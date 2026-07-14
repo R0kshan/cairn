@@ -1,0 +1,66 @@
+diagram logical "Insurance claims management — logical view"
+style { disposition: page }
+
+actor-group POLICYHOLDERS "Policyholders" {
+  actor POLICYHOLDER "Policyholder"
+  actor THIRD_PARTY "Involved third party"
+}
+
+actor-group HANDLERS "Case handlers" {
+  actor HANDLER "Claims\nhandler"
+  actor EXPERT "Appointed\nexpert"
+  actor SUPERVISOR "Settlement\nsupervisor"
+}
+
+system CLAIMS "Claims information system" {
+  layer REPORTING "Reporting layer" {
+    block REPORT_WEB "Online\nreporting"
+    block REPORT_PHONE "Phone\nreporting"
+    block DOCS "Supporting-document\ncollection"
+  }
+  layer INVESTIGATION "Investigation layer" {
+    block CASE "Claim-file\nmanagement"
+    block ASSESSMENT "Assessment\ntracking"
+    block FRAUD "Fraud\ndetection"
+  }
+  layer SETTLEMENT "Settlement layer" {
+    block COMPENSATION "Compensation\ncalculation"
+    block PAYMENT "Payment\nscheduling"
+  }
+}
+
+external EXT "External systems" {
+  block BANK "Banking system\n(transfers)"
+  block INTERINSURER "Inter-insurer\nfiles"
+  block ECM "Group\nECM"
+}
+
+# ---- business objects ----
+business-object BO_CLAIM "Claim" "damaging event reported by a policyholder"
+business-object BO_CASE "Case file" "file opened to investigate a claim"
+business-object BO_ASSESS "Assessment report" "quantified conclusions of the appointed expert"
+business-object BO_COMP "Compensation" "amount approved and paid to the policyholder"
+
+POLICYHOLDER -> REPORT_WEB : "Report a claim" [BO_CLAIM]
+THIRD_PARTY -> REPORT_PHONE : "Report involvement"
+POLICYHOLDER -> DOCS : "Upload photos\nand documents"
+DOCS -> ECM : "Archive documents"
+REPORT_WEB -> CASE : "Open the case file" [BO_CASE]
+REPORT_PHONE -> CASE : "Open the case file\n(phone channel)"
+CASE -> FRAUD : "Systematic check\nat opening"
+FRAUD -> INTERINSURER : "Query claims-history\nfiles"
+INTERINSURER -> FRAUD : "Policyholder\nhistory"
+CASE -> ASSESSMENT : "Assessment mission\nif damage > threshold"
+EXPERT -> ASSESSMENT : "Submit assessment\nreport" [BO_ASSESS]
+ASSESSMENT -> CASE : "Assessment\nconclusions" [BO_ASSESS]
+HANDLER -> CASE : "Investigation and\nmanagement decisions"
+CASE -> COMPENSATION : "Approved items\nfor pricing"
+COMPENSATION -> SUPERVISOR : "Approval request\nbeyond delegation"
+SUPERVISOR -> COMPENSATION : "Approval or\nreasoned refusal"
+COMPENSATION -> PAYMENT : "Compensation order" [BO_COMP]
+PAYMENT -> BANK : "SEPA transfer" [BO_COMP]
+CASE -> POLICYHOLDER : "Notify steps\nand decision"
+
+legend {
+  note "Claim files are retained for 10 years (legal obligation)"
+}

@@ -1,0 +1,22 @@
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm test
+      # regression gate: every example must build with zero label overlaps
+      - run: |
+          for f in examples/*.cairn examples/dispositions/*.cairn; do
+            case "$f" in *broken*) continue;; esac
+            out=$(node --experimental-strip-types src/cli.ts build "$f" 2>/dev/null) || { echo "BUILD FAIL: $f"; exit 1; }
+            echo "$out" | grep -q "label overlaps: 0" || { echo "OVERLAP REGRESSION: $f -> $out"; exit 1; }
+          done

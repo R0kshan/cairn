@@ -1,0 +1,38 @@
+diagram logical "Online appointment booking — logical view"
+
+actor-group USERS "Users" {
+  actor PATIENT "Patient"
+}
+
+actor-group STAFF "Staff" {
+  actor SECRETARY "Medical secretary"
+}
+
+system BOOKING "Appointment booking system" {
+  layer FRONT "Presentation layer" {
+    block PORTAL "Booking\nportal"
+  }
+  layer BUSINESS "Business layer" {
+    block SCHEDULER "Slot\nmanagement"
+    block NOTIF "Notifications"
+  }
+}
+
+external EXT "External systems" {
+  block SMS "SMS gateway"
+}
+
+# ---- business objects ----
+business-object BO_APPT "Appointment" "slot booked by a patient with a practitioner"
+business-object BO_SLOT "Slot" "time window open for booking"
+
+PATIENT -> PORTAL : "Search a slot\nand book" [BO_SLOT]
+PORTAL -> SCHEDULER : "Booking request" [BO_APPT]
+SCHEDULER -> NOTIF : "Appointment confirmed" [BO_APPT]
+NOTIF -> SMS : "Send SMS reminder"
+SECRETARY -> SCHEDULER : "Open / block\nslots" [BO_SLOT]
+SCHEDULER -> PATIENT : "Appointment\nconfirmation" [BO_APPT]
+
+legend {
+  note "Health data is stored on certified health-data-hosting infrastructure"
+}

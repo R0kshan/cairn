@@ -1,0 +1,79 @@
+{
+  "diagram": "logical",
+  "title": "Logical architecture — phase 0 spike",
+  "groups": [
+    {
+      "id": "ZONE_CTRL", "kind": "actor-group", "label": "Role group - Central zone",
+      "children": [
+        { "id": "ROLE_OBS_01", "kind": "actor", "label": "Control agent\nMain zone" },
+        { "id": "ROLE_GE_01", "kind": "actor", "label": "Functional and\ntechnical manager" },
+        { "id": "ROLE_TECH_01", "kind": "actor", "label": "Resource technicians\nMain zone" }
+      ]
+    },
+    {
+      "id": "ZONE_STATION", "kind": "actor-group", "label": "Role group - Remote site",
+      "children": [
+        { "id": "ROLE_OPE_01", "kind": "actor", "label": "Field operator\nRemote site" }
+      ]
+    },
+    {
+      "id": "ZONE_TARGET", "kind": "actor-group", "label": "External targets",
+      "children": [
+        { "id": "USER_FINAL", "kind": "actor", "label": "Concerned person" },
+        { "id": "USER_COND", "kind": "actor", "label": "Passenger-service agent" },
+        { "id": "USER_RESP", "kind": "actor", "label": "Remote-site\nmanager" }
+      ]
+    },
+    {
+      "id": "SYS_CENTRAL", "kind": "system", "label": "Main infrastructure",
+      "children": [
+        {
+          "id": "SYS_NIVEAU_CTRL", "kind": "system-block", "label": "Central control layer",
+          "children": [
+            { "id": "MOD_COM_CTR", "kind": "functional-block", "label": "Central communication\nmodule" },
+            { "id": "MOD_GST_DATA", "kind": "functional-block", "label": "Data processing\nmodule" },
+            { "id": "MOD_CFG_SYS", "kind": "functional-block", "label": "System configuration\nmodule" },
+            { "id": "MOD_SUIV_FLUX", "kind": "functional-block", "label": "Real-time activity\ntracking block" }
+          ]
+        },
+        {
+          "id": "SYS_NIVEAU_SITE", "kind": "system-block", "label": "Remote site layer",
+          "children": [
+            { "id": "MOD_COORD_SITE", "kind": "functional-block", "label": "Satellite coordination\nmodule" },
+            { "id": "MOD_COM_SITE", "kind": "functional-block", "label": "Local communication\nmodule" },
+            { "id": "MOD_COM_SAT2", "kind": "functional-block", "label": "Satellite communication\nmodule" },
+            { "id": "SUPPORT_AFF_DPT", "kind": "functional-block", "label": "Remote display\nchannels" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "INFRA_EXTERNAL", "kind": "external-group", "label": "External resources",
+      "children": [
+        { "id": "NODE_EXT_DISP", "kind": "external-block", "label": "External display\ninfrastructure" },
+        { "id": "NODE_EXT_NET01", "kind": "external-block", "label": "Third-party\nbroadcast network" },
+        { "id": "NODE_EXT_NET02", "kind": "external-block", "label": "Data export\nservice" },
+        { "id": "NODE_EXT_COLLECT", "kind": "external-block", "label": "External data-collection\ninfrastructure" }
+      ]
+    }
+  ],
+  "flows": [
+    { "id": "F01", "from": "ROLE_OBS_01", "to": "SYS_NIVEAU_CTRL", "label": "Overall control" },
+    { "id": "F02", "from": "ROLE_GE_01", "to": "MOD_CFG_SYS", "label": "Configure the system" },
+    { "id": "F03", "from": "MOD_COM_CTR", "to": "ROLE_OBS_01", "label": "Alerts, notifications and\nfeeds from various sources" },
+    { "id": "F04", "from": "ROLE_TECH_01", "to": "MOD_CFG_SYS", "label": "Enable/disable\na display terminal" },
+    { "id": "F05", "from": "MOD_COORD_SITE", "to": "ROLE_OPE_01", "label": "Report of\nanomalies and inconsistencies" },
+    { "id": "F06", "from": "ROLE_OPE_01", "to": "MOD_COM_SITE", "label": "Write and broadcast\nmessages to central\ncontrol" },
+    { "id": "F07", "from": "ZONE_TARGET", "to": "SUPPORT_AFF_DPT", "label": "Consult" },
+    { "id": "F08", "from": "MOD_COM_CTR", "to": "NODE_EXT_NET01", "label": "Real-time broadcast of\ndisruption information\nto the relevant lines" },
+    { "id": "F09", "from": "MOD_GST_DATA", "to": "NODE_EXT_NET02", "label": "Export of real-time\nand configuration data" },
+    { "id": "F10", "from": "MOD_SUIV_FLUX", "to": "MOD_COORD_SITE", "label": "Broadcast of information\nand messages about upcoming flows\nentered by the central team" },
+    { "id": "F11", "from": "MOD_COORD_SITE", "to": "MOD_SUIV_FLUX", "label": "Forward the\nmessages entered by staff\npresent on site" },
+    { "id": "F12", "from": "MOD_COM_SAT2", "to": "MOD_COM_CTR", "label": "Archive of\nthe messaging broadcast\nlocally at the remote site" },
+    { "id": "F13", "from": "NODE_EXT_COLLECT", "to": "MOD_SUIV_FLUX", "label": "Forward external\ncollection data and events" },
+    { "id": "F14", "from": "NODE_EXT_NET01", "to": "MOD_COM_CTR", "label": "Forward disruption messages\nfrom the requested transport networks" },
+    { "id": "F15", "from": "NODE_EXT_DISP", "to": "MOD_COORD_SITE", "label": "Forward the list of upcoming\nflows and the lead-vehicle identity\nfor periodic control" },
+    { "id": "F16", "from": "NODE_EXT_NET02", "to": "MOD_COM_SAT2", "label": "Traffic notifications\nand user messaging" },
+    { "id": "F17", "from": "NODE_EXT_COLLECT", "to": "MOD_SUIV_FLUX", "label": "Forward the associated missions and services" }
+  ]
+}

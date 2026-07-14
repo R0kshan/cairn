@@ -1,0 +1,22 @@
+diagram infrastructure "Showcase website — infrastructure view"
+style { disposition: page }
+
+site CLOUD "Cloud host" {
+  network-zone PUBLIC "Public zone" {
+    server LB "Load\nbalancer"
+  }
+  network-zone PRIVATE "Private zone" {
+    server WEB "Web VM" {
+      app-instance CMS_I "CMS"
+    }
+    server DB "Database\nVM" {
+      app-instance MYSQL_I "MySQL"
+    }
+  }
+}
+
+external VISITORS "Internet\nvisitors"
+
+VISITORS -> LB : "Site access" (HTTPS/443)
+LB -> CMS_I : "Balanced\ntraffic" (HTTP/8080)
+CMS_I -> MYSQL_I : "Read/write\ncontent" (TCP/3306)

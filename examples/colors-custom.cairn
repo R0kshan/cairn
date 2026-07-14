@@ -1,0 +1,28 @@
+diagram logical "Custom colors — per element, per kind and background"
+
+# Diagram-level: custom canvas background + per-kind overrides
+style {
+  background: #fffdf5
+  stroke system: #b3541e solid 1.4
+  text block: #333333
+}
+
+actor-group USERS "Users" {
+  actor USER "User"
+}
+
+system CORE "Core system" {
+  layer L "Services" {
+    # Per-element colors (fill + stroke on one line)
+    block API "API gateway" { style { fill: #e8f5e9  stroke: #2e7d32 } }
+    block WORKER "Worker" { style { fill: #e3f2fd  stroke: #1565c0 } }
+  }
+}
+
+external EXT "External systems" {
+  block QUEUE "Message queue"
+}
+
+USER -> API : "Request"
+API -> WORKER : "Dispatch job"
+WORKER -> QUEUE : "Publish event"

@@ -1,0 +1,477 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3512 1689" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#444444"/></marker></defs>
+<rect width="3512" height="1689" fill="white"/>
+<rect x="118" y="589" width="123" height="261" rx="6" fill="#eef4fb" stroke="#7a9cc4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="128" y="607" font-size="12" font-weight="bold" fill="#333">Customers</text>
+<rect x="12" y="113" width="139" height="446" rx="6" fill="#eef4fb" stroke="#7a9cc4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="22" y="131" font-size="12" font-weight="bold" fill="#333">Internal teams</text>
+<rect x="1445" y="369" width="874" height="478" rx="6" fill="#f6f2ea" stroke="#b09a6d" stroke-width="1.2"/>
+<text x="1455" y="387" font-size="12" font-weight="bold" fill="#333">Commerce front</text>
+<rect x="1482" y="527" width="194" height="235" rx="6" fill="#fdfbf6" stroke="#c4b258" stroke-width="1"/>
+<text x="1492" y="545" font-size="12" font-weight="bold" fill="#333">Presentation layer</text>
+<rect x="1862" y="540" width="410" height="244" rx="6" fill="#fdfbf6" stroke="#c4b258" stroke-width="1"/>
+<text x="1872" y="558" font-size="12" font-weight="bold" fill="#333">Customer-journey layer</text>
+<rect x="315" y="112" width="950" height="559.5" rx="6" fill="#f6f2ea" stroke="#b09a6d" stroke-width="1.2"/>
+<text x="325" y="130" font-size="12" font-weight="bold" fill="#333">Commerce core</text>
+<rect x="858" y="162.5" width="370" height="247" rx="6" fill="#fdfbf6" stroke="#c4b258" stroke-width="1"/>
+<text x="868" y="180.5" font-size="12" font-weight="bold" fill="#333">Sales layer</text>
+<rect x="460" y="429.5" width="164" height="230" rx="6" fill="#fdfbf6" stroke="#c4b258" stroke-width="1"/>
+<text x="470" y="447.5" font-size="12" font-weight="bold" fill="#333">Offer layer</text>
+<rect x="352" y="197" width="380" height="165" rx="6" fill="#fdfbf6" stroke="#c4b258" stroke-width="1"/>
+<text x="362" y="215" font-size="12" font-weight="bold" fill="#333">Execution layer</text>
+<rect x="2483" y="262" width="644" height="206" rx="6" fill="#f6f2ea" stroke="#b09a6d" stroke-width="1.2"/>
+<text x="2493" y="280" font-size="12" font-weight="bold" fill="#333">Data platform</text>
+<rect x="2500" y="292" width="164" height="164" rx="6" fill="#fdfbf6" stroke="#c4b258" stroke-width="1"/>
+<text x="2510" y="310" font-size="12" font-weight="bold" fill="#333">Collection layer</text>
+<rect x="2740" y="300.5" width="370" height="93" rx="6" fill="#fdfbf6" stroke="#c4b258" stroke-width="1"/>
+<text x="2750" y="318.5" font-size="12" font-weight="bold" fill="#333">Analytics layer</text>
+<rect x="3291" y="84" width="164" height="377" rx="6" fill="#f0eef5" stroke="#9187b3" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="3301" y="102" font-size="12" font-weight="bold" fill="#333">External systems</text>
+<circle cx="188" cy="792" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 177 814 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="188" y="826" font-size="10" text-anchor="middle" fill="#223344">Web customer</text>
+<circle cx="179.5" cy="716" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 168.5 738 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="179.5" y="750" font-size="10" text-anchor="middle" fill="#223344">Mobile customer</text>
+<circle cx="197" cy="629" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 186 651 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="197" y="663" font-size="10" text-anchor="middle" fill="#223344">In-store</text>
+<text x="197" y="674" font-size="10" text-anchor="middle" fill="#223344">customer</text>
+<circle cx="81.5" cy="229" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 70.5 251 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="81.5" y="263" font-size="10" text-anchor="middle" fill="#223344">Customer-relations</text>
+<text x="81.5" y="274" font-size="10" text-anchor="middle" fill="#223344">advisor</text>
+<circle cx="95.5" cy="490" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 84.5 512 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="95.5" y="524" font-size="10" text-anchor="middle" fill="#223344">Merchandising</text>
+<text x="95.5" y="535" font-size="10" text-anchor="middle" fill="#223344">manager</text>
+<circle cx="106.5" cy="316" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 95.5 338 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="106.5" y="350" font-size="10" text-anchor="middle" fill="#223344">Warehouse</text>
+<text x="106.5" y="361" font-size="10" text-anchor="middle" fill="#223344">operator</text>
+<circle cx="103.5" cy="153" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 92.5 175 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="103.5" y="187" font-size="10" text-anchor="middle" fill="#223344">Accountant</text>
+<circle cx="95.5" cy="403" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
+<path d="M 84.5 425 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
+<text x="95.5" y="437" font-size="10" text-anchor="middle" fill="#223344">Platform</text>
+<text x="95.5" y="448" font-size="10" text-anchor="middle" fill="#223344">administrator</text>
+<rect x="1494" y="699" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="1564" y="721.75" font-size="11.5" text-anchor="middle" fill="#222233">E-commerce</text>
+<text x="1564" y="735.25" font-size="11.5" text-anchor="middle" fill="#222233">site</text>
+<rect x="1494" y="628" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="1564" y="650.75" font-size="11.5" text-anchor="middle" fill="#222233">Mobile</text>
+<text x="1564" y="664.25" font-size="11.5" text-anchor="middle" fill="#222233">app</text>
+<rect x="1494" y="557" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="1564" y="579.75" font-size="11.5" text-anchor="middle" fill="#222233">Store</text>
+<text x="1564" y="593.25" font-size="11.5" text-anchor="middle" fill="#222233">kiosks</text>
+<rect x="1914" y="716.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="1984" y="739.25" font-size="11.5" text-anchor="middle" fill="#222233">Catalog</text>
+<text x="1984" y="752.75" font-size="11.5" text-anchor="middle" fill="#222233">browsing</text>
+<rect x="1914" y="641" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="1984" y="663.75" font-size="11.5" text-anchor="middle" fill="#222233">Cart and</text>
+<text x="1984" y="677.25" font-size="11.5" text-anchor="middle" fill="#222233">checkout</text>
+<rect x="1914" y="570" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="1984" y="592.75" font-size="11.5" text-anchor="middle" fill="#222233">Customer</text>
+<text x="1984" y="606.25" font-size="11.5" text-anchor="middle" fill="#222233">account</text>
+<rect x="2120" y="708" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="2190" y="730.75" font-size="11.5" text-anchor="middle" fill="#222233">Personalized</text>
+<text x="2190" y="744.25" font-size="11.5" text-anchor="middle" fill="#222233">recommendations</text>
+<rect x="870" y="275.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="940" y="298.25" font-size="11.5" text-anchor="middle" fill="#222233">Order</text>
+<text x="940" y="311.75" font-size="11.5" text-anchor="middle" fill="#222233">management</text>
+<rect x="1076" y="228" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="1146" y="250.75" font-size="11.5" text-anchor="middle" fill="#222233">Payment</text>
+<text x="1146" y="264.25" font-size="11.5" text-anchor="middle" fill="#222233">orchestration</text>
+<rect x="870" y="346.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="940" y="369.25" font-size="11.5" text-anchor="middle" fill="#222233">Promotions</text>
+<text x="940" y="382.75" font-size="11.5" text-anchor="middle" fill="#222233">engine</text>
+<rect x="870" y="192.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="940" y="215.25" font-size="11.5" text-anchor="middle" fill="#222233">Loyalty</text>
+<text x="940" y="228.75" font-size="11.5" text-anchor="middle" fill="#222233">program</text>
+<rect x="472" y="459.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="542" y="482.25" font-size="11.5" text-anchor="middle" fill="#222233">Product</text>
+<text x="542" y="495.75" font-size="11.5" text-anchor="middle" fill="#222233">repository</text>
+<rect x="472" y="601.5" width="140" height="46" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="542" y="628.5" font-size="11.5" text-anchor="middle" fill="#222233">Pricing</text>
+<rect x="472" y="530.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="542" y="553.25" font-size="11.5" text-anchor="middle" fill="#222233">Unified stock</text>
+<text x="542" y="566.75" font-size="11.5" text-anchor="middle" fill="#222233">view</text>
+<rect x="364" y="299" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="434" y="321.75" font-size="11.5" text-anchor="middle" fill="#222233">Shipment</text>
+<text x="434" y="335.25" font-size="11.5" text-anchor="middle" fill="#222233">orchestration</text>
+<rect x="580" y="272.25" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="650" y="295" font-size="11.5" text-anchor="middle" fill="#222233">Warehouse</text>
+<text x="650" y="308.5" font-size="11.5" text-anchor="middle" fill="#222233">control</text>
+<rect x="364" y="227" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="434" y="249.75" font-size="11.5" text-anchor="middle" fill="#222233">After-sales</text>
+<text x="434" y="263.25" font-size="11.5" text-anchor="middle" fill="#222233">service</text>
+<rect x="2512" y="393" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="2582" y="415.75" font-size="11.5" text-anchor="middle" fill="#222233">Browsing-event</text>
+<text x="2582" y="429.25" font-size="11.5" text-anchor="middle" fill="#222233">collection</text>
+<rect x="2512" y="322" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="2582" y="344.75" font-size="11.5" text-anchor="middle" fill="#222233">Reference-data</text>
+<text x="2582" y="358.25" font-size="11.5" text-anchor="middle" fill="#222233">change capture</text>
+<rect x="2752" y="330.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="2822" y="353.25" font-size="11.5" text-anchor="middle" fill="#222233">Data</text>
+<text x="2822" y="366.75" font-size="11.5" text-anchor="middle" fill="#222233">warehouse</text>
+<rect x="2958" y="330.5" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="3028" y="353.25" font-size="11.5" text-anchor="middle" fill="#222233">Customer</text>
+<text x="3028" y="366.75" font-size="11.5" text-anchor="middle" fill="#222233">segmentation</text>
+<rect x="3303" y="185" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="3373" y="207.75" font-size="11.5" text-anchor="middle" fill="#222233">Payment service</text>
+<text x="3373" y="221.25" font-size="11.5" text-anchor="middle" fill="#222233">provider (PSP)</text>
+<rect x="3303" y="114" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="3373" y="136.75" font-size="11.5" text-anchor="middle" fill="#222233">Carrier</text>
+<text x="3373" y="150.25" font-size="11.5" text-anchor="middle" fill="#222233">platforms</text>
+<rect x="3303" y="256" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="3373" y="278.75" font-size="11.5" text-anchor="middle" fill="#222233">Group</text>
+<text x="3373" y="292.25" font-size="11.5" text-anchor="middle" fill="#222233">ERP</text>
+<rect x="3303" y="398" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="3373" y="420.75" font-size="11.5" text-anchor="middle" fill="#222233">Group</text>
+<text x="3373" y="434.25" font-size="11.5" text-anchor="middle" fill="#222233">CRM</text>
+<rect x="3303" y="327" width="140" height="51" rx="4" fill="#ffffff" stroke="#666677" stroke-width="1.3"/>
+<text x="3373" y="349.75" font-size="11.5" text-anchor="middle" fill="#222233">Customer-review</text>
+<text x="3373" y="363.25" font-size="11.5" text-anchor="middle" fill="#222233">platform</text>
+<path d="M 229 810 L 265 810 A 5 5 0 0 1 275 810 L 275 810 A 5 5 0 0 1 285 810 L 285 810 A 5 5 0 0 1 295 810 L 1410 810 L 1410 716 L 1415 716 A 5 5 0 0 1 1425 716 L 1494 716" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="310" y="814" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="323" y="826.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">1</text>
+<path d="M 229 734 L 265 734 A 5 5 0 0 1 275 734 L 275 734 A 5 5 0 0 1 285 734 L 285 734 A 5 5 0 0 1 295 734 L 1400 734 L 1400 654 L 1440 653.5 L 1494 653.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="310" y="738" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="323" y="750.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">2</text>
+<path d="M 229 652.5 L 246 653 L 265 653 A 5 5 0 0 1 275 653 L 275 653 A 5 5 0 0 1 285 653 L 285 653 A 5 5 0 0 1 295 653 L 300 653 L 300 698 L 1390 698 L 1390 583 L 1440 582.5 L 1494 582.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="310" y="702" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="323" y="714.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">3</text>
+<path d="M 1634 724.5 L 1654 724.5 L 1654 652 L 1757 652 L 1757 752 L 1884 752 L 1884 748.375 L 1914 748.375" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1711" y="655" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1724" y="667.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">4</text>
+<path d="M 1634 662 L 1639 662 A 5 5 0 0 1 1649 662 L 1649 662 A 5 5 0 0 1 1659 662 L 1701 662 L 1701 741 L 1747 741 L 1747 762 L 1894 762 L 1894 754.75 L 1914 754.75" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1711" y="744" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1724" y="756.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">5</text>
+<path d="M 1634 582.5 L 1639 582.5 A 5 5 0 0 1 1649 582.5 L 1649 582.5 A 5 5 0 0 1 1659 582.5 L 1691 582.5 L 1691 621 L 1767 621 L 1767 742 L 1914 742" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1711" y="624" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1724" y="636.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">6</text>
+<path d="M 1634 711.75 L 1644 711.75 L 1644 562.5 L 1691 562.5 L 1691 441 L 1827 441 L 1827 658 L 1914 658" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1711" y="421" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1724" y="433.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">7</text>
+<path d="M 1634 645 L 1639 645 A 5 5 0 0 1 1649 645 L 1654 645 L 1654 572.5 L 1701 572.5 L 1701 452 L 1817 452 L 1817 675 L 1914 675" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1711" y="455" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1724" y="467.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">8</text>
+<path d="M 2054 675 L 2297 675 L 2297 835 L 2334 835 L 2334 865 L 1435 865 A 5 5 0 0 0 1425 865 L 1425 865 A 5 5 0 0 0 1415 865 L 295 865 A 5 5 0 0 0 285 865 L 280 865 L 280 372 L 332 372 A 5 5 0 0 1 342 372 L 752 372 A 5 5 0 0 1 762 372 L 870 372" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1384" y="869" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1397" y="881.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">9</text>
+<path d="M 2054 742 L 2120 742" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="2074" y="745" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="2087" y="757.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">10</text>
+<path d="M 2260 733.5 L 2287 733.5 L 2287 794 L 1696 794 A 5 5 0 0 0 1686 794 L 1467 794 L 1467 733 L 1494 733" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1711" y="797" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1724" y="809.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">11</text>
+<path d="M 2054 595.5 L 2324 596 L 2334 596 L 2334 351 L 1435 351 A 5 5 0 0 0 1425 351 L 1335 351 A 5 5 0 0 0 1325 351 L 1280 351 L 1280 94 L 300 94 L 300 153 L 742 153 A 5 5 0 0 1 752 153 L 843 153 L 843 218 L 870 218" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1350" y="355" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1363" y="367.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">12</text>
+<path d="M 2054 658 L 2344 658 L 2344 337 L 1440 337 L 1440 315 L 1384 315 L 1384 80 L 290 80 L 290 186 L 742 186 A 5 5 0 0 1 752 186 L 813 186 L 813 292.5 L 870 292.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1394" y="319" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1407" y="331.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">13</text>
+<path d="M 1010 288.25 L 1020 288.25 L 1020 242.5 L 1066 242.5 L 1066 240.75 L 1076 240.75" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1030" y="222.5" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1043" y="235" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">14</text>
+<path d="M 1216 253.5 L 1270 254 L 1275 254 A 5 5 0 0 1 1285 254 L 1310 254 L 1310 207 L 1379 207 A 5 5 0 0 1 1389 207 L 1430 207 L 1430 211 L 3286 210.5 L 3303 210.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1394" y="211" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1407" y="223.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">15</text>
+<path d="M 3443 210.5 L 3460 211 L 3480 211 L 3480 30 L 280 30 L 280 164 L 285 164 A 5 5 0 0 1 295 164 L 742 164 A 5 5 0 0 1 752 164 L 833 164 L 833 253.5 L 1015 253.5 A 5 5 0 0 1 1025 253.5 L 1076 253.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="3286" y="34" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="3299" y="46.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">16</text>
+<path d="M 1010 313.75 L 1243 313.75 L 1243 419.5 L 762 419.5 A 5 5 0 0 0 752 419.5 L 337 419.5 L 337 333 L 364 333" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="767" y="422.5" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="780" y="435" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">17</text>
+<path d="M 504 324.5 L 524 324.5 L 524 306.25 L 580 306.25" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="534" y="309.25" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="547" y="321.75" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">18</text>
+<path d="M 139 339.5 L 156 340 L 280 340 L 280 288 L 509 288 A 5 5 0 0 1 519 288 L 570 288 L 570 289.25 L 580 289.25" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="220" y="344" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="233" y="356.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">19</text>
+<path d="M 504 311.75 L 514 311.75 L 514 241.5 L 747 241.5 L 747 142 L 1275 142 A 5 5 0 0 1 1285 142 L 1379 142 A 5 5 0 0 1 1389 142 L 1430 142 L 1430 140 L 3286 139.5 L 3303 139.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1394" y="146" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1407" y="158.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">20</text>
+<path d="M 3443 139.5 L 3460 140 L 3470 140 L 3470 66 L 285 66 A 5 5 0 0 0 275 66 L 270 66 L 270 316 L 275 316 A 5 5 0 0 1 285 316 L 364 316" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="3196" y="70" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="3209" y="82.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">21</text>
+<path d="M 504 337.25 L 757 337.25 L 757 482.5 L 1270 483 L 1340 483 L 1340 410 L 1415 410 A 5 5 0 0 1 1425 410 L 1425 410 A 5 5 0 0 1 1435 410 L 1837 410 L 1837 604 L 1914 604" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1350" y="414" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1363" y="426.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">22</text>
+<path d="M 139 252.5 L 156 253 L 310 252.5 L 364 252.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="220" y="257" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="233" y="269.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">23</text>
+<path d="M 504 252.5 L 509 252.5 A 5 5 0 0 1 519 252.5 L 803 252.5 L 803 309.5 L 870 309.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="767" y="255.5" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="780" y="268" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">24</text>
+<path d="M 139 513.5 L 156 514 L 210 514 L 210 494 L 310 493.5 L 472 493.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="220" y="498" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="233" y="510.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">25</text>
+<path d="M 612 493.5 L 1270 494 L 1415 494 A 5 5 0 0 1 1425 494 L 1686 494 A 5 5 0 0 1 1696 494 L 1696 494 A 5 5 0 0 1 1706 494 L 1797 494 L 1797 712 L 1904 712 L 1904 722.875 L 1914 722.875" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1334" y="498" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1347" y="510.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">26</text>
+<path d="M 612 624.5 L 1270 625 L 1380 625 L 1380 516 L 1415 516 A 5 5 0 0 1 1425 516 L 1686 516 A 5 5 0 0 1 1696 516 L 1696 516 A 5 5 0 0 1 1706 516 L 1777 516 L 1777 732 L 1884 732 L 1884 735.625 L 1914 735.625" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1344" y="629" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1357" y="641.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">27</text>
+<path d="M 3443 273 L 3500 273 L 3500 949 L 270 949 L 270 556 L 275 556 A 5 5 0 0 1 285 556 L 472 556" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="3286" y="953" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="3299" y="965.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">28</text>
+<path d="M 612 556 L 1370 556 L 1370 505 L 1415 505 A 5 5 0 0 1 1425 505 L 1686 505 A 5 5 0 0 1 1696 505 L 1696 505 A 5 5 0 0 1 1706 505 L 1787 505 L 1787 722 L 1894 722 L 1894 729.25 L 1914 729.25" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1334" y="560" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1347" y="572.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">29</text>
+<path d="M 3443 290 L 3490 290 L 3490 934 L 290 934 L 290 625 L 310 624.5 L 472 624.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="3246" y="913" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="3259" y="925.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">30</text>
+<path d="M 1634 737.25 L 1691 737.25 L 1691 825 L 2292 825 A 5 5 0 0 1 2302 825 L 2354 825 L 2354 419 L 2478 418.5 L 2512 418.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="2388" y="398" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="2401" y="410.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">31</text>
+<path d="M 612 476.5 L 747 476.5 L 747 471.5 L 1270 472 L 1330 472 L 1330 283 L 1379 283 A 5 5 0 0 1 1389 283 L 2388 283 L 2388 348 L 2478 347.5 L 2512 347.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="2352" y="287" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="2365" y="299.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">32</text>
+<path d="M 2652 418.5 L 2725 418.5 L 2725 364.5 L 2752 364.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="2689" y="421.5" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="2702" y="434" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">33</text>
+<path d="M 2652 347.5 L 2752 347.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="2689" y="327.5" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="2702" y="340" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">34</text>
+<path d="M 2892 356 L 2958 356" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="2912" y="359" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="2925" y="371.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">35</text>
+<path d="M 3098 364.5 L 3132 365 L 3142 365 L 3142 486 L 2378 486 L 2378 323 L 1445 323 A 5 5 0 0 0 1435 323 L 1430 323 L 1430 483 L 1686 483 A 5 5 0 0 1 1696 483 L 1696 483 A 5 5 0 0 1 1706 483 L 1807 483 L 1807 702 L 2110 702 L 2110 725 L 2120 725" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="2478" y="490" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="2491" y="502.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">36</text>
+<path d="M 3098 347.5 L 3132 348 L 3232 348 L 3232 424 L 3286 423.5 L 3303 423.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="3196" y="352" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="3209" y="364.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">37</text>
+<path d="M 3443 423.5 L 3460 424 L 3470 424 L 3470 879 L 1435 879 A 5 5 0 0 0 1425 879 L 1420 879 L 1420 399 L 1425 399 A 5 5 0 0 1 1435 399 L 1847 399 L 1847 587 L 1914 587" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="3286" y="858" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="3299" y="870.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">38</text>
+<path d="M 139 171 L 265 171 A 5 5 0 0 1 275 171 L 285 171 A 5 5 0 0 1 295 171 L 300 171 L 300 175 L 742 175 A 5 5 0 0 1 752 175 L 823 175 L 823 264.5 L 1015 264.5 A 5 5 0 0 1 1025 264.5 L 1066 264.5 L 1066 266.25 L 1076 266.25" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="220" y="175" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="233" y="187.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">39</text>
+<path d="M 139 426.5 L 156 427 L 275 427 A 5 5 0 0 1 285 427 L 300 427 L 300 477 L 310 476.5 L 472 476.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="220" y="431" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="233" y="443.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">40</text>
+<path d="M 1010 301 L 1275 301 A 5 5 0 0 1 1285 301 L 1320 301 L 1320 243 L 1379 243 A 5 5 0 0 1 1389 243 L 3242 243 L 3242 353 L 3286 352.5 L 3303 352.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="1394" y="247" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="1407" y="259.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">41</text>
+<path d="M 3443 352.5 L 3460 353 L 3480 353 L 3480 894 L 1430 894 L 1430 772 L 1462 772 A 5 5 0 0 1 1472 772 L 1686 772 A 5 5 0 0 1 1696 772 L 1904 772 L 1904 761.125 L 1914 761.125" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<rect x="3286" y="898" width="26" height="17" rx="8.5" fill="white" stroke="#888" stroke-width="1"/>
+<text x="3299" y="910.5" font-size="10" text-anchor="middle" fill="#444" font-weight="bold">42</text>
+<line x1="20" y1="993" x2="3492" y2="993" stroke="#ddd" stroke-width="1"/>
+<text x="20" y="1015" font-size="11" font-weight="bold" fill="#555">FLOWS</text>
+<rect x="150" y="1003" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1014" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">1</text>
+<text x="184" y="1014" font-size="10" fill="#444">Browse, search,</text>
+<text x="184" y="1027.5" font-size="10" fill="#444">order</text>
+<rect x="150" y="1037" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1048" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">2</text>
+<text x="184" y="1048" font-size="10" fill="#444">Mobile purchase</text>
+<text x="184" y="1061.5" font-size="10" fill="#444">journey</text>
+<rect x="150" y="1071" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1082" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">3</text>
+<text x="184" y="1082" font-size="10" fill="#444">Check stock and</text>
+<text x="184" y="1095.5" font-size="10" fill="#444">order in store</text>
+<rect x="150" y="1105" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1116" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">4</text>
+<text x="184" y="1116" font-size="10" fill="#444">Display product</text>
+<text x="184" y="1129.5" font-size="10" fill="#444">pages</text>
+<rect x="150" y="1139" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1150" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">5</text>
+<text x="184" y="1150" font-size="10" fill="#444">Display mobile</text>
+<text x="184" y="1163.5" font-size="10" fill="#444">catalog</text>
+<rect x="150" y="1173" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1184" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">6</text>
+<text x="184" y="1184" font-size="10" fill="#444">Browse the</text>
+<text x="184" y="1197.5" font-size="10" fill="#444">store offer</text>
+<rect x="150" y="1207" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1218" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">7</text>
+<text x="184" y="1218" font-size="10" fill="#444">Build the cart</text>
+<rect x="150" y="1227.5" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1238.5" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">8</text>
+<text x="184" y="1238.5" font-size="10" fill="#444">Synchronized</text>
+<text x="184" y="1252" font-size="10" fill="#444">mobile cart</text>
+<rect x="150" y="1261.5" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1272.5" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">9</text>
+<text x="184" y="1272.5" font-size="10" fill="#444">Apply current</text>
+<text x="184" y="1286" font-size="10" fill="#444">offers</text>
+<rect x="150" y="1295.5" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1306.5" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">10</text>
+<text x="184" y="1306.5" font-size="10" fill="#444">Browsing</text>
+<text x="184" y="1320" font-size="10" fill="#444">context</text>
+<rect x="150" y="1329.5" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1340.5" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">11</text>
+<text x="184" y="1340.5" font-size="10" fill="#444">Personalized</text>
+<text x="184" y="1354" font-size="10" fill="#444">suggestions</text>
+<rect x="150" y="1363.5" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1374.5" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">12</text>
+<text x="184" y="1374.5" font-size="10" fill="#444">Loyalty balance</text>
+<text x="184" y="1388" font-size="10" fill="#444">and benefits</text>
+<rect x="150" y="1397.5" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1408.5" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">13</text>
+<text x="184" y="1408.5" font-size="10" fill="#444">Order</text>
+<text x="184" y="1422" font-size="10" fill="#444">validation</text>
+<rect x="242" y="1412" width="43" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="263.5" y="1423" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Order</text>
+<rect x="150" y="1431.5" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="162" y="1442.5" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">14</text>
+<text x="184" y="1442.5" font-size="10" fill="#444">Charge</text>
+<text x="184" y="1456" font-size="10" fill="#444">request</text>
+<rect x="227" y="1446" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="254" y="1457" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Payment</text>
+<rect x="1273" y="1003" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1014" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">15</text>
+<text x="1307" y="1014" font-size="10" fill="#444">Payment authorization</text>
+<text x="1307" y="1027.5" font-size="10" fill="#444">and capture</text>
+<rect x="1371" y="1017.5" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="1398" y="1028.5" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Payment</text>
+<rect x="1273" y="1037" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1048" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">16</text>
+<text x="1307" y="1048" font-size="10" fill="#444">Transaction</text>
+<text x="1307" y="1061.5" font-size="10" fill="#444">status</text>
+<rect x="1273" y="1071" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1082" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">17</text>
+<text x="1307" y="1082" font-size="10" fill="#444">Fulfilment</text>
+<text x="1307" y="1095.5" font-size="10" fill="#444">order</text>
+<rect x="1339" y="1085.5" width="43" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="1360.5" y="1096.5" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Order</text>
+<rect x="1273" y="1105" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1116" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">18</text>
+<text x="1307" y="1116" font-size="10" fill="#444">Warehouse picking</text>
+<text x="1307" y="1129.5" font-size="10" fill="#444">waves</text>
+<rect x="1273" y="1139" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1150" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">19</text>
+<text x="1307" y="1150" font-size="10" fill="#444">Pick and ship</text>
+<text x="1307" y="1163.5" font-size="10" fill="#444">parcels</text>
+<rect x="1273" y="1173" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1184" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">20</text>
+<text x="1307" y="1184" font-size="10" fill="#444">Pickup requests</text>
+<text x="1307" y="1197.5" font-size="10" fill="#444">and labels</text>
+<rect x="1365" y="1187.5" width="48" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="1389" y="1198.5" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Parcel</text>
+<rect x="1273" y="1207" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1218" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">21</text>
+<text x="1307" y="1218" font-size="10" fill="#444">Parcel-tracking</text>
+<text x="1307" y="1231.5" font-size="10" fill="#444">events</text>
+<rect x="1273" y="1241" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1252" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">22</text>
+<text x="1307" y="1252" font-size="10" fill="#444">Customer order</text>
+<text x="1307" y="1265.5" font-size="10" fill="#444">tracking</text>
+<rect x="1273" y="1275" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1286" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">23</text>
+<text x="1307" y="1286" font-size="10" fill="#444">Handle</text>
+<text x="1307" y="1299.5" font-size="10" fill="#444">complaints</text>
+<rect x="1273" y="1309" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1320" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">24</text>
+<text x="1307" y="1320" font-size="10" fill="#444">Returns and</text>
+<text x="1307" y="1333.5" font-size="10" fill="#444">refunds</text>
+<rect x="1273" y="1343" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1354" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">25</text>
+<text x="1307" y="1354" font-size="10" fill="#444">Enrich product</text>
+<text x="1307" y="1367.5" font-size="10" fill="#444">pages</text>
+<rect x="1273" y="1377" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1388" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">26</text>
+<text x="1307" y="1388" font-size="10" fill="#444">Publish the</text>
+<text x="1307" y="1401.5" font-size="10" fill="#444">catalog</text>
+<rect x="1350" y="1391.5" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="1377" y="1402.5" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Product</text>
+<rect x="1273" y="1411" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1422" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">27</text>
+<text x="1307" y="1422" font-size="10" fill="#444">Current sale</text>
+<text x="1307" y="1435.5" font-size="10" fill="#444">prices</text>
+<rect x="1273" y="1445" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="1285" y="1456" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">28</text>
+<text x="1307" y="1456" font-size="10" fill="#444">Accounting stock</text>
+<text x="1307" y="1469.5" font-size="10" fill="#444">movements</text>
+<rect x="2396" y="1003" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1014" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">29</text>
+<text x="2430" y="1014" font-size="10" fill="#444">Product</text>
+<text x="2430" y="1027.5" font-size="10" fill="#444">availability</text>
+<rect x="2499" y="1017.5" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="2526" y="1028.5" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Product</text>
+<rect x="2396" y="1037" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1048" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">30</text>
+<text x="2430" y="1048" font-size="10" fill="#444">Reference purchase</text>
+<text x="2430" y="1061.5" font-size="10" fill="#444">costs</text>
+<rect x="2396" y="1071" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1082" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">31</text>
+<text x="2430" y="1082" font-size="10" fill="#444">Browsing</text>
+<text x="2430" y="1095.5" font-size="10" fill="#444">events</text>
+<rect x="2396" y="1105" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1116" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">32</text>
+<text x="2430" y="1116" font-size="10" fill="#444">Reference-data</text>
+<text x="2430" y="1129.5" font-size="10" fill="#444">changes</text>
+<rect x="2396" y="1139" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1150" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">33</text>
+<text x="2430" y="1150" font-size="10" fill="#444">Feed the data</text>
+<text x="2430" y="1163.5" font-size="10" fill="#444">foundation</text>
+<rect x="2396" y="1173" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1184" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">34</text>
+<text x="2430" y="1184" font-size="10" fill="#444">Reference-data</text>
+<text x="2430" y="1197.5" font-size="10" fill="#444">sync</text>
+<rect x="2396" y="1207" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1218" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">35</text>
+<text x="2430" y="1218" font-size="10" fill="#444">Compute</text>
+<text x="2430" y="1231.5" font-size="10" fill="#444">segments</text>
+<rect x="2396" y="1241" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1252" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">36</text>
+<text x="2430" y="1252" font-size="10" fill="#444">Audience segments</text>
+<text x="2430" y="1265.5" font-size="10" fill="#444">for personalization</text>
+<rect x="2396" y="1275" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1286" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">37</text>
+<text x="2430" y="1286" font-size="10" fill="#444">Audiences for</text>
+<text x="2430" y="1299.5" font-size="10" fill="#444">campaigns</text>
+<rect x="2396" y="1309" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1320" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">38</text>
+<text x="2430" y="1320" font-size="10" fill="#444">Personalized</text>
+<text x="2430" y="1333.5" font-size="10" fill="#444">outreach</text>
+<rect x="2396" y="1343" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1354" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">39</text>
+<text x="2430" y="1354" font-size="10" fill="#444">Reconcile</text>
+<text x="2430" y="1367.5" font-size="10" fill="#444">collections</text>
+<rect x="2396" y="1377" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1388" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">40</text>
+<text x="2430" y="1388" font-size="10" fill="#444">Administer repositories</text>
+<text x="2430" y="1401.5" font-size="10" fill="#444">and permissions</text>
+<rect x="2396" y="1411" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1422" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">41</text>
+<text x="2430" y="1422" font-size="10" fill="#444">Request a review</text>
+<text x="2430" y="1435.5" font-size="10" fill="#444">after delivery</text>
+<rect x="2396" y="1445" width="24" height="15" rx="7.5" fill="white" stroke="#888"/>
+<text x="2408" y="1456" font-size="9.5" text-anchor="middle" fill="#444" font-weight="bold">42</text>
+<text x="2430" y="1456" font-size="10" fill="#444">Product ratings</text>
+<text x="2430" y="1469.5" font-size="10" fill="#444">and reviews</text>
+<line x1="20" y1="1495" x2="3492" y2="1495" stroke="#ddd" stroke-width="1"/>
+<text x="20" y="1517" font-size="11" font-weight="bold" fill="#555">BUSINESS OBJECTS</text>
+<rect x="150" y="1507" width="43" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="171.5" y="1518" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Order</text>
+<text x="203" y="1518" font-size="10" fill="#666">— cart validated by a customer, tracked until delivery</text>
+<rect x="150" y="1531" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="177" y="1542" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Payment</text>
+<text x="214" y="1542" font-size="10" fill="#666">— financial transaction tied to an order</text>
+<rect x="150" y="1555" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="177" y="1566" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Product</text>
+<text x="214" y="1566" font-size="10" fill="#666">— catalog item with price and availability</text>
+<rect x="150" y="1579" width="48" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="174" y="1590" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Parcel</text>
+<text x="208" y="1590" font-size="10" fill="#666">— shipping unit handed to the carrier</text>
+<line x1="20" y1="1617" x2="3492" y2="1617" stroke="#ddd" stroke-width="1"/>
+<text x="20" y="1639" font-size="11" font-weight="bold" fill="#555">LEGEND</text>
+<rect x="150" y="1629" width="26" height="14" rx="3" fill="#eef4fb" stroke="#7a9cc4" stroke-dasharray="5 3"/>
+<text x="182" y="1640" font-size="10" fill="#444">Actor group</text>
+<rect x="272" y="1629" width="26" height="14" rx="3" fill="#f6f2ea" stroke="#b09a6d"/>
+<text x="304" y="1640" font-size="10" fill="#444">System</text>
+<rect x="368" y="1629" width="26" height="14" rx="3" fill="#fdfbf6" stroke="#c4b258"/>
+<text x="400" y="1640" font-size="10" fill="#444">Layer</text>
+<rect x="458" y="1629" width="26" height="14" rx="3" fill="#ffffff" stroke="#666677"/>
+<text x="490" y="1640" font-size="10" fill="#444">Functional block</text>
+<rect x="606" y="1629" width="26" height="14" rx="3" fill="#f0eef5" stroke="#9187b3" stroke-dasharray="5 3"/>
+<text x="638" y="1640" font-size="10" fill="#444">External system</text>
+<line x1="150" y1="1659" x2="176" y2="1659" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="1663" font-size="10" fill="#444">Functional flow (label = exchanged data) — numbered (text: FLOWS band)</text>
+<rect x="480" y="1652" width="96" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
+<text x="528" y="1663" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Business object</text>
+<text x="584" y="1663" font-size="10" fill="#444">carried by the flow</text>
+</svg>

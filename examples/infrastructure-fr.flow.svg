@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 987 274" font-family="Helvetica,Arial,sans-serif">
+<rect width="987" height="274" fill="white"/>
+<text x="1" y="22" font-size="13" font-weight="bold" fill="#555">MATRICE DES FLUX TECHNIQUES — Plateforme de facturation — vue infrastructure</text>
+<rect x="0" y="34" width="985" height="30" fill="#f7f7f7" stroke="#ddd"/>
+<text x="19.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">N°</text>
+<text x="49" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
+<text x="347" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
+<text x="614" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Protocole</text>
+<text x="711.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">Port</text>
+<text x="747" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Nature du flux</text>
+<text x="19.5" y="81" font-size="11" text-anchor="middle" fill="#444">1</text>
+<text x="49" y="81" font-size="11" text-anchor="start" fill="#444">Postes utilisateurs</text>
+<text x="347" y="81" font-size="11" text-anchor="start" fill="#444">WAF (DMZ)</text>
+<text x="614" y="81" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="711.5" y="81" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="747" y="81" font-size="11" text-anchor="start" fill="#444">Accès application web</text>
+<rect x="0" y="90" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="19.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
+<text x="49" y="107" font-size="11" text-anchor="start" fill="#444">WAF (DMZ)</text>
+<text x="347" y="107" font-size="11" text-anchor="start" fill="#444">Facturation (Zone applicative)</text>
+<text x="614" y="107" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="711.5" y="107" font-size="11" text-anchor="middle" fill="#444">8443</text>
+<text x="747" y="107" font-size="11" text-anchor="start" fill="#444">Trafic facturation filtré</text>
+<text x="19.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
+<text x="49" y="133" font-size="11" text-anchor="start" fill="#444">WAF (DMZ)</text>
+<text x="347" y="133" font-size="11" text-anchor="start" fill="#444">CRM (Zone applicative)</text>
+<text x="614" y="133" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="711.5" y="133" font-size="11" text-anchor="middle" fill="#444">8444</text>
+<text x="747" y="133" font-size="11" text-anchor="start" fill="#444">Trafic CRM filtré</text>
+<rect x="0" y="142" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="19.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>
+<text x="49" y="159" font-size="11" text-anchor="start" fill="#444">Facturation (Zone applicative)</text>
+<text x="347" y="159" font-size="11" text-anchor="start" fill="#444">PostgreSQL (Zone de données)</text>
+<text x="614" y="159" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="711.5" y="159" font-size="11" text-anchor="middle" fill="#444">5432</text>
+<text x="747" y="159" font-size="11" text-anchor="start" fill="#444">Lecture/écriture données facturation</text>
+<text x="19.5" y="185" font-size="11" text-anchor="middle" fill="#444">5</text>
+<text x="49" y="185" font-size="11" text-anchor="start" fill="#444">CRM (Zone applicative)</text>
+<text x="347" y="185" font-size="11" text-anchor="start" fill="#444">PostgreSQL (Zone de données)</text>
+<text x="614" y="185" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="711.5" y="185" font-size="11" text-anchor="middle" fill="#444">5432</text>
+<text x="747" y="185" font-size="11" text-anchor="start" fill="#444">Lecture/écriture données clients</text>
+<rect x="0" y="194" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="19.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
+<text x="49" y="211" font-size="11" text-anchor="start" fill="#444">Facturation (Zone applicative)</text>
+<text x="347" y="211" font-size="11" text-anchor="start" fill="#444">Passerelle de transfert (DMZ)</text>
+<text x="614" y="211" font-size="11" text-anchor="start" fill="#444">SFTP</text>
+<text x="711.5" y="211" font-size="11" text-anchor="middle" fill="#444">22</text>
+<text x="747" y="211" font-size="11" text-anchor="start" fill="#444">Dépôt des factures à transmettre</text>
+<text x="19.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>
+<text x="49" y="237" font-size="11" text-anchor="start" fill="#444">Passerelle de transfert (DMZ)</text>
+<text x="347" y="237" font-size="11" text-anchor="start" fill="#444">Plateforme EDI partenaire</text>
+<text x="614" y="237" font-size="11" text-anchor="start" fill="#444">AS4</text>
+<text x="711.5" y="237" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="747" y="237" font-size="11" text-anchor="start" fill="#444">Transferts partenaires</text>
+<rect x="0" y="246" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="19.5" y="263" font-size="11" text-anchor="middle" fill="#444">8</text>
+<text x="49" y="263" font-size="11" text-anchor="start" fill="#444">Serveur de base de données (Zone de données)</text>
+<text x="347" y="263" font-size="11" text-anchor="start" fill="#444">Serveur de sauvegarde (Zone de données)</text>
+<text x="614" y="263" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="711.5" y="263" font-size="11" text-anchor="middle" fill="#444">9092</text>
+<text x="747" y="263" font-size="11" text-anchor="start" fill="#444">Sauvegardes quotidiennes</text>
+<line x1="39" y1="34" x2="39" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="337" y1="34" x2="337" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="604" y1="34" x2="604" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="686" y1="34" x2="686" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="737" y1="34" x2="737" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="0" y1="272" x2="985" y2="272" stroke="#ddd"/>
+<rect x="0" y="34" width="985" height="238" fill="none" stroke="#ddd"/>
+</svg>

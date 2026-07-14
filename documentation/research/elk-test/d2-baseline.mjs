@@ -1,0 +1,12 @@
+import { D2 } from '@terrastruct/d2';
+import fs from 'fs';
+const src = fs.readFileSync('logical-cairn.d2', 'utf8');
+const d2 = new D2();
+const t0 = Date.now();
+const result = await d2.compile(src);
+const svg = await d2.render(result.diagram, result.renderOptions);
+console.log('compile+render ms:', Date.now() - t0);
+fs.writeFileSync('d2-baseline.svg', svg);
+const m = svg.match(/viewBox="[\d.\- ]+"/) || svg.match(/width="(\d+)" height="(\d+)"/);
+console.log(m && m[0]);
+process.exit(0);

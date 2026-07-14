@@ -1,0 +1,27 @@
+diagram logical "Diagnostics demo file"
+
+actor-group ZONE "Role group" {
+  actor OBS "Control agent"
+}
+
+# E0210: block sitting bare at the root
+block ORPHAN "Floating block"
+
+system SYS "System" {
+  layer L1 "Layer" {
+    block MOD "Main module"
+    # E0202: duplicate identifier
+    block MOD "Duplicate module"
+    # W0510: isolated block (no flow)
+    block ISOLATED "Block without flow"
+  }
+}
+
+# E0201: unknown kind (typo)
+sytem SYS2 "Other system"
+
+# E0203: flow without a label
+OBS -> MOD
+
+# E0220: unknown reference (typo)
+OBS -> MODD : "Consultation"

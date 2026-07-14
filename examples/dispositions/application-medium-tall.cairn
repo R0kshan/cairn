@@ -1,0 +1,51 @@
+diagram application "Billing management — application view"
+style { disposition: tall }
+
+actor-group MANAGERS "Managers" {
+  actor ACCOUNTANT "Accountant"
+  actor SALES_ADMIN "Sales\nadministration"
+}
+
+application CRM "CRM" {
+  module CRM_ACCOUNTS "Customer-account\nmanagement"
+  module CRM_CONTRACTS "Contract\nmanagement"
+}
+
+application BILLING "Billing" {
+  module BILL_ENGINE "Billing\nengine"
+  module BILL_ISSUE "Invoice issuing\nand sending"
+  module BILL_DUNNING "Dunning and\ncollection"
+}
+
+application ACCOUNTING "Accounting" {
+  module GL "General ledger"
+  module AR "Accounts\nreceivable"
+}
+
+datastore REF_CUSTOMERS "Customer\nrepository"
+datastore REF_OFFERS "Offer\ncatalog"
+
+external EDI "Partner EDI\nplatform"
+external PPF "Electronic-invoicing\nportal (PPF)"
+
+# ---- business objects ----
+business-object BO_INVOICE "Invoice" "billing document issued to a customer"
+business-object BO_CONTRACT "Contract" "active commercial commitment of a customer"
+
+# ---- application flows: label (protocol, format) [objects] ----
+SALES_ADMIN -> CRM_CONTRACTS : "Enter and update\ncontracts" [BO_CONTRACT]
+CRM_ACCOUNTS -> REF_CUSTOMERS : "Sync customer\naccounts" (API_REST, JSON)
+CRM_CONTRACTS -> BILL_ENGINE : "Contractual items\nto bill" (MQ, JSON) [BO_CONTRACT]
+REF_OFFERS -> BILL_ENGINE : "Prices and\nterms" (JDBC)
+BILL_ENGINE -> BILL_ISSUE : "Computed\ninvoices" (MQ, JSON) [BO_INVOICE]
+BILL_ISSUE -> EDI : "Submit paperless\ninvoices" (AS4, UBL) [BO_INVOICE]
+BILL_ISSUE -> PPF : "Regulatory\ntransmission" (API_REST, FacturX) [BO_INVOICE]
+BILL_ISSUE -> AR : "Sales\nentries" (MQ, JSON)
+BILL_DUNNING -> CRM_ACCOUNTS : "Customer dunning\nstatus" (API_REST, JSON)
+AR -> GL : "Accounting\nposting" (batch, CSV)
+ACCOUNTANT -> GL : "Controls and\nclosings"
+ACCOUNTANT -> BILL_DUNNING : "Steer\ncollection"
+
+legend {
+  note "Factur-X mandatory since the electronic-invoicing reform"
+}

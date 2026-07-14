@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>dagre container edge routing — visual demo</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@dagrejs/dagre@0.8.5/dist/dagre.min.js"></script>
+<style>
+  body { font-family: system-ui, sans-serif; margin: 2rem; background: #f8f9fa; }
+  h1 { font-size: 1.3rem; }
+  .note { font-size: 0.9rem; color: #555; max-width: 700px; }
+  .diagram { margin: 1rem 0; }
+  svg { background: white; border: 1px solid #ddd; border-radius: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.1); }
+  .container-bg { fill: #e8f4f8; stroke: #4a9bb5; stroke-width: 1.5; rx: 6; }
+  .container-label { font-size: 11px; fill: #4a9bb5; font-weight: 600; }
+  .node-box { fill: #fff; stroke: #333; stroke-width: 1.5; rx: 4; }
+  .node-label { font-size: 11px; fill: #333; text-anchor: middle; dominant-baseline: central; }
+  .edge-path { fill: none; stroke: #666; stroke-width: 1.5; }
+  .edge-path.broken { stroke: #d32f2f; stroke-dasharray: 4,3; }
+  .edge-path.ok { stroke: #2e7d32; }
+  .edge-label { font-size: 9px; fill: #333; }
+  .legend { display: flex; gap: 1.5rem; margin: 0.5rem 0; font-size: 0.85rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.4rem; }
+  .swatch { width: 24px; height: 3px; border-radius: 2px; }
+  .swatch.broken { background: #d32f2f; border-top: 2px dashed #d32f2f; }
+  .swatch.ok { background: #2e7d32; }
+  .error-badge { fill: #fff; stroke: #d32f2f; stroke-width: 1; rx: 3; }
+  .error-text { font-size: 8px; fill: #d32f2f; text-anchor: middle; }
+</style>
+</head>
+<body>
+
+<h1>🧱 dagre container (compound) edge routing</h1>
+<div class="legend">
+  <div class="legend-item"><span class="swatch broken"></span> Broken — edge punches straight through container</div>
+  <div class="legend-item"><span class="swatch ok"></span> Working — same-level (child→child) edges</div>
+</div>
+<p class="note">
+  Scenario: <code>zone → server</code> (nested container with cross-boundary edges).
+  A container <strong>Z</strong> holds nodes <strong>A</strong>, <strong>B</strong>, <strong>C</strong>.
+  An external node <strong>Ext</strong> connects to the container <strong>Z</strong> and to individual children.
+</p>
+
+<div id="demo" class="diagram"></div>
+
+<script>
+const width = 700;
+const height = 420;
+
+function renderComparison(containerId) {
+  const svg = d3.select(`#${containerId}`)
+    .append('svg')
+    .attr('width', width)
+    .attr('height', height);
+
+  // ── LEFT PANEL: dagre layout ──
+  const leftGroup = svg.append('g').attr('transform', 'translate(20, 20)');
+
+  // Build dagre graph with compound nodes
+  const g = new dagre.graphlib.Graph({ compound: true, directed: true });
+  g.setGraph({ rankdir: 'TB', nodesep: 30, ranksep: 40 });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  // Nodes
+  g.setNode('ext', { label: 'External', width: 80, height: 36 });
+  g.setNode('A',   { label: 'Server A',  width: 70, height: 30 });
+  g.setNode('B',   { label: 'Server B',  width: 70, height: 30 });
+  g.setNode('C',   { label: 'Server C',  width: 70, height: 30 });
+  // Container Z — dagre treats it as a node
+  g.setNode('Z',   { label: 'Zone Z',    width: 250, height: 162 });
+
+  // Parent assignments
+  g.setParent('A', 'Z');
+  g.setParent('B', 'Z');
+  g.setParent('C', 'Z');
+
+  // Edges — three that work (child↔child inside container),
+  // two that are broken (cross-container boundary)
+  g.setEdge('A', 'B', { label: 'intra' });
+  g.setEdge('B', 'C', { label: 'intra' });
+  g.setEdge('ext', 'Z', { label: '→ ZONE' });   // BROKEN: external to container
+  g.setEdge('Z', 'ext', { label: 'ZONE →' });   // BROKEN: container to external
+  g.setEdge('ext', 'A', { label: '→ A' });      // OK: external to child
+
+  // Run layout
+  dagre.layout(g);
+
+  // Collect layout data
+  const layoutNodes = {};
+  g.nodes().forEach(v => {
+    const n = g.node(v);
+    layoutNodes[v] = n;
+  });
+
+  // Compute bounding box of Z's children for the container rect
+  const children = ['A', 'B', 'C'];
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  children.forEach(id => {
+    const n = layoutNodes[id];
+    if (n.x && n.y) {
+      const hw = n.width / 2, hh = n.height / 2;
+      minX = Math.min(minX, n.x - hw);
+      minY = Math.min(minY, n.y - hh);
+      maxX = Math.max(maxX, n.x + hw);
+      maxY = Math.max(maxY, n.y + hh);
+    }
+  });
+
+  const pad = 15;
+  minX -= pad; minY -= pad;
+  maxX += pad; maxY += pad;
+
+  // The dagre-placed Z node (as a point)
+  const zNode = layoutNodes['Z'];
+
+  // ── Draw ──
+  leftGroup.append('text')
+    .attr('x', 0).attr('y', -6)
+    .attr('font-size', '13px').attr('font-weight', 600).attr('fill', '#333')
+    .text('dagre output');
+
+  // Container Z background (from children bounding box)
+  leftGroup.append('rect')
+    .attr('class', 'container-bg')
+    .attr('x', minX)
+    .attr('y', minY)
+    .attr('width', maxX - minX)
+    .attr('height', maxY - minY);
+
+  leftGroup.append('text')
+    .attr('class', 'container-label')
+    .attr('x', minX + 8)
+    .attr('y', minY + 14)
+    .text('Zone Z');
+
+  // External node
+  const ext = layoutNodes['ext'];
+  leftGroup.append('rect')
+    .attr('class', 'node-box')
+    .attr('x', ext.x - ext.width/2)
+    .attr('y', ext.y - ext.height/2)
+    .attr('width', ext.width)
+    .attr('height', ext.height);
+  leftGroup.append('text')
+    .attr('class', 'node-label')
+    .attr('x', ext.x)
+    .attr('y', ext.y)
+    .text(ext.label);
+
+  // Child nodes
+  children.forEach(id => {
+    const n = layoutNodes[id];
+    leftGroup.append('rect')
+      .attr('class', 'node-box')
+      .attr('x', n.x - n.width/2)
+      .attr('y', n.y - n.height/2)
+      .attr('width', n.width)
+      .attr('height', n.height);
+    leftGroup.append('text')
+      .attr('class', 'node-label')
+      .attr('x', n.x)
+      .attr('y', n.y)
+      .text(n.label);
+  });
+
+  // Edges
+  g.edges().forEach(e => {
+    const edge = g.edge(e);
+    const points = edge.points;
+    if (!points || points.length < 2) return;
+
+    const isContainerEdge = e.v === 'Z' || e.w === 'Z';
+    const line = d3.line()
+      .x(d => d.x)
+      .y(d => d.y)
+      .curve(d3.curveStepBefore);  // orthogonal routing
+
+    leftGroup.append('path')
+      .attr('class', `edge-path ${isContainerEdge ? 'broken' : 'ok'}`)
+      .attr('d', line(points));
+
+    // Edge label at midpoint
+    if (edge.label) {
+      const mid = Math.floor(points.length / 2);
+      leftGroup.append('text')
+        .attr('class', 'edge-label')
+        .attr('x', points[mid].x + 4)
+        .attr('y', points[mid].y - 2)
+        .text(edge.label);
+    }
+  });
+
+  // Error annotations for broken edges
+  // ext → Z: draw attention to where edge punches through container boundary
+  leftGroup.append('text')
+    .attr('class', 'error-text')
+    .attr('x', 170).attr('y', 80)
+    .text('✗ Edge routed through container,')
+    .append('tspan')
+    .attr('x', 170).attr('y', 90)
+    .text('   not around its boundary');
+
+  leftGroup.append('text')
+    .attr('class', 'error-text')
+    .attr('x', 170).attr('y', 350)
+    .text('✗ Same issue: Z → ext');
+
+  // ── RIGHT PANEL: expected (ELK-like) behavior ──
+  const rightGroup = svg.append('g').attr('transform', 'translate(360, 20)');
+
+  rightGroup.append('text')
+    .attr('x', 0).attr('y', -6)
+    .attr('font-size', '13px').attr('font-weight', 600).attr('fill', '#333')
+    .text('expected (ELK partition)');
+
+  // Container Z — proper semantic band
+  const zx = 20, zy = 50, zw = 260, zh = 280;
+
+  rightGroup.append('rect')
+    .attr('class', 'container-bg')
+    .attr('x', zx).attr('y', zy)
+    .attr('width', zw).attr('height', zh)
+    .attr('fill', '#e8f8e8')
+    .attr('stroke', '#388e3c');
+
+  rightGroup.append('text')
+    .attr('class', 'container-label')
+    .attr('x', zx + 8).attr('y', zy + 14)
+    .attr('fill', '#388e3c')
+    .text('Zone Z');
+
+  // External node — placed outside container with proper edge routing
+  const extX = zx + zw/2, extY = 10;
+  rightGroup.append('rect')
+    .attr('class', 'node-box')
+    .attr('x', extX - 40).attr('y', extY)
+    .attr('width', 80).attr('height', 30);
+  rightGroup.append('text')
+    .attr('class', 'node-label')
+    .attr('x', extX).attr('y', extY + 15)
+    .text('External');
+
+  // Children inside container
+  const childData = [
+    { id: 'A', x: zx + zw/2, y: zy + 70 },
+    { id: 'B', x: zx + zw/2, y: zy + 150 },
+    { id: 'C', x: zx + zw/2, y: zy + 230 },
+  ];
+
+  childData.forEach(d => {
+    rightGroup.append('rect')
+      .attr('class', 'node-box')
+      .attr('x', d.x - 35).attr('y', d.y - 15)
+      .attr('width', 70).attr('height', 30);
+    rightGroup.append('text')
+      .attr('class', 'node-label')
+      .attr('x', d.x).attr('y', d.y)
+      .text('Server ' + d.id);
+  });
+
+  // Edge: ext → Z (proper routing around boundary)
+  rightGroup.append('path')
+    .attr('class', 'edge-path ok')
+    .attr('d', `M ${extX} ${extY + 30} L ${extX - 30} ${extY + 45} L ${extX - 30} ${zy} L ${zx} ${zy}`)
+    .attr('stroke', '#2e7d32');
+  rightGroup.append('text')
+    .attr('class', 'edge-label')
+    .attr('x', extX - 28).attr('y', extY + 42)
+    .attr('text-anchor', 'end')
+    .attr('fill', '#2e7d32')
+    .text('→ ZONE');
+
+  // Edge: Z → ext
+  rightGroup.append('path')
+    .attr('class', 'edge-path ok')
+    .attr('d', `M ${zx + zw} ${zy + zh} L ${extX + 40} ${zy + zh} L ${extX + 40} ${extY + 30} L ${extX} ${extY + 30}`)
+    .attr('stroke', '#2e7d32');
+  rightGroup.append('text')
+    .attr('class', 'edge-label')
+    .attr('x', extX + 42).attr('y', zy + zh - 2)
+    .attr('fill', '#2e7d32')
+    .text('ZONE →');
+
+  // Edge: ext → A
+  rightGroup.append('path')
+    .attr('class', 'edge-path ok')
+    .attr('d', `M ${extX} ${extY + 30} L ${childData[0].x} ${childData[0].y - 15}`)
+    .attr('stroke', '#2e7d32');
+  rightGroup.append('text')
+    .attr('class', 'edge-label')
+    .attr('x', childData[0].x + 4).attr('y', childData[0].y - 4)
+    .attr('fill', '#2e7d32')
+    .text('→ A');
+
+  // Intra-container edges
+  rightGroup.append('path')
+    .attr('class', 'edge-path ok')
+    .attr('d', `M ${childData[0].x} ${childData[0].y + 15} L ${childData[1].x} ${childData[1].y - 15}`);
+  rightGroup.append('text')
+    .attr('class', 'edge-label')
+    .attr('x', childData[1].x + 35).attr('y', childData[1].y - 4)
+    .text('intra');
+
+  rightGroup.append('path')
+    .attr('class', 'edge-path ok')
+    .attr('d', `M ${childData[1].x} ${childData[1].y + 15} L ${childData[2].x} ${childData[2].y - 15}`);
+  rightGroup.append('text')
+    .attr('class', 'edge-label')
+    .attr('x', childData[2].x + 35).attr('y', childData[2].y - 4)
+    .text('intra');
+}
+
+renderComparison('demo');
+</script>
+
+</body>
+</html>

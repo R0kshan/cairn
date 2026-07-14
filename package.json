@@ -1,0 +1,17 @@
+{
+  "name": "cairn",
+  "version": "0.1.0",
+  "description": "Architecture diagrams as code — typed profiles, semantic layout, overlap-free labels",
+  "type": "module",
+  "bin": { "cairn": "bin/cairn.js" },
+  "files": ["bin/", "src/", "README.md", "documentation/"],
+  "scripts": {
+    "cairn": "node --experimental-strip-types src/cli.ts",
+    "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
+    "build:binaries": "bash scripts/build-binaries.sh",
+    "build:playground": "bash scripts/build-playground.sh"
+  },
+  "dependencies": {
+    "elkjs": "^0.11.1"
+  }
+}

@@ -1,0 +1,65 @@
+diagram infrastructure "E-commerce platform — infrastructure view"
+style { disposition: slide }
+
+site DC1 "Main data center" {
+  network-zone DMZ1 "DMZ" {
+    server FW_WAF "Application\nfirewall (WAF)"
+    server RP1 "Reverse proxies\n(HA)" {
+      app-instance NGINX_I "Nginx"
+    }
+    server SFTP_GW "Transfer\ngateway"
+  }
+  network-zone APPS1 "Application zone" {
+    server K8S1 "K8s cluster\nfront" {
+      app-instance FRONT_I "Sales front"
+      app-instance CHECKOUT_I "Checkout funnel"
+    }
+    server K8S2 "K8s cluster\nbusiness" {
+      app-instance OMS_I "Order\nmanagement"
+      app-instance PAYHUB_I "Payment\nhub"
+    }
+  }
+  network-zone DATA1 "Data zone" {
+    server PG_CLU "PostgreSQL\ncluster" {
+      app-instance PG_I "PostgreSQL\nprimary"
+    }
+    server KAFKA_SRV "Kafka\ncluster" {
+      app-instance KAFKA_I "Kafka"
+    }
+  }
+}
+
+site DC2 "Disaster-recovery site" {
+  network-zone DATA2 "DR data zone" {
+    server PG_STANDBY "PostgreSQL\nstandby" {
+      app-instance PG2_I "PostgreSQL\nreplica"
+    }
+    server BACKUP "Backup\nserver"
+  }
+}
+
+external USERS "Internet\ncustomers"
+external PSP_EXT "PSP"
+external CARRIERS_EXT "Carrier\nplatforms"
+
+# ---- technical flows (protocol REQUIRED) ----
+USERS -> FW_WAF : "Client web\ntraffic" (HTTPS/443)
+FW_WAF -> NGINX_I : "Filtered\ntraffic" (HTTPS/443)
+NGINX_I -> FRONT_I : "Front\nrouting" (HTTPS/8443)
+NGINX_I -> CHECKOUT_I : "Checkout\nrouting" (HTTPS/8444)
+FRONT_I -> OMS_I : "Orders\nAPI" (HTTPS/8443)
+CHECKOUT_I -> PAYHUB_I : "Payment\nAPI" (HTTPS/8445)
+PAYHUB_I -> PSP_EXT : "Authorization and\ncapture" (HTTPS/443)
+OMS_I -> PG_I : "Read/write\norders" (TCP/5432)
+PAYHUB_I -> PG_I : "Read/write\ntransactions" (TCP/5432)
+OMS_I -> KAFKA_I : "Order\nevents" (TCP/9092)
+FRONT_I -> KAFKA_I : "Browsing\nevents" (TCP/9092)
+OMS_I -> SFTP_GW : "Carrier\nfiles" (SFTP/22)
+SFTP_GW -> CARRIERS_EXT : "Logistics\nexchanges" (AS4/443)
+PG_I -> PG2_I : "Async\nreplication" (TCP/5432)
+PG_STANDBY -> BACKUP : "Daily\nbackups" (TCP/9095)
+KAFKA_I -> BACKUP : "Topic\narchiving" (TCP/9095)
+
+legend {
+  note "Inter-zone and inter-site flows filtered by firewall (flow matrix in the architecture dossier)"
+}

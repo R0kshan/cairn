@@ -1,0 +1,45 @@
+diagram infrastructure "Plateforme de facturation — vue infrastructure"
+style { lang: fr }
+
+# Les zones sont ordonnées de gauche à droite selon l'ordre de déclaration :
+# la zone exposée à Internet en premier.
+
+site DC "Centre de données principal" {
+  network-zone DMZ "DMZ" {
+    server RP "Reverse proxy\n(paire HA)" {
+      app-instance WAF_I "WAF"
+    }
+    server SFTP_GW "Passerelle\nde transfert"
+  }
+  network-zone LAN_APP "Zone applicative" {
+    server VM_FACT "VM Facturation" {
+      app-instance FACT_I "Facturation"
+    }
+    server VM_CRM "VM CRM" {
+      app-instance CRM_I "CRM"
+    }
+  }
+  network-zone LAN_DATA "Zone de données" {
+    server DB_SRV "Serveur de\nbase de données" {
+      app-instance PG_I "PostgreSQL"
+    }
+    server SAUVEGARDE "Serveur de\nsauvegarde"
+  }
+}
+
+external POSTES "Postes\nutilisateurs"
+external EDI "Plateforme EDI\npartenaire"
+
+# ---- flux techniques (protocole OBLIGATOIRE) ----
+POSTES -> WAF_I : "Accès application\nweb" (HTTPS/443)
+WAF_I -> FACT_I : "Trafic facturation\nfiltré" (HTTPS/8443)
+WAF_I -> CRM_I : "Trafic CRM\nfiltré" (HTTPS/8444)
+FACT_I -> PG_I : "Lecture/écriture\ndonnées facturation" (TCP/5432)
+CRM_I -> PG_I : "Lecture/écriture\ndonnées clients" (TCP/5432)
+FACT_I -> SFTP_GW : "Dépôt des factures\nà transmettre" (SFTP/22)
+SFTP_GW -> EDI : "Transferts\npartenaires" (AS4/443)
+DB_SRV -> SAUVEGARDE : "Sauvegardes\nquotidiennes" (TCP/9092)
+
+legend {
+  note "Flux inter-zones filtrés par pare-feu (matrice des flux jointe au dossier d'architecture)"
+}

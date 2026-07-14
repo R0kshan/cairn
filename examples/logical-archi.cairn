@@ -1,0 +1,67 @@
+diagram logical "Display system — logical view"
+
+actor-group ZONE_CTRL "Role group - Central zone" {
+  actor OBS  "Control agent\nMain zone"
+  actor GE   "Functional and\ntechnical manager"
+  actor TECH "Resource technicians\nMain zone"
+}
+
+actor-group ZONE_STATION "Role group - Remote site" {
+  actor OPE "Field operator\nRemote site"
+}
+
+actor-group ZONE_TARGET "External targets" {
+  actor USER_FINAL "Concerned person"
+  actor USER_COND  "Passenger-service agent"
+  actor USER_RESP  "Remote-site\nmanager"
+}
+
+system CENTRAL "Main infrastructure" {
+  layer CTRL "Central control layer" {
+    block COM_CTR   "Central communication\nmodule"
+    block GST_DATA  "Data processing\nmodule"
+    block CFG_SYS   "System configuration\nmodule"
+    block SUIV_FLUX "Real-time activity\ntracking block"
+  }
+  layer SITE "Remote site layer" {
+    block COORD    "Satellite coordination\nmodule"
+    block COM_SITE "Local communication\nmodule"
+    block COM_SAT2 "Satellite communication\nmodule"
+    block AFF_DPT  "Remote display\nchannels"
+  }
+}
+
+external EXT "External resources" {
+  block DISP     "External display\ninfrastructure"
+  block NET01    "Third-party\nbroadcast network"
+  block NET02    "Data export\nservice"
+  block COLLECT  "External data-collection\ninfrastructure"
+}
+
+# ---- business objects ----
+business-object BO_MSG "Message" "information message broadcast to sites and display channels"
+business-object BO_ANO "Anomaly" "incident or inconsistency reported on a site"
+
+# ---- flows ----
+OBS  -> CTRL    : "Overall control"
+GE   -> CFG_SYS : "Configure the system"
+COM_CTR -> OBS  : "Alerts, notifications and\nfeeds from various sources"
+TECH -> CFG_SYS : "Enable/disable\na display terminal"
+
+COORD -> OPE     : "Report of\nanomalies and inconsistencies" [BO_ANO]
+OPE   -> COM_SITE : "Write and broadcast\nmessages to central\ncontrol" [BO_MSG]
+
+ZONE_TARGET -> AFF_DPT : "Consult"
+
+COM_CTR  -> NET01 : "Real-time broadcast of\ndisruption information\nto the relevant lines"
+GST_DATA -> NET02 : "Export of real-time\nand configuration data"
+
+SUIV_FLUX -> COORD : "Broadcast of information\nand messages about upcoming flows\nentered by the central team"
+COORD -> SUIV_FLUX : "Forward the\nmessages entered by staff\npresent on site" [BO_MSG]
+COM_SAT2 -> COM_CTR : "Archive of\nthe messaging broadcast\nlocally at the remote site"
+
+COLLECT -> SUIV_FLUX : "Forward external\ncollection data and events"
+NET01    -> COM_CTR   : "Forward disruption messages\nfrom the requested transport networks"
+DISP     -> COORD     : "Forward the list of upcoming\nflows and the lead-vehicle identity\nfor periodic control"
+NET02    -> COM_SAT2  : "Traffic notifications\nand user messaging"
+COLLECT  -> SUIV_FLUX : "Forward the associated missions and services"

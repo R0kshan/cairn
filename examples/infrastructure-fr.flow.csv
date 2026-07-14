@@ -1,0 +1,9 @@
+N°,Source,Destination,Protocole,Port,Nature du flux
+1,Postes utilisateurs,WAF (DMZ),HTTPS,443,Accès application web
+2,WAF (DMZ),Facturation (Zone applicative),HTTPS,8443,Trafic facturation filtré
+3,WAF (DMZ),CRM (Zone applicative),HTTPS,8444,Trafic CRM filtré
+4,Facturation (Zone applicative),PostgreSQL (Zone de données),TCP,5432,Lecture/écriture données facturation
+5,CRM (Zone applicative),PostgreSQL (Zone de données),TCP,5432,Lecture/écriture données clients
+6,Facturation (Zone applicative),Passerelle de transfert (DMZ),SFTP,22,Dépôt des factures à transmettre
+7,Passerelle de transfert (DMZ),Plateforme EDI partenaire,AS4,443,Transferts partenaires
+8,Serveur de base de données (Zone de données),Serveur de sauvegarde (Zone de données),TCP,9092,Sauvegardes quotidiennes

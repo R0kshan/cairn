@@ -1,0 +1,51 @@
+diagram application "Gestion de la facturation — vue applicative"
+style { lang: fr }
+
+actor-group RESPONSABLES "Responsables" {
+  actor COMPTABLE "Comptable"
+  actor ADMIN_VENTES "Administration\ndes ventes"
+}
+
+application CRM "CRM" {
+  module CRM_COMPTES "Gestion des\ncomptes clients"
+  module CRM_CONTRATS "Gestion des\ncontrats"
+}
+
+application FACTURATION "Facturation" {
+  module FACT_MOTEUR "Moteur de\nfacturation"
+  module FACT_EMISSION "Émission et envoi\ndes factures"
+  module FACT_RELANCE "Relance et\nrecouvrement"
+}
+
+application COMPTABILITE "Comptabilité" {
+  module GRAND_LIVRE "Grand livre"
+  module CLIENTS "Comptes\nclients"
+}
+
+datastore REF_CLIENTS "Référentiel\nclients"
+datastore REF_OFFRES "Catalogue\nd'offres"
+
+external EDI "Plateforme EDI\npartenaire"
+external PPF "Portail de facturation\nélectronique (PPF)"
+
+# ---- objets métier ----
+business-object BO_FACTURE "Facture" "document de facturation émis vers un client"
+business-object BO_CONTRAT "Contrat" "engagement commercial actif d'un client"
+
+# ---- flux applicatifs : libellé (protocole, format) [objets] ----
+ADMIN_VENTES -> CRM_CONTRATS : "Saisir et mettre\nà jour les contrats" [BO_CONTRAT]
+CRM_COMPTES -> REF_CLIENTS : "Synchroniser les\ncomptes clients" (API_REST, JSON)
+CRM_CONTRATS -> FACT_MOTEUR : "Éléments contractuels\nà facturer" (MQ, JSON) [BO_CONTRAT]
+REF_OFFRES -> FACT_MOTEUR : "Tarifs et\nconditions" (JDBC)
+FACT_MOTEUR -> FACT_EMISSION : "Factures\ncalculées" (MQ, JSON) [BO_FACTURE]
+FACT_EMISSION -> EDI : "Émettre les factures\ndématérialisées" (AS4, UBL) [BO_FACTURE]
+FACT_EMISSION -> PPF : "Transmission\nréglementaire" (API_REST, FacturX) [BO_FACTURE]
+FACT_EMISSION -> CLIENTS : "Écritures de\nventes" (MQ, JSON)
+FACT_RELANCE -> CRM_COMPTES : "Statut de relance\nclient" (API_REST, JSON)
+CLIENTS -> GRAND_LIVRE : "Imputation\ncomptable" (batch, CSV)
+COMPTABLE -> GRAND_LIVRE : "Contrôles et\nclôtures"
+COMPTABLE -> FACT_RELANCE : "Piloter le\nrecouvrement"
+
+legend {
+  note "Factur-X obligatoire depuis la réforme de la facturation électronique"
+}

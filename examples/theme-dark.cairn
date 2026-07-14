@@ -1,0 +1,28 @@
+diagram logical "Online appointment booking — dark theme"
+
+style { theme: dark }
+
+actor-group USERS "Users" {
+  actor PATIENT "Patient"
+}
+
+system BOOKING "Appointment booking system" {
+  layer FRONT "Presentation layer" {
+    block PORTAL "Booking\nportal"
+  }
+  layer BUSINESS "Business layer" {
+    block SCHEDULER "Slot\nmanagement"
+    block NOTIF "Notifications"
+  }
+}
+
+external EXT "External systems" {
+  block SMS "SMS gateway"
+}
+
+business-object BO_APPT "Appointment" "slot booked by a patient"
+
+PATIENT -> PORTAL : "Search and book" [BO_APPT]
+PORTAL -> SCHEDULER : "Booking request" [BO_APPT]
+SCHEDULER -> NOTIF : "Appointment confirmed" [BO_APPT]
+NOTIF -> SMS : "Send SMS reminder"

@@ -1,0 +1,66 @@
+diagram logical "Gestion des sinistres — vue logique"
+style { lang: fr }
+
+actor-group ASSURES "Assurés" {
+  actor ASSURE "Assuré"
+  actor TIERS "Tiers impliqué"
+}
+
+actor-group GESTIONNAIRES "Gestionnaires" {
+  actor GESTIONNAIRE "Gestionnaire\nde sinistres"
+  actor EXPERT "Expert\nmandaté"
+  actor RESPONSABLE "Responsable\nindemnisation"
+}
+
+system SINISTRES "Système d'information sinistres" {
+  layer DECLARATION "Couche déclaration" {
+    block DECL_WEB "Déclaration\nen ligne"
+    block DECL_TEL "Déclaration\ntéléphonique"
+    block PIECES "Collecte des\npièces justificatives"
+  }
+  layer INSTRUCTION "Couche instruction" {
+    block DOSSIER "Gestion du\ndossier sinistre"
+    block EXPERTISE "Suivi\nd'expertise"
+    block FRAUDE "Détection\nde fraude"
+  }
+  layer INDEMNISATION "Couche indemnisation" {
+    block CALCUL "Calcul de\nl'indemnité"
+    block PAIEMENT "Ordonnancement\ndes paiements"
+  }
+}
+
+external EXT "Systèmes externes" {
+  block BANQUE "Système bancaire\n(virements)"
+  block INTER_ASSUREURS "Fichiers\ninter-assureurs"
+  block GED "GED\ndu groupe"
+}
+
+# ---- objets métier ----
+business-object BO_SINISTRE "Sinistre" "événement dommageable déclaré par un assuré"
+business-object BO_DOSSIER "Dossier" "dossier ouvert pour instruire un sinistre"
+business-object BO_RAPPORT "Rapport d'expertise" "conclusions chiffrées de l'expert mandaté"
+business-object BO_INDEMNITE "Indemnité" "montant validé et versé à l'assuré"
+
+ASSURE -> DECL_WEB : "Déclarer un sinistre" [BO_SINISTRE]
+TIERS -> DECL_TEL : "Déclarer son implication"
+ASSURE -> PIECES : "Téléverser photos\net documents"
+PIECES -> GED : "Archiver les documents"
+DECL_WEB -> DOSSIER : "Ouvrir le dossier" [BO_DOSSIER]
+DECL_TEL -> DOSSIER : "Ouvrir le dossier\n(canal téléphonique)"
+DOSSIER -> FRAUDE : "Contrôle systématique\nà l'ouverture"
+FRAUDE -> INTER_ASSUREURS : "Interroger les fichiers\nd'antécédents"
+INTER_ASSUREURS -> FRAUDE : "Antécédents\nde l'assuré"
+DOSSIER -> EXPERTISE : "Mission d'expertise\nsi dommage > seuil"
+EXPERT -> EXPERTISE : "Remettre le rapport\nd'expertise" [BO_RAPPORT]
+EXPERTISE -> DOSSIER : "Conclusions\nd'expertise" [BO_RAPPORT]
+GESTIONNAIRE -> DOSSIER : "Instruction et\ndécisions de gestion"
+DOSSIER -> CALCUL : "Éléments validés\npour chiffrage"
+CALCUL -> RESPONSABLE : "Demande d'accord\nhors délégation"
+RESPONSABLE -> CALCUL : "Accord ou\nrefus motivé"
+CALCUL -> PAIEMENT : "Ordre d'indemnisation" [BO_INDEMNITE]
+PAIEMENT -> BANQUE : "Virement SEPA" [BO_INDEMNITE]
+DOSSIER -> ASSURE : "Notifier étapes\net décision"
+
+legend {
+  note "Les dossiers sinistres sont conservés 10 ans (obligation légale)"
+}

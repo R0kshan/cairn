@@ -1,0 +1,126 @@
+diagram logical "Omnichannel e-commerce platform — logical view"
+style { disposition: wide }
+
+actor-group CUSTOMERS "Customers" {
+  actor WEB_CUSTOMER "Web customer"
+  actor MOBILE_CUSTOMER "Mobile customer"
+  actor STORE_CUSTOMER "In-store\ncustomer"
+}
+
+actor-group INTERNAL "Internal teams" {
+  actor ADVISOR "Customer-relations\nadvisor"
+  actor MERCH "Merchandising\nmanager"
+  actor WAREHOUSE_OP "Warehouse\noperator"
+  actor ACCOUNTANT "Accountant"
+  actor ADMIN "Platform\nadministrator"
+}
+
+system FRONT "Commerce front" {
+  layer PRESENTATION "Presentation layer" {
+    block SITE "E-commerce\nsite"
+    block APP "Mobile\napp"
+    block KIOSK "Store\nkiosks"
+  }
+  layer JOURNEY "Customer-journey layer" {
+    block CATALOG_FRONT "Catalog\nbrowsing"
+    block CART "Cart and\ncheckout"
+    block ACCOUNT "Customer\naccount"
+    block RECO "Personalized\nrecommendations"
+  }
+}
+
+system CORE "Commerce core" {
+  layer SALES "Sales layer" {
+    block ORDER "Order\nmanagement"
+    block PAYMENT "Payment\norchestration"
+    block PROMO "Promotions\nengine"
+    block LOYALTY "Loyalty\nprogram"
+  }
+  layer OFFER "Offer layer" {
+    block PIM "Product\nrepository"
+    block PRICING "Pricing"
+    block STOCK "Unified stock\nview"
+  }
+  layer EXECUTION "Execution layer" {
+    block OMS "Shipment\norchestration"
+    block WMS_LINK "Warehouse\ncontrol"
+    block AFTERSALES "After-sales\nservice"
+  }
+}
+
+system DATA "Data platform" {
+  layer COLLECTION "Collection layer" {
+    block TRACKING "Browsing-event\ncollection"
+    block CDC "Reference-data\nchange capture"
+  }
+  layer ANALYTICS "Analytics layer" {
+    block DWH "Data\nwarehouse"
+    block SEGMENTS "Customer\nsegmentation"
+  }
+}
+
+external EXT "External systems" {
+  block PSP "Payment service\nprovider (PSP)"
+  block CARRIERS "Carrier\nplatforms"
+  block ERP "Group\nERP"
+  block CRM "Group\nCRM"
+  block REVIEWS "Customer-review\nplatform"
+}
+
+# ---- business objects ----
+business-object BO_ORDER "Order" "cart validated by a customer, tracked until delivery"
+business-object BO_PAY "Payment" "financial transaction tied to an order"
+business-object BO_PROD "Product" "catalog item with price and availability"
+business-object BO_PARCEL "Parcel" "shipping unit handed to the carrier"
+
+# ---- customer journey ----
+WEB_CUSTOMER -> SITE : "Browse, search,\norder"
+MOBILE_CUSTOMER -> APP : "Mobile purchase\njourney"
+STORE_CUSTOMER -> KIOSK : "Check stock and\norder in store"
+SITE -> CATALOG_FRONT : "Display product\npages"
+APP -> CATALOG_FRONT : "Display mobile\ncatalog"
+KIOSK -> CATALOG_FRONT : "Browse the\nstore offer"
+SITE -> CART : "Build the cart"
+APP -> CART : "Synchronized\nmobile cart"
+CART -> PROMO : "Apply current\noffers"
+CATALOG_FRONT -> RECO : "Browsing\ncontext"
+RECO -> SITE : "Personalized\nsuggestions"
+ACCOUNT -> LOYALTY : "Loyalty balance\nand benefits"
+
+# ---- sales and fulfilment ----
+CART -> ORDER : "Order\nvalidation" [BO_ORDER]
+ORDER -> PAYMENT : "Charge\nrequest" [BO_PAY]
+PAYMENT -> PSP : "Payment authorization\nand capture" [BO_PAY]
+PSP -> PAYMENT : "Transaction\nstatus"
+ORDER -> OMS : "Fulfilment\norder" [BO_ORDER]
+OMS -> WMS_LINK : "Warehouse picking\nwaves"
+WAREHOUSE_OP -> WMS_LINK : "Pick and ship\nparcels"
+OMS -> CARRIERS : "Pickup requests\nand labels" [BO_PARCEL]
+CARRIERS -> OMS : "Parcel-tracking\nevents"
+OMS -> ACCOUNT : "Customer order\ntracking"
+ADVISOR -> AFTERSALES : "Handle\ncomplaints"
+AFTERSALES -> ORDER : "Returns and\nrefunds"
+
+# ---- offer ----
+MERCH -> PIM : "Enrich product\npages"
+PIM -> CATALOG_FRONT : "Publish the\ncatalog" [BO_PROD]
+PRICING -> CATALOG_FRONT : "Current sale\nprices"
+ERP -> STOCK : "Accounting stock\nmovements"
+STOCK -> CATALOG_FRONT : "Product\navailability" [BO_PROD]
+ERP -> PRICING : "Reference purchase\ncosts"
+
+# ---- data ----
+SITE -> TRACKING : "Browsing\nevents"
+PIM -> CDC : "Reference-data\nchanges"
+TRACKING -> DWH : "Feed the data\nfoundation"
+CDC -> DWH : "Reference-data\nsync"
+DWH -> SEGMENTS : "Compute\nsegments"
+SEGMENTS -> RECO : "Audience segments\nfor personalization"
+SEGMENTS -> CRM : "Audiences for\ncampaigns"
+CRM -> ACCOUNT : "Personalized\noutreach"
+
+# ---- cross-cutting ----
+ACCOUNTANT -> PAYMENT : "Reconcile\ncollections"
+ADMIN -> PIM : "Administer repositories\nand permissions"
+ORDER -> REVIEWS : "Request a review\nafter delivery"
+REVIEWS -> CATALOG_FRONT : "Product ratings\nand reviews"

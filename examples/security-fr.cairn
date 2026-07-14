@@ -1,0 +1,38 @@
+diagram security "Plateforme de facturation — vue sécurité"
+style { lang: fr }
+
+# Les zones de confiance sont ordonnées de gauche à droite (la plus exposée à
+# la plus protégée). Niveaux de sensibilité : public | internal | restricted |
+# secret. Tout flux inter-zones doit passer un nœud de sécurité et être chiffré.
+
+trust-zone DMZ "DMZ" (public) {
+  security-node WAF "WAF /\nproxy inverse"
+  security-node SFTP_GW "Passerelle\nSFTP"
+}
+
+trust-zone APP_ZONE "Zone applicative" (internal) {
+  asset FACTURATION "Application\nde facturation"
+  asset CRM "Application\nCRM"
+}
+
+trust-zone DATA_ZONE "Zone de données" (restricted) {
+  security-node DBFW "Pare-feu base\nde données"
+  asset DB "Base clients &\nfacturation"
+}
+
+external USERS "Utilisateurs\nfinaux"
+external PARTNER "Plateforme EDI\npartenaire"
+
+# ---- flux de sécurité (inter-zones = filtrés par un nœud de sécurité + chiffrés) ----
+USERS -> WAF : "Accès web" (TLS1.3)
+WAF -> FACTURATION : "Trafic facturation\nfiltré" (mTLS)
+WAF -> CRM : "Trafic CRM\nfiltré" (mTLS)
+FACTURATION -> DBFW : "Accès données\nfacturation" (TLS1.3)
+CRM -> DBFW : "Accès données\nclients" (TLS1.3)
+DBFW -> DB : "Requêtes\ncontrôlées" (TLS1.3)
+FACTURATION -> SFTP_GW : "Dépôt des\nfactures" (TLS1.3)
+SFTP_GW -> PARTNER : "Transfert\npartenaire" (AS4)
+
+legend {
+  note "W0560 signale tout flux entrant dans une zone plus sûre sans passer par un nœud de sécurité"
+}

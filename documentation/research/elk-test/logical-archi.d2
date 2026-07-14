@@ -1,0 +1,159 @@
+direction: right
+vars: {
+  d2-config: {
+    layout-engine: elk
+    theme-id: 300
+
+    # Add these spatial properties to optimize routing:
+  }
+}
+
+direction: right
+
+ZONE_CTRL: {
+  label: "Groupement de rôles - Zone centrale"
+
+  ROLE_OBS_01: {
+    label: "Agent de contrôle \nZone principale"
+    shape: person
+    width: 50
+  }
+
+  ROLE_GE_01: {
+    label: "Gestionnaire \nfonctionnel et technique"
+    shape: person
+    width: 50
+  }
+
+  ROLE_TECH_01: {
+    label: "Techniciens des\nressources Zone principale"
+    shape: person
+    width: 50
+  }
+}
+
+ZONE_STATION: {
+  label: "Groupement de rôles - Site distant"
+  grid-columns: 1
+
+  ROLE_OPE_01: {
+    label: "Opérateur terrain\nSite distant"
+    shape: person
+    width: 50
+  }
+}
+
+ZONE_CIBLE: {
+  label: "Cibles extérieures"
+  grid-columns: 1
+
+  USER_FINAL: {
+    label: "Personne concernée"
+    shape: person
+    width: 40
+  }
+
+  USER_COND: {
+    label: "Agent de service passagers"
+    shape: person
+    width: 50
+  }
+
+  USER_RESP: {
+    label: "Responsable\nde site distant"
+    shape: person
+    width: 50
+  }
+}
+
+SYS_CENTRAL: {
+  label: "Infrastructure principale"
+
+  SYS_NIVEAU_CTRL: {
+    label: "Couche de Contrôle Central"
+
+    MOD_COM_CTR: {
+      label: "Module de\ncommunication centrale"
+    }
+
+    MOD_GST_DATA: {
+      label: "Module de\ntraitement des données"
+    }
+
+    MOD_CFG_SYS: {
+      label: "Module de\nconfiguration système"
+    }
+
+    MOD_SUIV_FLUX: {
+      label: "Bloc de suivi de l'activité\ntemps réel"
+    }
+  }
+
+  SYS_NIVEAU_SITE: {
+    label: "Couche Site déporté"
+
+    MOD_COORD_SITE: {
+      label: "Module de\ncoordination satellite"
+    }
+
+    MOD_COM_SITE: {
+      label: "Module de\ncommunication locale"
+    }
+
+    MOD_COM_SAT2: {
+      label: "Module de\ncommunication satellite"
+    }
+
+    SUPPORT_AFF_DPT: {
+      label: "Vecteurs d'affichage\ndéportés"
+    }
+  }
+}
+
+INFRA_EXTERNE: {
+  label: "Ressources externes"
+  grid-columns: 1
+
+  NODE_EXT_DISP: {
+    label: "Infrastructure d'affichage\nexterne"
+  }
+
+  NODE_EXT_NET01: {
+    label: "Réseau tiers\nde diffusion"
+  }
+
+  NODE_EXT_NET02: {
+    label: "Service d'export\nde données"
+  }
+
+  NODE_EXT_COLLECTE: {
+    label: "Infrastructure externe\nde collecte de données"
+  }
+}
+
+ZONE_CTRL.ROLE_OBS_01 -> SYS_CENTRAL.SYS_NIVEAU_CTRL: "Contrôle globale"
+ZONE_CTRL.ROLE_GE_01 -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_CFG_SYS: "Configurer le système"
+ZONE_CTRL.ROLE_OBS_01 <- SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_COM_CTR: "Alertes, notifications et\nflux de diverses provenances"
+ZONE_CTRL.ROLE_TECH_01 -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_CFG_SYS: "Activation/désactivation\nd'un terminal d'affichage"
+
+ZONE_STATION.ROLE_OPE_01 <- SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COORD_SITE: "Signalement\nd'anomalies et incohérences"
+ZONE_STATION.ROLE_OPE_01 -> SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COM_SITE: "Rédaction et diffusion de\nmessages vers le contrôle\ncentral"
+
+ZONE_CIBLE -> SYS_CENTRAL.SYS_NIVEAU_SITE.SUPPORT_AFF_DPT: "Consulter"
+
+SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_COM_CTR -> INFRA_EXTERNE.NODE_EXT_NET01: "Diffusion temps réel d'informations\nde perturbation\nvers les lignes concernées"
+SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_GST_DATA -> INFRA_EXTERNE.NODE_EXT_NET02: "Export des données\ntemps réel et de configuration"
+
+SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COORD_SITE <- SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SUIV_FLUX: "Diffusion d'informations\net messages concernant les prochains flux\nsaisies par l'équipe centrale"
+SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COORD_SITE -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SUIV_FLUX: "Transmission des\nmessages saisis par le personnel\nprésent sur site"
+SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COM_SAT2 -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_COM_CTR: "Archivage de\nla messagerie diffusée\nlocalement en site distant"
+
+INFRA_EXTERNE.NODE_EXT_COLLECTE -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SUIV_FLUX: "Transmission des données\nde collecte externe et événements"
+# INFRA_EXTERNE.NODE_EXT_NET01 -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_COM_CTR: "Transmission messages de\nperturbation des réseaux de transport souhaités"
+# INFRA_EXTERNE.NODE_EXT_DISP -> SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COORD_SITE: "Transmission de la liste des prochains\nflux et identité du véhicule de tête\npour contrôle périodique"
+# INFRA_EXTERNE.NODE_EXT_NET02 -> SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COM_SAT2: "Notifications trafic\net messagerie usagers"
+# INFRA_EXTERNE.NODE_EXT_COLLECTE -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SUIV_FLUX: "Transmission des missions et dessertes associés"
+
+SYS_CENTRAL -> INFRA_EXTERNE: {
+  style.opacity: 0
+}

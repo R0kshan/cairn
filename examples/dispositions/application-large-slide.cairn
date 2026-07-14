@@ -1,0 +1,79 @@
+diagram application "E-commerce platform — application view"
+style { disposition: slide }
+
+actor-group TEAMS "Internal teams" {
+  actor MERCH "Merchandising\nmanager"
+  actor ADVISOR "Customer-relations\nadvisor"
+  actor ACCOUNTANT "Accountant"
+}
+
+application FRONT "Sales front" {
+  module SITE "E-commerce\nsite"
+  module APP_MOBILE "Mobile\napp"
+  module CHECKOUT "Checkout\nfunnel"
+}
+
+application OMS "Order management" {
+  module ORDERS "Order\nlifecycle"
+  module SHIPPING "Shipment\norchestration"
+  module RETURNS "Returns and\nrefunds"
+}
+
+application PIM "Product repository" {
+  module CATALOG "Catalog\nmanagement"
+  module MEDIA "Media\nmanagement"
+}
+
+application PRICING "Pricing" {
+  module RULES "Pricing-rule\nengine"
+}
+
+application PAYHUB "Payment hub" {
+  module PAY_ORCH "Payment\norchestration"
+  module FRAUD "Anti-fraud\nscoring"
+}
+
+application CARE "Customer care" {
+  module TICKETS "Ticket\nmanagement"
+  module SELFCARE "Customer\nself-care"
+}
+
+datastore DWH "Data\nwarehouse"
+datastore REF_CUSTOMERS "Customer\nrepository"
+
+external PSP "PSP"
+external CARRIERS "Carrier\nplatforms"
+external ERP "Group\nERP"
+
+# ---- business objects ----
+business-object BO_ORDER "Order" "validated cart, tracked until delivery"
+business-object BO_PAY "Payment" "financial transaction tied to an order"
+business-object BO_PROD "Product" "item published to the catalog"
+
+# ---- flows ----
+MERCH -> CATALOG : "Enrich product\npages"
+CATALOG -> SITE : "Publish the\ncatalog" (API_REST, JSON) [BO_PROD]
+MEDIA -> SITE : "Product\nvisuals" (CDN, HTTPS)
+RULES -> SITE : "Current\nprices" (API_REST, JSON)
+RULES -> CHECKOUT : "Prices guaranteed\nat cart" (API_REST, JSON)
+ERP -> RULES : "Reference purchase\ncosts" (SFTP, CSV)
+SITE -> CHECKOUT : "Go to\ncheckout" (internal)
+APP_MOBILE -> CHECKOUT : "Mobile\ncart" (API_REST, JSON)
+CHECKOUT -> ORDERS : "Create the\norder" (MQ, JSON) [BO_ORDER]
+CHECKOUT -> PAY_ORCH : "Payment\nrequest" (API_REST, JSON) [BO_PAY]
+PAY_ORCH -> FRAUD : "Score the\ntransaction" (internal)
+PAY_ORCH -> PSP : "Authorization and\ncapture" (API_REST, JSON) [BO_PAY]
+PSP -> PAY_ORCH : "Transaction\nstatus" (webhook, JSON)
+PAY_ORCH -> ORDERS : "Payment\nconfirmed" (MQ, JSON)
+ORDERS -> SHIPPING : "Orders to\nship" (internal) [BO_ORDER]
+SHIPPING -> CARRIERS : "Labels and\npickups" (API_REST, JSON)
+CARRIERS -> SHIPPING : "Parcel\ntracking" (webhook, JSON)
+SHIPPING -> SELFCARE : "Customer order\ntracking" (MQ, JSON)
+ADVISOR -> TICKETS : "Handle\ncomplaints"
+TICKETS -> RETURNS : "Approved return\nrequests" (API_REST, JSON)
+RETURNS -> PAY_ORCH : "Refund\norders" (MQ, JSON) [BO_PAY]
+SELFCARE -> REF_CUSTOMERS : "Update customer\nprofile" (JDBC)
+ORDERS -> DWH : "Archive\norders" (batch, parquet) [BO_ORDER]
+SITE -> DWH : "Browsing\nevents" (streaming, avro)
+ACCOUNTANT -> PAY_ORCH : "Reconcile\ncollections"
+ERP -> ORDERS : "Accounting logistics\nstatuses" (MQ, JSON)

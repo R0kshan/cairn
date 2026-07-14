@@ -1,0 +1,37 @@
+diagram security "Billing platform — security view"
+
+# Trust zones band left→right in declaration order (most exposed → most
+# protected). Each carries a sensitivity level: public | internal | restricted
+# | secret. Cross-zone traffic must pass a security-node and state encryption.
+
+trust-zone DMZ "DMZ" (public) {
+  security-node WAF "WAF /\nreverse proxy"
+  security-node SFTP_GW "SFTP\ngateway"
+}
+
+trust-zone APP_ZONE "Application zone" (internal) {
+  asset BILLING "Billing\napplication"
+  asset CRM "CRM\napplication"
+}
+
+trust-zone DATA_ZONE "Data zone" (restricted) {
+  security-node DBFW "Database\nfirewall"
+  asset DB "Customer &\nbilling database"
+}
+
+external USERS "End users"
+external PARTNER "Partner EDI\nplatform"
+
+# ---- security flows (cross-zone = filtered by a security-node + encrypted) ----
+USERS -> WAF : "Web access" (TLS1.3)
+WAF -> BILLING : "Filtered billing\ntraffic" (mTLS)
+WAF -> CRM : "Filtered CRM\ntraffic" (mTLS)
+BILLING -> DBFW : "Billing data\naccess" (TLS1.3)
+CRM -> DBFW : "Customer data\naccess" (TLS1.3)
+DBFW -> DB : "Screened\nqueries" (TLS1.3)
+BILLING -> SFTP_GW : "Drop invoices\nto transmit" (TLS1.3)
+SFTP_GW -> PARTNER : "Partner\ntransfer" (AS4)
+
+legend {
+  note "W0560 flags any flow entering a more-trusted zone without a security-node"
+}

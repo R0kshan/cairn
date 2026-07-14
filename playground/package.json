@@ -1,0 +1,8 @@
+{
+  "name": "cairn-playground",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Vercel-deployable playground for cairn — architecture diagrams as code",
+  "engines": { "node": ">=18" }
+}

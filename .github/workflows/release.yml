@@ -1,0 +1,95 @@
+# Release automation 
+# on tag v* -> test -> compile binaries for 5 platforms -> GitHub Release
+# -> publish npm -> bump brew formula & scoop manifest in their repos.
+name: release
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm test
+
+  binaries:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install
+      - run: bash scripts/build-binaries.sh
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/cairn-*
+          generate_release_notes: true
+      # Hand the built binaries + checksums to the taps job.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  npm:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, registry-url: "https://registry.npmjs.org" }
+      - run: npm ci
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  taps:
+    needs: binaries
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/download-artifact@v4
+        with: { name: dist, path: dist }
+
+      - name: Render formula + manifest
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          node scripts/render-packaging.mjs "$VERSION" "dist/cairn-${VERSION}-checksums.txt"
+
+      # Push the rendered formula to the Homebrew tap repo (R0kshan/homebrew-tap).
+      - name: Publish Homebrew formula
+        env:
+          TAP_PUSH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          git clone "https://x-access-token:${TAP_PUSH_TOKEN}@github.com/R0kshan/homebrew-tap.git" tap
+          mkdir -p tap/Formula
+          cp dist/cairn.rb tap/Formula/cairn.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/cairn.rb
+          git commit -m "cairn ${VERSION}" || { echo "no change"; exit 0; }
+          git push
+
+      # Push the rendered manifest to the Scoop bucket repo (R0kshan/scoop-bucket).
+      - name: Publish Scoop manifest
+        env:
+          TAP_PUSH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          git clone "https://x-access-token:${TAP_PUSH_TOKEN}@github.com/R0kshan/scoop-bucket.git" bucket
+          mkdir -p bucket/bucket
+          cp dist/cairn.json bucket/bucket/cairn.json
+          cd bucket
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add bucket/cairn.json
+          git commit -m "cairn ${VERSION}" || { echo "no change"; exit 0; }
+          git push
