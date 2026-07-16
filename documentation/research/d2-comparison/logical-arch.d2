@@ -149,10 +149,10 @@ SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COORD_SITE -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SU
 SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COM_SAT2 -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_COM_CTR: "Archivage de\nla messagerie diffusée\nlocalement en site distant"
 
 INFRA_EXTERNE.NODE_EXT_COLLECTE -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SUIV_FLUX: "Transmission des données\nde collecte externe et événements"
-# INFRA_EXTERNE.NODE_EXT_NET01 -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_COM_CTR: "Transmission messages de\nperturbation des réseaux de transport souhaités"
-# INFRA_EXTERNE.NODE_EXT_DISP -> SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COORD_SITE: "Transmission de la liste des prochains\nflux et identité du véhicule de tête\npour contrôle périodique"
-# INFRA_EXTERNE.NODE_EXT_NET02 -> SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COM_SAT2: "Notifications trafic\net messagerie usagers"
-# INFRA_EXTERNE.NODE_EXT_COLLECTE -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SUIV_FLUX: "Transmission des missions et dessertes associés"
+INFRA_EXTERNE.NODE_EXT_NET01 -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_COM_CTR: "Transmission messages de\nperturbation des réseaux de transport souhaités"
+INFRA_EXTERNE.NODE_EXT_DISP -> SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COORD_SITE: "Transmission de la liste des prochains\nflux et identité du véhicule de tête\npour contrôle périodique"
+INFRA_EXTERNE.NODE_EXT_NET02 -> SYS_CENTRAL.SYS_NIVEAU_SITE.MOD_COM_SAT2: "Notifications trafic\net messagerie usagers"
+INFRA_EXTERNE.NODE_EXT_COLLECTE -> SYS_CENTRAL.SYS_NIVEAU_CTRL.MOD_SUIV_FLUX: "Transmission des missions et dessertes associés"
 
 SYS_CENTRAL -> INFRA_EXTERNE: {
   style.opacity: 0

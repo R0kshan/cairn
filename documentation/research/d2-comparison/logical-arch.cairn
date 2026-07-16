@@ -1,0 +1,64 @@
+diagram logical "Système de contrôle d'affichage — vue logique"
+style { lang: fr }
+
+actor-group ZONE_CTRL "Groupement de rôles - Zone centrale" {
+  actor OBS  "Agent de contrôle \nZone principale"
+  actor GE   "Gestionnaire \nfonctionnel et technique"
+  actor TECH "Techniciens des\nressources Zone principale"
+}
+
+actor-group ZONE_STATION "Groupement de rôles - Site distant" {
+  actor OPE "Opérateur terrain\nSite distant"
+}
+
+actor-group ZONE_CIBLE "Cibles extérieures" {
+  actor USER_FINAL "Personne concernée"
+  actor USER_COND "Agent de service passagers"
+  actor USER_RESP "Responsable\nde site distant"
+}
+
+system CENTRAL "Infrastructure principale" {
+  layer CTRL "Couche de Contrôle Central" {
+    block COM_CTR   "Module de\ncommunication centrale"
+    block GST_DATA  "Module de\ntraitement des données"
+    block CFG_SYS   "Module de\nconfiguration système"
+    block SUIV_FLUX "Bloc de suivi de l'activité\ntemps réel"
+  }
+  layer SITE "Couche Site déporté" {
+    block COORD_SITE "Module de\ncoordination satellite"
+    block COM_SITE   "Module de\ncommunication locale"
+    block COM_SAT2   "Module de\ncommunication satellite"
+    block AFF_DPT    "Vecteurs d'affichage\ndéportés"
+  }
+}
+
+external EXT "Ressources externes" {
+  block EXT_DISP     "Infrastructure d'affichage\nexterne"
+  block EXT_NET01    "Réseau tiers\nde diffusion"
+  block EXT_NET02    "Service d'export\nde données"
+  block EXT_COLLECTE "Infrastructure externe\nde collecte de données"
+}
+
+# ---- flux ----
+OBS          -> CTRL       : "Contrôle globale"
+GE           -> CFG_SYS    : "Configurer le système"
+COM_CTR      -> OBS        : "Alertes, notifications et\nflux de diverses provenances"
+TECH         -> CFG_SYS    : "Activation/désactivation\nd'un terminal d'affichage"
+
+COORD_SITE   -> OPE        : "Signalement\nd'anomalies et incohérences"
+OPE          -> COM_SITE   : "Rédaction et diffusion de\nmessages vers le contrôle\ncentral"
+
+ZONE_CIBLE   -> AFF_DPT    : "Consulter"
+
+COM_CTR      -> EXT_NET01  : "Diffusion temps réel d'informations\nde perturbation\nvers les lignes concernées"
+GST_DATA     -> EXT_NET02  : "Export des données\ntemps réel et de configuration"
+
+SUIV_FLUX    -> COORD_SITE : "Diffusion d'informations\net messages concernant les prochains flux\nsaisies par l'équipe centrale"
+COORD_SITE   -> SUIV_FLUX  : "Transmission des\nmessages saisis par le personnel\nprésent sur site"
+COM_SAT2     -> COM_CTR    : "Archivage de\nla messagerie diffusée\nlocalement en site distant"
+
+EXT_COLLECTE -> SUIV_FLUX  : "Transmission des données\nde collecte externe et événements"
+EXT_NET01    -> COM_CTR    : "Transmission messages de\nperturbation des réseaux de transport souhaités"
+EXT_DISP     -> COORD_SITE : "Transmission de la liste des prochains\nflux et identité du véhicule de tête\npour contrôle périodique"
+EXT_NET02    -> COM_SAT2   : "Notifications trafic\net messagerie usagers"
+EXT_COLLECTE -> SUIV_FLUX  : "Transmission des missions et dessertes associés"
