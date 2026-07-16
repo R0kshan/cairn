@@ -25,7 +25,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | Features | Description |
 |---|---|
 | **Readability through overlap-checked layout.** | Label space is reserved during layout; overlaps are measured every build and shipped at 0, with a CI gate. Each flow stays a distinct arrow with its own label. Labels can also be numbered, with the full labels displayed in the legend. |
-| **Configurable dispositions** | `slide`, `page`, `tall` andd `wide` dispositions available to suit different presentation requirements |
+| **Configurable dispositions** | `slide` and `page` dispositions available to suit different presentation requirements |
 | **Spacial optimization** | Cairn aims to optimize space as much as possible (Still working on improving this functionnality) |
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
 | **Security trust-boundary linting.** | The `security` view models trust zones with sensitivity levels (`public`/`internal`/`restricted`/`secret`) and flags flows entering a more-trusted zone without a `security-node` (`W0560`) or missing encryption (`W0561`). |
