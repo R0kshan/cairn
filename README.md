@@ -27,7 +27,6 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Configurable dispositions** | `slide` and `page` dispositions available to suit different presentation requirements |
 | **Spacial optimization** | Cairn aims to optimize space as much as possible (Still working on improving this functionnality) |
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
-| **Security trust-boundary linting.** | The `security` view models trust zones with sensitivity levels (`public`/`internal`/`restricted`/`secret`) and flags flows entering a more-trusted zone without a `security-node` (`W0560`) or missing encryption (`W0561`). |
 | **Infrastructure flow matrix.** | `cairn matrix` exports the flow matrice as CSV, Markdown, or SVG. Columns split protocol from port, annotate each endpoint with its network zone, and localise via `style { lang: fr }`. |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
@@ -53,6 +52,8 @@ TODO
 ## Preview
 
 Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/`](examples/) — plain SVG, zero label overlaps.
+
+> Each example digram below 
 
 ### Logicial view diagram examples from small to large
 
