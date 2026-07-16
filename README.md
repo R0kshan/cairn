@@ -6,6 +6,16 @@
 
 Cairn is an [ELK (Eclipse Layout Kernel)](https://github.com/eclipse-elk/elk) based diagram-as-code tool specialised in these four software architecture views : `logical`, `application`, `infrastructure` and `security` with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
 
+## Table of contents
+
+- [Why cairn?](#why-cairn)
+- [Usage & preview](#usage--preview)
+- [Install](#install)
+- [Commands](#commands)
+- [Examples & dispositions](#examples--dispositions)
+- [Colors & themes](#colors--themes)
+- [More](#more)
+
 ## Why cairn?
 
 A large majority of the diagrams (logical, application, infrastructure view) in existing Software Architecture Documents I've worked are made with graphical diagramming softwares such as Drawio and the like. However, modifying diagrams manually in a GUI take time and migrating to diagram as code has proven complicated since most diagrams are rich and it's hard to preserve the same level of information with other solutions like C4.
