@@ -9,11 +9,10 @@ Cairn is an [ELK (Eclipse Layout Kernel)](https://github.com/eclipse-elk/elk) ba
 ## Table of contents
 
 - [Why cairn?](#why-cairn)
+- [Usage](#usage)
 - [Preview](#preview)
-- [Install](#install)
+- [Installation](#installation)
 - [Commands](#commands)
-- [Examples & dispositions](#examples--dispositions)
-- [Colors & themes](#colors--themes)
 - [More](#more)
 
 ## Why cairn?
