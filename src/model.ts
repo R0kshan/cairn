@@ -14,6 +14,7 @@ export type Disposition = 'wide' | 'tall' | 'slide' | 'page';
 
 export interface DiagramStyle {
   crossingHops: boolean;
+  compact: boolean;                // tighter spacing + narrower-wrapped flow labels
   disposition: Disposition;
   legend: 'auto' | 'off';
   flowText: 'full' | 'numbered';   // numbered: arrows carry a number badge, text goes to the FLUX band
@@ -82,6 +83,7 @@ export interface Diagnostic {
 
 export const defaultDiagramStyle = (): DiagramStyle => ({
   crossingHops: true,
+  compact: false,
   disposition: 'wide',
   legend: 'auto',
   flowText: 'full',

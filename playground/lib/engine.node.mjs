@@ -7794,7 +7794,7 @@ var require_elk_bundled = __commonJS({
             }
             function Bfb() {
               Bfb = ndb;
-              Afb = SC(UI, Ote, 15, 256, 0, 1);
+              Afb = SC(UI2, Ote, 15, 256, 0, 1);
             }
             function jSb() {
               iSb(this, false, false, false, false);
@@ -18228,7 +18228,7 @@ var require_elk_bundled = __commonJS({
               return a & 63;
             }
             function Ohe(a) {
-              return !a ? null : (a.i & 1) != 0 ? a == Fcb ? GI : a == cE ? UI : a == bE ? QI : a == aE ? LI : a == dE ? XI : a == Ecb ? cJ : a == $D ? HI : II : a;
+              return !a ? null : (a.i & 1) != 0 ? a == Fcb ? GI : a == cE ? UI2 : a == bE ? QI : a == aE ? LI : a == dE ? XI : a == Ecb ? cJ : a == $D ? HI : II : a;
             }
             function pb(a, b) {
               return VD(a) ? sgb(a, b) : TD(a) ? Seb(a, b) : SD(a) ? (KDb(a), XD(a) === XD(b)) : QD(a) ? a.Fb(b) : UC(a) ? mb(a, b) : zz(a, b);
@@ -49964,7 +49964,7 @@ var require_elk_bundled = __commonJS({
               PPd(_ab, new rae());
               PPd(Rab, new uae());
               PPd(QI, new xae());
-              PPd(UI, new Aae());
+              PPd(UI2, new Aae());
               PPd(KI, new Dae());
               PPd(XI, new Gae());
               PPd(MK, new Jae());
@@ -52787,7 +52787,7 @@ var require_elk_bundled = __commonJS({
               PPd(HK, new Eme());
               PPd(HK, new Hme());
               PPd(hJ, new Kme());
-              PPd(UI, new Qme());
+              PPd(UI2, new Qme());
               PPd(hJ, new Tme());
               PPd(XI, new Wme());
               PPd(hJ, new Zme());
@@ -52809,7 +52809,7 @@ var require_elk_bundled = __commonJS({
               PPd(cJ, new Wne());
               PPd(XI, new aoe());
               PPd(hJ, new doe());
-              PPd(UI, new goe());
+              PPd(UI2, new goe());
             }
             function Bmc(a, b) {
               var c, d, e, f, g10, h, i10, j, k, l, m, n, o10;
@@ -53285,7 +53285,7 @@ var require_elk_bundled = __commonJS({
               m = 0;
               a.k = 0;
               a.n = 0;
-              a.b = Wu(SC(UI, Ote, 15, a.j, 0, 1));
+              a.b = Wu(SC(UI2, Ote, 15, a.j, 0, 1));
               a.c = Wu(SC(LI, Ote, 346, a.j, 7, 1));
               for (g10 = new Hmb(a.i.b); g10.a < g10.c.c.length; ) {
                 e = JD(Fmb(g10), 25);
@@ -61834,7 +61834,7 @@ var require_elk_bundled = __commonJS({
               qsc = new nEd(DAe);
               vsc = aqc;
               usc = new pEd(EAe, vsc);
-              tsc = Onb(rse(WC(OC(UI, 1), Ote, 15, 0, [zfb(1), zfb(2), zfb(6), zfb(7), zfb(10), zfb(11)])));
+              tsc = Onb(rse(WC(OC(UI2, 1), Ote, 15, 0, [zfb(1), zfb(2), zfb(6), zfb(7), zfb(10), zfb(11)])));
               ssc = new pEd(FAe, tsc);
               ytc = goc;
               xtc = Hnc;
@@ -62080,7 +62080,7 @@ var require_elk_bundled = __commonJS({
               Eyd(a.I, HK, "IDREFSBase", true);
               Eyd(a.K, cE, "Int", true);
               Eyd(a.M, lJ, "Integer", true);
-              Eyd(a.L, UI, "IntObject", true);
+              Eyd(a.L, UI2, "IntObject", true);
               Eyd(a.P, hJ, "Language", true);
               Eyd(a.Q, dE, "Long", true);
               Eyd(a.R, XI, "LongObject", true);
@@ -62107,7 +62107,7 @@ var require_elk_bundled = __commonJS({
               Eyd(a.mb, XI, "UnsignedIntObject", true);
               Eyd(a.nb, lJ, "UnsignedLong", true);
               Eyd(a.ob, cE, "UnsignedShort", true);
-              Eyd(a.pb, UI, "UnsignedShortObject", true);
+              Eyd(a.pb, UI2, "UnsignedShortObject", true);
               wyd(a, ZIe);
               wle(a);
             }
@@ -63538,7 +63538,7 @@ var require_elk_bundled = __commonJS({
               Eyd(a.F, bE, "EFloat", true);
               Eyd(a.G, QI, "EFloatObject", true);
               Eyd(a.I, cE, "EInt", true);
-              Eyd(a.J, UI, "EIntegerObject", true);
+              Eyd(a.J, UI2, "EIntegerObject", true);
               Eyd(a.L, KI, "EJavaClass", true);
               Eyd(a.M, aJ, "EJavaObject", true);
               Eyd(a.N, dE, "ELong", true);
@@ -67540,7 +67540,7 @@ var require_elk_bundled = __commonJS({
               return "" + this.a;
             };
             _.a = 0;
-            var UI = zeb(mte, "Integer", 15);
+            var UI2 = zeb(mte, "Integer", 15);
             var Afb;
             var Cfb;
             mdb(190, 242, { 3: 1, 35: 1, 190: 1, 242: 1 }, Gfb);
@@ -70681,8 +70681,8 @@ var require_elk_bundled = __commonJS({
             mdb(844, 1, lxe, oOb);
             _.tf = function pOb(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fxe), ""), "Force Model"), "Determines the model for force calculation."), hOb), (Ued(), Oed)), hO), Crb((Ged(), Eed)))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gxe), ""), "Iterations"), "The number of iterations on the force model."), zfb(300)), Qed), UI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hxe), ""), "Repulsive Power"), "Determines how many bend points are added to the edge; such bend points are regarded as repelling particles in the force model"), zfb(0)), Qed), UI), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gxe), ""), "Iterations"), "The number of iterations on the force model."), zfb(300)), Qed), UI2), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hxe), ""), "Repulsive Power"), "Determines how many bend points are added to the edge; such bend points are regarded as repelling particles in the force model"), zfb(0)), Qed), UI2), Crb(Bed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ixe), ""), "FR Temperature"), "The temperature is used as a scaling factor for particle displacements."), jxe), Ned), LI), Crb(Eed))));
               hdd(a, ixe, fxe, mOb);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), kxe), ""), "Eades Repulsion"), "Factor for repulsive forces in Eades' model."), 5), Ned), LI), Crb(Eed))));
@@ -70716,7 +70716,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Pxe), ""), "Desired Edge Length"), "Either specified for parent nodes or for individual edges, where the latter takes higher precedence."), 100), Ned), LI), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Bed])))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Qxe), ""), "Layout Dimension"), "Dimensions that are permitted to be altered during layout."), lPb), Oed), pO), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Rxe), ""), "Stress Epsilon"), "Termination criterion for the iterative process."), jxe), Ned), LI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Sxe), ""), "Iteration Limit"), "Maximum number of performed iterations. Takes higher precedence than 'epsilon'."), zfb(lte)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Sxe), ""), "Iteration Limit"), "Maximum number of performed iterations. Takes higher precedence than 'epsilon'."), zfb(lte)), Qed), UI2), Crb(Eed))));
               FPb((new GPb(), a));
             };
             var jPb, kPb, lPb, mPb, nPb, oPb;
@@ -74174,22 +74174,22 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cze), ""), "Merge Hierarchy-Crossing Edges"), "If hierarchical layout is active, hierarchy-crossing edges use as few hierarchical ports as possible. They are broken by the algorithm, with hierarchical ports inserted as required. Usually, one such port is created for each edge at each hierarchy crossing point. With this option set to true, we try to create as few hierarchical ports as possible in the process. In particular, all edges that form a hyperedge can share a port."), true), Med), GI), Crb(Eed))));
               mdd(a, new ied(ved(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), dze), ""), "Allow Non-Flow Ports To Switch Sides"), "Specifies whether non-flow ports may switch sides if their node's port constraints are either FIXED_SIDE or FIXED_ORDER. A non-flow port is a port on a side that is not part of the currently configured layout flow. For instance, given a left-to-right layout direction, north and south ports would be considered non-flow ports. Further note that the underlying criterium whether to switch sides or not solely relies on the minimization of edge crossings. Hence, edge length and other aesthetics criteria are not addressed."), false), Med), GI), Crb(Fed)), WC(OC(hJ, 1), Ote, 2, 6, ["org.eclipse.elk.layered.northOrSouthPort"]))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eze), ""), "Port Sorting Strategy"), "Only relevant for nodes with FIXED_SIDE port constraints. Determines the way a node's ports are distributed on the sides of a node if their order is not prescribed. The option is set on parent nodes."), quc), Oed), pW), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fze), ""), "Thoroughness"), "How much effort should be spent to produce a nice layout."), zfb(7)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fze), ""), "Thoroughness"), "How much effort should be spent to produce a nice layout."), zfb(7)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gze), ""), "Add Unnecessary Bendpoints"), "Adds bend points even if an edge does not change direction. If true, each long edge dummy will contribute a bend point to its edges and hierarchy-crossing edges will always get a bend point where they cross hierarchy boundaries. By default, bend points are only added where an edge changes direction."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hze), ""), "Generate Position and Layer IDs"), "If enabled position id and layer id are generated, which are usually only used internally when setting the interactiveLayout option. This option should be specified on the root node."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ize), "cycleBreaking"), "Cycle Breaking Strategy"), "Strategy for cycle breaking. Cycle breaking looks for cycles in the graph and determines which edges to reverse to break the cycles. Reversed edges will end up pointing to the opposite direction of regular edges (that is, reversed edges will point left if edges usually point right)."), Zsc), Oed), TV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), jze), GAe), "Node Layering Strategy"), "Strategy for node layering."), Ntc), Oed), jW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), kze), GAe), "Layer Constraint"), "Determines a constraint on the placement of the node regarding the layering."), Dtc), Oed), dW), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), lze), GAe), "Layer Choice Constraint"), "Allows to set a constraint regarding the layer placement of a node. Let i be the value of teh constraint. Assumed the drawing has n layers and i < n. If set to i, it expresses that the node should be placed in i-th layer. Should i>=n be true then the node is placed in the last layer of the drawing. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), mze), GAe), "Layer ID"), "Layer identifier that was calculated by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nze), HAe), "Upper Bound On Width [MinWidth Layerer]"), "Defines a loose upper bound on the width of the MinWidth layerer. If set to '-1' multiple values are tested and the best result is selected."), zfb(4)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), lze), GAe), "Layer Choice Constraint"), "Allows to set a constraint regarding the layer placement of a node. Let i be the value of teh constraint. Assumed the drawing has n layers and i < n. If set to i, it expresses that the node should be placed in i-th layer. Should i>=n be true then the node is placed in the last layer of the drawing. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), mze), GAe), "Layer ID"), "Layer identifier that was calculated by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nze), HAe), "Upper Bound On Width [MinWidth Layerer]"), "Defines a loose upper bound on the width of the MinWidth layerer. If set to '-1' multiple values are tested and the best result is selected."), zfb(4)), Qed), UI2), Crb(Eed))));
               hdd(a, nze, jze, Gtc);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), oze), HAe), "Upper Layer Estimation Scaling Factor [MinWidth Layerer]"), "Multiplied with Upper Bound On Width for defining an upper bound on the width of layers which haven't been determined yet, but whose maximum width had been (roughly) estimated by the MinWidth algorithm. Compensates for too high estimations. If set to '-1' multiple values are tested and the best result is selected."), zfb(2)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), oze), HAe), "Upper Layer Estimation Scaling Factor [MinWidth Layerer]"), "Multiplied with Upper Bound On Width for defining an upper bound on the width of layers which haven't been determined yet, but whose maximum width had been (roughly) estimated by the MinWidth algorithm. Compensates for too high estimations. If set to '-1' multiple values are tested and the best result is selected."), zfb(2)), Qed), UI2), Crb(Eed))));
               hdd(a, oze, jze, Itc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), pze), IAe), "Node Promotion Strategy"), "Reduces number of dummy nodes after layering phase (if possible)."), Ltc), Oed), nW), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), qze), IAe), "Max Node Promotion Iterations"), "Limits the number of iterations for node promotion."), zfb(0)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), qze), IAe), "Max Node Promotion Iterations"), "Limits the number of iterations for node promotion."), zfb(0)), Qed), UI2), Crb(Eed))));
               hdd(a, qze, pze, null);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), rze), "layering.coffmanGraham"), "Layer Bound"), "The maximum number of nodes allowed per layer."), zfb(lte)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), rze), "layering.coffmanGraham"), "Layer Bound"), "The maximum number of nodes allowed per layer."), zfb(lte)), Qed), UI2), Crb(Eed))));
               hdd(a, rze, jze, Atc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), sze), JAe), "Crossing Minimization Strategy"), "Strategy for crossing minimization."), Xsc), Oed), RV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), tze), JAe), "Force Node Model Order"), "The node order given by the model does not change to produce a better layout. E.g. if node A is before node B in the model this is not changed during crossing minimization. This assumes that the node model order is already respected before crossing minimization. This can be achieved by setting considerModelOrder.strategy to NODES_AND_EDGES."), false), Med), GI), Crb(Eed))));
@@ -74199,9 +74199,9 @@ var require_elk_bundled = __commonJS({
               hdd(a, vze, sze, Vsc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), wze), JAe), "In Layer Predecessor of"), "Allows to set a constraint which specifies of which node the current node is the predecessor. If set to 's' then the node is the predecessor of 's' and is in the same layer"), null), Sed), hJ), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xze), JAe), "In Layer Successor of"), "Allows to set a constraint which specifies of which node the current node is the successor. If set to 's' then the node is the successor of 's' and is in the same layer"), null), Sed), hJ), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yze), JAe), "Position Choice Constraint"), "Allows to set a constraint regarding the position placement of a node in a layer. Assumed the layer in which the node placed includes n other nodes and i < n. If set to i, it expresses that the node should be placed at the i-th position. Should i>=n be true then the node is placed at the last position in the layer. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zze), JAe), "Position ID"), "Position within a layer that was determined by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Aze), LAe), "Greedy Switch Activation Threshold"), "By default it is decided automatically if the greedy switch is activated or not. The decision is based on whether the size of the input graph (without dummy nodes) is smaller than the value of this option. A '0' enforces the activation."), zfb(40)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yze), JAe), "Position Choice Constraint"), "Allows to set a constraint regarding the position placement of a node in a layer. Assumed the layer in which the node placed includes n other nodes and i < n. If set to i, it expresses that the node should be placed at the i-th position. Should i>=n be true then the node is placed at the last position in the layer. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zze), JAe), "Position ID"), "Position within a layer that was determined by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Aze), LAe), "Greedy Switch Activation Threshold"), "By default it is decided automatically if the greedy switch is activated or not. The decision is based on whether the size of the input graph (without dummy nodes) is smaller than the value of this option. A '0' enforces the activation."), zfb(40)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Bze), LAe), "Greedy Switch Crossing Minimization"), "Greedy Switch strategy for crossing minimization. The greedy switch heuristic is executed after the regular crossing minimization as a post-processor. Note that if 'hierarchyHandling' is set to 'INCLUDE_CHILDREN', the 'greedySwitchHierarchical.type' option must be used."), Msc), Oed), _V), Crb(Eed))));
               hdd(a, Bze, sze, Nsc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Cze), "crossingMinimization.greedySwitchHierarchical"), "Greedy Switch Crossing Minimization (hierarchical)"), "Activates the greedy switch heuristic in case hierarchical layout is used. The differences to the non-hierarchical case (see 'greedySwitch.type') are: 1) greedy switch is inactive by default, 3) only the option value set on the node at which hierarchical layout starts is relevant, and 2) if it's activated by the user, it properly addresses hierarchy-crossing edges."), Isc), Oed), _V), Crb(Eed))));
@@ -74234,17 +74234,17 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Qze), QAe), "Edge Node Between Layers Spacing"), "The spacing to be preserved between nodes and edges that are routed next to the node's layer. For the spacing between nodes and edges that cross the node's layer 'spacing.edgeNode' is used."), 10), Ned), LI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Rze), QAe), "Edge Edge Between Layer Spacing"), "Spacing to be preserved between pairs of edges that are routed between the same pair of layers. Note that 'spacing.edgeEdge' is used for the spacing between pairs of edges crossing the same layer."), 10), Ned), LI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Sze), QAe), "Node Node Between Layers Spacing"), "The spacing to be preserved between any pair of nodes of two adjacent layers. Note that 'spacing.nodeNode' is used for the spacing between nodes within the layer itself."), 20), Ned), LI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Tze), RAe), "Direction Priority"), "Defines how important it is to have a certain edge point into the direction of the overall layout. This option is evaluated during the cycle breaking phase."), zfb(0)), Qed), UI), Crb(Bed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Uze), RAe), "Shortness Priority"), "Defines how important it is to keep an edge as short as possible. This option is evaluated during the layering phase."), zfb(0)), Qed), UI), Crb(Bed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Vze), RAe), "Straightness Priority"), "Defines how important it is to keep an edge straight, i.e. aligned with one of the two axes. This option is evaluated during node placement."), zfb(0)), Qed), UI), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Tze), RAe), "Direction Priority"), "Defines how important it is to have a certain edge point into the direction of the overall layout. This option is evaluated during the cycle breaking phase."), zfb(0)), Qed), UI2), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Uze), RAe), "Shortness Priority"), "Defines how important it is to keep an edge as short as possible. This option is evaluated during the layering phase."), zfb(0)), Qed), UI2), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Vze), RAe), "Straightness Priority"), "Defines how important it is to keep an edge straight, i.e. aligned with one of the two axes. This option is evaluated during node placement."), zfb(0)), Qed), UI2), Crb(Bed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Wze), SAe), "Connected Components Compaction"), "Tries to further compact components (disconnected sub-graphs)."), false), Med), GI), Crb(Eed))));
               hdd(a, Wze, uxe, true);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Xze), TAe), "Post Compaction Strategy"), UAe), hsc), Oed), ZV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Yze), TAe), "Post Compaction Constraint Calculation"), UAe), fsc), Oed), QV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Zze), VAe), "High Degree Node Treatment"), "Makes room around high degree nodes to place leafs and trees."), false), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), $ze), VAe), "High Degree Node Threshold"), "Whether a node is considered to have a high degree."), zfb(16)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), $ze), VAe), "High Degree Node Threshold"), "Whether a node is considered to have a high degree."), zfb(16)), Qed), UI2), Crb(Eed))));
               hdd(a, $ze, Zze, true);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), _ze), VAe), "High Degree Node Maximum Tree Height"), "Maximum height of a subtree connected to a high degree node to be moved to separate layers."), zfb(5)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), _ze), VAe), "High Degree Node Maximum Tree Height"), "Maximum height of a subtree connected to a high degree node to be moved to separate layers."), zfb(5)), Qed), UI2), Crb(Eed))));
               hdd(a, _ze, Zze, true);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), aAe), WAe), "Graph Wrapping Strategy"), "For certain graphs and certain prescribed drawing areas it may be desirable to split the laid out graph into chunks that are placed side by side. The edges that connect different chunks are 'wrapped' around from the end of one chunk to the start of the other chunk. The points between the chunks are referred to as 'cuts'."), Wuc), Oed), wW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), bAe), WAe), "Additional Wrapped Edges Spacing"), "To visually separate edges that are wrapped from regularly routed edges an additional spacing value can be specified in form of this layout option. The spacing is added to the regular edgeNode spacing."), 10), Ned), LI), Crb(Eed))));
@@ -74258,7 +74258,7 @@ var require_elk_bundled = __commonJS({
               hdd(a, dAe, aAe, Ouc);
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), eAe), XAe), "Manually Specified Cuts"), "Allows the user to specify her own cuts for a certain graph."), Red), HK), Crb(Eed))));
               hdd(a, eAe, dAe, Huc);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fAe), "wrapping.cutting.msd"), "MSD Freedom"), "The MSD cutting strategy starts with an initial guess on the number of chunks the graph should be split into. The freedom specifies how much the strategy may deviate from this guess. E.g. if an initial number of 3 is computed, a freedom of 1 allows 2, 3, and 4 cuts."), Juc), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fAe), "wrapping.cutting.msd"), "MSD Freedom"), "The MSD cutting strategy starts with an initial guess on the number of chunks the graph should be split into. The freedom specifies how much the strategy may deviate from this guess. E.g. if an initial number of 3 is computed, a freedom of 1 allows 2, 3, and 4 cuts."), Juc), Qed), UI2), Crb(Eed))));
               hdd(a, fAe, dAe, Kuc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gAe), YAe), "Validification Strategy"), "When wrapping graphs, one can specify indices that are not allowed as split points. The validification strategy makes sure every computed split point is allowed."), _uc), Oed), vW), Crb(Eed))));
               hdd(a, gAe, aAe, avc);
@@ -74276,7 +74276,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), lAe), $Ae), "Layer Unzipping Strategy"), "The strategy to use for unzipping a layer into multiple sublayers while maintaining the existing ordering of nodes and edges after crossing minimization. The default value is 'NONE'."), Wtc), Oed), eW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), mAe), $Ae), "Minimize Edge Length Heuristic"), "Use a heuristic to decide whether or not to actually perform the layer split with the goal of minimizing the total edge length. This option only works when layerSplit is set to 2. The property can be set to the nodes in a layer, which then applies the property for the layer. If any node sets the value to true, then the value is set to true for the entire layer."), false), Med), GI), Crb(Ded))));
               hdd(a, mAe, nAe, Rtc);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nAe), $Ae), "Unzipping Layer Split"), "Defines the number of sublayers to split a layer into. The property can be set to the nodes in a layer, which then applies the property for the layer. If multiple nodes set the value to different values, then the lowest value is chosen."), Ptc), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nAe), $Ae), "Unzipping Layer Split"), "Defines the number of sublayers to split a layer into. The property can be set to the nodes in a layer, which then applies the property for the layer. If multiple nodes set the value to different values, then the lowest value is chosen."), Ptc), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), oAe), $Ae), "Reset Alternation on Long Edges"), "If set to true, nodes will always be placed in the first sublayer after a long edge when using the ALTERNATING strategy. Otherwise long edge dummies are treated the same as regular nodes. The default value is true. The property can be set to the nodes in a layer, which then applies the property for the layer. If any node sets the value to false, then the value is set to false for the entire layer."), Ttc), Med), GI), Crb(Ded))));
               hdd(a, oAe, lAe, Utc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), pAe), _Ae), "Edge Label Side Selection"), "Method to decide on edge label sides."), dtc), Oed), WV), Crb(Eed))));
@@ -74291,16 +74291,16 @@ var require_elk_bundled = __commonJS({
               hdd(a, wAe, rAe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xAe), aBe), "Crossing Counter Port Order Influence"), "Indicates with what percentage (1 for 100%) violations of the port model order are weighted against the crossings e.g. a value of 0.5 means two model order violations are as important as on edge crossing. This allows some edge crossings in favor of preserving the model order. It is advised to set this value to a very small positive value (e.g. 0.001) to have minimal crossing and a optimal port order. Defaults to no influence (0)."), 0), Ned), LI), Crb(Eed))));
               hdd(a, xAe, rAe, null);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yAe), bBe), cBe), "Used to define partial ordering groups during cycle breaking. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yAe), bBe), cBe), "Used to define partial ordering groups during cycle breaking. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI2), Crb(Ded))));
               hdd(a, yAe, tAe, false);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zAe), bBe), cBe), "Used to define partial ordering groups during crossing minimization. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zAe), bBe), cBe), "Used to define partial ordering groups during crossing minimization. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
               hdd(a, zAe, tAe, false);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), AAe), bBe), cBe), "Used to define partial ordering groups during component packing. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), AAe), bBe), cBe), "Used to define partial ordering groups during component packing. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
               hdd(a, AAe, tAe, false);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), BAe), bBe), "Cycle Breaking Group Ordering Strategy"), "Determines how to count ordering violations during cycle breaking. NONE: They do not count. ENFORCED: A group with a higher model order is before a node with a smaller. MODEL_ORDER: The model order counts instead of the model order group id ordering."), nsc), Oed), aW), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), CAe), bBe), "Cycle Breaking Preferred Source Id"), "The model order group id for which should be preferred as a source if possible."), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), CAe), bBe), "Cycle Breaking Preferred Source Id"), "The model order group id for which should be preferred as a source if possible."), Qed), UI2), Crb(Eed))));
               hdd(a, CAe, ize, psc);
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), DAe), bBe), "Cycle Breaking Preferred Target Id"), "The model order group id for which should be preferred as a target if possible."), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), DAe), bBe), "Cycle Breaking Preferred Target Id"), "The model order group id for which should be preferred as a target if possible."), Qed), UI2), Crb(Eed))));
               hdd(a, DAe, ize, rsc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), EAe), bBe), "Crossing Minimization Group Ordering Strategy"), "Determines how to count ordering violations during crossing minimization. NONE: They do not count. ENFORCED: A group with a lower id is before a group with a higher id. MODEL_ORDER: The model order counts instead of the model order group id ordering."), vsc), Oed), aW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), FAe), bBe), "Crossing Minimization Enforced Group Orders"), "Holds all group ids which are enforcing their order during crossing minimization strategies. E.g. if only groups 2 and -1 (default) enforce their ordering. Other groups e.g. the group of timer nodes can be ordered arbitrarily if it helps and the mentioned groups may not change their order."), tsc), Red), HK), Crb(Eed))));
@@ -76610,8 +76610,8 @@ var require_elk_bundled = __commonJS({
             _.tf = function ZWc(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ECe), ""), LCe), "Turns on Tree compaction which decreases the size of the whole tree by placing nodes of multiple levels in one large level"), (Ndb(), false)), (Ued(), Med)), GI), Crb((Ged(), Eed)))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), FCe), ""), "Edge End Texture Length"), "Should be set to the length of the texture at the end of an edge. This value can be used to improve the Edge Routing."), 7), Ned), LI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GCe), ""), "Tree Level"), "The index for the tree level the node is in"), zfb(0)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), HCe), ""), LCe), "When set to a positive number this option will force the algorithm to place the node to the specified position within the trees layer if weighting is set to constraint"), zfb(-1)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GCe), ""), "Tree Level"), "The index for the tree level the node is in"), zfb(0)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), HCe), ""), LCe), "When set to a positive number this option will force the algorithm to place the node to the specified position within the trees layer if weighting is set to constraint"), zfb(-1)), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ICe), ""), "Weighting of Nodes"), "Which weighting to use when computing a node order."), WWc), Oed), K$), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), JCe), ""), "Edge Routing Mode"), "Chooses an Edge Routing algorithm."), QWc), Oed), G$), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KCe), ""), "Search Order"), "Which search order to use when computing a spanning tree."), TWc), Oed), L$), Crb(Eed))));
@@ -77140,11 +77140,11 @@ var require_elk_bundled = __commonJS({
             mdb(847, 1, lxe, $0c);
             _.tf = function _0c(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), bDe), ""), "Center On Root"), "Centers the layout on the root of the tree i.e. so that the central node is also the center node of the final layout. This introduces additional whitespace."), (Ndb(), false)), (Ued(), Med)), GI), Crb((Ged(), Eed)))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cDe), ""), "Order ID"), "The id can be used to define an order for nodes of one radius. This can be used to sort them in the layer accordingly."), zfb(0)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cDe), ""), "Order ID"), "The id can be used to define an order for nodes of one radius. This can be used to sort them in the layer accordingly."), zfb(0)), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), dDe), ""), "Radius"), "The radius option can be used to set the initial radius for the radial layouter."), 0), Ned), LI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eDe), ""), "Rotate"), "The rotate option determines whether a rotation of the layout should be performed."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fDe), ""), nDe), "With the compacter option it can be determined how compaction on the graph is done. It can be chosen between none, the radial compaction or the compaction of wedges separately."), M0c), Oed), J_), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gDe), ""), "Compaction Step Size"), "Determine the size of steps with which the compaction is done. Step size 1 correlates to a compaction of 1 pixel per Iteration."), zfb(1)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gDe), ""), "Compaction Step Size"), "Determine the size of steps with which the compaction is done. Step size 1 correlates to a compaction of 1 pixel per Iteration."), zfb(1)), Qed), UI2), Crb(Eed))));
               hdd(a, gDe, fDe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hDe), ""), "Sorter"), "Sort the nodes per radius according to the sorting algorithm. The strategies are none, by the given order id, or sorting them by polar coordinates."), W0c), Oed), O_), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), iDe), ""), "Annulus Wedge Criteria"), "Determine how the wedge for the node placement is calculated. It can be chosen between wedge determination by the number of leaves or by the maximum sum of diagonals."), Y0c), Oed), I_), Crb(Eed))));
@@ -77376,8 +77376,8 @@ var require_elk_bundled = __commonJS({
             mdb(849, 1, lxe, a4c);
             _.tf = function b4c(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yDe), ""), "Try box layout first"), "Whether one should check whether the regions are stackable to see whether box layout would do the job. For example, nodes with the same height are not stackable inside a row. Therefore, box layout will perform better and faster."), (Ndb(), false)), (Ued(), Med)), GI), Crb((Ged(), Eed)))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zDe), ""), "Current position of a node in the order of nodes"), "The rectangles are ordered. Normally according to their definition the the model. This option specifies the current position of a node."), zfb(-1)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ADe), ""), "Desired index of node"), "The rectangles are ordered. Normally according to their definition the the model. This option allows to specify a desired position that has preference over the original position."), zfb(-1)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zDe), ""), "Current position of a node in the order of nodes"), "The rectangles are ordered. Normally according to their definition the the model. This option specifies the current position of a node."), zfb(-1)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ADe), ""), "Desired index of node"), "The rectangles are ordered. Normally according to their definition the the model. This option allows to specify a desired position that has preference over the original position."), zfb(-1)), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), BDe), ""), "In new Row"), "If set to true this node begins in a new row. Consequently this node cannot be moved in a previous layer during compaction. Width approximation does does not take this into account."), false), Med), GI), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), CDe), ""), "Order nodes by height"), "If set to true the nodes will be sorted by their height before computing the layout. The largest node will be in the first position."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), DDe), LDe), "Width Approximation Strategy"), "Strategy for finding an initial width of the drawing."), Z3c), Oed), o0), Crb(Eed))));
@@ -77386,7 +77386,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GDe), LDe), "Shift Last Placed."), "When placing a rectangle behind or below the last placed rectangle in the first iteration, it is sometimes possible to shift the rectangle further to the left or right, resulting in less whitespace. True (default) enables the shift and false disables it. Disabling the shift produces a greater approximated area by the first iteration and a layout, when using ONLY the first iteration (default not the case), where it is sometimes impossible to implement a size transformation of rectangles that will fill the bounding box and eliminate empty spaces."), true), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), HDe), "packing"), MDe), "Strategy for finding an initial placement on nodes."), R3c), Oed), r0), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), IDe), NDe), "Row Height Reevaluation"), "During the compaction step the height of a row is normally not changed. If this options is set, the blocks of other rows might be added if they exceed the row height. If this is the case the whole row has to be packed again to be optimal regarding the new row height. This option should, therefore, be used with care since it might be computation heavy."), false), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), JDe), NDe), "Compaction iterations"), "Defines the number of compaction iterations. E.g. if set to 2 the width is initially approximated, then the drawing is compacted and based on the resulting drawing the target width is decreased or increased and a second compaction step is executed and the result compared to the first one. The best run is used based on the scale measure."), zfb(1)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), JDe), NDe), "Compaction iterations"), "Defines the number of compaction iterations. E.g. if set to 2 the width is initially approximated, then the drawing is compacted and based on the resulting drawing the target width is decreased or increased and a second compaction step is executed and the result compared to the first one. The best run is used based on the scale measure."), zfb(1)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KDe), "whiteSpaceElimination"), "White Space Approximation Strategy"), "Strategy for expanding nodes such that whitespace in the parent is eliminated."), U3c), Oed), w0), Crb(Eed))));
               E4c((new F4c(), a));
             };
@@ -77774,7 +77774,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), aEe), gEe), "Root selection for spanning tree"), "This sets the method used to select a root node for the construction of a spanning tree"), j9c), Oed), R0), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cEe), SAe), MDe), "This option defines how the compaction is applied."), c9c), Oed), P0), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), dEe), SAe), "Orthogonal Compaction"), "Restricts the translation of nodes to orthogonal directions in the compaction phase."), (Ndb(), false)), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eEe), hEe), "Upper limit for iterations of overlap removal"), null), zfb(64)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eEe), hEe), "Upper limit for iterations of overlap removal"), null), zfb(64)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fEe), hEe), "Whether to run a supplementary scanline overlap check."), null), true), Med), GI), Crb(Eed))));
               B9c((new C9c(), a));
               X8c((new Y8c(), a));
@@ -78352,8 +78352,8 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zxe), ""), "Omit Node Micro Layout"), "Node micro layout comprises the computation of node dimensions (if requested), the placement of ports and their labels, and the placement of node labels. The functionality is implemented independent of any specific layout algorithm and shouldn't have any negative impact on the layout algorithm's performance itself. Yet, if any unforeseen behavior occurs, this option allows to deactivate the micro layout."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xxe), ""), "Port Constraints"), "Defines constraints of the position of the ports of a node."), rid), Oed), H2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), PBe), ""), "Position"), "The position of a node, port, or label. This is used by the 'Fixed Layout' algorithm to specify a pre-defined position."), Red), o2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Fed, Ced])))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), pxe), ""), "Priority"), "Defines the priority of an object; its meaning depends on the specific layout algorithm and the context where it is used."), Qed), UI), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed])))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), txe), ""), "Randomization Seed"), "Seed used for pseudo-random number generators to control the layout algorithm. If the value is 0, the seed shall be determined pseudo-randomly (e.g. from the system time)."), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), pxe), ""), "Priority"), "Defines the priority of an object; its meaning depends on the specific layout algorithm and the context where it is used."), Qed), UI2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed])))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), txe), ""), "Randomization Seed"), "Seed used for pseudo-random number generators to control the layout algorithm. If the value is 0, the seed shall be determined pseudo-randomly (e.g. from the system time)."), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), uxe), ""), "Separate Connected Components"), "Whether each connected component should be processed separately."), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GBe), ""), "Junction Points"), "This option is not used as option, but as output of the layout algorithms. It is attached to edges and determines the points where junction symbols should be drawn in order to represent hyperedges with orthogonal routing. Whether such points are computed depends on the chosen layout algorithm and edge routing style. The points are put into the vector chain with no specific order."), Ohd), Red), n2), Crb(Bed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KBe), ""), "Comment Box"), "Whether the node should be regarded as a comment box instead of a regular node. In that case its placement should be similar to how labels are handled. Any edges incident to a comment box specify to which graph elements the comment is related."), false), Med), GI), Crb(Ded))));
@@ -78368,10 +78368,10 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Fxe), ""), mEe), "Turns topdown layout on and off. If this option is enabled, hierarchical layout will be computed first for the root node and then for its children recursively. Layouts are then scaled down to fit the area provided by their parents. Graphs must follow a certain structure for topdown layout to work properly. {@link TopdownNodeTypes.PARALLEL_NODE} nodes must have children of type {@link TopdownNodeTypes.HIERARCHICAL_NODE} and must define {@link topdown.hierarchicalNodeWidth} and {@link topdown.hierarchicalNodeAspectRatio} for their children. Furthermore they need to be laid out using an algorithm that is a {@link TopdownLayoutProvider}. Hierarchical nodes can also be parents of other hierarchical nodes and can optionally use a {@link TopdownSizeApproximator} to dynamically set sizes during topdown layout. In this case {@link topdown.hierarchicalNodeWidth} and {@link topdown.hierarchicalNodeAspectRatio} should be set on the node itself rather than the parent. The values are then used by the size approximator as base values. Hierarchical nodes require the layout option {@link nodeSize.fixedGraphSize} to be true to prevent the algorithm used there from resizing the hierarchical node. This option is not supported if 'Hierarchy Handling' is set to 'INCLUDE_CHILDREN'"), false), Med), GI), Crb(Eed))));
               hdd(a, Fxe, Jxe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KEe), ""), "Animate"), "Whether the shift from the old layout to the new computed layout shall be animated."), true), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), LEe), ""), "Animation Time Factor"), "Factor for computation of animation time. The higher the value, the longer the animation time. If the value is 0, the resulting time is always equal to the minimum defined by 'Minimal Animation Time'."), zfb(100)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), LEe), ""), "Animation Time Factor"), "Factor for computation of animation time. The higher the value, the longer the animation time. If the value is 0, the resulting time is always equal to the minimum defined by 'Minimal Animation Time'."), zfb(100)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), MEe), ""), "Layout Ancestors"), "Whether the hierarchy levels on the path from the selected element to the root of the diagram shall be included in the layout process."), false), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), NEe), ""), "Maximal Animation Time"), "The maximal time for animations, in milliseconds."), zfb(4e3)), Qed), UI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), OEe), ""), "Minimal Animation Time"), "The minimal time for animations, in milliseconds."), zfb(400)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), NEe), ""), "Maximal Animation Time"), "The maximal time for animations, in milliseconds."), zfb(4e3)), Qed), UI2), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), OEe), ""), "Minimal Animation Time"), "The minimal time for animations, in milliseconds."), zfb(400)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), PEe), ""), "Progress Bar"), "Whether a progress bar shall be displayed during layout computations."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), QEe), ""), "Validate Graph"), "Whether the graph shall be validated before any layout algorithm is applied. If this option is enabled and at least one error is found, the layout process is aborted and a message is shown to the user."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), REe), ""), "Validate Options"), "Whether layout options shall be validated before any layout algorithm is applied. If this option is enabled and at least one error is found, the layout process is aborted and a message is shown to the user."), true), Med), GI), Crb(Eed))));
@@ -78394,7 +78394,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nBe), QAe), "Port Spacing"), "Spacing between pairs of ports of the same node."), 10), Ned), LI), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Ded])))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), oBe), QAe), "Individual Spacing"), "Allows to specify individual spacing values for graph elements that shall be different from the value specified for the element's parent."), Red), t3), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed, Ced])))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), RBe), QAe), "Additional Port Space"), "Additional space around the sets of ports on each node side. For each side of a node, this option can reserve additional space before and after the ports on each side. For example, a top spacing of 20 makes sure that the first port on the western and eastern side is 20 units away from the northern border."), Tid), Red), k2), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), OBe), aFe), "Layout Partition"), "Partition to which the node belongs. This requires Layout Partitioning to be active. Nodes with lower partition IDs will appear to the left of nodes with higher partition IDs (assuming a left-to-right layout direction)."), Qed), UI), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Ded])))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), OBe), aFe), "Layout Partition"), "Partition to which the node belongs. This requires Layout Partitioning to be active. Nodes with lower partition IDs will appear to the left of nodes with higher partition IDs (assuming a left-to-right layout direction)."), Qed), UI2), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Ded])))));
               hdd(a, OBe, NBe, hid);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), NBe), aFe), "Layout Partitioning"), "Whether to activate partitioned layout. This will allow to group nodes through the Layout Partition option. a pair of nodes with different partition indices is then placed such that the node with lower index is placed to the left of the other node (with left-to-right layout direction). Depending on the layout algorithm, this may only be guaranteed to work if all nodes have a layout partition configured, or at least if edges that cross partitions are not part of a partition-crossing cycle."), fid), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xBe), bFe), "Node Label Padding"), "Define padding for node labels that are placed inside of a node."), Shd), Red), l2), Crb(Eed))));
@@ -78411,17 +78411,17 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), IBe), _Ae), "Edge Label Placement"), "Gives a hint on where to put edge labels."), whd), Oed), x2), Crb(Ced))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yxe), _Ae), "Inline Edge Labels"), "If true, an edge label is placed directly on its edge. May only apply to center edge labels. This kind of label placement is only advisable if the label's rendering is such that it is not crossed by its edge and thus stays legible."), false), Med), GI), Crb(Ced))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), VEe), "font"), "Font Name"), "Font name used for a label."), Sed), hJ), Crb(Ced))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), WEe), "font"), "Font Size"), "Font size used for a label."), Qed), UI), Crb(Ced))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), WEe), "font"), "Font Size"), "Font size used for a label."), Qed), UI2), Crb(Ced))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), MBe), eFe), "Port Anchor Offset"), "The offset to the port position where connections shall be attached."), Red), o2), Crb(Fed))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), JBe), eFe), "Port Index"), "The index of a port in the fixed order around a node. The order is assumed as clockwise, starting with the leftmost port on the top side. This option must be set if 'Port Constraints' is set to FIXED_ORDER and no specific positions are given for the ports. Additionally, the option 'Port Side' must be defined in this case."), Qed), UI), Crb(Fed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), JBe), eFe), "Port Index"), "The index of a port in the fixed order around a node. The order is assumed as clockwise, starting with the leftmost port on the top side. This option must be set if 'Port Constraints' is set to FIXED_ORDER and no specific positions are given for the ports. Additionally, the option 'Port Side' must be defined in this case."), Qed), UI2), Crb(Fed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), rBe), eFe), "Port Side"), "The side of a node on which a port is situated. This option must be set if 'Port Constraints' is set to FIXED_SIDE or FIXED_ORDER and no specific positions are given for the ports."), yid), Oed), J2), Crb(Fed))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), pBe), eFe), "Port Border Offset"), "The offset of ports on the node border. With a positive offset the port is moved outside of the node, while with a negative offset the port is moved towards the inside. An offset of 0 means that the port is placed directly on the node border, i.e. if the port side is north, the port's south border touches the nodes's north border; if the port side is east, the port's west border touches the nodes's east border; if the port side is south, the port's north border touches the node's south border; if the port side is west, the port's east border touches the node's west border."), Ned), LI), Crb(Fed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Exe), fFe), "Port Label Placement"), "Decides on a placement method for port labels; if empty, the node label's position is not modified."), vid), Ped), I2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yBe), fFe), "Port Labels Next to Port"), "Use 'portLabels.placement': NEXT_TO_PORT_OF_POSSIBLE."), false), Med), GI), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zBe), fFe), "Treat Port Labels as Group"), "If this option is true (default), the labels of a port will be treated as a group when it comes to centering them next to their port. If this option is false, only the first label will be centered next to the port, with the others being placed below. This only applies to labels of eastern and western ports and will have no effect if labels are not placed next to their port."), true), Med), GI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), XEe), gFe), "Number of size categories"), "Defines the number of categories to use for the FIXED_INTEGER_RATIO_BOXES size approximator."), zfb(3)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), XEe), gFe), "Number of size categories"), "Defines the number of categories to use for the FIXED_INTEGER_RATIO_BOXES size approximator."), zfb(3)), Qed), UI2), Crb(Eed))));
               hdd(a, XEe, ZEe, ejd);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), YEe), gFe), "Weight of a node containing children for determining the graph size"), "When determining the graph size for the size categorisation, this value determines how many times a node containing children is weighted more than a simple node. For example setting this value to four would result in a graph containing a simple node and a hierarchical node to be counted as having a size of five."), zfb(4)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), YEe), gFe), "Weight of a node containing children for determining the graph size"), "When determining the graph size for the size categorisation, this value determines how many times a node containing children is weighted more than a simple node. For example setting this value to four would result in a graph containing a simple node and a hierarchical node to be counted as having a size of five."), zfb(4)), Qed), UI2), Crb(Eed))));
               hdd(a, YEe, XEe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Gxe), gFe), "Topdown Scale Factor"), "The scaling factor to be applied to the nodes laid out within the node in recursive topdown layout. The difference to 'Scale Factor' is that the node itself is not scaled. This value has to be set on hierarchical nodes."), 1), Ned), LI), Crb(Eed))));
               hdd(a, Gxe, Jxe, ajd);
@@ -83889,7 +83889,7 @@ var require_elk_bundled = __commonJS({
                 !!d && yWd(sUd(d));
                 e = UTd(this);
                 g10 = e.ik();
-                a = !g10 ? null : (g10.i & 1) != 0 ? g10 == Fcb ? GI : g10 == cE ? UI : g10 == bE ? QI : g10 == aE ? LI : g10 == dE ? XI : g10 == Ecb ? cJ : g10 == $D ? HI : II : g10;
+                a = !g10 ? null : (g10.i & 1) != 0 ? g10 == Fcb ? GI : g10 == cE ? UI2 : g10 == bE ? QI : g10 == aE ? LI : g10 == dE ? XI : g10 == Ecb ? cJ : g10 == $D ? HI : II : g10;
                 b = rUd(this);
                 h = e.gk();
                 Khe(this);
@@ -88655,7 +88655,7 @@ var require_elk_bundled = __commonJS({
               return RD(a, 15);
             };
             _.ek = function Cae(a) {
-              return SC(UI, Ote, 15, a, 0, 1);
+              return SC(UI2, Ote, 15, a, 0, 1);
             };
             var j9 = zeb(MFe, "EcorePackageImpl/34", 1232);
             mdb(1233, 1, IIe, Dae);
@@ -90690,7 +90690,7 @@ var require_elk_bundled = __commonJS({
               return RD(a, 15);
             };
             _.ek = function Sme(a) {
-              return SC(UI, Ote, 15, a, 0, 1);
+              return SC(UI2, Ote, 15, a, 0, 1);
             };
             var Hbb = zeb(fJe, "XMLTypePackageImpl/30", 1952);
             mdb(1953, 1, IIe, Tme);
@@ -90882,7 +90882,7 @@ var require_elk_bundled = __commonJS({
               return RD(a, 15);
             };
             _.ek = function ioe(a) {
-              return SC(UI, Ote, 15, a, 0, 1);
+              return SC(UI2, Ote, 15, a, 0, 1);
             };
             var dcb = zeb(fJe, "XMLTypePackageImpl/52", 1974);
             mdb(1928, 1, IIe, joe);
@@ -92250,6 +92250,7 @@ function lex(src, diags) {
 // src/model.ts
 var defaultDiagramStyle = () => ({
   crossingHops: true,
+  compact: false,
   disposition: "wide",
   legend: "auto",
   flowText: "full",
@@ -92257,9 +92258,30 @@ var defaultDiagramStyle = () => ({
   flowStroke: { color: "#444444", style: "solid", width: 1.3 },
   flowStrokeColorSet: false,
   theme: "light",
+  lang: "en",
   kind: {},
   font: { family: "Helvetica", size: 11 }
 });
+var UI = {
+  en: {
+    flows: "FLOWS",
+    objects: "BUSINESS OBJECTS",
+    legend: "LEGEND",
+    numberedSuffix: "numbered (text: FLOWS band)",
+    carriedByFlow: "carried by the flow",
+    businessObject: "Business object",
+    matrix: { title: "TECHNICAL FLOW MATRIX", n: "No.", source: "Source", dest: "Destination", proto: "Protocol", port: "Port", nature: "Flow", zone: "zone" }
+  },
+  fr: {
+    flows: "FLUX",
+    objects: "OBJETS M\xC9TIER",
+    legend: "L\xC9GENDE",
+    numberedSuffix: "num\xE9rot\xE9 (texte : bande FLUX)",
+    carriedByFlow: "port\xE9 par le flux",
+    businessObject: "Objet m\xE9tier",
+    matrix: { title: "MATRICE DES FLUX TECHNIQUES", n: "N\xB0", source: "Source", dest: "Destination", proto: "Protocole", port: "Port", nature: "Nature du flux", zone: "zone" }
+  }
+};
 var lightPalette = {
   background: "white",
   containerLabel: "#333",
@@ -92309,7 +92331,7 @@ var darkPalette = {
   chipText: "#e0c068"
 };
 var palettes = { light: lightPalette, dark: darkPalette };
-var logicalProfile = {
+var logicalView = {
   name: "logical",
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
   containerKinds: ["actor-group", "system", "layer", "external"],
@@ -92321,8 +92343,17 @@ var logicalProfile = {
     block: "Functional block",
     external: "External system"
   },
+  legendNamesFr: {
+    "actor-group": "Groupe d'acteurs",
+    actor: "Acteur",
+    system: "Syst\xE8me",
+    layer: "Couche",
+    block: "Bloc fonctionnel",
+    external: "Syst\xE8me externe"
+  },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Functional flow (label = exchanged data)",
+  legendFlowLabelFr: "Flux fonctionnel (libell\xE9 = donn\xE9es \xE9chang\xE9es)",
   flowTechRequired: null,
   flowTechRecommended: null,
   partitions: { "actor-group": 0, system: 1, external: 2 },
@@ -92379,7 +92410,7 @@ var logicalProfile = {
     actor: {}
   }
 };
-var applicationProfile = {
+var applicationView = {
   name: "application",
   kinds: ["actor-group", "actor", "application", "module", "datastore", "external"],
   containerKinds: ["actor-group", "application", "external"],
@@ -92392,8 +92423,17 @@ var applicationProfile = {
     datastore: "Datastore / registry",
     external: "External system"
   },
+  legendNamesFr: {
+    "actor-group": "Groupe d'acteurs",
+    actor: "Acteur",
+    application: "Application",
+    module: "Module applicatif",
+    datastore: "Entrep\xF4t / r\xE9f\xE9rentiel",
+    external: "Syst\xE8me externe"
+  },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Application flow \u2014 (protocol, format) under the label",
+  legendFlowLabelFr: "Flux applicatif \u2014 (protocole, format) sous le libell\xE9",
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
@@ -92446,22 +92486,37 @@ var applicationProfile = {
     actor: {}
   }
 };
-var infrastructureProfile = {
+var infrastructureView = {
   name: "infrastructure",
-  kinds: ["site", "network-zone", "server", "app-instance", "external"],
+  // `actor` = the consumer/user of the infrastructure (C4 Person). It has no
+  // network location, so it is not a container and needs no zone; it reads on
+  // the entry edge, distinct from `external` third-party systems on the exit edge.
+  kinds: ["actor", "site", "network-zone", "server", "app-instance", "external"],
   containerKinds: ["site", "network-zone", "server"],
   partitions: { external: 2 },
   partitionByOrder: true,
   // zones/sites band left->right in declaration order
+  actorLegend: true,
+  // users are standalone actors here — key them in the legend
   legendNames: {
+    actor: "User / consumer",
     site: "Site / data center",
     "network-zone": "Network zone",
     server: "Server / VM",
     "app-instance": "Deployed application",
     external: "External system"
   },
+  legendNamesFr: {
+    actor: "Utilisateur / consommateur",
+    site: "Site / centre de donn\xE9es",
+    "network-zone": "Zone r\xE9seau",
+    server: "Serveur / VM",
+    "app-instance": "Application d\xE9ploy\xE9e",
+    external: "Syst\xE8me externe"
+  },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Technical flow (protocol, port)",
+  legendFlowLabelFr: "Flux technique (protocole, port)",
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
@@ -92471,7 +92526,7 @@ var infrastructureProfile = {
   flowTechRequired: {
     code: "E0240",
     message: "technical flow without protocol",
-    help: 'the infrastructure profile requires a protocol: `A -> B : "\u2026" (HTTPS/443)`'
+    help: 'the infrastructure view requires a protocol: `A -> B : "\u2026" (HTTPS/443)`'
   },
   nesting: [
     {
@@ -92503,6 +92558,7 @@ var infrastructureProfile = {
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
+    actor: {},
     site: { fill: "#f5f5f4", stroke: { color: "#8a8a85", style: "solid", width: 1.4 } },
     "network-zone": { fill: "#ecf3ec", stroke: { color: "#6d9a6d", style: "dashed", width: 1.2 } },
     server: { fill: "#ffffff", stroke: { color: "#55606b", style: "solid", width: 1.5 } },
@@ -92510,6 +92566,7 @@ var infrastructureProfile = {
     external: { fill: "#f0eef5", stroke: { color: "#9187b3", style: "dashed", width: 1.2 } }
   },
   defaultsDark: {
+    actor: {},
     site: { fill: "#26261f", stroke: { color: "#8a8a72", style: "solid", width: 1.4 } },
     "network-zone": { fill: "#20291f", stroke: { color: "#5f8a5f", style: "dashed", width: 1.2 } },
     server: { fill: "#252a31", stroke: { color: "#6b7885", style: "solid", width: 1.5 } },
@@ -92517,10 +92574,123 @@ var infrastructureProfile = {
     external: { fill: "#2a2833", stroke: { color: "#7d72a0", style: "dashed", width: 1.2 } }
   }
 };
-var profiles = {
-  logical: logicalProfile,
-  application: applicationProfile,
-  infrastructure: infrastructureProfile
+var SEC_LEVELS = ["public", "internal", "restricted", "secret"];
+var securityView = {
+  name: "security",
+  kinds: ["trust-zone", "security-node", "asset", "actor-group", "actor", "external"],
+  containerKinds: ["trust-zone", "actor-group"],
+  legendNames: {
+    "trust-zone": "Trust zone (sensitivity)",
+    "security-node": "Filtering / security node",
+    asset: "Sensitive asset",
+    "actor-group": "Actor group",
+    actor: "Actor",
+    external: "Untrusted external"
+  },
+  legendNamesFr: {
+    "trust-zone": "Zone de confiance (sensibilit\xE9)",
+    "security-node": "N\u0153ud de filtrage / s\xE9curit\xE9",
+    asset: "Actif sensible",
+    "actor-group": "Groupe d'acteurs",
+    actor: "Acteur",
+    external: "Externe non ma\xEEtris\xE9"
+  },
+  bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
+  legendFlowLabel: "Security flow \u2014 cross-zone flows should be filtered and encrypted",
+  legendFlowLabelFr: "Flux de s\xE9curit\xE9 \u2014 les flux inter-zones doivent \xEAtre filtr\xE9s et chiffr\xE9s",
+  partitions: {},
+  partitionByOrder: true,
+  // zones band left→right in declaration order (exposed → protected)
+  flowLabelRequired: {
+    code: "E0203",
+    message: "flow without a label",
+    help: 'add a label describing the exchange: `A -> B : "\u2026" (TLS1.3)`'
+  },
+  flowTechRequired: null,
+  flowTechRecommended: null,
+  attrSpec: {
+    kind: "trust-zone",
+    values: SEC_LEVELS,
+    code: "E0250",
+    message: "trust zone without a valid sensitivity level",
+    help: 'set a level in parentheses: `trust-zone DMZ "DMZ" (public)` \u2014 one of public, internal, restricted, secret'
+  },
+  trustOrder: { public: 0, internal: 1, restricted: 2, secret: 3 },
+  boundaryLint: {
+    code: "W0560",
+    nodeKind: "security-node",
+    message: "unfiltered trust-boundary crossing",
+    help: "route this flow through a `security-node` (firewall/WAF/bastion), or confirm the direct path is intended"
+  },
+  crossZoneTechRecommended: {
+    code: "W0561",
+    message: "cross-zone flow without stated encryption/protocol",
+    help: 'add the protocol/encryption on inter-zone flows: `A -> B : "\u2026" (TLS1.3)`'
+  },
+  nesting: [
+    {
+      code: "E0217",
+      child: "asset",
+      parents: ["trust-zone"],
+      message: "sensitive asset outside any trust zone",
+      help: "move this `asset` inside a `trust-zone`"
+    },
+    {
+      code: "E0218",
+      child: "security-node",
+      parents: ["trust-zone"],
+      message: "security node outside any trust zone",
+      help: "place this `security-node` inside a `trust-zone` (typically the exposed one it protects)"
+    },
+    {
+      code: "E0211",
+      child: "actor",
+      parents: ["actor-group"],
+      message: "actor outside any group",
+      help: "move this `actor` inside an `actor-group`"
+    }
+  ],
+  minCounts: [],
+  isolatedWarn: {
+    code: "W0510",
+    kinds: ["asset"],
+    message: "isolated element: no incoming or outgoing flow"
+  },
+  // trust-zone colors come from levelDefaults (by sensitivity); non-zone kinds use these.
+  defaults: {
+    "trust-zone": { fill: "#f5f5f4", stroke: { color: "#8a8a85", style: "solid", width: 1.3 } },
+    "security-node": { fill: "#fff7e6", stroke: { color: "#c46b2a", style: "solid", width: 1.6 } },
+    asset: { fill: "#ffffff", stroke: { color: "#55606b", style: "solid", width: 1.3 } },
+    "actor-group": { fill: "#eef4fb", stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 } },
+    external: { fill: "#fdecea", stroke: { color: "#d9534f", style: "dashed", width: 1.3 } },
+    actor: {}
+  },
+  defaultsDark: {
+    "trust-zone": { fill: "#26261f", stroke: { color: "#8a8a72", style: "solid", width: 1.3 } },
+    "security-node": { fill: "#2e2717", stroke: { color: "#c46b2a", style: "solid", width: 1.6 } },
+    asset: { fill: "#252a31", stroke: { color: "#6b7885", style: "solid", width: 1.3 } },
+    "actor-group": { fill: "#232a33", stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 } },
+    external: { fill: "#3a2422", stroke: { color: "#c25a54", style: "dashed", width: 1.3 } },
+    actor: {}
+  },
+  levelDefaults: {
+    public: { fill: "#fdecea", stroke: { color: "#d9534f", style: "solid", width: 1.4 } },
+    internal: { fill: "#fff4e5", stroke: { color: "#e0a458", style: "solid", width: 1.4 } },
+    restricted: { fill: "#e8f1f8", stroke: { color: "#5b8db8", style: "solid", width: 1.4 } },
+    secret: { fill: "#ece8f5", stroke: { color: "#7a5fae", style: "solid", width: 1.4 } }
+  },
+  levelDefaultsDark: {
+    public: { fill: "#3a2422", stroke: { color: "#c25a54", style: "solid", width: 1.4 } },
+    internal: { fill: "#332a1c", stroke: { color: "#c08a44", style: "solid", width: 1.4 } },
+    restricted: { fill: "#1f2a33", stroke: { color: "#4a7ba6", style: "solid", width: 1.4 } },
+    secret: { fill: "#2a2433", stroke: { color: "#7a5f9e", style: "solid", width: 1.4 } }
+  }
+};
+var views = {
+  logical: logicalView,
+  application: applicationView,
+  infrastructure: infrastructureView,
+  security: securityView
 };
 
 // src/parse.ts
@@ -92733,6 +92903,15 @@ function parse(src) {
       parent: parent ?? void 0
     };
     if (at("str")) el.label = next().text;
+    if (at("lparen")) {
+      next();
+      if (at("id")) {
+        const t = next();
+        el.attr = { value: t.text, span: t.span };
+      } else err("attribute value expected after `(`", peek().span, 'e.g. `trust-zone DMZ "DMZ" (public)`');
+      if (at("rparen")) next();
+      else err("`)` expected to close the attribute", peek().span, 'e.g. `trust-zone DMZ "DMZ" (public)`');
+    }
     if (at("lbrace")) {
       next();
       parseElementBody(el);
@@ -92791,6 +92970,12 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
       else bad(v ?? key, "`on` or `off`");
       break;
     }
+    case "compact": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "on" || v.text === "off")) diag.compact = v.text === "on";
+      else bad(v ?? key, "`on` or `off`");
+      break;
+    }
     case "disposition": {
       const v = one();
       const OK = /* @__PURE__ */ new Set(["wide", "tall", "slide", "page"]);
@@ -92828,6 +93013,12 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
       else bad(v ?? key, "`light` or `dark`");
       break;
     }
+    case "lang": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "en" || v.text === "fr")) diag.lang = v.text;
+      else bad(v ?? key, "`en` or `fr` (localizes rendered labels; keywords stay English)");
+      break;
+    }
     case "background": {
       const v = one();
       if (v?.kind === "color") diag.background = v.text;
@@ -92860,25 +93051,25 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
       break;
     }
     default:
-      diags.push({ code: "E0104", severity: "error", message: `unknown style property: \`${k}\``, span: key.span, help: "properties: theme, background, disposition, legend, flow-text, crossing-hops, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font" });
+      diags.push({ code: "E0104", severity: "error", message: `unknown style property: \`${k}\``, span: key.span, help: "properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, compact, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font" });
   }
 }
 
 // src/validate.ts
 function validate(model) {
   const diags = [];
-  const profile = model.type ? profiles[model.type] : void 0;
-  if (model.type && !profile) {
+  const view = model.type ? views[model.type] : void 0;
+  if (model.type && !view) {
     diags.push({
       code: "E0200",
       severity: "error",
       message: `unknown diagram type \`${model.type}\``,
       span: model.typeSpan,
-      help: `available types: ${Object.keys(profiles).join(", ")} (application and infrastructure land in phase 3)`
+      help: `available types: ${Object.keys(views).join(", ")} (application and infrastructure land in phase 3)`
     });
     return diags;
   }
-  if (!profile) return diags;
+  if (!view) return diags;
   const all = [];
   (function walk(els) {
     for (const e of els) {
@@ -92901,14 +93092,14 @@ function validate(model) {
     } else seen.set(e.id, e);
   }
   for (const e of all) {
-    if (!profile.kinds.includes(e.kind)) {
+    if (!view.kinds.includes(e.kind)) {
       diags.push({
         code: "E0201",
         severity: "error",
         message: `unknown element kind \`${e.kind}\``,
         span: e.kindSpan,
-        note: `the \`${profile.name}\` profile defines: ${profile.kinds.join(", ")}`,
-        help: nearest(e.kind, profile.kinds) ? `did you mean \`${nearest(e.kind, profile.kinds)}\`?` : void 0
+        note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
+        help: nearest(e.kind, view.kinds) ? `did you mean \`${nearest(e.kind, view.kinds)}\`?` : void 0
       });
     }
   }
@@ -92923,7 +93114,7 @@ function validate(model) {
       });
     }
   }
-  for (const rule of profile.nesting) {
+  for (const rule of view.nesting) {
     for (const e of all) {
       if (e.kind !== rule.child) continue;
       const pk = e.parent?.kind;
@@ -92951,43 +93142,107 @@ function validate(model) {
         });
       }
     }
-    if (profile.flowTechRecommended && !f.tech?.protocol) {
+    if (view.flowTechRecommended && !f.tech?.protocol) {
       const isActor = (id) => {
         const k = model.index.get(id)?.kind;
         return k === "actor" || k === "actor-group";
       };
       if (!isActor(f.from) && !isActor(f.to)) {
         diags.push({
-          code: profile.flowTechRecommended.code,
+          code: view.flowTechRecommended.code,
           severity: "warning",
-          message: profile.flowTechRecommended.message,
+          message: view.flowTechRecommended.message,
           span: f.span,
-          note: `completeness check of the \`${profile.name}\` profile (actor flows are exempt)`,
-          help: profile.flowTechRecommended.help
+          note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
+          help: view.flowTechRecommended.help
         });
       }
     }
-    if (profile.flowTechRequired && !f.tech?.protocol) {
+    if (view.flowTechRequired && !f.tech?.protocol) {
       diags.push({
-        code: profile.flowTechRequired.code,
+        code: view.flowTechRequired.code,
         severity: "error",
-        message: profile.flowTechRequired.message,
+        message: view.flowTechRequired.message,
         span: f.span,
-        note: `the \`${profile.name}\` profile requires the protocol on every flow`,
-        help: profile.flowTechRequired.help,
+        note: `the \`${view.name}\` view requires the protocol on every flow`,
+        help: view.flowTechRequired.help,
         fix: { insert: " (HTTPS/443)", atEndOfLine: true }
       });
     }
-    if (profile.flowLabelRequired && !f.label) {
+    if (view.flowLabelRequired && !f.label) {
       diags.push({
-        code: profile.flowLabelRequired.code,
+        code: view.flowLabelRequired.code,
         severity: "error",
-        message: profile.flowLabelRequired.message,
+        message: view.flowLabelRequired.message,
         span: f.span,
-        note: `the \`${profile.name}\` profile forbids unlabelled arrows`,
-        help: profile.flowLabelRequired.help,
+        note: `the \`${view.name}\` view forbids unlabelled arrows`,
+        help: view.flowLabelRequired.help,
         fix: { insert: ' : "\u2026"', atEndOfLine: true }
       });
+    }
+  }
+  if (view.attrSpec) {
+    const spec = view.attrSpec;
+    for (const e of all) {
+      if (e.kind !== spec.kind) continue;
+      if (!e.attr) {
+        diags.push({
+          code: spec.code,
+          severity: "error",
+          message: spec.message + ` (\`${e.id}\`)`,
+          span: e.idSpan,
+          help: spec.help
+        });
+      } else if (!spec.values.includes(e.attr.value)) {
+        diags.push({
+          code: spec.code,
+          severity: "error",
+          message: `invalid ${spec.kind} value \`${e.attr.value}\` (\`${e.id}\`)`,
+          span: e.attr.span,
+          note: `allowed: ${spec.values.join(", ")}`,
+          help: nearest(e.attr.value, spec.values) ? `did you mean \`${nearest(e.attr.value, spec.values)}\`?` : spec.help
+        });
+      }
+    }
+  }
+  if (view.boundaryLint || view.crossZoneTechRecommended) {
+    const zoneOf = (id) => {
+      for (let a = model.index.get(id)?.parent; a; a = a.parent) if (a.kind === "trust-zone") return a;
+      return void 0;
+    };
+    const levelOf = (id) => {
+      const z = zoneOf(id);
+      const v = z?.attr?.value;
+      return v && view.trustOrder?.[v] !== void 0 ? view.trustOrder[v] : -1;
+    };
+    for (const f of model.flows) {
+      if (!model.index.has(f.from) || !model.index.has(f.to)) continue;
+      const zf = zoneOf(f.from), zt = zoneOf(f.to);
+      const crossing = zf !== zt;
+      if (view.boundaryLint) {
+        const bl = view.boundaryLint;
+        const isNode = (id) => model.index.get(id)?.kind === bl.nodeKind;
+        if (levelOf(f.to) > levelOf(f.from) && !isNode(f.from) && !isNode(f.to)) {
+          diags.push({
+            code: bl.code,
+            severity: "warning",
+            message: bl.message,
+            span: f.span,
+            note: `flow enters a more-trusted zone without passing a \`${bl.nodeKind}\``,
+            help: bl.help
+          });
+        }
+      }
+      if (view.crossZoneTechRecommended && crossing && !f.tech?.protocol) {
+        diags.push({
+          code: view.crossZoneTechRecommended.code,
+          severity: "warning",
+          message: view.crossZoneTechRecommended.message,
+          span: f.span,
+          note: "inter-zone flow \u2014 state how the traffic is protected",
+          help: view.crossZoneTechRecommended.help
+        });
+      }
     }
   }
   const boIds = new Map(model.businessObjects.map((b) => [b.id, b]));
@@ -93023,11 +93278,11 @@ function validate(model) {
         severity: "warning",
         message: `business object \`${b.id}\` is never carried by any flow`,
         span: b.idSpan,
-        note: `completeness check of the \`${profile.name}\` profile`
+        note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  for (const mc of profile.minCounts) {
+  for (const mc of view.minCounts) {
     const n = all.filter((e) => e.kind === mc.kind).length;
     if (n < mc.min) {
       diags.push({
@@ -93035,11 +93290,11 @@ function validate(model) {
         severity: "warning",
         message: mc.message,
         span: model.typeSpan ?? { line: 1, col: 1, len: 7 },
-        note: `completeness check of the \`${profile.name}\` profile`
+        note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  if (profile.isolatedWarn) {
+  if (view.isolatedWarn) {
     const touched = /* @__PURE__ */ new Set();
     const touch = (id) => {
       const el = model.index.get(id);
@@ -93055,13 +93310,13 @@ function validate(model) {
       touch(f.to);
     }
     for (const e of all) {
-      if (profile.isolatedWarn.kinds.includes(e.kind) && !touched.has(e.id)) {
+      if (view.isolatedWarn.kinds.includes(e.kind) && !touched.has(e.id)) {
         diags.push({
-          code: profile.isolatedWarn.code,
+          code: view.isolatedWarn.code,
           severity: "warning",
-          message: profile.isolatedWarn.message + ` (\`${e.id}\`)`,
+          message: view.isolatedWarn.message + ` (\`${e.id}\`)`,
           span: e.idSpan,
-          note: `completeness check of the \`${profile.name}\` profile`
+          note: `completeness check of the \`${view.name}\` view`
         });
       }
     }
@@ -93161,17 +93416,17 @@ var LaneAlloc = class {
     return this.lanes.length - 1;
   }
 };
-async function foldedLayout(model, profile, elk) {
+async function foldedLayout(model, view, elk) {
   const roots = model.elements;
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
   const numbered = model.style.flowText === "numbered";
   const chipsOf = (f) => numbered ? [] : (f.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
   const numLabel = (f) => ({ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 });
-  const part = (e) => profile.partitions[e.kind] ?? 1;
+  const part = (e) => view.partitions[e.kind] ?? 1;
   const sources = roots.filter((e) => part(e) === 0);
   const middles = roots.filter((e) => part(e) === 1);
   const sinks = roots.filter((e) => part(e) === 2);
-  if (profile.partitionByOrder) return null;
+  if (view.partitionByOrder) return null;
   const middleGroups = middles.filter((m) => m.children.length > 0);
   if (middleGroups.length < 2) return null;
   const topOf = /* @__PURE__ */ new Map();
@@ -93438,16 +93693,18 @@ async function foldedLayout(model, profile, elk) {
 var FS_EDGE2 = 10.5;
 var FS_NODE2 = 11.5;
 var FS_CONT2 = 12;
-async function layout(model, profile) {
+async function layout(model, view) {
   const elk = await getElk();
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
   const numbered = model.style.flowText === "numbered";
+  const compact = model.style.compact;
+  const COMPACT_WRAP = 10;
   function toElkNode(e) {
     if (e.children.length) {
       const nLines = (e.label ?? e.id).split("\n").length;
       return {
         id: e.id,
-        layoutOptions: { "elk.padding": `[top=${17 + nLines * 13},left=12,bottom=12,right=12]` },
+        layoutOptions: { "elk.padding": `[top=${(compact ? 13 : 15) + nLines * 13},left=${compact ? 8 : 10},bottom=${compact ? 8 : 10},right=${compact ? 8 : 10}]` },
         labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT2) }],
         children: e.children.map(toElkNode)
       };
@@ -93456,23 +93713,38 @@ async function layout(model, profile) {
     const isActor = e.kind === "actor";
     return {
       id: e.id,
-      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE2 - 1.5).width + 8) : Math.max(140, m.width + 16),
-      height: isActor ? 56 + ((e.label ?? e.id).split("\n").length - 1) * 11 : Math.max(46, m.height + 18)
+      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE2 - 1.5).width + 8) : Math.max(compact ? 100 : 112, m.width + (compact ? 12 : 14)),
+      height: isActor ? 56 + ((e.label ?? e.id).split("\n").length - 1) * 11 : Math.max(compact ? 38 : 40, m.height + (compact ? 13 : 15))
     };
   }
   const disp = model.style.disposition;
   const TARGETS = { slide: 16 / 9, page: 0.71 };
   const target = TARGETS[disp];
+  const ingressExternal = /* @__PURE__ */ new Set();
+  if (view.partitionByOrder) {
+    for (const e of model.elements) {
+      if (e.kind !== "external") continue;
+      const ids = /* @__PURE__ */ new Set();
+      (function collect(x) {
+        ids.add(x.id);
+        x.children.forEach(collect);
+      })(e);
+      const feedsIn = model.flows.some((f) => ids.has(f.from) && !ids.has(f.to));
+      const receives = model.flows.some((f) => ids.has(f.to) && !ids.has(f.from));
+      if (feedsIn && !receives) ingressExternal.add(e.id);
+    }
+  }
+  const INGRESS_PART = -1, EGRESS_PART = 900;
   const makeGraph = (direction, opts) => ({
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": direction,
       ...opts?.tight ? {
-        "elk.layered.spacing.nodeNodeBetweenLayers": "30",
-        "elk.spacing.nodeNode": "13",
-        "elk.spacing.edgeEdge": "9",
-        "elk.spacing.edgeNode": "10"
+        "elk.layered.spacing.nodeNodeBetweenLayers": "14",
+        "elk.spacing.nodeNode": "10",
+        "elk.spacing.edgeEdge": "8",
+        "elk.spacing.edgeNode": "9"
       } : {},
       ...opts?.minLayers ? { "elk.layered.layering.strategy": "LONGEST_PATH" } : {},
       "elk.hierarchyHandling": "INCLUDE_CHILDREN",
@@ -93483,14 +93755,14 @@ async function layout(model, profile) {
       "elk.layered.feedbackEdges": "true",
       "elk.layered.thoroughness": "30",
       "elk.separateConnectedComponents": "false",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "44",
-      "elk.spacing.nodeNode": "16",
-      "elk.spacing.edgeEdge": "11",
-      "elk.spacing.edgeNode": "12",
-      "elk.spacing.edgeLabel": "3",
+      "elk.layered.spacing.nodeNodeBetweenLayers": compact ? "10" : "16",
+      "elk.spacing.nodeNode": compact ? "8" : "11",
+      "elk.spacing.edgeEdge": compact ? "7" : "9",
+      "elk.spacing.edgeNode": compact ? "8" : "10",
+      "elk.spacing.edgeLabel": "2",
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
-      "elk.padding": "[top=30,left=12,bottom=12,right=12]",
+      "elk.padding": "[top=22,left=10,bottom=10,right=10]",
       // Numbered mode carries tiny number badges (not full labels) on the
       // edges, so there's room to spread blocks apart and let ELK find
       // shorter, more followable routes: more node/edge spacing + thoroughness.
@@ -93505,7 +93777,7 @@ async function layout(model, profile) {
     },
     children: model.elements.map((e, idx) => {
       const n = toElkNode(e);
-      const p = profile.partitionByOrder ? profile.partitions[e.kind] !== void 0 ? 90 + profile.partitions[e.kind] : idx : profile.partitions[e.kind] ?? 1;
+      const p = view.partitionByOrder ? e.kind === "actor" || e.kind === "actor-group" ? INGRESS_PART : e.kind === "external" ? ingressExternal.has(e.id) ? INGRESS_PART : EGRESS_PART : view.partitions[e.kind] !== void 0 ? 90 + view.partitions[e.kind] : idx : view.partitions[e.kind] ?? 1;
       n.layoutOptions = { ...n.layoutOptions, "elk.partitioning.partition": String(p) };
       return n;
     }),
@@ -93518,7 +93790,8 @@ async function layout(model, profile) {
           labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 }]
         };
       }
-      const text = f.label && opts?.labelWrap ? wrapText(f.label, opts.labelWrap) : f.label;
+      const wrap = opts?.labelWrap ?? (compact ? COMPACT_WRAP : void 0);
+      const text = f.label && wrap ? wrapText(f.label, wrap) : f.label;
       const chips = (f.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
       const tech = techText(f.tech);
       return {
@@ -93582,13 +93855,10 @@ async function layout(model, profile) {
   if (target) {
     const specs = disp === "slide" ? [
       makeGraph("RIGHT"),
-      makeGraph("DOWN"),
       makeGraph("RIGHT", { labelWrap: 16 }),
       makeGraph("RIGHT", { labelWrap: 14, tight: true }),
-      makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true }),
-      makeGraph("DOWN", { labelWrap: 16 }),
-      makeGraph("DOWN", { labelWrap: 20, minLayers: true })
-    ] : [makeGraph("RIGHT"), makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
+      makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true })
+    ] : [makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
     const candidates = await Promise.all(specs.map((g) => elk.layout(g)));
     const wantLandscape = disp === "slide";
     const oriented = candidates.filter((r) => wantLandscape ? r.width >= r.height : r.height >= r.width);
@@ -93597,8 +93867,8 @@ async function layout(model, profile) {
     const fit = (r) => -Math.min(frame.w / r.width, frame.h / r.height);
     res = pool.reduce((a, b) => fit(a) <= fit(b) ? a : b);
     if (disp === "slide") {
-      const fold = await foldedLayout(model, profile, elk);
-      if (fold && fit(fold) < fit(res)) {
+      const fold = await foldedLayout(model, view, elk);
+      if (fold && fit(res) >= fit(fold) * 1.1) {
         fold.layoutMs = Date.now() - t0;
         return fold;
       }
@@ -93615,26 +93885,35 @@ var FS_EDGE3 = 10.5;
 var FS_NODE3 = 11.5;
 var FS_CONT3 = 12;
 var HOP_R = 5;
+var SEC_LEVEL_FR = { public: "public", internal: "interne", restricted: "restreint", secret: "secret" };
 var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 var dashArray = (style) => style === "dashed" ? "5 3" : style === "dotted" ? "2 2.5" : void 0;
 var inter = (a, b) => !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
-function render(model, profile, scene) {
+function render(model, view, scene) {
   const ds = model.style;
   const pal = palettes[ds.theme] ?? lightPalette;
-  const kindDefaults = ds.theme === "dark" ? profile.defaultsDark : profile.defaults;
+  const kindDefaults = ds.theme === "dark" ? view.defaultsDark : view.defaults;
   const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : pal.edge;
   const flowById = new Map(model.flows.map((f) => [f.id, f]));
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
   const numbered = ds.flowText === "numbered";
+  const t = UI[ds.lang] ?? UI.en;
+  const legendNames = ds.lang === "fr" ? view.legendNamesFr : view.legendNames;
+  const legendFlowLabel = ds.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
   const elStyle = /* @__PURE__ */ new Map();
+  const elAttr = /* @__PURE__ */ new Map();
   (function walk(els) {
     for (const e of els) {
       elStyle.set(e.id, e.style);
+      elAttr.set(e.id, e.attr?.value);
       walk(e.children);
     }
   })(model.elements);
+  const levelDefaults = ds.theme === "dark" ? view.levelDefaultsDark : view.levelDefaults;
   const resolve = (kind, id) => {
-    const a = kindDefaults[kind] ?? {};
+    let a = kindDefaults[kind] ?? {};
+    const lvl = elAttr.get(id);
+    if (kind === "trust-zone" && lvl && levelDefaults?.[lvl]) a = levelDefaults[lvl];
     const b = ds.kind[kind] ?? {};
     const c = elStyle.get(id) ?? {};
     return {
@@ -93718,6 +93997,12 @@ function render(model, profile, scene) {
       out += `<text x="${n.x + 10}" y="${n.y + 18 + i * 13}" font-size="${FS_CONT3}" font-weight="bold" fill="${s.text ?? pal.containerLabel}">${esc(line)}</text>
 `;
     });
+    const lvl = n.kind === "trust-zone" ? elAttr.get(n.id) : void 0;
+    if (lvl) {
+      const word = (ds.lang === "fr" ? SEC_LEVEL_FR[lvl] : lvl) ?? lvl;
+      out += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="9.5" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? pal.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
+`;
+    }
   }
   for (const n of scene.nodes.filter((n2) => !n2.container)) {
     const s = resolve(n.kind, n.id);
@@ -93819,7 +94104,7 @@ function render(model, profile, scene) {
   };
   const contentX = 150;
   if (numbered && model.flows.length) {
-    bandStart(profile.bandTitles.flows);
+    bandStart(t.flows);
     const BADGE = 34;
     const GUT = 28;
     const LH = 13.5;
@@ -93867,7 +94152,7 @@ function render(model, profile, scene) {
     by = Math.max(...colY) + 6;
   }
   if (model.businessObjects.length) {
-    bandStart(profile.bandTitles.objects);
+    bandStart(t.objects);
     for (const b of model.businessObjects) {
       const c = chip(contentX, by + 2, b.name);
       bands += c.svg;
@@ -93878,15 +94163,23 @@ function render(model, profile, scene) {
     by += 6;
   }
   if (ds.legend === "auto") {
-    bandStart(profile.bandTitles.legend);
+    bandStart(t.legend);
     let lx = contentX;
-    const kindsUsed = [...new Set(scene.nodes.map((n) => n.kind))].filter((k) => profile.legendNames[k] && k !== "actor");
+    const kindsUsed = [...new Set(scene.nodes.map((n) => n.kind))].filter((k) => legendNames[k] && (k !== "actor" || view.actorLegend));
     for (const k of kindsUsed) {
       const s = resolve(k, "");
-      const da = dashArray(s.stroke?.style);
-      bands += `<rect x="${lx}" y="${by + 2}" width="26" height="14" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+      if (k === "actor") {
+        const ac = s.stroke?.color ?? pal.actorStroke;
+        bands += `<circle cx="${lx + 13}" cy="${by + 5}" r="3" fill="none" stroke="${ac}" stroke-width="1.2"/>
 `;
-      const name = profile.legendNames[k];
+        bands += `<path d="M ${lx + 8} ${by + 15} q 5 -7 10 0" fill="none" stroke="${ac}" stroke-width="1.2"/>
+`;
+      } else {
+        const da = dashArray(s.stroke?.style);
+        bands += `<rect x="${lx}" y="${by + 2}" width="26" height="14" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+`;
+      }
+      const name = legendNames[k];
       bands += `<text x="${lx + 32}" y="${by + 13}" font-size="10" fill="${pal.bandText}">${esc(name)}</text>
 `;
       lx += 40 + Math.ceil(name.length * 10 * 0.52) + 24;
@@ -93898,12 +94191,12 @@ function render(model, profile, scene) {
     by += 24;
     bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + 26}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#arr)"/>
 `;
-    bands += `<text x="${contentX + 32}" y="${by + 12}" font-size="10" fill="${pal.bandText}">${esc(numbered ? profile.legendFlowLabel + " \u2014 numbered (text: FLOWS band)" : profile.legendFlowLabel)}</text>
+    bands += `<text x="${contentX + 32}" y="${by + 12}" font-size="10" fill="${pal.bandText}">${esc(numbered ? legendFlowLabel + " \u2014 " + t.numberedSuffix : legendFlowLabel)}</text>
 `;
     if (model.businessObjects.length) {
-      const c = chip(contentX + 330, by + 1, "Business object");
+      const c = chip(contentX + 330, by + 1, t.businessObject);
       bands += c.svg;
-      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + 12}" font-size="10" fill="${pal.bandText}">carried by the flow</text>
+      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + 12}" font-size="10" fill="${pal.bandText}">${esc(t.carriedByFlow)}</text>
 `;
     }
     by += 24;
@@ -93928,12 +94221,12 @@ async function compile(source) {
   const { model, diags } = parse(source);
   diags.push(...validate(model));
   const errors = diags.filter((d) => d.severity === "error");
-  if (errors.length || !model.type || !profiles[model.type]) {
+  if (errors.length || !model.type || !views[model.type]) {
     return { svg: null, diagnostics: diags, metrics: null };
   }
-  const profile = profiles[model.type];
-  const scene = await layout(model, profile);
-  const { svg, overlapsAfter } = render(model, profile, scene);
+  const view = views[model.type];
+  const scene = await layout(model, view);
+  const { svg, overlapsAfter } = render(model, view, scene);
   return {
     svg,
     diagnostics: diags,

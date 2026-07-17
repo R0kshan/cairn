@@ -1,82 +1,82 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1444 432" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1124 403" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#444444"/></marker></defs>
-<rect width="1444" height="432" fill="white"/>
-<rect x="304" y="92" width="164" height="164" rx="6" fill="#fdecea" stroke="#d9534f" stroke-width="1.4"/>
-<text x="314" y="110" font-size="12" font-weight="bold" fill="#333">DMZ</text>
-<text x="459" y="250" font-size="9.5" text-anchor="end" font-weight="bold" fill="#d9534f" letter-spacing="0.5">PUBLIC</text>
-<rect x="678" y="154" width="164" height="164" rx="6" fill="#fff4e5" stroke="#e0a458" stroke-width="1.4"/>
-<text x="688" y="172" font-size="12" font-weight="bold" fill="#333">Zone applicative</text>
-<text x="833" y="312" font-size="9.5" text-anchor="end" font-weight="bold" fill="#e0a458" letter-spacing="0.5">INTERNE</text>
-<rect x="1023" y="171" width="409" height="114.5" rx="6" fill="#e8f1f8" stroke="#5b8db8" stroke-width="1.4"/>
-<text x="1033" y="189" font-size="12" font-weight="bold" fill="#333">Zone de données</text>
-<text x="1423" y="279.5" font-size="9.5" text-anchor="end" font-weight="bold" fill="#5b8db8" letter-spacing="0.5">RESTREINT</text>
-<rect x="316" y="193" width="140" height="51" rx="4" fill="#fff7e6" stroke="#c46b2a" stroke-width="1.6"/>
-<text x="386" y="215.75" font-size="11.5" text-anchor="middle" fill="#222233">WAF /</text>
-<text x="386" y="229.25" font-size="11.5" text-anchor="middle" fill="#222233">proxy inverse</text>
-<rect x="316" y="122" width="140" height="51" rx="4" fill="#fff7e6" stroke="#c46b2a" stroke-width="1.6"/>
-<text x="386" y="144.75" font-size="11.5" text-anchor="middle" fill="#222233">Passerelle</text>
-<text x="386" y="158.25" font-size="11.5" text-anchor="middle" fill="#222233">SFTP</text>
-<rect x="690" y="184" width="140" height="51" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.3"/>
-<text x="760" y="206.75" font-size="11.5" text-anchor="middle" fill="#222233">Application</text>
-<text x="760" y="220.25" font-size="11.5" text-anchor="middle" fill="#222233">de facturation</text>
-<rect x="690" y="255" width="140" height="51" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.3"/>
-<text x="760" y="277.75" font-size="11.5" text-anchor="middle" fill="#222233">Application</text>
-<text x="760" y="291.25" font-size="11.5" text-anchor="middle" fill="#222233">CRM</text>
-<rect x="1035" y="201" width="140" height="51" rx="4" fill="#fff7e6" stroke="#c46b2a" stroke-width="1.6"/>
-<text x="1105" y="223.75" font-size="11.5" text-anchor="middle" fill="#222233">Pare-feu base</text>
-<text x="1105" y="237.25" font-size="11.5" text-anchor="middle" fill="#222233">de données</text>
-<rect x="1280" y="201" width="140" height="51" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.3"/>
-<text x="1350" y="223.75" font-size="11.5" text-anchor="middle" fill="#222233">Base clients &amp;</text>
-<text x="1350" y="237.25" font-size="11.5" text-anchor="middle" fill="#222233">facturation</text>
-<rect x="12" y="193" width="140" height="51" rx="4" fill="#fdecea" stroke="#d9534f" stroke-width="1.3" stroke-dasharray="5 3"/>
-<text x="82" y="215.75" font-size="11.5" text-anchor="middle" fill="#222233">Utilisateurs</text>
-<text x="82" y="229.25" font-size="11.5" text-anchor="middle" fill="#222233">finaux</text>
-<rect x="867" y="64" width="140" height="51" rx="4" fill="#fdecea" stroke="#d9534f" stroke-width="1.3" stroke-dasharray="5 3"/>
-<text x="937" y="86.75" font-size="11.5" text-anchor="middle" fill="#222233">Plateforme EDI</text>
-<text x="937" y="100.25" font-size="11.5" text-anchor="middle" fill="#222233">partenaire</text>
-<path d="M 152 219 L 299 218.5 L 316 218.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="225.5" y="234.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accès web</text>
-<text x="225.5" y="248" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<path d="M 456 210 L 673 209.5 L 690 209.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="573" y="174.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Trafic facturation</text>
-<text x="573" y="188" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">filtré</text>
-<text x="573" y="201.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
-<path d="M 456 227 L 663 227 L 663 281 L 673 280.5 L 690 280.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="596.5" y="242.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Trafic CRM</text>
-<text x="596.5" y="256" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">filtré</text>
-<text x="596.5" y="269.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
-<path d="M 830 218 L 1035 218" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="932.5" y="182.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accès données</text>
-<text x="932.5" y="196" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">facturation</text>
-<text x="932.5" y="209.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<path d="M 830 280.5 L 847 281 L 857 281 L 857 235 L 1035 235" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="932.5" y="250.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accès données</text>
-<text x="932.5" y="264" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">clients</text>
-<text x="932.5" y="277.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<path d="M 1175 226.5 L 1280 226.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1227.5" y="241" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Requêtes</text>
-<text x="1227.5" y="254.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">contrôlées</text>
-<text x="1227.5" y="268" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<path d="M 830 201 L 857 201 L 857 30 L 289 30 L 289 148 L 299 147.5 L 316 147.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="702.5" y="45.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Dépôt des</text>
-<text x="702.5" y="59" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">factures</text>
-<text x="702.5" y="72.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<path d="M 456 147.5 L 473 148 L 483 148 L 483 90 L 852 90 A 5 5 0 0 1 862 90 L 867 90" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="549.5" y="105.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Transfert</text>
-<text x="549.5" y="119" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">partenaire</text>
-<text x="549.5" y="132.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4)</text>
-<line x1="20" y1="340" x2="1424" y2="340" stroke="#ddd" stroke-width="1"/>
-<text x="20" y="362" font-size="11" font-weight="bold" fill="#555">LÉGENDE</text>
-<rect x="150" y="352" width="26" height="14" rx="3" fill="#f5f5f4" stroke="#8a8a85"/>
-<text x="182" y="363" font-size="10" fill="#444">Zone de confiance (sensibilité)</text>
-<rect x="376" y="352" width="26" height="14" rx="3" fill="#fff7e6" stroke="#c46b2a"/>
-<text x="408" y="363" font-size="10" fill="#444">Nœud de filtrage / sécurité</text>
-<rect x="581" y="352" width="26" height="14" rx="3" fill="#ffffff" stroke="#55606b"/>
-<text x="613" y="363" font-size="10" fill="#444">Actif sensible</text>
-<rect x="718" y="352" width="26" height="14" rx="3" fill="#fdecea" stroke="#d9534f" stroke-dasharray="5 3"/>
-<text x="750" y="363" font-size="10" fill="#444">Externe non maîtrisé</text>
-<line x1="150" y1="382" x2="176" y2="382" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="386" font-size="10" fill="#444">Flux de sécurité — les flux inter-zones doivent être filtrés et chiffrés</text>
-<text x="150" y="410" font-size="10" fill="#444" font-style="italic">W0560 signale tout flux entrant dans une zone plus sûre sans passer par un nœud de sécurité</text>
+<rect width="1124" height="403" fill="white"/>
+<rect x="218" y="77" width="132" height="154" rx="6" fill="#fdecea" stroke="#d9534f" stroke-width="1.4"/>
+<text x="228" y="95" font-size="12" font-weight="bold" fill="#333">DMZ</text>
+<text x="341" y="225" font-size="9.5" text-anchor="end" font-weight="bold" fill="#d9534f" letter-spacing="0.5">PUBLIC</text>
+<rect x="504" y="137" width="132" height="154" rx="6" fill="#fff4e5" stroke="#e0a458" stroke-width="1.4"/>
+<text x="514" y="155" font-size="12" font-weight="bold" fill="#333">Zone applicative</text>
+<text x="627" y="285" font-size="9.5" text-anchor="end" font-weight="bold" fill="#e0a458" letter-spacing="0.5">INTERNE</text>
+<rect x="765" y="153" width="349" height="109" rx="6" fill="#e8f1f8" stroke="#5b8db8" stroke-width="1.4"/>
+<text x="775" y="171" font-size="12" font-weight="bold" fill="#333">Zone de données</text>
+<text x="1105" y="256" font-size="9.5" text-anchor="end" font-weight="bold" fill="#5b8db8" letter-spacing="0.5">RESTREINT</text>
+<rect x="228" y="173" width="112" height="48" rx="4" fill="#fff7e6" stroke="#c46b2a" stroke-width="1.6"/>
+<text x="284" y="194.25" font-size="11.5" text-anchor="middle" fill="#222233">WAF /</text>
+<text x="284" y="207.75" font-size="11.5" text-anchor="middle" fill="#222233">proxy inverse</text>
+<rect x="228" y="105" width="112" height="48" rx="4" fill="#fff7e6" stroke="#c46b2a" stroke-width="1.6"/>
+<text x="284" y="126.25" font-size="11.5" text-anchor="middle" fill="#222233">Passerelle</text>
+<text x="284" y="139.75" font-size="11.5" text-anchor="middle" fill="#222233">SFTP</text>
+<rect x="514" y="165" width="112" height="48" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.3"/>
+<text x="570" y="186.25" font-size="11.5" text-anchor="middle" fill="#222233">Application</text>
+<text x="570" y="199.75" font-size="11.5" text-anchor="middle" fill="#222233">de facturation</text>
+<rect x="514" y="233" width="112" height="48" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.3"/>
+<text x="570" y="254.25" font-size="11.5" text-anchor="middle" fill="#222233">Application</text>
+<text x="570" y="267.75" font-size="11.5" text-anchor="middle" fill="#222233">CRM</text>
+<rect x="775" y="181" width="112" height="48" rx="4" fill="#fff7e6" stroke="#c46b2a" stroke-width="1.6"/>
+<text x="831" y="202.25" font-size="11.5" text-anchor="middle" fill="#222233">Pare-feu base</text>
+<text x="831" y="215.75" font-size="11.5" text-anchor="middle" fill="#222233">de données</text>
+<rect x="992" y="181" width="112" height="48" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.3"/>
+<text x="1048" y="202.25" font-size="11.5" text-anchor="middle" fill="#222233">Base clients &amp;</text>
+<text x="1048" y="215.75" font-size="11.5" text-anchor="middle" fill="#222233">facturation</text>
+<rect x="10" y="173" width="112" height="48" rx="4" fill="#fdecea" stroke="#d9534f" stroke-width="1.3" stroke-dasharray="5 3"/>
+<text x="66" y="194.25" font-size="11.5" text-anchor="middle" fill="#222233">Utilisateurs</text>
+<text x="66" y="207.75" font-size="11.5" text-anchor="middle" fill="#222233">finaux</text>
+<rect x="661" y="55" width="112" height="48" rx="4" fill="#fdecea" stroke="#d9534f" stroke-width="1.3" stroke-dasharray="5 3"/>
+<text x="717" y="76.25" font-size="11.5" text-anchor="middle" fill="#222233">Plateforme EDI</text>
+<text x="717" y="89.75" font-size="11.5" text-anchor="middle" fill="#222233">partenaire</text>
+<path d="M 122 197 L 228 197" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="167.5" y="211.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accès web</text>
+<text x="167.5" y="225" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<path d="M 340 189 L 514 189" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="427" y="154.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Trafic facturation</text>
+<text x="427" y="168" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">filtré</text>
+<text x="427" y="181.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
+<path d="M 340 205 L 489 205 L 489 257 L 514 257" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="446.5" y="219.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Trafic CRM</text>
+<text x="446.5" y="233" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">filtré</text>
+<text x="446.5" y="246.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
+<path d="M 626 197 L 775 197" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="702.5" y="162.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accès données</text>
+<text x="702.5" y="176" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">facturation</text>
+<text x="702.5" y="189.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<path d="M 626 257 L 651 257 L 651 213 L 775 213" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="702.5" y="227.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accès données</text>
+<text x="702.5" y="241" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">clients</text>
+<text x="702.5" y="254.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<path d="M 887 205 L 992 205" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="939.5" y="219.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Requêtes</text>
+<text x="939.5" y="233" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">contrôlées</text>
+<text x="939.5" y="246.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<path d="M 626 181 L 651 181 L 651 22 L 203 22 L 203 129 L 228 129" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="528.5" y="36.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Dépôt des</text>
+<text x="528.5" y="50" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">factures</text>
+<text x="528.5" y="63.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<path d="M 340 129 L 365 129 L 365 79 L 646 79 A 5 5 0 0 1 656 79 L 661 79" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="407.5" y="93.5" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Transfert</text>
+<text x="407.5" y="107" font-size="10.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">partenaire</text>
+<text x="407.5" y="120.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4)</text>
+<line x1="20" y1="311" x2="1104" y2="311" stroke="#ddd" stroke-width="1"/>
+<text x="20" y="333" font-size="11" font-weight="bold" fill="#555">LÉGENDE</text>
+<rect x="150" y="323" width="26" height="14" rx="3" fill="#f5f5f4" stroke="#8a8a85"/>
+<text x="182" y="334" font-size="10" fill="#444">Zone de confiance (sensibilité)</text>
+<rect x="376" y="323" width="26" height="14" rx="3" fill="#fff7e6" stroke="#c46b2a"/>
+<text x="408" y="334" font-size="10" fill="#444">Nœud de filtrage / sécurité</text>
+<rect x="581" y="323" width="26" height="14" rx="3" fill="#ffffff" stroke="#55606b"/>
+<text x="613" y="334" font-size="10" fill="#444">Actif sensible</text>
+<rect x="718" y="323" width="26" height="14" rx="3" fill="#fdecea" stroke="#d9534f" stroke-dasharray="5 3"/>
+<text x="750" y="334" font-size="10" fill="#444">Externe non maîtrisé</text>
+<line x1="150" y1="353" x2="176" y2="353" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="357" font-size="10" fill="#444">Flux de sécurité — les flux inter-zones doivent être filtrés et chiffrés</text>
+<text x="150" y="381" font-size="10" fill="#444" font-style="italic">W0560 signale tout flux entrant dans une zone plus sûre sans passer par un nœud de sécurité</text>
 </svg>

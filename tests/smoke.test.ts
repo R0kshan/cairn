@@ -154,6 +154,21 @@ test('infrastructure models users as actor (person glyph + legend key), distinct
   assert.ok(!codes.includes('E0201'));
 });
 
+test('compact style yields a smaller canvas with zero overlaps', async () => {
+  for (const f of ['small.cairn', 'medium.cairn', 'application.cairn', 'infrastructure.cairn']) {
+    const base = load(f);
+    const normal = await build(base);
+    const compact = await build(base.replace('"\n', '"\nstyle { compact: on }\n'));
+    const aN = normal.scene.width * normal.scene.height;
+    const aC = compact.scene.width * compact.scene.height;
+    assert.ok(aC < aN, `${f}: compact (${compact.scene.width}x${compact.scene.height}) must be smaller than normal (${normal.scene.width}x${normal.scene.height})`);
+    assert.equal(compact.overlapsAfter, 0, `${f}: compact must keep zero label overlaps`);
+  }
+  // compact is off by default
+  const { model } = await build(load('small.cairn'));
+  assert.equal(model.style.compact, false);
+});
+
 // ---------- bands & rendering ----------
 
 test('legend + registry bands render, and legend: off removes the legend only', async () => {

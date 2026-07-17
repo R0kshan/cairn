@@ -56,6 +56,7 @@ B1   -> EXT1 : "Data sent" [BO1]
 #   flow-text: full            # full | numbered (numbered = FLUX table below)
 #   legend: auto               # auto | off
 #   crossing-hops: on
+#   compact: off               # on = denser layout (tighter spacing + wrapped flow labels)
 #   flow-label: on-line
 #   lang: en                   # en | fr (localizes rendered labels; keywords stay English)
 # }

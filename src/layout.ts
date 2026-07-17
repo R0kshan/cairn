@@ -17,13 +17,18 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const boName = new Map(model.businessObjects.map(b => [b.id, b.name]));
   const numbered = model.style.flowText === 'numbered';
+  // `compact` opts into a denser layout: tighter inter-layer spacing plus
+  // narrower-wrapped flow labels (traded for a little extra height), which
+  // shrinks the label-driven gaps between layers. Off by default.
+  const compact = model.style.compact;
+  const COMPACT_WRAP = 10; // chars/line for flow labels when compact
 
   function toElkNode(e: Element): any {
     if (e.children.length) {
       const nLines = (e.label ?? e.id).split('\n').length;
       return {
         id: e.id,
-        layoutOptions: { 'elk.padding': `[top=${17 + nLines * 13},left=12,bottom=12,right=12]` },
+        layoutOptions: { 'elk.padding': `[top=${(compact ? 13 : 15) + nLines * 13},left=${compact ? 8 : 10},bottom=${compact ? 8 : 10},right=${compact ? 8 : 10}]` },
         labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT) }],
         children: e.children.map(toElkNode),
       };
@@ -32,8 +37,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const isActor = e.kind === 'actor';
     return {
       id: e.id,
-      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE - 1.5).width + 8) : Math.max(140, m.width + 16),
-      height: isActor ? 56 + ((e.label ?? e.id).split('\n').length - 1) * 11 : Math.max(46, m.height + 18),
+      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE - 1.5).width + 8) : Math.max(compact ? 100 : 112, m.width + (compact ? 12 : 14)),
+      height: isActor ? 56 + ((e.label ?? e.id).split('\n').length - 1) * 11 : Math.max(compact ? 38 : 40, m.height + (compact ? 13 : 15)),
     };
   }
 
@@ -74,10 +79,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       'elk.algorithm': 'layered',
       'elk.direction': direction,
       ...(opts?.tight ? {
-        'elk.layered.spacing.nodeNodeBetweenLayers': '30',
-        'elk.spacing.nodeNode': '13',
-        'elk.spacing.edgeEdge': '9',
-        'elk.spacing.edgeNode': '10',
+        'elk.layered.spacing.nodeNodeBetweenLayers': '14',
+        'elk.spacing.nodeNode': '10',
+        'elk.spacing.edgeEdge': '8',
+        'elk.spacing.edgeNode': '9',
       } : {}),
       ...(opts?.minLayers ? { 'elk.layered.layering.strategy': 'LONGEST_PATH' } : {}),
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
@@ -88,14 +93,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       'elk.layered.feedbackEdges': 'true',
       'elk.layered.thoroughness': '30',
       'elk.separateConnectedComponents': 'false',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '44',
-      'elk.spacing.nodeNode': '16',
-      'elk.spacing.edgeEdge': '11',
-      'elk.spacing.edgeNode': '12',
-      'elk.spacing.edgeLabel': '3',
+      'elk.layered.spacing.nodeNodeBetweenLayers': compact ? '10' : '16',
+      'elk.spacing.nodeNode': compact ? '8' : '11',
+      'elk.spacing.edgeEdge': compact ? '7' : '9',
+      'elk.spacing.edgeNode': compact ? '8' : '10',
+      'elk.spacing.edgeLabel': '2',
       'elk.layered.edgeLabels.sideSelection': 'SMART_DOWN',
       'elk.edgeLabels.placement': 'CENTER',
-      'elk.padding': '[top=30,left=12,bottom=12,right=12]',
+      'elk.padding': '[top=22,left=10,bottom=10,right=10]',
       // Numbered mode carries tiny number badges (not full labels) on the
       // edges, so there's room to spread blocks apart and let ELK find
       // shorter, more followable routes: more node/edge spacing + thoroughness.
@@ -131,7 +136,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
           labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 }],
         };
       }
-      const text = f.label && opts?.labelWrap ? wrapText(f.label, opts.labelWrap) : f.label;
+      // compact wraps labels narrower (unless a candidate already sets a wrap),
+      // trading a bit of height for much less width in the inter-layer gaps.
+      const wrap = opts?.labelWrap ?? (compact ? COMPACT_WRAP : undefined);
+      const text = f.label && wrap ? wrapText(f.label, wrap) : f.label;
       const chips = (f.objects ?? []).map(o => boName.get(o.id) ?? o.id);
       const tech = techText(f.tech);
       return {
@@ -203,10 +211,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const fit = (r: { width: number; height: number }) => -Math.min(frame.w / r.width, frame.h / r.height);
     res = pool.reduce((a, b) => (fit(a) <= fit(b) ? a : b));
     // Slide: the folded composite layout (systems stacked as rows) usually
-    // beats any single global layering — compare on the same fitness.
+    // beats any single global layering. Prefer the fold's slide-shaped canvas
+    // unless the single-layer ribbon fits meaningfully better (>10%): the fold
+    // reads far better on a 16:9 slide than a long ribbon, so a marginal fit edge
+    // (which tighter spacing can create) must not flip a multi-system slide back
+    // into a ribbon.
     if (disp === 'slide') {
       const fold = await foldedLayout(model, view, elk);
-      if (fold && fit(fold) < fit(res)) {
+      if (fold && fit(res) >= fit(fold) * 1.10) {
         fold.layoutMs = Date.now() - t0;
         return fold;
       }
