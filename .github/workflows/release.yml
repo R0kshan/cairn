@@ -126,10 +126,10 @@ jobs:
       # Push the rendered manifest to the Scoop bucket repo (R0kshan/scoop-bucket).
       - name: Publish Scoop manifest
         env:
-          TAP_PUSH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+          TAP_PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          git clone "https://x-access-token:${TAP_PUSH_TOKEN}@github.com/R0kshan/scoop-bucket.git" bucket
+          git clone "https://x-access-token:${PUSH_TOKEN}@github.com/R0kshan/scoop-bucket.git" bucket
           mkdir -p bucket/bucket
           cp dist/cairn.json bucket/bucket/cairn.json
           cd bucket
