@@ -8,9 +8,11 @@ import { parse } from './parse.ts';
 import { validate } from './validate.ts';
 import { layout } from './layout.ts';
 import { render } from './render.ts';
-import { views, type Diagnostic } from './model.ts';
+import { views, themeNames, type Diagnostic } from './model.ts';
 
 setElkFactory(() => new (ELK as any)());
+
+export { themeNames };
 
 export interface CompileResult {
   svg: string | null;
@@ -18,8 +20,9 @@ export interface CompileResult {
   metrics: { width: number; height: number; layoutMs: number; overlaps: number } | null;
 }
 
-export async function compile(source: string): Promise<CompileResult> {
+export async function compile(source: string, opts?: { theme?: string }): Promise<CompileResult> {
   const { model, diags } = parse(source);
+  if (opts?.theme) model.style.theme = opts.theme;   // playground theme override (doesn't edit source)
   diags.push(...validate(model));
   const errors = diags.filter(d => d.severity === 'error');
   if (errors.length || !model.type || !views[model.type]) {

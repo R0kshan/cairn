@@ -1,135 +1,135 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1272 723" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="#444444"/></marker></defs>
-<rect width="1272" height="723" fill="white"/>
-<rect x="10" y="224" width="119" height="175" rx="6" fill="#eef4fb" stroke="#7a9cc4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="20" y="242" font-size="13" font-weight="bold" fill="#333">Managers</text>
-<rect x="878" y="309" width="149" height="150" rx="6" fill="#e8f1f8" stroke="#5b8db8" stroke-width="1.2"/>
-<text x="888" y="327" font-size="13" font-weight="bold" fill="#333">CRM</text>
-<rect x="374" y="126" width="348" height="193.5" rx="6" fill="#e8f1f8" stroke="#5b8db8" stroke-width="1.2"/>
-<text x="384" y="144" font-size="13" font-weight="bold" fill="#333">Billing</text>
-<rect x="825" y="22" width="354" height="119.5" rx="6" fill="#e8f1f8" stroke="#5b8db8" stroke-width="1.2"/>
-<text x="835" y="40" font-size="13" font-weight="bold" fill="#333">Accounting</text>
-<circle cx="82" cy="261" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
-<path d="M 71 283 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
-<text x="82" y="295" font-size="11" text-anchor="middle" fill="#223344">Accountant</text>
-<circle cx="69.5" cy="335" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
-<path d="M 58.5 357 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
-<text x="69.5" y="369" font-size="11" text-anchor="middle" fill="#223344">Sales</text>
-<text x="69.5" y="380" font-size="11" text-anchor="middle" fill="#223344">administration</text>
-<rect x="887" y="336" width="131" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="952.5" y="356.25" font-size="12.5" text-anchor="middle" fill="#222233">Customer-account</text>
-<text x="952.5" y="370.75" font-size="12.5" text-anchor="middle" fill="#222233">management</text>
-<rect x="898.5" y="403" width="108" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="952.5" y="423.25" font-size="12.5" text-anchor="middle" fill="#222233">Contract</text>
-<text x="952.5" y="437.75" font-size="12.5" text-anchor="middle" fill="#222233">management</text>
-<rect x="383" y="196.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="437" y="216.75" font-size="12.5" text-anchor="middle" fill="#222233">Billing</text>
-<text x="437" y="231.25" font-size="12.5" text-anchor="middle" fill="#222233">engine</text>
-<rect x="589" y="196.5" width="124" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="651" y="216.75" font-size="12.5" text-anchor="middle" fill="#222233">Invoice issuing</text>
-<text x="651" y="231.25" font-size="12.5" text-anchor="middle" fill="#222233">and sending</text>
-<rect x="383" y="263.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="437" y="283.75" font-size="12.5" text-anchor="middle" fill="#222233">Dunning and</text>
-<text x="437" y="298.25" font-size="12.5" text-anchor="middle" fill="#222233">collection</text>
-<rect x="1053" y="58.16666666666667" width="117" height="38" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="1111.5" y="81.16666666666667" font-size="12.5" text-anchor="middle" fill="#222233">General ledger</text>
-<rect x="834" y="60" width="108" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="888" y="80.25" font-size="12.5" text-anchor="middle" fill="#222233">Accounts</text>
-<text x="888" y="94.75" font-size="12.5" text-anchor="middle" fill="#222233">receivable</text>
-<path d="M 1154 343 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f3eef8" stroke="#8a6fae" stroke-width="1.3"/>
-<ellipse cx="1208" cy="343" rx="54" ry="7" fill="#f3eef8" stroke="#8a6fae" stroke-width="1.3"/>
-<text x="1208" y="359.75" font-size="12.5" text-anchor="middle" fill="#222233">Customer</text>
-<text x="1208" y="374.25" font-size="12.5" text-anchor="middle" fill="#222233">repository</text>
-<path d="M 154 195 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f3eef8" stroke="#8a6fae" stroke-width="1.3"/>
-<ellipse cx="208" cy="195" rx="54" ry="7" fill="#f3eef8" stroke="#8a6fae" stroke-width="1.3"/>
-<text x="208" y="211.75" font-size="12.5" text-anchor="middle" fill="#222233">Offer</text>
-<text x="208" y="226.25" font-size="12.5" text-anchor="middle" fill="#222233">catalog</text>
-<rect x="1003" y="254" width="108" height="47" rx="4" fill="#f0eef5" stroke="#9187b3" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1057" y="274.25" font-size="12.5" text-anchor="middle" fill="#222233">Partner EDI</text>
-<text x="1057" y="288.75" font-size="12.5" text-anchor="middle" fill="#222233">platform</text>
-<rect x="1003" y="196" width="158" height="47" rx="4" fill="#f0eef5" stroke="#9187b3" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1082" y="216.25" font-size="12.5" text-anchor="middle" fill="#222233">Electronic-invoicing</text>
-<text x="1082" y="230.75" font-size="12.5" text-anchor="middle" fill="#222233">portal (PPF)</text>
-<path d="M 120 357.5 L 134 358 L 229 358 L 229 427 L 873 426.5 L 898.5 426.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="294" y="442.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Enter and update</text>
-<text x="294" y="457" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">contracts</text>
-<rect x="264.5" y="465" width="59" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227" stroke-width="1"/>
-<text x="294" y="476" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Contract</text>
-<path d="M 1018 359.5 L 1032 360 L 1154 360" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1093" y="375.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Sync customer</text>
-<text x="1093" y="390" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">accounts</text>
-<text x="1093" y="404.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 1006.5 426.5 L 1032 427 L 1042 427 L 1042 469 L 359 469 L 359 228 L 369 227.83333333333334 L 383 227.83333333333334" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="931" y="484.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Contractual items</text>
-<text x="931" y="499" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">to bill</text>
-<text x="931" y="513.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<rect x="901.5" y="519" width="59" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227" stroke-width="1"/>
-<text x="931" y="530" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Contract</text>
-<path d="M 262 212 L 369 212.16666666666669 L 383 212.16666666666669" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="313.5" y="227.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Prices and</text>
-<text x="313.5" y="242" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">terms</text>
-<text x="313.5" y="256.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<path d="M 491 220 L 589 220" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="540" y="165.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Computed</text>
-<text x="540" y="180" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">invoices</text>
-<text x="540" y="194.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<rect x="513" y="200" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227" stroke-width="1"/>
-<text x="540" y="211" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Invoice</text>
-<path d="M 713 231.75 L 727 232 L 737 232 L 737 230 L 993 230 L 993 278 L 1003 278" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="928" y="245.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Submit paperless</text>
-<text x="928" y="260" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">invoices</text>
-<text x="928" y="274.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
-<rect x="901" y="280" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227" stroke-width="1"/>
-<text x="928" y="291" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Invoice</text>
-<path d="M 713 220 L 1003 220" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="798" y="165.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Regulatory</text>
-<text x="798" y="180" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">transmission</text>
-<text x="798" y="194.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
-<rect x="771" y="200" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227" stroke-width="1"/>
-<text x="798" y="211" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Invoice</text>
-<path d="M 713 208.25 L 727 208 L 737 208 L 737 84 L 820 83.5 L 834 83.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="775.5" y="99.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Sales</text>
-<text x="775.5" y="114" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">entries</text>
-<text x="775.5" y="128.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<path d="M 491 287 L 863 287 L 863 360 L 873 359.5 L 887 359.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="798" y="302.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Customer dunning</text>
-<text x="798" y="317" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">status</text>
-<text x="798" y="331.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 942 83.5 L 1053 83.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="997.5" y="99" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accounting</text>
-<text x="997.5" y="113.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">posting</text>
-<text x="997.5" y="128" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(batch, CSV)</text>
-<path d="M 120 269 L 144 269 L 144 49 L 1043 49.00000000000003 L 1043 70.83333333333334 L 1053 70.83333333333334" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="685" y="64.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Controls and</text>
-<text x="685" y="79" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">closings</text>
-<path d="M 120 287 L 354 287 A 5 5 0 0 1 364 287 L 383 287" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="189.5" y="263.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Steer</text>
-<text x="189.5" y="278" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">collection</text>
-<line x1="20" y1="557" x2="1252" y2="557" stroke="#ddd" stroke-width="1"/>
-<text x="20" y="579" font-size="11" font-weight="bold" fill="#555">BUSINESS OBJECTS</text>
-<rect x="150" y="569" width="54" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
-<text x="177" y="580" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Invoice</text>
-<text x="214" y="580" font-size="10" fill="#666">— billing document issued to a customer</text>
-<rect x="150" y="593" width="59" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
-<text x="179.5" y="604" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Contract</text>
-<text x="219" y="604" font-size="10" fill="#666">— active commercial commitment of a customer</text>
-<line x1="20" y1="631" x2="1252" y2="631" stroke="#ddd" stroke-width="1"/>
-<text x="20" y="653" font-size="11" font-weight="bold" fill="#555">LEGEND</text>
-<rect x="150" y="643" width="26" height="14" rx="3" fill="#eef4fb" stroke="#7a9cc4" stroke-dasharray="5 3"/>
-<text x="182" y="654" font-size="10" fill="#444">Actor group</text>
-<rect x="272" y="643" width="26" height="14" rx="3" fill="#e8f1f8" stroke="#5b8db8"/>
-<text x="304" y="654" font-size="10" fill="#444">Application</text>
-<rect x="394" y="643" width="26" height="14" rx="3" fill="#ffffff" stroke="#5b7a99"/>
-<text x="426" y="654" font-size="10" fill="#444">Application module</text>
-<rect x="552" y="643" width="26" height="14" rx="3" fill="#f3eef8" stroke="#8a6fae"/>
-<text x="584" y="654" font-size="10" fill="#444">Datastore / registry</text>
-<rect x="720" y="643" width="26" height="14" rx="3" fill="#f0eef5" stroke="#9187b3" stroke-dasharray="5 3"/>
-<text x="752" y="654" font-size="10" fill="#444">External system</text>
-<line x1="150" y1="673" x2="176" y2="673" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="677" font-size="10" fill="#444">Application flow — (protocol, format) under the label</text>
-<rect x="480" y="666" width="96" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
-<text x="528" y="677" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Business object</text>
-<text x="584" y="677" font-size="10" fill="#444">carried by the flow</text>
-<text x="150" y="701" font-size="10" fill="#444" font-style="italic">Factur-X mandatory since the electronic-invoicing reform</text>
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="1272" height="723" fill="#ffffff"/>
+<rect x="10" y="224" width="119" height="175" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="242" font-size="13" font-weight="bold" fill="#17202c">Managers</text>
+<rect x="878" y="309" width="149" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="888" y="327" font-size="13" font-weight="bold" fill="#17202c">CRM</text>
+<rect x="374" y="126" width="348" height="193.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="384" y="144" font-size="13" font-weight="bold" fill="#17202c">Billing</text>
+<rect x="825" y="22" width="354" height="119.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="835" y="40" font-size="13" font-weight="bold" fill="#17202c">Accounting</text>
+<circle cx="82" cy="261" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 71 283 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="82" y="295" font-size="11" text-anchor="middle" fill="#20364c">Accountant</text>
+<circle cx="69.5" cy="335" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 58.5 357 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="69.5" y="369" font-size="11" text-anchor="middle" fill="#20364c">Sales</text>
+<text x="69.5" y="380" font-size="11" text-anchor="middle" fill="#20364c">administration</text>
+<rect x="887" y="336" width="131" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="952.5" y="356.25" font-size="12.5" text-anchor="middle" fill="#17202c">Customer-account</text>
+<text x="952.5" y="370.75" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="898.5" y="403" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="952.5" y="423.25" font-size="12.5" text-anchor="middle" fill="#17202c">Contract</text>
+<text x="952.5" y="437.75" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="383" y="196.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="437" y="216.75" font-size="12.5" text-anchor="middle" fill="#17202c">Billing</text>
+<text x="437" y="231.25" font-size="12.5" text-anchor="middle" fill="#17202c">engine</text>
+<rect x="589" y="196.5" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="651" y="216.75" font-size="12.5" text-anchor="middle" fill="#17202c">Invoice issuing</text>
+<text x="651" y="231.25" font-size="12.5" text-anchor="middle" fill="#17202c">and sending</text>
+<rect x="383" y="263.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="437" y="283.75" font-size="12.5" text-anchor="middle" fill="#17202c">Dunning and</text>
+<text x="437" y="298.25" font-size="12.5" text-anchor="middle" fill="#17202c">collection</text>
+<rect x="1053" y="58.16666666666667" width="117" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1111.5" y="81.16666666666667" font-size="12.5" text-anchor="middle" fill="#17202c">General ledger</text>
+<rect x="834" y="60" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="888" y="80.25" font-size="12.5" text-anchor="middle" fill="#17202c">Accounts</text>
+<text x="888" y="94.75" font-size="12.5" text-anchor="middle" fill="#17202c">receivable</text>
+<path d="M 1154 343 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="1208" cy="343" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="1208" y="359.75" font-size="12.5" text-anchor="middle" fill="#17202c">Customer</text>
+<text x="1208" y="374.25" font-size="12.5" text-anchor="middle" fill="#17202c">repository</text>
+<path d="M 154 195 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="208" cy="195" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="208" y="211.75" font-size="12.5" text-anchor="middle" fill="#17202c">Offer</text>
+<text x="208" y="226.25" font-size="12.5" text-anchor="middle" fill="#17202c">catalog</text>
+<rect x="1003" y="254" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1057" y="274.25" font-size="12.5" text-anchor="middle" fill="#17202c">Partner EDI</text>
+<text x="1057" y="288.75" font-size="12.5" text-anchor="middle" fill="#17202c">platform</text>
+<rect x="1003" y="196" width="158" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1082" y="216.25" font-size="12.5" text-anchor="middle" fill="#17202c">Electronic-invoicing</text>
+<text x="1082" y="230.75" font-size="12.5" text-anchor="middle" fill="#17202c">portal (PPF)</text>
+<path d="M 120 357.5 L 134 358 L 229 358 L 229 427 L 873 426.5 L 898.5 426.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="294" y="442.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Enter and update</text>
+<text x="294" y="457" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">contracts</text>
+<rect x="264.5" y="465" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="294" y="476" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Contract</text>
+<path d="M 1018 359.5 L 1032 360 L 1154 360" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1093" y="375.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Sync customer</text>
+<text x="1093" y="390" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">accounts</text>
+<text x="1093" y="404.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<path d="M 1006.5 426.5 L 1032 427 L 1042 427 L 1042 469 L 359 469 L 359 228 L 369 227.83333333333334 L 383 227.83333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="931" y="484.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Contractual items</text>
+<text x="931" y="499" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">to bill</text>
+<text x="931" y="513.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<rect x="901.5" y="519" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="931" y="530" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Contract</text>
+<path d="M 262 212 L 369 212.16666666666669 L 383 212.16666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="313.5" y="227.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Prices and</text>
+<text x="313.5" y="242" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">terms</text>
+<text x="313.5" y="256.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<path d="M 491 220 L 589 220" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="540" y="165.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Computed</text>
+<text x="540" y="180" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">invoices</text>
+<text x="540" y="194.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<rect x="513" y="200" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="540" y="211" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Invoice</text>
+<path d="M 713 231.75 L 727 232 L 737 232 L 737 230 L 993 230 L 993 278 L 1003 278" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="928" y="245.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Submit paperless</text>
+<text x="928" y="260" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">invoices</text>
+<text x="928" y="274.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
+<rect x="901" y="280" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="928" y="291" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Invoice</text>
+<path d="M 713 220 L 1003 220" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="798" y="165.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Regulatory</text>
+<text x="798" y="180" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">transmission</text>
+<text x="798" y="194.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
+<rect x="771" y="200" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="798" y="211" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Invoice</text>
+<path d="M 713 208.25 L 727 208 L 737 208 L 737 84 L 820 83.5 L 834 83.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="775.5" y="99.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Sales</text>
+<text x="775.5" y="114" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">entries</text>
+<text x="775.5" y="128.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<path d="M 491 287 L 863 287 L 863 360 L 873 359.5 L 887 359.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="798" y="302.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Customer dunning</text>
+<text x="798" y="317" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">status</text>
+<text x="798" y="331.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<path d="M 942 83.5 L 1053 83.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="997.5" y="99" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accounting</text>
+<text x="997.5" y="113.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">posting</text>
+<text x="997.5" y="128" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(batch, CSV)</text>
+<path d="M 120 269 L 144 269 L 144 49 L 1043 49.00000000000003 L 1043 70.83333333333334 L 1053 70.83333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="685" y="64.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Controls and</text>
+<text x="685" y="79" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">closings</text>
+<path d="M 120 287 L 354 287 A 5 5 0 0 1 364 287 L 383 287" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="189.5" y="263.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Steer</text>
+<text x="189.5" y="278" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">collection</text>
+<line x1="20" y1="557" x2="1252" y2="557" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="579" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
+<rect x="150" y="569" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="177" y="580" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Invoice</text>
+<text x="214" y="580" font-size="10" fill="#79828f">— billing document issued to a customer</text>
+<rect x="150" y="593" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="179.5" y="604" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Contract</text>
+<text x="219" y="604" font-size="10" fill="#79828f">— active commercial commitment of a customer</text>
+<line x1="20" y1="631" x2="1252" y2="631" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="653" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="643" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="654" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="643" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="304" y="654" font-size="10" fill="#17202c">Application</text>
+<rect x="394" y="643" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="426" y="654" font-size="10" fill="#17202c">Application module</text>
+<rect x="552" y="643" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="584" y="654" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="720" y="643" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="752" y="654" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="673" x2="176" y2="673" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="677" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+<rect x="480" y="666" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="528" y="677" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="584" y="677" font-size="10" fill="#17202c">carried by the flow</text>
+<text x="150" y="701" font-size="10" fill="#17202c" font-style="italic">Factur-X mandatory since the electronic-invoicing reform</text>
 </svg>

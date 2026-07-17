@@ -242,11 +242,22 @@ const THEME_BASE =
 
 test('dark theme paints a dark background + light chrome; light stays white', async () => {
   const dark = await build(THEME_BASE.replace('STYLE', 'style { theme: dark }'));
-  assert.match(dark.svg, /<rect width="\d+" height="\d+" fill="#1e2227"\/>/); // dark canvas
+  assert.match(dark.svg, /<rect width="\d+" height="\d+" fill="#1e2530"\/>/); // dark canvas
   assert.match(dark.svg, /#c2ccd6/);                                          // light band text
-  const light = await build(THEME_BASE.replace('STYLE\n', ''));
-  assert.match(light.svg, /<rect width="\d+" height="\d+" fill="white"\/>/);
-  assert.doesNotMatch(light.svg, /#1e2227/);
+  const light = await build(THEME_BASE.replace('STYLE\n', ''));               // default = modern light
+  assert.match(light.svg, /<rect width="\d+" height="\d+" fill="#ffffff"\/>/);
+  assert.doesNotMatch(light.svg, /#1e2530/);
+});
+
+test('themes: named themes paint their palette, classic keeps the old look, accent retints flows', async () => {
+  const nord = await build(THEME_BASE.replace('STYLE', 'style { theme: nord }'));
+  assert.match(nord.svg, /fill="#2e3440"/);                 // nord canvas
+  const classic = await build(THEME_BASE.replace('STYLE', 'style { theme: classic }'));
+  assert.match(classic.svg, /stroke="#b09a6d"/);            // original system stroke preserved
+  const acc = await build(THEME_BASE.replace('STYLE', 'style { accent: #17876b }'));
+  assert.match(acc.svg, /stroke="#17876b"/);                // accent retints flows
+  const { codes } = check('diagram logical "t"\nstyle { theme: bogus }\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B : "x"\n');
+  assert.ok(codes.includes('E0103'), 'unknown theme is rejected as an invalid value');
 });
 
 test('background: overrides the theme default canvas color', async () => {
@@ -338,8 +349,8 @@ test('security: E0250 on a trust-zone without a valid sensitivity level', () => 
 
 test('security: trust zones are colored by sensitivity level + tag rendered', async () => {
   const { svg } = await build(load('security.cairn'));
-  assert.match(svg, /fill="#fdecea"/); // public level fill
-  assert.match(svg, /fill="#e8f1f8"/); // restricted level fill
+  assert.match(svg, /fill="#fdeceb"/); // public level fill (modern light)
+  assert.match(svg, /fill="#e9f2fb"/); // restricted level fill (modern light)
   assert.match(svg, />PUBLIC</);
   assert.match(svg, />RESTRICTED</);
 });

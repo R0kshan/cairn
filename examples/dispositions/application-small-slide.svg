@@ -1,72 +1,72 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 959 352" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="#444444"/></marker></defs>
-<rect width="959" height="352" fill="white"/>
-<rect x="10" y="23" width="82" height="164" rx="6" fill="#eef4fb" stroke="#7a9cc4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="20" y="41" font-size="13" font-weight="bold" fill="#333">HR actors</text>
-<rect x="228" y="23" width="364" height="137.5" rx="6" fill="#e8f1f8" stroke="#5b8db8" stroke-width="1.2"/>
-<text x="238" y="41" font-size="13" font-weight="bold" fill="#333">HR portal</text>
-<circle cx="51" cy="60" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
-<path d="M 40 82 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
-<text x="51" y="94" font-size="11" text-anchor="middle" fill="#223344">Employee</text>
-<circle cx="51" cy="134" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
-<path d="M 40 156 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
-<text x="51" y="168" font-size="11" text-anchor="middle" fill="#223344">Manager</text>
-<rect x="237" y="93.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="291" y="113.75" font-size="12.5" text-anchor="middle" fill="#222233">Leave</text>
-<text x="291" y="128.25" font-size="12.5" text-anchor="middle" fill="#222233">requests</text>
-<rect x="475" y="101.33333333333333" width="108" height="47" rx="4" fill="#ffffff" stroke="#5b7a99" stroke-width="1.3"/>
-<text x="529" y="121.58333333333333" font-size="12.5" text-anchor="middle" fill="#222233">Approval</text>
-<text x="529" y="136.08333333333331" font-size="12.5" text-anchor="middle" fill="#222233">workflow</text>
-<path d="M 717 83 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f3eef8" stroke="#8a6fae" stroke-width="1.3"/>
-<ellipse cx="771" cy="83" rx="54" ry="7" fill="#f3eef8" stroke="#8a6fae" stroke-width="1.3"/>
-<text x="771" y="99.75" font-size="12.5" text-anchor="middle" fill="#222233">HR</text>
-<text x="771" y="114.25" font-size="12.5" text-anchor="middle" fill="#222233">repository</text>
-<rect x="841" y="109" width="108" height="47" rx="4" fill="#f0eef5" stroke="#9187b3" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="895" y="129.25" font-size="12.5" text-anchor="middle" fill="#222233">Payroll HRIS</text>
-<text x="895" y="143.75" font-size="12.5" text-anchor="middle" fill="#222233">(outsourced)</text>
-<path d="M 83 77 L 213 77 L 213 117 L 237 117" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="158" y="34.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Submit a</text>
-<text x="158" y="49" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">request</text>
-<rect x="115" y="57" width="86" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227" stroke-width="1"/>
-<text x="158" y="68" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Leave request</text>
-<path d="M 345 117 L 475 117" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="410" y="62.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Submit to the</text>
-<text x="410" y="77" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">workflow</text>
-<text x="410" y="91.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(internal)</text>
-<rect x="367" y="97" width="86" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227" stroke-width="1"/>
-<text x="410" y="108" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Leave request</text>
-<path d="M 83 151 L 223 150.5 L 465 150.5 L 465 132.66666666666666 L 475 132.66666666666666" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="148.5" y="166.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approve or</text>
-<text x="148.5" y="181" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">reject</text>
-<path d="M 583 117 L 607 117 L 607 100 L 717 100" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="659" y="64.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Update leave</text>
-<text x="659" y="79" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">balances</text>
-<text x="659" y="93.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<path d="M 583 132.66666666666666 L 597 133 L 841 133" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="661.5" y="148.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approved</text>
-<text x="661.5" y="163" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">variable items</text>
-<text x="661.5" y="177.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
-<line x1="20" y1="208" x2="939" y2="208" stroke="#ddd" stroke-width="1"/>
-<text x="20" y="230" font-size="11" font-weight="bold" fill="#555">BUSINESS OBJECTS</text>
-<rect x="150" y="220" width="86" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
-<text x="193" y="231" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Leave request</text>
-<text x="246" y="231" font-size="10" fill="#666">— request submitted by an employee, subject to approval</text>
-<line x1="20" y1="258" x2="939" y2="258" stroke="#ddd" stroke-width="1"/>
-<text x="20" y="280" font-size="11" font-weight="bold" fill="#555">LEGEND</text>
-<rect x="150" y="270" width="26" height="14" rx="3" fill="#eef4fb" stroke="#7a9cc4" stroke-dasharray="5 3"/>
-<text x="182" y="281" font-size="10" fill="#444">Actor group</text>
-<rect x="272" y="270" width="26" height="14" rx="3" fill="#e8f1f8" stroke="#5b8db8"/>
-<text x="304" y="281" font-size="10" fill="#444">Application</text>
-<rect x="394" y="270" width="26" height="14" rx="3" fill="#ffffff" stroke="#5b7a99"/>
-<text x="426" y="281" font-size="10" fill="#444">Application module</text>
-<rect x="552" y="270" width="26" height="14" rx="3" fill="#f3eef8" stroke="#8a6fae"/>
-<text x="584" y="281" font-size="10" fill="#444">Datastore / registry</text>
-<rect x="720" y="270" width="26" height="14" rx="3" fill="#f0eef5" stroke="#9187b3" stroke-dasharray="5 3"/>
-<text x="752" y="281" font-size="10" fill="#444">External system</text>
-<line x1="150" y1="322" x2="176" y2="322" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="326" font-size="10" fill="#444">Application flow — (protocol, format) under the label</text>
-<rect x="480" y="315" width="96" height="15" rx="7.5" fill="#fdf3d8" stroke="#c9a227"/>
-<text x="528" y="326" font-size="9.5" text-anchor="middle" fill="#7a6216" font-weight="bold">Business object</text>
-<text x="584" y="326" font-size="10" fill="#444">carried by the flow</text>
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="959" height="352" fill="#ffffff"/>
+<rect x="10" y="23" width="82" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="41" font-size="13" font-weight="bold" fill="#17202c">HR actors</text>
+<rect x="228" y="23" width="364" height="137.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="238" y="41" font-size="13" font-weight="bold" fill="#17202c">HR portal</text>
+<circle cx="51" cy="60" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 40 82 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="51" y="94" font-size="11" text-anchor="middle" fill="#20364c">Employee</text>
+<circle cx="51" cy="134" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 40 156 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="51" y="168" font-size="11" text-anchor="middle" fill="#20364c">Manager</text>
+<rect x="237" y="93.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="291" y="113.75" font-size="12.5" text-anchor="middle" fill="#17202c">Leave</text>
+<text x="291" y="128.25" font-size="12.5" text-anchor="middle" fill="#17202c">requests</text>
+<rect x="475" y="101.33333333333333" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="529" y="121.58333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Approval</text>
+<text x="529" y="136.08333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">workflow</text>
+<path d="M 717 83 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="771" cy="83" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="771" y="99.75" font-size="12.5" text-anchor="middle" fill="#17202c">HR</text>
+<text x="771" y="114.25" font-size="12.5" text-anchor="middle" fill="#17202c">repository</text>
+<rect x="841" y="109" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="895" y="129.25" font-size="12.5" text-anchor="middle" fill="#17202c">Payroll HRIS</text>
+<text x="895" y="143.75" font-size="12.5" text-anchor="middle" fill="#17202c">(outsourced)</text>
+<path d="M 83 77 L 213 77 L 213 117 L 237 117" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="158" y="34.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Submit a</text>
+<text x="158" y="49" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">request</text>
+<rect x="115" y="57" width="86" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="158" y="68" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Leave request</text>
+<path d="M 345 117 L 475 117" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="410" y="62.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Submit to the</text>
+<text x="410" y="77" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">workflow</text>
+<text x="410" y="91.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(internal)</text>
+<rect x="367" y="97" width="86" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="410" y="108" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Leave request</text>
+<path d="M 83 151 L 223 150.5 L 465 150.5 L 465 132.66666666666666 L 475 132.66666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="148.5" y="166.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approve or</text>
+<text x="148.5" y="181" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">reject</text>
+<path d="M 583 117 L 607 117 L 607 100 L 717 100" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="659" y="64.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Update leave</text>
+<text x="659" y="79" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">balances</text>
+<text x="659" y="93.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<path d="M 583 132.66666666666666 L 597 133 L 841 133" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="661.5" y="148.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approved</text>
+<text x="661.5" y="163" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">variable items</text>
+<text x="661.5" y="177.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
+<line x1="20" y1="208" x2="939" y2="208" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="230" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
+<rect x="150" y="220" width="86" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="193" y="231" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Leave request</text>
+<text x="246" y="231" font-size="10" fill="#79828f">— request submitted by an employee, subject to approval</text>
+<line x1="20" y1="258" x2="939" y2="258" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="280" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="270" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="281" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="270" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="304" y="281" font-size="10" fill="#17202c">Application</text>
+<rect x="394" y="270" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="426" y="281" font-size="10" fill="#17202c">Application module</text>
+<rect x="552" y="270" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="584" y="281" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="720" y="270" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="752" y="281" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="322" x2="176" y2="322" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="326" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+<rect x="480" y="315" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="528" y="326" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="584" y="326" font-size="10" fill="#17202c">carried by the flow</text>
 </svg>

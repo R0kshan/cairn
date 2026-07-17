@@ -1,155 +1,155 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2140 510" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="#444444"/></marker></defs>
-<rect width="2140" height="510" fill="white"/>
-<rect x="188" y="24" width="1279" height="373.41666666666663" rx="6" fill="#f5f5f4" stroke="#8a8a85" stroke-width="1.4"/>
-<text x="198" y="42" font-size="13" font-weight="bold" fill="#333">Main data center</text>
-<rect x="222" y="51" width="373" height="179.5" rx="6" fill="#ecf3ec" stroke="#6d9a6d" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="232" y="69" font-size="13" font-weight="bold" fill="#333">DMZ</text>
-<rect x="455" y="112.5" width="126" height="88" rx="6" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="465" y="130.5" font-size="13" font-weight="bold" fill="#333">Reverse proxies</text>
-<text x="465" y="144.5" font-size="13" font-weight="bold" fill="#333">(HA)</text>
-<rect x="712" y="74.66666666666666" width="433" height="221.16666666666669" rx="6" fill="#ecf3ec" stroke="#6d9a6d" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="722" y="92.66666666666666" font-size="13" font-weight="bold" fill="#333">Application zone</text>
-<rect x="726" y="106.16666666666666" width="142" height="146" rx="6" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="736" y="124.16666666666666" font-size="13" font-weight="bold" fill="#333">K8s cluster</text>
-<text x="736" y="138.16666666666666" font-size="13" font-weight="bold" fill="#333">front</text>
-<rect x="985" y="101.66666666666666" width="126" height="164" rx="6" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="995" y="119.66666666666666" font-size="13" font-weight="bold" fill="#333">K8s cluster</text>
-<text x="995" y="133.66666666666666" font-size="13" font-weight="bold" fill="#333">business</text>
-<rect x="1299" y="78.74999999999997" width="154" height="241" rx="6" fill="#ecf3ec" stroke="#6d9a6d" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1309" y="96.74999999999997" font-size="13" font-weight="bold" fill="#333">Data zone</text>
-<rect x="1313" y="105.74999999999997" width="126" height="97" rx="6" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="1323" y="123.74999999999997" font-size="13" font-weight="bold" fill="#333">PostgreSQL</text>
-<text x="1323" y="137.74999999999997" font-size="13" font-weight="bold" fill="#333">cluster</text>
-<rect x="1313" y="222.74999999999997" width="126" height="88" rx="6" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="1323" y="240.74999999999997" font-size="13" font-weight="bold" fill="#333">Kafka</text>
-<text x="1323" y="254.74999999999997" font-size="13" font-weight="bold" fill="#333">cluster</text>
-<rect x="1629" y="115" width="377" height="187" rx="6" fill="#f5f5f4" stroke="#8a8a85" stroke-width="1.4"/>
-<text x="1639" y="133" font-size="13" font-weight="bold" fill="#333">Disaster-recovery site</text>
-<rect x="1643" y="142" width="354" height="151" rx="6" fill="#ecf3ec" stroke="#6d9a6d" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1653" y="160" font-size="13" font-weight="bold" fill="#333">DR data zone</text>
-<rect x="1657" y="176" width="126" height="97" rx="6" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="1667" y="194" font-size="13" font-weight="bold" fill="#333">PostgreSQL</text>
-<text x="1667" y="208" font-size="13" font-weight="bold" fill="#333">standby</text>
-<rect x="231" y="149" width="117" height="47" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="289.5" y="169.25" font-size="12.5" text-anchor="middle" fill="#222233">Application</text>
-<text x="289.5" y="183.75" font-size="12.5" text-anchor="middle" fill="#222233">firewall (WAF)</text>
-<rect x="464" y="153.5" width="108" height="38" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="518" y="176.5" font-size="12.5" text-anchor="middle" fill="#222233">Nginx</text>
-<rect x="235.5" y="78" width="108" height="47" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="289.5" y="98.25" font-size="12.5" text-anchor="middle" fill="#222233">Transfer</text>
-<text x="289.5" y="112.75" font-size="12.5" text-anchor="middle" fill="#222233">gateway</text>
-<rect x="745.6666666666666" y="205.16666666666666" width="108" height="38" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="799.6666666666666" y="228.16666666666666" font-size="12.5" text-anchor="middle" fill="#222233">Sales front</text>
-<rect x="735" y="147.16666666666666" width="124" height="38" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="797" y="170.16666666666666" font-size="12.5" text-anchor="middle" fill="#222233">Checkout funnel</text>
-<rect x="994" y="209.66666666666666" width="108" height="47" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="1048" y="229.91666666666666" font-size="12.5" text-anchor="middle" fill="#222233">Order</text>
-<text x="1048" y="244.41666666666666" font-size="12.5" text-anchor="middle" fill="#222233">management</text>
-<rect x="994" y="142.66666666666666" width="108" height="47" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="1048" y="162.91666666666666" font-size="12.5" text-anchor="middle" fill="#222233">Payment</text>
-<text x="1048" y="177.41666666666666" font-size="12.5" text-anchor="middle" fill="#222233">hub</text>
-<rect x="1322" y="146.74999999999997" width="108" height="47" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="1376" y="166.99999999999997" font-size="12.5" text-anchor="middle" fill="#222233">PostgreSQL</text>
-<text x="1376" y="181.49999999999997" font-size="12.5" text-anchor="middle" fill="#222233">primary</text>
-<rect x="1322" y="263.75" width="108" height="38" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="1376" y="286.75" font-size="12.5" text-anchor="middle" fill="#222233">Kafka</text>
-<rect x="1666" y="217" width="108" height="47" rx="4" fill="#fff7e6" stroke="#b08d2a" stroke-width="1.2"/>
-<text x="1720" y="237.25" font-size="12.5" text-anchor="middle" fill="#222233">PostgreSQL</text>
-<text x="1720" y="251.75" font-size="12.5" text-anchor="middle" fill="#222233">replica</text>
-<rect x="1880" y="201.33333333333331" width="108" height="47" rx="4" fill="#ffffff" stroke="#55606b" stroke-width="1.5"/>
-<text x="1934" y="221.58333333333331" font-size="12.5" text-anchor="middle" fill="#222233">Backup</text>
-<text x="1934" y="236.08333333333331" font-size="12.5" text-anchor="middle" fill="#222233">server</text>
-<circle cx="45" cy="150" r="7" fill="none" stroke="#445566" stroke-width="1.5"/>
-<path d="M 34 172 q 11 -19 22 0" fill="none" stroke="#445566" stroke-width="1.5"/>
-<text x="45" y="184" font-size="11" text-anchor="middle" fill="#223344">Internet</text>
-<text x="45" y="195" font-size="11" text-anchor="middle" fill="#223344">customers</text>
-<rect x="2022" y="85" width="108" height="38" rx="4" fill="#f0eef5" stroke="#9187b3" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="2076" y="108" font-size="12.5" text-anchor="middle" fill="#222233">PSP</text>
-<rect x="1572" y="22" width="108" height="47" rx="4" fill="#f0eef5" stroke="#9187b3" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1626" y="42.25" font-size="12.5" text-anchor="middle" fill="#222233">Carrier</text>
-<text x="1626" y="56.75" font-size="12.5" text-anchor="middle" fill="#222233">platforms</text>
-<path d="M 80 173 L 183 172.5 L 202 172.5 A 5 5 0 0 1 212 172.5 L 231 172.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="131.5" y="188.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Client web</text>
-<text x="131.5" y="203" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">traffic</text>
-<text x="131.5" y="217.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
-<path d="M 348 172.5 L 464 172.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="399" y="188" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Filtered</text>
-<text x="399" y="202.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">traffic</text>
-<text x="399" y="217" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
-<path d="M 572 178.83333333333334 L 610 178.83333333333331 L 610 225.16666666666666 L 697 225.16666666666666 L 697 224.16666666666666 L 745.6666666666667 224.16666666666666" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="653.5" y="240.66666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Front</text>
-<text x="653.5" y="255.16666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">routing</text>
-<text x="653.5" y="269.66666666666663" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
-<path d="M 572 166.16666666666666 L 735 166.16666666666666" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="653.5" y="181.66666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Checkout</text>
-<text x="653.5" y="196.16666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">routing</text>
-<text x="653.5" y="210.66666666666666" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8444)</text>
-<path d="M 853.6666666666667 217.83333333333334 L 970 217.83333333333334 L 970 233.16666666666666 L 994 233.16666666666666" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="926.5" y="233.33333333333334" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Orders</text>
-<text x="926.5" y="247.83333333333334" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">API</text>
-<text x="926.5" y="262.33333333333337" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
-<path d="M 859 166.16666666666666 L 994 166.16666666666666" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="926.5" y="130.66666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Payment</text>
-<text x="926.5" y="145.16666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">API</text>
-<text x="926.5" y="159.66666666666666" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8445)</text>
-<path d="M 1102 158.33333333333331 L 1160 158.33333333333331 L 1160 67.74999999999997 L 1472 68 L 1482 68 L 1482 104 L 2022 104" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1550" y="119.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Authorization and</text>
-<text x="1550" y="134" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">capture</text>
-<text x="1550" y="148.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
-<path d="M 1102 221.41666666666666 L 1284 221.41666666666666 L 1284 178.08333333333331 L 1322 178.08333333333331" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1232" y="236.91666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Read/write</text>
-<text x="1232" y="251.41666666666666" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">orders</text>
-<text x="1232" y="265.91666666666663" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
-<path d="M 1102 174 L 1170 174 L 1170 162.41666666666663 L 1322 162.41666666666663" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1232" y="177.91666666666663" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Read/write</text>
-<text x="1232" y="192.41666666666663" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">transactions</text>
-<text x="1232" y="206.91666666666663" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
-<path d="M 1102 233.16666666666666 L 1180 233.16666666666666 L 1180 280.41666666666663 L 1284 280.41666666666663 L 1284 276.41666666666663 L 1322 276.41666666666663" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1232" y="295.91666666666663" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Order</text>
-<text x="1232" y="310.41666666666663" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">events</text>
-<text x="1232" y="324.91666666666663" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9092)</text>
-<path d="M 853.6666666666666 230.5 L 883 230.49999999999997 L 883 276.83333333333337 L 1121 276.83333333333337 A 5 5 0 0 1 1131 276.83333333333337 L 1170 276.83333333333337 L 1170 339.41666666666663 L 1284 339.41666666666663 L 1284 289.08333333333326 L 1322 289.0833333333333" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1232" y="354.91666666666663" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Browsing</text>
-<text x="1232" y="369.41666666666663" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">events</text>
-<text x="1232" y="383.91666666666663" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9092)</text>
-<path d="M 1102 244.91666666666666 L 1126 244.91666666666666 L 1126 286.83333333333337 L 1160 286.83333333333337 L 1160 305.83333333333337 L 207 305.83333333333337 L 207 101.5 L 235.5 101.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="653.5" y="321.33333333333337" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Carrier</text>
-<text x="653.5" y="335.83333333333337" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">files</text>
-<text x="653.5" y="350.33333333333337" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SFTP/22)</text>
-<path d="M 343.5 101.5 L 610 101.5 L 610 56.74999999999997 L 1472 57 L 1482 57 L 1482 46 L 1572 46" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1524" y="61.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Logistics</text>
-<text x="1524" y="76" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">exchanges</text>
-<text x="1524" y="90.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4/443)</text>
-<path d="M 1430 170.24999999999997 L 1472 170 L 1482 170 L 1482 241 L 1624 240.5 L 1666 240.5" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1530.5" y="205.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Async</text>
-<text x="1530.5" y="220" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">replication</text>
-<text x="1530.5" y="234.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
-<path d="M 1783 217 L 1880 217" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1831.5" y="181.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Daily</text>
-<text x="1831.5" y="196" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">backups</text>
-<text x="1831.5" y="210.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9095)</text>
-<path d="M 1430 282.75 L 1472 283 L 1870 283 L 1870 232.66666666666669 L 1880 232.66666666666669" fill="none" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1520" y="298.5" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Topic</text>
-<text x="1520" y="313" font-size="11.5" text-anchor="middle" fill="#333" font-style="italic" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">archiving</text>
-<text x="1520" y="327.5" font-size="9" text-anchor="middle" fill="#777" stroke="white" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9095)</text>
-<line x1="20" y1="418" x2="2120" y2="418" stroke="#ddd" stroke-width="1"/>
-<text x="20" y="440" font-size="11" font-weight="bold" fill="#555">LEGEND</text>
-<rect x="150" y="430" width="26" height="14" rx="3" fill="#f5f5f4" stroke="#8a8a85"/>
-<text x="182" y="441" font-size="10" fill="#444">Site / data center</text>
-<rect x="308" y="430" width="26" height="14" rx="3" fill="#ecf3ec" stroke="#6d9a6d" stroke-dasharray="5 3"/>
-<text x="340" y="441" font-size="10" fill="#444">Network zone</text>
-<rect x="435" y="430" width="26" height="14" rx="3" fill="#ffffff" stroke="#55606b"/>
-<text x="467" y="441" font-size="10" fill="#444">Server / VM</text>
-<rect x="557" y="430" width="26" height="14" rx="3" fill="#fff7e6" stroke="#b08d2a"/>
-<text x="589" y="441" font-size="10" fill="#444">Deployed application</text>
-<circle cx="738" cy="433" r="3" fill="none" stroke="#445566" stroke-width="1.2"/>
-<path d="M 733 443 q 5 -7 10 0" fill="none" stroke="#445566" stroke-width="1.2"/>
-<text x="757" y="441" font-size="10" fill="#444">User / consumer</text>
-<rect x="867" y="430" width="26" height="14" rx="3" fill="#f0eef5" stroke="#9187b3" stroke-dasharray="5 3"/>
-<text x="899" y="441" font-size="10" fill="#444">External system</text>
-<line x1="150" y1="460" x2="176" y2="460" stroke="#444444" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="464" font-size="10" fill="#444">Technical flow (protocol, port)</text>
-<text x="150" y="488" font-size="10" fill="#444" font-style="italic">Inter-zone and inter-site flows filtered by firewall (flow matrix in the architecture dossier)</text>
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="2140" height="510" fill="#ffffff"/>
+<rect x="188" y="24" width="1279" height="373.41666666666663" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
+<text x="198" y="42" font-size="13" font-weight="bold" fill="#17202c">Main data center</text>
+<rect x="222" y="51" width="373" height="179.5" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="232" y="69" font-size="13" font-weight="bold" fill="#17202c">DMZ</text>
+<rect x="455" y="112.5" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="465" y="130.5" font-size="13" font-weight="bold" fill="#17202c">Reverse proxies</text>
+<text x="465" y="144.5" font-size="13" font-weight="bold" fill="#17202c">(HA)</text>
+<rect x="712" y="74.66666666666666" width="433" height="221.16666666666669" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="722" y="92.66666666666666" font-size="13" font-weight="bold" fill="#17202c">Application zone</text>
+<rect x="726" y="106.16666666666666" width="142" height="146" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="736" y="124.16666666666666" font-size="13" font-weight="bold" fill="#17202c">K8s cluster</text>
+<text x="736" y="138.16666666666666" font-size="13" font-weight="bold" fill="#17202c">front</text>
+<rect x="985" y="101.66666666666666" width="126" height="164" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="995" y="119.66666666666666" font-size="13" font-weight="bold" fill="#17202c">K8s cluster</text>
+<text x="995" y="133.66666666666666" font-size="13" font-weight="bold" fill="#17202c">business</text>
+<rect x="1299" y="78.74999999999997" width="154" height="241" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1309" y="96.74999999999997" font-size="13" font-weight="bold" fill="#17202c">Data zone</text>
+<rect x="1313" y="105.74999999999997" width="126" height="97" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1323" y="123.74999999999997" font-size="13" font-weight="bold" fill="#17202c">PostgreSQL</text>
+<text x="1323" y="137.74999999999997" font-size="13" font-weight="bold" fill="#17202c">cluster</text>
+<rect x="1313" y="222.74999999999997" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1323" y="240.74999999999997" font-size="13" font-weight="bold" fill="#17202c">Kafka</text>
+<text x="1323" y="254.74999999999997" font-size="13" font-weight="bold" fill="#17202c">cluster</text>
+<rect x="1629" y="115" width="377" height="187" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
+<text x="1639" y="133" font-size="13" font-weight="bold" fill="#17202c">Disaster-recovery site</text>
+<rect x="1643" y="142" width="354" height="151" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1653" y="160" font-size="13" font-weight="bold" fill="#17202c">DR data zone</text>
+<rect x="1657" y="176" width="126" height="97" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1667" y="194" font-size="13" font-weight="bold" fill="#17202c">PostgreSQL</text>
+<text x="1667" y="208" font-size="13" font-weight="bold" fill="#17202c">standby</text>
+<rect x="231" y="149" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="289.5" y="169.25" font-size="12.5" text-anchor="middle" fill="#17202c">Application</text>
+<text x="289.5" y="183.75" font-size="12.5" text-anchor="middle" fill="#17202c">firewall (WAF)</text>
+<rect x="464" y="153.5" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="518" y="176.5" font-size="12.5" text-anchor="middle" fill="#17202c">Nginx</text>
+<rect x="235.5" y="78" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="289.5" y="98.25" font-size="12.5" text-anchor="middle" fill="#17202c">Transfer</text>
+<text x="289.5" y="112.75" font-size="12.5" text-anchor="middle" fill="#17202c">gateway</text>
+<rect x="745.6666666666666" y="205.16666666666666" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="799.6666666666666" y="228.16666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Sales front</text>
+<rect x="735" y="147.16666666666666" width="124" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="797" y="170.16666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Checkout funnel</text>
+<rect x="994" y="209.66666666666666" width="108" height="47" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="1048" y="229.91666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Order</text>
+<text x="1048" y="244.41666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="994" y="142.66666666666666" width="108" height="47" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="1048" y="162.91666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Payment</text>
+<text x="1048" y="177.41666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">hub</text>
+<rect x="1322" y="146.74999999999997" width="108" height="47" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="1376" y="166.99999999999997" font-size="12.5" text-anchor="middle" fill="#17202c">PostgreSQL</text>
+<text x="1376" y="181.49999999999997" font-size="12.5" text-anchor="middle" fill="#17202c">primary</text>
+<rect x="1322" y="263.75" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="1376" y="286.75" font-size="12.5" text-anchor="middle" fill="#17202c">Kafka</text>
+<rect x="1666" y="217" width="108" height="47" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="1720" y="237.25" font-size="12.5" text-anchor="middle" fill="#17202c">PostgreSQL</text>
+<text x="1720" y="251.75" font-size="12.5" text-anchor="middle" fill="#17202c">replica</text>
+<rect x="1880" y="201.33333333333331" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1934" y="221.58333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">Backup</text>
+<text x="1934" y="236.08333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">server</text>
+<circle cx="45" cy="150" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 34 172 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="45" y="184" font-size="11" text-anchor="middle" fill="#20364c">Internet</text>
+<text x="45" y="195" font-size="11" text-anchor="middle" fill="#20364c">customers</text>
+<rect x="2022" y="85" width="108" height="38" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="2076" y="108" font-size="12.5" text-anchor="middle" fill="#17202c">PSP</text>
+<rect x="1572" y="22" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1626" y="42.25" font-size="12.5" text-anchor="middle" fill="#17202c">Carrier</text>
+<text x="1626" y="56.75" font-size="12.5" text-anchor="middle" fill="#17202c">platforms</text>
+<path d="M 80 173 L 183 172.5 L 202 172.5 A 5 5 0 0 1 212 172.5 L 231 172.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="131.5" y="188.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Client web</text>
+<text x="131.5" y="203" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">traffic</text>
+<text x="131.5" y="217.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<path d="M 348 172.5 L 464 172.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="399" y="188" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Filtered</text>
+<text x="399" y="202.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">traffic</text>
+<text x="399" y="217" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<path d="M 572 178.83333333333334 L 610 178.83333333333331 L 610 225.16666666666666 L 697 225.16666666666666 L 697 224.16666666666666 L 745.6666666666667 224.16666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="653.5" y="240.66666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Front</text>
+<text x="653.5" y="255.16666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">routing</text>
+<text x="653.5" y="269.66666666666663" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
+<path d="M 572 166.16666666666666 L 735 166.16666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="653.5" y="181.66666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Checkout</text>
+<text x="653.5" y="196.16666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">routing</text>
+<text x="653.5" y="210.66666666666666" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8444)</text>
+<path d="M 853.6666666666667 217.83333333333334 L 970 217.83333333333334 L 970 233.16666666666666 L 994 233.16666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="926.5" y="233.33333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Orders</text>
+<text x="926.5" y="247.83333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">API</text>
+<text x="926.5" y="262.33333333333337" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
+<path d="M 859 166.16666666666666 L 994 166.16666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="926.5" y="130.66666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Payment</text>
+<text x="926.5" y="145.16666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">API</text>
+<text x="926.5" y="159.66666666666666" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8445)</text>
+<path d="M 1102 158.33333333333331 L 1160 158.33333333333331 L 1160 67.74999999999997 L 1472 68 L 1482 68 L 1482 104 L 2022 104" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1550" y="119.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Authorization and</text>
+<text x="1550" y="134" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">capture</text>
+<text x="1550" y="148.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<path d="M 1102 221.41666666666666 L 1284 221.41666666666666 L 1284 178.08333333333331 L 1322 178.08333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1232" y="236.91666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Read/write</text>
+<text x="1232" y="251.41666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">orders</text>
+<text x="1232" y="265.91666666666663" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
+<path d="M 1102 174 L 1170 174 L 1170 162.41666666666663 L 1322 162.41666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1232" y="177.91666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Read/write</text>
+<text x="1232" y="192.41666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">transactions</text>
+<text x="1232" y="206.91666666666663" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
+<path d="M 1102 233.16666666666666 L 1180 233.16666666666666 L 1180 280.41666666666663 L 1284 280.41666666666663 L 1284 276.41666666666663 L 1322 276.41666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1232" y="295.91666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Order</text>
+<text x="1232" y="310.41666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">events</text>
+<text x="1232" y="324.91666666666663" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9092)</text>
+<path d="M 853.6666666666666 230.5 L 883 230.49999999999997 L 883 276.83333333333337 L 1121 276.83333333333337 A 5 5 0 0 1 1131 276.83333333333337 L 1170 276.83333333333337 L 1170 339.41666666666663 L 1284 339.41666666666663 L 1284 289.08333333333326 L 1322 289.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1232" y="354.91666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Browsing</text>
+<text x="1232" y="369.41666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">events</text>
+<text x="1232" y="383.91666666666663" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9092)</text>
+<path d="M 1102 244.91666666666666 L 1126 244.91666666666666 L 1126 286.83333333333337 L 1160 286.83333333333337 L 1160 305.83333333333337 L 207 305.83333333333337 L 207 101.5 L 235.5 101.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="653.5" y="321.33333333333337" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Carrier</text>
+<text x="653.5" y="335.83333333333337" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">files</text>
+<text x="653.5" y="350.33333333333337" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SFTP/22)</text>
+<path d="M 343.5 101.5 L 610 101.5 L 610 56.74999999999997 L 1472 57 L 1482 57 L 1482 46 L 1572 46" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1524" y="61.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Logistics</text>
+<text x="1524" y="76" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">exchanges</text>
+<text x="1524" y="90.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4/443)</text>
+<path d="M 1430 170.24999999999997 L 1472 170 L 1482 170 L 1482 241 L 1624 240.5 L 1666 240.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1530.5" y="205.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Async</text>
+<text x="1530.5" y="220" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">replication</text>
+<text x="1530.5" y="234.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
+<path d="M 1783 217 L 1880 217" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1831.5" y="181.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Daily</text>
+<text x="1831.5" y="196" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">backups</text>
+<text x="1831.5" y="210.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9095)</text>
+<path d="M 1430 282.75 L 1472 283 L 1870 283 L 1870 232.66666666666669 L 1880 232.66666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1520" y="298.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Topic</text>
+<text x="1520" y="313" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">archiving</text>
+<text x="1520" y="327.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9095)</text>
+<line x1="20" y1="418" x2="2120" y2="418" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="440" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="430" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
+<text x="182" y="441" font-size="10" fill="#17202c">Site / data center</text>
+<rect x="308" y="430" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<text x="340" y="441" font-size="10" fill="#17202c">Network zone</text>
+<rect x="435" y="430" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="467" y="441" font-size="10" fill="#17202c">Server / VM</text>
+<rect x="557" y="430" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="589" y="441" font-size="10" fill="#17202c">Deployed application</text>
+<circle cx="738" cy="433" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<path d="M 733 443 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<text x="757" y="441" font-size="10" fill="#17202c">User / consumer</text>
+<rect x="867" y="430" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="899" y="441" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="460" x2="176" y2="460" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="464" font-size="10" fill="#17202c">Technical flow (protocol, port)</text>
+<text x="150" y="488" font-size="10" fill="#17202c" font-style="italic">Inter-zone and inter-site flows filtered by firewall (flow matrix in the architecture dossier)</text>
 </svg>

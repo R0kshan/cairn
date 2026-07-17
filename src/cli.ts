@@ -56,6 +56,8 @@ B1   -> EXT1 : "Data sent" [BO1]
 #   flow-text: full            # full | numbered (numbered = FLUX table below)
 #   legend: auto               # auto | off
 #   crossing-hops: on
+#   theme: light               # light | dark | slate | sand | contrast | nord | solarized | classic | classic-dark
+#   accent: #1f77b4            # optional: retints flows on top of the chosen theme
 #   compact: off               # on = denser layout (tighter spacing + wrapped flow labels)
 #   font-size: 12.5            # base text size (edge labels = base-1, container titles = base+0.5)
 #   arrows: normal             # normal | large (larger arrowheads so endpoints stand out)

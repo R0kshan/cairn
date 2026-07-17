@@ -3,7 +3,7 @@
 // INVARIANT (§1.1): every flow is a distinct arrow with a distinct label. Never merged.
 
 import type { Model, View, StyleProps, Flow } from './model.ts';
-import { palettes, lightPalette, flowPalette, UI } from './model.ts';
+import { themeFor, flowPalette, UI } from './model.ts';
 import type { Scene, SceneLabel } from './layout.ts';
 import { chipW, CHIP_H, measure, techText, wrapText, fontSizes } from './text.ts';
 
@@ -34,16 +34,16 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   // fonts, row heights, offsets — by the same factor so they grow together.
   // At the default base, scale = 1 and bs(n) === n, so output is byte-identical.
   const bs = (n: number) => r1(n * F.scale);
-  // Theme selects the chrome palette and the per-kind default fills/strokes.
-  const pal = palettes[ds.theme] ?? lightPalette;
-  const kindDefaults = ds.theme === 'dark' ? view.defaultsDark : view.defaults;
-  // Default flow-stroke color follows the palette unless the author set one.
-  const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : pal.edge;
+  // Theme selects the chrome palette, per-kind default fills/strokes and levels.
+  const { palette: pal, kinds: kindDefaults, levels: levelDefaults } = themeFor(ds.theme, view);
+  const darkTheme = ['dark', 'nord', 'classic-dark'].includes(ds.theme);
+  // Flow color: explicit flow-stroke wins, else the accent (if set), else palette.
+  const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : (ds.accent ?? pal.edge);
   // C (opt-in): color each flow by its source. Assign palette hues to distinct
   // source ids in first-seen order, cycling if there are more sources than hues.
   const srcColor = new Map<string, string>();
   if (ds.flowColor === 'by-source') {
-    const hues = flowPalette[ds.theme] ?? flowPalette.light;
+    const hues = flowPalette[darkTheme ? 'dark' : 'light'];
     for (const f of model.flows) if (!srcColor.has(f.from)) srcColor.set(f.from, hues[srcColor.size % hues.length]);
   }
   const flowColorOf = (f?: Flow): string =>
@@ -67,8 +67,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   const elStyle = new Map<string, StyleProps | undefined>();
   const elAttr = new Map<string, string | undefined>();
   (function walk(els) { for (const e of els) { elStyle.set(e.id, e.style); elAttr.set(e.id, e.attr?.value); walk(e.children); } })(model.elements);
-  // security view: trust-zone base colors come from the sensitivity level, not the kind.
-  const levelDefaults = ds.theme === 'dark' ? view.levelDefaultsDark : view.levelDefaults;
+  // security view: trust-zone base colors come from the sensitivity level (theme.levels).
 
   const resolve = (kind: string, id: string): StyleProps => {
     let a = kindDefaults[kind] ?? {};

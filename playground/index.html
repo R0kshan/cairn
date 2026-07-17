@@ -47,6 +47,9 @@
     <option value="application">application — starter</option>
     <option value="infrastructure">infrastructure — starter</option>
   </select>
+  <select id="theme" title="Preview theme (overrides the diagram's own theme)">
+    <option value="">theme: as written</option>
+  </select>
   <button id="share">Copy share link</button>
   <button id="embed" title="A live SVG URL served by /api/svg — embed it in a README or docs">Copy embed URL</button>
   <button id="download">Download SVG</button>
@@ -66,7 +69,7 @@
 </main>
 
 <script type="module">
-import { compile, version } from './cairn-engine.js';
+import { compile, version, themeNames } from './cairn-engine.js';
 
 // Minimal starter scaffolds — one per diagram type. Each is a clean base
 // that compiles with zero errors so you can build up from it.
@@ -118,7 +121,16 @@ const preview = document.getElementById('preview');
 const diagsEl = document.getElementById('diags');
 const stat    = document.getElementById('stat');
 const note    = document.getElementById('note');
-let lastSvg = null, zoom = 1;
+const themeSel = document.getElementById('theme');
+let lastSvg = null, zoom = 1, currentTheme = '';
+
+// Populate the theme dropdown from the engine's theme list.
+for (const t of themeNames) {
+  const o = document.createElement('option');
+  o.value = t; o.textContent = 'theme: ' + t;
+  themeSel.appendChild(o);
+}
+themeSel.addEventListener('change', e => { currentTheme = e.target.value; run(); });
 
 const escapeHtml = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
 const b64encode = s => btoa(String.fromCharCode(...new TextEncoder().encode(s)));
@@ -142,7 +154,7 @@ async function run() {
   running = true;
   const src = editor.value;
   try {
-    const r = await compile(src);
+    const r = await compile(src, currentTheme ? { theme: currentTheme } : undefined);
     diagsEl.innerHTML = r.diagnostics.map(d =>
       `<div class="diag" data-line="${d.span.line}"><b class="${d.severity === 'error' ? 'e' : 'w'}">${d.severity}[${d.code}]</b> line ${d.span.line}: ${escapeHtml(d.message)}${d.help ? `<span class="help">help: ${escapeHtml(d.help)}</span>` : ''}</div>`
     ).join('');
@@ -152,6 +164,9 @@ async function run() {
       lastSvg = r.svg;
       preview.classList.remove('error');
       preview.innerHTML = r.svg;
+      // match the preview backdrop to the theme's canvas colour
+      const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
+      if (bg) preview.style.background = bg;
       applyZoom();
       stat.innerHTML = `<span class="ok">✓</span> ${r.metrics.width}×${r.metrics.height} · layout ${r.metrics.layoutMs} ms · label overlaps: ${r.metrics.overlaps}${nw ? ` · <span style="color:var(--warn)">${nw} warning${nw > 1 ? 's' : ''}</span>` : ''} · engine v${version}`;
     } else {

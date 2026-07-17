@@ -69,12 +69,6 @@ Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/
 <p align="center"><img src="examples/infrastructure-medium.svg" alt="Medium infrastructure view" width="760"></p>
 <p align="center"><img src="examples/infrastructure-large.svg" alt="Large infrastructure view" width="760"></p>
 
-### Light mode / dark mode
-
-<img src="examples/theme-light.svg" alt="Light theme" width="100%">
-
-<img src="examples/theme-dark.svg" alt="Dark theme" width="100%">
-
 ### Custom colours
 
 Per-element `fill`/`stroke`/`text`, per-kind overrides, and a custom canvas `background` — [`examples/colors-custom.cairn`](examples/colors-custom.cairn):
@@ -93,6 +87,28 @@ Same diagram different disposition :
 > This example has a large number of flows on purpose in order to showcase how it renders. But in such a case, it's best to consider breaking the diagram into two diagrams : one more general one more zoomed in.
 
 <p align="center"><img src="examples/large-numbered.svg" alt="Custom colours" width="620"></p>
+
+### Themes
+
+Cairn comes with a collection of built-in themes. Choose the one that best fits your presentation or documentation style:
+
+<table>
+  <tr>
+    <td align="center"><strong>Classic</strong><br><img src="examples/themes/classic.svg" alt="Classic theme" width="200"></td>
+    <td align="center"><strong>Classic Dark</strong><br><img src="examples/themes/classic-dark.svg" alt="Classic Dark theme" width="200"></td>
+    <td align="center"><strong>Light</strong><br><img src="examples/themes/light.svg" alt="Light theme" width="200"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Dark</strong><br><img src="examples/themes/dark.svg" alt="Dark theme" width="200"></td>
+    <td align="center"><strong>Contrast</strong><br><img src="examples/themes/contrast.svg" alt="Contrast theme" width="200"></td>
+    <td align="center"><strong>Nord</strong><br><img src="examples/themes/nord.svg" alt="Nord theme" width="200"></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>Sand</strong><br><img src="examples/themes/sand.svg" alt="Sand theme" width="200"></td>
+    <td align="center"><strong>Slate</strong><br><img src="examples/themes/slate.svg" alt="Slate theme" width="200"></td>
+    <td align="center"><strong>Solarized</strong><br><img src="examples/themes/solarized.svg" alt="Solarized theme" width="200"></td>
+  </tr>
+</table>
 
 ## Installation
 
