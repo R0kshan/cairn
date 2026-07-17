@@ -106,7 +106,7 @@ Same diagram different disposition :
 
 Cairn comes with a collection of built-in themes. Choose the one that best fits your presentation or documentation style:
 
-<table>
+<table align="center">
   <tr>
     <td align="center"><strong>Classic</strong><br><img src="examples/themes/classic.svg" alt="Classic theme" width="200"></td>
     <td align="center"><strong>Classic Dark</strong><br><img src="examples/themes/classic-dark.svg" alt="Classic Dark theme" width="200"></td>
