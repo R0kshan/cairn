@@ -71,7 +71,9 @@ Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/
 
 ### Light mode / dark mode
 
-<table> <tr> <td width="50%"><img src="examples/theme-light.svg" alt="Light theme" width="100%"><br><sub><code>theme: light</code> — <a href="examples/theme-light.cairn">theme-light.cairn</a></sub></td> <td width="50%"><img src="examples/theme-dark.svg" alt="Dark theme" width="100%"><br><sub><code>theme: dark</code> — <a href="examples/theme-dark.cairn">theme-dark.cairn</a></sub></td> </tr> </table>
+<img src="examples/theme-light.svg" alt="Light theme" width="100%">
+
+<img src="examples/theme-dark.svg" alt="Dark theme" width="100%">
 
 ### Custom colours
 
