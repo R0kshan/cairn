@@ -126,15 +126,31 @@ Cairn comes with a collection of built-in themes. Choose the one that best fits 
 
 ## Installation
 
-```bash
-# While in early access / local development:
-git clone https://github.com/R0kshan/cairn
-cd cairn
-npm install
-npm run cairn -- --help
+Prebuilt, self-contained binaries are published on every `v*` tag (no runtime needed). Pick your platform:
 
-# Coming soon: Homebrew, Scoop, and npm i -g cairn-cli
+```sh
+# macOS / Linux — curl installer (downloads the right binary for your OS/arch)
+curl -fsSL https://raw.githubusercontent.com/R0kshan/cairn/main/packaging/install.sh | sh
+
+# macOS / Linux — Homebrew
+brew install R0kshan/tap/cairn
+
+# Windows — Scoop
+scoop bucket add cairn https://github.com/R0kshan/scoop-bucket
+scoop install cairn
 ```
+
+The curl installer drops a `cairn` binary in `~/.local/bin` (override with `CAIRN_INSTALL_DIR`) and clears the macOS quarantine flag so it runs immediately.
+
+From source (no release needed — requires Node ≥ 22.6):
+
+```sh
+git clone https://github.com/R0kshan/cairn && cd cairn
+npm install
+npm run cairn -- --help          # or: node bin/cairn.js --help
+```
+
+> The Homebrew, Scoop, and curl channels all serve the compiled binaries from the GitHub Release. They light up once the first release is tagged — see [`RELEASING.md`](RELEASING.md) for the one-time repo setup and the release steps. (npm publishing is intentionally disabled: the bare name `cairn` is already taken on the registry.)
 
 ## Commands
 
