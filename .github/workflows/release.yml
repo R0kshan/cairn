@@ -99,7 +99,7 @@ jobs:
         with: { persist-credentials: false }
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: 22 }
-      - uses: actions/download-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5
+      - uses: actions/download-artifact@a9bc5e6ef2cb54c177f32aa5726adaa15e7e2d59 # v3.1.0
         with: { name: dist, path: dist }
 
       - name: Render formula + manifest
