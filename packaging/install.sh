@@ -23,10 +23,46 @@ tag=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n '
 version=${tag#v}
 asset="cairn-${version}-${os}-${arch}"
 
-echo "installing cairn $tag ($os-$arch) to $INSTALL_DIR"
+base="https://github.com/$REPO/releases/download/$tag"
+sums="cairn-${version}-checksums.txt"
+tmp=$(mktemp -d)
+trap 'rm -rf "$tmp"' EXIT
+
+echo "downloading cairn $tag ($os-$arch)…"
+curl -fsSL -o "$tmp/cairn" "$base/$asset"
+
+# --- verify the download against the published sha256 checksums (fail closed) ---
+if ! curl -fsSL -o "$tmp/$sums" "$base/$sums"; then
+  echo "error: could not fetch $sums to verify the binary — aborting for safety" >&2
+  exit 1
+fi
+expected=$(awk -v f="$asset" '{n=$2; sub(/^\*/,"",n); if (n==f) print $1}' "$tmp/$sums" | head -n1)
+[ -n "$expected" ] || { echo "error: $asset not listed in $sums — aborting" >&2; exit 1; }
+if command -v sha256sum >/dev/null 2>&1; then
+  actual=$(sha256sum "$tmp/cairn" | awk '{print $1}')
+elif command -v shasum >/dev/null 2>&1; then
+  actual=$(shasum -a 256 "$tmp/cairn" | awk '{print $1}')
+else
+  echo "error: no sha256 tool (sha256sum/shasum) available to verify — aborting" >&2
+  exit 1
+fi
+if [ "$expected" != "$actual" ]; then
+  echo "error: checksum mismatch for $asset — refusing to install" >&2
+  echo "  expected: $expected" >&2
+  echo "  actual:   $actual" >&2
+  exit 1
+fi
+echo "✓ sha256 verified"
+
 mkdir -p "$INSTALL_DIR"
-curl -fsSL -o "$INSTALL_DIR/cairn" "https://github.com/$REPO/releases/download/$tag/$asset"
+mv "$tmp/cairn" "$INSTALL_DIR/cairn"
 chmod +x "$INSTALL_DIR/cairn"
+
+# macOS quarantines files downloaded via curl; strip it so Gatekeeper doesn't
+# block the unsigned binary on first run. (Homebrew does this automatically.)
+if [ "$os" = darwin ]; then
+  xattr -d com.apple.quarantine "$INSTALL_DIR/cairn" >/dev/null 2>&1 || true
+fi
 
 echo "✓ installed: $INSTALL_DIR/cairn"
 case ":$PATH:" in
