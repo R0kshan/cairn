@@ -33,7 +33,7 @@ Furthermore, complexe software architecture with many flows and component genera
 
 > Cairn is not a replacement for general diagram tools; for flowcharts, sequence, or ER diagrams, Mermaid or D2 remain the better fit. For C4-level software-structure modeling, dedicated C4 tools like Structurizr or LikeC4 ([c4model.com](https://c4model.com)) are a mature choice.
 
-As a result here's a comparaison of the same diagram done with D2 (ELK Layout) vs Cairn : 
+As a result here's a comparaison of the same diagram done with D2 (ELK Layout) vs Cairn (tuned ELK Layout) : 
 
 |D2 (ELK Layout)|Cairn (ELK)|
 |---|---|
@@ -49,7 +49,7 @@ Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/).
 
 Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/`](examples/) — plain SVG, zero label overlaps.
 
-> Each example digram below 
+> The example diagrams have been generated with AI and some of them purposely large to showcase how such diagrams are rendered with Cairn to handle overlap. 
 
 ### Logicial view diagram examples from small to large
 
@@ -88,9 +88,9 @@ Same diagram different disposition :
 
 ### Numbered flows
 
+> This example has a large number of flows on purpose in order to showcase how it renders. But in such a case, it's best to consider breaking the diagram into two diagrams : one more general one more zoomed in.
+
 <p align="center"><img src="examples/large-numbered.svg" alt="Custom colours" width="620"></p>
-
-
 
 ## Installation
 
