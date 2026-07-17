@@ -239,6 +239,18 @@ function applyStyleEntry(
       else bad(v ?? key, '`on` or `off`');
       break;
     }
+    case 'arrows': {
+      const v = one();
+      if (v?.kind === 'id' && (v.text === 'normal' || v.text === 'large')) diag.arrows = v.text as any;
+      else bad(v ?? key, '`normal` or `large`');
+      break;
+    }
+    case 'flow-color': {
+      const v = one();
+      if (v?.kind === 'id' && (v.text === 'none' || v.text === 'by-source')) diag.flowColor = v.text as any;
+      else bad(v ?? key, '`none` or `by-source`');
+      break;
+    }
     case 'disposition': {
       const v = one();
       const OK = new Set(['wide', 'tall', 'slide', 'page']);
@@ -320,6 +332,6 @@ function applyStyleEntry(
       break;
     }
     default:
-      diags.push({ code: 'E0104', severity: 'error', message: `unknown style property: \`${k}\``, span: key.span, help: 'properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, compact, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size' });
+      diags.push({ code: 'E0104', severity: 'error', message: `unknown style property: \`${k}\``, span: key.span, help: 'properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size' });
   }
 }

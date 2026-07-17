@@ -92254,6 +92254,8 @@ var defaultDiagramStyle = () => ({
   disposition: "wide",
   legend: "auto",
   flowText: "full",
+  arrows: "normal",
+  flowColor: "none",
   flowLabel: "on-line",
   flowStroke: { color: "#444444", style: "solid", width: 1.3 },
   flowStrokeColorSet: false,
@@ -92332,6 +92334,10 @@ var darkPalette = {
   chipText: "#e0c068"
 };
 var palettes = { light: lightPalette, dark: darkPalette };
+var flowPalette = {
+  light: ["#1f77b4", "#d62728", "#2e8b57", "#9467bd", "#8c564b", "#c1288a", "#0e8ea6", "#9a9a1e", "#e07b00", "#5a5a5a"],
+  dark: ["#5fa8dc", "#f2695f", "#63c98a", "#b79ae0", "#c08a76", "#e878bd", "#4fc4d6", "#cfcf5a", "#f2a24e", "#a6a6a6"]
+};
 var logicalView = {
   name: "logical",
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
@@ -92977,6 +92983,18 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
       else bad(v ?? key, "`on` or `off`");
       break;
     }
+    case "arrows": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "normal" || v.text === "large")) diag.arrows = v.text;
+      else bad(v ?? key, "`normal` or `large`");
+      break;
+    }
+    case "flow-color": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "none" || v.text === "by-source")) diag.flowColor = v.text;
+      else bad(v ?? key, "`none` or `by-source`");
+      break;
+    }
     case "disposition": {
       const v = one();
       const OK = /* @__PURE__ */ new Set(["wide", "tall", "slide", "page"]);
@@ -93058,7 +93076,7 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
       break;
     }
     default:
-      diags.push({ code: "E0104", severity: "error", message: `unknown style property: \`${k}\``, span: key.span, help: "properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, compact, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size" });
+      diags.push({ code: "E0104", severity: "error", message: `unknown style property: \`${k}\``, span: key.span, help: "properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size" });
   }
 }
 
@@ -93856,14 +93874,24 @@ async function layout(model, view) {
         const o = origins[e.container] ?? { x: 0, y: 0 };
         const s = e.sections?.[0];
         const pts = s ? [s.startPoint, ...s.bendPoints ?? [], s.endPoint].map((p) => ({ x: p.x + o.x, y: p.y + o.y })) : [];
-        const labels = (e.labels ?? []).map((l) => ({
-          flowId: e.id,
-          text: l.text,
-          x: l.x + o.x,
-          y: l.y + o.y,
-          w: l.width,
-          h: l.height
-        }));
+        const labels = (e.labels ?? []).map((l) => {
+          let x = l.x + o.x, y = l.y + o.y;
+          if (numbered && pts.length >= 2) {
+            const b = pts[pts.length - 1], a = pts[pts.length - 2];
+            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+            const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+            const back = Math.min(len - 2, 20 + l.width / 2);
+            let px = -uy, py = ux;
+            if (py > 0) {
+              px = -px;
+              py = -py;
+            }
+            const off = l.height / 2 + 2;
+            x = b.x - ux * back + px * off - l.width / 2;
+            y = b.y - uy * back + py * off - l.height / 2;
+          }
+          return { flowId: e.id, text: l.text, x, y, w: l.width, h: l.height };
+        });
         edges.push({ id: e.id, pts, labels });
       }
       (n.children ?? []).forEach(collect);
@@ -93926,6 +93954,21 @@ function render(model, view, scene) {
   const pal = palettes[ds.theme] ?? lightPalette;
   const kindDefaults = ds.theme === "dark" ? view.defaultsDark : view.defaults;
   const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : pal.edge;
+  const srcColor = /* @__PURE__ */ new Map();
+  if (ds.flowColor === "by-source") {
+    const hues = flowPalette[ds.theme] ?? flowPalette.light;
+    for (const f of model.flows) if (!srcColor.has(f.from)) srcColor.set(f.from, hues[srcColor.size % hues.length]);
+  }
+  const flowColorOf = (f) => f?.style?.stroke?.color ?? (ds.flowColor === "by-source" ? srcColor.get(f?.from ?? "") ?? edge : edge);
+  const arrowMk = /* @__PURE__ */ new Map();
+  const markerId = (color) => {
+    let id = arrowMk.get(color);
+    if (!id) {
+      id = arrowMk.size === 0 ? "arr" : `arr${arrowMk.size}`;
+      arrowMk.set(color, id);
+    }
+    return id;
+  };
   const flowById = new Map(model.flows.map((f) => [f.id, f]));
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
   const numbered = ds.flowText === "numbered";
@@ -94072,20 +94115,23 @@ function render(model, view, scene) {
     }
   }
   for (const e of scene.edges) {
-    const fst = flowById.get(e.id)?.style;
-    const color = fst?.stroke?.color ?? edge;
+    const f = flowById.get(e.id);
+    const fst = f?.style;
+    const color = flowColorOf(f);
+    const headColor = ds.flowColor === "by-source" ? color : edge;
     const style = fst?.stroke?.style ?? ds.flowStroke.style;
     const width = fst?.stroke?.width ?? ds.flowStroke.width;
     const da = dashArray(style);
     if (e.pts.length) {
-      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ""} marker-end="url(#arr)"/>
+      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ""} marker-end="url(#${markerId(headColor)})"/>
 `;
     }
     for (const l of e.labels) {
       if (numbered) {
-        out += `<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="${l.h / 2}" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}" stroke-width="1"/>
+        const nx = l.x + l.w / 2, ny = l.y + l.h / 2 + bs(3.6), nfs = bs(10.5);
+        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.halo}" stroke="${pal.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(l.text)}</text>
 `;
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + l.h * 12.5 / 17}" font-size="${bs(10)}" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${esc(l.text)}</text>
+        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.edgeLabel}" font-weight="bold">${esc(l.text)}</text>
 `;
         continue;
       }
@@ -94221,9 +94267,10 @@ function render(model, view, scene) {
       }
     }
     by += bs(24);
-    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#arr)"/>
+    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#${markerId(edge)})"/>
 `;
-    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(numbered ? legendFlowLabel + " \u2014 " + t.numberedSuffix : legendFlowLabel)}</text>
+    const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + t.numberedSuffix : legendFlowLabel) + (ds.flowColor === "by-source" ? ds.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
+    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(flowLabelText)}</text>
 `;
     if (model.businessObjects.length) {
       const c = chip(contentX + 330, by + 1, t.businessObject);
@@ -94239,9 +94286,12 @@ function render(model, view, scene) {
     }
   }
   const totalH = by > H ? by + 14 : H;
+  const mw = ds.arrows === "large" ? r1(11 * F.scale) : 7;
+  if (arrowMk.size === 0) markerId(edge);
+  const markers = [...arrowMk].map(([color, id]) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${mw}" markerHeight="${mw}" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("\n");
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${esc(font)},Arial,sans-serif">
-<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="${edge}"/></marker></defs>
+<defs>${markers}</defs>
 <rect width="${W}" height="${totalH}" fill="${ds.background ?? pal.background}"/>
 ` + out + bands + "</svg>\n";
   return { svg, overlapsBefore, overlapsAfter };

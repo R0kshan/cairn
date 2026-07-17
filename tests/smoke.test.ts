@@ -182,6 +182,26 @@ test('font-size scales the text and is measured into the layout', async () => {
   assert.match(small.svg, /font-size="9"[^>]*>Node label/);
 });
 
+test('flow readability: endpoint number, larger arrows, color-by-source', async () => {
+  const base = 'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" block C "c" }\nA -> B : "one"\nB -> C : "two"\n';
+  // default: single arrowhead marker, width 7
+  const def = await build(base.replace('STYLE\n', ''));
+  assert.match(def.svg, /markerWidth="7"/);
+  assert.equal((def.svg.match(/<marker /g) ?? []).length, 1);
+  // B — arrows: large gives a bigger marker
+  const large = await build(base.replace('STYLE', 'style { arrows: large }'));
+  assert.match(large.svg, /markerWidth="11"/);
+  // C — by-source: one marker per source color + colored strokes + legend hint
+  const col = await build(base.replace('STYLE', 'style { flow-color: by-source }'));
+  assert.ok((col.svg.match(/<marker /g) ?? []).length >= 2, 'a marker per source color');
+  assert.match(col.svg, /stroke="#1f77b4"/);           // first source hue
+  assert.match(col.svg, /colour = source/);            // legend hint
+  assert.equal(col.overlapsAfter, 0);
+  // A — numbered badge pinned near the target; must still be overlap-free
+  const num = await build(base.replace('STYLE', 'style { flow-text: numbered }'));
+  assert.equal(num.overlapsAfter, 0);
+});
+
 // ---------- bands & rendering ----------
 
 test('legend + registry bands render, and legend: off removes the legend only', async () => {

@@ -177,9 +177,26 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         const o = origins[e.container] ?? { x: 0, y: 0 };
         const s = e.sections?.[0];
         const pts = s ? [s.startPoint, ...(s.bendPoints ?? []), s.endPoint].map((p: any) => ({ x: p.x + o.x, y: p.y + o.y })) : [];
-        const labels: SceneLabel[] = (e.labels ?? []).map((l: any) => ({
-          flowId: e.id, text: l.text, x: l.x + o.x, y: l.y + o.y, w: l.width, h: l.height,
-        }));
+        const labels: SceneLabel[] = (e.labels ?? []).map((l: any) => {
+          let x = l.x + o.x, y = l.y + o.y;
+          // A (default): pin the number badge on the final approach segment, just
+          // outside the target node, so the number sits where the flow lands.
+          if (numbered && pts.length >= 2) {
+            const b = pts[pts.length - 1], a = pts[pts.length - 2];
+            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+            const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+            // Consistent placement: back from the arrowhead along the final
+            // segment, then offset to the upper side so the number sits BESIDE
+            // the line (never struck through) — same relationship for every flow.
+            const back = Math.min(len - 2, 20 + l.width / 2);
+            let px = -uy, py = ux;           // perpendicular to the segment
+            if (py > 0) { px = -px; py = -py; } // choose the upper side
+            const off = l.height / 2 + 2;
+            x = b.x - ux * back + px * off - l.width / 2;
+            y = b.y - uy * back + py * off - l.height / 2;
+          }
+          return { flowId: e.id, text: l.text, x, y, w: l.width, h: l.height };
+        });
         edges.push({ id: e.id, pts, labels });
       }
       (n.children ?? []).forEach(collect);

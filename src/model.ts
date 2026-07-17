@@ -18,6 +18,8 @@ export interface DiagramStyle {
   disposition: Disposition;
   legend: 'auto' | 'off';
   flowText: 'full' | 'numbered';   // numbered: arrows carry a number badge, text goes to the FLUX band
+  arrows: 'normal' | 'large';      // large: bigger arrowheads so endpoints stand out
+  flowColor: 'none' | 'by-source'; // by-source: tint each flow + its arrowhead by its origin
   flowLabel: 'on-line' | 'above' | 'below';
   flowStroke: { color: string; style: 'solid' | 'dashed' | 'dotted'; width: number };
   flowStrokeColorSet: boolean;     // true once the author sets a flow-stroke color (else palette edge color)
@@ -87,6 +89,8 @@ export const defaultDiagramStyle = (): DiagramStyle => ({
   disposition: 'wide',
   legend: 'auto',
   flowText: 'full',
+  arrows: 'normal',
+  flowColor: 'none',
   flowLabel: 'on-line',
   flowStroke: { color: '#444444', style: 'solid', width: 1.3 },
   flowStrokeColorSet: false,
@@ -170,6 +174,13 @@ export const darkPalette: Palette = {
 };
 
 export const palettes: Record<string, Palette> = { light: lightPalette, dark: darkPalette };
+
+// Categorical hues for `flow-color: by-source` — each source gets one, cycling.
+// Chosen to stay distinguishable against the light/dark canvases.
+export const flowPalette: Record<'light' | 'dark', string[]> = {
+  light: ['#1f77b4', '#d62728', '#2e8b57', '#9467bd', '#8c564b', '#c1288a', '#0e8ea6', '#9a9a1e', '#e07b00', '#5a5a5a'],
+  dark:  ['#5fa8dc', '#f2695f', '#63c98a', '#b79ae0', '#c08a76', '#e878bd', '#4fc4d6', '#cfcf5a', '#f2a24e', '#a6a6a6'],
+};
 
 // ---------------- Views ----------------
 

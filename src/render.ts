@@ -3,7 +3,7 @@
 // INVARIANT (§1.1): every flow is a distinct arrow with a distinct label. Never merged.
 
 import type { Model, View, StyleProps, Flow } from './model.ts';
-import { palettes, lightPalette, UI } from './model.ts';
+import { palettes, lightPalette, flowPalette, UI } from './model.ts';
 import type { Scene, SceneLabel } from './layout.ts';
 import { chipW, CHIP_H, measure, techText, wrapText, fontSizes } from './text.ts';
 
@@ -39,6 +39,24 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   const kindDefaults = ds.theme === 'dark' ? view.defaultsDark : view.defaults;
   // Default flow-stroke color follows the palette unless the author set one.
   const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : pal.edge;
+  // C (opt-in): color each flow by its source. Assign palette hues to distinct
+  // source ids in first-seen order, cycling if there are more sources than hues.
+  const srcColor = new Map<string, string>();
+  if (ds.flowColor === 'by-source') {
+    const hues = flowPalette[ds.theme] ?? flowPalette.light;
+    for (const f of model.flows) if (!srcColor.has(f.from)) srcColor.set(f.from, hues[srcColor.size % hues.length]);
+  }
+  const flowColorOf = (f?: Flow): string =>
+    f?.style?.stroke?.color ?? (ds.flowColor === 'by-source' ? srcColor.get(f?.from ?? '') ?? edge : edge);
+  // Arrowhead markers: one <marker> per distinct color, so heads match their
+  // line even in static SVG (no reliance on context-stroke). The base edge color
+  // keeps id "arr" so default output (normal arrows, no color) is byte-identical.
+  const arrowMk = new Map<string, string>();
+  const markerId = (color: string): string => {
+    let id = arrowMk.get(color);
+    if (!id) { id = arrowMk.size === 0 ? 'arr' : `arr${arrowMk.size}`; arrowMk.set(color, id); }
+    return id;
+  };
   const flowById = new Map<string, Flow>(model.flows.map(f => [f.id, f]));
   const boName = new Map(model.businessObjects.map(b => [b.id, b.name]));
   const numbered = ds.flowText === 'numbered';
@@ -181,19 +199,27 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     }
   }
   for (const e of scene.edges) {
-    const fst = flowById.get(e.id)?.style;
-    const color = fst?.stroke?.color ?? edge;
+    const f = flowById.get(e.id);
+    const fst = f?.style;
+    const color = flowColorOf(f);
+    // arrowhead matches the line only under by-source; otherwise the base edge
+    // color, so default output stays byte-identical.
+    const headColor = ds.flowColor === 'by-source' ? color : edge;
     const style = fst?.stroke?.style ?? ds.flowStroke.style;
     const width = fst?.stroke?.width ?? ds.flowStroke.width;
     const da = dashArray(style);
     if (e.pts.length) {
-      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ''} marker-end="url(#arr)"/>\n`;
+      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ''} marker-end="url(#${markerId(headColor)})"/>\n`;
     }
     for (const l of e.labels) {
       if (numbered) {
-        // number badge — full text lives in the FLOWS band below
-        out += `<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="${l.h / 2}" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}" stroke-width="1"/>\n`;
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + l.h * 12.5 / 17}" font-size="${bs(10)}" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${esc(l.text)}</text>\n`;
+        // number sits on the line near its target (full text lives in the FLOWS
+        // band below). No background box: a two-pass halo (fat background-colored
+        // number behind, dark number on top) keeps it legible over lines and
+        // renders crisply even where `paint-order` is unsupported (PDF/rsvg).
+        const nx = l.x + l.w / 2, ny = l.y + l.h / 2 + bs(3.6), nfs = bs(10.5);
+        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.halo}" stroke="${pal.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(l.text)}</text>\n`;
+        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.edgeLabel}" font-weight="bold">${esc(l.text)}</text>\n`;
         continue;
       }
       // Transparent background: a thin halo (background color) on the glyphs
@@ -328,8 +354,10 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       if (lx > W - 220) { lx = contentX; by += bs(22); }
     }
     by += bs(24);
-    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#arr)"/>\n`;
-    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(numbered ? legendFlowLabel + ' — ' + t.numberedSuffix : legendFlowLabel)}</text>\n`;
+    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#${markerId(edge)})"/>\n`;
+    const flowLabelText = (numbered ? legendFlowLabel + ' — ' + t.numberedSuffix : legendFlowLabel)
+      + (ds.flowColor === 'by-source' ? (ds.lang === 'fr' ? ' — couleur = source' : ' — colour = source') : '');
+    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(flowLabelText)}</text>\n`;
     if (model.businessObjects.length) {
       const c = chip(contentX + 330, by + 1, t.businessObject);
       bands += c.svg;
@@ -343,9 +371,13 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   }
 
   const totalH = by > H ? by + 14 : H;
+  // B (opt-in): larger arrowheads that scale with font-size. Default stays 7.
+  const mw = ds.arrows === 'large' ? r1(11 * F.scale) : 7;
+  if (arrowMk.size === 0) markerId(edge); // ensure the base marker always exists
+  const markers = [...arrowMk].map(([color, id]) =>
+    `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${mw}" markerHeight="${mw}" orient="auto-start-reverse">\n<path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join('\n');
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${esc(font)},Arial,sans-serif">
-<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="${edge}"/></marker></defs>
+<defs>${markers}</defs>
 <rect width="${W}" height="${totalH}" fill="${ds.background ?? pal.background}"/>\n` + out + bands + '</svg>\n';
   return { svg, overlapsBefore, overlapsAfter };
 }
