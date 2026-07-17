@@ -1,0 +1,24 @@
+diagram application "Theme showcase — sand"
+style { theme: sand }
+
+actor-group TEAM "Team" {
+  actor DEV "Developer"
+  actor OPS "Operator"
+}
+
+application CORE "Core platform" {
+  module API "API service"
+  module JOBS "Job runner"
+}
+
+datastore DB "Primary database"
+
+external PAY "Payment provider"
+
+business-object ORDER "Order" "a customer order tracked to fulfilment"
+
+DEV  -> API  : "Create order" (HTTPS, JSON) [ORDER]
+API  -> DB   : "Persist order" (SQL)
+API  -> PAY  : "Charge card" (HTTPS)
+OPS  -> JOBS : "Trigger nightly batch"
+JOBS -> DB   : "Read / write" (SQL)

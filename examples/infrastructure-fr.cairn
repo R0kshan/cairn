@@ -27,7 +27,7 @@ site DC "Centre de données principal" {
   }
 }
 
-external POSTES "Postes\nutilisateurs"
+actor POSTES "Postes\nutilisateurs"
 external EDI "Plateforme EDI\npartenaire"
 
 # ---- flux techniques (protocole OBLIGATOIRE) ----

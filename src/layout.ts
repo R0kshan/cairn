@@ -2,11 +2,9 @@
 // Ported from the phase 0 spike; view conventions drive the ELK options.
 
 import type { Model, Element, View } from './model.ts';
-import { measure, wrapText, flowLabelBox, techText } from './text.ts';
+import { measure, wrapText, flowLabelBox, techText, fontSizes } from './text.ts';
 import { foldedLayout } from './fold.ts';
 import { getElk } from './elk.ts';
-
-const FS_EDGE = 10.5, FS_NODE = 11.5, FS_CONT = 12;
 
 export interface SceneNode { id: string; kind: string; label: string; x: number; y: number; w: number; h: number; container: boolean; }
 export interface SceneLabel { flowId: string; text: string; x: number; y: number; w: number; h: number; }
@@ -17,13 +15,21 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const boName = new Map(model.businessObjects.map(b => [b.id, b.name]));
   const numbered = model.style.flowText === 'numbered';
+  // `compact` opts into a denser layout: tighter inter-layer spacing plus
+  // narrower-wrapped flow labels (traded for a little extra height), which
+  // shrinks the label-driven gaps between layers. Off by default.
+  const compact = model.style.compact;
+  const COMPACT_WRAP = 10; // chars/line for flow labels when compact
+  // Text sizes derive from the single base (style.font.size); bigger base =
+  // bigger, more readable text everywhere, with layout measured to match.
+  const { edge: FS_EDGE, node: FS_NODE, cont: FS_CONT, scale: FS_SCALE } = fontSizes(model.style.font.size);
 
   function toElkNode(e: Element): any {
     if (e.children.length) {
       const nLines = (e.label ?? e.id).split('\n').length;
       return {
         id: e.id,
-        layoutOptions: { 'elk.padding': `[top=${17 + nLines * 13},left=12,bottom=12,right=12]` },
+        layoutOptions: { 'elk.padding': `[top=${(compact ? 11 : 13) + nLines * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]` },
         labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT) }],
         children: e.children.map(toElkNode),
       };
@@ -32,17 +38,41 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const isActor = e.kind === 'actor';
     return {
       id: e.id,
-      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE - 1.5).width + 8) : Math.max(140, m.width + 16),
-      height: isActor ? 56 + ((e.label ?? e.id).split('\n').length - 1) * 11 : Math.max(46, m.height + 18),
+      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE - 1.5).width + 8) : Math.max(compact ? 98 : 108, m.width + (compact ? 10 : 12)),
+      height: isActor ? 54 + ((e.label ?? e.id).split('\n').length - 1) * 11 : Math.max(compact ? 36 : 38, m.height + (compact ? 10 : 12)),
     };
   }
 
-  // disposition -> direction; balanced modes (slide/page) try both directions
-  // and keep the result closest to the target ratio (ELK's wrapping doesn't
-  // operate under INCLUDE_CHILDREN, so exact ratio targeting is unavailable).
+  // disposition -> direction. Direction is LOCKED per disposition so the actor
+  // band (partition 0) is always on the expected side — a hard reading-order
+  // invariant, not something left to the fitness search:
+  //   wide  / slide -> RIGHT (actors LEFT)   |  tall / page -> DOWN (actors TOP)
+  // slide/page still explore multiple candidates, but only within their locked
+  // direction; the search tunes fit (label wrap, spacing), never the side.
   const disp = model.style.disposition;
   const TARGETS: Record<string, number | undefined> = { slide: 16 / 9, page: 0.71 };
   const target = TARGETS[disp];
+
+  // Infrastructure and security views have no `actor` kind — their "users" are
+  // modelled as `external` elements. Split externals by flow topology so those
+  // user-facing sources read on the entry side (left for wide/slide, top for
+  // tall/page), exactly like actors do, while downstream partners stay on the
+  // exit side. An external is INGRESS iff it only feeds the system (has an
+  // outgoing flow into it and no incoming flow); everything else is EGRESS.
+  // Only applies to partitionByOrder views (infra/security); logical/application
+  // keep externals right — there, users are actors and already sit left.
+  const ingressExternal = new Set<string>();
+  if (view.partitionByOrder) {
+    for (const e of model.elements) {
+      if (e.kind !== 'external') continue;
+      const ids = new Set<string>();
+      (function collect(x: Element) { ids.add(x.id); x.children.forEach(collect); })(e);
+      const feedsIn = model.flows.some(f => ids.has(f.from) && !ids.has(f.to));
+      const receives = model.flows.some(f => ids.has(f.to) && !ids.has(f.from));
+      if (feedsIn && !receives) ingressExternal.add(e.id);
+    }
+  }
+  const INGRESS_PART = -1, EGRESS_PART = 900; // left-of-everything / right-of-everything
 
   const makeGraph = (direction: 'RIGHT' | 'DOWN', opts?: { labelWrap?: number; tight?: boolean; minLayers?: boolean }) => ({
     id: 'root',
@@ -50,10 +80,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       'elk.algorithm': 'layered',
       'elk.direction': direction,
       ...(opts?.tight ? {
-        'elk.layered.spacing.nodeNodeBetweenLayers': '30',
-        'elk.spacing.nodeNode': '13',
-        'elk.spacing.edgeEdge': '9',
-        'elk.spacing.edgeNode': '10',
+        'elk.layered.spacing.nodeNodeBetweenLayers': '14',
+        'elk.spacing.nodeNode': '10',
+        'elk.spacing.edgeEdge': '8',
+        'elk.spacing.edgeNode': '9',
       } : {}),
       ...(opts?.minLayers ? { 'elk.layered.layering.strategy': 'LONGEST_PATH' } : {}),
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
@@ -64,14 +94,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       'elk.layered.feedbackEdges': 'true',
       'elk.layered.thoroughness': '30',
       'elk.separateConnectedComponents': 'false',
-      'elk.layered.spacing.nodeNodeBetweenLayers': '44',
-      'elk.spacing.nodeNode': '16',
-      'elk.spacing.edgeEdge': '11',
-      'elk.spacing.edgeNode': '12',
-      'elk.spacing.edgeLabel': '3',
+      'elk.layered.spacing.nodeNodeBetweenLayers': compact ? '10' : '16',
+      'elk.spacing.nodeNode': compact ? '8' : '11',
+      'elk.spacing.edgeEdge': compact ? '7' : '9',
+      'elk.spacing.edgeNode': compact ? '8' : '10',
+      'elk.spacing.edgeLabel': '2',
       'elk.layered.edgeLabels.sideSelection': 'SMART_DOWN',
       'elk.edgeLabels.placement': 'CENTER',
-      'elk.padding': '[top=30,left=12,bottom=12,right=12]',
+      'elk.padding': '[top=22,left=10,bottom=10,right=10]',
       // Numbered mode carries tiny number badges (not full labels) on the
       // edges, so there's room to spread blocks apart and let ELK find
       // shorter, more followable routes: more node/edge spacing + thoroughness.
@@ -86,9 +116,16 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     },
     children: model.elements.map((e, idx) => {
       const n = toElkNode(e);
-      // partition: by declaration order (infra zones/sites) or by kind band
+      // partition: by declaration order (infra zones/sites) or by kind band.
+      // In partitionByOrder views, actors (the users) pin to the entry edge, and
+      // externals split by ingress/egress side (see ingressExternal above) so
+      // user-facing sources read on the entry edge and partners on the exit edge.
       const p = view.partitionByOrder
-        ? (view.partitions[e.kind] !== undefined ? 90 + view.partitions[e.kind] : idx)
+        ? (e.kind === 'actor' || e.kind === 'actor-group'
+            ? INGRESS_PART
+            : e.kind === 'external'
+              ? (ingressExternal.has(e.id) ? INGRESS_PART : EGRESS_PART)
+              : (view.partitions[e.kind] !== undefined ? 90 + view.partitions[e.kind] : idx))
         : (view.partitions[e.kind] ?? 1);
       n.layoutOptions = { ...n.layoutOptions, 'elk.partitioning.partition': String(p) };
       return n;
@@ -97,15 +134,18 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       if (numbered) {
         return {
           id: f.id, sources: [f.from], targets: [f.to],
-          labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 }],
+          labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) }],
         };
       }
-      const text = f.label && opts?.labelWrap ? wrapText(f.label, opts.labelWrap) : f.label;
+      // compact wraps labels narrower (unless a candidate already sets a wrap),
+      // trading a bit of height for much less width in the inter-layer gaps.
+      const wrap = opts?.labelWrap ?? (compact ? COMPACT_WRAP : undefined);
+      const text = f.label && wrap ? wrapText(f.label, wrap) : f.label;
       const chips = (f.objects ?? []).map(o => boName.get(o.id) ?? o.id);
       const tech = techText(f.tech);
       return {
         id: f.id, sources: [f.from], targets: [f.to],
-        labels: text || chips.length || tech ? [{ text: text ?? '', ...flowLabelBox(text ?? '', chips, FS_EDGE, tech) }] : [],
+        labels: text || chips.length || tech ? [{ text: text ?? '', ...flowLabelBox(text ?? '', chips, FS_EDGE, tech, FS_SCALE) }] : [],
       };
     }),
   });
@@ -137,9 +177,26 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         const o = origins[e.container] ?? { x: 0, y: 0 };
         const s = e.sections?.[0];
         const pts = s ? [s.startPoint, ...(s.bendPoints ?? []), s.endPoint].map((p: any) => ({ x: p.x + o.x, y: p.y + o.y })) : [];
-        const labels: SceneLabel[] = (e.labels ?? []).map((l: any) => ({
-          flowId: e.id, text: l.text, x: l.x + o.x, y: l.y + o.y, w: l.width, h: l.height,
-        }));
+        const labels: SceneLabel[] = (e.labels ?? []).map((l: any) => {
+          let x = l.x + o.x, y = l.y + o.y;
+          // A (default): pin the number badge on the final approach segment, just
+          // outside the target node, so the number sits where the flow lands.
+          if (numbered && pts.length >= 2) {
+            const b = pts[pts.length - 1], a = pts[pts.length - 2];
+            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+            const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+            // Consistent placement: back from the arrowhead along the final
+            // segment, then offset to the upper side so the number sits BESIDE
+            // the line (never struck through) — same relationship for every flow.
+            const back = Math.min(len - 2, 20 + l.width / 2);
+            let px = -uy, py = ux;           // perpendicular to the segment
+            if (py > 0) { px = -px; py = -py; } // choose the upper side
+            const off = l.height / 2 + 2;
+            x = b.x - ux * back + px * off - l.width / 2;
+            y = b.y - uy * back + py * off - l.height / 2;
+          }
+          return { flowId: e.id, text: l.text, x, y, w: l.width, h: l.height };
+        });
         edges.push({ id: e.id, pts, labels });
       }
       (n.children ?? []).forEach(collect);
@@ -151,17 +208,18 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const t0 = Date.now();
   let res: any;
   if (target) {
-    // Orientation is a HARD constraint (slide = landscape, page = portrait);
-    // the ratio is only a soft target among correctly-oriented candidates.
-    // Slide adds width-reducing candidates: narrow-wrapped labels trade the
-    // slide's spare height for width (labels drive layer-gap width in RIGHT).
+    // Direction is locked (slide = RIGHT/landscape, page = DOWN/portrait) so the
+    // actor band never flips sides. Candidates only vary fit knobs WITHIN that
+    // direction: slide trades its spare height for width via narrow-wrapped
+    // labels + tight spacing; page re-wraps labels to fill the column.
     const specs: any[] = disp === 'slide'
-      ? [makeGraph('RIGHT'), makeGraph('DOWN'),
+      ? [makeGraph('RIGHT'),
          makeGraph('RIGHT', { labelWrap: 16 }), makeGraph('RIGHT', { labelWrap: 14, tight: true }),
-         makeGraph('RIGHT', { labelWrap: 14, tight: true, minLayers: true }),
-         makeGraph('DOWN', { labelWrap: 16 }), makeGraph('DOWN', { labelWrap: 20, minLayers: true })]
-      : [makeGraph('RIGHT'), makeGraph('DOWN'), makeGraph('DOWN', { labelWrap: 16 })];
+         makeGraph('RIGHT', { labelWrap: 14, tight: true, minLayers: true })]
+      : [makeGraph('DOWN'), makeGraph('DOWN', { labelWrap: 16 })];
     const candidates = await Promise.all(specs.map(g => elk.layout(g)));
+    // All candidates already share the locked direction; this filter only drops
+    // pathological cases (e.g. a RIGHT graph that still came out taller than wide).
     const wantLandscape = disp === 'slide';
     const oriented = candidates.filter(r => wantLandscape ? r.width >= r.height : r.height >= r.width);
     const pool = oriented.length ? oriented : candidates;
@@ -171,10 +229,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const fit = (r: { width: number; height: number }) => -Math.min(frame.w / r.width, frame.h / r.height);
     res = pool.reduce((a, b) => (fit(a) <= fit(b) ? a : b));
     // Slide: the folded composite layout (systems stacked as rows) usually
-    // beats any single global layering — compare on the same fitness.
+    // beats any single global layering. Prefer the fold's slide-shaped canvas
+    // unless the single-layer ribbon fits meaningfully better (>10%): the fold
+    // reads far better on a 16:9 slide than a long ribbon, so a marginal fit edge
+    // (which tighter spacing can create) must not flip a multi-system slide back
+    // into a ribbon.
     if (disp === 'slide') {
       const fold = await foldedLayout(model, view, elk);
-      if (fold && fit(fold) < fit(res)) {
+      if (fold && fit(res) >= fit(fold) * 1.10) {
         fold.layoutMs = Date.now() - t0;
         return fold;
       }

@@ -10,7 +10,7 @@
 
 import type { Model, Element, View } from './model.ts';
 import type { Scene, SceneNode, SceneEdge } from './layout.ts';
-import { measure, wrapText, nodeSize, flowLabelBox, FS_CONT, FS_EDGE } from './text.ts';
+import { measure, wrapText, nodeSize, flowLabelBox, fontSizes } from './text.ts';
 
 const PAD_TOP = 30, PAD = 12;
 const LANE_STEP = 10;   // horizontal spacing of vertical lanes
@@ -36,8 +36,9 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
   const roots = model.elements;
   const boName = new Map(model.businessObjects.map(b => [b.id, b.name]));
   const numbered = model.style.flowText === 'numbered';
+  const { edge: FS_EDGE, node: FS_NODE, cont: FS_CONT, scale: FS_SCALE } = fontSizes(model.style.font.size);
   const chipsOf = (f: { objects?: { id: string }[] }) => numbered ? [] : (f.objects ?? []).map(o => boName.get(o.id) ?? o.id);
-  const numLabel = (f: { id: string }) => ({ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 });
+  const numLabel = (f: { id: string }) => ({ text: String(parseInt(f.id.slice(1), 10)), width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) });
   const part = (e: Element) => view.partitions[e.kind] ?? 1;
   const sources = roots.filter(e => part(e) === 0);
   const middles = roots.filter(e => part(e) === 1);
@@ -69,7 +70,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
         children: e.children.map(toElkNode),
       };
     }
-    const s = nodeSize(e.kind, e.label ?? e.id);
+    const s = nodeSize(e.kind, e.label ?? e.id, FS_NODE);
     return { id: e.id, width: s.w, height: s.h };
   }
 
@@ -95,7 +96,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
           if (numbered) return { id: f.id, sources: [f.from], targets: [f.to], labels: [numLabel(f)] };
           const text = f.label ? wrapText(f.label, LABEL_WRAP + 4) : '';
           const chips = chipsOf(f);
-          return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE) }] : [] };
+          return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, undefined, FS_SCALE) }] : [] };
         }),
         ...interFlows.filter(f => topOf.get(f.from) === sys).map(f => ({ id: `${f.id}_oe`, sources: [f.from], targets: [`${f.id}_out`] })),
         ...interFlows.filter(f => topOf.get(f.to) === sys).map(f => ({ id: `${f.id}_ie`, sources: [`${f.id}_in`], targets: [f.to] })),
@@ -107,7 +108,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
   // ---------- 2. self-laid source/sink columns ----------
   interface ColGroup { el: Element; w: number; h: number; blocks: { el: Element; x: number; y: number; w: number; h: number }[]; }
   const layoutColumn = (groups: Element[]): ColGroup[] => groups.map(g => {
-    const blocks = g.children.map(c => ({ el: c, ...nodeSize(c.kind, c.label ?? c.id), x: 0, y: 0 }));
+    const blocks = g.children.map(c => ({ el: c, ...nodeSize(c.kind, c.label ?? c.id, FS_NODE), x: 0, y: 0 }));
     const w = Math.max(measure(g.label ?? g.id, FS_CONT).width + 20, ...blocks.map(b => b.w)) + 2 * PAD;
     let y = PAD_TOP;
     for (const b of blocks) { b.x = PAD + (w - 2 * PAD - b.w) / 2; b.y = y; y += b.h + 14; }
@@ -147,7 +148,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
   const wSrc = Math.max(0, ...srcCols.map(c => c.w));
   const midW = (m: Element) => m.children.length
     ? middleResults.get(m.id)!.children[0].width
-    : nodeSize(m.kind, m.label ?? m.id).w;
+    : nodeSize(m.kind, m.label ?? m.id, FS_NODE).w;
   const wMid = Math.max(...middles.map(midW));
   const wSink = Math.max(0, ...sinkCols.map(c => c.w));
 
@@ -169,7 +170,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
     const res = middleResults.get(m.id) ?? null;
     const size = res
       ? { w: res.children[0].width, h: res.children[0].height }
-      : (() => { const s = nodeSize(m.kind, m.label ?? m.id); return { w: s.w, h: s.h }; })();
+      : (() => { const s = nodeSize(m.kind, m.label ?? m.id, FS_NODE); return { w: s.w, h: s.h }; })();
     rows.push({ el: m, box: { x: xMid, y: yCur, w: size.w, h: size.h }, res });
     yCur += size.h + Math.max(40, gutterHeight(i + 1));
   });
@@ -292,7 +293,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
     const chips = chipsOf(f);
     const text = numbered ? numLabel(f).text : (f.label ? wrapText(f.label, LABEL_WRAP) : (chips.length ? '' : undefined));
     if (text !== undefined) {
-      const m = numbered ? { width: 26, height: 17 } : flowLabelBox(text, chips, FS_EDGE);
+      const m = numbered ? { width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) } : flowLabelBox(text, chips, FS_EDGE, undefined, FS_SCALE);
       if (pts.length >= 6) {
         const segL = Math.min(pts[2].x, pts[3].x), segR = Math.max(pts[2].x, pts[3].x);
         const span = Math.max(40, segR - segL - m.width - 20);

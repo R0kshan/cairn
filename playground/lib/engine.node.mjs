@@ -7794,7 +7794,7 @@ var require_elk_bundled = __commonJS({
             }
             function Bfb() {
               Bfb = ndb;
-              Afb = SC(UI, Ote, 15, 256, 0, 1);
+              Afb = SC(UI2, Ote, 15, 256, 0, 1);
             }
             function jSb() {
               iSb(this, false, false, false, false);
@@ -18228,7 +18228,7 @@ var require_elk_bundled = __commonJS({
               return a & 63;
             }
             function Ohe(a) {
-              return !a ? null : (a.i & 1) != 0 ? a == Fcb ? GI : a == cE ? UI : a == bE ? QI : a == aE ? LI : a == dE ? XI : a == Ecb ? cJ : a == $D ? HI : II : a;
+              return !a ? null : (a.i & 1) != 0 ? a == Fcb ? GI : a == cE ? UI2 : a == bE ? QI : a == aE ? LI : a == dE ? XI : a == Ecb ? cJ : a == $D ? HI : II : a;
             }
             function pb(a, b) {
               return VD(a) ? sgb(a, b) : TD(a) ? Seb(a, b) : SD(a) ? (KDb(a), XD(a) === XD(b)) : QD(a) ? a.Fb(b) : UC(a) ? mb(a, b) : zz(a, b);
@@ -49964,7 +49964,7 @@ var require_elk_bundled = __commonJS({
               PPd(_ab, new rae());
               PPd(Rab, new uae());
               PPd(QI, new xae());
-              PPd(UI, new Aae());
+              PPd(UI2, new Aae());
               PPd(KI, new Dae());
               PPd(XI, new Gae());
               PPd(MK, new Jae());
@@ -52787,7 +52787,7 @@ var require_elk_bundled = __commonJS({
               PPd(HK, new Eme());
               PPd(HK, new Hme());
               PPd(hJ, new Kme());
-              PPd(UI, new Qme());
+              PPd(UI2, new Qme());
               PPd(hJ, new Tme());
               PPd(XI, new Wme());
               PPd(hJ, new Zme());
@@ -52809,7 +52809,7 @@ var require_elk_bundled = __commonJS({
               PPd(cJ, new Wne());
               PPd(XI, new aoe());
               PPd(hJ, new doe());
-              PPd(UI, new goe());
+              PPd(UI2, new goe());
             }
             function Bmc(a, b) {
               var c, d, e, f, g10, h, i10, j, k, l, m, n, o10;
@@ -53285,7 +53285,7 @@ var require_elk_bundled = __commonJS({
               m = 0;
               a.k = 0;
               a.n = 0;
-              a.b = Wu(SC(UI, Ote, 15, a.j, 0, 1));
+              a.b = Wu(SC(UI2, Ote, 15, a.j, 0, 1));
               a.c = Wu(SC(LI, Ote, 346, a.j, 7, 1));
               for (g10 = new Hmb(a.i.b); g10.a < g10.c.c.length; ) {
                 e = JD(Fmb(g10), 25);
@@ -61834,7 +61834,7 @@ var require_elk_bundled = __commonJS({
               qsc = new nEd(DAe);
               vsc = aqc;
               usc = new pEd(EAe, vsc);
-              tsc = Onb(rse(WC(OC(UI, 1), Ote, 15, 0, [zfb(1), zfb(2), zfb(6), zfb(7), zfb(10), zfb(11)])));
+              tsc = Onb(rse(WC(OC(UI2, 1), Ote, 15, 0, [zfb(1), zfb(2), zfb(6), zfb(7), zfb(10), zfb(11)])));
               ssc = new pEd(FAe, tsc);
               ytc = goc;
               xtc = Hnc;
@@ -62080,7 +62080,7 @@ var require_elk_bundled = __commonJS({
               Eyd(a.I, HK, "IDREFSBase", true);
               Eyd(a.K, cE, "Int", true);
               Eyd(a.M, lJ, "Integer", true);
-              Eyd(a.L, UI, "IntObject", true);
+              Eyd(a.L, UI2, "IntObject", true);
               Eyd(a.P, hJ, "Language", true);
               Eyd(a.Q, dE, "Long", true);
               Eyd(a.R, XI, "LongObject", true);
@@ -62107,7 +62107,7 @@ var require_elk_bundled = __commonJS({
               Eyd(a.mb, XI, "UnsignedIntObject", true);
               Eyd(a.nb, lJ, "UnsignedLong", true);
               Eyd(a.ob, cE, "UnsignedShort", true);
-              Eyd(a.pb, UI, "UnsignedShortObject", true);
+              Eyd(a.pb, UI2, "UnsignedShortObject", true);
               wyd(a, ZIe);
               wle(a);
             }
@@ -63538,7 +63538,7 @@ var require_elk_bundled = __commonJS({
               Eyd(a.F, bE, "EFloat", true);
               Eyd(a.G, QI, "EFloatObject", true);
               Eyd(a.I, cE, "EInt", true);
-              Eyd(a.J, UI, "EIntegerObject", true);
+              Eyd(a.J, UI2, "EIntegerObject", true);
               Eyd(a.L, KI, "EJavaClass", true);
               Eyd(a.M, aJ, "EJavaObject", true);
               Eyd(a.N, dE, "ELong", true);
@@ -67540,7 +67540,7 @@ var require_elk_bundled = __commonJS({
               return "" + this.a;
             };
             _.a = 0;
-            var UI = zeb(mte, "Integer", 15);
+            var UI2 = zeb(mte, "Integer", 15);
             var Afb;
             var Cfb;
             mdb(190, 242, { 3: 1, 35: 1, 190: 1, 242: 1 }, Gfb);
@@ -70681,8 +70681,8 @@ var require_elk_bundled = __commonJS({
             mdb(844, 1, lxe, oOb);
             _.tf = function pOb(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fxe), ""), "Force Model"), "Determines the model for force calculation."), hOb), (Ued(), Oed)), hO), Crb((Ged(), Eed)))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gxe), ""), "Iterations"), "The number of iterations on the force model."), zfb(300)), Qed), UI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hxe), ""), "Repulsive Power"), "Determines how many bend points are added to the edge; such bend points are regarded as repelling particles in the force model"), zfb(0)), Qed), UI), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gxe), ""), "Iterations"), "The number of iterations on the force model."), zfb(300)), Qed), UI2), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hxe), ""), "Repulsive Power"), "Determines how many bend points are added to the edge; such bend points are regarded as repelling particles in the force model"), zfb(0)), Qed), UI2), Crb(Bed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ixe), ""), "FR Temperature"), "The temperature is used as a scaling factor for particle displacements."), jxe), Ned), LI), Crb(Eed))));
               hdd(a, ixe, fxe, mOb);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), kxe), ""), "Eades Repulsion"), "Factor for repulsive forces in Eades' model."), 5), Ned), LI), Crb(Eed))));
@@ -70716,7 +70716,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Pxe), ""), "Desired Edge Length"), "Either specified for parent nodes or for individual edges, where the latter takes higher precedence."), 100), Ned), LI), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Bed])))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Qxe), ""), "Layout Dimension"), "Dimensions that are permitted to be altered during layout."), lPb), Oed), pO), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Rxe), ""), "Stress Epsilon"), "Termination criterion for the iterative process."), jxe), Ned), LI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Sxe), ""), "Iteration Limit"), "Maximum number of performed iterations. Takes higher precedence than 'epsilon'."), zfb(lte)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Sxe), ""), "Iteration Limit"), "Maximum number of performed iterations. Takes higher precedence than 'epsilon'."), zfb(lte)), Qed), UI2), Crb(Eed))));
               FPb((new GPb(), a));
             };
             var jPb, kPb, lPb, mPb, nPb, oPb;
@@ -74174,22 +74174,22 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cze), ""), "Merge Hierarchy-Crossing Edges"), "If hierarchical layout is active, hierarchy-crossing edges use as few hierarchical ports as possible. They are broken by the algorithm, with hierarchical ports inserted as required. Usually, one such port is created for each edge at each hierarchy crossing point. With this option set to true, we try to create as few hierarchical ports as possible in the process. In particular, all edges that form a hyperedge can share a port."), true), Med), GI), Crb(Eed))));
               mdd(a, new ied(ved(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), dze), ""), "Allow Non-Flow Ports To Switch Sides"), "Specifies whether non-flow ports may switch sides if their node's port constraints are either FIXED_SIDE or FIXED_ORDER. A non-flow port is a port on a side that is not part of the currently configured layout flow. For instance, given a left-to-right layout direction, north and south ports would be considered non-flow ports. Further note that the underlying criterium whether to switch sides or not solely relies on the minimization of edge crossings. Hence, edge length and other aesthetics criteria are not addressed."), false), Med), GI), Crb(Fed)), WC(OC(hJ, 1), Ote, 2, 6, ["org.eclipse.elk.layered.northOrSouthPort"]))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eze), ""), "Port Sorting Strategy"), "Only relevant for nodes with FIXED_SIDE port constraints. Determines the way a node's ports are distributed on the sides of a node if their order is not prescribed. The option is set on parent nodes."), quc), Oed), pW), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fze), ""), "Thoroughness"), "How much effort should be spent to produce a nice layout."), zfb(7)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fze), ""), "Thoroughness"), "How much effort should be spent to produce a nice layout."), zfb(7)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gze), ""), "Add Unnecessary Bendpoints"), "Adds bend points even if an edge does not change direction. If true, each long edge dummy will contribute a bend point to its edges and hierarchy-crossing edges will always get a bend point where they cross hierarchy boundaries. By default, bend points are only added where an edge changes direction."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hze), ""), "Generate Position and Layer IDs"), "If enabled position id and layer id are generated, which are usually only used internally when setting the interactiveLayout option. This option should be specified on the root node."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ize), "cycleBreaking"), "Cycle Breaking Strategy"), "Strategy for cycle breaking. Cycle breaking looks for cycles in the graph and determines which edges to reverse to break the cycles. Reversed edges will end up pointing to the opposite direction of regular edges (that is, reversed edges will point left if edges usually point right)."), Zsc), Oed), TV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), jze), GAe), "Node Layering Strategy"), "Strategy for node layering."), Ntc), Oed), jW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), kze), GAe), "Layer Constraint"), "Determines a constraint on the placement of the node regarding the layering."), Dtc), Oed), dW), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), lze), GAe), "Layer Choice Constraint"), "Allows to set a constraint regarding the layer placement of a node. Let i be the value of teh constraint. Assumed the drawing has n layers and i < n. If set to i, it expresses that the node should be placed in i-th layer. Should i>=n be true then the node is placed in the last layer of the drawing. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), mze), GAe), "Layer ID"), "Layer identifier that was calculated by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nze), HAe), "Upper Bound On Width [MinWidth Layerer]"), "Defines a loose upper bound on the width of the MinWidth layerer. If set to '-1' multiple values are tested and the best result is selected."), zfb(4)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), lze), GAe), "Layer Choice Constraint"), "Allows to set a constraint regarding the layer placement of a node. Let i be the value of teh constraint. Assumed the drawing has n layers and i < n. If set to i, it expresses that the node should be placed in i-th layer. Should i>=n be true then the node is placed in the last layer of the drawing. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), mze), GAe), "Layer ID"), "Layer identifier that was calculated by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nze), HAe), "Upper Bound On Width [MinWidth Layerer]"), "Defines a loose upper bound on the width of the MinWidth layerer. If set to '-1' multiple values are tested and the best result is selected."), zfb(4)), Qed), UI2), Crb(Eed))));
               hdd(a, nze, jze, Gtc);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), oze), HAe), "Upper Layer Estimation Scaling Factor [MinWidth Layerer]"), "Multiplied with Upper Bound On Width for defining an upper bound on the width of layers which haven't been determined yet, but whose maximum width had been (roughly) estimated by the MinWidth algorithm. Compensates for too high estimations. If set to '-1' multiple values are tested and the best result is selected."), zfb(2)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), oze), HAe), "Upper Layer Estimation Scaling Factor [MinWidth Layerer]"), "Multiplied with Upper Bound On Width for defining an upper bound on the width of layers which haven't been determined yet, but whose maximum width had been (roughly) estimated by the MinWidth algorithm. Compensates for too high estimations. If set to '-1' multiple values are tested and the best result is selected."), zfb(2)), Qed), UI2), Crb(Eed))));
               hdd(a, oze, jze, Itc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), pze), IAe), "Node Promotion Strategy"), "Reduces number of dummy nodes after layering phase (if possible)."), Ltc), Oed), nW), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), qze), IAe), "Max Node Promotion Iterations"), "Limits the number of iterations for node promotion."), zfb(0)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), qze), IAe), "Max Node Promotion Iterations"), "Limits the number of iterations for node promotion."), zfb(0)), Qed), UI2), Crb(Eed))));
               hdd(a, qze, pze, null);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), rze), "layering.coffmanGraham"), "Layer Bound"), "The maximum number of nodes allowed per layer."), zfb(lte)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), rze), "layering.coffmanGraham"), "Layer Bound"), "The maximum number of nodes allowed per layer."), zfb(lte)), Qed), UI2), Crb(Eed))));
               hdd(a, rze, jze, Atc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), sze), JAe), "Crossing Minimization Strategy"), "Strategy for crossing minimization."), Xsc), Oed), RV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), tze), JAe), "Force Node Model Order"), "The node order given by the model does not change to produce a better layout. E.g. if node A is before node B in the model this is not changed during crossing minimization. This assumes that the node model order is already respected before crossing minimization. This can be achieved by setting considerModelOrder.strategy to NODES_AND_EDGES."), false), Med), GI), Crb(Eed))));
@@ -74199,9 +74199,9 @@ var require_elk_bundled = __commonJS({
               hdd(a, vze, sze, Vsc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), wze), JAe), "In Layer Predecessor of"), "Allows to set a constraint which specifies of which node the current node is the predecessor. If set to 's' then the node is the predecessor of 's' and is in the same layer"), null), Sed), hJ), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xze), JAe), "In Layer Successor of"), "Allows to set a constraint which specifies of which node the current node is the successor. If set to 's' then the node is the successor of 's' and is in the same layer"), null), Sed), hJ), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yze), JAe), "Position Choice Constraint"), "Allows to set a constraint regarding the position placement of a node in a layer. Assumed the layer in which the node placed includes n other nodes and i < n. If set to i, it expresses that the node should be placed at the i-th position. Should i>=n be true then the node is placed at the last position in the layer. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zze), JAe), "Position ID"), "Position within a layer that was determined by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Aze), LAe), "Greedy Switch Activation Threshold"), "By default it is decided automatically if the greedy switch is activated or not. The decision is based on whether the size of the input graph (without dummy nodes) is smaller than the value of this option. A '0' enforces the activation."), zfb(40)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yze), JAe), "Position Choice Constraint"), "Allows to set a constraint regarding the position placement of a node in a layer. Assumed the layer in which the node placed includes n other nodes and i < n. If set to i, it expresses that the node should be placed at the i-th position. Should i>=n be true then the node is placed at the last position in the layer. Note that this option is not part of any of ELK Layered's default configurations but is only evaluated as part of the `InteractiveLayeredGraphVisitor`, which must be applied manually or used via the `DiagramLayoutEngine."), null), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zze), JAe), "Position ID"), "Position within a layer that was determined by ELK Layered for a node. This is only generated if interactiveLayot or generatePositionAndLayerIds is set."), zfb(-1)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Aze), LAe), "Greedy Switch Activation Threshold"), "By default it is decided automatically if the greedy switch is activated or not. The decision is based on whether the size of the input graph (without dummy nodes) is smaller than the value of this option. A '0' enforces the activation."), zfb(40)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Bze), LAe), "Greedy Switch Crossing Minimization"), "Greedy Switch strategy for crossing minimization. The greedy switch heuristic is executed after the regular crossing minimization as a post-processor. Note that if 'hierarchyHandling' is set to 'INCLUDE_CHILDREN', the 'greedySwitchHierarchical.type' option must be used."), Msc), Oed), _V), Crb(Eed))));
               hdd(a, Bze, sze, Nsc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Cze), "crossingMinimization.greedySwitchHierarchical"), "Greedy Switch Crossing Minimization (hierarchical)"), "Activates the greedy switch heuristic in case hierarchical layout is used. The differences to the non-hierarchical case (see 'greedySwitch.type') are: 1) greedy switch is inactive by default, 3) only the option value set on the node at which hierarchical layout starts is relevant, and 2) if it's activated by the user, it properly addresses hierarchy-crossing edges."), Isc), Oed), _V), Crb(Eed))));
@@ -74234,17 +74234,17 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Qze), QAe), "Edge Node Between Layers Spacing"), "The spacing to be preserved between nodes and edges that are routed next to the node's layer. For the spacing between nodes and edges that cross the node's layer 'spacing.edgeNode' is used."), 10), Ned), LI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Rze), QAe), "Edge Edge Between Layer Spacing"), "Spacing to be preserved between pairs of edges that are routed between the same pair of layers. Note that 'spacing.edgeEdge' is used for the spacing between pairs of edges crossing the same layer."), 10), Ned), LI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Sze), QAe), "Node Node Between Layers Spacing"), "The spacing to be preserved between any pair of nodes of two adjacent layers. Note that 'spacing.nodeNode' is used for the spacing between nodes within the layer itself."), 20), Ned), LI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Tze), RAe), "Direction Priority"), "Defines how important it is to have a certain edge point into the direction of the overall layout. This option is evaluated during the cycle breaking phase."), zfb(0)), Qed), UI), Crb(Bed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Uze), RAe), "Shortness Priority"), "Defines how important it is to keep an edge as short as possible. This option is evaluated during the layering phase."), zfb(0)), Qed), UI), Crb(Bed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Vze), RAe), "Straightness Priority"), "Defines how important it is to keep an edge straight, i.e. aligned with one of the two axes. This option is evaluated during node placement."), zfb(0)), Qed), UI), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Tze), RAe), "Direction Priority"), "Defines how important it is to have a certain edge point into the direction of the overall layout. This option is evaluated during the cycle breaking phase."), zfb(0)), Qed), UI2), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Uze), RAe), "Shortness Priority"), "Defines how important it is to keep an edge as short as possible. This option is evaluated during the layering phase."), zfb(0)), Qed), UI2), Crb(Bed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Vze), RAe), "Straightness Priority"), "Defines how important it is to keep an edge straight, i.e. aligned with one of the two axes. This option is evaluated during node placement."), zfb(0)), Qed), UI2), Crb(Bed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Wze), SAe), "Connected Components Compaction"), "Tries to further compact components (disconnected sub-graphs)."), false), Med), GI), Crb(Eed))));
               hdd(a, Wze, uxe, true);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Xze), TAe), "Post Compaction Strategy"), UAe), hsc), Oed), ZV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Yze), TAe), "Post Compaction Constraint Calculation"), UAe), fsc), Oed), QV), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Zze), VAe), "High Degree Node Treatment"), "Makes room around high degree nodes to place leafs and trees."), false), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), $ze), VAe), "High Degree Node Threshold"), "Whether a node is considered to have a high degree."), zfb(16)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), $ze), VAe), "High Degree Node Threshold"), "Whether a node is considered to have a high degree."), zfb(16)), Qed), UI2), Crb(Eed))));
               hdd(a, $ze, Zze, true);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), _ze), VAe), "High Degree Node Maximum Tree Height"), "Maximum height of a subtree connected to a high degree node to be moved to separate layers."), zfb(5)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), _ze), VAe), "High Degree Node Maximum Tree Height"), "Maximum height of a subtree connected to a high degree node to be moved to separate layers."), zfb(5)), Qed), UI2), Crb(Eed))));
               hdd(a, _ze, Zze, true);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), aAe), WAe), "Graph Wrapping Strategy"), "For certain graphs and certain prescribed drawing areas it may be desirable to split the laid out graph into chunks that are placed side by side. The edges that connect different chunks are 'wrapped' around from the end of one chunk to the start of the other chunk. The points between the chunks are referred to as 'cuts'."), Wuc), Oed), wW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), bAe), WAe), "Additional Wrapped Edges Spacing"), "To visually separate edges that are wrapped from regularly routed edges an additional spacing value can be specified in form of this layout option. The spacing is added to the regular edgeNode spacing."), 10), Ned), LI), Crb(Eed))));
@@ -74258,7 +74258,7 @@ var require_elk_bundled = __commonJS({
               hdd(a, dAe, aAe, Ouc);
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), eAe), XAe), "Manually Specified Cuts"), "Allows the user to specify her own cuts for a certain graph."), Red), HK), Crb(Eed))));
               hdd(a, eAe, dAe, Huc);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fAe), "wrapping.cutting.msd"), "MSD Freedom"), "The MSD cutting strategy starts with an initial guess on the number of chunks the graph should be split into. The freedom specifies how much the strategy may deviate from this guess. E.g. if an initial number of 3 is computed, a freedom of 1 allows 2, 3, and 4 cuts."), Juc), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fAe), "wrapping.cutting.msd"), "MSD Freedom"), "The MSD cutting strategy starts with an initial guess on the number of chunks the graph should be split into. The freedom specifies how much the strategy may deviate from this guess. E.g. if an initial number of 3 is computed, a freedom of 1 allows 2, 3, and 4 cuts."), Juc), Qed), UI2), Crb(Eed))));
               hdd(a, fAe, dAe, Kuc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gAe), YAe), "Validification Strategy"), "When wrapping graphs, one can specify indices that are not allowed as split points. The validification strategy makes sure every computed split point is allowed."), _uc), Oed), vW), Crb(Eed))));
               hdd(a, gAe, aAe, avc);
@@ -74276,7 +74276,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), lAe), $Ae), "Layer Unzipping Strategy"), "The strategy to use for unzipping a layer into multiple sublayers while maintaining the existing ordering of nodes and edges after crossing minimization. The default value is 'NONE'."), Wtc), Oed), eW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), mAe), $Ae), "Minimize Edge Length Heuristic"), "Use a heuristic to decide whether or not to actually perform the layer split with the goal of minimizing the total edge length. This option only works when layerSplit is set to 2. The property can be set to the nodes in a layer, which then applies the property for the layer. If any node sets the value to true, then the value is set to true for the entire layer."), false), Med), GI), Crb(Ded))));
               hdd(a, mAe, nAe, Rtc);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nAe), $Ae), "Unzipping Layer Split"), "Defines the number of sublayers to split a layer into. The property can be set to the nodes in a layer, which then applies the property for the layer. If multiple nodes set the value to different values, then the lowest value is chosen."), Ptc), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nAe), $Ae), "Unzipping Layer Split"), "Defines the number of sublayers to split a layer into. The property can be set to the nodes in a layer, which then applies the property for the layer. If multiple nodes set the value to different values, then the lowest value is chosen."), Ptc), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), oAe), $Ae), "Reset Alternation on Long Edges"), "If set to true, nodes will always be placed in the first sublayer after a long edge when using the ALTERNATING strategy. Otherwise long edge dummies are treated the same as regular nodes. The default value is true. The property can be set to the nodes in a layer, which then applies the property for the layer. If any node sets the value to false, then the value is set to false for the entire layer."), Ttc), Med), GI), Crb(Ded))));
               hdd(a, oAe, lAe, Utc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), pAe), _Ae), "Edge Label Side Selection"), "Method to decide on edge label sides."), dtc), Oed), WV), Crb(Eed))));
@@ -74291,16 +74291,16 @@ var require_elk_bundled = __commonJS({
               hdd(a, wAe, rAe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xAe), aBe), "Crossing Counter Port Order Influence"), "Indicates with what percentage (1 for 100%) violations of the port model order are weighted against the crossings e.g. a value of 0.5 means two model order violations are as important as on edge crossing. This allows some edge crossings in favor of preserving the model order. It is advised to set this value to a very small positive value (e.g. 0.001) to have minimal crossing and a optimal port order. Defaults to no influence (0)."), 0), Ned), LI), Crb(Eed))));
               hdd(a, xAe, rAe, null);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yAe), bBe), cBe), "Used to define partial ordering groups during cycle breaking. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yAe), bBe), cBe), "Used to define partial ordering groups during cycle breaking. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI2), Crb(Ded))));
               hdd(a, yAe, tAe, false);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zAe), bBe), cBe), "Used to define partial ordering groups during crossing minimization. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zAe), bBe), cBe), "Used to define partial ordering groups during crossing minimization. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
               hdd(a, zAe, tAe, false);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), AAe), bBe), cBe), "Used to define partial ordering groups during component packing. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), AAe), bBe), cBe), "Used to define partial ordering groups during component packing. A lower group id means that the group is sorted before other groups. A group model order of 0 is the default group."), zfb(0)), Qed), UI2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed])))));
               hdd(a, AAe, tAe, false);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), BAe), bBe), "Cycle Breaking Group Ordering Strategy"), "Determines how to count ordering violations during cycle breaking. NONE: They do not count. ENFORCED: A group with a higher model order is before a node with a smaller. MODEL_ORDER: The model order counts instead of the model order group id ordering."), nsc), Oed), aW), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), CAe), bBe), "Cycle Breaking Preferred Source Id"), "The model order group id for which should be preferred as a source if possible."), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), CAe), bBe), "Cycle Breaking Preferred Source Id"), "The model order group id for which should be preferred as a source if possible."), Qed), UI2), Crb(Eed))));
               hdd(a, CAe, ize, psc);
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), DAe), bBe), "Cycle Breaking Preferred Target Id"), "The model order group id for which should be preferred as a target if possible."), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), DAe), bBe), "Cycle Breaking Preferred Target Id"), "The model order group id for which should be preferred as a target if possible."), Qed), UI2), Crb(Eed))));
               hdd(a, DAe, ize, rsc);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), EAe), bBe), "Crossing Minimization Group Ordering Strategy"), "Determines how to count ordering violations during crossing minimization. NONE: They do not count. ENFORCED: A group with a lower id is before a group with a higher id. MODEL_ORDER: The model order counts instead of the model order group id ordering."), vsc), Oed), aW), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), FAe), bBe), "Crossing Minimization Enforced Group Orders"), "Holds all group ids which are enforcing their order during crossing minimization strategies. E.g. if only groups 2 and -1 (default) enforce their ordering. Other groups e.g. the group of timer nodes can be ordered arbitrarily if it helps and the mentioned groups may not change their order."), tsc), Red), HK), Crb(Eed))));
@@ -76610,8 +76610,8 @@ var require_elk_bundled = __commonJS({
             _.tf = function ZWc(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ECe), ""), LCe), "Turns on Tree compaction which decreases the size of the whole tree by placing nodes of multiple levels in one large level"), (Ndb(), false)), (Ued(), Med)), GI), Crb((Ged(), Eed)))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), FCe), ""), "Edge End Texture Length"), "Should be set to the length of the texture at the end of an edge. This value can be used to improve the Edge Routing."), 7), Ned), LI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GCe), ""), "Tree Level"), "The index for the tree level the node is in"), zfb(0)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), HCe), ""), LCe), "When set to a positive number this option will force the algorithm to place the node to the specified position within the trees layer if weighting is set to constraint"), zfb(-1)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GCe), ""), "Tree Level"), "The index for the tree level the node is in"), zfb(0)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), HCe), ""), LCe), "When set to a positive number this option will force the algorithm to place the node to the specified position within the trees layer if weighting is set to constraint"), zfb(-1)), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ICe), ""), "Weighting of Nodes"), "Which weighting to use when computing a node order."), WWc), Oed), K$), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), JCe), ""), "Edge Routing Mode"), "Chooses an Edge Routing algorithm."), QWc), Oed), G$), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KCe), ""), "Search Order"), "Which search order to use when computing a spanning tree."), TWc), Oed), L$), Crb(Eed))));
@@ -77140,11 +77140,11 @@ var require_elk_bundled = __commonJS({
             mdb(847, 1, lxe, $0c);
             _.tf = function _0c(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), bDe), ""), "Center On Root"), "Centers the layout on the root of the tree i.e. so that the central node is also the center node of the final layout. This introduces additional whitespace."), (Ndb(), false)), (Ued(), Med)), GI), Crb((Ged(), Eed)))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cDe), ""), "Order ID"), "The id can be used to define an order for nodes of one radius. This can be used to sort them in the layer accordingly."), zfb(0)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cDe), ""), "Order ID"), "The id can be used to define an order for nodes of one radius. This can be used to sort them in the layer accordingly."), zfb(0)), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), dDe), ""), "Radius"), "The radius option can be used to set the initial radius for the radial layouter."), 0), Ned), LI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eDe), ""), "Rotate"), "The rotate option determines whether a rotation of the layout should be performed."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fDe), ""), nDe), "With the compacter option it can be determined how compaction on the graph is done. It can be chosen between none, the radial compaction or the compaction of wedges separately."), M0c), Oed), J_), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gDe), ""), "Compaction Step Size"), "Determine the size of steps with which the compaction is done. Step size 1 correlates to a compaction of 1 pixel per Iteration."), zfb(1)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), gDe), ""), "Compaction Step Size"), "Determine the size of steps with which the compaction is done. Step size 1 correlates to a compaction of 1 pixel per Iteration."), zfb(1)), Qed), UI2), Crb(Eed))));
               hdd(a, gDe, fDe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), hDe), ""), "Sorter"), "Sort the nodes per radius according to the sorting algorithm. The strategies are none, by the given order id, or sorting them by polar coordinates."), W0c), Oed), O_), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), iDe), ""), "Annulus Wedge Criteria"), "Determine how the wedge for the node placement is calculated. It can be chosen between wedge determination by the number of leaves or by the maximum sum of diagonals."), Y0c), Oed), I_), Crb(Eed))));
@@ -77376,8 +77376,8 @@ var require_elk_bundled = __commonJS({
             mdb(849, 1, lxe, a4c);
             _.tf = function b4c(a) {
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yDe), ""), "Try box layout first"), "Whether one should check whether the regions are stackable to see whether box layout would do the job. For example, nodes with the same height are not stackable inside a row. Therefore, box layout will perform better and faster."), (Ndb(), false)), (Ued(), Med)), GI), Crb((Ged(), Eed)))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zDe), ""), "Current position of a node in the order of nodes"), "The rectangles are ordered. Normally according to their definition the the model. This option specifies the current position of a node."), zfb(-1)), Qed), UI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ADe), ""), "Desired index of node"), "The rectangles are ordered. Normally according to their definition the the model. This option allows to specify a desired position that has preference over the original position."), zfb(-1)), Qed), UI), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zDe), ""), "Current position of a node in the order of nodes"), "The rectangles are ordered. Normally according to their definition the the model. This option specifies the current position of a node."), zfb(-1)), Qed), UI2), Crb(Ded))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), ADe), ""), "Desired index of node"), "The rectangles are ordered. Normally according to their definition the the model. This option allows to specify a desired position that has preference over the original position."), zfb(-1)), Qed), UI2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), BDe), ""), "In new Row"), "If set to true this node begins in a new row. Consequently this node cannot be moved in a previous layer during compaction. Width approximation does does not take this into account."), false), Med), GI), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), CDe), ""), "Order nodes by height"), "If set to true the nodes will be sorted by their height before computing the layout. The largest node will be in the first position."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), DDe), LDe), "Width Approximation Strategy"), "Strategy for finding an initial width of the drawing."), Z3c), Oed), o0), Crb(Eed))));
@@ -77386,7 +77386,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GDe), LDe), "Shift Last Placed."), "When placing a rectangle behind or below the last placed rectangle in the first iteration, it is sometimes possible to shift the rectangle further to the left or right, resulting in less whitespace. True (default) enables the shift and false disables it. Disabling the shift produces a greater approximated area by the first iteration and a layout, when using ONLY the first iteration (default not the case), where it is sometimes impossible to implement a size transformation of rectangles that will fill the bounding box and eliminate empty spaces."), true), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), HDe), "packing"), MDe), "Strategy for finding an initial placement on nodes."), R3c), Oed), r0), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), IDe), NDe), "Row Height Reevaluation"), "During the compaction step the height of a row is normally not changed. If this options is set, the blocks of other rows might be added if they exceed the row height. If this is the case the whole row has to be packed again to be optimal regarding the new row height. This option should, therefore, be used with care since it might be computation heavy."), false), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), JDe), NDe), "Compaction iterations"), "Defines the number of compaction iterations. E.g. if set to 2 the width is initially approximated, then the drawing is compacted and based on the resulting drawing the target width is decreased or increased and a second compaction step is executed and the result compared to the first one. The best run is used based on the scale measure."), zfb(1)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), JDe), NDe), "Compaction iterations"), "Defines the number of compaction iterations. E.g. if set to 2 the width is initially approximated, then the drawing is compacted and based on the resulting drawing the target width is decreased or increased and a second compaction step is executed and the result compared to the first one. The best run is used based on the scale measure."), zfb(1)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KDe), "whiteSpaceElimination"), "White Space Approximation Strategy"), "Strategy for expanding nodes such that whitespace in the parent is eliminated."), U3c), Oed), w0), Crb(Eed))));
               E4c((new F4c(), a));
             };
@@ -77774,7 +77774,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), aEe), gEe), "Root selection for spanning tree"), "This sets the method used to select a root node for the construction of a spanning tree"), j9c), Oed), R0), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), cEe), SAe), MDe), "This option defines how the compaction is applied."), c9c), Oed), P0), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), dEe), SAe), "Orthogonal Compaction"), "Restricts the translation of nodes to orthogonal directions in the compaction phase."), (Ndb(), false)), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eEe), hEe), "Upper limit for iterations of overlap removal"), null), zfb(64)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), eEe), hEe), "Upper limit for iterations of overlap removal"), null), zfb(64)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), fEe), hEe), "Whether to run a supplementary scanline overlap check."), null), true), Med), GI), Crb(Eed))));
               B9c((new C9c(), a));
               X8c((new Y8c(), a));
@@ -78352,8 +78352,8 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zxe), ""), "Omit Node Micro Layout"), "Node micro layout comprises the computation of node dimensions (if requested), the placement of ports and their labels, and the placement of node labels. The functionality is implemented independent of any specific layout algorithm and shouldn't have any negative impact on the layout algorithm's performance itself. Yet, if any unforeseen behavior occurs, this option allows to deactivate the micro layout."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xxe), ""), "Port Constraints"), "Defines constraints of the position of the ports of a node."), rid), Oed), H2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), PBe), ""), "Position"), "The position of a node, port, or label. This is used by the 'Fixed Layout' algorithm to specify a pre-defined position."), Red), o2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Fed, Ced])))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), pxe), ""), "Priority"), "Defines the priority of an object; its meaning depends on the specific layout algorithm and the context where it is used."), Qed), UI), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed])))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), txe), ""), "Randomization Seed"), "Seed used for pseudo-random number generators to control the layout algorithm. If the value is 0, the seed shall be determined pseudo-randomly (e.g. from the system time)."), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), pxe), ""), "Priority"), "Defines the priority of an object; its meaning depends on the specific layout algorithm and the context where it is used."), Qed), UI2), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed])))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), txe), ""), "Randomization Seed"), "Seed used for pseudo-random number generators to control the layout algorithm. If the value is 0, the seed shall be determined pseudo-randomly (e.g. from the system time)."), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), uxe), ""), "Separate Connected Components"), "Whether each connected component should be processed separately."), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), GBe), ""), "Junction Points"), "This option is not used as option, but as output of the layout algorithms. It is attached to edges and determines the points where junction symbols should be drawn in order to represent hyperedges with orthogonal routing. Whether such points are computed depends on the chosen layout algorithm and edge routing style. The points are put into the vector chain with no specific order."), Ohd), Red), n2), Crb(Bed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KBe), ""), "Comment Box"), "Whether the node should be regarded as a comment box instead of a regular node. In that case its placement should be similar to how labels are handled. Any edges incident to a comment box specify to which graph elements the comment is related."), false), Med), GI), Crb(Ded))));
@@ -78368,10 +78368,10 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Fxe), ""), mEe), "Turns topdown layout on and off. If this option is enabled, hierarchical layout will be computed first for the root node and then for its children recursively. Layouts are then scaled down to fit the area provided by their parents. Graphs must follow a certain structure for topdown layout to work properly. {@link TopdownNodeTypes.PARALLEL_NODE} nodes must have children of type {@link TopdownNodeTypes.HIERARCHICAL_NODE} and must define {@link topdown.hierarchicalNodeWidth} and {@link topdown.hierarchicalNodeAspectRatio} for their children. Furthermore they need to be laid out using an algorithm that is a {@link TopdownLayoutProvider}. Hierarchical nodes can also be parents of other hierarchical nodes and can optionally use a {@link TopdownSizeApproximator} to dynamically set sizes during topdown layout. In this case {@link topdown.hierarchicalNodeWidth} and {@link topdown.hierarchicalNodeAspectRatio} should be set on the node itself rather than the parent. The values are then used by the size approximator as base values. Hierarchical nodes require the layout option {@link nodeSize.fixedGraphSize} to be true to prevent the algorithm used there from resizing the hierarchical node. This option is not supported if 'Hierarchy Handling' is set to 'INCLUDE_CHILDREN'"), false), Med), GI), Crb(Eed))));
               hdd(a, Fxe, Jxe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), KEe), ""), "Animate"), "Whether the shift from the old layout to the new computed layout shall be animated."), true), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), LEe), ""), "Animation Time Factor"), "Factor for computation of animation time. The higher the value, the longer the animation time. If the value is 0, the resulting time is always equal to the minimum defined by 'Minimal Animation Time'."), zfb(100)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), LEe), ""), "Animation Time Factor"), "Factor for computation of animation time. The higher the value, the longer the animation time. If the value is 0, the resulting time is always equal to the minimum defined by 'Minimal Animation Time'."), zfb(100)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), MEe), ""), "Layout Ancestors"), "Whether the hierarchy levels on the path from the selected element to the root of the diagram shall be included in the layout process."), false), Med), GI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), NEe), ""), "Maximal Animation Time"), "The maximal time for animations, in milliseconds."), zfb(4e3)), Qed), UI), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), OEe), ""), "Minimal Animation Time"), "The minimal time for animations, in milliseconds."), zfb(400)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), NEe), ""), "Maximal Animation Time"), "The maximal time for animations, in milliseconds."), zfb(4e3)), Qed), UI2), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), OEe), ""), "Minimal Animation Time"), "The minimal time for animations, in milliseconds."), zfb(400)), Qed), UI2), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), PEe), ""), "Progress Bar"), "Whether a progress bar shall be displayed during layout computations."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), QEe), ""), "Validate Graph"), "Whether the graph shall be validated before any layout algorithm is applied. If this option is enabled and at least one error is found, the layout process is aborted and a message is shown to the user."), false), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), REe), ""), "Validate Options"), "Whether layout options shall be validated before any layout algorithm is applied. If this option is enabled and at least one error is found, the layout process is aborted and a message is shown to the user."), true), Med), GI), Crb(Eed))));
@@ -78394,7 +78394,7 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), nBe), QAe), "Port Spacing"), "Spacing between pairs of ports of the same node."), 10), Ned), LI), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Ded])))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), oBe), QAe), "Individual Spacing"), "Allows to specify individual spacing values for graph elements that shall be different from the value specified for the element's parent."), Red), t3), Drb(Ded, WC(OC(g2, 1), kue, 160, 0, [Bed, Fed, Ced])))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), RBe), QAe), "Additional Port Space"), "Additional space around the sets of ports on each node side. For each side of a node, this option can reserve additional space before and after the ports on each side. For example, a top spacing of 20 makes sure that the first port on the western and eastern side is 20 units away from the northern border."), Tid), Red), k2), Crb(Eed))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), OBe), aFe), "Layout Partition"), "Partition to which the node belongs. This requires Layout Partitioning to be active. Nodes with lower partition IDs will appear to the left of nodes with higher partition IDs (assuming a left-to-right layout direction)."), Qed), UI), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Ded])))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), OBe), aFe), "Layout Partition"), "Partition to which the node belongs. This requires Layout Partitioning to be active. Nodes with lower partition IDs will appear to the left of nodes with higher partition IDs (assuming a left-to-right layout direction)."), Qed), UI2), Drb(Eed, WC(OC(g2, 1), kue, 160, 0, [Ded])))));
               hdd(a, OBe, NBe, hid);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), NBe), aFe), "Layout Partitioning"), "Whether to activate partitioned layout. This will allow to group nodes through the Layout Partition option. a pair of nodes with different partition indices is then placed such that the node with lower index is placed to the left of the other node (with left-to-right layout direction). Depending on the layout algorithm, this may only be guaranteed to work if all nodes have a layout partition configured, or at least if edges that cross partitions are not part of a partition-crossing cycle."), fid), Med), GI), Crb(Eed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), xBe), bFe), "Node Label Padding"), "Define padding for node labels that are placed inside of a node."), Shd), Red), l2), Crb(Eed))));
@@ -78411,17 +78411,17 @@ var require_elk_bundled = __commonJS({
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), IBe), _Ae), "Edge Label Placement"), "Gives a hint on where to put edge labels."), whd), Oed), x2), Crb(Ced))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yxe), _Ae), "Inline Edge Labels"), "If true, an edge label is placed directly on its edge. May only apply to center edge labels. This kind of label placement is only advisable if the label's rendering is such that it is not crossed by its edge and thus stays legible."), false), Med), GI), Crb(Ced))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), VEe), "font"), "Font Name"), "Font name used for a label."), Sed), hJ), Crb(Ced))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), WEe), "font"), "Font Size"), "Font size used for a label."), Qed), UI), Crb(Ced))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), WEe), "font"), "Font Size"), "Font size used for a label."), Qed), UI2), Crb(Ced))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), MBe), eFe), "Port Anchor Offset"), "The offset to the port position where connections shall be attached."), Red), o2), Crb(Fed))));
-              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), JBe), eFe), "Port Index"), "The index of a port in the fixed order around a node. The order is assumed as clockwise, starting with the leftmost port on the top side. This option must be set if 'Port Constraints' is set to FIXED_ORDER and no specific positions are given for the ports. Additionally, the option 'Port Side' must be defined in this case."), Qed), UI), Crb(Fed))));
+              mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), JBe), eFe), "Port Index"), "The index of a port in the fixed order around a node. The order is assumed as clockwise, starting with the leftmost port on the top side. This option must be set if 'Port Constraints' is set to FIXED_ORDER and no specific positions are given for the ports. Additionally, the option 'Port Side' must be defined in this case."), Qed), UI2), Crb(Fed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), rBe), eFe), "Port Side"), "The side of a node on which a port is situated. This option must be set if 'Port Constraints' is set to FIXED_SIDE or FIXED_ORDER and no specific positions are given for the ports."), yid), Oed), J2), Crb(Fed))));
               mdd(a, new ied(yed(xed(zed(sed(wed(ted(ued(new Aed(), pBe), eFe), "Port Border Offset"), "The offset of ports on the node border. With a positive offset the port is moved outside of the node, while with a negative offset the port is moved towards the inside. An offset of 0 means that the port is placed directly on the node border, i.e. if the port side is north, the port's south border touches the nodes's north border; if the port side is east, the port's west border touches the nodes's east border; if the port side is south, the port's north border touches the node's south border; if the port side is west, the port's east border touches the node's west border."), Ned), LI), Crb(Fed))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Exe), fFe), "Port Label Placement"), "Decides on a placement method for port labels; if empty, the node label's position is not modified."), vid), Ped), I2), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), yBe), fFe), "Port Labels Next to Port"), "Use 'portLabels.placement': NEXT_TO_PORT_OF_POSSIBLE."), false), Med), GI), Crb(Ded))));
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), zBe), fFe), "Treat Port Labels as Group"), "If this option is true (default), the labels of a port will be treated as a group when it comes to centering them next to their port. If this option is false, only the first label will be centered next to the port, with the others being placed below. This only applies to labels of eastern and western ports and will have no effect if labels are not placed next to their port."), true), Med), GI), Crb(Ded))));
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), XEe), gFe), "Number of size categories"), "Defines the number of categories to use for the FIXED_INTEGER_RATIO_BOXES size approximator."), zfb(3)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), XEe), gFe), "Number of size categories"), "Defines the number of categories to use for the FIXED_INTEGER_RATIO_BOXES size approximator."), zfb(3)), Qed), UI2), Crb(Eed))));
               hdd(a, XEe, ZEe, ejd);
-              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), YEe), gFe), "Weight of a node containing children for determining the graph size"), "When determining the graph size for the size categorisation, this value determines how many times a node containing children is weighted more than a simple node. For example setting this value to four would result in a graph containing a simple node and a hierarchical node to be counted as having a size of five."), zfb(4)), Qed), UI), Crb(Eed))));
+              mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), YEe), gFe), "Weight of a node containing children for determining the graph size"), "When determining the graph size for the size categorisation, this value determines how many times a node containing children is weighted more than a simple node. For example setting this value to four would result in a graph containing a simple node and a hierarchical node to be counted as having a size of five."), zfb(4)), Qed), UI2), Crb(Eed))));
               hdd(a, YEe, XEe, null);
               mdd(a, new ied(yed(xed(zed(red(sed(wed(ted(ued(new Aed(), Gxe), gFe), "Topdown Scale Factor"), "The scaling factor to be applied to the nodes laid out within the node in recursive topdown layout. The difference to 'Scale Factor' is that the node itself is not scaled. This value has to be set on hierarchical nodes."), 1), Ned), LI), Crb(Eed))));
               hdd(a, Gxe, Jxe, ajd);
@@ -83889,7 +83889,7 @@ var require_elk_bundled = __commonJS({
                 !!d && yWd(sUd(d));
                 e = UTd(this);
                 g10 = e.ik();
-                a = !g10 ? null : (g10.i & 1) != 0 ? g10 == Fcb ? GI : g10 == cE ? UI : g10 == bE ? QI : g10 == aE ? LI : g10 == dE ? XI : g10 == Ecb ? cJ : g10 == $D ? HI : II : g10;
+                a = !g10 ? null : (g10.i & 1) != 0 ? g10 == Fcb ? GI : g10 == cE ? UI2 : g10 == bE ? QI : g10 == aE ? LI : g10 == dE ? XI : g10 == Ecb ? cJ : g10 == $D ? HI : II : g10;
                 b = rUd(this);
                 h = e.gk();
                 Khe(this);
@@ -88655,7 +88655,7 @@ var require_elk_bundled = __commonJS({
               return RD(a, 15);
             };
             _.ek = function Cae(a) {
-              return SC(UI, Ote, 15, a, 0, 1);
+              return SC(UI2, Ote, 15, a, 0, 1);
             };
             var j9 = zeb(MFe, "EcorePackageImpl/34", 1232);
             mdb(1233, 1, IIe, Dae);
@@ -90690,7 +90690,7 @@ var require_elk_bundled = __commonJS({
               return RD(a, 15);
             };
             _.ek = function Sme(a) {
-              return SC(UI, Ote, 15, a, 0, 1);
+              return SC(UI2, Ote, 15, a, 0, 1);
             };
             var Hbb = zeb(fJe, "XMLTypePackageImpl/30", 1952);
             mdb(1953, 1, IIe, Tme);
@@ -90882,7 +90882,7 @@ var require_elk_bundled = __commonJS({
               return RD(a, 15);
             };
             _.ek = function ioe(a) {
-              return SC(UI, Ote, 15, a, 0, 1);
+              return SC(UI2, Ote, 15, a, 0, 1);
             };
             var dcb = zeb(fJe, "XMLTypePackageImpl/52", 1974);
             mdb(1928, 1, IIe, joe);
@@ -92250,16 +92250,41 @@ function lex(src, diags) {
 // src/model.ts
 var defaultDiagramStyle = () => ({
   crossingHops: true,
+  compact: false,
   disposition: "wide",
   legend: "auto",
   flowText: "full",
+  arrows: "normal",
+  flowColor: "none",
   flowLabel: "on-line",
   flowStroke: { color: "#444444", style: "solid", width: 1.3 },
   flowStrokeColorSet: false,
   theme: "light",
+  lang: "en",
   kind: {},
-  font: { family: "Helvetica", size: 11 }
+  font: { family: "Helvetica", size: 12.5 }
+  // base text size; edge = base-1, container = base+0.5
 });
+var UI = {
+  en: {
+    flows: "FLOWS",
+    objects: "BUSINESS OBJECTS",
+    legend: "LEGEND",
+    numberedSuffix: "numbered (text: FLOWS band)",
+    carriedByFlow: "carried by the flow",
+    businessObject: "Business object",
+    matrix: { title: "TECHNICAL FLOW MATRIX", n: "No.", source: "Source", dest: "Destination", proto: "Protocol", port: "Port", nature: "Flow", zone: "zone" }
+  },
+  fr: {
+    flows: "FLUX",
+    objects: "OBJETS M\xC9TIER",
+    legend: "L\xC9GENDE",
+    numberedSuffix: "num\xE9rot\xE9 (texte : bande FLUX)",
+    carriedByFlow: "port\xE9 par le flux",
+    businessObject: "Objet m\xE9tier",
+    matrix: { title: "MATRICE DES FLUX TECHNIQUES", n: "N\xB0", source: "Source", dest: "Destination", proto: "Protocole", port: "Port", nature: "Nature du flux", zone: "zone" }
+  }
+};
 var lightPalette = {
   background: "white",
   containerLabel: "#333",
@@ -92308,8 +92333,11 @@ var darkPalette = {
   chipStroke: "#b08d2a",
   chipText: "#e0c068"
 };
-var palettes = { light: lightPalette, dark: darkPalette };
-var logicalProfile = {
+var flowPalette = {
+  light: ["#1f77b4", "#d62728", "#2e8b57", "#9467bd", "#8c564b", "#c1288a", "#0e8ea6", "#9a9a1e", "#e07b00", "#5a5a5a"],
+  dark: ["#5fa8dc", "#f2695f", "#63c98a", "#b79ae0", "#c08a76", "#e878bd", "#4fc4d6", "#cfcf5a", "#f2a24e", "#a6a6a6"]
+};
+var logicalView = {
   name: "logical",
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
   containerKinds: ["actor-group", "system", "layer", "external"],
@@ -92321,8 +92349,17 @@ var logicalProfile = {
     block: "Functional block",
     external: "External system"
   },
+  legendNamesFr: {
+    "actor-group": "Groupe d'acteurs",
+    actor: "Acteur",
+    system: "Syst\xE8me",
+    layer: "Couche",
+    block: "Bloc fonctionnel",
+    external: "Syst\xE8me externe"
+  },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Functional flow (label = exchanged data)",
+  legendFlowLabelFr: "Flux fonctionnel (libell\xE9 = donn\xE9es \xE9chang\xE9es)",
   flowTechRequired: null,
   flowTechRecommended: null,
   partitions: { "actor-group": 0, system: 1, external: 2 },
@@ -92379,7 +92416,7 @@ var logicalProfile = {
     actor: {}
   }
 };
-var applicationProfile = {
+var applicationView = {
   name: "application",
   kinds: ["actor-group", "actor", "application", "module", "datastore", "external"],
   containerKinds: ["actor-group", "application", "external"],
@@ -92392,8 +92429,17 @@ var applicationProfile = {
     datastore: "Datastore / registry",
     external: "External system"
   },
+  legendNamesFr: {
+    "actor-group": "Groupe d'acteurs",
+    actor: "Acteur",
+    application: "Application",
+    module: "Module applicatif",
+    datastore: "Entrep\xF4t / r\xE9f\xE9rentiel",
+    external: "Syst\xE8me externe"
+  },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Application flow \u2014 (protocol, format) under the label",
+  legendFlowLabelFr: "Flux applicatif \u2014 (protocole, format) sous le libell\xE9",
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
@@ -92446,22 +92492,37 @@ var applicationProfile = {
     actor: {}
   }
 };
-var infrastructureProfile = {
+var infrastructureView = {
   name: "infrastructure",
-  kinds: ["site", "network-zone", "server", "app-instance", "external"],
+  // `actor` = the consumer/user of the infrastructure (C4 Person). It has no
+  // network location, so it is not a container and needs no zone; it reads on
+  // the entry edge, distinct from `external` third-party systems on the exit edge.
+  kinds: ["actor", "site", "network-zone", "server", "app-instance", "external"],
   containerKinds: ["site", "network-zone", "server"],
   partitions: { external: 2 },
   partitionByOrder: true,
   // zones/sites band left->right in declaration order
+  actorLegend: true,
+  // users are standalone actors here — key them in the legend
   legendNames: {
+    actor: "User / consumer",
     site: "Site / data center",
     "network-zone": "Network zone",
     server: "Server / VM",
     "app-instance": "Deployed application",
     external: "External system"
   },
+  legendNamesFr: {
+    actor: "Utilisateur / consommateur",
+    site: "Site / centre de donn\xE9es",
+    "network-zone": "Zone r\xE9seau",
+    server: "Serveur / VM",
+    "app-instance": "Application d\xE9ploy\xE9e",
+    external: "Syst\xE8me externe"
+  },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Technical flow (protocol, port)",
+  legendFlowLabelFr: "Flux technique (protocole, port)",
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
@@ -92471,7 +92532,7 @@ var infrastructureProfile = {
   flowTechRequired: {
     code: "E0240",
     message: "technical flow without protocol",
-    help: 'the infrastructure profile requires a protocol: `A -> B : "\u2026" (HTTPS/443)`'
+    help: 'the infrastructure view requires a protocol: `A -> B : "\u2026" (HTTPS/443)`'
   },
   nesting: [
     {
@@ -92503,6 +92564,7 @@ var infrastructureProfile = {
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
+    actor: {},
     site: { fill: "#f5f5f4", stroke: { color: "#8a8a85", style: "solid", width: 1.4 } },
     "network-zone": { fill: "#ecf3ec", stroke: { color: "#6d9a6d", style: "dashed", width: 1.2 } },
     server: { fill: "#ffffff", stroke: { color: "#55606b", style: "solid", width: 1.5 } },
@@ -92510,6 +92572,7 @@ var infrastructureProfile = {
     external: { fill: "#f0eef5", stroke: { color: "#9187b3", style: "dashed", width: 1.2 } }
   },
   defaultsDark: {
+    actor: {},
     site: { fill: "#26261f", stroke: { color: "#8a8a72", style: "solid", width: 1.4 } },
     "network-zone": { fill: "#20291f", stroke: { color: "#5f8a5f", style: "dashed", width: 1.2 } },
     server: { fill: "#252a31", stroke: { color: "#6b7885", style: "solid", width: 1.5 } },
@@ -92517,11 +92580,243 @@ var infrastructureProfile = {
     external: { fill: "#2a2833", stroke: { color: "#7d72a0", style: "dashed", width: 1.2 } }
   }
 };
-var profiles = {
-  logical: logicalProfile,
-  application: applicationProfile,
-  infrastructure: infrastructureProfile
+var SEC_LEVELS = ["public", "internal", "restricted", "secret"];
+var securityView = {
+  name: "security",
+  kinds: ["trust-zone", "security-node", "asset", "actor-group", "actor", "external"],
+  containerKinds: ["trust-zone", "actor-group"],
+  legendNames: {
+    "trust-zone": "Trust zone (sensitivity)",
+    "security-node": "Filtering / security node",
+    asset: "Sensitive asset",
+    "actor-group": "Actor group",
+    actor: "Actor",
+    external: "Untrusted external"
+  },
+  legendNamesFr: {
+    "trust-zone": "Zone de confiance (sensibilit\xE9)",
+    "security-node": "N\u0153ud de filtrage / s\xE9curit\xE9",
+    asset: "Actif sensible",
+    "actor-group": "Groupe d'acteurs",
+    actor: "Acteur",
+    external: "Externe non ma\xEEtris\xE9"
+  },
+  bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
+  legendFlowLabel: "Security flow \u2014 cross-zone flows should be filtered and encrypted",
+  legendFlowLabelFr: "Flux de s\xE9curit\xE9 \u2014 les flux inter-zones doivent \xEAtre filtr\xE9s et chiffr\xE9s",
+  partitions: {},
+  partitionByOrder: true,
+  // zones band left→right in declaration order (exposed → protected)
+  flowLabelRequired: {
+    code: "E0203",
+    message: "flow without a label",
+    help: 'add a label describing the exchange: `A -> B : "\u2026" (TLS1.3)`'
+  },
+  flowTechRequired: null,
+  flowTechRecommended: null,
+  attrSpec: {
+    kind: "trust-zone",
+    values: SEC_LEVELS,
+    code: "E0250",
+    message: "trust zone without a valid sensitivity level",
+    help: 'set a level in parentheses: `trust-zone DMZ "DMZ" (public)` \u2014 one of public, internal, restricted, secret'
+  },
+  trustOrder: { public: 0, internal: 1, restricted: 2, secret: 3 },
+  boundaryLint: {
+    code: "W0560",
+    nodeKind: "security-node",
+    message: "unfiltered trust-boundary crossing",
+    help: "route this flow through a `security-node` (firewall/WAF/bastion), or confirm the direct path is intended"
+  },
+  crossZoneTechRecommended: {
+    code: "W0561",
+    message: "cross-zone flow without stated encryption/protocol",
+    help: 'add the protocol/encryption on inter-zone flows: `A -> B : "\u2026" (TLS1.3)`'
+  },
+  nesting: [
+    {
+      code: "E0217",
+      child: "asset",
+      parents: ["trust-zone"],
+      message: "sensitive asset outside any trust zone",
+      help: "move this `asset` inside a `trust-zone`"
+    },
+    {
+      code: "E0218",
+      child: "security-node",
+      parents: ["trust-zone"],
+      message: "security node outside any trust zone",
+      help: "place this `security-node` inside a `trust-zone` (typically the exposed one it protects)"
+    },
+    {
+      code: "E0211",
+      child: "actor",
+      parents: ["actor-group"],
+      message: "actor outside any group",
+      help: "move this `actor` inside an `actor-group`"
+    }
+  ],
+  minCounts: [],
+  isolatedWarn: {
+    code: "W0510",
+    kinds: ["asset"],
+    message: "isolated element: no incoming or outgoing flow"
+  },
+  // trust-zone colors come from levelDefaults (by sensitivity); non-zone kinds use these.
+  defaults: {
+    "trust-zone": { fill: "#f5f5f4", stroke: { color: "#8a8a85", style: "solid", width: 1.3 } },
+    "security-node": { fill: "#fff7e6", stroke: { color: "#c46b2a", style: "solid", width: 1.6 } },
+    asset: { fill: "#ffffff", stroke: { color: "#55606b", style: "solid", width: 1.3 } },
+    "actor-group": { fill: "#eef4fb", stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 } },
+    external: { fill: "#fdecea", stroke: { color: "#d9534f", style: "dashed", width: 1.3 } },
+    actor: {}
+  },
+  defaultsDark: {
+    "trust-zone": { fill: "#26261f", stroke: { color: "#8a8a72", style: "solid", width: 1.3 } },
+    "security-node": { fill: "#2e2717", stroke: { color: "#c46b2a", style: "solid", width: 1.6 } },
+    asset: { fill: "#252a31", stroke: { color: "#6b7885", style: "solid", width: 1.3 } },
+    "actor-group": { fill: "#232a33", stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 } },
+    external: { fill: "#3a2422", stroke: { color: "#c25a54", style: "dashed", width: 1.3 } },
+    actor: {}
+  },
+  levelDefaults: {
+    public: { fill: "#fdecea", stroke: { color: "#d9534f", style: "solid", width: 1.4 } },
+    internal: { fill: "#fff4e5", stroke: { color: "#e0a458", style: "solid", width: 1.4 } },
+    restricted: { fill: "#e8f1f8", stroke: { color: "#5b8db8", style: "solid", width: 1.4 } },
+    secret: { fill: "#ece8f5", stroke: { color: "#7a5fae", style: "solid", width: 1.4 } }
+  },
+  levelDefaultsDark: {
+    public: { fill: "#3a2422", stroke: { color: "#c25a54", style: "solid", width: 1.4 } },
+    internal: { fill: "#332a1c", stroke: { color: "#c08a44", style: "solid", width: 1.4 } },
+    restricted: { fill: "#1f2a33", stroke: { color: "#4a7ba6", style: "solid", width: 1.4 } },
+    secret: { fill: "#2a2433", stroke: { color: "#7a5f9e", style: "solid", width: 1.4 } }
+  }
 };
+var views = {
+  logical: logicalView,
+  application: applicationView,
+  infrastructure: infrastructureView,
+  security: securityView
+};
+var cont = (fill, stroke, dashed = false, width = 1.2) => ({ fill, stroke: { color: stroke, style: dashed ? "dashed" : "solid", width } });
+var leaf = (fill, stroke, width = 1.3) => ({ fill, stroke: { color: stroke, style: "solid", width } });
+var KIND_ROLE = {
+  "actor-group": "actorGroup",
+  actor: "actor",
+  system: "system",
+  application: "application",
+  module: "leaf",
+  layer: "layer",
+  block: "leaf",
+  external: "external",
+  datastore: "datastore",
+  site: "site",
+  "network-zone": "networkZone",
+  server: "server",
+  "app-instance": "appInstance",
+  "security-node": "securityNode",
+  asset: "leaf"
+};
+var roleFor = (kind, viewName) => viewName === "security" && kind === "external" ? "untrusted" : KIND_ROLE[kind] ?? "leaf";
+var mkTheme = (s) => {
+  const p = s.pal, h = s.h;
+  const palette = {
+    background: p.bg,
+    containerLabel: p.text,
+    containerFill: p.cFill,
+    containerStroke: p.cStroke,
+    nodeText: p.text,
+    nodeFill: p.nFill,
+    nodeStroke: p.nStroke,
+    actorStroke: p.aStroke,
+    actorText: p.aText,
+    edge: p.edge,
+    edgeLabel: p.sub,
+    techText: p.muted,
+    halo: p.halo,
+    bandTitle: p.sub,
+    bandText: p.text,
+    bandMuted: p.muted,
+    divider: p.div,
+    badgeFill: p.badge[0],
+    badgeStroke: p.badge[1],
+    chipFill: p.chip[0],
+    chipStroke: p.chip[1],
+    chipText: p.chip[2]
+  };
+  return {
+    palette,
+    roles: {
+      actor: {},
+      actorGroup: cont(h.blueF, h.blue, true),
+      system: cont(h.amberF, h.amber),
+      application: cont(h.appF, h.app),
+      layer: cont(h.goldF, h.gold, false, 1),
+      external: cont(h.violetF, h.violet, true),
+      untrusted: cont(h.redF, h.red, true, 1.3),
+      leaf: leaf(h.leafF, h.leafS),
+      datastore: leaf(h.purpleF, h.purple),
+      site: cont(h.siteF, h.siteS, false, 1.4),
+      networkZone: cont(h.greenF, h.green, true),
+      server: cont(h.serverF, h.serverS, false, 1.5),
+      appInstance: leaf(h.aiF, h.aiS, 1.2),
+      securityNode: leaf(h.nodeF, h.node, 1.6)
+    },
+    levels: {
+      public: cont(s.lv.public[0], s.lv.public[1], false, 1.4),
+      internal: cont(s.lv.internal[0], s.lv.internal[1], false, 1.4),
+      restricted: cont(s.lv.restricted[0], s.lv.restricted[1], false, 1.4),
+      secret: cont(s.lv.secret[0], s.lv.secret[1], false, 1.4)
+    }
+  };
+};
+var themes = {
+  // modern professional — the new default
+  light: mkTheme({
+    pal: { bg: "#ffffff", text: "#17202c", sub: "#3a4553", muted: "#79828f", cFill: "#f5f6f8", cStroke: "#c7ccd3", nFill: "#ffffff", nStroke: "#48546a", edge: "#5a6675", div: "#e6e9ee", halo: "#ffffff", aStroke: "#1f5e91", aText: "#20364c", chip: ["#fff2d4", "#d3a01f", "#6a5111"], badge: ["#ffffff", "#8a94a2"] },
+    h: { blue: "#1f77b4", blueF: "#e9f2fb", amber: "#c17d1c", amberF: "#fbf4e9", app: "#2f83b6", appF: "#e9f3fa", gold: "#cf9f2f", goldF: "#fdfaf0", violet: "#8659a6", violetF: "#f4eff8", red: "#cf4b3f", redF: "#fdecea", purple: "#8a53a8", purpleF: "#f4edf8", green: "#1a8f66", greenF: "#eaf5ef", siteS: "#7c8794", siteF: "#f3f5f6", leafF: "#ffffff", leafS: "#48546a", aiS: "#c88a2e", aiF: "#fdf4e3", node: "#d1600f", nodeF: "#fdefe3", serverS: "#48546a", serverF: "#ffffff" },
+    lv: { public: ["#fdeceb", "#d0463f"], internal: ["#fef2e2", "#cf9436"], restricted: ["#e9f2fb", "#2f7cc4"], secret: ["#efe9f7", "#7a55a8"] }
+  }),
+  dark: mkTheme({
+    pal: { bg: "#1e2530", text: "#e6edf3", sub: "#c2ccd6", muted: "#93a0ab", cFill: "#2a313c", cStroke: "#4a5560", nFill: "#252c37", nStroke: "#5a6673", edge: "#9aa7b4", div: "#3a4149", halo: "#1e2530", aStroke: "#8aa0b8", aText: "#c9d5e1", chip: ["#3a3320", "#b08d2a", "#e0c068"], badge: ["#252c37", "#5a6673"] },
+    h: { blue: "#5aa9e6", blueF: "#233242", amber: "#e0a955", amberF: "#332a1b", app: "#5aa9e6", appF: "#1f2a37", gold: "#d8c15f", goldF: "#2e2a1a", violet: "#b48ad6", violetF: "#2a2436", red: "#e0736a", redF: "#3a2422", purple: "#c085d8", purpleF: "#291f33", green: "#4fc08a", greenF: "#1c2b23", siteS: "#8a95a2", siteF: "#282d34", leafF: "#252c37", leafS: "#6b7885", aiS: "#e0a955", aiF: "#2e2717", node: "#f0894e", nodeF: "#33261c", serverS: "#6b7885", serverF: "#252c37" },
+    lv: { public: ["#3a2422", "#c25a54"], internal: ["#332a1c", "#c08a44"], restricted: ["#1f2a37", "#4a86b8"], secret: ["#291f33", "#8a6cb0"] }
+  }),
+  slate: mkTheme({
+    pal: { bg: "#f7f9fb", text: "#26303c", sub: "#465264", muted: "#8792a0", cFill: "#eef2f6", cStroke: "#c2ccd6", nFill: "#ffffff", nStroke: "#516070", edge: "#5b6673", div: "#e0e6ec", halo: "#f7f9fb", aStroke: "#3b6ea5", aText: "#2b4560", chip: ["#eaeef3", "#8595a8", "#48566a"], badge: ["#ffffff", "#93a0b0"] },
+    h: { blue: "#3b6ea5", blueF: "#e8eff6", amber: "#5b7a99", amberF: "#eef2f6", app: "#3b6ea5", appF: "#e8eff6", gold: "#7a94ad", goldF: "#f0f3f6", violet: "#7d6ba8", violetF: "#efecf5", red: "#b5544a", redF: "#f7ebe9", purple: "#8a6fae", purpleF: "#efecf6", green: "#4a8f8a", greenF: "#e9f2f1", siteS: "#8792a0", siteF: "#eef1f4", leafF: "#ffffff", leafS: "#516070", aiS: "#6f86a0", aiF: "#eef2f6", node: "#c0603a", nodeF: "#f8ece7", serverS: "#516070", serverF: "#ffffff" },
+    lv: { public: ["#f7ece9", "#c05a4a"], internal: ["#f3efe6", "#a8823f"], restricted: ["#e8eff6", "#3b6ea5"], secret: ["#efecf5", "#7d6ba8"] }
+  }),
+  sand: mkTheme({
+    pal: { bg: "#faf6ee", text: "#3a2f22", sub: "#5c4c38", muted: "#8a795f", cFill: "#f2ebdd", cStroke: "#cdbfa3", nFill: "#fffdf8", nStroke: "#6b5d48", edge: "#6b5d48", div: "#e6dcc9", halo: "#faf6ee", aStroke: "#3f7a8c", aText: "#274852", chip: ["#f4e6c8", "#c19a3f", "#6b5417"], badge: ["#fffdf8", "#b3a488"] },
+    h: { blue: "#3f7a8c", blueF: "#e6f0f1", amber: "#b07d2a", amberF: "#f6ecd8", app: "#3f7a8c", appF: "#e6f0f1", gold: "#c99f45", goldF: "#f8f0dd", violet: "#9c6f4a", violetF: "#f1e9df", red: "#c0562a", redF: "#f7e6da", purple: "#8a5f7a", purpleF: "#f2e8ee", green: "#6f8f4a", greenF: "#eef2e2", siteS: "#8a795f", siteF: "#f2ecdf", leafF: "#fffdf8", leafS: "#6b5d48", aiS: "#b07d2a", aiF: "#f7efe0", node: "#c0562a", nodeF: "#f7e6da", serverS: "#6b5d48", serverF: "#fffdf8" },
+    lv: { public: ["#f7e2da", "#c0562a"], internal: ["#f6ecd2", "#b0842e"], restricted: ["#e6f0f1", "#3f7a8c"], secret: ["#f0e8ef", "#8a5f7a"] }
+  }),
+  contrast: mkTheme({
+    pal: { bg: "#ffffff", text: "#000000", sub: "#1a1a1a", muted: "#3a3a3a", cFill: "#f2f2f2", cStroke: "#333333", nFill: "#ffffff", nStroke: "#111111", edge: "#1a1a1a", div: "#cccccc", halo: "#ffffff", aStroke: "#003a66", aText: "#000000", chip: ["#ffe9b0", "#8a6d00", "#3a2e00"], badge: ["#ffffff", "#333333"] },
+    h: { blue: "#005a9c", blueF: "#e0edf7", amber: "#9a4a00", amberF: "#f6e9dd", app: "#005a9c", appF: "#e0edf7", gold: "#8a6d00", goldF: "#f6f0da", violet: "#6a2fa0", violetF: "#eee4f7", red: "#c0341a", redF: "#f9e2dd", purple: "#8a1a6a", purpleF: "#f7e0ef", green: "#00695c", greenF: "#daf0ec", siteS: "#333333", siteF: "#eeeeee", leafF: "#ffffff", leafS: "#111111", aiS: "#9a4a00", aiF: "#f6e9dd", node: "#c0341a", nodeF: "#f9e2dd", serverS: "#111111", serverF: "#ffffff" },
+    lv: { public: ["#f9dcd6", "#c0341a"], internal: ["#f6e6c8", "#9a6a00"], restricted: ["#e0edf7", "#005a9c"], secret: ["#eee0f7", "#6a2fa0"] }
+  }),
+  nord: mkTheme({
+    pal: { bg: "#2e3440", text: "#eceff4", sub: "#d8dee9", muted: "#9aa3b2", cFill: "#3b4252", cStroke: "#4c566a", nFill: "#3b4252", nStroke: "#4c566a", edge: "#abb2bf", div: "#434c5e", halo: "#2e3440", aStroke: "#88c0d0", aText: "#e5e9f0", chip: ["#3b3a2a", "#ebcb8b", "#ebcb8b"], badge: ["#3b4252", "#4c566a"] },
+    h: { blue: "#81a1c1", blueF: "#333b4a", amber: "#ebcb8b", amberF: "#3a3524", app: "#81a1c1", appF: "#2f3a44", gold: "#d0b47a", goldF: "#37331f", violet: "#b48ead", violetF: "#352d38", red: "#bf616a", redF: "#3a2a2d", purple: "#a38bbd", purpleF: "#312a3a", green: "#8fbcbb", greenF: "#26332f", siteS: "#9aa3b2", siteF: "#353c49", leafF: "#3b4252", leafS: "#5a6377", aiS: "#ebcb8b", aiF: "#3a3524", node: "#d08770", nodeF: "#372a24", serverS: "#5a6377", serverF: "#3b4252" },
+    lv: { public: ["#3a2a2d", "#bf616a"], internal: ["#3a3524", "#d0a85f"], restricted: ["#2f3a44", "#81a1c1"], secret: ["#312a3a", "#a38bbd"] }
+  }),
+  solarized: mkTheme({
+    pal: { bg: "#fdf6e3", text: "#586e75", sub: "#657b83", muted: "#93a1a1", cFill: "#eee8d5", cStroke: "#c9c1a8", nFill: "#fdf6e3", nStroke: "#93a1a1", edge: "#657b83", div: "#ded8c3", halo: "#fdf6e3", aStroke: "#268bd2", aText: "#073642", chip: ["#f2e9c8", "#b58900", "#5c4a00"], badge: ["#fdf6e3", "#b3aa90"] },
+    h: { blue: "#268bd2", blueF: "#e3edf3", amber: "#b58900", amberF: "#f2ecd6", app: "#268bd2", appF: "#e3edf3", gold: "#cb9b2e", goldF: "#f4eed6", violet: "#6c71c4", violetF: "#e8e6f2", red: "#dc322f", redF: "#f7e2d9", purple: "#d33682", purpleF: "#f6e0ea", green: "#2aa198", greenF: "#dff0ec", siteS: "#93a1a1", siteF: "#eee8d5", leafF: "#fdf6e3", leafS: "#657b83", aiS: "#b58900", aiF: "#f2ecd6", node: "#cb4b16", nodeF: "#f7e4d6", serverS: "#657b83", serverF: "#fdf6e3" },
+    lv: { public: ["#f7ddd6", "#dc322f"], internal: ["#f2e6c8", "#b58900"], restricted: ["#e3edf3", "#268bd2"], secret: ["#e8e6f2", "#6c71c4"] }
+  })
+};
+var themeNames = [...Object.keys(themes), "classic", "classic-dark"];
+function themeFor(name, view) {
+  if (name === "classic") return { palette: lightPalette, kinds: view.defaults, levels: view.levelDefaults ?? {} };
+  if (name === "classic-dark") return { palette: darkPalette, kinds: view.defaultsDark, levels: view.levelDefaultsDark ?? {} };
+  const t = themes[name] ?? themes.light;
+  const kinds = {};
+  for (const k of view.kinds) kinds[k] = t.roles[roleFor(k, view.name)] ?? {};
+  return { palette: t.palette, kinds, levels: t.levels };
+}
 
 // src/parse.ts
 function parse(src) {
@@ -92733,6 +93028,15 @@ function parse(src) {
       parent: parent ?? void 0
     };
     if (at("str")) el.label = next().text;
+    if (at("lparen")) {
+      next();
+      if (at("id")) {
+        const t = next();
+        el.attr = { value: t.text, span: t.span };
+      } else err("attribute value expected after `(`", peek().span, 'e.g. `trust-zone DMZ "DMZ" (public)`');
+      if (at("rparen")) next();
+      else err("`)` expected to close the attribute", peek().span, 'e.g. `trust-zone DMZ "DMZ" (public)`');
+    }
     if (at("lbrace")) {
       next();
       parseElementBody(el);
@@ -92791,6 +93095,24 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
       else bad(v ?? key, "`on` or `off`");
       break;
     }
+    case "compact": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "on" || v.text === "off")) diag.compact = v.text === "on";
+      else bad(v ?? key, "`on` or `off`");
+      break;
+    }
+    case "arrows": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "normal" || v.text === "large")) diag.arrows = v.text;
+      else bad(v ?? key, "`normal` or `large`");
+      break;
+    }
+    case "flow-color": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "none" || v.text === "by-source")) diag.flowColor = v.text;
+      else bad(v ?? key, "`none` or `by-source`");
+      break;
+    }
     case "disposition": {
       const v = one();
       const OK = /* @__PURE__ */ new Set(["wide", "tall", "slide", "page"]);
@@ -92824,8 +93146,20 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
     }
     case "theme": {
       const v = one();
-      if (v?.kind === "id" && (v.text === "light" || v.text === "dark")) diag.theme = v.text;
-      else bad(v ?? key, "`light` or `dark`");
+      if (v?.kind === "id" && themeNames.includes(v.text)) diag.theme = v.text;
+      else bad(v ?? key, "`" + themeNames.join("` | `") + "`");
+      break;
+    }
+    case "accent": {
+      const v = one();
+      if (v?.kind === "color") diag.accent = v.text;
+      else bad(v ?? key, "`#hex` color (retints flows on top of the theme)");
+      break;
+    }
+    case "lang": {
+      const v = one();
+      if (v?.kind === "id" && (v.text === "en" || v.text === "fr")) diag.lang = v.text;
+      else bad(v ?? key, "`en` or `fr` (localizes rendered labels; keywords stay English)");
       break;
     }
     case "background": {
@@ -92859,26 +93193,32 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
       }
       break;
     }
+    case "font-size": {
+      const v = one();
+      if (v?.kind === "num") diag.font.size = parseFloat(v.text);
+      else bad(v ?? key, "a number, e.g. `font-size: 14`");
+      break;
+    }
     default:
-      diags.push({ code: "E0104", severity: "error", message: `unknown style property: \`${k}\``, span: key.span, help: "properties: theme, background, disposition, legend, flow-text, crossing-hops, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font" });
+      diags.push({ code: "E0104", severity: "error", message: `unknown style property: \`${k}\``, span: key.span, help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size" });
   }
 }
 
 // src/validate.ts
 function validate(model) {
   const diags = [];
-  const profile = model.type ? profiles[model.type] : void 0;
-  if (model.type && !profile) {
+  const view = model.type ? views[model.type] : void 0;
+  if (model.type && !view) {
     diags.push({
       code: "E0200",
       severity: "error",
       message: `unknown diagram type \`${model.type}\``,
       span: model.typeSpan,
-      help: `available types: ${Object.keys(profiles).join(", ")} (application and infrastructure land in phase 3)`
+      help: `available types: ${Object.keys(views).join(", ")} (application and infrastructure land in phase 3)`
     });
     return diags;
   }
-  if (!profile) return diags;
+  if (!view) return diags;
   const all = [];
   (function walk(els) {
     for (const e of els) {
@@ -92901,14 +93241,14 @@ function validate(model) {
     } else seen.set(e.id, e);
   }
   for (const e of all) {
-    if (!profile.kinds.includes(e.kind)) {
+    if (!view.kinds.includes(e.kind)) {
       diags.push({
         code: "E0201",
         severity: "error",
         message: `unknown element kind \`${e.kind}\``,
         span: e.kindSpan,
-        note: `the \`${profile.name}\` profile defines: ${profile.kinds.join(", ")}`,
-        help: nearest(e.kind, profile.kinds) ? `did you mean \`${nearest(e.kind, profile.kinds)}\`?` : void 0
+        note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
+        help: nearest(e.kind, view.kinds) ? `did you mean \`${nearest(e.kind, view.kinds)}\`?` : void 0
       });
     }
   }
@@ -92923,7 +93263,7 @@ function validate(model) {
       });
     }
   }
-  for (const rule of profile.nesting) {
+  for (const rule of view.nesting) {
     for (const e of all) {
       if (e.kind !== rule.child) continue;
       const pk = e.parent?.kind;
@@ -92951,43 +93291,107 @@ function validate(model) {
         });
       }
     }
-    if (profile.flowTechRecommended && !f.tech?.protocol) {
+    if (view.flowTechRecommended && !f.tech?.protocol) {
       const isActor = (id) => {
         const k = model.index.get(id)?.kind;
         return k === "actor" || k === "actor-group";
       };
       if (!isActor(f.from) && !isActor(f.to)) {
         diags.push({
-          code: profile.flowTechRecommended.code,
+          code: view.flowTechRecommended.code,
           severity: "warning",
-          message: profile.flowTechRecommended.message,
+          message: view.flowTechRecommended.message,
           span: f.span,
-          note: `completeness check of the \`${profile.name}\` profile (actor flows are exempt)`,
-          help: profile.flowTechRecommended.help
+          note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
+          help: view.flowTechRecommended.help
         });
       }
     }
-    if (profile.flowTechRequired && !f.tech?.protocol) {
+    if (view.flowTechRequired && !f.tech?.protocol) {
       diags.push({
-        code: profile.flowTechRequired.code,
+        code: view.flowTechRequired.code,
         severity: "error",
-        message: profile.flowTechRequired.message,
+        message: view.flowTechRequired.message,
         span: f.span,
-        note: `the \`${profile.name}\` profile requires the protocol on every flow`,
-        help: profile.flowTechRequired.help,
+        note: `the \`${view.name}\` view requires the protocol on every flow`,
+        help: view.flowTechRequired.help,
         fix: { insert: " (HTTPS/443)", atEndOfLine: true }
       });
     }
-    if (profile.flowLabelRequired && !f.label) {
+    if (view.flowLabelRequired && !f.label) {
       diags.push({
-        code: profile.flowLabelRequired.code,
+        code: view.flowLabelRequired.code,
         severity: "error",
-        message: profile.flowLabelRequired.message,
+        message: view.flowLabelRequired.message,
         span: f.span,
-        note: `the \`${profile.name}\` profile forbids unlabelled arrows`,
-        help: profile.flowLabelRequired.help,
+        note: `the \`${view.name}\` view forbids unlabelled arrows`,
+        help: view.flowLabelRequired.help,
         fix: { insert: ' : "\u2026"', atEndOfLine: true }
       });
+    }
+  }
+  if (view.attrSpec) {
+    const spec = view.attrSpec;
+    for (const e of all) {
+      if (e.kind !== spec.kind) continue;
+      if (!e.attr) {
+        diags.push({
+          code: spec.code,
+          severity: "error",
+          message: spec.message + ` (\`${e.id}\`)`,
+          span: e.idSpan,
+          help: spec.help
+        });
+      } else if (!spec.values.includes(e.attr.value)) {
+        diags.push({
+          code: spec.code,
+          severity: "error",
+          message: `invalid ${spec.kind} value \`${e.attr.value}\` (\`${e.id}\`)`,
+          span: e.attr.span,
+          note: `allowed: ${spec.values.join(", ")}`,
+          help: nearest(e.attr.value, spec.values) ? `did you mean \`${nearest(e.attr.value, spec.values)}\`?` : spec.help
+        });
+      }
+    }
+  }
+  if (view.boundaryLint || view.crossZoneTechRecommended) {
+    const zoneOf = (id) => {
+      for (let a = model.index.get(id)?.parent; a; a = a.parent) if (a.kind === "trust-zone") return a;
+      return void 0;
+    };
+    const levelOf = (id) => {
+      const z = zoneOf(id);
+      const v = z?.attr?.value;
+      return v && view.trustOrder?.[v] !== void 0 ? view.trustOrder[v] : -1;
+    };
+    for (const f of model.flows) {
+      if (!model.index.has(f.from) || !model.index.has(f.to)) continue;
+      const zf = zoneOf(f.from), zt = zoneOf(f.to);
+      const crossing = zf !== zt;
+      if (view.boundaryLint) {
+        const bl = view.boundaryLint;
+        const isNode = (id) => model.index.get(id)?.kind === bl.nodeKind;
+        if (levelOf(f.to) > levelOf(f.from) && !isNode(f.from) && !isNode(f.to)) {
+          diags.push({
+            code: bl.code,
+            severity: "warning",
+            message: bl.message,
+            span: f.span,
+            note: `flow enters a more-trusted zone without passing a \`${bl.nodeKind}\``,
+            help: bl.help
+          });
+        }
+      }
+      if (view.crossZoneTechRecommended && crossing && !f.tech?.protocol) {
+        diags.push({
+          code: view.crossZoneTechRecommended.code,
+          severity: "warning",
+          message: view.crossZoneTechRecommended.message,
+          span: f.span,
+          note: "inter-zone flow \u2014 state how the traffic is protected",
+          help: view.crossZoneTechRecommended.help
+        });
+      }
     }
   }
   const boIds = new Map(model.businessObjects.map((b) => [b.id, b]));
@@ -93023,11 +93427,11 @@ function validate(model) {
         severity: "warning",
         message: `business object \`${b.id}\` is never carried by any flow`,
         span: b.idSpan,
-        note: `completeness check of the \`${profile.name}\` profile`
+        note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  for (const mc of profile.minCounts) {
+  for (const mc of view.minCounts) {
     const n = all.filter((e) => e.kind === mc.kind).length;
     if (n < mc.min) {
       diags.push({
@@ -93035,11 +93439,11 @@ function validate(model) {
         severity: "warning",
         message: mc.message,
         span: model.typeSpan ?? { line: 1, col: 1, len: 7 },
-        note: `completeness check of the \`${profile.name}\` profile`
+        note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  if (profile.isolatedWarn) {
+  if (view.isolatedWarn) {
     const touched = /* @__PURE__ */ new Set();
     const touch = (id) => {
       const el = model.index.get(id);
@@ -93055,13 +93459,13 @@ function validate(model) {
       touch(f.to);
     }
     for (const e of all) {
-      if (profile.isolatedWarn.kinds.includes(e.kind) && !touched.has(e.id)) {
+      if (view.isolatedWarn.kinds.includes(e.kind) && !touched.has(e.id)) {
         diags.push({
-          code: profile.isolatedWarn.code,
+          code: view.isolatedWarn.code,
           severity: "warning",
-          message: profile.isolatedWarn.message + ` (\`${e.id}\`)`,
+          message: view.isolatedWarn.message + ` (\`${e.id}\`)`,
           span: e.idSpan,
-          note: `completeness check of the \`${profile.name}\` profile`
+          note: `completeness check of the \`${view.name}\` view`
         });
       }
     }
@@ -93095,9 +93499,23 @@ function lev(a, b, cap) {
 }
 
 // src/text.ts
-var FS_EDGE = 10.5;
-var FS_NODE = 11.5;
-var FS_CONT = 12;
+var FS_NODE = 12.5;
+var REF_BASE = 12.5;
+var fontSizes = (base) => {
+  const scale = base / REF_BASE;
+  return {
+    edge: base - 1,
+    node: base,
+    cont: base + 0.5,
+    scale,
+    tech: 9 * scale,
+    chip: 9.5 * scale,
+    tag: 9.5 * scale,
+    band: 10 * scale,
+    bandTitle: 11 * scale,
+    chipH: 19 * scale
+  };
+};
 var CW = 0.56;
 var measure = (text, fs) => {
   const lines = text.split("\n");
@@ -93121,20 +93539,20 @@ function wrapText(text, maxChars) {
   return lines.join("\n");
 }
 var CHIP_H = 19;
-var chipW = (name) => Math.ceil(name.length * 9.5 * 0.56) + 16;
+var chipW = (name, scale = 1) => Math.ceil(name.length * 9.5 * scale * CW) + Math.round(16 * scale);
 var techText = (t) => t?.protocol ? `(${t.protocol}${t.format ? ", " + t.format : ""})` : "";
-var flowLabelBox = (text, chipNames, fs, tech) => {
+var flowLabelBox = (text, chipNames, fs, tech, scale = 1) => {
   const m = text ? measure(text, fs) : { width: 0, height: 0 };
-  const chips = chipNames.reduce((s, n) => s + chipW(n) + 4, -4);
-  const techW = tech ? Math.ceil(tech.length * 9 * 0.56) + 6 : 0;
+  const chips = chipNames.reduce((s, n) => s + chipW(n, scale) + 4, -4);
+  const techW = tech ? Math.ceil(tech.length * 9 * scale * CW) + 6 : 0;
   return {
     width: Math.max(m.width, chips > 0 ? chips + 4 : 0, techW),
-    height: m.height + (tech ? 12 : 0) + (chipNames.length ? CHIP_H : 0)
+    height: m.height + (tech ? 12 * scale : 0) + (chipNames.length ? CHIP_H * scale : 0)
   };
 };
-var nodeSize = (kind, label) => {
+var nodeSize = (kind, label, fs = FS_NODE) => {
   const isActor = kind === "actor";
-  const m = measure(label, isActor ? FS_NODE - 1.5 : FS_NODE);
+  const m = measure(label, isActor ? fs - 1.5 : fs);
   return {
     w: isActor ? Math.max(64, m.width + 8) : Math.max(140, m.width + 16),
     h: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, m.height + 18)
@@ -93161,17 +93579,18 @@ var LaneAlloc = class {
     return this.lanes.length - 1;
   }
 };
-async function foldedLayout(model, profile, elk) {
+async function foldedLayout(model, view, elk) {
   const roots = model.elements;
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
   const numbered = model.style.flowText === "numbered";
+  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT, scale: FS_SCALE } = fontSizes(model.style.font.size);
   const chipsOf = (f) => numbered ? [] : (f.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
-  const numLabel = (f) => ({ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 });
-  const part = (e) => profile.partitions[e.kind] ?? 1;
+  const numLabel = (f) => ({ text: String(parseInt(f.id.slice(1), 10)), width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) });
+  const part = (e) => view.partitions[e.kind] ?? 1;
   const sources = roots.filter((e) => part(e) === 0);
   const middles = roots.filter((e) => part(e) === 1);
   const sinks = roots.filter((e) => part(e) === 2);
-  if (profile.partitionByOrder) return null;
+  if (view.partitionByOrder) return null;
   const middleGroups = middles.filter((m) => m.children.length > 0);
   if (middleGroups.length < 2) return null;
   const topOf = /* @__PURE__ */ new Map();
@@ -93201,7 +93620,7 @@ async function foldedLayout(model, profile, elk) {
         children: e.children.map(toElkNode)
       };
     }
-    const s = nodeSize(e.kind, e.label ?? e.id);
+    const s = nodeSize(e.kind, e.label ?? e.id, FS_NODE2);
     return { id: e.id, width: s.w, height: s.h };
   }
   const middleResults = /* @__PURE__ */ new Map();
@@ -93232,7 +93651,7 @@ async function foldedLayout(model, profile, elk) {
           if (numbered) return { id: f.id, sources: [f.from], targets: [f.to], labels: [numLabel(f)] };
           const text = f.label ? wrapText(f.label, LABEL_WRAP + 4) : "";
           const chips = chipsOf(f);
-          return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE) }] : [] };
+          return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, void 0, FS_SCALE) }] : [] };
         }),
         ...interFlows.filter((f) => topOf.get(f.from) === sys).map((f) => ({ id: `${f.id}_oe`, sources: [f.from], targets: [`${f.id}_out`] })),
         ...interFlows.filter((f) => topOf.get(f.to) === sys).map((f) => ({ id: `${f.id}_ie`, sources: [`${f.id}_in`], targets: [f.to] }))
@@ -93241,7 +93660,7 @@ async function foldedLayout(model, profile, elk) {
     middleResults.set(sys.id, await elk.layout(graph));
   }
   const layoutColumn = (groups) => groups.map((g) => {
-    const blocks = g.children.map((c) => ({ el: c, ...nodeSize(c.kind, c.label ?? c.id), x: 0, y: 0 }));
+    const blocks = g.children.map((c) => ({ el: c, ...nodeSize(c.kind, c.label ?? c.id, FS_NODE2), x: 0, y: 0 }));
     const w = Math.max(measure(g.label ?? g.id, FS_CONT).width + 20, ...blocks.map((b) => b.w)) + 2 * PAD;
     let y = PAD_TOP;
     for (const b of blocks) {
@@ -93275,7 +93694,7 @@ async function foldedLayout(model, profile, elk) {
   const wLG = 28 + Math.min(Math.ceil(nLeft / 2), 10) * LANE_STEP + LABEL_W;
   const wRG = 28 + Math.min(Math.ceil(nRight / 2), 10) * LANE_STEP + LABEL_W;
   const wSrc = Math.max(0, ...srcCols.map((c) => c.w));
-  const midW = (m) => m.children.length ? middleResults.get(m.id).children[0].width : nodeSize(m.kind, m.label ?? m.id).w;
+  const midW = (m) => m.children.length ? middleResults.get(m.id).children[0].width : nodeSize(m.kind, m.label ?? m.id, FS_NODE2).w;
   const wMid = Math.max(...middles.map(midW));
   const wSink = Math.max(0, ...sinkCols.map((c) => c.w));
   const xSrc = 10;
@@ -93292,7 +93711,7 @@ async function foldedLayout(model, profile, elk) {
   middles.forEach((m, i) => {
     const res = middleResults.get(m.id) ?? null;
     const size = res ? { w: res.children[0].width, h: res.children[0].height } : (() => {
-      const s = nodeSize(m.kind, m.label ?? m.id);
+      const s = nodeSize(m.kind, m.label ?? m.id, FS_NODE2);
       return { w: s.w, h: s.h };
     })();
     rows.push({ el: m, box: { x: xMid, y: yCur, w: size.w, h: size.h }, res });
@@ -93416,7 +93835,7 @@ async function foldedLayout(model, profile, elk) {
     const chips = chipsOf(f);
     const text = numbered ? numLabel(f).text : f.label ? wrapText(f.label, LABEL_WRAP) : chips.length ? "" : void 0;
     if (text !== void 0) {
-      const m = numbered ? { width: 26, height: 17 } : flowLabelBox(text, chips, FS_EDGE);
+      const m = numbered ? { width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) } : flowLabelBox(text, chips, FS_EDGE, void 0, FS_SCALE);
       if (pts.length >= 6) {
         const segL = Math.min(pts[2].x, pts[3].x), segR = Math.max(pts[2].x, pts[3].x);
         const span = Math.max(40, segR - segL - m.width - 20);
@@ -93435,20 +93854,20 @@ async function foldedLayout(model, profile, elk) {
 }
 
 // src/layout.ts
-var FS_EDGE2 = 10.5;
-var FS_NODE2 = 11.5;
-var FS_CONT2 = 12;
-async function layout(model, profile) {
+async function layout(model, view) {
   const elk = await getElk();
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
   const numbered = model.style.flowText === "numbered";
+  const compact = model.style.compact;
+  const COMPACT_WRAP = 10;
+  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT, scale: FS_SCALE } = fontSizes(model.style.font.size);
   function toElkNode(e) {
     if (e.children.length) {
       const nLines = (e.label ?? e.id).split("\n").length;
       return {
         id: e.id,
-        layoutOptions: { "elk.padding": `[top=${17 + nLines * 13},left=12,bottom=12,right=12]` },
-        labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT2) }],
+        layoutOptions: { "elk.padding": `[top=${(compact ? 11 : 13) + nLines * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]` },
+        labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT) }],
         children: e.children.map(toElkNode)
       };
     }
@@ -93456,23 +93875,38 @@ async function layout(model, profile) {
     const isActor = e.kind === "actor";
     return {
       id: e.id,
-      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE2 - 1.5).width + 8) : Math.max(140, m.width + 16),
-      height: isActor ? 56 + ((e.label ?? e.id).split("\n").length - 1) * 11 : Math.max(46, m.height + 18)
+      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE2 - 1.5).width + 8) : Math.max(compact ? 98 : 108, m.width + (compact ? 10 : 12)),
+      height: isActor ? 54 + ((e.label ?? e.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, m.height + (compact ? 10 : 12))
     };
   }
   const disp = model.style.disposition;
   const TARGETS = { slide: 16 / 9, page: 0.71 };
   const target = TARGETS[disp];
+  const ingressExternal = /* @__PURE__ */ new Set();
+  if (view.partitionByOrder) {
+    for (const e of model.elements) {
+      if (e.kind !== "external") continue;
+      const ids = /* @__PURE__ */ new Set();
+      (function collect(x) {
+        ids.add(x.id);
+        x.children.forEach(collect);
+      })(e);
+      const feedsIn = model.flows.some((f) => ids.has(f.from) && !ids.has(f.to));
+      const receives = model.flows.some((f) => ids.has(f.to) && !ids.has(f.from));
+      if (feedsIn && !receives) ingressExternal.add(e.id);
+    }
+  }
+  const INGRESS_PART = -1, EGRESS_PART = 900;
   const makeGraph = (direction, opts) => ({
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": direction,
       ...opts?.tight ? {
-        "elk.layered.spacing.nodeNodeBetweenLayers": "30",
-        "elk.spacing.nodeNode": "13",
-        "elk.spacing.edgeEdge": "9",
-        "elk.spacing.edgeNode": "10"
+        "elk.layered.spacing.nodeNodeBetweenLayers": "14",
+        "elk.spacing.nodeNode": "10",
+        "elk.spacing.edgeEdge": "8",
+        "elk.spacing.edgeNode": "9"
       } : {},
       ...opts?.minLayers ? { "elk.layered.layering.strategy": "LONGEST_PATH" } : {},
       "elk.hierarchyHandling": "INCLUDE_CHILDREN",
@@ -93483,14 +93917,14 @@ async function layout(model, profile) {
       "elk.layered.feedbackEdges": "true",
       "elk.layered.thoroughness": "30",
       "elk.separateConnectedComponents": "false",
-      "elk.layered.spacing.nodeNodeBetweenLayers": "44",
-      "elk.spacing.nodeNode": "16",
-      "elk.spacing.edgeEdge": "11",
-      "elk.spacing.edgeNode": "12",
-      "elk.spacing.edgeLabel": "3",
+      "elk.layered.spacing.nodeNodeBetweenLayers": compact ? "10" : "16",
+      "elk.spacing.nodeNode": compact ? "8" : "11",
+      "elk.spacing.edgeEdge": compact ? "7" : "9",
+      "elk.spacing.edgeNode": compact ? "8" : "10",
+      "elk.spacing.edgeLabel": "2",
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
-      "elk.padding": "[top=30,left=12,bottom=12,right=12]",
+      "elk.padding": "[top=22,left=10,bottom=10,right=10]",
       // Numbered mode carries tiny number badges (not full labels) on the
       // edges, so there's room to spread blocks apart and let ELK find
       // shorter, more followable routes: more node/edge spacing + thoroughness.
@@ -93505,7 +93939,7 @@ async function layout(model, profile) {
     },
     children: model.elements.map((e, idx) => {
       const n = toElkNode(e);
-      const p = profile.partitionByOrder ? profile.partitions[e.kind] !== void 0 ? 90 + profile.partitions[e.kind] : idx : profile.partitions[e.kind] ?? 1;
+      const p = view.partitionByOrder ? e.kind === "actor" || e.kind === "actor-group" ? INGRESS_PART : e.kind === "external" ? ingressExternal.has(e.id) ? INGRESS_PART : EGRESS_PART : view.partitions[e.kind] !== void 0 ? 90 + view.partitions[e.kind] : idx : view.partitions[e.kind] ?? 1;
       n.layoutOptions = { ...n.layoutOptions, "elk.partitioning.partition": String(p) };
       return n;
     }),
@@ -93515,17 +93949,18 @@ async function layout(model, profile) {
           id: f.id,
           sources: [f.from],
           targets: [f.to],
-          labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 }]
+          labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) }]
         };
       }
-      const text = f.label && opts?.labelWrap ? wrapText(f.label, opts.labelWrap) : f.label;
+      const wrap = opts?.labelWrap ?? (compact ? COMPACT_WRAP : void 0);
+      const text = f.label && wrap ? wrapText(f.label, wrap) : f.label;
       const chips = (f.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
       const tech = techText(f.tech);
       return {
         id: f.id,
         sources: [f.from],
         targets: [f.to],
-        labels: text || chips.length || tech ? [{ text: text ?? "", ...flowLabelBox(text ?? "", chips, FS_EDGE2, tech) }] : []
+        labels: text || chips.length || tech ? [{ text: text ?? "", ...flowLabelBox(text ?? "", chips, FS_EDGE, tech, FS_SCALE) }] : []
       };
     })
   });
@@ -93563,14 +93998,24 @@ async function layout(model, profile) {
         const o = origins[e.container] ?? { x: 0, y: 0 };
         const s = e.sections?.[0];
         const pts = s ? [s.startPoint, ...s.bendPoints ?? [], s.endPoint].map((p) => ({ x: p.x + o.x, y: p.y + o.y })) : [];
-        const labels = (e.labels ?? []).map((l) => ({
-          flowId: e.id,
-          text: l.text,
-          x: l.x + o.x,
-          y: l.y + o.y,
-          w: l.width,
-          h: l.height
-        }));
+        const labels = (e.labels ?? []).map((l) => {
+          let x = l.x + o.x, y = l.y + o.y;
+          if (numbered && pts.length >= 2) {
+            const b = pts[pts.length - 1], a = pts[pts.length - 2];
+            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+            const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
+            const back = Math.min(len - 2, 20 + l.width / 2);
+            let px = -uy, py = ux;
+            if (py > 0) {
+              px = -px;
+              py = -py;
+            }
+            const off = l.height / 2 + 2;
+            x = b.x - ux * back + px * off - l.width / 2;
+            y = b.y - uy * back + py * off - l.height / 2;
+          }
+          return { flowId: e.id, text: l.text, x, y, w: l.width, h: l.height };
+        });
         edges.push({ id: e.id, pts, labels });
       }
       (n.children ?? []).forEach(collect);
@@ -93582,13 +94027,10 @@ async function layout(model, profile) {
   if (target) {
     const specs = disp === "slide" ? [
       makeGraph("RIGHT"),
-      makeGraph("DOWN"),
       makeGraph("RIGHT", { labelWrap: 16 }),
       makeGraph("RIGHT", { labelWrap: 14, tight: true }),
-      makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true }),
-      makeGraph("DOWN", { labelWrap: 16 }),
-      makeGraph("DOWN", { labelWrap: 20, minLayers: true })
-    ] : [makeGraph("RIGHT"), makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
+      makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true })
+    ] : [makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
     const candidates = await Promise.all(specs.map((g) => elk.layout(g)));
     const wantLandscape = disp === "slide";
     const oriented = candidates.filter((r) => wantLandscape ? r.width >= r.height : r.height >= r.width);
@@ -93597,8 +94039,8 @@ async function layout(model, profile) {
     const fit = (r) => -Math.min(frame.w / r.width, frame.h / r.height);
     res = pool.reduce((a, b) => fit(a) <= fit(b) ? a : b);
     if (disp === "slide") {
-      const fold = await foldedLayout(model, profile, elk);
-      if (fold && fit(fold) < fit(res)) {
+      const fold = await foldedLayout(model, view, elk);
+      if (fold && fit(res) >= fit(fold) * 1.1) {
         fold.layoutMs = Date.now() - t0;
         return fold;
       }
@@ -93611,30 +94053,65 @@ async function layout(model, profile) {
 }
 
 // src/render.ts
-var FS_EDGE3 = 10.5;
-var FS_NODE3 = 11.5;
-var FS_CONT3 = 12;
 var HOP_R = 5;
+var SEC_LEVEL_FR = { public: "public", internal: "interne", restricted: "restreint", secret: "secret" };
 var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 var dashArray = (style) => style === "dashed" ? "5 3" : style === "dotted" ? "2 2.5" : void 0;
 var inter = (a, b) => !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
-function render(model, profile, scene) {
+function render(model, view, scene) {
   const ds = model.style;
-  const pal = palettes[ds.theme] ?? lightPalette;
-  const kindDefaults = ds.theme === "dark" ? profile.defaultsDark : profile.defaults;
-  const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : pal.edge;
+  const F = fontSizes(ds.font.size);
+  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT } = F;
+  const r1 = (n) => Math.round(n * 10) / 10;
+  const A = {
+    tech: r1(F.tech),
+    chip: r1(F.chip),
+    tag: r1(F.tag),
+    band: r1(F.band),
+    bandTitle: r1(F.bandTitle),
+    chipH: Math.round(F.chipH),
+    scale: F.scale,
+    chipRectH: Math.round(15 * F.scale),
+    chipTextDy: r1(11 * F.scale)
+  };
+  const bs = (n) => r1(n * F.scale);
+  const { palette: pal, kinds: kindDefaults, levels: levelDefaults } = themeFor(ds.theme, view);
+  const darkTheme = ["dark", "nord", "classic-dark"].includes(ds.theme);
+  const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : ds.accent ?? pal.edge;
+  const srcColor = /* @__PURE__ */ new Map();
+  if (ds.flowColor === "by-source") {
+    const hues = flowPalette[darkTheme ? "dark" : "light"];
+    for (const f of model.flows) if (!srcColor.has(f.from)) srcColor.set(f.from, hues[srcColor.size % hues.length]);
+  }
+  const flowColorOf = (f) => f?.style?.stroke?.color ?? (ds.flowColor === "by-source" ? srcColor.get(f?.from ?? "") ?? edge : edge);
+  const arrowMk = /* @__PURE__ */ new Map();
+  const markerId = (color) => {
+    let id = arrowMk.get(color);
+    if (!id) {
+      id = arrowMk.size === 0 ? "arr" : `arr${arrowMk.size}`;
+      arrowMk.set(color, id);
+    }
+    return id;
+  };
   const flowById = new Map(model.flows.map((f) => [f.id, f]));
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
   const numbered = ds.flowText === "numbered";
+  const t = UI[ds.lang] ?? UI.en;
+  const legendNames = ds.lang === "fr" ? view.legendNamesFr : view.legendNames;
+  const legendFlowLabel = ds.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
   const elStyle = /* @__PURE__ */ new Map();
+  const elAttr = /* @__PURE__ */ new Map();
   (function walk(els) {
     for (const e of els) {
       elStyle.set(e.id, e.style);
+      elAttr.set(e.id, e.attr?.value);
       walk(e.children);
     }
   })(model.elements);
   const resolve = (kind, id) => {
-    const a = kindDefaults[kind] ?? {};
+    let a = kindDefaults[kind] ?? {};
+    const lvl = elAttr.get(id);
+    if (kind === "trust-zone" && lvl && levelDefaults?.[lvl]) a = levelDefaults[lvl];
     const b = ds.kind[kind] ?? {};
     const c = elStyle.get(id) ?? {};
     return {
@@ -93715,9 +94192,15 @@ function render(model, profile, scene) {
     out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6" fill="${s.fill ?? pal.containerFill}" stroke="${s.stroke?.color ?? pal.containerStroke}" stroke-width="${s.stroke?.width ?? 1.2}"${da ? ` stroke-dasharray="${da}"` : ""}/>
 `;
     n.label.split("\n").forEach((line, i) => {
-      out += `<text x="${n.x + 10}" y="${n.y + 18 + i * 13}" font-size="${FS_CONT3}" font-weight="bold" fill="${s.text ?? pal.containerLabel}">${esc(line)}</text>
+      out += `<text x="${n.x + 10}" y="${n.y + 18 + i * 14}" font-size="${FS_CONT}" font-weight="bold" fill="${s.text ?? pal.containerLabel}">${esc(line)}</text>
 `;
     });
+    const lvl = n.kind === "trust-zone" ? elAttr.get(n.id) : void 0;
+    if (lvl) {
+      const word = (ds.lang === "fr" ? SEC_LEVEL_FR[lvl] : lvl) ?? lvl;
+      out += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="${A.tag}" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? pal.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
+`;
+    }
   }
   for (const n of scene.nodes.filter((n2) => !n2.container)) {
     const s = resolve(n.kind, n.id);
@@ -93729,7 +94212,7 @@ function render(model, profile, scene) {
 <path d="M ${cx - 11} ${n.y + 32} q 11 -19 22 0" fill="none" stroke="${ac}" stroke-width="1.5"/>
 `;
       lines.forEach((l, i) => {
-        out += `<text x="${cx}" y="${n.y + 44 + i * 11}" font-size="${FS_NODE3 - 1.5}" text-anchor="middle" fill="${s.text ?? pal.actorText}">${esc(l)}</text>
+        out += `<text x="${cx}" y="${n.y + 44 + i * 11}" font-size="${FS_NODE2 - 1.5}" text-anchor="middle" fill="${s.text ?? pal.actorText}">${esc(l)}</text>
 `;
       });
     } else if (n.kind === "datastore") {
@@ -93738,61 +94221,64 @@ function render(model, profile, scene) {
 `;
       out += `<ellipse cx="${n.x + n.w / 2}" cy="${n.y + ry}" rx="${n.w / 2}" ry="${ry}" fill="${f}" stroke="${c}" stroke-width="1.3"/>
 `;
-      const cy = n.y + ry + (n.h - ry) / 2 - (lines.length - 1) * (FS_NODE3 + 2) / 2 + 4;
+      const cy = n.y + ry + (n.h - ry) / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
       lines.forEach((l, i) => {
-        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE3 + 2)}" font-size="${FS_NODE3}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
+        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE2 + 2)}" font-size="${FS_NODE2}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
 `;
       });
     } else {
       const da = dashArray(s.stroke?.style);
       out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}" stroke-width="${s.stroke?.width ?? 1.3}"${da ? ` stroke-dasharray="${da}"` : ""}/>
 `;
-      const cy = n.y + n.h / 2 - (lines.length - 1) * (FS_NODE3 + 2) / 2 + 4;
+      const cy = n.y + n.h / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
       lines.forEach((l, i) => {
-        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE3 + 2)}" font-size="${FS_NODE3}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
+        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE2 + 2)}" font-size="${FS_NODE2}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
 `;
       });
     }
   }
   for (const e of scene.edges) {
-    const fst = flowById.get(e.id)?.style;
-    const color = fst?.stroke?.color ?? edge;
+    const f = flowById.get(e.id);
+    const fst = f?.style;
+    const color = flowColorOf(f);
+    const headColor = ds.flowColor === "by-source" ? color : edge;
     const style = fst?.stroke?.style ?? ds.flowStroke.style;
     const width = fst?.stroke?.width ?? ds.flowStroke.width;
     const da = dashArray(style);
     if (e.pts.length) {
-      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ""} marker-end="url(#arr)"/>
+      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ""} marker-end="url(#${markerId(headColor)})"/>
 `;
     }
     for (const l of e.labels) {
       if (numbered) {
-        out += `<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="8.5" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}" stroke-width="1"/>
+        const nx = l.x + l.w / 2, ny = l.y + l.h / 2 + bs(3.6), nfs = bs(10.5);
+        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.halo}" stroke="${pal.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(l.text)}</text>
 `;
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + 12.5}" font-size="10" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${esc(l.text)}</text>
+        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.edgeLabel}" font-weight="bold">${esc(l.text)}</text>
 `;
         continue;
       }
       const lines = l.text ? l.text.split("\n") : [];
       const labelColor = fst?.text ?? pal.edgeLabel;
       lines.forEach((line, i) => {
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE3 + 1 + i * (FS_EDGE3 + 3)}" font-size="${FS_EDGE3}" text-anchor="middle" fill="${labelColor}" font-style="italic" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
+        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + i * (FS_EDGE + 3)}" font-size="${FS_EDGE}" text-anchor="middle" fill="${labelColor}" font-style="italic" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
 `;
       });
       const tech = techText(flowById.get(l.flowId)?.tech);
       if (tech) {
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE3 + 1 + lines.length * (FS_EDGE3 + 3)}" font-size="9" text-anchor="middle" fill="${pal.techText}" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
+        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + lines.length * (FS_EDGE + 3)}" font-size="${A.tech}" text-anchor="middle" fill="${pal.techText}" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
 `;
       }
       const chips = (flowById.get(l.flowId)?.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
       if (chips.length) {
-        const totalW = chips.reduce((s, n) => s + chipW(n) + 4, -4);
+        const totalW = chips.reduce((s, n) => s + chipW(n, A.scale) + 4, -4);
         let cx = l.x + l.w / 2 - totalW / 2;
-        const cy = l.y + l.h - CHIP_H + 2;
+        const cy = l.y + l.h - A.chipH + 2;
         for (const name of chips) {
-          const w = chipW(name);
-          out += `<rect x="${cx}" y="${cy}" width="${w}" height="15" rx="7.5" fill="${pal.chipFill}" stroke="${pal.chipStroke}" stroke-width="1"/>
+          const w = chipW(name, A.scale);
+          out += `<rect x="${cx}" y="${cy}" width="${w}" height="${A.chipRectH}" rx="${A.chipRectH / 2}" fill="${pal.chipFill}" stroke="${pal.chipStroke}" stroke-width="1"/>
 `;
-          out += `<text x="${cx + w / 2}" y="${cy + 11}" font-size="9.5" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
+          out += `<text x="${cx + w / 2}" y="${cy + A.chipTextDy}" font-size="${A.chip}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
 `;
           cx += w + 4;
         }
@@ -93802,10 +94288,10 @@ function render(model, profile, scene) {
   let by = H;
   let bands = "";
   const chip = (x, y, name) => {
-    const w = chipW(name);
+    const w = chipW(name, A.scale);
     return {
-      svg: `<rect x="${x}" y="${y}" width="${w}" height="15" rx="7.5" fill="${pal.chipFill}" stroke="${pal.chipStroke}"/>
-<text x="${x + w / 2}" y="${y + 11}" font-size="9.5" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
+      svg: `<rect x="${x}" y="${y}" width="${w}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.chipFill}" stroke="${pal.chipStroke}"/>
+<text x="${x + w / 2}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
 `,
       w
     };
@@ -93813,16 +94299,16 @@ function render(model, profile, scene) {
   const bandStart = (title) => {
     bands += `<line x1="20" y1="${by + 10}" x2="${W - 20}" y2="${by + 10}" stroke="${pal.divider}" stroke-width="1"/>
 `;
-    bands += `<text x="20" y="${by + 32}" font-size="11" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>
+    bands += `<text x="20" y="${by + bs(32)}" font-size="${bs(11)}" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>
 `;
-    by += 20;
+    by += bs(20);
   };
   const contentX = 150;
   if (numbered && model.flows.length) {
-    bandStart(profile.bandTitles.flows);
-    const BADGE = 34;
-    const GUT = 28;
-    const LH = 13.5;
+    bandStart(t.flows);
+    const BADGE = bs(34);
+    const GUT = bs(28);
+    const LH = bs(13.5);
     const COL_TARGET = 520;
     const avail = W - contentX - 20;
     let cols = Math.max(1, Math.min(3, Math.floor((avail + GUT) / (COL_TARGET + GUT))));
@@ -93830,9 +94316,9 @@ function render(model, profile, scene) {
     const colW = Math.floor((avail - (cols - 1) * GUT) / cols);
     const entries = model.flows.map((f) => {
       const tech = techText(f.tech);
-      const chipsW = (f.objects ?? []).reduce((s, o) => s + chipW(boName.get(o.id) ?? o.id) + 4, 0);
+      const chipsW = (f.objects ?? []).reduce((s, o) => s + chipW(boName.get(o.id) ?? o.id, A.scale) + 4, 0);
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
-      const maxChars = Math.max(6, Math.floor(textW / (10 * 0.52)));
+      const maxChars = Math.max(6, Math.floor(textW / (bs(10) * 0.52)));
       const raw = (f.label ?? "") + (tech ? "  " + tech : "");
       const lines = raw.split("\n").flatMap((seg) => wrapText(seg, maxChars).split("\n"));
       return { f, lines };
@@ -93844,17 +94330,17 @@ function render(model, profile, scene) {
       const col = Math.floor(i / rows);
       const x = contentX + col * (colW + GUT);
       const y = colY[col];
-      bands += `<rect x="${x}" y="${y}" width="24" height="15" rx="7.5" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}"/>
+      bands += `<rect x="${x}" y="${y}" width="${bs(24)}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}"/>
 `;
-      bands += `<text x="${x + 12}" y="${y + 11}" font-size="9.5" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${i + 1}</text>
+      bands += `<text x="${x + bs(12)}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${i + 1}</text>
 `;
       e.lines.forEach((line, li) => {
-        bands += `<text x="${x + BADGE}" y="${y + 11 + li * LH}" font-size="10" fill="${pal.bandText}">${esc(line)}</text>
+        bands += `<text x="${x + BADGE}" y="${y + bs(11) + li * LH}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(line)}</text>
 `;
       });
       if (e.f.objects?.length) {
         const last = e.lines[e.lines.length - 1] ?? "";
-        let cx = x + BADGE + Math.ceil(last.length * 10 * 0.52) + 6;
+        let cx = x + BADGE + Math.ceil(last.length * bs(10) * 0.52) + 6;
         const cy = y + 1 + (e.lines.length - 1) * LH;
         for (const o of e.f.objects) {
           const c = chip(cx, cy, boName.get(o.id) ?? o.id);
@@ -93862,61 +94348,73 @@ function render(model, profile, scene) {
           cx += c.w + 4;
         }
       }
-      colY[col] = y + Math.max(20, e.lines.length * LH + 7);
+      colY[col] = y + Math.max(bs(20), e.lines.length * LH + bs(7));
     });
     by = Math.max(...colY) + 6;
   }
   if (model.businessObjects.length) {
-    bandStart(profile.bandTitles.objects);
+    bandStart(t.objects);
     for (const b of model.businessObjects) {
       const c = chip(contentX, by + 2, b.name);
       bands += c.svg;
-      if (b.description) bands += `<text x="${contentX + c.w + 10}" y="${by + 13}" font-size="10" fill="${pal.bandMuted}">\u2014 ${esc(b.description)}</text>
+      if (b.description) bands += `<text x="${contentX + c.w + 10}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandMuted}">\u2014 ${esc(b.description)}</text>
 `;
-      by += 24;
+      by += bs(24);
     }
     by += 6;
   }
   if (ds.legend === "auto") {
-    bandStart(profile.bandTitles.legend);
+    bandStart(t.legend);
     let lx = contentX;
-    const kindsUsed = [...new Set(scene.nodes.map((n) => n.kind))].filter((k) => profile.legendNames[k] && k !== "actor");
+    const kindsUsed = [...new Set(scene.nodes.map((n) => n.kind))].filter((k) => legendNames[k] && (k !== "actor" || view.actorLegend));
     for (const k of kindsUsed) {
       const s = resolve(k, "");
-      const da = dashArray(s.stroke?.style);
-      bands += `<rect x="${lx}" y="${by + 2}" width="26" height="14" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+      if (k === "actor") {
+        const ac = s.stroke?.color ?? pal.actorStroke;
+        bands += `<circle cx="${lx + bs(13)}" cy="${by + bs(5)}" r="${bs(3)}" fill="none" stroke="${ac}" stroke-width="1.2"/>
 `;
-      const name = profile.legendNames[k];
-      bands += `<text x="${lx + 32}" y="${by + 13}" font-size="10" fill="${pal.bandText}">${esc(name)}</text>
+        bands += `<path d="M ${lx + bs(8)} ${by + bs(15)} q ${bs(5)} ${bs(-7)} ${bs(10)} 0" fill="none" stroke="${ac}" stroke-width="1.2"/>
 `;
-      lx += 40 + Math.ceil(name.length * 10 * 0.52) + 24;
+      } else {
+        const da = dashArray(s.stroke?.style);
+        bands += `<rect x="${lx}" y="${by + 2}" width="${bs(26)}" height="${bs(14)}" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+`;
+      }
+      const name = legendNames[k];
+      bands += `<text x="${lx + bs(32)}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(name)}</text>
+`;
+      lx += bs(40) + Math.ceil(name.length * bs(10) * 0.52) + bs(24);
       if (lx > W - 220) {
         lx = contentX;
-        by += 22;
+        by += bs(22);
       }
     }
-    by += 24;
-    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + 26}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#arr)"/>
+    by += bs(24);
+    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#${markerId(edge)})"/>
 `;
-    bands += `<text x="${contentX + 32}" y="${by + 12}" font-size="10" fill="${pal.bandText}">${esc(numbered ? profile.legendFlowLabel + " \u2014 numbered (text: FLOWS band)" : profile.legendFlowLabel)}</text>
+    const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + t.numberedSuffix : legendFlowLabel) + (ds.flowColor === "by-source" ? ds.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
+    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(flowLabelText)}</text>
 `;
     if (model.businessObjects.length) {
-      const c = chip(contentX + 330, by + 1, "Business object");
+      const c = chip(contentX + 330, by + 1, t.businessObject);
       bands += c.svg;
-      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + 12}" font-size="10" fill="${pal.bandText}">carried by the flow</text>
+      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(t.carriedByFlow)}</text>
 `;
     }
-    by += 24;
+    by += bs(24);
     for (const note of model.legendNotes) {
-      bands += `<text x="${contentX}" y="${by + 12}" font-size="10" fill="${pal.bandText}" font-style="italic">${esc(note)}</text>
+      bands += `<text x="${contentX}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}" font-style="italic">${esc(note)}</text>
 `;
-      by += 20;
+      by += bs(20);
     }
   }
   const totalH = by > H ? by + 14 : H;
+  const mw = ds.arrows === "large" ? r1(11 * F.scale) : 7;
+  if (arrowMk.size === 0) markerId(edge);
+  const markers = [...arrowMk].map(([color, id]) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${mw}" markerHeight="${mw}" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("\n");
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${esc(font)},Arial,sans-serif">
-<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="${edge}"/></marker></defs>
+<defs>${markers}</defs>
 <rect width="${W}" height="${totalH}" fill="${ds.background ?? pal.background}"/>
 ` + out + bands + "</svg>\n";
   return { svg, overlapsBefore, overlapsAfter };
@@ -93924,16 +94422,17 @@ function render(model, profile, scene) {
 
 // src/playground-entry.ts
 setElkFactory(() => new import_elk_bundled.default());
-async function compile(source) {
+async function compile(source, opts) {
   const { model, diags } = parse(source);
+  if (opts?.theme) model.style.theme = opts.theme;
   diags.push(...validate(model));
   const errors = diags.filter((d) => d.severity === "error");
-  if (errors.length || !model.type || !profiles[model.type]) {
+  if (errors.length || !model.type || !views[model.type]) {
     return { svg: null, diagnostics: diags, metrics: null };
   }
-  const profile = profiles[model.type];
-  const scene = await layout(model, profile);
-  const { svg, overlapsAfter } = render(model, profile, scene);
+  const view = views[model.type];
+  const scene = await layout(model, view);
+  const { svg, overlapsAfter } = render(model, view, scene);
   return {
     svg,
     diagnostics: diags,
@@ -93943,5 +94442,6 @@ async function compile(source) {
 var version = "0.1.0";
 export {
   compile,
+  themeNames,
   version
 };

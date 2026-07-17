@@ -14,7 +14,7 @@ site CLOUD "Cloud host" {
   }
 }
 
-external VISITORS "Internet\nvisitors"
+actor VISITORS "Internet\nvisitors"
 
 VISITORS -> LB : "Site access" (HTTPS/443)
 LB -> CMS_I : "Balanced\ntraffic" (HTTP/8080)

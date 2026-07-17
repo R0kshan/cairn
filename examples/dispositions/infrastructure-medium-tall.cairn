@@ -26,7 +26,7 @@ site DC "Main data center" {
   }
 }
 
-external USERS "User\nworkstations"
+actor USERS "User\nworkstations"
 external EDI "Partner EDI\nplatform"
 
 # ---- technical flows (protocol REQUIRED) ----

@@ -1,0 +1,21 @@
+# Normalize line endings to LF for all text files.
+# The test harness and the DSL are LF-based; a CRLF checkout (Windows) silently
+# breaks source-string matching in tests and produces noisy whole-file diffs.
+* text=auto eol=lf
+
+# Explicit LF for source, DSL, and generated text artifacts.
+*.ts   text eol=lf
+*.js   text eol=lf
+*.mjs  text eol=lf
+*.json text eol=lf
+*.jsonc text eol=lf
+*.md   text eol=lf
+*.cairn text eol=lf
+*.svg  text eol=lf
+*.csv  text eol=lf
+*.html text eol=lf
+*.sh   text eol=lf
+*.yml  text eol=lf
+
+# Binary assets — never touch.
+*.png binary

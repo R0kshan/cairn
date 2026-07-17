@@ -9,7 +9,7 @@
 
 import { lex, type Tok } from './lex.ts';
 import type { Model, Element, Flow, Diagnostic, StyleProps, DiagramStyle, Span } from './model.ts';
-import { defaultDiagramStyle } from './model.ts';
+import { defaultDiagramStyle, themeNames } from './model.ts';
 
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diags: Diagnostic[] = [];
@@ -233,6 +233,24 @@ function applyStyleEntry(
       else bad(v ?? key, '`on` or `off`');
       break;
     }
+    case 'compact': {
+      const v = one();
+      if (v?.kind === 'id' && (v.text === 'on' || v.text === 'off')) diag.compact = v.text === 'on';
+      else bad(v ?? key, '`on` or `off`');
+      break;
+    }
+    case 'arrows': {
+      const v = one();
+      if (v?.kind === 'id' && (v.text === 'normal' || v.text === 'large')) diag.arrows = v.text as any;
+      else bad(v ?? key, '`normal` or `large`');
+      break;
+    }
+    case 'flow-color': {
+      const v = one();
+      if (v?.kind === 'id' && (v.text === 'none' || v.text === 'by-source')) diag.flowColor = v.text as any;
+      else bad(v ?? key, '`none` or `by-source`');
+      break;
+    }
     case 'disposition': {
       const v = one();
       const OK = new Set(['wide', 'tall', 'slide', 'page']);
@@ -266,8 +284,14 @@ function applyStyleEntry(
     }
     case 'theme': {
       const v = one();
-      if (v?.kind === 'id' && (v.text === 'light' || v.text === 'dark')) diag.theme = v.text as any;
-      else bad(v ?? key, '`light` or `dark`');
+      if (v?.kind === 'id' && themeNames.includes(v.text)) diag.theme = v.text;
+      else bad(v ?? key, '`' + themeNames.join('` | `') + '`');
+      break;
+    }
+    case 'accent': {
+      const v = one();
+      if (v?.kind === 'color') diag.accent = v.text;
+      else bad(v ?? key, '`#hex` color (retints flows on top of the theme)');
       break;
     }
     case 'lang': {
@@ -307,7 +331,13 @@ function applyStyleEntry(
       }
       break;
     }
+    case 'font-size': {
+      const v = one();
+      if (v?.kind === 'num') diag.font.size = parseFloat(v.text);
+      else bad(v ?? key, 'a number, e.g. `font-size: 14`');
+      break;
+    }
     default:
-      diags.push({ code: 'E0104', severity: 'error', message: `unknown style property: \`${k}\``, span: key.span, help: 'properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font' });
+      diags.push({ code: 'E0104', severity: 'error', message: `unknown style property: \`${k}\``, span: key.span, help: 'properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size' });
   }
 }
