@@ -86,9 +86,13 @@ M1   -> EXT1 : "Data sent" (SFTP, XML)
 
 const TEMPLATE_INFRASTRUCTURE = `diagram infrastructure "Diagram title"
 
-# An infrastructure diagram shows: sites, network zones (banded in declaration
-# order), servers/VMs and deployed applications. Every flow MUST carry its
-# protocol (and port): \\\`A -> B : "…" (HTTPS/443)\\\`.
+# An infrastructure diagram shows: users (\\\`actor\\\` — the consumers, on the entry
+# side), sites, network zones (banded in declaration order), servers/VMs and
+# deployed applications, and external systems (partners, on the exit side).
+# Every flow MUST carry its protocol (and port): \\\`A -> B : "…" (HTTPS/443)\\\`.
+
+# Users of the infrastructure — rendered as people, placed on the entry side.
+actor USERS "End users"
 
 site DC1 "Main datacenter" {
   network-zone DMZ "DMZ" {
@@ -109,6 +113,7 @@ site DC1 "Main datacenter" {
 external PARTNER "Partner platform"
 
 # ---- technical flows (protocol REQUIRED) ----
+USERS   -> FRONT_I : "Web access" (HTTPS/443)
 FRONT_I -> CORE_I : "API calls" (HTTPS/8443)
 CORE_I  -> DB_I   : "Queries" (TCP/5432)
 CORE_I  -> PARTNER : "Nightly export" (SFTP/22)

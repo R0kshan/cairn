@@ -37,12 +37,36 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     };
   }
 
-  // disposition -> direction; balanced modes (slide/page) try both directions
-  // and keep the result closest to the target ratio (ELK's wrapping doesn't
-  // operate under INCLUDE_CHILDREN, so exact ratio targeting is unavailable).
+  // disposition -> direction. Direction is LOCKED per disposition so the actor
+  // band (partition 0) is always on the expected side — a hard reading-order
+  // invariant, not something left to the fitness search:
+  //   wide  / slide -> RIGHT (actors LEFT)   |  tall / page -> DOWN (actors TOP)
+  // slide/page still explore multiple candidates, but only within their locked
+  // direction; the search tunes fit (label wrap, spacing), never the side.
   const disp = model.style.disposition;
   const TARGETS: Record<string, number | undefined> = { slide: 16 / 9, page: 0.71 };
   const target = TARGETS[disp];
+
+  // Infrastructure and security views have no `actor` kind — their "users" are
+  // modelled as `external` elements. Split externals by flow topology so those
+  // user-facing sources read on the entry side (left for wide/slide, top for
+  // tall/page), exactly like actors do, while downstream partners stay on the
+  // exit side. An external is INGRESS iff it only feeds the system (has an
+  // outgoing flow into it and no incoming flow); everything else is EGRESS.
+  // Only applies to partitionByOrder views (infra/security); logical/application
+  // keep externals right — there, users are actors and already sit left.
+  const ingressExternal = new Set<string>();
+  if (view.partitionByOrder) {
+    for (const e of model.elements) {
+      if (e.kind !== 'external') continue;
+      const ids = new Set<string>();
+      (function collect(x: Element) { ids.add(x.id); x.children.forEach(collect); })(e);
+      const feedsIn = model.flows.some(f => ids.has(f.from) && !ids.has(f.to));
+      const receives = model.flows.some(f => ids.has(f.to) && !ids.has(f.from));
+      if (feedsIn && !receives) ingressExternal.add(e.id);
+    }
+  }
+  const INGRESS_PART = -1, EGRESS_PART = 900; // left-of-everything / right-of-everything
 
   const makeGraph = (direction: 'RIGHT' | 'DOWN', opts?: { labelWrap?: number; tight?: boolean; minLayers?: boolean }) => ({
     id: 'root',
@@ -86,9 +110,16 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     },
     children: model.elements.map((e, idx) => {
       const n = toElkNode(e);
-      // partition: by declaration order (infra zones/sites) or by kind band
+      // partition: by declaration order (infra zones/sites) or by kind band.
+      // In partitionByOrder views, actors (the users) pin to the entry edge, and
+      // externals split by ingress/egress side (see ingressExternal above) so
+      // user-facing sources read on the entry edge and partners on the exit edge.
       const p = view.partitionByOrder
-        ? (view.partitions[e.kind] !== undefined ? 90 + view.partitions[e.kind] : idx)
+        ? (e.kind === 'actor' || e.kind === 'actor-group'
+            ? INGRESS_PART
+            : e.kind === 'external'
+              ? (ingressExternal.has(e.id) ? INGRESS_PART : EGRESS_PART)
+              : (view.partitions[e.kind] !== undefined ? 90 + view.partitions[e.kind] : idx))
         : (view.partitions[e.kind] ?? 1);
       n.layoutOptions = { ...n.layoutOptions, 'elk.partitioning.partition': String(p) };
       return n;
@@ -151,17 +182,18 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const t0 = Date.now();
   let res: any;
   if (target) {
-    // Orientation is a HARD constraint (slide = landscape, page = portrait);
-    // the ratio is only a soft target among correctly-oriented candidates.
-    // Slide adds width-reducing candidates: narrow-wrapped labels trade the
-    // slide's spare height for width (labels drive layer-gap width in RIGHT).
+    // Direction is locked (slide = RIGHT/landscape, page = DOWN/portrait) so the
+    // actor band never flips sides. Candidates only vary fit knobs WITHIN that
+    // direction: slide trades its spare height for width via narrow-wrapped
+    // labels + tight spacing; page re-wraps labels to fill the column.
     const specs: any[] = disp === 'slide'
-      ? [makeGraph('RIGHT'), makeGraph('DOWN'),
+      ? [makeGraph('RIGHT'),
          makeGraph('RIGHT', { labelWrap: 16 }), makeGraph('RIGHT', { labelWrap: 14, tight: true }),
-         makeGraph('RIGHT', { labelWrap: 14, tight: true, minLayers: true }),
-         makeGraph('DOWN', { labelWrap: 16 }), makeGraph('DOWN', { labelWrap: 20, minLayers: true })]
-      : [makeGraph('RIGHT'), makeGraph('DOWN'), makeGraph('DOWN', { labelWrap: 16 })];
+         makeGraph('RIGHT', { labelWrap: 14, tight: true, minLayers: true })]
+      : [makeGraph('DOWN'), makeGraph('DOWN', { labelWrap: 16 })];
     const candidates = await Promise.all(specs.map(g => elk.layout(g)));
+    // All candidates already share the locked direction; this filter only drops
+    // pathological cases (e.g. a RIGHT graph that still came out taller than wide).
     const wantLandscape = disp === 'slide';
     const oriented = candidates.filter(r => wantLandscape ? r.width >= r.height : r.height >= r.width);
     const pool = oriented.length ? oriented : candidates;

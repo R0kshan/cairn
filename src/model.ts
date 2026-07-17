@@ -181,6 +181,10 @@ export interface View {
   bandTitles: { flows: string; objects: string; legend: string };
   partitions: Record<string, number>;    // semantic bands, left -> right
   partitionByOrder?: boolean;            // infra: root elements band in declaration order
+  // Views without an actor-group container (infrastructure) model their users as
+  // standalone `actor` elements. When set, the legend renders a person-glyph key
+  // for them (in grouped views the "Actor group" swatch already keys the actors).
+  actorLegend?: boolean;
   legendFlowLabel: string;
   legendFlowLabelFr: string;
   flowLabelRequired: { code: string; message: string; help: string } | null;
@@ -326,15 +330,21 @@ export const applicationView: View = {
 
 export const infrastructureView: View = {
   name: 'infrastructure',
-  kinds: ['site', 'network-zone', 'server', 'app-instance', 'external'],
+  // `actor` = the consumer/user of the infrastructure (C4 Person). It has no
+  // network location, so it is not a container and needs no zone; it reads on
+  // the entry edge, distinct from `external` third-party systems on the exit edge.
+  kinds: ['actor', 'site', 'network-zone', 'server', 'app-instance', 'external'],
   containerKinds: ['site', 'network-zone', 'server'],
   partitions: { external: 2 },
   partitionByOrder: true, // zones/sites band left->right in declaration order
+  actorLegend: true,      // users are standalone actors here — key them in the legend
   legendNames: {
+    actor: 'User / consumer',
     site: 'Site / data center', 'network-zone': 'Network zone', server: 'Server / VM',
     'app-instance': 'Deployed application', external: 'External system',
   },
   legendNamesFr: {
+    actor: 'Utilisateur / consommateur',
     site: 'Site / centre de données', 'network-zone': 'Zone réseau', server: 'Serveur / VM',
     'app-instance': 'Application déployée', external: 'Système externe',
   },
@@ -369,6 +379,7 @@ export const infrastructureView: View = {
     message: 'isolated element: no incoming or outgoing flow',
   },
   defaults: {
+    actor: {},
     site: { fill: '#f5f5f4', stroke: { color: '#8a8a85', style: 'solid', width: 1.4 } },
     'network-zone': { fill: '#ecf3ec', stroke: { color: '#6d9a6d', style: 'dashed', width: 1.2 } },
     server: { fill: '#ffffff', stroke: { color: '#55606b', style: 'solid', width: 1.5 } },
@@ -376,6 +387,7 @@ export const infrastructureView: View = {
     external: { fill: '#f0eef5', stroke: { color: '#9187b3', style: 'dashed', width: 1.2 } },
   },
   defaultsDark: {
+    actor: {},
     site: { fill: '#26261f', stroke: { color: '#8a8a72', style: 'solid', width: 1.4 } },
     'network-zone': { fill: '#20291f', stroke: { color: '#5f8a5f', style: 'dashed', width: 1.2 } },
     server: { fill: '#252a31', stroke: { color: '#6b7885', style: 'solid', width: 1.5 } },

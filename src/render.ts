@@ -294,11 +294,21 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   if (ds.legend === 'auto') {
     bandStart(t.legend);
     let lx = contentX;
-    const kindsUsed = [...new Set(scene.nodes.map(n => n.kind))].filter(k => legendNames[k] && k !== 'actor');
+    // `actor` is normally keyed by the "Actor group" swatch; views that place
+    // standalone actors (infrastructure) opt in via view.actorLegend to show a
+    // person-glyph key so the user/consumer symbol is explained.
+    const kindsUsed = [...new Set(scene.nodes.map(n => n.kind))]
+      .filter(k => legendNames[k] && (k !== 'actor' || view.actorLegend));
     for (const k of kindsUsed) {
       const s = resolve(k, '');
-      const da = dashArray(s.stroke?.style);
-      bands += `<rect x="${lx}" y="${by + 2}" width="26" height="14" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ''}/>\n`;
+      if (k === 'actor') {
+        const ac = s.stroke?.color ?? pal.actorStroke;
+        bands += `<circle cx="${lx + 13}" cy="${by + 5}" r="3" fill="none" stroke="${ac}" stroke-width="1.2"/>\n`;
+        bands += `<path d="M ${lx + 8} ${by + 15} q 5 -7 10 0" fill="none" stroke="${ac}" stroke-width="1.2"/>\n`;
+      } else {
+        const da = dashArray(s.stroke?.style);
+        bands += `<rect x="${lx}" y="${by + 2}" width="26" height="14" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ''}/>\n`;
+      }
       const name = legendNames[k];
       bands += `<text x="${lx + 32}" y="${by + 13}" font-size="10" fill="${pal.bandText}">${esc(name)}</text>\n`;
       lx += 40 + Math.ceil(name.length * 10 * 0.52) + 24;

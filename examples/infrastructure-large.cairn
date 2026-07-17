@@ -37,7 +37,7 @@ site DC2 "Disaster-recovery site" {
   }
 }
 
-external USERS "Internet\ncustomers"
+actor USERS "Internet\ncustomers"
 external PSP_EXT "PSP"
 external CARRIERS_EXT "Carrier\nplatforms"
 

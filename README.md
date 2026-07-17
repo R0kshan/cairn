@@ -4,7 +4,7 @@
 
 ## In short,
 
-Cairn is an [ELK (Eclipse Layout Kernel)](https://github.com/eclipse-elk/elk) based diagram-as-code tool specialised in these four software architecture views : `logical`, `application`, `infrastructure` and `security` with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
+Cairn is an [ELK (Eclipse Layout Kernel)](https://github.com/eclipse-elk/elk) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
 
 ## Table of contents
 
@@ -44,10 +44,6 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
 ## Usage
 
 Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/).
-
-### Commands 
-
-TODO
 
 ## Preview
 
@@ -115,7 +111,7 @@ Once installed, the command is `cairn`. From a clone, run `npm run cairn -- <com
 ### Scaffold a typed starter file
 
 ```sh
-cairn new -L my-system.cairn        # -L logical · -A application · -I infrastructure · -S security
+cairn new -L my-system.cairn        # -L logical · -A application · -I infrastructure
 ```
 
 The chosen view is written into the file header (`diagram logical …`); every other command reads it from there.

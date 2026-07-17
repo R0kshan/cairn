@@ -14,7 +14,9 @@ import { matrixCsv, matrixMd, matrixSvg } from '../src/matrix.ts';
 import { views } from '../src/model.ts';
 
 const EX = join(dirname(fileURLToPath(import.meta.url)), '..', 'examples');
-const load = (f: string) => readFileSync(join(EX, f), 'utf8');
+// Normalize to LF: tests inject style via `.replace('"\n', …)`, which a CRLF
+// checkout (Windows) would silently defeat. Keeps the suite line-ending-agnostic.
+const load = (f: string) => readFileSync(join(EX, f), 'utf8').replace(/\r\n/g, '\n');
 const check = (src: string) => {
   const { model, diags } = parse(src);
   diags.push(...validate(model));
@@ -79,6 +81,77 @@ test('slide is always landscape, page always portrait (medium)', async () => {
   assert.ok(slide.scene.width >= slide.scene.height);
   const page = await build(base.replace('"\n', '"\nstyle { disposition: page }\n'));
   assert.ok(page.scene.height >= page.scene.width);
+});
+
+// Reading-order invariant: actors LEFT for wide/slide, TOP for tall/page.
+// This is enforced by locking layout direction per disposition (src/layout.ts),
+// so it must hold for every disposition — not just land there by fitness luck.
+const actorSide = (scene: { nodes: { kind: string; x: number; y: number; w: number; h: number }[] }) => {
+  const actors = scene.nodes.filter(n => n.kind === 'actor-group' || n.kind === 'actor');
+  const others = scene.nodes.filter(n => n.kind !== 'actor-group' && n.kind !== 'actor');
+  const acx = (Math.min(...actors.map(a => a.x)) + Math.max(...actors.map(a => a.x + a.w))) / 2;
+  const acy = (Math.min(...actors.map(a => a.y)) + Math.max(...actors.map(a => a.y + a.h))) / 2;
+  const ocx = others.reduce((s, n) => s + n.x + n.w / 2, 0) / others.length;
+  const ocy = others.reduce((s, n) => s + n.y + n.h / 2, 0) / others.length;
+  return { left: acx < ocx, top: acy < ocy };
+};
+
+test('actors are LEFT for wide/slide and TOP for tall/page (all sizes)', async () => {
+  for (const f of ['small.cairn', 'medium.cairn', 'large.cairn', 'application-large.cairn']) {
+    const base = load(f);
+    for (const disp of ['wide', 'slide'] as const) {
+      const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
+      assert.ok(actorSide(scene).left, `${f} ${disp}: actors must be on the LEFT`);
+    }
+    for (const disp of ['tall', 'page'] as const) {
+      const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
+      assert.ok(actorSide(scene).top, `${f} ${disp}: actors must be on TOP`);
+    }
+  }
+});
+
+// Same reading-order invariant for actor-less views (infrastructure, security):
+// user-facing sources sit on the entry side, downstream partners on the exit
+// side. In infra, users are `actor` elements; in security they are untrusted
+// `external`s. Guards the "Internet visitors on the left" fix.
+const nodeSide = (scene: { nodes: { id: string; kind: string; x: number; y: number; w: number; h: number }[] }, id: string) => {
+  const n = scene.nodes.find(m => m.id === id)!;
+  const others = scene.nodes.filter(m => m.kind !== 'external' && m.kind !== 'actor');
+  const ocx = others.reduce((s, m) => s + m.x + m.w / 2, 0) / others.length;
+  const ocy = others.reduce((s, m) => s + m.y + m.h / 2, 0) / others.length;
+  return { left: n.x + n.w / 2 < ocx, top: n.y + n.h / 2 < ocy };
+};
+
+test('user-facing sources sit on the entry side in infra/security views', async () => {
+  const cases: [string, string, string][] = [
+    ['infrastructure.cairn', 'USERS', 'EDI'],       // actor users vs egress partner
+    ['security.cairn', 'USERS', 'PARTNER'],         // untrusted end users vs partner
+  ];
+  for (const [f, ingress, egress] of cases) {
+    const base = load(f);
+    for (const disp of ['wide', 'slide'] as const) {
+      const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
+      assert.ok(nodeSide(scene, ingress).left, `${f} ${disp}: ${ingress} (users) must be LEFT`);
+      assert.ok(!nodeSide(scene, egress).left, `${f} ${disp}: ${egress} (partner) must be RIGHT`);
+    }
+    for (const disp of ['tall', 'page'] as const) {
+      const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
+      assert.ok(nodeSide(scene, ingress).top, `${f} ${disp}: ${ingress} (users) must be TOP`);
+      assert.ok(!nodeSide(scene, egress).top, `${f} ${disp}: ${egress} (partner) must be BOTTOM`);
+    }
+  }
+});
+
+test('infrastructure models users as actor (person glyph + legend key), distinct from external systems', async () => {
+  const { model, svg } = await build(load('infrastructure-small.cairn'));
+  const visitors = model.index.get('VISITORS')!;
+  assert.equal(visitors.kind, 'actor', 'the user is an actor, not an external');
+  // person glyph is rendered (head circle r=7), and the legend keys it
+  assert.match(svg, /<circle cx="[\d.]+" cy="[\d.]+" r="7"/);
+  assert.match(svg, />User \/ consumer</);
+  // `actor` is accepted by the infrastructure view (no E0201)
+  const { codes } = check(load('infrastructure-small.cairn'));
+  assert.ok(!codes.includes('E0201'));
 });
 
 // ---------- bands & rendering ----------
