@@ -5,9 +5,8 @@
 import type { Model, View, StyleProps, Flow } from './model.ts';
 import { palettes, lightPalette, UI } from './model.ts';
 import type { Scene, SceneLabel } from './layout.ts';
-import { chipW, CHIP_H, measure, techText, wrapText } from './text.ts';
+import { chipW, CHIP_H, measure, techText, wrapText, fontSizes } from './text.ts';
 
-const FS_EDGE = 10.5, FS_NODE = 11.5, FS_CONT = 12;
 const HOP_R = 5;
 const SEC_LEVEL_FR: Record<string, string> = { public: 'public', internal: 'interne', restricted: 'restreint', secret: 'secret' };
 
@@ -21,6 +20,20 @@ export interface RenderResult { svg: string; overlapsBefore: number; overlapsAft
 
 export function render(model: Model, view: View, scene: Scene): RenderResult {
   const ds = model.style;
+  const F = fontSizes(ds.font.size);
+  const { edge: FS_EDGE, node: FS_NODE, cont: FS_CONT } = F;
+  // annotation sizes (tech tails, chips, tags, legend/registry bands) scale with
+  // the base too; `.scale` is 1 at the default base so output stays identical.
+  const r1 = (n: number) => Math.round(n * 10) / 10;   // 1-decimal, tidy SVG numbers
+  const A = {
+    tech: r1(F.tech), chip: r1(F.chip), tag: r1(F.tag), band: r1(F.band),
+    bandTitle: r1(F.bandTitle), chipH: Math.round(F.chipH), scale: F.scale,
+    chipRectH: Math.round(15 * F.scale), chipTextDy: r1(11 * F.scale),
+  };
+  // Below-canvas bands (FLOWS / BUSINESS OBJECTS / LEGEND) scale every metric —
+  // fonts, row heights, offsets — by the same factor so they grow together.
+  // At the default base, scale = 1 and bs(n) === n, so output is byte-identical.
+  const bs = (n: number) => r1(n * F.scale);
   // Theme selects the chrome palette and the per-kind default fills/strokes.
   const pal = palettes[ds.theme] ?? lightPalette;
   const kindDefaults = ds.theme === 'dark' ? view.defaultsDark : view.defaults;
@@ -128,14 +141,14 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     const da = dashArray(s.stroke?.style);
     out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6" fill="${s.fill ?? pal.containerFill}" stroke="${s.stroke?.color ?? pal.containerStroke}" stroke-width="${s.stroke?.width ?? 1.2}"${da ? ` stroke-dasharray="${da}"` : ''}/>\n`;
     n.label.split('\n').forEach((line, i) => {
-      out += `<text x="${n.x + 10}" y="${n.y + 18 + i * 13}" font-size="${FS_CONT}" font-weight="bold" fill="${s.text ?? pal.containerLabel}">${esc(line)}</text>\n`;
+      out += `<text x="${n.x + 10}" y="${n.y + 18 + i * 14}" font-size="${FS_CONT}" font-weight="bold" fill="${s.text ?? pal.containerLabel}">${esc(line)}</text>\n`;
     });
     // security view: sensitivity level tag, bottom-right of the trust zone
     // (inside the bottom padding — clear of the title and of child nodes)
     const lvl = n.kind === 'trust-zone' ? elAttr.get(n.id) : undefined;
     if (lvl) {
       const word = (ds.lang === 'fr' ? SEC_LEVEL_FR[lvl] : lvl) ?? lvl;
-      out += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="9.5" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? pal.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>\n`;
+      out += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="${A.tag}" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? pal.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>\n`;
     }
   }
   for (const n of scene.nodes.filter(n => !n.container)) {
@@ -179,8 +192,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     for (const l of e.labels) {
       if (numbered) {
         // number badge — full text lives in the FLOWS band below
-        out += `<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="8.5" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}" stroke-width="1"/>\n`;
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + 12.5}" font-size="10" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${esc(l.text)}</text>\n`;
+        out += `<rect x="${l.x}" y="${l.y}" width="${l.w}" height="${l.h}" rx="${l.h / 2}" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}" stroke-width="1"/>\n`;
+        out += `<text x="${l.x + l.w / 2}" y="${l.y + l.h * 12.5 / 17}" font-size="${bs(10)}" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${esc(l.text)}</text>\n`;
         continue;
       }
       // Transparent background: a thin halo (background color) on the glyphs
@@ -193,18 +206,18 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       // technical sub-line (protocol, format) — space reserved at layout time
       const tech = techText(flowById.get(l.flowId)?.tech);
       if (tech) {
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + lines.length * (FS_EDGE + 3)}" font-size="9" text-anchor="middle" fill="${pal.techText}" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>\n`;
+        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + lines.length * (FS_EDGE + 3)}" font-size="${A.tech}" text-anchor="middle" fill="${pal.techText}" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>\n`;
       }
       // business-object chips (space already reserved at layout time)
       const chips = (flowById.get(l.flowId)?.objects ?? []).map(o => boName.get(o.id) ?? o.id);
       if (chips.length) {
-        const totalW = chips.reduce((s, n) => s + chipW(n) + 4, -4);
+        const totalW = chips.reduce((s, n) => s + chipW(n, A.scale) + 4, -4);
         let cx = l.x + l.w / 2 - totalW / 2;
-        const cy = l.y + l.h - CHIP_H + 2;
+        const cy = l.y + l.h - A.chipH + 2;
         for (const name of chips) {
-          const w = chipW(name);
-          out += `<rect x="${cx}" y="${cy}" width="${w}" height="15" rx="7.5" fill="${pal.chipFill}" stroke="${pal.chipStroke}" stroke-width="1"/>\n`;
-          out += `<text x="${cx + w / 2}" y="${cy + 11}" font-size="9.5" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>\n`;
+          const w = chipW(name, A.scale);
+          out += `<rect x="${cx}" y="${cy}" width="${w}" height="${A.chipRectH}" rx="${A.chipRectH / 2}" fill="${pal.chipFill}" stroke="${pal.chipStroke}" stroke-width="1"/>\n`;
+          out += `<text x="${cx + w / 2}" y="${cy + A.chipTextDy}" font-size="${A.chip}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>\n`;
           cx += w + 4;
         }
       }
@@ -215,17 +228,17 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   let by = H;
   let bands = '';
   const chip = (x: number, y: number, name: string) => {
-    const w = chipW(name);
+    const w = chipW(name, A.scale);
     return {
-      svg: `<rect x="${x}" y="${y}" width="${w}" height="15" rx="7.5" fill="${pal.chipFill}" stroke="${pal.chipStroke}"/>\n` +
-        `<text x="${x + w / 2}" y="${y + 11}" font-size="9.5" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>\n`,
+      svg: `<rect x="${x}" y="${y}" width="${w}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.chipFill}" stroke="${pal.chipStroke}"/>\n` +
+        `<text x="${x + w / 2}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>\n`,
       w,
     };
   };
   const bandStart = (title: string) => {
     bands += `<line x1="20" y1="${by + 10}" x2="${W - 20}" y2="${by + 10}" stroke="${pal.divider}" stroke-width="1"/>\n`;
-    bands += `<text x="20" y="${by + 32}" font-size="11" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>\n`;
-    by += 20;
+    bands += `<text x="20" y="${by + bs(32)}" font-size="${bs(11)}" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>\n`;
+    by += bs(20);
   };
   const contentX = 150;
 
@@ -235,9 +248,9 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   // second half of the list to the right instead of one tall column.
   if (numbered && model.flows.length) {
     bandStart(t.flows);
-    const BADGE = 34;            // badge + gap before the text
-    const GUT = 28;              // gutter between columns
-    const LH = 13.5;             // line height inside the band
+    const BADGE = bs(34);        // badge + gap before the text
+    const GUT = bs(28);          // gutter between columns
+    const LH = bs(13.5);         // line height inside the band
     const COL_TARGET = 520;      // desired column width (incl. badge)
     const avail = W - contentX - 20;
     let cols = Math.max(1, Math.min(3, Math.floor((avail + GUT) / (COL_TARGET + GUT))));
@@ -247,9 +260,9 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     // pre-wrap every entry to its column, honouring manual \n and chip width
     const entries = model.flows.map(f => {
       const tech = techText(f.tech);
-      const chipsW = (f.objects ?? []).reduce((s, o) => s + chipW(boName.get(o.id) ?? o.id) + 4, 0);
+      const chipsW = (f.objects ?? []).reduce((s, o) => s + chipW(boName.get(o.id) ?? o.id, A.scale) + 4, 0);
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
-      const maxChars = Math.max(6, Math.floor(textW / (10 * 0.52)));
+      const maxChars = Math.max(6, Math.floor(textW / (bs(10) * 0.52)));
       const raw = (f.label ?? '') + (tech ? '  ' + tech : '');
       const lines = raw.split('\n').flatMap(seg => wrapText(seg, maxChars).split('\n'));
       return { f, lines };
@@ -262,18 +275,18 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       const col = Math.floor(i / rows);
       const x = contentX + col * (colW + GUT);
       const y = colY[col];
-      bands += `<rect x="${x}" y="${y}" width="24" height="15" rx="7.5" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}"/>\n`;
-      bands += `<text x="${x + 12}" y="${y + 11}" font-size="9.5" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${i + 1}</text>\n`;
+      bands += `<rect x="${x}" y="${y}" width="${bs(24)}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}"/>\n`;
+      bands += `<text x="${x + bs(12)}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${i + 1}</text>\n`;
       e.lines.forEach((line, li) => {
-        bands += `<text x="${x + BADGE}" y="${y + 11 + li * LH}" font-size="10" fill="${pal.bandText}">${esc(line)}</text>\n`;
+        bands += `<text x="${x + BADGE}" y="${y + bs(11) + li * LH}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(line)}</text>\n`;
       });
       if (e.f.objects?.length) {
         const last = e.lines[e.lines.length - 1] ?? '';
-        let cx = x + BADGE + Math.ceil(last.length * 10 * 0.52) + 6;
+        let cx = x + BADGE + Math.ceil(last.length * bs(10) * 0.52) + 6;
         const cy = y + 1 + (e.lines.length - 1) * LH;
         for (const o of e.f.objects) { const c = chip(cx, cy, boName.get(o.id) ?? o.id); bands += c.svg; cx += c.w + 4; }
       }
-      colY[col] = y + Math.max(20, e.lines.length * LH + 7);
+      colY[col] = y + Math.max(bs(20), e.lines.length * LH + bs(7));
     });
     by = Math.max(...colY) + 6;
   }
@@ -284,8 +297,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     for (const b of model.businessObjects) {
       const c = chip(contentX, by + 2, b.name);
       bands += c.svg;
-      if (b.description) bands += `<text x="${contentX + c.w + 10}" y="${by + 13}" font-size="10" fill="${pal.bandMuted}">— ${esc(b.description)}</text>\n`;
-      by += 24;
+      if (b.description) bands += `<text x="${contentX + c.w + 10}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandMuted}">— ${esc(b.description)}</text>\n`;
+      by += bs(24);
     }
     by += 6;
   }
@@ -303,29 +316,29 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       const s = resolve(k, '');
       if (k === 'actor') {
         const ac = s.stroke?.color ?? pal.actorStroke;
-        bands += `<circle cx="${lx + 13}" cy="${by + 5}" r="3" fill="none" stroke="${ac}" stroke-width="1.2"/>\n`;
-        bands += `<path d="M ${lx + 8} ${by + 15} q 5 -7 10 0" fill="none" stroke="${ac}" stroke-width="1.2"/>\n`;
+        bands += `<circle cx="${lx + bs(13)}" cy="${by + bs(5)}" r="${bs(3)}" fill="none" stroke="${ac}" stroke-width="1.2"/>\n`;
+        bands += `<path d="M ${lx + bs(8)} ${by + bs(15)} q ${bs(5)} ${bs(-7)} ${bs(10)} 0" fill="none" stroke="${ac}" stroke-width="1.2"/>\n`;
       } else {
         const da = dashArray(s.stroke?.style);
-        bands += `<rect x="${lx}" y="${by + 2}" width="26" height="14" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ''}/>\n`;
+        bands += `<rect x="${lx}" y="${by + 2}" width="${bs(26)}" height="${bs(14)}" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ''}/>\n`;
       }
       const name = legendNames[k];
-      bands += `<text x="${lx + 32}" y="${by + 13}" font-size="10" fill="${pal.bandText}">${esc(name)}</text>\n`;
-      lx += 40 + Math.ceil(name.length * 10 * 0.52) + 24;
-      if (lx > W - 220) { lx = contentX; by += 22; }
+      bands += `<text x="${lx + bs(32)}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(name)}</text>\n`;
+      lx += bs(40) + Math.ceil(name.length * bs(10) * 0.52) + bs(24);
+      if (lx > W - 220) { lx = contentX; by += bs(22); }
     }
-    by += 24;
-    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + 26}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#arr)"/>\n`;
-    bands += `<text x="${contentX + 32}" y="${by + 12}" font-size="10" fill="${pal.bandText}">${esc(numbered ? legendFlowLabel + ' — ' + t.numberedSuffix : legendFlowLabel)}</text>\n`;
+    by += bs(24);
+    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#arr)"/>\n`;
+    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(numbered ? legendFlowLabel + ' — ' + t.numberedSuffix : legendFlowLabel)}</text>\n`;
     if (model.businessObjects.length) {
       const c = chip(contentX + 330, by + 1, t.businessObject);
       bands += c.svg;
-      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + 12}" font-size="10" fill="${pal.bandText}">${esc(t.carriedByFlow)}</text>\n`;
+      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(t.carriedByFlow)}</text>\n`;
     }
-    by += 24;
+    by += bs(24);
     for (const note of model.legendNotes) {
-      bands += `<text x="${contentX}" y="${by + 12}" font-size="10" fill="${pal.bandText}" font-style="italic">${esc(note)}</text>\n`;
-      by += 20;
+      bands += `<text x="${contentX}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}" font-style="italic">${esc(note)}</text>\n`;
+      by += bs(20);
     }
   }
 

@@ -313,7 +313,13 @@ function applyStyleEntry(
       }
       break;
     }
+    case 'font-size': {
+      const v = one();
+      if (v?.kind === 'num') diag.font.size = parseFloat(v.text);
+      else bad(v ?? key, 'a number, e.g. `font-size: 14`');
+      break;
+    }
     default:
-      diags.push({ code: 'E0104', severity: 'error', message: `unknown style property: \`${k}\``, span: key.span, help: 'properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, compact, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font' });
+      diags.push({ code: 'E0104', severity: 'error', message: `unknown style property: \`${k}\``, span: key.span, help: 'properties: theme, lang, background, disposition, legend, flow-text, crossing-hops, compact, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size' });
   }
 }

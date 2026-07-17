@@ -93,7 +93,7 @@ export const defaultDiagramStyle = (): DiagramStyle => ({
   theme: 'light',
   lang: 'en',
   kind: {},
-  font: { family: 'Helvetica', size: 11 },
+  font: { family: 'Helvetica', size: 12.5 },  // base text size; edge = base-1, container = base+0.5
 });
 
 // ---------------- UI strings (output localization) ----------------

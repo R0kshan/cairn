@@ -2,11 +2,9 @@
 // Ported from the phase 0 spike; view conventions drive the ELK options.
 
 import type { Model, Element, View } from './model.ts';
-import { measure, wrapText, flowLabelBox, techText } from './text.ts';
+import { measure, wrapText, flowLabelBox, techText, fontSizes } from './text.ts';
 import { foldedLayout } from './fold.ts';
 import { getElk } from './elk.ts';
-
-const FS_EDGE = 10.5, FS_NODE = 11.5, FS_CONT = 12;
 
 export interface SceneNode { id: string; kind: string; label: string; x: number; y: number; w: number; h: number; container: boolean; }
 export interface SceneLabel { flowId: string; text: string; x: number; y: number; w: number; h: number; }
@@ -22,13 +20,16 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   // shrinks the label-driven gaps between layers. Off by default.
   const compact = model.style.compact;
   const COMPACT_WRAP = 10; // chars/line for flow labels when compact
+  // Text sizes derive from the single base (style.font.size); bigger base =
+  // bigger, more readable text everywhere, with layout measured to match.
+  const { edge: FS_EDGE, node: FS_NODE, cont: FS_CONT, scale: FS_SCALE } = fontSizes(model.style.font.size);
 
   function toElkNode(e: Element): any {
     if (e.children.length) {
       const nLines = (e.label ?? e.id).split('\n').length;
       return {
         id: e.id,
-        layoutOptions: { 'elk.padding': `[top=${(compact ? 13 : 15) + nLines * 13},left=${compact ? 8 : 10},bottom=${compact ? 8 : 10},right=${compact ? 8 : 10}]` },
+        layoutOptions: { 'elk.padding': `[top=${(compact ? 11 : 13) + nLines * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]` },
         labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT) }],
         children: e.children.map(toElkNode),
       };
@@ -37,8 +38,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const isActor = e.kind === 'actor';
     return {
       id: e.id,
-      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE - 1.5).width + 8) : Math.max(compact ? 100 : 112, m.width + (compact ? 12 : 14)),
-      height: isActor ? 56 + ((e.label ?? e.id).split('\n').length - 1) * 11 : Math.max(compact ? 38 : 40, m.height + (compact ? 13 : 15)),
+      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE - 1.5).width + 8) : Math.max(compact ? 98 : 108, m.width + (compact ? 10 : 12)),
+      height: isActor ? 54 + ((e.label ?? e.id).split('\n').length - 1) * 11 : Math.max(compact ? 36 : 38, m.height + (compact ? 10 : 12)),
     };
   }
 
@@ -133,7 +134,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       if (numbered) {
         return {
           id: f.id, sources: [f.from], targets: [f.to],
-          labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: 26, height: 17 }],
+          labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) }],
         };
       }
       // compact wraps labels narrower (unless a candidate already sets a wrap),
@@ -144,7 +145,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       const tech = techText(f.tech);
       return {
         id: f.id, sources: [f.from], targets: [f.to],
-        labels: text || chips.length || tech ? [{ text: text ?? '', ...flowLabelBox(text ?? '', chips, FS_EDGE, tech) }] : [],
+        labels: text || chips.length || tech ? [{ text: text ?? '', ...flowLabelBox(text ?? '', chips, FS_EDGE, tech, FS_SCALE) }] : [],
       };
     }),
   });

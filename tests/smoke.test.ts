@@ -169,6 +169,19 @@ test('compact style yields a smaller canvas with zero overlaps', async () => {
   assert.equal(model.style.compact, false);
 });
 
+test('font-size scales the text and is measured into the layout', async () => {
+  const base = 'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "Node label" }\nA -> B : "flow"\n';
+  const def = await build(base.replace('STYLE\n', ''));
+  assert.equal(def.model.style.font.size, 12.5, 'default base font is 12.5');
+  assert.match(def.svg, /font-size="12.5"[^>]*>Node label/);
+  const big = await build(base.replace('STYLE', 'style { font-size: 18 }'));
+  assert.match(big.svg, /font-size="18"[^>]*>Node label/);
+  assert.ok(big.scene.width >= def.scene.width, 'larger font is measured into node width');
+  assert.equal(big.overlapsAfter, 0);
+  const small = await build(base.replace('STYLE', 'style { font-size: 9 }'));
+  assert.match(small.svg, /font-size="9"[^>]*>Node label/);
+});
+
 // ---------- bands & rendering ----------
 
 test('legend + registry bands render, and legend: off removes the legend only', async () => {
