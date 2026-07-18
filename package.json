@@ -1,6 +1,6 @@
 {
   "name": "cairn",
-  "version": "1.0.0-RC02",
+  "version": "1.0.0-RC03",
   "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
   "type": "module",
   "bin": { "cairn": "bin/cairn.js" },
