@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 697 144" font-family="Helvetica,Arial,sans-serif">
+<rect width="697" height="144" fill="white"/>
+<text x="1" y="22" font-size="13" font-weight="bold" fill="#555">TECHNICAL FLOW MATRIX — Showcase website — infrastructure view</text>
+<rect x="0" y="34" width="695" height="30" fill="#f7f7f7" stroke="#ddd"/>
+<text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">No.</text>
+<text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
+<text x="248" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
+<text x="441" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Protocol</text>
+<text x="532.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">Port</text>
+<text x="568" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Flow</text>
+<text x="22.5" y="81" font-size="11" text-anchor="middle" fill="#444">1</text>
+<text x="55" y="81" font-size="11" text-anchor="start" fill="#444">Internet visitors</text>
+<text x="248" y="81" font-size="11" text-anchor="start" fill="#444">Load balancer (Public zone)</text>
+<text x="441" y="81" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="532.5" y="81" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="568" y="81" font-size="11" text-anchor="start" fill="#444">Site access</text>
+<rect x="0" y="90" width="695" height="26" fill="#ddd" opacity="0.18"/>
+<text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
+<text x="55" y="107" font-size="11" text-anchor="start" fill="#444">Load balancer (Public zone)</text>
+<text x="248" y="107" font-size="11" text-anchor="start" fill="#444">CMS (Private zone)</text>
+<text x="441" y="107" font-size="11" text-anchor="start" fill="#444">HTTP</text>
+<text x="532.5" y="107" font-size="11" text-anchor="middle" fill="#444">8080</text>
+<text x="568" y="107" font-size="11" text-anchor="start" fill="#444">Balanced traffic</text>
+<text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
+<text x="55" y="133" font-size="11" text-anchor="start" fill="#444">CMS (Private zone)</text>
+<text x="248" y="133" font-size="11" text-anchor="start" fill="#444">MySQL (Private zone)</text>
+<text x="441" y="133" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="532.5" y="133" font-size="11" text-anchor="middle" fill="#444">3306</text>
+<text x="568" y="133" font-size="11" text-anchor="start" fill="#444">Read/write content</text>
+<line x1="45" y1="34" x2="45" y2="142" stroke="#ddd" stroke-width="1"/>
+<line x1="238" y1="34" x2="238" y2="142" stroke="#ddd" stroke-width="1"/>
+<line x1="431" y1="34" x2="431" y2="142" stroke="#ddd" stroke-width="1"/>
+<line x1="507" y1="34" x2="507" y2="142" stroke="#ddd" stroke-width="1"/>
+<line x1="558" y1="34" x2="558" y2="142" stroke="#ddd" stroke-width="1"/>
+<line x1="0" y1="142" x2="695" y2="142" stroke="#ddd"/>
+<rect x="0" y="34" width="695" height="108" fill="none" stroke="#ddd"/>
+</svg>
