@@ -1,0 +1,65 @@
+diagram infrastructure "Plateforme e-commerce — vue infrastructure"
+style { lang: fr }
+
+site DC1 "Centre de données principal" {
+  network-zone DMZ1 "DMZ" {
+    server FW_WAF "Pare-feu\napplicatif (WAF)"
+    server RP1 "Reverse proxies\n(HA)" {
+      app-instance NGINX_I "Nginx"
+    }
+    server SFTP_GW "Passerelle\nde transfert"
+  }
+  network-zone APPS1 "Zone applicative" {
+    server K8S1 "Cluster K8s\nfront" {
+      app-instance FRONT_I "Front de vente"
+      app-instance CHECKOUT_I "Tunnel d'achat"
+    }
+    server K8S2 "Cluster K8s\nmétier" {
+      app-instance OMS_I "Gestion des\ncommandes"
+      app-instance PAYHUB_I "Hub de\npaiement"
+    }
+  }
+  network-zone DATA1 "Zone de données" {
+    server PG_CLU "Cluster\nPostgreSQL" {
+      app-instance PG_I "PostgreSQL\nprimaire"
+    }
+    server KAFKA_SRV "Cluster\nKafka" {
+      app-instance KAFKA_I "Kafka"
+    }
+  }
+}
+
+site DC2 "Site de secours" {
+  network-zone DATA2 "Zone de données PRA" {
+    server PG_STANDBY "PostgreSQL\nstandby" {
+      app-instance PG2_I "Réplique\nPostgreSQL"
+    }
+    server BACKUP "Serveur de\nsauvegarde"
+  }
+}
+
+actor USERS "Clients\ninternet"
+external PSP_EXT "PSP"
+external CARRIERS_EXT "Plateformes\ntransporteurs"
+
+# ---- flux techniques (protocole OBLIGATOIRE) ----
+USERS -> FW_WAF : "Trafic web\nclient" (HTTPS/443)
+FW_WAF -> NGINX_I : "Trafic\nfiltré" (HTTPS/443)
+NGINX_I -> FRONT_I : "Routage\nfront" (HTTPS/8443)
+NGINX_I -> CHECKOUT_I : "Routage tunnel\nd'achat" (HTTPS/8444)
+FRONT_I -> OMS_I : "API\ncommandes" (HTTPS/8443)
+CHECKOUT_I -> PAYHUB_I : "API\npaiement" (HTTPS/8445)
+PAYHUB_I -> PSP_EXT : "Autorisation et\ncapture" (HTTPS/443)
+OMS_I -> PG_I : "Lecture/écriture\ncommandes" (TCP/5432)
+PAYHUB_I -> PG_I : "Lecture/écriture\ntransactions" (TCP/5432)
+OMS_I -> KAFKA_I : "Événements de\ncommande" (TCP/9092)
+FRONT_I -> KAFKA_I : "Événements de\nnavigation" (TCP/9092)
+OMS_I -> SFTP_GW : "Fichiers\ntransporteur" (SFTP/22)
+SFTP_GW -> CARRIERS_EXT : "Échanges\nlogistiques" (AS4/443)
+PG_I -> PG2_I : "Réplication\nasynchrone" (TCP/5432)
+PG_STANDBY -> BACKUP : "Sauvegardes\nquotidiennes" (TCP/9095)
+KAFKA_I -> BACKUP : "Archivage des\ntopics" (TCP/9095)
+
+legend {
+  note "Flux inter-zones et inter-sites filtrés par pare-feu (matrice des flux jointe au dossier d'architecture)"
+}

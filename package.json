@@ -8,6 +8,7 @@
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",
     "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
+    "snapshots": "UPDATE_SNAPSHOTS=1 node --experimental-strip-types --test tests/snapshot.test.ts",
     "build:binaries": "bash scripts/build-binaries.sh",
     "build:playground": "bash scripts/build-playground.sh"
   },

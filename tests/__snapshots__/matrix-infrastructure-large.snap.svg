@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 839 482" font-family="Helvetica,Arial,sans-serif">
+<rect width="839" height="482" fill="white"/>
+<text x="1" y="22" font-size="13" font-weight="bold" fill="#555">TECHNICAL FLOW MATRIX — E-commerce platform — infrastructure view</text>
+<rect x="0" y="34" width="837" height="30" fill="#f7f7f7" stroke="#ddd"/>
+<text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">No.</text>
+<text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
+<text x="297" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
+<text x="539" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Protocol</text>
+<text x="630.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">Port</text>
+<text x="666" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Flow</text>
+<text x="22.5" y="81" font-size="11" text-anchor="middle" fill="#444">1</text>
+<text x="55" y="81" font-size="11" text-anchor="start" fill="#444">Internet customers</text>
+<text x="297" y="81" font-size="11" text-anchor="start" fill="#444">Application firewall (WAF) (DMZ)</text>
+<text x="539" y="81" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="630.5" y="81" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="666" y="81" font-size="11" text-anchor="start" fill="#444">Client web traffic</text>
+<rect x="0" y="90" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
+<text x="55" y="107" font-size="11" text-anchor="start" fill="#444">Application firewall (WAF) (DMZ)</text>
+<text x="297" y="107" font-size="11" text-anchor="start" fill="#444">Nginx (DMZ)</text>
+<text x="539" y="107" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="630.5" y="107" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="666" y="107" font-size="11" text-anchor="start" fill="#444">Filtered traffic</text>
+<text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
+<text x="55" y="133" font-size="11" text-anchor="start" fill="#444">Nginx (DMZ)</text>
+<text x="297" y="133" font-size="11" text-anchor="start" fill="#444">Sales front (Application zone)</text>
+<text x="539" y="133" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="630.5" y="133" font-size="11" text-anchor="middle" fill="#444">8443</text>
+<text x="666" y="133" font-size="11" text-anchor="start" fill="#444">Front routing</text>
+<rect x="0" y="142" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>
+<text x="55" y="159" font-size="11" text-anchor="start" fill="#444">Nginx (DMZ)</text>
+<text x="297" y="159" font-size="11" text-anchor="start" fill="#444">Checkout funnel (Application zone)</text>
+<text x="539" y="159" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="630.5" y="159" font-size="11" text-anchor="middle" fill="#444">8444</text>
+<text x="666" y="159" font-size="11" text-anchor="start" fill="#444">Checkout routing</text>
+<text x="22.5" y="185" font-size="11" text-anchor="middle" fill="#444">5</text>
+<text x="55" y="185" font-size="11" text-anchor="start" fill="#444">Sales front (Application zone)</text>
+<text x="297" y="185" font-size="11" text-anchor="start" fill="#444">Order management (Application zone)</text>
+<text x="539" y="185" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="630.5" y="185" font-size="11" text-anchor="middle" fill="#444">8443</text>
+<text x="666" y="185" font-size="11" text-anchor="start" fill="#444">Orders API</text>
+<rect x="0" y="194" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
+<text x="55" y="211" font-size="11" text-anchor="start" fill="#444">Checkout funnel (Application zone)</text>
+<text x="297" y="211" font-size="11" text-anchor="start" fill="#444">Payment hub (Application zone)</text>
+<text x="539" y="211" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="630.5" y="211" font-size="11" text-anchor="middle" fill="#444">8445</text>
+<text x="666" y="211" font-size="11" text-anchor="start" fill="#444">Payment API</text>
+<text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>
+<text x="55" y="237" font-size="11" text-anchor="start" fill="#444">Payment hub (Application zone)</text>
+<text x="297" y="237" font-size="11" text-anchor="start" fill="#444">PSP</text>
+<text x="539" y="237" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
+<text x="630.5" y="237" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="666" y="237" font-size="11" text-anchor="start" fill="#444">Authorization and capture</text>
+<rect x="0" y="246" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="263" font-size="11" text-anchor="middle" fill="#444">8</text>
+<text x="55" y="263" font-size="11" text-anchor="start" fill="#444">Order management (Application zone)</text>
+<text x="297" y="263" font-size="11" text-anchor="start" fill="#444">PostgreSQL primary (Data zone)</text>
+<text x="539" y="263" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="630.5" y="263" font-size="11" text-anchor="middle" fill="#444">5432</text>
+<text x="666" y="263" font-size="11" text-anchor="start" fill="#444">Read/write orders</text>
+<text x="22.5" y="289" font-size="11" text-anchor="middle" fill="#444">9</text>
+<text x="55" y="289" font-size="11" text-anchor="start" fill="#444">Payment hub (Application zone)</text>
+<text x="297" y="289" font-size="11" text-anchor="start" fill="#444">PostgreSQL primary (Data zone)</text>
+<text x="539" y="289" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="630.5" y="289" font-size="11" text-anchor="middle" fill="#444">5432</text>
+<text x="666" y="289" font-size="11" text-anchor="start" fill="#444">Read/write transactions</text>
+<rect x="0" y="298" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="315" font-size="11" text-anchor="middle" fill="#444">10</text>
+<text x="55" y="315" font-size="11" text-anchor="start" fill="#444">Order management (Application zone)</text>
+<text x="297" y="315" font-size="11" text-anchor="start" fill="#444">Kafka (Data zone)</text>
+<text x="539" y="315" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="630.5" y="315" font-size="11" text-anchor="middle" fill="#444">9092</text>
+<text x="666" y="315" font-size="11" text-anchor="start" fill="#444">Order events</text>
+<text x="22.5" y="341" font-size="11" text-anchor="middle" fill="#444">11</text>
+<text x="55" y="341" font-size="11" text-anchor="start" fill="#444">Sales front (Application zone)</text>
+<text x="297" y="341" font-size="11" text-anchor="start" fill="#444">Kafka (Data zone)</text>
+<text x="539" y="341" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="630.5" y="341" font-size="11" text-anchor="middle" fill="#444">9092</text>
+<text x="666" y="341" font-size="11" text-anchor="start" fill="#444">Browsing events</text>
+<rect x="0" y="350" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="367" font-size="11" text-anchor="middle" fill="#444">12</text>
+<text x="55" y="367" font-size="11" text-anchor="start" fill="#444">Order management (Application zone)</text>
+<text x="297" y="367" font-size="11" text-anchor="start" fill="#444">Transfer gateway (DMZ)</text>
+<text x="539" y="367" font-size="11" text-anchor="start" fill="#444">SFTP</text>
+<text x="630.5" y="367" font-size="11" text-anchor="middle" fill="#444">22</text>
+<text x="666" y="367" font-size="11" text-anchor="start" fill="#444">Carrier files</text>
+<text x="22.5" y="393" font-size="11" text-anchor="middle" fill="#444">13</text>
+<text x="55" y="393" font-size="11" text-anchor="start" fill="#444">Transfer gateway (DMZ)</text>
+<text x="297" y="393" font-size="11" text-anchor="start" fill="#444">Carrier platforms</text>
+<text x="539" y="393" font-size="11" text-anchor="start" fill="#444">AS4</text>
+<text x="630.5" y="393" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="666" y="393" font-size="11" text-anchor="start" fill="#444">Logistics exchanges</text>
+<rect x="0" y="402" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="419" font-size="11" text-anchor="middle" fill="#444">14</text>
+<text x="55" y="419" font-size="11" text-anchor="start" fill="#444">PostgreSQL primary (Data zone)</text>
+<text x="297" y="419" font-size="11" text-anchor="start" fill="#444">PostgreSQL replica (DR data zone)</text>
+<text x="539" y="419" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="630.5" y="419" font-size="11" text-anchor="middle" fill="#444">5432</text>
+<text x="666" y="419" font-size="11" text-anchor="start" fill="#444">Async replication</text>
+<text x="22.5" y="445" font-size="11" text-anchor="middle" fill="#444">15</text>
+<text x="55" y="445" font-size="11" text-anchor="start" fill="#444">PostgreSQL standby (DR data zone)</text>
+<text x="297" y="445" font-size="11" text-anchor="start" fill="#444">Backup server (DR data zone)</text>
+<text x="539" y="445" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="630.5" y="445" font-size="11" text-anchor="middle" fill="#444">9095</text>
+<text x="666" y="445" font-size="11" text-anchor="start" fill="#444">Daily backups</text>
+<rect x="0" y="454" width="837" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="471" font-size="11" text-anchor="middle" fill="#444">16</text>
+<text x="55" y="471" font-size="11" text-anchor="start" fill="#444">Kafka (Data zone)</text>
+<text x="297" y="471" font-size="11" text-anchor="start" fill="#444">Backup server (DR data zone)</text>
+<text x="539" y="471" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="630.5" y="471" font-size="11" text-anchor="middle" fill="#444">9095</text>
+<text x="666" y="471" font-size="11" text-anchor="start" fill="#444">Topic archiving</text>
+<line x1="45" y1="34" x2="45" y2="480" stroke="#ddd" stroke-width="1"/>
+<line x1="287" y1="34" x2="287" y2="480" stroke="#ddd" stroke-width="1"/>
+<line x1="529" y1="34" x2="529" y2="480" stroke="#ddd" stroke-width="1"/>
+<line x1="605" y1="34" x2="605" y2="480" stroke="#ddd" stroke-width="1"/>
+<line x1="656" y1="34" x2="656" y2="480" stroke="#ddd" stroke-width="1"/>
+<line x1="0" y1="480" x2="837" y2="480" stroke="#ddd"/>
+<rect x="0" y="34" width="837" height="446" fill="none" stroke="#ddd"/>
+</svg>

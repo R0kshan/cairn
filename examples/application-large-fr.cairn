@@ -1,0 +1,79 @@
+diagram application "Plateforme e-commerce — vue applicative"
+style { lang: fr }
+
+actor-group TEAMS "Équipes internes" {
+  actor MERCH "Responsable\nmerchandising"
+  actor ADVISOR "Conseiller relation\nclient"
+  actor ACCOUNTANT "Comptable"
+}
+
+application FRONT "Front de vente" {
+  module SITE "Site\ne-commerce"
+  module APP_MOBILE "Application\nmobile"
+  module CHECKOUT "Tunnel\nd'achat"
+}
+
+application OMS "Gestion des commandes" {
+  module ORDERS "Cycle de vie\ndes commandes"
+  module SHIPPING "Orchestration des\nexpéditions"
+  module RETURNS "Retours et\nremboursements"
+}
+
+application PIM "Référentiel produits" {
+  module CATALOG "Gestion du\ncatalogue"
+  module MEDIA "Gestion des\nmédias"
+}
+
+application PRICING "Tarification" {
+  module RULES "Moteur de règles\nde prix"
+}
+
+application PAYHUB "Hub de paiement" {
+  module PAY_ORCH "Orchestration des\npaiements"
+  module FRAUD "Scoring\nanti-fraude"
+}
+
+application CARE "Relation client" {
+  module TICKETS "Gestion des\ntickets"
+  module SELFCARE "Espace client\nautonome"
+}
+
+datastore DWH "Entrepôt de\ndonnées"
+datastore REF_CUSTOMERS "Référentiel\nclients"
+
+external PSP "PSP"
+external CARRIERS "Plateformes\ntransporteurs"
+external ERP "ERP\ngroupe"
+
+# ---- objets métier ----
+business-object BO_ORDER "Commande" "panier validé, suivi jusqu'à la livraison"
+business-object BO_PAY "Paiement" "transaction financière liée à une commande"
+business-object BO_PROD "Produit" "article publié au catalogue"
+
+# ---- flux ----
+MERCH -> CATALOG : "Enrichir les fiches\nproduit"
+CATALOG -> SITE : "Publier le\ncatalogue" (API_REST, JSON) [BO_PROD]
+MEDIA -> SITE : "Visuels\nproduit" (CDN, HTTPS)
+RULES -> SITE : "Prix en\ncours" (API_REST, JSON)
+RULES -> CHECKOUT : "Prix garantis\nau panier" (API_REST, JSON)
+ERP -> RULES : "Coûts d'achat de\nréférence" (SFTP, CSV)
+SITE -> CHECKOUT : "Accéder au tunnel\nd'achat" (internal)
+APP_MOBILE -> CHECKOUT : "Panier\nmobile" (API_REST, JSON)
+CHECKOUT -> ORDERS : "Créer la\ncommande" (MQ, JSON) [BO_ORDER]
+CHECKOUT -> PAY_ORCH : "Demande de\npaiement" (API_REST, JSON) [BO_PAY]
+PAY_ORCH -> FRAUD : "Scorer la\ntransaction" (internal)
+PAY_ORCH -> PSP : "Autorisation et\ncapture" (API_REST, JSON) [BO_PAY]
+PSP -> PAY_ORCH : "Statut de la\ntransaction" (webhook, JSON)
+PAY_ORCH -> ORDERS : "Paiement\nconfirmé" (MQ, JSON)
+ORDERS -> SHIPPING : "Commandes à\nexpédier" (internal) [BO_ORDER]
+SHIPPING -> CARRIERS : "Étiquettes et\nenlèvements" (API_REST, JSON)
+CARRIERS -> SHIPPING : "Suivi des\ncolis" (webhook, JSON)
+SHIPPING -> SELFCARE : "Suivi de commande\nclient" (MQ, JSON)
+ADVISOR -> TICKETS : "Traiter les\nréclamations"
+TICKETS -> RETURNS : "Demandes de retour\napprouvées" (API_REST, JSON)
+RETURNS -> PAY_ORCH : "Rembourser les\ncommandes" (MQ, JSON) [BO_PAY]
+SELFCARE -> REF_CUSTOMERS : "Mettre à jour le profil\nclient" (JDBC)
+ORDERS -> DWH : "Archiver les\ncommandes" (batch, parquet) [BO_ORDER]
+SITE -> DWH : "Événements de\nnavigation" (streaming, avro)
+ACCOUNTANT -> PAY_ORCH : "Rapprocher les\nencaissements"
+ERP -> ORDERS : "Statuts logistiques\ncomptables" (MQ, JSON)

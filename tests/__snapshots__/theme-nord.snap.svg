@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 352" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#abb2bf"/></marker></defs>
+<rect width="680" height="352" fill="#2e3440"/>
+<rect x="10" y="22" width="88" height="164" rx="6" fill="#333b4a" stroke="#81a1c1" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="40" font-size="13" font-weight="bold" fill="#eceff4">Team</text>
+<rect x="282" y="30" width="126" height="132" rx="6" fill="#2f3a44" stroke="#81a1c1" stroke-width="1.2"/>
+<text x="292" y="48" font-size="13" font-weight="bold" fill="#eceff4">Core platform</text>
+<circle cx="54" cy="133" r="7" fill="none" stroke="#88c0d0" stroke-width="1.5"/>
+<path d="M 43 155 q 11 -19 22 0" fill="none" stroke="#88c0d0" stroke-width="1.5"/>
+<text x="54" y="167" font-size="11" text-anchor="middle" fill="#e5e9f0">Developer</text>
+<circle cx="57" cy="59" r="7" fill="none" stroke="#88c0d0" stroke-width="1.5"/>
+<path d="M 46 81 q 11 -19 22 0" fill="none" stroke="#88c0d0" stroke-width="1.5"/>
+<text x="57" y="93" font-size="11" text-anchor="middle" fill="#e5e9f0">Operator</text>
+<rect x="291" y="115" width="108" height="38" rx="4" fill="#3b4252" stroke="#5a6377" stroke-width="1.3"/>
+<text x="345" y="138" font-size="12.5" text-anchor="middle" fill="#eceff4">API service</text>
+<rect x="291" y="57" width="108" height="38" rx="4" fill="#3b4252" stroke="#5a6377" stroke-width="1.3"/>
+<text x="345" y="80" font-size="12.5" text-anchor="middle" fill="#eceff4">Job runner</text>
+<path d="M 539 78 v 24 a 65.5 7 0 0 0 131 0 v -24" fill="#312a3a" stroke="#a38bbd" stroke-width="1.3"/>
+<ellipse cx="604.5" cy="78" rx="65.5" ry="7" fill="#312a3a" stroke="#a38bbd" stroke-width="1.3"/>
+<text x="604.5" y="97.5" font-size="12.5" text-anchor="middle" fill="#eceff4">Primary database</text>
+<rect x="539" y="121" width="131" height="38" rx="4" fill="#352d38" stroke="#b48ead" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="604.5" y="144" font-size="12.5" text-anchor="middle" fill="#eceff4">Payment provider</text>
+<path d="M 89 150 L 113 150 L 113 134 L 291 134" fill="none" stroke="#abb2bf" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="165" y="149.5" font-size="11.5" text-anchor="middle" fill="#d8dee9" font-style="italic" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Create order</text>
+<text x="165" y="164" font-size="9" text-anchor="middle" fill="#9aa3b2" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS, JSON)</text>
+<rect x="143.5" y="169.5" width="43" height="15" rx="7.5" fill="#3b3a2a" stroke="#ebcb8b" stroke-width="1"/>
+<text x="165" y="180.5" font-size="9.5" text-anchor="middle" fill="#ebcb8b" font-weight="bold">Order</text>
+<path d="M 399 127.7 L 413 128 L 423 128 L 423 96 L 539 96" fill="none" stroke="#abb2bf" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="478" y="111.5" font-size="11.5" text-anchor="middle" fill="#d8dee9" font-style="italic" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Persist order</text>
+<text x="478" y="126" font-size="9" text-anchor="middle" fill="#9aa3b2" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SQL)</text>
+<path d="M 399 140.3 L 413 140 L 539 140" fill="none" stroke="#abb2bf" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="467.5" y="155.5" font-size="11.5" text-anchor="middle" fill="#d8dee9" font-style="italic" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Charge card</text>
+<text x="467.5" y="170" font-size="9" text-anchor="middle" fill="#9aa3b2" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS)</text>
+<path d="M 89 76 L 291 76" fill="none" stroke="#abb2bf" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="190" y="66.5" font-size="11.5" text-anchor="middle" fill="#d8dee9" font-style="italic" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Trigger nightly batch</text>
+<path d="M 399 76 L 529 76 L 529 84 L 539 84" fill="none" stroke="#abb2bf" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="477" y="54.5" font-size="11.5" text-anchor="middle" fill="#d8dee9" font-style="italic" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Read / write</text>
+<text x="477" y="69" font-size="9" text-anchor="middle" fill="#9aa3b2" stroke="#2e3440" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SQL)</text>
+<line x1="20" y1="208" x2="660" y2="208" stroke="#434c5e" stroke-width="1"/>
+<text x="20" y="230" font-size="11" font-weight="bold" fill="#d8dee9">BUSINESS OBJECTS</text>
+<rect x="150" y="220" width="43" height="15" rx="7.5" fill="#3b3a2a" stroke="#ebcb8b"/>
+<text x="171.5" y="231" font-size="9.5" text-anchor="middle" fill="#ebcb8b" font-weight="bold">Order</text>
+<text x="203" y="231" font-size="10" fill="#9aa3b2">— a customer order tracked to fulfilment</text>
+<line x1="20" y1="258" x2="660" y2="258" stroke="#434c5e" stroke-width="1"/>
+<text x="20" y="280" font-size="11" font-weight="bold" fill="#d8dee9">LEGEND</text>
+<rect x="150" y="270" width="26" height="14" rx="3" fill="#333b4a" stroke="#81a1c1" stroke-dasharray="5 3"/>
+<text x="182" y="281" font-size="10" fill="#eceff4">Actor group</text>
+<rect x="272" y="270" width="26" height="14" rx="3" fill="#2f3a44" stroke="#81a1c1"/>
+<text x="304" y="281" font-size="10" fill="#eceff4">Application</text>
+<rect x="394" y="270" width="26" height="14" rx="3" fill="#3b4252" stroke="#5a6377"/>
+<text x="426" y="281" font-size="10" fill="#eceff4">Application module</text>
+<rect x="150" y="292" width="26" height="14" rx="3" fill="#312a3a" stroke="#a38bbd"/>
+<text x="182" y="303" font-size="10" fill="#eceff4">Datastore / registry</text>
+<rect x="318" y="292" width="26" height="14" rx="3" fill="#352d38" stroke="#b48ead" stroke-dasharray="5 3"/>
+<text x="350" y="303" font-size="10" fill="#eceff4">External system</text>
+<line x1="150" y1="322" x2="176" y2="322" stroke="#abb2bf" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="326" font-size="10" fill="#eceff4">Application flow — (protocol, format) under the label</text>
+<rect x="480" y="315" width="96" height="15" rx="7.5" fill="#3b3a2a" stroke="#ebcb8b"/>
+<text x="528" y="326" font-size="9.5" text-anchor="middle" fill="#ebcb8b" font-weight="bold">Business object</text>
+<text x="584" y="326" font-size="10" fill="#eceff4">carried by the flow</text>
+</svg>

@@ -1,0 +1,126 @@
+diagram logical "Plateforme e-commerce omnicanale — vue logique"
+style { lang: fr }
+
+actor-group CUSTOMERS "Clients" {
+  actor WEB_CUSTOMER "Client web"
+  actor MOBILE_CUSTOMER "Client mobile"
+  actor STORE_CUSTOMER "Client en\nmagasin"
+}
+
+actor-group INTERNAL "Équipes internes" {
+  actor ADVISOR "Conseiller relation\nclient"
+  actor MERCH "Responsable\nmerchandising"
+  actor WAREHOUSE_OP "Opérateur\nentrepôt"
+  actor ACCOUNTANT "Comptable"
+  actor ADMIN "Administrateur\nplateforme"
+}
+
+system FRONT "Front commerce" {
+  layer PRESENTATION "Couche de présentation" {
+    block SITE "Site\ne-commerce"
+    block APP "Application\nmobile"
+    block KIOSK "Bornes\nmagasin"
+  }
+  layer JOURNEY "Couche parcours client" {
+    block CATALOG_FRONT "Navigation\ncatalogue"
+    block CART "Panier et\ntunnel d'achat"
+    block ACCOUNT "Compte\nclient"
+    block RECO "Recommandations\npersonnalisées"
+  }
+}
+
+system CORE "Cœur commerce" {
+  layer SALES "Couche vente" {
+    block ORDER "Gestion des\ncommandes"
+    block PAYMENT "Orchestration des\npaiements"
+    block PROMO "Moteur de\npromotions"
+    block LOYALTY "Programme de\nfidélité"
+  }
+  layer OFFER "Couche offre" {
+    block PIM "Référentiel\nproduits"
+    block PRICING "Tarification"
+    block STOCK "Vue stock\nunifiée"
+  }
+  layer EXECUTION "Couche exécution" {
+    block OMS "Orchestration des\nexpéditions"
+    block WMS_LINK "Pilotage\nentrepôt"
+    block AFTERSALES "Service\naprès-vente"
+  }
+}
+
+system DATA "Plateforme data" {
+  layer COLLECTION "Couche collecte" {
+    block TRACKING "Collecte d'événements\nde navigation"
+    block CDC "Capture des changements\nde référentiel"
+  }
+  layer ANALYTICS "Couche analytique" {
+    block DWH "Entrepôt de\ndonnées"
+    block SEGMENTS "Segmentation\nclient"
+  }
+}
+
+external EXT "Systèmes externes" {
+  block PSP "Prestataire de\npaiement (PSP)"
+  block CARRIERS "Plateformes\ntransporteurs"
+  block ERP "ERP\ngroupe"
+  block CRM "CRM\ngroupe"
+  block REVIEWS "Plateforme d'avis\nclients"
+}
+
+# ---- objets métier ----
+business-object BO_ORDER "Commande" "panier validé par un client, suivi jusqu'à la livraison"
+business-object BO_PAY "Paiement" "transaction financière liée à une commande"
+business-object BO_PROD "Produit" "article du catalogue avec prix et disponibilité"
+business-object BO_PARCEL "Colis" "unité d'expédition remise au transporteur"
+
+# ---- parcours client ----
+WEB_CUSTOMER -> SITE : "Naviguer, rechercher,\ncommander"
+MOBILE_CUSTOMER -> APP : "Parcours d'achat\nmobile"
+STORE_CUSTOMER -> KIOSK : "Vérifier le stock et\ncommander en magasin"
+SITE -> CATALOG_FRONT : "Afficher les fiches\nproduit"
+APP -> CATALOG_FRONT : "Afficher le catalogue\nmobile"
+KIOSK -> CATALOG_FRONT : "Parcourir l'offre\nmagasin"
+SITE -> CART : "Constituer le panier"
+APP -> CART : "Panier mobile\nsynchronisé"
+CART -> PROMO : "Appliquer les offres\nen cours"
+CATALOG_FRONT -> RECO : "Contexte de\nnavigation"
+RECO -> SITE : "Suggestions\npersonnalisées"
+ACCOUNT -> LOYALTY : "Solde et avantages\nde fidélité"
+
+# ---- vente et exécution ----
+CART -> ORDER : "Validation de\nla commande" [BO_ORDER]
+ORDER -> PAYMENT : "Demande de\npaiement" [BO_PAY]
+PAYMENT -> PSP : "Autorisation et capture\ndu paiement" [BO_PAY]
+PSP -> PAYMENT : "Statut de la\ntransaction"
+ORDER -> OMS : "Commande à\nexécuter" [BO_ORDER]
+OMS -> WMS_LINK : "Vagues de préparation\nentrepôt"
+WAREHOUSE_OP -> WMS_LINK : "Préparer et expédier\nles colis"
+OMS -> CARRIERS : "Demandes d'enlèvement\net étiquettes" [BO_PARCEL]
+CARRIERS -> OMS : "Événements de suivi\ndes colis"
+OMS -> ACCOUNT : "Suivi de commande\nclient"
+ADVISOR -> AFTERSALES : "Traiter les\nréclamations"
+AFTERSALES -> ORDER : "Retours et\nremboursements"
+
+# ---- offre ----
+MERCH -> PIM : "Enrichir les fiches\nproduit"
+PIM -> CATALOG_FRONT : "Publier le\ncatalogue" [BO_PROD]
+PRICING -> CATALOG_FRONT : "Prix de vente\nen cours"
+ERP -> STOCK : "Mouvements de stock\ncomptables"
+STOCK -> CATALOG_FRONT : "Disponibilité\nproduit" [BO_PROD]
+ERP -> PRICING : "Coûts d'achat de\nréférence"
+
+# ---- data ----
+SITE -> TRACKING : "Événements de\nnavigation"
+PIM -> CDC : "Changements de\nréférentiel"
+TRACKING -> DWH : "Alimenter le socle\nde données"
+CDC -> DWH : "Synchronisation du\nréférentiel"
+DWH -> SEGMENTS : "Calculer les\nsegments"
+SEGMENTS -> RECO : "Segments d'audience\npour personnalisation"
+SEGMENTS -> CRM : "Audiences pour\ncampagnes"
+CRM -> ACCOUNT : "Sollicitations\npersonnalisées"
+
+# ---- transverse ----
+ACCOUNTANT -> PAYMENT : "Rapprocher les\nencaissements"
+ADMIN -> PIM : "Administrer référentiels\net habilitations"
+ORDER -> REVIEWS : "Demander un avis\naprès livraison"
+REVIEWS -> CATALOG_FRONT : "Notes et avis\nproduit"
