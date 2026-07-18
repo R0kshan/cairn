@@ -8,11 +8,12 @@
 //
 // Usage: node scripts/render-packaging.mjs <version> <checksums-file>
 //   e.g. node scripts/render-packaging.mjs 0.1.0 dist/cairn-0.1.0-checksums.txt
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
+mkdirSync(join(root, 'dist'), { recursive: true });
 
 const version = process.argv[2];
 const checksumsFile = process.argv[3];

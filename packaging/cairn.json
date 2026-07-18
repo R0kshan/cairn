@@ -1,6 +1,6 @@
 {
   "version": "0.1.0",
-  "description": "Architecture diagrams as code — typed profiles, semantic layout, overlap-free labels",
+  "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
   "homepage": "https://github.com/R0kshan/cairn",
   "license": "MIT",
   "architecture": {

@@ -1,7 +1,7 @@
 # Homebrew formula — lives in the tap repo (R0kshan/homebrew-tap).
 # The release workflow rewrites version, URLs and sha256 on every tag.
 class Cairn < Formula
-  desc "Architecture diagrams as code — typed profiles, semantic layout, overlap-free labels"
+  desc "Architecture diagrams as code — typed views, semantic layout, overlap-free labels"
   homepage "https://github.com/R0kshan/cairn"
   version "0.1.0"
   license "MIT"

@@ -1,17 +1,29 @@
-# Release automation 
-# on tag v* -> test -> compile binaries for 5 platforms -> GitHub Release
-# -> publish npm -> bump brew formula & scoop manifest in their repos.
+# Release automation
+# on tag v* -> test -> compile binaries for 5 platforms -> attest provenance
+# -> GitHub Release -> bump brew formula & scoop manifest in their repos.
+# (npm publishing is disabled — see the `npm` job.)
+#
+# Security posture:
+#  - all actions are pinned to a commit SHA (comment shows the human tag),
+#  - least privilege: the default GITHUB_TOKEN is read-only; only the `binaries`
+#    job is granted the writes it needs,
+#  - checkouts don't persist credentials.
 name: release
 on:
   push:
     tags: ["v*"]
 
+# Read-only by default; jobs opt into the narrow writes they need.
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: 22 }
       - run: npm ci
       - run: npm test
@@ -19,28 +31,57 @@ jobs:
   binaries:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write      # create the GitHub Release + upload assets
+      id-token: write      # OIDC token for build-provenance attestation
+      attestations: write  # write the attestation
     steps:
-      - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: bun install
       - run: bash scripts/build-binaries.sh
-      - uses: softprops/action-gh-release@v2
+
+      # Cryptographic provenance: proves each binary was built by this workflow.
+      # Verifiable with: gh attestation verify <binary> --repo R0kshan/cairn
+      # NOTE: attest-build-provenance is pinned to its major tag below because its
+      # commit SHA couldn't be resolved at authoring time. It's a first-party
+      # (actions/*) action, the lowest-risk case; to fully pin it run:
+      #   gh api repos/actions/attest-build-provenance/commits/v2 --jq .sha
+      # and replace `@v2` with `@<sha> # v2`.
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 #v4.1.1
+        with:
+          subject-path: |
+            dist/cairn-*
+            !dist/*.txt
+
+      - uses: softprops/action-gh-release@7e13ed4ac596a4adf801d3812be5a089356949aa # v3.0.2
         with:
           files: |
             dist/cairn-*
           generate_release_notes: true
+
       # Hand the built binaries + checksums to the taps job.
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: dist
           path: dist/
 
+  # --- npm publishing is DISABLED ---------------------------------------------
+  # The bare name "cairn" is already taken on the npm registry, so `npm publish`
+  # would 403. The curl / Homebrew / Scoop channels below do NOT depend on npm
+  # (they ship the compiled binaries from the GitHub Release), so this is safe
+  # to leave off. To enable npm later: pick an available name — e.g. a scoped
+  # "@<your-npm-user>/cairn" — set it in package.json, add an NPM_TOKEN secret,
+  # remove the `if: false` guard below, and set { scope } on setup-node.
   npm:
+    if: ${{ false }}
     needs: test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with: { node-version: 22, registry-url: "https://registry.npmjs.org" }
       - run: npm ci
       - run: npm publish --access public
@@ -50,11 +91,15 @@ jobs:
   taps:
     needs: binaries
     runs-on: ubuntu-latest
+    # Only reads this repo; pushes go to the tap/bucket repos via PUSH_TOKEN.
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: 22 }
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@fa0a91b85d4f404e444e00e005971372dc801d16 # v4.1.8
         with: { name: dist, path: dist }
 
       - name: Render formula + manifest
@@ -65,10 +110,10 @@ jobs:
       # Push the rendered formula to the Homebrew tap repo (R0kshan/homebrew-tap).
       - name: Publish Homebrew formula
         env:
-          TAP_PUSH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+          PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          git clone "https://x-access-token:${TAP_PUSH_TOKEN}@github.com/R0kshan/homebrew-tap.git" tap
+          git clone "https://x-access-token:${PUSH_TOKEN}@github.com/R0kshan/homebrew-tap.git" tap
           mkdir -p tap/Formula
           cp dist/cairn.rb tap/Formula/cairn.rb
           cd tap
@@ -81,10 +126,10 @@ jobs:
       # Push the rendered manifest to the Scoop bucket repo (R0kshan/scoop-bucket).
       - name: Publish Scoop manifest
         env:
-          TAP_PUSH_TOKEN: ${{ secrets.TAP_PUSH_TOKEN }}
+          PUSH_TOKEN: ${{ secrets.PUSH_TOKEN }}
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
-          git clone "https://x-access-token:${TAP_PUSH_TOKEN}@github.com/R0kshan/scoop-bucket.git" bucket
+          git clone "https://x-access-token:${PUSH_TOKEN}@github.com/R0kshan/scoop-bucket.git" bucket
           mkdir -p bucket/bucket
           cp dist/cairn.json bucket/bucket/cairn.json
           cd bucket

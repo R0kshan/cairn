@@ -17,7 +17,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 
 ## Why cairn?
 
-A large majority of the diagrams (logical, application, infrastructure view) in existing Software Architecture Documents I've worked are made with graphical diagramming softwares such as Drawio and the like. However, modifying diagrams manually in a GUI take time and migrating to diagram as code has proven complicated since most diagrams are rich and it's hard to preserve the same level of information with other solutions like C4.
+A large majority of the diagrams (logical, application, infrastructure view) in existing Software Architecture Documents I've worked are made with graphical diagramming softwares such as Drawio and the like. However, modifying diagrams manually in a GUI despite providing more control on the display, take time and migrating to diagram as code has proven complicated since most diagrams are rich and it's hard to preserve the same level of information with other solutions like C4.
 
 Furthermore, complexe software architecture with many flows and component generated with existing diagram-as-code tools end up very large or whith overlapping flow labels making unreadable and therefore not possible to integrate in a techical architecture document that requires specifically a logical view, application, physical & infrastructure view and Cairn is made specially to answer this need by provided the following features : 
 
@@ -126,14 +126,26 @@ Cairn comes with a collection of built-in themes. Choose the one that best fits 
 
 ## Installation
 
-```bash
-# While in early access / local development:
-git clone https://github.com/R0kshan/cairn
-cd cairn
-npm install
-npm run cairn -- --help
+Prebuilt, self-contained binaries are published on every `v*` tag (no runtime needed). Pick your platform:
 
-# Coming soon: Homebrew, Scoop, and npm i -g cairn-cli
+```sh
+# macOS / Linux — curl installer 
+curl -fsSL https://raw.githubusercontent.com/R0kshan/cairn/main/packaging/install.sh | sh
+
+# macOS / Linux — Homebrew
+brew install R0kshan/tap/cairn
+
+# Windows — Scoop
+scoop bucket add cairn https://github.com/R0kshan/scoop-bucket
+scoop install cairn
+```
+
+From source (no release needed — requires Node ≥ 22.6):
+
+```sh
+git clone https://github.com/R0kshan/cairn && cd cairn
+npm install
+npm run cairn -- --help          # or: node bin/cairn.js --help
 ```
 
 ## Commands
@@ -202,5 +214,3 @@ relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)`
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
-- [`DESIGN_BRIEF.md`](documentation/DESIGN_BRIEF.md) — design rationale and architecture overview.
-- [`research/`](documentation/research/) — layout engine evaluation, comparison results, alternatives analysis.
