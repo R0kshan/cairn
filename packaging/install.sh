@@ -18,8 +18,51 @@ case "$arch" in
   *) echo "unsupported architecture: $arch"; exit 1 ;;
 esac
 
-tag=$(curl -fsSL "https://api.github.com/repos/$REPO/releases/latest" | sed -n 's/.*"tag_name": *"\([^"]*\)".*/\1/p')
-[ -n "$tag" ] || { echo "could not determine latest release"; exit 1; }
+# GitHub's /releases/latest endpoint only ever returns a non-prerelease, so it
+# 404s until a real (non-RC) release exists. Fetch the full release list instead
+# and let the user choose: newest release regardless of type, or stable-only.
+releases_json=$(curl -fsSL "https://api.github.com/repos/$REPO/releases")
+pairs=$(printf '%s' "$releases_json" | grep -E '"tag_name":|"prerelease":' | paste -d' ' - - \
+  | sed -n 's/.*"tag_name": *"\([^"]*\)".*"prerelease": *\([a-z]*\).*/\1 \2/p')
+
+latest_any_tag=$(printf '%s\n' "$pairs" | head -n1 | awk '{print $1}')
+latest_stable_tag=$(printf '%s\n' "$pairs" | awk '$2=="false"{print $1; exit}')
+
+CAIRN_CHANNEL="${CAIRN_CHANNEL:-}"
+if [ -z "$CAIRN_CHANNEL" ]; then
+  # Probe tty availability in a subshell first: `exec 3</dev/tty` is a special
+  # built-in, so a failed redirect on it would kill a non-interactive dash
+  # script outright even inside `if`. Testing in a subshell avoids that.
+  if ( : < /dev/tty ) 2>/dev/null; then
+    exec 3</dev/tty
+    printf 'Install the latest release, even if it is a pre-release? [Y/n] (n = require a stable release): ' >&2
+    read -r reply <&3
+    exec 3<&-
+    case "$reply" in
+      [Nn]*) CAIRN_CHANNEL=stable ;;
+      *) CAIRN_CHANNEL=latest ;;
+    esac
+  else
+    echo "note: no interactive terminal detected - defaulting to the latest release (pre-releases included)." >&2
+    echo "      set CAIRN_CHANNEL=stable to require an actual stable release instead." >&2
+    CAIRN_CHANNEL=latest
+  fi
+fi
+
+case "$CAIRN_CHANNEL" in
+  stable)
+    tag="$latest_stable_tag"
+    if [ -z "$tag" ]; then
+      echo "no stable release yet - only pre-releases are available right now (latest: ${latest_any_tag:-none})." >&2
+      echo "re-run and answer 'y' (or set CAIRN_CHANNEL=latest) to install ${latest_any_tag:-it} instead." >&2
+      exit 1
+    fi
+    ;;
+  *)
+    tag="$latest_any_tag"
+    [ -n "$tag" ] || { echo "could not determine latest release" >&2; exit 1; }
+    ;;
+esac
 version=${tag#v}
 asset="cairn-${version}-${os}-${arch}"
 
