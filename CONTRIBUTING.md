@@ -1,6 +1,6 @@
 # Contributing to cairn
 
-> Before making a pull request, create an issue so we can discuss it. When the proposal is agreed upon, you'll be assigned to it an you go ahead with the pull request :) !
+Any contributions and ideas for improvement are very welcome ! Feel free to create an issue so we can discuss them before opening a PR. 
 
 ## Tests
 
