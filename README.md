@@ -17,7 +17,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 
 ## Why cairn?
 
-A large majority of the diagrams (logical, application, infrastructure view) in existing Software Architecture Documents I've worked are made with graphical diagramming softwares such as Drawio and the like. However, modifying diagrams manually in a GUI take time and migrating to diagram as code has proven complicated since most diagrams are rich and it's hard to preserve the same level of information with other solutions like C4.
+A large majority of the diagrams (logical, application, infrastructure view) in existing Software Architecture Documents I've worked are made with graphical diagramming softwares such as Drawio and the like. However, modifying diagrams manually in a GUI despite providing more control on the display, take time and migrating to diagram as code has proven complicated since most diagrams are rich and it's hard to preserve the same level of information with other solutions like C4.
 
 Furthermore, complexe software architecture with many flows and component generated with existing diagram-as-code tools end up very large or whith overlapping flow labels making unreadable and therefore not possible to integrate in a techical architecture document that requires specifically a logical view, application, physical & infrastructure view and Cairn is made specially to answer this need by provided the following features : 
 
@@ -129,7 +129,7 @@ Cairn comes with a collection of built-in themes. Choose the one that best fits 
 Prebuilt, self-contained binaries are published on every `v*` tag (no runtime needed). Pick your platform:
 
 ```sh
-# macOS / Linux — curl installer (downloads the right binary for your OS/arch)
+# macOS / Linux — curl installer 
 curl -fsSL https://raw.githubusercontent.com/R0kshan/cairn/main/packaging/install.sh | sh
 
 # macOS / Linux — Homebrew
@@ -140,8 +140,6 @@ scoop bucket add cairn https://github.com/R0kshan/scoop-bucket
 scoop install cairn
 ```
 
-The curl installer drops a `cairn` binary in `~/.local/bin` (override with `CAIRN_INSTALL_DIR`) and clears the macOS quarantine flag so it runs immediately.
-
 From source (no release needed — requires Node ≥ 22.6):
 
 ```sh
@@ -149,8 +147,6 @@ git clone https://github.com/R0kshan/cairn && cd cairn
 npm install
 npm run cairn -- --help          # or: node bin/cairn.js --help
 ```
-
-> The Homebrew, Scoop, and curl channels all serve the compiled binaries from the GitHub Release. They light up once the first release is tagged — see [`RELEASING.md`](RELEASING.md) for the one-time repo setup and the release steps. (npm publishing is intentionally disabled: the bare name `cairn` is already taken on the registry.)
 
 ## Commands
 
@@ -218,5 +214,3 @@ relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)`
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
-- [`DESIGN_BRIEF.md`](documentation/DESIGN_BRIEF.md) — design rationale and architecture overview.
-- [`research/`](documentation/research/) — layout engine evaluation, comparison results, alternatives analysis.
