@@ -27,7 +27,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Configurable dispositions** | `slide` and `page` dispositions available to suit different presentation requirements |
 | **Spacial optimization** | Cairn aims to optimize space as much as possible (Still working on improving this functionnality) |
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
-| **Infrastructure flow matrix.** | `cairn matrix` exports the flow matrice as CSV, Markdown, or SVG. Columns split protocol from port, annotate each endpoint with its network zone, and localise via `style { lang: fr }`. |
+| **Infrastructure flow matrix.** | `cairn matrix` exports the flow matrix as CSV, Markdown, or SVG. Columns split protocol from port, annotate each endpoint with its network zone, and localise via `style { lang: fr }`. |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
 | **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
@@ -83,6 +83,10 @@ Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/
 <p align="center"><img src="examples/infrastructure-small.svg" alt="Small infrastructure view" width="760"></p>
 <p align="center"><img src="examples/infrastructure-medium.svg" alt="Medium infrastructure view" width="760"></p>
 <p align="center"><img src="examples/infrastructure-large.svg" alt="Large infrastructure view" width="760"></p>
+
+#### Matrix flow export example (for the small diagram above)
+
+![](./examples/infrastructure-small.flow.svg)
 
 ### Custom colours
 
