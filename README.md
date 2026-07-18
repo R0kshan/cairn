@@ -19,7 +19,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 
 A large majority of the diagrams (logical, application, infrastructure view) in existing Software Architecture Documents I've worked are made with graphical diagramming softwares such as Drawio and the like. However, modifying diagrams manually in a GUI despite providing more control on the display, take time and migrating to diagram as code has proven complicated since most diagrams are rich and it's hard to preserve the same level of information with other solutions like C4.
 
-Furthermore, complexe software architecture with many flows and component generated with existing diagram-as-code tools end up very large or whith overlapping flow labels making unreadable and therefore not possible to integrate in a techical architecture document that requires specifically a logical view, application, physical & infrastructure view and Cairn is made specially to answer this need by provided the following features : 
+Furthermore, complexe software architecture with many flows and component generated with existing diagram-as-code tools end up very large or with overlapping flow labels making them unreadable and therefore not possible to integrate in a techical architecture document that requires specifically a logical view, application, physical & infrastructure view and Cairn is made specially to answer this need by provided the following features : 
 
 | Features | Description |
 |---|---|
@@ -30,6 +30,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Infrastructure flow matrix.** | `cairn matrix` exports the flow matrice as CSV, Markdown, or SVG. Columns split protocol from port, annotate each endpoint with its network zone, and localise via `style { lang: fr }`. |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
+| **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
 
 > Cairn is not a replacement for general diagram tools; for flowcharts, sequence, or ER diagrams, Mermaid or D2 remain the better fit. For C4-level software-structure modeling, dedicated C4 tools like Structurizr or LikeC4 ([c4model.com](https://c4model.com)) are a mature choice.
 
@@ -85,7 +86,29 @@ Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/
 
 ### Custom colours
 
-Per-element `fill`/`stroke`/`text`, per-kind overrides, and a custom canvas `background` — [`examples/colors-custom.cairn`](examples/colors-custom.cairn):
+Colours are resolved at three levels — most specific wins. From lowest to highest priority:
+
+1. **Theme defaults** — per-kind colours defined by the selected theme (fill, stroke, text for each element kind).
+2. **Diagram-level per-kind overrides** — override colours for all elements of a given kind in the `style` block:
+   ```
+   style {
+     fill actor-group: #eef4fb
+     stroke actor-group: #7a9cc4 dashed
+     text block: #222233
+     background: #fffdf5       # canvas background
+   }
+   ```
+3. **Inline per-element styles** — override colour for a single element:
+   ```
+   block API "API gateway" { style { fill: #e8f5e9  stroke: #2e7d32  text: #1b5e20 } }
+   ```
+
+Flows can also be coloured inline:
+```
+COM_CTR -> OBS : "Alerts…" { label: above  stroke: dashed #a33  text: #a33 }
+```
+
+See [`examples/colors-custom.cairn`](examples/colors-custom.cairn) for a full example:
 
 <p align="center"><img src="examples/colors-custom.svg" alt="Custom colours" width="620"></p>
 
