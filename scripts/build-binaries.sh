@@ -5,7 +5,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-VERSION=$(node -p "require('./package.json').version")
+# VERSION is set by the release workflow from the pushed tag (GITHUB_REF_NAME),
+# which is the single source of truth for release version numbers — it's what
+# render-packaging.mjs, the checksums filename, and the GitHub Release all key
+# off of. Falls back to package.json for local/manual builds.
+VERSION="${VERSION:-$(node -p "require('./package.json').version")}"
 OUT=dist
 mkdir -p "$OUT"
 
