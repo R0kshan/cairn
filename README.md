@@ -1,4 +1,4 @@
-# Cairn, a specialized Software Architecture Diagrams as code tool
+# Cairn, a specialized Software Architecture Diagram as Code tool
 
 *Just as a mountain trail is marked by cairns, software architecture is understood through a series of views, each revealing a different part of the landscape.*
 
