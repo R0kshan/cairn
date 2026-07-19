@@ -100,7 +100,15 @@ npm run snapshots                     # regenerate snapshot goldens (see below)
 npm run cairn -- <cmd> <file>         # run the CLI from source
 npm run typecheck                     # tsc --noEmit (the ONLY type check)
 npm run lint                          # biome (lint-only; formatting is the author's)
+npm run test:binary                   # compile the host bun binary + smoke-run it (needs Bun)
 ```
+
+`npm test` is Node-only and can't prove the bun-compiled binary or the esbuild
+playground bundle work — CI covers both (a Bun `binary-smoke` job runs the real
+binary; a `playground` job bundles it), and the release job smoke-runs the linux
+binary before publishing. The compiled binary bundles its own module graph
+(incl. elkjs's worker), so a loader change can pass every Node test yet break the
+binary — hence the dedicated smoke.
 
 CLI verbs: `validate` (`--format json`, `--strict`), `build` (`-o`), `matrix`
 (`--format csv|md|svg`), `watch`, `new` (`-L|-A|-I|-S` scaffold), `explain <code>`.

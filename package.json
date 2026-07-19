@@ -3,16 +3,33 @@
   "version": "1.0.0-RC04",
   "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
   "type": "module",
-  "bin": { "cairn": "bin/cairn.js" },
-  "files": ["bin/", "src/", "README.md", "documentation/"],
+  "bin": {
+    "cairn": "bin/cairn.js"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "documentation/"
+  ],
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",
     "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
-    "snapshots": "UPDATE_SNAPSHOTS=1 node --experimental-strip-types --test tests/snapshot.test.ts",
+    "snapshots": "UPDATE_SNAPSHOTS=1 node --experimental-strip-types --test tests/snapshot.test.ts tests/corpus.test.ts",
     "build:binaries": "bash scripts/build-binaries.sh",
-    "build:playground": "bash scripts/build-playground.sh"
+    "build:playground": "bash scripts/build-playground.sh",
+    "lint": "biome lint src tests",
+    "format": "biome format --write src tests",
+    "typecheck": "tsc --noEmit",
+    "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
+    "test:binary": "bash scripts/smoke-binary.sh"
   },
   "dependencies": {
     "elkjs": "^0.11.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.4",
+    "@types/node": "^26.1.1",
+    "typescript": "^7.0.2"
   }
 }

@@ -165,7 +165,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         nodes.push({
           id: c.id, kind: el.kind, label: el.label ?? c.id,
           x: ax, y: ay, w: c.width, h: c.height,
-          container: !!(c.children && c.children.length),
+          container: !!c.children?.length,
         });
         walk(c, ax, ay);
       }

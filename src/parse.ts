@@ -50,7 +50,15 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
       if (!at('id')) { err('style property expected', peek().span); syncLine(); skipNl(); continue; }
       const key = next();
       let kindTarget: string | undefined;
-      if (at('id')) kindTarget = next().text; // e.g. `fill actor-group:`
+      if (at('id')) {
+        const t = next();
+        // Reject reserved object keys so a per-kind target can never reach a
+        // prototype slot of the `kind` map (defence-in-depth against pollution).
+        if (t.text === '__proto__' || t.text === 'constructor' || t.text === 'prototype') {
+          err(`\`${t.text}\` is a reserved name and can't be styled`, t.span); syncLine(); skipNl(); continue;
+        }
+        kindTarget = t.text; // e.g. `fill actor-group:`
+      }
       if (!at('colon')) { err('`:` expected after the style property', peek().span); syncLine(); skipNl(); continue; }
       next();
       const values: Tok[] = [];
@@ -202,7 +210,7 @@ function applyStyleEntry(
   key: Tok, kindTarget: string | undefined, values: Tok[],
   diag: DiagramStyle | null, inline: StyleProps | null, diags: Diagnostic[],
 ) {
-  const strokeFrom = (vals: Tok[], span: Span): StyleProps['stroke'] => {
+  const strokeFrom = (vals: Tok[], _span: Span): NonNullable<StyleProps['stroke']> => {
     const s: NonNullable<StyleProps['stroke']> = {};
     for (const v of vals) {
       if (v.kind === 'color') { if (s.color) dup(v); s.color = v.text; }

@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: 22 }
       - run: npm ci
+      - run: npm run typecheck        # tsc --noEmit (the only type check; runtime strips types)
+      - run: npm run lint             # biome
       # `npm test` includes the non-regression snapshot gate (tests/snapshot.test.ts):
       # canary renders are diffed against committed snapshots. An intended change is
       # acknowledged with `npm run snapshots` + commit; otherwise this step fails.
@@ -27,3 +29,28 @@ jobs:
             out=$(node --experimental-strip-types src/cli.ts build "$f" 2>/dev/null) || { echo "BUILD FAIL: $f"; exit 1; }
             echo "$out" | grep -q "label overlaps: 0" || { echo "OVERLAP REGRESSION: $f -> $out"; exit 1; }
           done
+
+  # Proves the bun-COMPILED binary actually runs (Node tests can't — see
+  # scripts/smoke-binary.sh). Builds only the host target for speed; the release
+  # workflow builds all five platforms.
+  binary-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+      - run: npm run test:binary
+
+  # Proves the browser/node playground bundles still build (esbuild fails on a
+  # broken import — e.g. in src/playground-entry.ts).
+  playground:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: 22 }
+      - run: npm run build:playground
+      - run: |
+          test -s playground/cairn-engine.js       || { echo "browser bundle missing/empty"; exit 1; }
+          test -s playground/lib/engine.node.mjs    || { echo "node bundle missing/empty"; exit 1; }

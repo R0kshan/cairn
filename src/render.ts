@@ -5,12 +5,16 @@
 import type { Model, View, StyleProps, Flow } from './model.ts';
 import { themeFor, flowPalette, UI } from './model.ts';
 import type { Scene, SceneLabel } from './layout.ts';
-import { chipW, CHIP_H, measure, techText, wrapText, fontSizes } from './text.ts';
+import { chipW, techText, wrapText, fontSizes } from './text.ts';
 
 const HOP_R = 5;
 const SEC_LEVEL_FR: Record<string, string> = { public: 'public', internal: 'interne', restricted: 'restreint', secret: 'secret' };
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Attribute context also needs the quote escaped, else a user string placed
+// inside `="..."` (e.g. a custom font family) could break out and inject
+// attributes — an XSS vector when the SVG is opened standalone or inlined.
+const escAttr = (s: string) => esc(s).replace(/"/g, '&quot;');
 const dashArray = (style?: string) => style === 'dashed' ? '5 3' : style === 'dotted' ? '2 2.5' : undefined;
 
 interface Box { x: number; y: number; w: number; h: number; }
@@ -375,7 +379,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   if (arrowMk.size === 0) markerId(edge); // ensure the base marker always exists
   const markers = [...arrowMk].map(([color, id]) =>
     `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${mw}" markerHeight="${mw}" orient="auto-start-reverse">\n<path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join('\n');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${esc(font)},Arial,sans-serif">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${escAttr(font)},Arial,sans-serif">
 <defs>${markers}</defs>
 <rect width="${W}" height="${totalH}" fill="${ds.background ?? pal.background}"/>\n` + out + bands + '</svg>\n';
   return { svg, overlapsBefore, overlapsAfter };

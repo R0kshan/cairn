@@ -363,3 +363,23 @@ test('matrix respects lang: fr headers; md + svg render', () => {
   assert.match(svg, /^<svg/);
   assert.match(svg, /TECHNICAL FLOW MATRIX/);
 });
+
+// ---------- security ----------
+
+test('security: a font family cannot break out of the SVG attribute (XSS)', async () => {
+  // A quote in the (user-controlled) font family must be escaped, else it could
+  // close the font-family="…" attribute and inject e.g. an onload handler that
+  // fires when the SVG is opened standalone.
+  const src = 'diagram logical "t"\nstyle { font: "x\\" onload=\\"alert(1)" 12 }\n'
+    + 'actor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B : "x"\n';
+  const { svg } = await build(src);
+  assert.ok(!/onload="alert/.test(svg), 'attribute injection must not appear unescaped');
+  assert.match(svg, /font-family="x&quot; onload=&quot;alert\(1\)/);
+});
+
+test('security: a reserved key cannot be used as a per-kind style target', () => {
+  // `fill __proto__: …` must be rejected, not written into the kind map's
+  // prototype slot (defence-in-depth against prototype pollution).
+  const { diags } = check('diagram logical "t"\nstyle { fill __proto__: #fff }\nactor-group G "g" { actor A "a" }\n');
+  assert.ok(diags.some(d => d.severity === 'error' && /reserved/.test(d.message)));
+});

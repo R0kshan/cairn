@@ -1,0 +1,34 @@
+# Supply-chain + workflow-hardening checks that complement CodeQL.
+#  - audit:     fails if any (dev or runtime) dependency has a high+ advisory.
+#  - workflows: static-analyses the GitHub Actions workflows themselves (pinning,
+#               permissions, injection) with zizmor.
+name: security
+on:
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # weekly, so new advisories surface without a push
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm audit --audit-level=high
+
+  workflows:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      # zizmor audits the workflow files (pipx is preinstalled on the runner).
+      # --min-severity high: fail the build only on high-confidence, high-impact
+      # findings; lower-severity notes are printed but don't block.
+      - run: pipx run zizmor --min-severity high .github/workflows

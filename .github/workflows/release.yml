@@ -1,7 +1,10 @@
 # Release automation
 # on tag v* -> test -> compile binaries for 5 platforms -> attest provenance
 # -> GitHub Release -> bump brew formula & scoop manifest in their repos.
-# (npm publishing is disabled — see the `npm` job.)
+# (No npm publish: the bare name "cairn" is taken on the registry; the curl /
+#  Homebrew / Scoop channels ship the GitHub Release binaries and don't need it.
+#  To add npm later, publish under a scoped name — e.g. "@<user>/cairn" — with an
+#  NPM_TOKEN secret and a job mirroring `binaries`.)
 #
 # Security posture:
 #  - all actions are pinned to a commit SHA (comment shows the human tag),
@@ -46,6 +49,10 @@ jobs:
       # even if package.json wasn't bumped before tagging.
       - run: VERSION="${GITHUB_REF_NAME#v}" bash scripts/build-binaries.sh
 
+      # Don't ship a binary that can't run: smoke the just-built linux binary
+      # (the runner can execute it) through the full pipeline before publishing.
+      - run: bash scripts/smoke-binary.sh "dist/cairn-${GITHUB_REF_NAME#v}-linux-x64"
+
       # Cryptographic provenance: proves each binary was built by this workflow.
       # Verifiable with: gh attestation verify <binary> --repo R0kshan/cairn
       # NOTE: attest-build-provenance is pinned to its major tag below because its
@@ -70,27 +77,6 @@ jobs:
         with:
           name: dist
           path: dist/
-
-  # --- npm publishing is DISABLED ---------------------------------------------
-  # The bare name "cairn" is already taken on the npm registry, so `npm publish`
-  # would 403. The curl / Homebrew / Scoop channels below do NOT depend on npm
-  # (they ship the compiled binaries from the GitHub Release), so this is safe
-  # to leave off. To enable npm later: pick an available name — e.g. a scoped
-  # "@<your-npm-user>/cairn" — set it in package.json, add an NPM_TOKEN secret,
-  # remove the `if: false` guard below, and set { scope } on setup-node.
-  npm:
-    if: ${{ false }}
-    needs: test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with: { persist-credentials: false }
-      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with: { node-version: 22, registry-url: "https://registry.npmjs.org" }
-      - run: npm ci
-      - run: npm publish --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
   taps:
     needs: binaries
