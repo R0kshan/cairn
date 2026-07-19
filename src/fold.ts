@@ -9,7 +9,7 @@
 // coloring: overlapping spans never share a lane.
 
 import type { Model, Element, View } from './model.ts';
-import type { Scene, SceneNode, SceneEdge } from './layout.ts';
+import type { Scene, SceneNode, SceneEdge, SceneLabel } from './layout.ts';
 import { measure, wrapText, nodeSize, flowLabelBox, fontSizes } from './text.ts';
 
 const PAD_TOP = 30, PAD = 12;
@@ -289,7 +289,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
     //  - gutter routes: above the horizontal gutter segment, staggered along x
     //    by lane index so labels in the same gutter never start stacked
     //  - direct routes: pinned above the final approach segment (target end)
-    let label;
+    let label: SceneLabel | undefined;
     const chips = chipsOf(f);
     const text = numbered ? numLabel(f).text : (f.label ? wrapText(f.label, LABEL_WRAP) : (chips.length ? '' : undefined));
     if (text !== undefined) {

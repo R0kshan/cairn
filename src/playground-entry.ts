@@ -1,7 +1,6 @@
 // Browser entry: the whole engine, client-side. Bundled by
 // scripts/build-playground.sh into playground/cairn-engine.js (ESM).
 
-// @ts-ignore — bundled UMD, types not needed here
 import ELK from 'elkjs/lib/elk.bundled.js';
 import { setElkFactory } from './elk.ts';
 import { parse } from './parse.ts';

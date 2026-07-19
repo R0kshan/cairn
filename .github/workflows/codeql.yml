@@ -1,0 +1,32 @@
+# Static application security testing (SAST) with CodeQL.
+# Scans the TypeScript sources for injection, XSS, unsafe patterns, etc.
+name: codeql
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1" # weekly (Mon 06:00 UTC), catches newly-published queries
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # upload CodeQL results to the Security tab
+      actions: read
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with: { persist-credentials: false }
+      # First-party GitHub action; pin to a commit SHA when convenient:
+      #   gh api repos/github/codeql-action/commits/v3 --jq .sha
+      - uses: github/codeql-action/init@v3 # zizmor: ignore[unpinned-uses]
+        with:
+          languages: javascript-typescript
+          queries: security-extended # broader security query suite than the default
+      # No build step: cairn runs TypeScript directly, so CodeQL needs no autobuild.
+      - uses: github/codeql-action/analyze@v3 # zizmor: ignore[unpinned-uses]

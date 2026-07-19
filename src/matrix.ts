@@ -18,7 +18,7 @@ export interface MatrixRow {
 
 // nearest enclosing network-zone (else site) label — the flow's security/network context
 function zoneOf(model: Model, id: string): string | undefined {
-  let e = model.index.get(id);
+  const e = model.index.get(id);
   for (let a = e?.parent; a; a = a.parent) {
     if (a.kind === 'network-zone' || a.kind === 'site') return a.label ?? a.id;
   }
@@ -72,7 +72,7 @@ export function matrixCsv(model: Model, lang: 'en' | 'fr'): string {
 
 const mdCell = (s: string): string => s.replace(/\|/g, '\\|').replace(/\n/g, ' ');
 
-export function matrixMd(model: Model, view: View, lang: 'en' | 'fr'): string {
+export function matrixMd(model: Model, _view: View, lang: 'en' | 'fr'): string {
   const h = UI[lang].matrix;
   const rows = buildMatrixRows(model);
   const title = model.title ? `${h.title} — ${model.title}` : h.title;
@@ -89,8 +89,10 @@ export function matrixMd(model: Model, view: View, lang: 'en' | 'fr'): string {
 // Standalone SVG table — a paste-ready image for the physical-view page. Honors
 // the diagram's `theme` (light/dark palette) so it sits next to the diagram.
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// Attribute context needs the quote escaped too (see render.ts escAttr).
+const escAttr = (s: string) => esc(s).replace(/"/g, '&quot;');
 
-export function matrixSvg(model: Model, view: View, lang: 'en' | 'fr'): string {
+export function matrixSvg(model: Model, _view: View, lang: 'en' | 'fr'): string {
   const h = UI[lang].matrix;
   const pal = palettes[model.style.theme] ?? lightPalette;
   const rows = buildMatrixRows(model);
@@ -114,7 +116,7 @@ export function matrixSvg(model: Model, view: View, lang: 'en' | 'fr'): string {
   const colX: number[] = [];
   { let x = 0; for (const w of colW) { colX.push(x); x += w; } }
 
-  let out = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="${esc(model.style.font.family)},Arial,sans-serif">\n`;
+  let out = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" font-family="${escAttr(model.style.font.family)},Arial,sans-serif">\n`;
   out += `<rect width="${W}" height="${H}" fill="${model.style.background ?? pal.background}"/>\n`;
   out += `<text x="1" y="22" font-size="13" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>\n`;
 

@@ -1,0 +1,25 @@
+# Keeps pinned GitHub Actions SHAs and npm deps from going stale between
+# manual audits. Complements security.yml (npm audit + zizmor) and
+# dependency-review.yml (blocks new vulnerable/disallowed deps on PRs) —
+# those catch bad additions; this proactively opens PRs for known-good bumps.
+version: 2
+updates:
+  # Pinned action SHAs (see release.yml's security posture note) — Dependabot
+  # recognizes the "@<sha> # vX" convention and bumps both together.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+
+  - package-ecosystem: "npm"
+    directory: "/playground"
+    schedule:
+      interval: "weekly"
+      day: "monday"

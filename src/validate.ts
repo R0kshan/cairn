@@ -1,6 +1,6 @@
 // View-driven validation: structural rules + completeness checks.
 
-import type { Model, Element, Diagnostic, View } from './model.ts';
+import type { Model, Element, Diagnostic } from './model.ts';
 import { views } from './model.ts';
 
 export function validate(model: Model): Diagnostic[] {
