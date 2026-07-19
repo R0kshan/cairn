@@ -1,39 +1,65 @@
 # Contributing to cairn
 
-Any contributions and ideas for improvement are very welcome ! Feel free to create an issue so we can discuss them before opening a PR. 
+Contributions and ideas are welcome. **Open an issue first** so we can agree on
+the approach before you invest in a PR.
 
-## Tests
+## Getting started
+
+cairn has **no build step** — TypeScript runs directly on **Node ≥ 22.6** via
+`node --experimental-strip-types`. So there's nothing to compile:
 
 ```sh
-npm test               # full suite (unit + non-regression gates), Node-only
-npm run snapshots         # accept intended render changes (regenerate goldens)
-npm run snapshots:report  # preview what a render change would touch, and WHAT KIND
-npm run test:binary       # compile the host binary with Bun and smoke-run it (needs Bun)
+npm install
+npm run cairn -- new -L my.cairn     # scaffold a diagram
+npm run cairn -- build my.cairn      # render it to SVG
 ```
 
-CI runs `npm test` (plus `typecheck` + `lint`) on every push and PR, a build
-gate that rebuilds every example asserting `label overlaps: 0`, **and two build
-smokes that `npm test` can't do**: it compiles the host Bun binary and actually
-runs it (`scripts/smoke-binary.sh` — proves the compiled artifact works, which
-Node tests can't), and it bundles the playground with esbuild (proves the
-browser/node bundles still build). The release workflow smoke-runs the linux
+The only runtime dependency is `elkjs` (the layout engine); the dev toolchain is
+just biome + typescript. Please keep both lists that short — a new dependency is
+permanent maintenance for a solo project.
+
+## The three checks (all must be green)
+
+```sh
+npm run typecheck     # tsc --noEmit — the runtime strips types, so this is the ONLY type check
+npm run lint          # biome (lint-only; don't reformat existing code)
+npm test              # unit tests + the non-regression gates
+```
+
+CI runs all three on every push and PR, plus a gate that rebuilds every example
+asserting `label overlaps: 0`, and — because `npm test` is Node-only — **two
+build smokes it can't do itself**: it compiles the host Bun binary and actually
+runs it (`scripts/smoke-binary.sh`, also `npm run test:binary` locally), and it
+bundles the playground with esbuild. The release workflow smoke-runs the linux
 binary again before publishing, so a broken compile can't ship.
+
+## What you can't break
+
+cairn's value is dense diagrams that stay readable, so a few properties are
+non-negotiable (see `CLAUDE.md` for the full list and rationale):
+
+- **Zero label overlaps** — every example builds with `label overlaps: 0`.
+- **Byte-deterministic output** — same input → identical SVG, everywhere. No
+  `Date.now()`, randomness, locale-formatted numbers, or trig in the render path.
+- **No build step, one runtime dep.** Don't add either.
+- **User text is untrusted** — escape it into SVG: `esc()` for text content,
+  `escAttr()` for attribute values. Ship every security fix with its exploit as a
+  regression test.
+
+Diagnostics are coded, never thrown: user errors are `Diagnostic`s (`E0xxx` /
+`W0xxx`) with a source span and a `help` string. Reuse the scheme.
 
 ## Non-regression testing
 
-cairn's whole value is that its output is stable and readable, so the output
-itself is the thing under test. The tricky part isn't catching changes — it's
-telling a change you **meant** to make (you edited a theme colour) from a
-**regression** (a label silently drifted). The setup below is built to make 
-that distinction.
-
-There are three layers, all run by `npm test`:
+The output *is* the thing under test. The hard part isn't catching a change —
+it's telling a change you **meant** to make (you edited a theme colour) from a
+**regression** (a label silently drifted). Three layers, all run by `npm test`:
 
 ### 1. Structural digest — the whole corpus, one file
 
 `tests/corpus.test.ts` builds **every** example once and reduces each to a
-one-line fingerprint in `tests/__snapshots__/corpus.digest`. Each line splits
-the render into three **independent** hashes:
+one-line fingerprint in `tests/__snapshots__/corpus.digest`, splitting the render
+into three **independent** hashes:
 
 | fingerprint | what it covers | when it changes |
 |---|---|---|
@@ -41,26 +67,24 @@ the render into three **independent** hashes:
 | `color` | every fill / stroke / palette value | a theme/palette edit — usually intended |
 | `text` | the content of every `<text>` | a label / i18n edit |
 
-plus scalars (`n` nodes, `e` edges, `ov` overlaps, `dim` size). Because it's one
-file, full-corpus coverage costs a small, readable git diff — not 70 regenerated
-SVGs.
+plus scalars (`n` nodes, `e` edges, `ov` overlaps, `dim` size). One file, so
+full-corpus coverage costs a small readable git diff — not 70 regenerated SVGs.
 
 ### 2. Example-SVG fidelity — the images can't rot
 
 The SVGs committed under `examples/` (the ones the README shows) are rebuilt and
-compared to the code's current output, so a published diagram can never silently
-fall out of sync with the tool.
+compared to current output, so a published diagram can't silently fall out of
+sync with the code.
 
 ### 3. Full-fidelity canary snapshots
 
 `tests/snapshot.test.ts` keeps a small **curated set** you can eyeball in full:
-one diagram per view (EN+FR), every theme, and the three matrix formats
-(`matrixCsv`/`matrixMd`/`matrixSvg`). Snapshots live in `tests/__snapshots__/`
-(`.snap.svg`, `.csv`, `.md`).
+one diagram per view (EN+FR), every theme, and the three matrix formats. These
+live in `tests/__snapshots__/` (`.snap.svg`, `.csv`, `.md`).
 
 ## Regression, or an intended change? — the workflow
 
-When a gate fires, **don't reflexively regenerate**. First ask what moved:
+When a gate fires, **don't reflexively regenerate.** First ask what moved:
 
 ```sh
 npm run snapshots:report
@@ -75,39 +99,46 @@ It prints the changed examples grouped by kind, e.g.:
 
 Read it against your change's **blast radius**:
 
-- You edited a **theme colour** → expect `colour only`, on exactly the affected
-  themes. `geom` moving too? That's a regression — investigate before accepting.
-- You changed a **layout constant** → expect `⚠ GEOMETRY moved` broadly. That's
-  the loud, dangerous signal you *want* to see for that kind of change.
-- You touched **nothing render-related** but something moved → regression. Find
-  it; do not paper over it.
+- Edited a **theme colour** → expect `colour only`, on exactly the affected
+  themes. `geom` moved too? Regression — investigate before accepting.
+- Changed a **layout constant** → expect `⚠ GEOMETRY moved` broadly. That's the
+  loud signal you *want* for that kind of change.
+- Touched **nothing render-related** but something moved → regression. Find it.
 
-Once you've confirmed the change is intended, **acknowledge it** by regenerating
-and committing the goldens in the *same* change:
+Only once you've confirmed the change is intended, acknowledge it by regenerating
+and committing the goldens **in the same change**:
 
 ```sh
-npm run snapshots            # refreshes the digest, the example SVGs, and the canary snapshots
+npm run snapshots        # refreshes the digest, the example SVGs, and the canary snapshots
 git add tests/__snapshots__ examples
 ```
 
-That commit is the record of what your change did to output — the reviewer sees it next to the code. 
-**Never regenerate to silence a diff you don't understand**; that turns the gate into noise.
+That diff is the record of what your change did to output — reviewers read it
+next to the code. **Never regenerate to silence a diff you don't understand**;
+that turns the gate into noise.
 
-## Why the goldens are "normalized"
+### Why the goldens are "normalized"
 
-Render output is byte-deterministic on one machine, but a single value in the
-output path comes from `Math.hypot` (numbered-flow label placement), which isn't
-guaranteed identical to the last bit across OSes / Node versions. The digest and
-the SVG fidelity check round every decimal to 1 dp before comparing, so sub-pixel
-drift can't cause a false failure — while any change a human would call a
-regression (a ≥0.1px move, a colour, text, or structural change) is still caught.
-This is why the gates are safe on Linux CI even if the goldens were generated on
-macOS.
+Output is byte-deterministic on one machine, but a single value comes from
+`Math.hypot` (numbered-flow label placement), which isn't identical to the last
+bit across OSes / Node versions. The digest and the fidelity check round every
+decimal to 1 dp before comparing, so sub-pixel drift can't cause a false failure
+while any real change (≥0.1px move, colour, text, structure) is still caught —
+which is why the gates are safe on Linux CI even if the goldens came from macOS.
 
-## Adding an example or a canary
+### Adding an example or a canary
 
 Drop a `.cairn` file in `examples/` and it's automatically in the structural
 digest — run `npm run snapshots` to record it. To also give it a full-fidelity
 snapshot, add it to the `CANARIES` / `THEMES` list in `tests/snapshot.test.ts`.
 Keep the canary set small: it's the surface a human reviews in full, and a big
 one just trains you to rubber-stamp.
+
+## Opening a PR
+
+- The checks are green, and if you changed render/layout on purpose the
+  regenerated goldens are committed in the same PR.
+- Keep it focused — one concern per PR keeps the snapshot diff reviewable.
+- Link the PR to an issue
+- Extending the pipeline (a view / diagnostic / theme / style property) starts in
+  `src/model.ts`;

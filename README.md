@@ -1,10 +1,14 @@
-# Cairn, a specialized Software Architecture Diagrams as code tool
+# Cairn, a specialized Software Architecture Diagram as Code tool
 
 *Just as a mountain trail is marked by cairns, software architecture is understood through a series of views, each revealing a different part of the landscape.*
 
 ## In short,
 
 Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
+
+## Status 
+
+Pre-releases available. Waiting for first issues to be resolved and some community feedback before releasing a stable version.
 
 ## Table of contents
 
