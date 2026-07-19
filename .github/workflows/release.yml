@@ -67,7 +67,7 @@ jobs:
             dist/cairn-*
             !dist/*.txt
 
-      - uses: softprops/action-gh-release@7e13ed4ac596a4adf801d3812be5a089356949aa # v3.0.2
+      - uses: softprops/action-gh-release@1c214ab373197cfdedb8c44482a8faf4608192d7 # v3.0.2
         with:
           files: |
             dist/cairn-*
