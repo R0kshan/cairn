@@ -70,7 +70,8 @@ B1   -> EXT1 : "Data sent" [BO1]
 const TEMPLATE_APPLICATION = `diagram application "Diagram title"
 
 # An application diagram shows: applications and their modules, data stores,
-# and application flows — optionally with (protocol, format) and business objects.
+# message queues/brokers (\`queue\`) and application flows. A (protocol, format)
+# tail is recommended on system-to-system flows; labels are optional.
 
 actor-group ACTORS "Role group" {
   actor ACT1 "Main actor"
@@ -80,13 +81,16 @@ application APP1 "Main application" {
   module M1 "Module 1"
 }
 
+queue Q1 "Message broker"
+
 datastore DB1 "Reference database"
 
 external EXT1 "Partner system"
 
-# ---- flows : label (protocol, format) [business objects] ----
+# ---- flows : "label" (protocol, format) — label optional ----
 ACT1 -> M1  : "What the actor does"
-M1   -> DB1 : "Reads reference data" (JDBC)
+M1   -> Q1  : "Publish events" (MQ, JSON)
+Q1   -> DB1 : "Persist events" (JDBC)
 M1   -> EXT1 : "Data sent" (SFTP, XML)
 `;
 
@@ -113,15 +117,17 @@ site DC1 "Main datacenter" {
     server DB1 "Database server" {
       app-instance DB_I "Database"
     }
+    queue BROKER "Message broker"
   }
 }
 
 external PARTNER "Partner platform"
 
-# ---- technical flows (protocol REQUIRED) ----
+# ---- technical flows: protocol REQUIRED (E0240); the label is optional ----
 USERS   -> FRONT_I : "Web access" (HTTPS/443)
 FRONT_I -> CORE_I : "API calls" (HTTPS/8443)
 CORE_I  -> DB_I   : "Queries" (TCP/5432)
+CORE_I  -> BROKER : "Publish events" (TCP/9092)
 CORE_I  -> PARTNER : "Nightly export" (SFTP/22)
 
 # ---- matrice des flux techniques ----

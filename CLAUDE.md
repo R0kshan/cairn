@@ -79,8 +79,9 @@ break the binary — hence `test:binary`.
    is the risky kind; colour-only is usually an intended theme edit. A change
    outside your edit's blast radius is a regression. **Never regenerate to
    silence a diff you don't understand** — that's the one instinct to override.
-4. **Every flow is labelled;** infrastructure flows also carry `protocol/port`
-   (`(HTTPS/443)`) — `E0240`.
+4. **Flow labels are required on the logical & security views** (`E0203`),
+   optional on application & infrastructure. Infrastructure flows must still
+   carry `protocol/port` (`(HTTPS/443)` — `E0240`) even when unlabelled.
 
 ## Failure playbook — symptom → check this first
 
@@ -105,6 +106,9 @@ worth keeping if it grows.
 - **DSL keywords stay English** even for French output (decision D2); only
   rendered chrome localizes via `style { lang: fr }`.
 - The typed schema is a **"view"**, never "profile".
+- **Business objects are logical-view only** (`E0222` elsewhere). Element kinds
+  are per-view (`views` registry) — e.g. `queue` (horizontal-cylinder) lives in
+  application + infrastructure, not logical.
 - SVG output is untrusted-string territory: **`esc()` for text content,
   `escAttr()` (escapes `"`) for attribute values.** Reserved keys
   (`__proto__`/`constructor`/`prototype`) are rejected at parse time. Every

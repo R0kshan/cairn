@@ -37,6 +37,8 @@ application CARE "Customer care" {
   module SELFCARE "Customer\nself-care"
 }
 
+queue EVENTS "Order\nevent bus"
+
 datastore DWH "Data\nwarehouse"
 datastore REF_CUSTOMERS "Customer\nrepository"
 
@@ -44,35 +46,32 @@ external PSP "PSP"
 external CARRIERS "Carrier\nplatforms"
 external ERP "Group\nERP"
 
-# ---- business objects ----
-business-object BO_ORDER "Order" "validated cart, tracked until delivery"
-business-object BO_PAY "Payment" "financial transaction tied to an order"
-business-object BO_PROD "Product" "item published to the catalog"
 
 # ---- flows ----
-MERCH -> CATALOG : "Enrich product\npages"
-CATALOG -> SITE : "Publish the\ncatalog" (API_REST, JSON) [BO_PROD]
-MEDIA -> SITE : "Product\nvisuals" (CDN, HTTPS)
-RULES -> SITE : "Current\nprices" (API_REST, JSON)
-RULES -> CHECKOUT : "Prices guaranteed\nat cart" (API_REST, JSON)
-ERP -> RULES : "Reference purchase\ncosts" (SFTP, CSV)
-SITE -> CHECKOUT : "Go to\ncheckout" (internal)
-APP_MOBILE -> CHECKOUT : "Mobile\ncart" (API_REST, JSON)
-CHECKOUT -> ORDERS : "Create the\norder" (MQ, JSON) [BO_ORDER]
-CHECKOUT -> PAY_ORCH : "Payment\nrequest" (API_REST, JSON) [BO_PAY]
-PAY_ORCH -> FRAUD : "Score the\ntransaction" (internal)
-PAY_ORCH -> PSP : "Authorization and\ncapture" (API_REST, JSON) [BO_PAY]
-PSP -> PAY_ORCH : "Transaction\nstatus" (webhook, JSON)
-PAY_ORCH -> ORDERS : "Payment\nconfirmed" (MQ, JSON)
-ORDERS -> SHIPPING : "Orders to\nship" (internal) [BO_ORDER]
-SHIPPING -> CARRIERS : "Labels and\npickups" (API_REST, JSON)
-CARRIERS -> SHIPPING : "Parcel\ntracking" (webhook, JSON)
-SHIPPING -> SELFCARE : "Customer order\ntracking" (MQ, JSON)
-ADVISOR -> TICKETS : "Handle\ncomplaints"
-TICKETS -> RETURNS : "Approved return\nrequests" (API_REST, JSON)
-RETURNS -> PAY_ORCH : "Refund\norders" (MQ, JSON) [BO_PAY]
-SELFCARE -> REF_CUSTOMERS : "Update customer\nprofile" (JDBC)
-ORDERS -> DWH : "Archive\norders" (batch, parquet) [BO_ORDER]
-SITE -> DWH : "Browsing\nevents" (streaming, avro)
-ACCOUNTANT -> PAY_ORCH : "Reconcile\ncollections"
-ERP -> ORDERS : "Accounting logistics\nstatuses" (MQ, JSON)
+MERCH -> CATALOG
+CATALOG -> SITE (API_REST, JSON)
+MEDIA -> SITE (CDN, HTTPS)
+RULES -> SITE (API_REST, JSON)
+RULES -> CHECKOUT (API_REST, JSON)
+ERP -> RULES (SFTP, CSV)
+SITE -> CHECKOUT (internal)
+APP_MOBILE -> CHECKOUT (API_REST, JSON)
+CHECKOUT -> ORDERS (MQ, JSON)
+CHECKOUT -> PAY_ORCH (API_REST, JSON)
+PAY_ORCH -> FRAUD (internal)
+PAY_ORCH -> PSP (API_REST, JSON)
+PSP -> PAY_ORCH (webhook, JSON)
+PAY_ORCH -> ORDERS (MQ, JSON)
+ORDERS -> SHIPPING (internal)
+SHIPPING -> CARRIERS (API_REST, JSON)
+CARRIERS -> SHIPPING (webhook, JSON)
+SHIPPING -> EVENTS (MQ, JSON)
+EVENTS -> SELFCARE (MQ, JSON)
+ADVISOR -> TICKETS
+TICKETS -> RETURNS (API_REST, JSON)
+RETURNS -> PAY_ORCH (MQ, JSON)
+SELFCARE -> REF_CUSTOMERS (JDBC)
+ORDERS -> DWH (batch, parquet)
+SITE -> DWH (streaming, avro)
+ACCOUNTANT -> PAY_ORCH
+ERP -> ORDERS (MQ, JSON)

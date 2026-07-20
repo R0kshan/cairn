@@ -134,6 +134,8 @@ snapshot, add it to the `CANARIES` / `THEMES` list in `tests/snapshot.test.ts`.
 Keep the canary set small: it's the surface a human reviews in full, and a big
 one just trains you to rubber-stamp.
 
+Examples can be regenerated with : `npm run examples`
+
 ## Opening a PR
 
 - The checks are green, and if you changed render/layout on purpose the

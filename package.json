@@ -1,6 +1,6 @@
 {
   "name": "cairn",
-  "version": "1.0.0-RC05",
+  "version": "1.0.0-RC06",
   "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
   "type": "module",
   "bin": {
@@ -22,7 +22,8 @@
     "format": "biome format --write src tests",
     "typecheck": "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
-    "test:binary": "bash scripts/smoke-binary.sh"
+    "test:binary": "bash scripts/smoke-binary.sh",
+    "examples": "bash scripts/render-examples.sh"
   },
   "dependencies": {
     "elkjs": "^0.11.1"

@@ -202,6 +202,7 @@ export interface View {
   legendFlowLabel: string;
   legendFlowLabelFr: string;
   flowLabelRequired: { code: string; message: string; help: string } | null;
+  businessObjects?: boolean;              // whether `business-object` / `[refs]` are part of this view (logical only)
   flowTechRequired: { code: string; message: string; help: string } | null;
   flowTechRecommended: { code: string; message: string; help: string } | null; // warning, skips actor flows
   nesting: NestingRule[];
@@ -240,6 +241,7 @@ export const logicalView: View = {
   legendFlowLabelFr: 'Flux fonctionnel (libellé = données échangées)',
   flowTechRequired: null,
   flowTechRecommended: null,
+  businessObjects: true, // business objects are a logical-view concept ("what data circulates")
   partitions: { 'actor-group': 0, system: 1, external: 2 },
   flowLabelRequired: {
     code: 'E0203',
@@ -284,25 +286,23 @@ export const logicalView: View = {
 
 export const applicationView: View = {
   name: 'application',
-  kinds: ['actor-group', 'actor', 'application', 'module', 'datastore', 'external'],
+  kinds: ['actor-group', 'actor', 'application', 'module', 'queue', 'datastore', 'external'],
   containerKinds: ['actor-group', 'application', 'external'],
-  partitions: { 'actor-group': 0, application: 1, datastore: 1, external: 2 },
+  partitions: { 'actor-group': 0, application: 1, queue: 1, datastore: 1, external: 2 },
   legendNames: {
     'actor-group': 'Actor group', actor: 'Actor', application: 'Application',
-    module: 'Application module', datastore: 'Datastore / registry', external: 'External system',
+    module: 'Application module', queue: 'Message queue / broker',
+    datastore: 'Datastore / registry', external: 'External system',
   },
   legendNamesFr: {
     'actor-group': "Groupe d'acteurs", actor: 'Acteur', application: 'Application',
-    module: 'Module applicatif', datastore: 'Entrepôt / référentiel', external: 'Système externe',
+    module: 'Module applicatif', queue: 'File de messages / broker',
+    datastore: 'Entrepôt / référentiel', external: 'Système externe',
   },
   bandTitles: { flows: 'FLOWS', objects: 'BUSINESS OBJECTS', legend: 'LEGEND' },
   legendFlowLabel: 'Application flow — (protocol, format) under the label',
   legendFlowLabelFr: 'Flux applicatif — (protocole, format) sous le libellé',
-  flowLabelRequired: {
-    code: 'E0203',
-    message: 'flow without a label',
-    help: 'add a label describing the exchange: `A -> B : "…" (HTTP, JSON)`',
-  },
+  flowLabelRequired: null, // labels are optional on the application view (issue #19)
   flowTechRequired: null,
   // C4 container-diagram practice: inter-process relationships should carry
   // their technology/protocol. Warning (not error); human/actor flows exempt.
@@ -321,13 +321,14 @@ export const applicationView: View = {
   ],
   minCounts: [],
   isolatedWarn: {
-    code: 'W0510', kinds: ['module', 'datastore'],
+    code: 'W0510', kinds: ['module', 'queue', 'datastore'],
     message: 'isolated element: no incoming or outgoing flow',
   },
   defaults: {
     'actor-group': { fill: '#eef4fb', stroke: { color: '#7a9cc4', style: 'dashed', width: 1.2 } },
     application: { fill: '#e8f1f8', stroke: { color: '#5b8db8', style: 'solid', width: 1.2 } },
     module: { fill: '#ffffff', stroke: { color: '#5b7a99', style: 'solid', width: 1.3 } },
+    queue: { fill: '#f3eef8', stroke: { color: '#8a6fae', style: 'solid', width: 1.3 } },
     datastore: { fill: '#f3eef8', stroke: { color: '#8a6fae', style: 'solid', width: 1.3 } },
     external: { fill: '#f0eef5', stroke: { color: '#9187b3', style: 'dashed', width: 1.2 } },
     actor: {},
@@ -336,6 +337,7 @@ export const applicationView: View = {
     'actor-group': { fill: '#232a33', stroke: { color: '#5c7fa8', style: 'dashed', width: 1.2 } },
     application: { fill: '#1f2a33', stroke: { color: '#4a7ba6', style: 'solid', width: 1.2 } },
     module: { fill: '#252a31', stroke: { color: '#5f7f9e', style: 'solid', width: 1.3 } },
+    queue: { fill: '#2a2433', stroke: { color: '#7a5f9e', style: 'solid', width: 1.3 } },
     datastore: { fill: '#2a2433', stroke: { color: '#7a5f9e', style: 'solid', width: 1.3 } },
     external: { fill: '#2a2833', stroke: { color: '#7d72a0', style: 'dashed', width: 1.2 } },
     actor: {},
@@ -347,7 +349,7 @@ export const infrastructureView: View = {
   // `actor` = the consumer/user of the infrastructure (C4 Person). It has no
   // network location, so it is not a container and needs no zone; it reads on
   // the entry edge, distinct from `external` third-party systems on the exit edge.
-  kinds: ['actor', 'site', 'network-zone', 'server', 'app-instance', 'external'],
+  kinds: ['actor', 'site', 'network-zone', 'server', 'app-instance', 'queue', 'external'],
   containerKinds: ['site', 'network-zone', 'server'],
   partitions: { external: 2 },
   partitionByOrder: true, // zones/sites band left->right in declaration order
@@ -355,21 +357,17 @@ export const infrastructureView: View = {
   legendNames: {
     actor: 'User / consumer',
     site: 'Site / data center', 'network-zone': 'Network zone', server: 'Server / VM',
-    'app-instance': 'Deployed application', external: 'External system',
+    'app-instance': 'Deployed application', queue: 'Message queue / broker', external: 'External system',
   },
   legendNamesFr: {
     actor: 'Utilisateur / consommateur',
     site: 'Site / centre de données', 'network-zone': 'Zone réseau', server: 'Serveur / VM',
-    'app-instance': 'Application déployée', external: 'Système externe',
+    'app-instance': 'Application déployée', queue: 'File de messages / broker', external: 'Système externe',
   },
   bandTitles: { flows: 'FLOWS', objects: 'BUSINESS OBJECTS', legend: 'LEGEND' },
   legendFlowLabel: 'Technical flow (protocol, port)',
   legendFlowLabelFr: 'Flux technique (protocole, port)',
-  flowLabelRequired: {
-    code: 'E0203',
-    message: 'flow without a label',
-    help: 'add a label describing the exchange: `A -> B : "…" (HTTPS/443)`',
-  },
+  flowLabelRequired: null, // labels are optional on the infrastructure view (issue #19); protocol stays required (E0240)
   flowTechRecommended: null,
   flowTechRequired: {
     code: 'E0240',
@@ -389,7 +387,7 @@ export const infrastructureView: View = {
   ],
   minCounts: [],
   isolatedWarn: {
-    code: 'W0510', kinds: ['app-instance'],
+    code: 'W0510', kinds: ['app-instance', 'queue'],
     message: 'isolated element: no incoming or outgoing flow',
   },
   defaults: {
@@ -398,6 +396,7 @@ export const infrastructureView: View = {
     'network-zone': { fill: '#ecf3ec', stroke: { color: '#6d9a6d', style: 'dashed', width: 1.2 } },
     server: { fill: '#ffffff', stroke: { color: '#55606b', style: 'solid', width: 1.5 } },
     'app-instance': { fill: '#fff7e6', stroke: { color: '#b08d2a', style: 'solid', width: 1.2 } },
+    queue: { fill: '#f3eef8', stroke: { color: '#8a6fae', style: 'solid', width: 1.3 } },
     external: { fill: '#f0eef5', stroke: { color: '#9187b3', style: 'dashed', width: 1.2 } },
   },
   defaultsDark: {
@@ -406,6 +405,7 @@ export const infrastructureView: View = {
     'network-zone': { fill: '#20291f', stroke: { color: '#5f8a5f', style: 'dashed', width: 1.2 } },
     server: { fill: '#252a31', stroke: { color: '#6b7885', style: 'solid', width: 1.5 } },
     'app-instance': { fill: '#2e2717', stroke: { color: '#b08d2a', style: 'solid', width: 1.2 } },
+    queue: { fill: '#2a2433', stroke: { color: '#7a5f9e', style: 'solid', width: 1.3 } },
     external: { fill: '#2a2833', stroke: { color: '#7d72a0', style: 'dashed', width: 1.2 } },
   },
 };
@@ -523,6 +523,7 @@ const leaf = (fill: string, stroke: string, width = 1.3): StyleProps =>
 const KIND_ROLE: Record<string, string> = {
   'actor-group': 'actorGroup', actor: 'actor', system: 'system', application: 'application',
   module: 'leaf', layer: 'layer', block: 'leaf', external: 'external', datastore: 'datastore',
+  queue: 'datastore', // a message queue is a data conduit — shares the datastore palette, distinguished by its horizontal-cylinder shape
   site: 'site', 'network-zone': 'networkZone', server: 'server', 'app-instance': 'appInstance',
   'security-node': 'securityNode', asset: 'leaf',
 };
@@ -642,6 +643,7 @@ export const explanations: Record<string, string> = {
   W0540: 'C4 container-diagram practice: inter-process relationships should be labelled with their technology/protocol ("the how, not just the what"). Human/actor interactions are exempt. Add `(API_REST, JSON)` after the label, or ignore if the diagram is intentionally functional-only.',
   E0240: 'The infrastructure view requires every flow to carry its protocol (and port if relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)` after the label.',
   E0221: 'Unknown business-object reference: a flow carries `[AN_ID]` that no `business-object` declaration defines. Declare it once (`business-object ID "Name" "description"`) so the registry and the chips stay consistent.',
+  E0222: 'Business objects are a logical-view concept (what data circulates between functional blocks). They are not part of the application, infrastructure, or security views — model the exchange with the flow label and technical tail instead. Remove the `business-object` declaration and its `[refs]`, or switch the diagram to `logical`.',
   W0530: 'Completeness check: a declared business object is never carried by any flow — either connect it to the flows that transport it, or remove it from this view.',
   E0217: 'A sensitive asset must sit inside a trust zone: its protection level is defined by the zone that contains it.',
   E0218: 'A security node (firewall, WAF, bastion, reverse proxy) lives inside a trust zone — typically the exposed zone whose traffic it filters.',

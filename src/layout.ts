@@ -140,12 +140,17 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       // compact wraps labels narrower (unless a candidate already sets a wrap),
       // trading a bit of height for much less width in the inter-layer gaps.
       const wrap = opts?.labelWrap ?? (compact ? COMPACT_WRAP : undefined);
-      const text = f.label && wrap ? wrapText(f.label, wrap) : f.label;
+      const raw = f.label && wrap ? wrapText(f.label, wrap) : f.label;
       const chips = (f.objects ?? []).map(o => boName.get(o.id) ?? o.id);
       const tech = techText(f.tech);
+      // No prose label? Promote the protocol tail to BE the label — same font,
+      // same on-the-arrow placement, same overlap resolution — so it never
+      // detaches. With a label, the tail stays a sub-line beneath it (subTech).
+      const text = raw || (tech ? tech : '');
+      const subTech = raw ? tech : undefined;
       return {
         id: f.id, sources: [f.from], targets: [f.to],
-        labels: text || chips.length || tech ? [{ text: text ?? '', ...flowLabelBox(text ?? '', chips, FS_EDGE, tech, FS_SCALE) }] : [],
+        labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, subTech, FS_SCALE) }] : [],
       };
     }),
   });

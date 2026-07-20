@@ -192,6 +192,16 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       lines.forEach((l, i) => {
         out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>\n`;
       });
+    } else if (n.kind === 'queue') {
+      // horizontal cylinder (message queue / broker) — a capsule outline plus a
+      // left end-rim ellipse for the 3D read, distinct from the upright datastore.
+      const rx = 8, c = s.stroke?.color ?? pal.nodeStroke, f = s.fill ?? pal.nodeFill;
+      out += `<path d="M ${n.x + rx} ${n.y} h ${n.w - 2 * rx} a ${rx} ${n.h / 2} 0 0 1 0 ${n.h} h ${-(n.w - 2 * rx)} a ${rx} ${n.h / 2} 0 0 1 0 ${-n.h}" fill="${f}" stroke="${c}" stroke-width="1.3"/>\n`;
+      out += `<ellipse cx="${n.x + rx}" cy="${n.y + n.h / 2}" rx="${rx}" ry="${n.h / 2}" fill="${f}" stroke="${c}" stroke-width="1.3"/>\n`;
+      const cy = n.y + n.h / 2 - ((lines.length - 1) * (FS_NODE + 2)) / 2 + 4;
+      lines.forEach((l, i) => {
+        out += `<text x="${n.x + rx + (n.w - rx) / 2}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>\n`;
+      });
     } else {
       const da = dashArray(s.stroke?.style);
       out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}" stroke-width="${s.stroke?.width ?? 1.3}"${da ? ` stroke-dasharray="${da}"` : ''}/>\n`;
@@ -232,9 +242,11 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       lines.forEach((line, i) => {
         out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + i * (FS_EDGE + 3)}" font-size="${FS_EDGE}" text-anchor="middle" fill="${labelColor}" font-style="italic" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>\n`;
       });
-      // technical sub-line (protocol, format) — space reserved at layout time
+      // technical sub-line (protocol, format) — space reserved at layout time.
+      // Only when the flow has a prose label; a label-less flow renders its
+      // protocol AS the label above (promoted in layout), so no sub-line here.
       const tech = techText(flowById.get(l.flowId)?.tech);
-      if (tech) {
+      if (tech && flowById.get(l.flowId)?.label) {
         out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + lines.length * (FS_EDGE + 3)}" font-size="${A.tech}" text-anchor="middle" fill="${pal.techText}" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>\n`;
       }
       // business-object chips (space already reserved at layout time)

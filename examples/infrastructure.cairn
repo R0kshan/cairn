@@ -16,6 +16,7 @@ site DC "Main data center" {
     server VM_CRM "CRM VM" {
       app-instance CRM_I "CRM"
     }
+    queue KAFKA "Message\nbroker"
   }
   network-zone LAN_DATA "Data zone" {
     server DB_SRV "Database\nserver" {
@@ -34,6 +35,8 @@ WAF_I -> BILL_I : "Filtered billing\ntraffic" (HTTPS/8443)
 WAF_I -> CRM_I : "Filtered CRM\ntraffic" (HTTPS/8444)
 BILL_I -> PG_I : "Read/write\nbilling data" (TCP/5432)
 CRM_I -> PG_I : "Read/write\ncustomer data" (TCP/5432)
+BILL_I -> KAFKA : "Publish billing\nevents" (TCP/9092)
+KAFKA -> CRM_I : "Consume billing\nevents" (TCP/9092)
 BILL_I -> SFTP_GW : "Drop invoices\nto transmit" (SFTP/22)
 SFTP_GW -> EDI : "Partner\ntransfers" (AS4/443)
 DB_SRV -> BACKUP : "Daily\nbackups" (TCP/9092)

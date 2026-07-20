@@ -38,6 +38,8 @@ application CARE "Relation client" {
   module SELFCARE "Espace client\nautonome"
 }
 
+queue EVENTS "Bus d'événements\ncommandes"
+
 datastore DWH "Entrepôt de\ndonnées"
 datastore REF_CUSTOMERS "Référentiel\nclients"
 
@@ -45,35 +47,32 @@ external PSP "PSP"
 external CARRIERS "Plateformes\ntransporteurs"
 external ERP "ERP\ngroupe"
 
-# ---- objets métier ----
-business-object BO_ORDER "Commande" "panier validé, suivi jusqu'à la livraison"
-business-object BO_PAY "Paiement" "transaction financière liée à une commande"
-business-object BO_PROD "Produit" "article publié au catalogue"
 
 # ---- flux ----
-MERCH -> CATALOG : "Enrichir les fiches\nproduit"
-CATALOG -> SITE : "Publier le\ncatalogue" (API_REST, JSON) [BO_PROD]
-MEDIA -> SITE : "Visuels\nproduit" (CDN, HTTPS)
-RULES -> SITE : "Prix en\ncours" (API_REST, JSON)
-RULES -> CHECKOUT : "Prix garantis\nau panier" (API_REST, JSON)
-ERP -> RULES : "Coûts d'achat de\nréférence" (SFTP, CSV)
-SITE -> CHECKOUT : "Accéder au tunnel\nd'achat" (internal)
-APP_MOBILE -> CHECKOUT : "Panier\nmobile" (API_REST, JSON)
-CHECKOUT -> ORDERS : "Créer la\ncommande" (MQ, JSON) [BO_ORDER]
-CHECKOUT -> PAY_ORCH : "Demande de\npaiement" (API_REST, JSON) [BO_PAY]
-PAY_ORCH -> FRAUD : "Scorer la\ntransaction" (internal)
-PAY_ORCH -> PSP : "Autorisation et\ncapture" (API_REST, JSON) [BO_PAY]
-PSP -> PAY_ORCH : "Statut de la\ntransaction" (webhook, JSON)
-PAY_ORCH -> ORDERS : "Paiement\nconfirmé" (MQ, JSON)
-ORDERS -> SHIPPING : "Commandes à\nexpédier" (internal) [BO_ORDER]
-SHIPPING -> CARRIERS : "Étiquettes et\nenlèvements" (API_REST, JSON)
-CARRIERS -> SHIPPING : "Suivi des\ncolis" (webhook, JSON)
-SHIPPING -> SELFCARE : "Suivi de commande\nclient" (MQ, JSON)
-ADVISOR -> TICKETS : "Traiter les\nréclamations"
-TICKETS -> RETURNS : "Demandes de retour\napprouvées" (API_REST, JSON)
-RETURNS -> PAY_ORCH : "Rembourser les\ncommandes" (MQ, JSON) [BO_PAY]
-SELFCARE -> REF_CUSTOMERS : "Mettre à jour le profil\nclient" (JDBC)
-ORDERS -> DWH : "Archiver les\ncommandes" (batch, parquet) [BO_ORDER]
-SITE -> DWH : "Événements de\nnavigation" (streaming, avro)
-ACCOUNTANT -> PAY_ORCH : "Rapprocher les\nencaissements"
-ERP -> ORDERS : "Statuts logistiques\ncomptables" (MQ, JSON)
+MERCH -> CATALOG
+CATALOG -> SITE (API_REST, JSON)
+MEDIA -> SITE (CDN, HTTPS)
+RULES -> SITE (API_REST, JSON)
+RULES -> CHECKOUT (API_REST, JSON)
+ERP -> RULES (SFTP, CSV)
+SITE -> CHECKOUT (internal)
+APP_MOBILE -> CHECKOUT (API_REST, JSON)
+CHECKOUT -> ORDERS (MQ, JSON)
+CHECKOUT -> PAY_ORCH (API_REST, JSON)
+PAY_ORCH -> FRAUD (internal)
+PAY_ORCH -> PSP (API_REST, JSON)
+PSP -> PAY_ORCH (webhook, JSON)
+PAY_ORCH -> ORDERS (MQ, JSON)
+ORDERS -> SHIPPING (internal)
+SHIPPING -> CARRIERS (API_REST, JSON)
+CARRIERS -> SHIPPING (webhook, JSON)
+SHIPPING -> EVENTS (MQ, JSON)
+EVENTS -> SELFCARE (MQ, JSON)
+ADVISOR -> TICKETS
+TICKETS -> RETURNS (API_REST, JSON)
+RETURNS -> PAY_ORCH (MQ, JSON)
+SELFCARE -> REF_CUSTOMERS (JDBC)
+ORDERS -> DWH (batch, parquet)
+SITE -> DWH (streaming, avro)
+ACCOUNTANT -> PAY_ORCH
+ERP -> ORDERS (MQ, JSON)

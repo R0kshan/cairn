@@ -188,38 +188,62 @@ export function validate(model: Model): Diagnostic[] {
     }
   }
 
-  // business objects: unique ids, valid refs, usage completeness
-  const boIds = new Map(model.businessObjects.map(b => [b.id, b]));
-  for (const b of model.businessObjects) {
-    if (model.index.has(b.id)) {
+  // business objects belong to the logical view only (issue #19). In any other
+  // view, a declaration or a `[ref]` on a flow is an error — nothing else about
+  // them is validated there.
+  if (!view.businessObjects) {
+    for (const b of model.businessObjects) {
       diags.push({
-        code: 'E0202', severity: 'error',
-        message: `duplicate identifier \`${b.id}\` (already used by an element)`,
-        span: b.idSpan, help: 'business objects share the flat ID namespace (decision D1)',
-      });
-    }
-  }
-  const carried = new Set<string>();
-  for (const f of model.flows) {
-    for (const o of f.objects ?? []) {
-      if (!boIds.has(o.id)) {
-        diags.push({
-          code: 'E0221', severity: 'error',
-          message: `unknown business-object reference \`${o.id}\``,
-          span: o.span,
-          help: nearest(o.id, [...boIds.keys()]) ? `did you mean \`${nearest(o.id, [...boIds.keys()])}\`?` : 'declare it: `business-object ' + o.id + ' "Name" "description"`',
-        });
-      } else carried.add(o.id);
-    }
-  }
-  for (const b of model.businessObjects) {
-    if (!carried.has(b.id)) {
-      diags.push({
-        code: 'W0530', severity: 'warning',
-        message: `business object \`${b.id}\` is never carried by any flow`,
+        code: 'E0222', severity: 'error',
+        message: `business objects are not part of the \`${view.name}\` view (\`${b.id}\`)`,
         span: b.idSpan,
-        note: `completeness check of the \`${view.name}\` view`,
+        help: 'business objects belong to the `logical` view — remove it, or model the exchange with the flow label',
       });
+    }
+    for (const f of model.flows) {
+      for (const o of f.objects ?? []) {
+        diags.push({
+          code: 'E0222', severity: 'error',
+          message: `business-object reference \`[${o.id}]\` is not part of the \`${view.name}\` view`,
+          span: o.span,
+          help: 'drop the `[…]` reference — business objects are a logical-view feature',
+        });
+      }
+    }
+  } else {
+    // business objects: unique ids, valid refs, usage completeness
+    const boIds = new Map(model.businessObjects.map(b => [b.id, b]));
+    for (const b of model.businessObjects) {
+      if (model.index.has(b.id)) {
+        diags.push({
+          code: 'E0202', severity: 'error',
+          message: `duplicate identifier \`${b.id}\` (already used by an element)`,
+          span: b.idSpan, help: 'business objects share the flat ID namespace (decision D1)',
+        });
+      }
+    }
+    const carried = new Set<string>();
+    for (const f of model.flows) {
+      for (const o of f.objects ?? []) {
+        if (!boIds.has(o.id)) {
+          diags.push({
+            code: 'E0221', severity: 'error',
+            message: `unknown business-object reference \`${o.id}\``,
+            span: o.span,
+            help: nearest(o.id, [...boIds.keys()]) ? `did you mean \`${nearest(o.id, [...boIds.keys()])}\`?` : 'declare it: `business-object ' + o.id + ' "Name" "description"`',
+          });
+        } else carried.add(o.id);
+      }
+    }
+    for (const b of model.businessObjects) {
+      if (!carried.has(b.id)) {
+        diags.push({
+          code: 'W0530', severity: 'warning',
+          message: `business object \`${b.id}\` is never carried by any flow`,
+          span: b.idSpan,
+          note: `completeness check of the \`${view.name}\` view`,
+        });
+      }
     }
   }
 

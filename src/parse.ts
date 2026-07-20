@@ -139,7 +139,13 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
       if (at('colon')) {
         next();
         if (at('str')) flow.label = next().text;
-        else err('flow label expected after `:`', peek().span, 'e.g. `A -> B : "Quote request"`');
+        // The label is optional: a bare `:` before the `(tail)`, `[refs]`,
+        // `{ style }`, or end of line is allowed (e.g. `A -> B : (HTTPS/443)`).
+        // Whether a missing label is an error is a per-view rule (E0203), not a
+        // grammar rule. A stray non-label token after `:` is still flagged.
+        else if (!at('lparen') && !at('lbrack') && !at('lbrace') && !at('nl') && !at('rbrace') && !at('eof')) {
+          err('flow label expected after `:`', peek().span, 'give a `"label"`, or omit it: `A -> B (HTTPS/443)`');
+        }
       }
       if (at('lparen')) { // technical tail: (PROTOCOL, FORMAT)
         const open = next();

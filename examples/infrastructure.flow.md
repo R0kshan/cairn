@@ -7,6 +7,8 @@
 | 3 | WAF (DMZ) | CRM (Application zone) | HTTPS | 8444 | Filtered CRM traffic |
 | 4 | Billing (Application zone) | PostgreSQL (Data zone) | TCP | 5432 | Read/write billing data |
 | 5 | CRM (Application zone) | PostgreSQL (Data zone) | TCP | 5432 | Read/write customer data |
-| 6 | Billing (Application zone) | Transfer gateway (DMZ) | SFTP | 22 | Drop invoices to transmit |
-| 7 | Transfer gateway (DMZ) | Partner EDI platform | AS4 | 443 | Partner transfers |
-| 8 | Database server (Data zone) | Backup server (Data zone) | TCP | 9092 | Daily backups |
+| 6 | Billing (Application zone) | Message broker (Application zone) | TCP | 9092 | Publish billing events |
+| 7 | Message broker (Application zone) | CRM (Application zone) | TCP | 9092 | Consume billing events |
+| 8 | Billing (Application zone) | Transfer gateway (DMZ) | SFTP | 22 | Drop invoices to transmit |
+| 9 | Transfer gateway (DMZ) | Partner EDI platform | AS4 | 443 | Partner transfers |
+| 10 | Database server (Data zone) | Backup server (Data zone) | TCP | 9092 | Daily backups |

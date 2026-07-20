@@ -35,10 +35,11 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0101–E0104 | error | Syntax / style-value errors |
 | E0200 / E0201 | error | Unknown diagram type / element kind (with did-you-mean) |
 | E0202 | error | Duplicate identifier (flat ID namespace, shared with business objects) |
-| E0203 | error | Flow without a label |
+| E0203 | error | Flow without a label (logical & security views only — optional on application/infrastructure) |
 | E0210–E0218 | error | Nesting violations, per view (blocks / actors / layers / modules / servers / app-instances / network-zones / assets / security-nodes) |
 | E0220 / E0221 | error | Unknown flow reference / unknown business-object reference |
-| E0240 | error | Infrastructure flow without a protocol (required in this view) |
+| E0222 | error | Business object used outside the logical view (business objects are logical-view only) |
+| E0240 | error | Infrastructure flow without a protocol (required in this view, even when the label is omitted) |
 | E0250 | error | Trust zone without a valid sensitivity level (security view) |
 | W0501 | warning | No actor declared (logical) |
 | W0502 | warning | Element without a label (its ID is displayed as-is) |

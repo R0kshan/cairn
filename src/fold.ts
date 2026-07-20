@@ -10,7 +10,7 @@
 
 import type { Model, Element, View } from './model.ts';
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from './layout.ts';
-import { measure, wrapText, nodeSize, flowLabelBox, fontSizes } from './text.ts';
+import { measure, wrapText, nodeSize, flowLabelBox, techText, fontSizes } from './text.ts';
 
 const PAD_TOP = 30, PAD = 12;
 const LANE_STEP = 10;   // horizontal spacing of vertical lanes
@@ -94,7 +94,8 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
       edges: [
         ...internalFlows.filter(f => topOf.get(f.from) === sys).map(f => {
           if (numbered) return { id: f.id, sources: [f.from], targets: [f.to], labels: [numLabel(f)] };
-          const text = f.label ? wrapText(f.label, LABEL_WRAP + 4) : '';
+          // No prose label → the protocol tail becomes the label (see layout.ts).
+          const text = f.label ? wrapText(f.label, LABEL_WRAP + 4) : techText(f.tech);
           const chips = chipsOf(f);
           return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, undefined, FS_SCALE) }] : [] };
         }),
@@ -291,7 +292,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
     //  - direct routes: pinned above the final approach segment (target end)
     let label: SceneLabel | undefined;
     const chips = chipsOf(f);
-    const text = numbered ? numLabel(f).text : (f.label ? wrapText(f.label, LABEL_WRAP) : (chips.length ? '' : undefined));
+    const text = numbered ? numLabel(f).text : (f.label ? wrapText(f.label, LABEL_WRAP) : (techText(f.tech) || (chips.length ? '' : undefined)));
     if (text !== undefined) {
       const m = numbered ? { width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) } : flowLabelBox(text, chips, FS_EDGE, undefined, FS_SCALE);
       if (pts.length >= 6) {
