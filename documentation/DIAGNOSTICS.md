@@ -35,7 +35,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0101–E0104 | error | Syntax / style-value errors |
 | E0200 / E0201 | error | Unknown diagram type / element kind (with did-you-mean) |
 | E0202 | error | Duplicate identifier (flat ID namespace, shared with business objects) |
-| E0203 | error | Flow without a label (logical & security views only — optional on application/infrastructure) |
+| E0203 | error | Flow without a label |
 | E0210–E0218 | error | Nesting violations, per view (blocks / actors / layers / modules / servers / app-instances / network-zones / assets / security-nodes) |
 | E0220 / E0221 | error | Unknown flow reference / unknown business-object reference |
 | E0222 | error | Business object used outside the logical view (business objects are logical-view only) |

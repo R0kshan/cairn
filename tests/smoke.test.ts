@@ -384,8 +384,6 @@ test('security: a reserved key cannot be used as a per-kind style target', () =>
   assert.ok(diags.some(d => d.severity === 'error' && /reserved/.test(d.message)));
 });
 
-// ---------- issue #19: DSL coherence (business objects / queue / optional labels) ----------
-
 test('business objects are logical-only: allowed in logical, E0222 elsewhere', () => {
   const decl = 'business-object BO "Order" "an order"\n';
   // logical: fine
