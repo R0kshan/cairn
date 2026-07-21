@@ -10,6 +10,10 @@ site DC1 "Main data center" {
     server SFTP_GW "Transfer\ngateway"
   }
   network-zone APPS1 "Application zone" {
+    gateway AUTH_GW "Gateway"
+    auth OAUTH2 "OAuth2\nproxy"
+    idp IDP "LDAP / IdP"
+
     server K8S1 "K8s cluster\nfront" {
       app-instance FRONT_I "Sales front"
       app-instance CHECKOUT_I "Checkout funnel"
@@ -54,6 +58,9 @@ OMS_I -> PG_I : "Read/write\norders" (TCP/5432)
 PAYHUB_I -> PG_I : "Read/write\ntransactions" (TCP/5432)
 OMS_I -> KAFKA_I : "Order\nevents" (TCP/9092)
 FRONT_I -> KAFKA_I : "Browsing\nevents" (TCP/9092)
+OMS_I -> AUTH_GW : "Authenticate\nAPI calls" (HTTPS/8443)
+AUTH_GW -> OAUTH2 : "Forward" (HTTP/80)
+OAUTH2 -> IDP : "Verify tokens" (LDAPS/636)
 OMS_I -> SFTP_GW : "Carrier\nfiles" (SFTP/22)
 SFTP_GW -> CARRIERS_EXT : "Logistics\nexchanges" (AS4/443)
 PG_I -> PG2_I : "Async\nreplication" (TCP/5432)

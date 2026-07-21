@@ -3,10 +3,13 @@
 | N° | Source | Destination | Protocole | Port | Nature du flux |
 |---|---|---|---|---|---|
 | 1 | Postes utilisateurs | WAF (DMZ) | HTTPS | 443 | Accès application web |
-| 2 | WAF (DMZ) | Facturation (Zone applicative) | HTTPS | 8443 | Trafic facturation filtré |
-| 3 | WAF (DMZ) | CRM (Zone applicative) | HTTPS | 8444 | Trafic CRM filtré |
-| 4 | Facturation (Zone applicative) | PostgreSQL (Zone de données) | TCP | 5432 | Lecture/écriture données facturation |
-| 5 | CRM (Zone applicative) | PostgreSQL (Zone de données) | TCP | 5432 | Lecture/écriture données clients |
-| 6 | Facturation (Zone applicative) | Passerelle de transfert (DMZ) | SFTP | 22 | Dépôt des factures à transmettre |
-| 7 | Passerelle de transfert (DMZ) | Plateforme EDI partenaire | AS4 | 443 | Transferts partenaires |
-| 8 | Serveur de base de données (Zone de données) | Serveur de sauvegarde (Zone de données) | TCP | 9092 | Sauvegardes quotidiennes |
+| 2 | WAF (DMZ) | Gateway (Zone applicative) | HTTPS | 443 | Routage vers le backend |
+| 3 | Gateway (Zone applicative) | OAuth2 proxy (Zone applicative) | HTTP | 80 | Vérifier tokens |
+| 4 | OAuth2 proxy (Zone applicative) | LDAP / IdP (Zone applicative) | LDAPS | 636 | Valider l'identité |
+| 5 | Gateway (Zone applicative) | Facturation (Zone applicative) | HTTPS | 8443 | API facturation |
+| 6 | Gateway (Zone applicative) | CRM (Zone applicative) | HTTPS | 8444 | API CRM |
+| 7 | Facturation (Zone applicative) | PostgreSQL (Zone de données) | TCP | 5432 | Lecture/écriture données facturation |
+| 8 | CRM (Zone applicative) | PostgreSQL (Zone de données) | TCP | 5432 | Lecture/écriture données clients |
+| 9 | Facturation (Zone applicative) | Passerelle de transfert (DMZ) | SFTP | 22 | Dépôt des factures à transmettre |
+| 10 | Passerelle de transfert (DMZ) | Plateforme EDI partenaire | AS4 | 443 | Transferts partenaires |
+| 11 | Serveur de base de données (Zone de données) | Serveur de sauvegarde (Zone de données) | TCP | 9092 | Sauvegardes quotidiennes |

@@ -9,6 +9,9 @@ site DC1 "Main data center" {
     server SFTP_GW "Transfer\ngateway"
   }
   network-zone APPS1 "Application zone" {
+    gateway AUTH_GW "Gateway"
+    auth OAUTH2 "OAuth2\nproxy"
+    idp IDP "LDAP / IdP"
     server K8S1 "K8s cluster\nfront" {
       app-instance FRONT_I "Sales front"
       app-instance CHECKOUT_I "Checkout funnel"
@@ -44,8 +47,11 @@ external CARRIERS_EXT "Carrier\nplatforms"
 # ---- technical flows (protocol REQUIRED) ----
 USERS -> FW_WAF : "Client web\ntraffic" (HTTPS/443)
 FW_WAF -> NGINX_I : "Filtered\ntraffic" (HTTPS/443)
-NGINX_I -> FRONT_I : "Front\nrouting" (HTTPS/8443)
-NGINX_I -> CHECKOUT_I : "Checkout\nrouting" (HTTPS/8444)
+NGINX_I -> AUTH_GW : "Route to backend" (HTTPS/443)
+AUTH_GW -> OAUTH2 : "Verify tokens" (HTTP/80)
+OAUTH2 -> IDP : "Validate identity" (LDAPS/636)
+AUTH_GW -> FRONT_I : "Sales front" (HTTPS/8443)
+AUTH_GW -> CHECKOUT_I : "Checkout\nfunnel" (HTTPS/8444)
 FRONT_I -> OMS_I : "Orders\nAPI" (HTTPS/8443)
 CHECKOUT_I -> PAYHUB_I : "Payment\nAPI" (HTTPS/8445)
 PAYHUB_I -> PSP_EXT : "Authorization and\ncapture" (HTTPS/443)

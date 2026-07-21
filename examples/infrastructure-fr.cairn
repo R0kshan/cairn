@@ -12,6 +12,9 @@ site DC "Centre de données principal" {
     server SFTP_GW "Passerelle\nde transfert"
   }
   network-zone LAN_APP "Zone applicative" {
+    gateway AUTH_GW "Gateway"
+    auth OAUTH2 "OAuth2\nproxy"
+    idp IDP "LDAP / IdP"
     server VM_FACT "VM Facturation" {
       app-instance FACT_I "Facturation"
     }
@@ -32,8 +35,11 @@ external EDI "Plateforme EDI\npartenaire"
 
 # ---- flux techniques (protocole OBLIGATOIRE) ----
 POSTES -> WAF_I : "Accès application\nweb" (HTTPS/443)
-WAF_I -> FACT_I : "Trafic facturation\nfiltré" (HTTPS/8443)
-WAF_I -> CRM_I : "Trafic CRM\nfiltré" (HTTPS/8444)
+WAF_I -> AUTH_GW : "Routage vers\nle backend" (HTTPS/443)
+AUTH_GW -> OAUTH2 : "Vérifier tokens" (HTTP/80)
+OAUTH2 -> IDP : "Valider l'identité" (LDAPS/636)
+AUTH_GW -> FACT_I : "API facturation" (HTTPS/8443)
+AUTH_GW -> CRM_I : "API CRM" (HTTPS/8444)
 FACT_I -> PG_I : "Lecture/écriture\ndonnées facturation" (TCP/5432)
 CRM_I -> PG_I : "Lecture/écriture\ndonnées clients" (TCP/5432)
 FACT_I -> SFTP_GW : "Dépôt des factures\nà transmettre" (SFTP/22)

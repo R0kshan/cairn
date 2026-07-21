@@ -10,6 +10,9 @@ site DC1 "Centre de données principal" {
     server SFTP_GW "Passerelle\nde transfert"
   }
   network-zone APPS1 "Zone applicative" {
+    gateway AUTH_GW "Gateway"
+    auth OAUTH2 "OAuth2\nproxy"
+    idp IDP "LDAP / IdP"
     server K8S1 "Cluster K8s\nfront" {
       app-instance FRONT_I "Front de vente"
       app-instance CHECKOUT_I "Tunnel d'achat"
@@ -45,8 +48,11 @@ external CARRIERS_EXT "Plateformes\ntransporteurs"
 # ---- flux techniques (protocole OBLIGATOIRE) ----
 USERS -> FW_WAF : "Trafic web\nclient" (HTTPS/443)
 FW_WAF -> NGINX_I : "Trafic\nfiltré" (HTTPS/443)
-NGINX_I -> FRONT_I : "Routage\nfront" (HTTPS/8443)
-NGINX_I -> CHECKOUT_I : "Routage tunnel\nd'achat" (HTTPS/8444)
+NGINX_I -> AUTH_GW : "Routage vers\nle backend" (HTTPS/443)
+AUTH_GW -> OAUTH2 : "Vérifier tokens" (HTTP/80)
+OAUTH2 -> IDP : "Valider l'identité" (LDAPS/636)
+AUTH_GW -> FRONT_I : "Front de vente" (HTTPS/8443)
+AUTH_GW -> CHECKOUT_I : "Tunnel d'achat" (HTTPS/8444)
 FRONT_I -> OMS_I : "API\ncommandes" (HTTPS/8443)
 CHECKOUT_I -> PAYHUB_I : "API\npaiement" (HTTPS/8445)
 PAYHUB_I -> PSP_EXT : "Autorisation et\ncapture" (HTTPS/443)

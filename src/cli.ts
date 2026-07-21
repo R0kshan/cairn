@@ -111,6 +111,9 @@ site DC1 "Main datacenter" {
     }
   }
   network-zone LAN "Internal zone" {
+    gateway AUTH_GW "Auth proxy"
+    auth OAUTH2 "OAuth2 proxy"
+    idp IDP "LDAP / IdP"
     server APP1 "Application server" {
       app-instance CORE_I "Core application"
     }
@@ -124,11 +127,13 @@ site DC1 "Main datacenter" {
 external PARTNER "Partner platform"
 
 # ---- technical flows: protocol REQUIRED (E0240); the label is optional ----
-USERS   -> FRONT_I : "Web access" (HTTPS/443)
-FRONT_I -> CORE_I : "API calls" (HTTPS/8443)
-CORE_I  -> DB_I   : "Queries" (TCP/5432)
-CORE_I  -> BROKER : "Publish events" (TCP/9092)
-CORE_I  -> PARTNER : "Nightly export" (SFTP/22)
+USERS    -> FRONT_I : "Web access" (HTTPS/443)
+FRONT_I  -> CORE_I  : "API calls" (HTTPS/8443)
+CORE_I   -> AUTH_GW : "Auth check" (HTTPS/8443)
+AUTH_GW  -> IDP     : "Validate tokens" (LDAPS/636)
+CORE_I   -> DB_I    : "Queries" (TCP/5432)
+CORE_I   -> BROKER  : "Publish events" (TCP/9092)
+CORE_I   -> PARTNER : "Nightly export" (SFTP/22)
 
 # ---- matrice des flux techniques ----
 # Export the flow matrix beside the physical diagram (French DA deliverable):

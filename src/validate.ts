@@ -212,15 +212,25 @@ export function validate(model: Model): Diagnostic[] {
     }
   } else {
     // business objects: unique ids, valid refs, usage completeness
-    const boIds = new Map(model.businessObjects.map(b => [b.id, b]));
+    const boIds = new Map<string, (typeof model.businessObjects)[number]>();
     for (const b of model.businessObjects) {
-      if (model.index.has(b.id)) {
+      const prev = boIds.get(b.id);
+      if (prev) {
+        diags.push({
+          code: 'E0202', severity: 'error',
+          message: `duplicate identifier \`${b.id}\``,
+          span: b.idSpan,
+          note: `already declared at line ${prev.idSpan.line}`,
+          help: `rename one of the two, e.g. \`${b.id}_2\` (decision D1: flat unique IDs)`,
+        });
+      } else if (model.index.has(b.id)) {
         diags.push({
           code: 'E0202', severity: 'error',
           message: `duplicate identifier \`${b.id}\` (already used by an element)`,
           span: b.idSpan, help: 'business objects share the flat ID namespace (decision D1)',
         });
       }
+      if (!prev) boIds.set(b.id, b);
     }
     const carried = new Set<string>();
     for (const f of model.flows) {

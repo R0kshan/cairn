@@ -449,3 +449,28 @@ test('infrastructure protocol stays mandatory (E0240) even when the label is omi
   assert.ok(codes.includes('E0240'));
   assert.ok(!codes.includes('E0203')); // label omission is fine; only the protocol is flagged
 });
+
+test('gateway, auth, and idp are valid in infrastructure, unknown in other views', () => {
+  const infra = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway"\nauth OAUTH2 "Auth"\nidp IDP "IdP" } }\n';
+  assert.ok(!check(infra).codes.includes('E0201'));
+  // rejected in logical, application, security
+  for (const v of ['logical', 'application', 'security']) {
+    assert.ok(check(`diagram ${v} "t"\ngateway GW "Gateway"\n`).codes.includes('E0201'));
+    assert.ok(check(`diagram ${v} "t"\nauth OAUTH2 "Auth"\n`).codes.includes('E0201'));
+    assert.ok(check(`diagram ${v} "t"\nidp IDP "IdP"\n`).codes.includes('E0201'));
+  }
+});
+
+test('gateway renders as a rounded rect with shield badge (polygon), overlaps 0', async () => {
+  const { svg, overlapsAfter } = await build('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" } }\nauth OAUTH2 "OAuth2"\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\n');
+  assert.equal(overlapsAfter, 0);
+  assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
+});
+
+test('auth renders with a lock icon badge (path + rect), overlaps 0', async () => {
+  const { svg, overlapsAfter } = await build('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { auth OAUTH2 "OAuth2"\ngateway GW "Gateway" } }\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\nGW -> OAUTH2 : "Forward" (HTTP/80)\n');
+  assert.equal(overlapsAfter, 0);
+  // lock shackle arc + body rect
+  assert.match(svg, /v -4 a 5 5 0 0 1 10 0 v 4/);
+  assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
+});

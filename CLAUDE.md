@@ -88,7 +88,6 @@ break the binary — hence `test:binary`.
 - **Diagnostics are coded, never thrown.** Errors `E0xxx`, warnings `W0xxx`,
   each with a `span` + `help`; rationale in `explanations` (via `cairn explain`).
   A user error is a `Diagnostic`, not an exception. ~29 codes — reuse the scheme; only rendered chrome localizes via `style { lang: fr }`.
-- The typed schema is a **"view"**, never "profile".
 - **Business objects are logical-view only** (`E0222` elsewhere). Element kinds
   are per-view (`views` registry) — e.g. `queue` (horizontal-cylinder) lives in
   application + infrastructure, not logical.

@@ -11,6 +11,10 @@ site DC "Main data center" {
     server SFTP_GW "Transfer\ngateway"
   }
   network-zone LAN_APP "Application zone" {
+    gateway AUTH_GW "Gateway"
+    auth OAUTH2 "OAuth2\nproxy"
+    idp IDP "LDAP / IdP"
+
     server VM_BILL "Billing VM" {
       app-instance BILL_I "Billing"
     }
@@ -35,6 +39,9 @@ WAF_I -> BILL_I : "Filtered billing\ntraffic" (HTTPS/8443)
 WAF_I -> CRM_I : "Filtered CRM\ntraffic" (HTTPS/8444)
 BILL_I -> PG_I : "Read/write\nbilling data" (TCP/5432)
 CRM_I -> PG_I : "Read/write\ncustomer data" (TCP/5432)
+BILL_I -> AUTH_GW : "Authenticate\nAPI calls" (HTTPS/8443)
+AUTH_GW -> OAUTH2 : "Forward" (HTTP/80)
+OAUTH2 -> IDP : "Verify tokens" (LDAPS/636)
 BILL_I -> SFTP_GW : "Drop invoices\nto transmit" (SFTP/22)
 SFTP_GW -> EDI : "Partner\ntransfers" (AS4/443)
 DB_SRV -> BACKUP : "Daily\nbackups" (TCP/9092)
