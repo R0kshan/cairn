@@ -10,6 +10,7 @@
 # Usage: npm run examples   (or: bash scripts/render-examples.sh)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+npm run snapshots:report
 CAIRN="node --experimental-strip-types src/cli.ts"
 
 echo "• rebuilding diagram SVGs…"

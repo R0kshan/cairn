@@ -193,36 +193,35 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
         out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>\n`;
       });
     } else if (n.kind === 'queue') {
-      // horizontal cylinder (message queue / broker) — a capsule outline plus a
-      // left end-rim ellipse for the 3D read, distinct from the upright datastore.
       const rx = 8, c = s.stroke?.color ?? pal.nodeStroke, f = s.fill ?? pal.nodeFill;
-      out += `<path d="M ${n.x + rx} ${n.y} h ${n.w - 2 * rx} a ${rx} ${n.h / 2} 0 0 1 0 ${n.h} h ${-(n.w - 2 * rx)} a ${rx} ${n.h / 2} 0 0 1 0 ${-n.h}" fill="${f}" stroke="${c}" stroke-width="1.3"/>\n`;
-      out += `<ellipse cx="${n.x + rx}" cy="${n.y + n.h / 2}" rx="${rx}" ry="${n.h / 2}" fill="${f}" stroke="${c}" stroke-width="1.3"/>\n`;
+      const escF = escAttr(f), escC = escAttr(c), escT = escAttr(s.text ?? pal.nodeText);
+      out += `<path d="M ${n.x + rx} ${n.y} h ${n.w - 2 * rx} a ${rx} ${n.h / 2} 0 0 1 0 ${n.h} h ${-(n.w - 2 * rx)} a ${rx} ${n.h / 2} 0 0 1 0 ${-n.h}" fill="${escF}" stroke="${escC}" stroke-width="1.3"/>\n`;
+      out += `<ellipse cx="${n.x + rx}" cy="${n.y + n.h / 2}" rx="${rx}" ry="${n.h / 2}" fill="${escF}" stroke="${escC}" stroke-width="1.3"/>\n`;
       const cy = n.y + n.h / 2 - ((lines.length - 1) * (FS_NODE + 2)) / 2 + 4;
       lines.forEach((l, i) => {
-        out += `<text x="${n.x + rx + (n.w - rx) / 2}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>\n`;
+        out += `<text x="${n.x + rx + (n.w - rx) / 2}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${escT}">${esc(l)}</text>\n`;
       });
     } else if (n.kind === 'gateway') {
-      // rounded rect with shield badge (gateway / reverse proxy)
       const cx = n.x + n.w / 2;
       const c = s.stroke?.color ?? pal.nodeStroke, f = s.fill ?? pal.nodeFill;
-      out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${f}" stroke="${c}" stroke-width="1.3"/>\n`;
-      out += `<path d="M ${r1(n.x + 8)} ${r1(n.y + 8)} L ${r1(n.x + 22)} ${r1(n.y + 8)} Q ${r1(n.x + 24)} ${r1(n.y + 13)} ${r1(n.x + 15)} ${r1(n.y + 20)} Q ${r1(n.x + 6)} ${r1(n.y + 13)} ${r1(n.x + 8)} ${r1(n.y + 8)}" fill="none" stroke="${c}" stroke-width="1.3"/>\n`;
+      const escC = escAttr(c), escF = escAttr(f), escT = escAttr(s.text ?? pal.nodeText);
+      out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${escF}" stroke="${escC}" stroke-width="1.3"/>\n`;
+      out += `<path d="M ${r1(n.x + 8)} ${r1(n.y + 8)} L ${r1(n.x + 22)} ${r1(n.y + 8)} Q ${r1(n.x + 24)} ${r1(n.y + 13)} ${r1(n.x + 15)} ${r1(n.y + 20)} Q ${r1(n.x + 6)} ${r1(n.y + 13)} ${r1(n.x + 8)} ${r1(n.y + 8)}" fill="none" stroke="${escC}" stroke-width="1.3"/>\n`;
       const cy = n.y + n.h / 2 - ((lines.length - 1) * (FS_NODE + 2)) / 2 + 4;
       lines.forEach((l, i) => {
-        out += `<text x="${cx + 10}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>\n`;
+        out += `<text x="${cx + 10}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${escT}">${esc(l)}</text>\n`;
       });
     } else if (n.kind === 'auth') {
-      // rounded rect with lock badge (auth middleware — OAuth2-proxy, Dex, WAF)
       const cx = n.x + n.w / 2;
       const c = s.stroke?.color ?? pal.nodeStroke, f = s.fill ?? pal.nodeFill;
-      out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${f}" stroke="${c}" stroke-width="1.3"/>\n`;
-      out += `<rect x="${n.x + 6}" y="${n.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${c}" stroke-width="1.3"/>\n`;
-      out += `<path d="M ${n.x + 10} ${n.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${c}" stroke-width="1.3"/>\n`;
-      out += `<circle cx="${n.x + 15}" cy="${n.y + 16}" r="2.5" fill="${c}"/>\n`;
+      const escC = escAttr(c), escF = escAttr(f), escT = escAttr(s.text ?? pal.nodeText);
+      out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${escF}" stroke="${escC}" stroke-width="1.3"/>\n`;
+      out += `<rect x="${n.x + 6}" y="${n.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${escC}" stroke-width="1.3"/>\n`;
+      out += `<path d="M ${n.x + 10} ${n.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${escC}" stroke-width="1.3"/>\n`;
+      out += `<circle cx="${n.x + 15}" cy="${n.y + 16}" r="2.5" fill="${escC}"/>\n`;
       const cy = n.y + n.h / 2 - ((lines.length - 1) * (FS_NODE + 2)) / 2 + 4;
       lines.forEach((l, i) => {
-        out += `<text x="${cx + 10}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>\n`;
+        out += `<text x="${cx + 10}" y="${cy + i * (FS_NODE + 2)}" font-size="${FS_NODE}" text-anchor="middle" fill="${escT}">${esc(l)}</text>\n`;
       });
     } else {
       const da = dashArray(s.stroke?.style);

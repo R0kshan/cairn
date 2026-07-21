@@ -18,7 +18,7 @@ Keywords are English; labels are free text. Built-in diagram types: `logical`, `
 | View | Element kinds | Flow specifics |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label required; business objects via `[REFS]` (**logical-view only** — a `business-object` in any other view is **E0222**) |
-| `application` | actor-group, actor, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540**, actor flows exempt — C4 container-diagram practice); no business objects |
+| `application` | actor-group, actor, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540**, actor flows exempt — C4 container-diagram practice**)**; no business objects |
 | `infrastructure` | site, network-zone, server, app-instance, queue (horizontal cylinder), gateway (shield hexagon), auth (lock badge), idp, external | label **optional**; protocol still required (**E0240**): `(HTTPS/443)`; zones band left→right in declaration order |
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a sensitivity level `(public\|internal\|restricted\|secret)` (**E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**); zones band exposed→protected in declaration order |
 
@@ -44,7 +44,7 @@ The layout engine assigns each element a semantic horizontal band (ELK partition
 | `infrastructure` | sites / zones in declaration order (0) | externals (1) |
 | `security` | zones in declaration order (exposed → protected) |
 
-Flow syntax, full form: `A -> B : "label" (PROTOCOL, FORMAT) [BO_REFS] { inline style }` — every segment after the arrow is optional (subject to view rules). The `[BO_REFS]` segment is **logical-view only**. The technical tail renders as a smaller gray sub-line under the label; in `flow-text: numbered` mode it joins the flow table entry.
+Flow syntax, full form: `A -> B : "label" (PROTOCOL, FORMAT) [BO_REFS] { inline style }` — every segment after the arrow is optional (subject to view rules). The `[BO_REFS]` segment is **logical-view only**. When a prose label is present the technical tail renders as a smaller gray sub-line under it; when the label is omitted the technical tail is promoted to the primary arrow label. In `flow-text: numbered` mode the tail joins the flow table entry.
 
 ```
 diagram logical "Display system — logical view"
