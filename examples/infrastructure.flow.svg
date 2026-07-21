@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 815 404" font-family="Helvetica,Arial,sans-serif">
-<rect width="815" height="404" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 685 404" font-family="Helvetica,Arial,sans-serif">
+<rect width="685" height="404" fill="white"/>
 <text x="1" y="22" font-size="13" font-weight="bold" fill="#555">TECHNICAL FLOW MATRIX — Billing platform — infrastructure view</text>
-<rect x="0" y="34" width="813" height="30" fill="#f7f7f7" stroke="#ddd"/>
+<rect x="0" y="34" width="683" height="30" fill="#f7f7f7" stroke="#ddd"/>
 <text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">No.</text>
 <text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
 <text x="285" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
@@ -13,90 +13,90 @@
 <text x="285" y="81" font-size="11" text-anchor="start" fill="#444">WAF (DMZ)</text>
 <text x="515" y="81" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="606.5" y="81" font-size="11" text-anchor="middle" fill="#444">443</text>
-<text x="642" y="81" font-size="11" text-anchor="start" fill="#444">Web application access</text>
-<rect x="0" y="90" width="813" height="26" fill="#ddd" opacity="0.18"/>
+<text x="642" y="81" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="90" width="683" height="26" fill="#ddd" opacity="0.18"/>
 <text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
 <text x="55" y="107" font-size="11" text-anchor="start" fill="#444">WAF (DMZ)</text>
 <text x="285" y="107" font-size="11" text-anchor="start" fill="#444">Gateway (Application zone)</text>
 <text x="515" y="107" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="606.5" y="107" font-size="11" text-anchor="middle" fill="#444">443</text>
-<text x="642" y="107" font-size="11" text-anchor="start" fill="#444">Route to backend</text>
+<text x="642" y="107" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
 <text x="55" y="133" font-size="11" text-anchor="start" fill="#444">Gateway (Application zone)</text>
 <text x="285" y="133" font-size="11" text-anchor="start" fill="#444">OAuth2 proxy (Application zone)</text>
 <text x="515" y="133" font-size="11" text-anchor="start" fill="#444">HTTP</text>
 <text x="606.5" y="133" font-size="11" text-anchor="middle" fill="#444">80</text>
-<text x="642" y="133" font-size="11" text-anchor="start" fill="#444">Verify tokens</text>
-<rect x="0" y="142" width="813" height="26" fill="#ddd" opacity="0.18"/>
+<text x="642" y="133" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="142" width="683" height="26" fill="#ddd" opacity="0.18"/>
 <text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>
 <text x="55" y="159" font-size="11" text-anchor="start" fill="#444">OAuth2 proxy (Application zone)</text>
 <text x="285" y="159" font-size="11" text-anchor="start" fill="#444">LDAP / IdP (Application zone)</text>
 <text x="515" y="159" font-size="11" text-anchor="start" fill="#444">LDAPS</text>
 <text x="606.5" y="159" font-size="11" text-anchor="middle" fill="#444">636</text>
-<text x="642" y="159" font-size="11" text-anchor="start" fill="#444">Validate identity</text>
+<text x="642" y="159" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="22.5" y="185" font-size="11" text-anchor="middle" fill="#444">5</text>
 <text x="55" y="185" font-size="11" text-anchor="start" fill="#444">Gateway (Application zone)</text>
 <text x="285" y="185" font-size="11" text-anchor="start" fill="#444">Billing (Application zone)</text>
 <text x="515" y="185" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="606.5" y="185" font-size="11" text-anchor="middle" fill="#444">8443</text>
-<text x="642" y="185" font-size="11" text-anchor="start" fill="#444">Billing API</text>
-<rect x="0" y="194" width="813" height="26" fill="#ddd" opacity="0.18"/>
+<text x="642" y="185" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="194" width="683" height="26" fill="#ddd" opacity="0.18"/>
 <text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
 <text x="55" y="211" font-size="11" text-anchor="start" fill="#444">Gateway (Application zone)</text>
 <text x="285" y="211" font-size="11" text-anchor="start" fill="#444">CRM (Application zone)</text>
 <text x="515" y="211" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="606.5" y="211" font-size="11" text-anchor="middle" fill="#444">8444</text>
-<text x="642" y="211" font-size="11" text-anchor="start" fill="#444">CRM API</text>
+<text x="642" y="211" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>
 <text x="55" y="237" font-size="11" text-anchor="start" fill="#444">Billing (Application zone)</text>
 <text x="285" y="237" font-size="11" text-anchor="start" fill="#444">PostgreSQL (Data zone)</text>
 <text x="515" y="237" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="606.5" y="237" font-size="11" text-anchor="middle" fill="#444">5432</text>
-<text x="642" y="237" font-size="11" text-anchor="start" fill="#444">Read/write billing data</text>
-<rect x="0" y="246" width="813" height="26" fill="#ddd" opacity="0.18"/>
+<text x="642" y="237" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="246" width="683" height="26" fill="#ddd" opacity="0.18"/>
 <text x="22.5" y="263" font-size="11" text-anchor="middle" fill="#444">8</text>
 <text x="55" y="263" font-size="11" text-anchor="start" fill="#444">CRM (Application zone)</text>
 <text x="285" y="263" font-size="11" text-anchor="start" fill="#444">PostgreSQL (Data zone)</text>
 <text x="515" y="263" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="606.5" y="263" font-size="11" text-anchor="middle" fill="#444">5432</text>
-<text x="642" y="263" font-size="11" text-anchor="start" fill="#444">Read/write customer data</text>
+<text x="642" y="263" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="22.5" y="289" font-size="11" text-anchor="middle" fill="#444">9</text>
 <text x="55" y="289" font-size="11" text-anchor="start" fill="#444">Billing (Application zone)</text>
 <text x="285" y="289" font-size="11" text-anchor="start" fill="#444">Message broker (Application zone)</text>
 <text x="515" y="289" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="606.5" y="289" font-size="11" text-anchor="middle" fill="#444">9092</text>
-<text x="642" y="289" font-size="11" text-anchor="start" fill="#444">Publish billing events</text>
-<rect x="0" y="298" width="813" height="26" fill="#ddd" opacity="0.18"/>
+<text x="642" y="289" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="298" width="683" height="26" fill="#ddd" opacity="0.18"/>
 <text x="22.5" y="315" font-size="11" text-anchor="middle" fill="#444">10</text>
 <text x="55" y="315" font-size="11" text-anchor="start" fill="#444">Message broker (Application zone)</text>
 <text x="285" y="315" font-size="11" text-anchor="start" fill="#444">CRM (Application zone)</text>
 <text x="515" y="315" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="606.5" y="315" font-size="11" text-anchor="middle" fill="#444">9092</text>
-<text x="642" y="315" font-size="11" text-anchor="start" fill="#444">Consume billing events</text>
+<text x="642" y="315" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="22.5" y="341" font-size="11" text-anchor="middle" fill="#444">11</text>
 <text x="55" y="341" font-size="11" text-anchor="start" fill="#444">Billing (Application zone)</text>
 <text x="285" y="341" font-size="11" text-anchor="start" fill="#444">Transfer gateway (DMZ)</text>
 <text x="515" y="341" font-size="11" text-anchor="start" fill="#444">SFTP</text>
 <text x="606.5" y="341" font-size="11" text-anchor="middle" fill="#444">22</text>
-<text x="642" y="341" font-size="11" text-anchor="start" fill="#444">Drop invoices to transmit</text>
-<rect x="0" y="350" width="813" height="26" fill="#ddd" opacity="0.18"/>
+<text x="642" y="341" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="350" width="683" height="26" fill="#ddd" opacity="0.18"/>
 <text x="22.5" y="367" font-size="11" text-anchor="middle" fill="#444">12</text>
 <text x="55" y="367" font-size="11" text-anchor="start" fill="#444">Transfer gateway (DMZ)</text>
 <text x="285" y="367" font-size="11" text-anchor="start" fill="#444">Partner EDI platform</text>
 <text x="515" y="367" font-size="11" text-anchor="start" fill="#444">AS4</text>
 <text x="606.5" y="367" font-size="11" text-anchor="middle" fill="#444">443</text>
-<text x="642" y="367" font-size="11" text-anchor="start" fill="#444">Partner transfers</text>
+<text x="642" y="367" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="22.5" y="393" font-size="11" text-anchor="middle" fill="#444">13</text>
 <text x="55" y="393" font-size="11" text-anchor="start" fill="#444">Database server (Data zone)</text>
 <text x="285" y="393" font-size="11" text-anchor="start" fill="#444">Backup server (Data zone)</text>
 <text x="515" y="393" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="606.5" y="393" font-size="11" text-anchor="middle" fill="#444">9092</text>
-<text x="642" y="393" font-size="11" text-anchor="start" fill="#444">Daily backups</text>
+<text x="642" y="393" font-size="11" text-anchor="start" fill="#444"></text>
 <line x1="45" y1="34" x2="45" y2="402" stroke="#ddd" stroke-width="1"/>
 <line x1="275" y1="34" x2="275" y2="402" stroke="#ddd" stroke-width="1"/>
 <line x1="505" y1="34" x2="505" y2="402" stroke="#ddd" stroke-width="1"/>
 <line x1="581" y1="34" x2="581" y2="402" stroke="#ddd" stroke-width="1"/>
 <line x1="632" y1="34" x2="632" y2="402" stroke="#ddd" stroke-width="1"/>
-<line x1="0" y1="402" x2="813" y2="402" stroke="#ddd"/>
-<rect x="0" y="34" width="813" height="368" fill="none" stroke="#ddd"/>
+<line x1="0" y1="402" x2="683" y2="402" stroke="#ddd"/>
+<rect x="0" y="34" width="683" height="368" fill="none" stroke="#ddd"/>
 </svg>

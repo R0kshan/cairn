@@ -410,6 +410,7 @@ test('queue renders as a horizontal cylinder (path + end-rim ellipse), overlaps 
   const { svg, overlapsAfter } = await build('diagram application "t"\nqueue Q "q"\napplication A "a" { module M "m" }\nM -> Q : "x" (MQ)\n');
   assert.equal(overlapsAfter, 0);
   assert.match(svg, /<path d="M \d+ \d+ h [\d-]+ a 8 /); // capsule body with rx=8 end caps
+  assert.match(svg, /<ellipse cx="\d+" cy="\d+" rx="8"/); // end-rim ellipse
 });
 
 test('flow labels: required on logical/security (E0203), optional on application/infrastructure', () => {
@@ -461,10 +462,10 @@ test('gateway, auth, and idp are valid in infrastructure, unknown in other views
   }
 });
 
-test('gateway renders as a rounded rect with shield badge (polygon), overlaps 0', async () => {
+test('gateway renders as a rounded rect with shield badge, overlaps 0', async () => {
   const { svg, overlapsAfter } = await build('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" } }\nauth OAUTH2 "OAuth2"\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\n');
   assert.equal(overlapsAfter, 0);
-  assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
+  assert.match(svg, /Q \d+ \d+ \d+ \d+/); // kite-shield bezier badge
 });
 
 test('auth renders with a lock icon badge (path + rect), overlaps 0', async () => {

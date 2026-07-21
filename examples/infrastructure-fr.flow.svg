@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 987 352" font-family="Helvetica,Arial,sans-serif">
-<rect width="987" height="352" fill="white"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 852 404" font-family="Helvetica,Arial,sans-serif">
+<rect width="852" height="404" fill="white"/>
 <text x="1" y="22" font-size="13" font-weight="bold" fill="#555">MATRICE DES FLUX TECHNIQUES — Plateforme de facturation — vue infrastructure</text>
-<rect x="0" y="34" width="985" height="30" fill="#f7f7f7" stroke="#ddd"/>
+<rect x="0" y="34" width="850" height="30" fill="#f7f7f7" stroke="#ddd"/>
 <text x="19.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">N°</text>
 <text x="49" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
 <text x="347" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
@@ -13,77 +13,90 @@
 <text x="347" y="81" font-size="11" text-anchor="start" fill="#444">WAF (DMZ)</text>
 <text x="614" y="81" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="711.5" y="81" font-size="11" text-anchor="middle" fill="#444">443</text>
-<text x="747" y="81" font-size="11" text-anchor="start" fill="#444">Accès application web</text>
-<rect x="0" y="90" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="747" y="81" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="90" width="850" height="26" fill="#ddd" opacity="0.18"/>
 <text x="19.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
 <text x="49" y="107" font-size="11" text-anchor="start" fill="#444">WAF (DMZ)</text>
 <text x="347" y="107" font-size="11" text-anchor="start" fill="#444">Gateway (Zone applicative)</text>
 <text x="614" y="107" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="711.5" y="107" font-size="11" text-anchor="middle" fill="#444">443</text>
-<text x="747" y="107" font-size="11" text-anchor="start" fill="#444">Routage vers le backend</text>
+<text x="747" y="107" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="19.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
 <text x="49" y="133" font-size="11" text-anchor="start" fill="#444">Gateway (Zone applicative)</text>
 <text x="347" y="133" font-size="11" text-anchor="start" fill="#444">OAuth2 proxy (Zone applicative)</text>
 <text x="614" y="133" font-size="11" text-anchor="start" fill="#444">HTTP</text>
 <text x="711.5" y="133" font-size="11" text-anchor="middle" fill="#444">80</text>
-<text x="747" y="133" font-size="11" text-anchor="start" fill="#444">Vérifier tokens</text>
-<rect x="0" y="142" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="747" y="133" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="142" width="850" height="26" fill="#ddd" opacity="0.18"/>
 <text x="19.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>
 <text x="49" y="159" font-size="11" text-anchor="start" fill="#444">OAuth2 proxy (Zone applicative)</text>
 <text x="347" y="159" font-size="11" text-anchor="start" fill="#444">LDAP / IdP (Zone applicative)</text>
 <text x="614" y="159" font-size="11" text-anchor="start" fill="#444">LDAPS</text>
 <text x="711.5" y="159" font-size="11" text-anchor="middle" fill="#444">636</text>
-<text x="747" y="159" font-size="11" text-anchor="start" fill="#444">Valider l'identité</text>
+<text x="747" y="159" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="19.5" y="185" font-size="11" text-anchor="middle" fill="#444">5</text>
 <text x="49" y="185" font-size="11" text-anchor="start" fill="#444">Gateway (Zone applicative)</text>
 <text x="347" y="185" font-size="11" text-anchor="start" fill="#444">Facturation (Zone applicative)</text>
 <text x="614" y="185" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="711.5" y="185" font-size="11" text-anchor="middle" fill="#444">8443</text>
-<text x="747" y="185" font-size="11" text-anchor="start" fill="#444">API facturation</text>
-<rect x="0" y="194" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="747" y="185" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="194" width="850" height="26" fill="#ddd" opacity="0.18"/>
 <text x="19.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
 <text x="49" y="211" font-size="11" text-anchor="start" fill="#444">Gateway (Zone applicative)</text>
 <text x="347" y="211" font-size="11" text-anchor="start" fill="#444">CRM (Zone applicative)</text>
 <text x="614" y="211" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
 <text x="711.5" y="211" font-size="11" text-anchor="middle" fill="#444">8444</text>
-<text x="747" y="211" font-size="11" text-anchor="start" fill="#444">API CRM</text>
+<text x="747" y="211" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="19.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>
 <text x="49" y="237" font-size="11" text-anchor="start" fill="#444">Facturation (Zone applicative)</text>
 <text x="347" y="237" font-size="11" text-anchor="start" fill="#444">PostgreSQL (Zone de données)</text>
 <text x="614" y="237" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="711.5" y="237" font-size="11" text-anchor="middle" fill="#444">5432</text>
-<text x="747" y="237" font-size="11" text-anchor="start" fill="#444">Lecture/écriture données facturation</text>
-<rect x="0" y="246" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="747" y="237" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="246" width="850" height="26" fill="#ddd" opacity="0.18"/>
 <text x="19.5" y="263" font-size="11" text-anchor="middle" fill="#444">8</text>
 <text x="49" y="263" font-size="11" text-anchor="start" fill="#444">CRM (Zone applicative)</text>
 <text x="347" y="263" font-size="11" text-anchor="start" fill="#444">PostgreSQL (Zone de données)</text>
 <text x="614" y="263" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="711.5" y="263" font-size="11" text-anchor="middle" fill="#444">5432</text>
-<text x="747" y="263" font-size="11" text-anchor="start" fill="#444">Lecture/écriture données clients</text>
+<text x="747" y="263" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="19.5" y="289" font-size="11" text-anchor="middle" fill="#444">9</text>
 <text x="49" y="289" font-size="11" text-anchor="start" fill="#444">Facturation (Zone applicative)</text>
-<text x="347" y="289" font-size="11" text-anchor="start" fill="#444">Passerelle de transfert (DMZ)</text>
-<text x="614" y="289" font-size="11" text-anchor="start" fill="#444">SFTP</text>
-<text x="711.5" y="289" font-size="11" text-anchor="middle" fill="#444">22</text>
-<text x="747" y="289" font-size="11" text-anchor="start" fill="#444">Dépôt des factures à transmettre</text>
-<rect x="0" y="298" width="985" height="26" fill="#ddd" opacity="0.18"/>
+<text x="347" y="289" font-size="11" text-anchor="start" fill="#444">Broker de messages (Zone applicative)</text>
+<text x="614" y="289" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="711.5" y="289" font-size="11" text-anchor="middle" fill="#444">9092</text>
+<text x="747" y="289" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="298" width="850" height="26" fill="#ddd" opacity="0.18"/>
 <text x="19.5" y="315" font-size="11" text-anchor="middle" fill="#444">10</text>
-<text x="49" y="315" font-size="11" text-anchor="start" fill="#444">Passerelle de transfert (DMZ)</text>
-<text x="347" y="315" font-size="11" text-anchor="start" fill="#444">Plateforme EDI partenaire</text>
-<text x="614" y="315" font-size="11" text-anchor="start" fill="#444">AS4</text>
-<text x="711.5" y="315" font-size="11" text-anchor="middle" fill="#444">443</text>
-<text x="747" y="315" font-size="11" text-anchor="start" fill="#444">Transferts partenaires</text>
+<text x="49" y="315" font-size="11" text-anchor="start" fill="#444">Broker de messages (Zone applicative)</text>
+<text x="347" y="315" font-size="11" text-anchor="start" fill="#444">CRM (Zone applicative)</text>
+<text x="614" y="315" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="711.5" y="315" font-size="11" text-anchor="middle" fill="#444">9092</text>
+<text x="747" y="315" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="19.5" y="341" font-size="11" text-anchor="middle" fill="#444">11</text>
-<text x="49" y="341" font-size="11" text-anchor="start" fill="#444">Serveur de base de données (Zone de données)</text>
-<text x="347" y="341" font-size="11" text-anchor="start" fill="#444">Serveur de sauvegarde (Zone de données)</text>
-<text x="614" y="341" font-size="11" text-anchor="start" fill="#444">TCP</text>
-<text x="711.5" y="341" font-size="11" text-anchor="middle" fill="#444">9092</text>
-<text x="747" y="341" font-size="11" text-anchor="start" fill="#444">Sauvegardes quotidiennes</text>
-<line x1="39" y1="34" x2="39" y2="350" stroke="#ddd" stroke-width="1"/>
-<line x1="337" y1="34" x2="337" y2="350" stroke="#ddd" stroke-width="1"/>
-<line x1="604" y1="34" x2="604" y2="350" stroke="#ddd" stroke-width="1"/>
-<line x1="686" y1="34" x2="686" y2="350" stroke="#ddd" stroke-width="1"/>
-<line x1="737" y1="34" x2="737" y2="350" stroke="#ddd" stroke-width="1"/>
-<line x1="0" y1="350" x2="985" y2="350" stroke="#ddd"/>
-<rect x="0" y="34" width="985" height="316" fill="none" stroke="#ddd"/>
+<text x="49" y="341" font-size="11" text-anchor="start" fill="#444">Facturation (Zone applicative)</text>
+<text x="347" y="341" font-size="11" text-anchor="start" fill="#444">Passerelle de transfert (DMZ)</text>
+<text x="614" y="341" font-size="11" text-anchor="start" fill="#444">SFTP</text>
+<text x="711.5" y="341" font-size="11" text-anchor="middle" fill="#444">22</text>
+<text x="747" y="341" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="350" width="850" height="26" fill="#ddd" opacity="0.18"/>
+<text x="19.5" y="367" font-size="11" text-anchor="middle" fill="#444">12</text>
+<text x="49" y="367" font-size="11" text-anchor="start" fill="#444">Passerelle de transfert (DMZ)</text>
+<text x="347" y="367" font-size="11" text-anchor="start" fill="#444">Plateforme EDI partenaire</text>
+<text x="614" y="367" font-size="11" text-anchor="start" fill="#444">AS4</text>
+<text x="711.5" y="367" font-size="11" text-anchor="middle" fill="#444">443</text>
+<text x="747" y="367" font-size="11" text-anchor="start" fill="#444"></text>
+<text x="19.5" y="393" font-size="11" text-anchor="middle" fill="#444">13</text>
+<text x="49" y="393" font-size="11" text-anchor="start" fill="#444">Serveur de base de données (Zone de données)</text>
+<text x="347" y="393" font-size="11" text-anchor="start" fill="#444">Serveur de sauvegarde (Zone de données)</text>
+<text x="614" y="393" font-size="11" text-anchor="start" fill="#444">TCP</text>
+<text x="711.5" y="393" font-size="11" text-anchor="middle" fill="#444">9092</text>
+<text x="747" y="393" font-size="11" text-anchor="start" fill="#444"></text>
+<line x1="39" y1="34" x2="39" y2="402" stroke="#ddd" stroke-width="1"/>
+<line x1="337" y1="34" x2="337" y2="402" stroke="#ddd" stroke-width="1"/>
+<line x1="604" y1="34" x2="604" y2="402" stroke="#ddd" stroke-width="1"/>
+<line x1="686" y1="34" x2="686" y2="402" stroke="#ddd" stroke-width="1"/>
+<line x1="737" y1="34" x2="737" y2="402" stroke="#ddd" stroke-width="1"/>
+<line x1="0" y1="402" x2="850" y2="402" stroke="#ddd"/>
+<rect x="0" y="34" width="850" height="368" fill="none" stroke="#ddd"/>
 </svg>
