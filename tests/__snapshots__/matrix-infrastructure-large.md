@@ -5,7 +5,7 @@
 | 1 | Internet customers | Application firewall (WAF) (DMZ) | HTTPS | 443 |  |
 | 2 | Application firewall (WAF) (DMZ) | Nginx (DMZ) | HTTPS | 443 |  |
 | 3 | Nginx (DMZ) | Gateway (Application zone) | HTTPS | 443 |  |
-| 4 | Gateway (Application zone) | OAuth2 proxy (Application zone) | HTTP | 80 |  |
+| 4 | Gateway (Application zone) | OAuth2 proxy (Application zone) | HTTPS | 8443 |  |
 | 5 | OAuth2 proxy (Application zone) | LDAP / IdP (Application zone) | LDAPS | 636 |  |
 | 6 | Gateway (Application zone) | Sales front (Application zone) | HTTPS | 8443 |  |
 | 7 | Gateway (Application zone) | Checkout funnel (Application zone) | HTTPS | 8444 |  |

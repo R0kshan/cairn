@@ -61,7 +61,7 @@
 <path d="M 1441.3 347 L 1636 347 L 1636 394 L 231 394 L 231 169 L 255 169" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1194.5" y="409.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
 <path d="M 363 178.5 L 373 178.5 L 373 240.5 L 511 240.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="425" y="256" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTP/80)</text>
+<text x="425" y="256" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
 <path d="M 619 240.5 L 767 240.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="705" y="256" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(LDAPS/636)</text>
 <path d="M 363 169 L 501 169" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>

@@ -377,6 +377,19 @@ test('security: a font family cannot break out of the SVG attribute (XSS)', asyn
   assert.match(svg, /font-family="x&quot; onload=&quot;alert\(1\)/);
 });
 
+test('security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XSS)', async () => {
+  // Per-element style values (fill, stroke, text) on the new element kinds must
+  // be passed through escAttr() so a quote in a user-supplied colour does not
+  // break out of the SVG attribute — even though these values normally look like
+  // hex colours, custom themes could propagate untrusted strings into them.
+  const src = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" { style { fill: #cc2222 stroke: #ff0000 text: #ffffff } } auth OAUTH2 "OAuth2" { style { fill: #3366cc stroke: #00ff00 text: #ffff00 } } } }\nqueue Q "Queue" { style { fill: #ff00ff stroke: #990099 text: #000000 } }\nactor U "User"\nU -> GW : "Login" (HTTPS/443)\n';
+  const { svg } = await build(src);
+  assert.match(svg, /fill="#cc2222"/, 'gateway fill must be escAttr-escaped');
+  assert.match(svg, /fill="#3366cc"/, 'auth fill must be escAttr-escaped');
+  assert.match(svg, /fill="#ff00ff"/, 'queue fill must be escAttr-escaped');
+  assert.equal(svg.includes('onload='), false, 'no unescaped attribute injection');
+});
+
 test('security: a reserved key cannot be used as a per-kind style target', () => {
   // `fill __proto__: …` must be rejected, not written into the kind map's
   // prototype slot (defence-in-depth against prototype pollution).

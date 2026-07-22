@@ -39,7 +39,7 @@ external EDI "Partner EDI\nplatform"
 # ---- technical flows (protocol REQUIRED) ----
 USERS -> WAF_I : (HTTPS/443)
 WAF_I -> AUTH_GW : (HTTPS/443)
-AUTH_GW -> OAUTH2 : (HTTP/80)
+AUTH_GW -> OAUTH2 : (HTTPS/8443)
 OAUTH2 -> IDP : (LDAPS/636)
 AUTH_GW -> BILL_I : (HTTPS/8443)
 AUTH_GW -> CRM_I : (HTTPS/8444)

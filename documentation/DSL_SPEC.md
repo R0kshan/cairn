@@ -18,7 +18,7 @@ Keywords are English; labels are free text. Built-in diagram types: `logical`, `
 | View | Element kinds | Flow specifics |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label required; business objects via `[REFS]` (**logical-view only** — a `business-object` in any other view is **E0222**) |
-| `application` | actor-group, actor, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540**, actor flows exempt — C4 container-diagram practice**)**; no business objects |
+| `application` | actor-group, actor, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540, actor flows exempt — C4 container-diagram practice)**; no business objects |
 | `infrastructure` | site, network-zone, server, app-instance, queue (horizontal cylinder), gateway (shield hexagon), auth (lock badge), idp, external | label **optional**; protocol still required (**E0240**): `(HTTPS/443)`; zones band left→right in declaration order |
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a sensitivity level `(public\|internal\|restricted\|secret)` (**E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**); zones band exposed→protected in declaration order |
 
