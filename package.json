@@ -26,7 +26,7 @@
     "examples": "bash scripts/render-examples.sh"
   },
   "dependencies": {
-    "elkjs": "^0.11.1"
+    "elkjs": "^0.12.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
