@@ -60,6 +60,11 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
     </tr>
     </table>
 
+## Known limitations I'm working on
+
+* While Cairn ensures 0 label overlap, flows on large diagrams still take a longer than neccessary route to the target element - issue [#26](https://github.com/R0kshan/cairn/issues/26) created to adress this
+* At the moment Cairn doesn't give the user the possibility to control positioning - issue [#8](https://github.com/R0kshan/cairn/issues/8) created to adress this
+
 ## Usage
 
 Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/).
