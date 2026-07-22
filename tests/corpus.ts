@@ -50,7 +50,7 @@ export function corpusFiles(): string[] {
 
 // Path relative to examples/ (e.g. "themes/nord.cairn") — the digest key.
 export const relName = (file: string): string =>
-  file.slice(EXAMPLES_DIR.length + 1);
+  file.slice(EXAMPLES_DIR.length + 1).replace(/\\/g, '/');
 
 const h = (s: string): string => createHash('sha1').update(s).digest('hex').slice(0, 12);
 

@@ -377,9 +377,114 @@ test('security: a font family cannot break out of the SVG attribute (XSS)', asyn
   assert.match(svg, /font-family="x&quot; onload=&quot;alert\(1\)/);
 });
 
+test('security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XSS)', async () => {
+  // Per-element style values (fill, stroke, text) on the new element kinds must
+  // be passed through escAttr() so a quote in a user-supplied colour does not
+  // break out of the SVG attribute — even though these values normally look like
+  // hex colours, custom themes could propagate untrusted strings into them.
+  const src = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" { style { fill: #cc2222 stroke: #ff0000 text: #ffffff } } auth OAUTH2 "OAuth2" { style { fill: #3366cc stroke: #00ff00 text: #ffff00 } } } }\nqueue Q "Queue" { style { fill: #ff00ff stroke: #990099 text: #000000 } }\nactor U "User"\nU -> GW : "Login" (HTTPS/443)\n';
+  const { svg } = await build(src);
+  assert.match(svg, /fill="#cc2222"/, 'gateway fill must be escAttr-escaped');
+  assert.match(svg, /fill="#3366cc"/, 'auth fill must be escAttr-escaped');
+  assert.match(svg, /fill="#ff00ff"/, 'queue fill must be escAttr-escaped');
+  assert.equal(svg.includes('onload='), false, 'no unescaped attribute injection');
+});
+
 test('security: a reserved key cannot be used as a per-kind style target', () => {
   // `fill __proto__: …` must be rejected, not written into the kind map's
   // prototype slot (defence-in-depth against prototype pollution).
   const { diags } = check('diagram logical "t"\nstyle { fill __proto__: #fff }\nactor-group G "g" { actor A "a" }\n');
   assert.ok(diags.some(d => d.severity === 'error' && /reserved/.test(d.message)));
+});
+
+test('business objects are logical-only: allowed in logical, E0222 elsewhere', () => {
+  const decl = 'business-object BO "Order" "an order"\n';
+  // logical: fine
+  assert.ok(!check(`diagram logical "t"\nsystem S "s" { block B "b" }\n${decl}`).codes.includes('E0222'));
+  // application / infrastructure / security: rejected
+  assert.ok(check(`diagram application "t"\napplication A "a" { module M "m" }\n${decl}`).codes.includes('E0222'));
+  assert.ok(check(`diagram infrastructure "t"\nsite S "s" { server V "v" }\n${decl}`).codes.includes('E0222'));
+  assert.ok(check(`diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" }\n${decl}`).codes.includes('E0222'));
+});
+
+test('a `[ref]` on a flow in a non-logical view is E0222', () => {
+  const src = 'diagram application "t"\napplication A "a" { module M "m" }\ndatastore D "d"\nM -> D : "x" [BO]\n';
+  assert.ok(check(src).codes.includes('E0222'));
+});
+
+test('queue is a valid kind in application & infrastructure, unknown in logical', () => {
+  assert.ok(!check('diagram application "t"\nqueue Q "q"\napplication A "a" { module M "m" }\nM -> Q : "x"\n').codes.includes('E0201'));
+  assert.ok(!check('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { queue Q "q" server V "v" { app-instance I "i" } } }\nI -> Q : "x" (TCP/9092)\n').codes.includes('E0201'));
+  // logical does not define `queue`
+  assert.ok(check('diagram logical "t"\nqueue Q "q"\n').codes.includes('E0201'));
+});
+
+test('queue renders as a horizontal cylinder (path + end-rim ellipse), overlaps 0', async () => {
+  const { svg, overlapsAfter } = await build('diagram application "t"\nqueue Q "q"\napplication A "a" { module M "m" }\nM -> Q : "x" (MQ)\n');
+  assert.equal(overlapsAfter, 0);
+  assert.match(svg, /<path d="M \d+ \d+ h [\d-]+ a 8 /); // capsule body with rx=8 end caps
+  assert.match(svg, /<ellipse cx="\d+" cy="\d+" rx="8"/); // end-rim ellipse
+});
+
+test('flow labels: required on logical/security (E0203), optional on application/infrastructure', () => {
+  // logical + security still require the label
+  assert.ok(check('diagram logical "t"\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B\n').codes.includes('E0203'));
+  assert.ok(check('diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" asset B "b" }\nA -> B\n').codes.includes('E0203'));
+  // application + infrastructure no longer require it
+  assert.ok(!check('diagram application "t"\napplication A "a" { module M "m" }\ndatastore D "d"\nM -> D\n').codes.includes('E0203'));
+  assert.ok(!check('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { server V "v" { app-instance A "a" } app-instance B "b" } }\nA -> B (TCP/9092)\n').codes.includes('E0203'));
+});
+
+test('flow label after `:` is optional — "text", "", and a bare `:` before the tail all parse', () => {
+  const head = 'diagram application "t"\napplication A "a" { module M "m" }\ndatastore D "d"\n';
+  const labelled = check(`${head}M -> D : "Payment request" (API_REST, JSON)\n`);
+  const emptyStr = check(`${head}M -> D : "" (API_REST, JSON)\n`);
+  const noLabel = check(`${head}M -> D : (API_REST, JSON)\n`);
+  for (const r of [labelled, emptyStr, noLabel]) {
+    assert.equal(r.diags.filter(d => d.severity === 'error').length, 0);
+  }
+  // empty string and omitted label both mean "no label"
+  assert.equal(emptyStr.model.flows[0].label ?? '', '');
+  assert.equal(noLabel.model.flows[0].label, undefined);
+  // but a stray non-label token after `:` is still an error
+  assert.ok(check(`${head}M -> D : foo123\n`).codes.includes('E0101'));
+});
+
+test('tail-only flows stay overlap-free on a dense application diagram', async () => {
+  // With labels omitted, the protocol tail takes the label's place and is
+  // overlap-resolved like a label — a dense example must still reach 0.
+  const { overlapsAfter } = await build(load('application-large.cairn'));
+  assert.equal(overlapsAfter, 0);
+});
+
+test('infrastructure protocol stays mandatory (E0240) even when the label is omitted', () => {
+  const src = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { server V "v" { app-instance A "a" } app-instance B "b" } }\nA -> B\n';
+  const { codes } = check(src);
+  assert.ok(codes.includes('E0240'));
+  assert.ok(!codes.includes('E0203')); // label omission is fine; only the protocol is flagged
+});
+
+test('gateway, auth, and idp are valid in infrastructure, unknown in other views', () => {
+  const infra = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway"\nauth OAUTH2 "Auth"\nidp IDP "IdP" } }\n';
+  assert.ok(!check(infra).codes.includes('E0201'));
+  // rejected in logical, application, security
+  for (const v of ['logical', 'application', 'security']) {
+    assert.ok(check(`diagram ${v} "t"\ngateway GW "Gateway"\n`).codes.includes('E0201'));
+    assert.ok(check(`diagram ${v} "t"\nauth OAUTH2 "Auth"\n`).codes.includes('E0201'));
+    assert.ok(check(`diagram ${v} "t"\nidp IDP "IdP"\n`).codes.includes('E0201'));
+  }
+});
+
+test('gateway renders as a rounded rect with shield badge, overlaps 0', async () => {
+  const { svg, overlapsAfter } = await build('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" } }\nauth OAUTH2 "OAuth2"\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\n');
+  assert.equal(overlapsAfter, 0);
+  assert.match(svg, /Q \d+ \d+ \d+ \d+/); // kite-shield bezier badge
+});
+
+test('auth renders with a lock icon badge (path + rect), overlaps 0', async () => {
+  const { svg, overlapsAfter } = await build('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { auth OAUTH2 "OAuth2"\ngateway GW "Gateway" } }\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\nGW -> OAUTH2 : "Forward" (HTTP/80)\n');
+  assert.equal(overlapsAfter, 0);
+  // lock shackle arc + body rect
+  assert.match(svg, /v -4 a 5 5 0 0 1 10 0 v 4/);
+  assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
 });
