@@ -92078,10 +92078,10 @@ var require_elk_bundled = __commonJS({
   }
 });
 
-// src/playground-entry.ts
+// src/playground.ts
 var import_elk_bundled = __toESM(require_elk_bundled(), 1);
 
-// src/elk.ts
+// src/elk-engine.ts
 var factory = null;
 var instance = null;
 function setElkFactory(f) {
@@ -92091,7 +92091,7 @@ function setElkFactory(f) {
 async function getElk() {
   if (instance) return instance;
   if (!factory) {
-    const spec = "./elk-node.ts";
+    const spec = "./elk-worker.ts";
     const mod = await import(
       /* @vite-ignore */
       spec
@@ -92102,7 +92102,7 @@ async function getElk() {
   return instance;
 }
 
-// src/lex.ts
+// src/lexer.ts
 var HEX = /^[0-9a-fA-F]{3,8}$/;
 var isIdChar = (c) => /[A-Za-z0-9_\-/.]/.test(c);
 function lex(src, diags) {
@@ -92842,7 +92842,7 @@ function themeFor(name, view) {
   return { palette: t.palette, kinds, levels: t.levels };
 }
 
-// src/parse.ts
+// src/parser.ts
 function parse(src) {
   const diags = [];
   const toks = lex(src, diags);
@@ -93239,7 +93239,7 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
   }
 }
 
-// src/validate.ts
+// src/validator.ts
 function validate(model) {
   const view = model.type ? views[model.type] : void 0;
   if (model.type && !view) {
@@ -93615,7 +93615,7 @@ function levenshtein(a, b, cap) {
   return dp[a.length];
 }
 
-// src/text.ts
+// src/text-metrics.ts
 var FS_NODE = 12.5;
 var REF_BASE = 12.5;
 var fontSizes = (base) => {
@@ -93676,7 +93676,7 @@ var nodeSize = (kind, label, fs = FS_NODE) => {
   };
 };
 
-// src/fold.ts
+// src/slide-fold.ts
 var PAD_TOP = 30;
 var PAD = 12;
 var LANE_STEP = 10;
@@ -93970,7 +93970,7 @@ async function foldedLayout(model, view, elk) {
   return { width: W, height: H, nodes, edges, layoutMs: 0 };
 }
 
-// src/layout.ts
+// src/scene-layout.ts
 async function layout(model, view) {
   const elk = await getElk();
   const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
@@ -94171,7 +94171,7 @@ async function layout(model, view) {
   return sceneFromRes(res, layoutMs);
 }
 
-// src/render.ts
+// src/svg-render.ts
 var HOP_RADIUS = 5;
 var SEC_LEVEL_FR = { public: "public", internal: "interne", restricted: "restreint", secret: "secret" };
 var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
@@ -94588,7 +94588,7 @@ function render(model, view, scene) {
   return { svg, overlapsBefore, overlapsAfter };
 }
 
-// src/playground-entry.ts
+// src/playground.ts
 setElkFactory(() => new import_elk_bundled.default());
 async function compile(source, opts) {
   const { model, diags } = parse(source);
