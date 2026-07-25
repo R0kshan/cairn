@@ -192,8 +192,18 @@ const args = process.argv.slice(2);
 const cmd = args[0];
 
 // The single positional argument every command takes is the .cairn file: the
-// first non-flag token that isn't the command verb itself.
-const positionalFile = (): string | undefined => args.find(a => !a.startsWith('-') && a !== cmd);
+// first non-flag token that isn't the command verb and isn't the value of a
+// value-taking flag (`-o`, `--format`).
+const VALUE_FLAGS = new Set(['-o', '--format']);
+const positionalFile = (): string | undefined => {
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (VALUE_FLAGS.has(a)) { i++; continue; }
+    if (a.startsWith('-') || a === cmd) continue;
+    return a;
+  }
+  return undefined;
+};
 
 function usage(): never {
   console.log(`cairn — architecture diagrams as code
@@ -226,7 +236,12 @@ function loadAndCheck(file: string): { src: string; model: any; diags: Diagnosti
 // extension swapped for `suffix` (e.g. `.svg`, `.flow.csv`).
 function resolveOutputPath(file: string, suffix: string): string {
   const oIdx = args.indexOf('-o');
-  return oIdx >= 0 ? args[oIdx + 1] : file.replace(/\.cairn$/, '') + suffix;
+  if (oIdx >= 0) {
+    const out = args[oIdx + 1];
+    if (!out || out.startsWith('-')) usage();
+    return out;
+  }
+  return file.replace(/\.cairn$/, '') + suffix;
 }
 
 // Errors are fatal: print the full diagnostic report to stderr and stop before

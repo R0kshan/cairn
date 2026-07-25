@@ -34,7 +34,7 @@ committed artifacts are what ships. Nothing rebuilds them automatically, so a
 source change without a rebuild leaves the playground on stale code even though
 all CLI tests pass (the test suite doesn't exercise these bundles).
 
-**Don't read or edit the bundles by hand.** Read `src/playground-entry.ts`
+**Don't read or edit the bundles by hand.** Read `src/playground.ts`
 (exports `compile`, `version`, `themeNames`) and the modules it imports instead.
 
 ## Local preview

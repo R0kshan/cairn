@@ -4,7 +4,7 @@
 
 ## Getting started
 
-No build step — TypeScript runs directly on **Node ≥ 22.6** via `node --experimental-strip-types`.
+No build step — TypeScript runs directly on **Node ≥ 22.6** via the `--experimental-strip-types` flag.
 
 ```sh
 npm install
@@ -13,6 +13,15 @@ npm run cairn -- build my.cairn      # render it to SVG
 ```
 
 The only runtime dependency is `elkjs`; the dev toolchain is just biome + typescript. Keep both lists that short.
+
+### Why no build step works for cairn
+
+`--experimental-strip-types` tells Node to erase the type annotations and run the resulting JavaScript — no compilation, no `dist/`, no sourcemap chasing. This matters in **development only** — the shipped binary is compiled by Bun and runs without Node. In dev the flag eliminates the entire compile step:
+
+- **Instant edit-run cycle.** Change source, re-run the test or CLI command right away — no `tsc --watch`, no `dist/`
+- **No unsupported TS features needed.** The flag doesn't support `enum` with initializers, `const enum`, `namespace`, or legacy decorators. cairn uses none of these.
+
+The tradeoff: it's experimental (track [node#53725](https://github.com/nodejs/node/issues/53725)). If the flag changes or disappears, the necessary adaptations will be made by this repository's maintainer.
 
 ## What you can't break
 

@@ -18,6 +18,14 @@ Not a general diagramming tool.
 - **No build step.** `.ts` runs directly via `node --experimental-strip-types`
   (Node ≥ 22.6). Don't add a transpile/bundle step, emit `dist/`, or rewrite
   imports to `.js` — the explicit `.ts` import extensions are intentional.
+  This flag erases type annotations at runtime without compiling them. It
+  matters in **development only** (the shipped binary uses Bun's compiler
+  and runs without Node). In dev it eliminates the compile step — change
+  source and re-run, no `tsc --watch` or `dist/` overhead. The project uses
+  none of the unsupported TS features (`enum` initializers, `const enum`,
+  `namespace`, legacy decorators). The tradeoff: it's experimental
+  ([node#53725](https://github.com/nodejs/node/issues/53725)). If it changes,
+  the fallback is a one-liner `tsc` compile step.
 - **Type checking exists ONLY in `npm run typecheck`** — the runtime strips
   types without checking them. (TS 7.x native compiler; needs its per-platform
   binary installed.)

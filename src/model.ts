@@ -5,10 +5,11 @@
  *   • Types — the AST (Element, Flow, BusinessObject, Model), the resolved
  *     DiagramStyle, and Diagnostic. Every AST node carries a source Span so a
  *     diagnostic can point back at the exact characters.
- *   • The view registry (`views`) — each of the four views (logical,
+  *   • The view registry (`views`) — each of the four views (logical,
  *     application, infrastructure, security) declares its own kinds, nesting
- *     rules, partitions, and per-view checks. This is the one place a new
- *     view/diagnostic is added; parse/validate/layout/render just read it.
+ *     rules, partitions, and per-view checks. A new view is added here;
+ *     per-view validation rules and their diagnostic messages are defined in
+ *     the view object, while diagnostic emission lives in `validator.ts`.
  *   • Themes & palettes — a theme is a chrome palette plus role colours; views
  *     map their kinds to roles, so each theme is defined once and applies to all.
  *

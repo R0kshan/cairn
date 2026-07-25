@@ -69,7 +69,9 @@ export function watchCommand(file: string, outFile: string) {
         if (diags.length) console.log(renderHuman(file, src, diags, process.stdout.isTTY ?? false) + '\n');
         console.log(`✓ ${outFile} (${scene.width}×${scene.height}, layout ${scene.layoutMs} ms, label overlaps: ${overlapsAfter})`);
       } catch (e: any) {
-        console.error('layout error:', e.message);
+        writeFileSync(outFile, errorPanelSvg(file, [{ code: 'E0000', severity: 'error', message: e.message, span: { line: 0, col: 0, len: 0 }, help: 'check the terminal for details' }]));
+        console.error('layout/render error:', e.message);
+        console.log(`\n✗ ${outFile} shows an error panel until the file compiles`);
       }
     }
     building = false;

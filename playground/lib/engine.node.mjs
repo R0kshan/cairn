@@ -94242,12 +94242,11 @@ function render(model, view, scene) {
   };
   const nodeBoxes = scene.nodes.filter((n) => !n.container).map((n) => ({ x: n.x, y: n.y, w: n.w, h: n.h }));
   const labels = scene.edges.flatMap((e) => e.labels);
-  const labelBoxes = labels.map((l) => l);
   const countLabelOverlaps = () => {
     let count = 0;
-    for (let i = 0; i < labelBoxes.length; i++) {
-      for (let j = i + 1; j < labelBoxes.length; j++) if (overlaps(labelBoxes[i], labelBoxes[j])) count++;
-      for (const node of nodeBoxes) if (overlaps(labelBoxes[i], node)) count++;
+    for (let i = 0; i < labels.length; i++) {
+      for (let j = i + 1; j < labels.length; j++) if (overlaps(labels[i], labels[j])) count++;
+      for (const node of nodeBoxes) if (overlaps(labels[i], node)) count++;
     }
     return count;
   };
@@ -94258,7 +94257,7 @@ function render(model, view, scene) {
       else if (requested === "below") label.y += label.h / 2 + 5;
     }
     for (const label of labels) {
-      const collides = () => labelBoxes.some((o) => o !== label && overlaps(o, label)) || nodeBoxes.some((node) => overlaps(node, label));
+      const collides = () => labels.some((o) => o !== label && overlaps(o, label)) || nodeBoxes.some((node) => overlaps(node, label));
       if (!collides()) continue;
       const originY = label.y, originX = label.x;
       let settled = false;
@@ -94311,40 +94310,43 @@ function render(model, view, scene) {
   const centerLinesY = (top, h, lineCount) => top + h / 2 - (lineCount - 1) * (FS_NODE2 + 2) / 2 + 4;
   const renderContainerNode = (n) => {
     const s = resolveStyle(n.kind, n.id);
+    const fill = escAttr(s.fill ?? palette.containerFill), stroke = escAttr(s.stroke?.color ?? palette.containerStroke), text = escAttr(s.text ?? palette.containerLabel);
     const dash = dashArray(s.stroke?.style);
-    let svg2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6" fill="${s.fill ?? palette.containerFill}" stroke="${s.stroke?.color ?? palette.containerStroke}" stroke-width="${s.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+    let svg2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${s.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
     n.label.split("\n").forEach((line, i) => {
-      svg2 += `<text x="${n.x + 10}" y="${n.y + 18 + i * 14}" font-size="${FS_CONT}" font-weight="bold" fill="${s.text ?? palette.containerLabel}">${esc(line)}</text>
+      svg2 += `<text x="${n.x + 10}" y="${n.y + 18 + i * 14}" font-size="${FS_CONT}" font-weight="bold" fill="${text}">${esc(line)}</text>
 `;
     });
     const level = n.kind === "trust-zone" ? elementAttr.get(n.id) : void 0;
     if (level) {
       const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
-      svg2 += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? palette.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
+      svg2 += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
 `;
     }
     return svg2;
   };
   const renderActor = (n, s, lines) => {
     const cx = n.x + n.w / 2;
-    const stroke = s.stroke?.color ?? palette.actorStroke;
+    const stroke = escAttr(s.stroke?.color ?? palette.actorStroke);
+    const text = escAttr(s.text ?? palette.actorText);
     let svg2 = `<circle cx="${cx}" cy="${n.y + 10}" r="7" fill="none" stroke="${stroke}" stroke-width="1.5"/>
 <path d="M ${cx - 11} ${n.y + 32} q 11 -19 22 0" fill="none" stroke="${stroke}" stroke-width="1.5"/>
 `;
     lines.forEach((line, i) => {
-      svg2 += `<text x="${cx}" y="${n.y + 44 + i * 11}" font-size="${FS_NODE2 - 1.5}" text-anchor="middle" fill="${s.text ?? palette.actorText}">${esc(line)}</text>
+      svg2 += `<text x="${cx}" y="${n.y + 44 + i * 11}" font-size="${FS_NODE2 - 1.5}" text-anchor="middle" fill="${text}">${esc(line)}</text>
 `;
     });
     return svg2;
   };
   const renderDatastore = (n, s, lines) => {
-    const ry = 7, stroke = s.stroke?.color ?? palette.nodeStroke, fill = s.fill ?? palette.nodeFill;
+    const ry = 7;
+    const stroke = escAttr(s.stroke?.color ?? palette.nodeStroke), fill = escAttr(s.fill ?? palette.nodeFill);
     const body2 = `<path d="M ${n.x} ${n.y + ry} v ${n.h - 2 * ry} a ${n.w / 2} ${ry} 0 0 0 ${n.w} 0 v ${-(n.h - 2 * ry)}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
 <ellipse cx="${n.x + n.w / 2}" cy="${n.y + ry}" rx="${n.w / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
 `;
     const cy = n.y + ry + (n.h - ry) / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
-    return body2 + centeredNodeLabel(lines, n.x + n.w / 2, cy, s.text ?? palette.nodeText);
+    return body2 + centeredNodeLabel(lines, n.x + n.w / 2, cy, escAttr(s.text ?? palette.nodeText));
   };
   const renderQueue = (n, s, lines) => {
     const rx = 8;
@@ -94373,10 +94375,11 @@ function render(model, view, scene) {
     return body2 + centeredNodeLabel(lines, cx + 10, centerLinesY(n.y, n.h, lines.length), text);
   };
   const renderPlainBox = (n, s, lines) => {
+    const fill = escAttr(s.fill ?? palette.nodeFill), stroke = escAttr(s.stroke?.color ?? palette.nodeStroke), text = escAttr(s.text ?? palette.nodeText);
     const dash = dashArray(s.stroke?.style);
-    const body2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${s.fill ?? palette.nodeFill}" stroke="${s.stroke?.color ?? palette.nodeStroke}" stroke-width="${s.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+    const body2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${s.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
-    return body2 + centeredNodeLabel(lines, n.x + n.w / 2, centerLinesY(n.y, n.h, lines.length), s.text ?? palette.nodeText);
+    return body2 + centeredNodeLabel(lines, n.x + n.w / 2, centerLinesY(n.y, n.h, lines.length), text);
   };
   const renderLeafNode = (n) => {
     const s = resolveStyle(n.kind, n.id);
@@ -94392,6 +94395,8 @@ function render(model, view, scene) {
         return renderGateway(n, s, lines);
       case "auth":
         return renderAuth(n, s, lines);
+      case "idp":
+        return renderPlainBox(n, s, lines);
       default:
         return renderPlainBox(n, s, lines);
     }
@@ -94438,7 +94443,7 @@ function render(model, view, scene) {
     const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
     let svg2 = "";
     if (e.pts.length) {
-      svg2 += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerId(headColor)})"/>
+      svg2 += `<path d="${edgePath(e.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerId(headColor)})"/>
 `;
     }
     for (const label of e.labels) {
@@ -94550,7 +94555,7 @@ function render(model, view, scene) {
       }
     }
     bandY += scaled(24);
-    bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${edgeColor}" stroke-width="1.3" marker-end="url(#${markerId(edgeColor)})"/>
+    bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(edgeColor)}" stroke-width="1.3" marker-end="url(#${markerId(edgeColor)})"/>
 `;
     const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + ui.numberedSuffix : legendFlowLabel) + (style.flowColor === "by-source" ? style.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
@@ -94580,10 +94585,10 @@ function render(model, view, scene) {
   const markerSize = style.arrows === "large" ? round1(11 * fonts.scale) : 7;
   if (arrowMarkers.size === 0) markerId(edgeColor);
   const markers = [...arrowMarkers].map(([color, id]) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${markerSize}" markerHeight="${markerSize}" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("\n");
+<path d="M0,0 L10,5 L0,10 z" fill="${escAttr(color)}"/></marker>`).join("\n");
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${escAttr(style.font.family)},Arial,sans-serif">
 <defs>${markers}</defs>
-<rect width="${W}" height="${totalH}" fill="${style.background ?? palette.background}"/>
+<rect width="${W}" height="${totalH}" fill="${escAttr(style.background ?? palette.background)}"/>
 ` + body + bandsSvg + "</svg>\n";
   return { svg, overlapsBefore, overlapsAfter };
 }

@@ -42,7 +42,7 @@ jobs:
       - run: npm run test:binary
 
   # Proves the browser/node playground bundles still build (esbuild fails on a
-  # broken import — e.g. in src/playground-entry.ts).
+  # broken import — e.g. in src/playground.ts).
   playground:
     runs-on: ubuntu-latest
     steps:
