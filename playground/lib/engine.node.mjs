@@ -92362,6 +92362,8 @@ var logicalView = {
   legendFlowLabelFr: "Flux fonctionnel (libell\xE9 = donn\xE9es \xE9chang\xE9es)",
   flowTechRequired: null,
   flowTechRecommended: null,
+  businessObjects: true,
+  // business objects are a logical-view concept ("what data circulates")
   partitions: { "actor-group": 0, system: 1, external: 2 },
   flowLabelRequired: {
     code: "E0203",
@@ -92418,14 +92420,15 @@ var logicalView = {
 };
 var applicationView = {
   name: "application",
-  kinds: ["actor-group", "actor", "application", "module", "datastore", "external"],
+  kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
   containerKinds: ["actor-group", "application", "external"],
-  partitions: { "actor-group": 0, application: 1, datastore: 1, external: 2 },
+  partitions: { "actor-group": 0, application: 1, queue: 1, datastore: 1, external: 2 },
   legendNames: {
     "actor-group": "Actor group",
     actor: "Actor",
     application: "Application",
     module: "Application module",
+    queue: "Message queue / broker",
     datastore: "Datastore / registry",
     external: "External system"
   },
@@ -92434,17 +92437,15 @@ var applicationView = {
     actor: "Acteur",
     application: "Application",
     module: "Module applicatif",
+    queue: "File de messages / broker",
     datastore: "Entrep\xF4t / r\xE9f\xE9rentiel",
     external: "Syst\xE8me externe"
   },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Application flow \u2014 (protocol, format) under the label",
   legendFlowLabelFr: "Flux applicatif \u2014 (protocole, format) sous le libell\xE9",
-  flowLabelRequired: {
-    code: "E0203",
-    message: "flow without a label",
-    help: 'add a label describing the exchange: `A -> B : "\u2026" (HTTP, JSON)`'
-  },
+  flowLabelRequired: null,
+  // labels are optional on the application view (issue #19)
   flowTechRequired: null,
   // C4 container-diagram practice: inter-process relationships should carry
   // their technology/protocol. Warning (not error); human/actor flows exempt.
@@ -92472,13 +92473,14 @@ var applicationView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["module", "datastore"],
+    kinds: ["module", "queue", "datastore"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
     "actor-group": { fill: "#eef4fb", stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 } },
     application: { fill: "#e8f1f8", stroke: { color: "#5b8db8", style: "solid", width: 1.2 } },
     module: { fill: "#ffffff", stroke: { color: "#5b7a99", style: "solid", width: 1.3 } },
+    queue: { fill: "#f3eef8", stroke: { color: "#8a6fae", style: "solid", width: 1.3 } },
     datastore: { fill: "#f3eef8", stroke: { color: "#8a6fae", style: "solid", width: 1.3 } },
     external: { fill: "#f0eef5", stroke: { color: "#9187b3", style: "dashed", width: 1.2 } },
     actor: {}
@@ -92487,6 +92489,7 @@ var applicationView = {
     "actor-group": { fill: "#232a33", stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 } },
     application: { fill: "#1f2a33", stroke: { color: "#4a7ba6", style: "solid", width: 1.2 } },
     module: { fill: "#252a31", stroke: { color: "#5f7f9e", style: "solid", width: 1.3 } },
+    queue: { fill: "#2a2433", stroke: { color: "#7a5f9e", style: "solid", width: 1.3 } },
     datastore: { fill: "#2a2433", stroke: { color: "#7a5f9e", style: "solid", width: 1.3 } },
     external: { fill: "#2a2833", stroke: { color: "#7d72a0", style: "dashed", width: 1.2 } },
     actor: {}
@@ -92497,7 +92500,7 @@ var infrastructureView = {
   // `actor` = the consumer/user of the infrastructure (C4 Person). It has no
   // network location, so it is not a container and needs no zone; it reads on
   // the entry edge, distinct from `external` third-party systems on the exit edge.
-  kinds: ["actor", "site", "network-zone", "server", "app-instance", "external"],
+  kinds: ["actor", "site", "network-zone", "server", "app-instance", "queue", "gateway", "auth", "idp", "external"],
   containerKinds: ["site", "network-zone", "server"],
   partitions: { external: 2 },
   partitionByOrder: true,
@@ -92510,6 +92513,10 @@ var infrastructureView = {
     "network-zone": "Network zone",
     server: "Server / VM",
     "app-instance": "Deployed application",
+    queue: "Message queue / broker",
+    gateway: "Gateway / reverse proxy",
+    auth: "Auth middleware",
+    idp: "Identity provider (IdP)",
     external: "External system"
   },
   legendNamesFr: {
@@ -92518,16 +92525,17 @@ var infrastructureView = {
     "network-zone": "Zone r\xE9seau",
     server: "Serveur / VM",
     "app-instance": "Application d\xE9ploy\xE9e",
+    queue: "File de messages / broker",
+    gateway: "Passerelle / proxy",
+    auth: "Middleware d'authentification",
+    idp: "Fournisseur d'identit\xE9 (IdP)",
     external: "Syst\xE8me externe"
   },
   bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
   legendFlowLabel: "Technical flow (protocol, port)",
   legendFlowLabelFr: "Flux technique (protocole, port)",
-  flowLabelRequired: {
-    code: "E0203",
-    message: "flow without a label",
-    help: 'add a label describing the exchange: `A -> B : "\u2026" (HTTPS/443)`'
-  },
+  flowLabelRequired: null,
+  // labels are optional on the infrastructure view (issue #19); protocol stays required (E0240)
   flowTechRecommended: null,
   flowTechRequired: {
     code: "E0240",
@@ -92560,7 +92568,7 @@ var infrastructureView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance"],
+    kinds: ["app-instance", "queue", "gateway", "auth", "idp"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
@@ -92569,6 +92577,10 @@ var infrastructureView = {
     "network-zone": { fill: "#ecf3ec", stroke: { color: "#6d9a6d", style: "dashed", width: 1.2 } },
     server: { fill: "#ffffff", stroke: { color: "#55606b", style: "solid", width: 1.5 } },
     "app-instance": { fill: "#fff7e6", stroke: { color: "#b08d2a", style: "solid", width: 1.2 } },
+    queue: { fill: "#f3eef8", stroke: { color: "#8a6fae", style: "solid", width: 1.3 } },
+    gateway: { fill: "#f5e6dd", stroke: { color: "#bf5530", style: "solid", width: 1.6 } },
+    auth: { fill: "#fef3e2", stroke: { color: "#d68a2a", style: "solid", width: 1.5 } },
+    idp: { fill: "#e0f0f0", stroke: { color: "#3a8f8f", style: "solid", width: 1.3 } },
     external: { fill: "#f0eef5", stroke: { color: "#9187b3", style: "dashed", width: 1.2 } }
   },
   defaultsDark: {
@@ -92577,6 +92589,10 @@ var infrastructureView = {
     "network-zone": { fill: "#20291f", stroke: { color: "#5f8a5f", style: "dashed", width: 1.2 } },
     server: { fill: "#252a31", stroke: { color: "#6b7885", style: "solid", width: 1.5 } },
     "app-instance": { fill: "#2e2717", stroke: { color: "#b08d2a", style: "solid", width: 1.2 } },
+    queue: { fill: "#2a2433", stroke: { color: "#7a5f9e", style: "solid", width: 1.3 } },
+    gateway: { fill: "#332218", stroke: { color: "#c96a4a", style: "solid", width: 1.6 } },
+    auth: { fill: "#332614", stroke: { color: "#b88a30", style: "solid", width: 1.5 } },
+    idp: { fill: "#1a2e2e", stroke: { color: "#4fafaf", style: "solid", width: 1.3 } },
     external: { fill: "#2a2833", stroke: { color: "#7d72a0", style: "dashed", width: 1.2 } }
   }
 };
@@ -92710,6 +92726,11 @@ var KIND_ROLE = {
   block: "leaf",
   external: "external",
   datastore: "datastore",
+  queue: "datastore",
+  // a message queue is a data conduit — shares the datastore palette, distinguished by its horizontal-cylinder shape
+  gateway: "authGateway",
+  auth: "auth",
+  idp: "identityProvider",
   site: "site",
   "network-zone": "networkZone",
   server: "server",
@@ -92760,7 +92781,10 @@ var mkTheme = (s) => {
       networkZone: cont(h.greenF, h.green, true),
       server: cont(h.serverF, h.serverS, false, 1.5),
       appInstance: leaf(h.aiF, h.aiS, 1.2),
-      securityNode: leaf(h.nodeF, h.node, 1.6)
+      securityNode: leaf(h.nodeF, h.node, 1.6),
+      authGateway: leaf(h.authF, h.auth, 1.4),
+      auth: leaf(h.nodeF, h.node, 1.5),
+      identityProvider: leaf(h.idpF, h.idp)
     },
     levels: {
       public: cont(s.lv.public[0], s.lv.public[1], false, 1.4),
@@ -92774,37 +92798,37 @@ var themes = {
   // modern professional — the new default
   light: mkTheme({
     pal: { bg: "#ffffff", text: "#17202c", sub: "#3a4553", muted: "#79828f", cFill: "#f5f6f8", cStroke: "#c7ccd3", nFill: "#ffffff", nStroke: "#48546a", edge: "#5a6675", div: "#e6e9ee", halo: "#ffffff", aStroke: "#1f5e91", aText: "#20364c", chip: ["#fff2d4", "#d3a01f", "#6a5111"], badge: ["#ffffff", "#8a94a2"] },
-    h: { blue: "#1f77b4", blueF: "#e9f2fb", amber: "#c17d1c", amberF: "#fbf4e9", app: "#2f83b6", appF: "#e9f3fa", gold: "#cf9f2f", goldF: "#fdfaf0", violet: "#8659a6", violetF: "#f4eff8", red: "#cf4b3f", redF: "#fdecea", purple: "#8a53a8", purpleF: "#f4edf8", green: "#1a8f66", greenF: "#eaf5ef", siteS: "#7c8794", siteF: "#f3f5f6", leafF: "#ffffff", leafS: "#48546a", aiS: "#c88a2e", aiF: "#fdf4e3", node: "#d1600f", nodeF: "#fdefe3", serverS: "#48546a", serverF: "#ffffff" },
+    h: { blue: "#1f77b4", blueF: "#e9f2fb", amber: "#c17d1c", amberF: "#fbf4e9", app: "#2f83b6", appF: "#e9f3fa", gold: "#cf9f2f", goldF: "#fdfaf0", violet: "#8659a6", violetF: "#f4eff8", red: "#cf4b3f", redF: "#fdecea", purple: "#8a53a8", purpleF: "#f4edf8", green: "#1a8f66", greenF: "#eaf5ef", siteS: "#7c8794", siteF: "#f3f5f6", leafF: "#ffffff", leafS: "#48546a", aiS: "#c88a2e", aiF: "#fdf4e3", node: "#d1600f", nodeF: "#fdefe3", serverS: "#48546a", serverF: "#ffffff", auth: "#b85a30", authF: "#f5e6dd", idp: "#3a8f8f", idpF: "#e0f0f0" },
     lv: { public: ["#fdeceb", "#d0463f"], internal: ["#fef2e2", "#cf9436"], restricted: ["#e9f2fb", "#2f7cc4"], secret: ["#efe9f7", "#7a55a8"] }
   }),
   dark: mkTheme({
     pal: { bg: "#1e2530", text: "#e6edf3", sub: "#c2ccd6", muted: "#93a0ab", cFill: "#2a313c", cStroke: "#4a5560", nFill: "#252c37", nStroke: "#5a6673", edge: "#9aa7b4", div: "#3a4149", halo: "#1e2530", aStroke: "#8aa0b8", aText: "#c9d5e1", chip: ["#3a3320", "#b08d2a", "#e0c068"], badge: ["#252c37", "#5a6673"] },
-    h: { blue: "#5aa9e6", blueF: "#233242", amber: "#e0a955", amberF: "#332a1b", app: "#5aa9e6", appF: "#1f2a37", gold: "#d8c15f", goldF: "#2e2a1a", violet: "#b48ad6", violetF: "#2a2436", red: "#e0736a", redF: "#3a2422", purple: "#c085d8", purpleF: "#291f33", green: "#4fc08a", greenF: "#1c2b23", siteS: "#8a95a2", siteF: "#282d34", leafF: "#252c37", leafS: "#6b7885", aiS: "#e0a955", aiF: "#2e2717", node: "#f0894e", nodeF: "#33261c", serverS: "#6b7885", serverF: "#252c37" },
+    h: { blue: "#5aa9e6", blueF: "#233242", amber: "#e0a955", amberF: "#332a1b", app: "#5aa9e6", appF: "#1f2a37", gold: "#d8c15f", goldF: "#2e2a1a", violet: "#b48ad6", violetF: "#2a2436", red: "#e0736a", redF: "#3a2422", purple: "#c085d8", purpleF: "#291f33", green: "#4fc08a", greenF: "#1c2b23", siteS: "#8a95a2", siteF: "#282d34", leafF: "#252c37", leafS: "#6b7885", aiS: "#e0a955", aiF: "#2e2717", node: "#f0894e", nodeF: "#33261c", serverS: "#6b7885", serverF: "#252c37", auth: "#c96a4a", authF: "#332218", idp: "#4fafaf", idpF: "#1a2e2e" },
     lv: { public: ["#3a2422", "#c25a54"], internal: ["#332a1c", "#c08a44"], restricted: ["#1f2a37", "#4a86b8"], secret: ["#291f33", "#8a6cb0"] }
   }),
   slate: mkTheme({
     pal: { bg: "#f7f9fb", text: "#26303c", sub: "#465264", muted: "#8792a0", cFill: "#eef2f6", cStroke: "#c2ccd6", nFill: "#ffffff", nStroke: "#516070", edge: "#5b6673", div: "#e0e6ec", halo: "#f7f9fb", aStroke: "#3b6ea5", aText: "#2b4560", chip: ["#eaeef3", "#8595a8", "#48566a"], badge: ["#ffffff", "#93a0b0"] },
-    h: { blue: "#3b6ea5", blueF: "#e8eff6", amber: "#5b7a99", amberF: "#eef2f6", app: "#3b6ea5", appF: "#e8eff6", gold: "#7a94ad", goldF: "#f0f3f6", violet: "#7d6ba8", violetF: "#efecf5", red: "#b5544a", redF: "#f7ebe9", purple: "#8a6fae", purpleF: "#efecf6", green: "#4a8f8a", greenF: "#e9f2f1", siteS: "#8792a0", siteF: "#eef1f4", leafF: "#ffffff", leafS: "#516070", aiS: "#6f86a0", aiF: "#eef2f6", node: "#c0603a", nodeF: "#f8ece7", serverS: "#516070", serverF: "#ffffff" },
+    h: { blue: "#3b6ea5", blueF: "#e8eff6", amber: "#5b7a99", amberF: "#eef2f6", app: "#3b6ea5", appF: "#e8eff6", gold: "#7a94ad", goldF: "#f0f3f6", violet: "#7d6ba8", violetF: "#efecf5", red: "#b5544a", redF: "#f7ebe9", purple: "#8a6fae", purpleF: "#efecf6", green: "#4a8f8a", greenF: "#e9f2f1", siteS: "#8792a0", siteF: "#eef1f4", leafF: "#ffffff", leafS: "#516070", aiS: "#6f86a0", aiF: "#eef2f6", node: "#c0603a", nodeF: "#f8ece7", serverS: "#516070", serverF: "#ffffff", auth: "#a85a30", authF: "#f0e4dd", idp: "#3a8f8f", idpF: "#e4f0f0" },
     lv: { public: ["#f7ece9", "#c05a4a"], internal: ["#f3efe6", "#a8823f"], restricted: ["#e8eff6", "#3b6ea5"], secret: ["#efecf5", "#7d6ba8"] }
   }),
   sand: mkTheme({
     pal: { bg: "#faf6ee", text: "#3a2f22", sub: "#5c4c38", muted: "#8a795f", cFill: "#f2ebdd", cStroke: "#cdbfa3", nFill: "#fffdf8", nStroke: "#6b5d48", edge: "#6b5d48", div: "#e6dcc9", halo: "#faf6ee", aStroke: "#3f7a8c", aText: "#274852", chip: ["#f4e6c8", "#c19a3f", "#6b5417"], badge: ["#fffdf8", "#b3a488"] },
-    h: { blue: "#3f7a8c", blueF: "#e6f0f1", amber: "#b07d2a", amberF: "#f6ecd8", app: "#3f7a8c", appF: "#e6f0f1", gold: "#c99f45", goldF: "#f8f0dd", violet: "#9c6f4a", violetF: "#f1e9df", red: "#c0562a", redF: "#f7e6da", purple: "#8a5f7a", purpleF: "#f2e8ee", green: "#6f8f4a", greenF: "#eef2e2", siteS: "#8a795f", siteF: "#f2ecdf", leafF: "#fffdf8", leafS: "#6b5d48", aiS: "#b07d2a", aiF: "#f7efe0", node: "#c0562a", nodeF: "#f7e6da", serverS: "#6b5d48", serverF: "#fffdf8" },
+    h: { blue: "#3f7a8c", blueF: "#e6f0f1", amber: "#b07d2a", amberF: "#f6ecd8", app: "#3f7a8c", appF: "#e6f0f1", gold: "#c99f45", goldF: "#f8f0dd", violet: "#9c6f4a", violetF: "#f1e9df", red: "#c0562a", redF: "#f7e6da", purple: "#8a5f7a", purpleF: "#f2e8ee", green: "#6f8f4a", greenF: "#eef2e2", siteS: "#8a795f", siteF: "#f2ecdf", leafF: "#fffdf8", leafS: "#6b5d48", aiS: "#b07d2a", aiF: "#f7efe0", node: "#c0562a", nodeF: "#f7e6da", serverS: "#6b5d48", serverF: "#fffdf8", auth: "#a85a30", authF: "#f0e5dd", idp: "#3a7a6f", idpF: "#e5f0ed" },
     lv: { public: ["#f7e2da", "#c0562a"], internal: ["#f6ecd2", "#b0842e"], restricted: ["#e6f0f1", "#3f7a8c"], secret: ["#f0e8ef", "#8a5f7a"] }
   }),
   contrast: mkTheme({
     pal: { bg: "#ffffff", text: "#000000", sub: "#1a1a1a", muted: "#3a3a3a", cFill: "#f2f2f2", cStroke: "#333333", nFill: "#ffffff", nStroke: "#111111", edge: "#1a1a1a", div: "#cccccc", halo: "#ffffff", aStroke: "#003a66", aText: "#000000", chip: ["#ffe9b0", "#8a6d00", "#3a2e00"], badge: ["#ffffff", "#333333"] },
-    h: { blue: "#005a9c", blueF: "#e0edf7", amber: "#9a4a00", amberF: "#f6e9dd", app: "#005a9c", appF: "#e0edf7", gold: "#8a6d00", goldF: "#f6f0da", violet: "#6a2fa0", violetF: "#eee4f7", red: "#c0341a", redF: "#f9e2dd", purple: "#8a1a6a", purpleF: "#f7e0ef", green: "#00695c", greenF: "#daf0ec", siteS: "#333333", siteF: "#eeeeee", leafF: "#ffffff", leafS: "#111111", aiS: "#9a4a00", aiF: "#f6e9dd", node: "#c0341a", nodeF: "#f9e2dd", serverS: "#111111", serverF: "#ffffff" },
+    h: { blue: "#005a9c", blueF: "#e0edf7", amber: "#9a4a00", amberF: "#f6e9dd", app: "#005a9c", appF: "#e0edf7", gold: "#8a6d00", goldF: "#f6f0da", violet: "#6a2fa0", violetF: "#eee4f7", red: "#c0341a", redF: "#f9e2dd", purple: "#8a1a6a", purpleF: "#f7e0ef", green: "#00695c", greenF: "#daf0ec", siteS: "#333333", siteF: "#eeeeee", leafF: "#ffffff", leafS: "#111111", aiS: "#9a4a00", aiF: "#f6e9dd", node: "#c0341a", nodeF: "#f9e2dd", serverS: "#111111", serverF: "#ffffff", auth: "#993a1a", authF: "#f6e3dd", idp: "#005a5a", idpF: "#daf0f0" },
     lv: { public: ["#f9dcd6", "#c0341a"], internal: ["#f6e6c8", "#9a6a00"], restricted: ["#e0edf7", "#005a9c"], secret: ["#eee0f7", "#6a2fa0"] }
   }),
   nord: mkTheme({
     pal: { bg: "#2e3440", text: "#eceff4", sub: "#d8dee9", muted: "#9aa3b2", cFill: "#3b4252", cStroke: "#4c566a", nFill: "#3b4252", nStroke: "#4c566a", edge: "#abb2bf", div: "#434c5e", halo: "#2e3440", aStroke: "#88c0d0", aText: "#e5e9f0", chip: ["#3b3a2a", "#ebcb8b", "#ebcb8b"], badge: ["#3b4252", "#4c566a"] },
-    h: { blue: "#81a1c1", blueF: "#333b4a", amber: "#ebcb8b", amberF: "#3a3524", app: "#81a1c1", appF: "#2f3a44", gold: "#d0b47a", goldF: "#37331f", violet: "#b48ead", violetF: "#352d38", red: "#bf616a", redF: "#3a2a2d", purple: "#a38bbd", purpleF: "#312a3a", green: "#8fbcbb", greenF: "#26332f", siteS: "#9aa3b2", siteF: "#353c49", leafF: "#3b4252", leafS: "#5a6377", aiS: "#ebcb8b", aiF: "#3a3524", node: "#d08770", nodeF: "#372a24", serverS: "#5a6377", serverF: "#3b4252" },
+    h: { blue: "#81a1c1", blueF: "#333b4a", amber: "#ebcb8b", amberF: "#3a3524", app: "#81a1c1", appF: "#2f3a44", gold: "#d0b47a", goldF: "#37331f", violet: "#b48ead", violetF: "#352d38", red: "#bf616a", redF: "#3a2a2d", purple: "#a38bbd", purpleF: "#312a3a", green: "#8fbcbb", greenF: "#26332f", siteS: "#9aa3b2", siteF: "#353c49", leafF: "#3b4252", leafS: "#5a6377", aiS: "#ebcb8b", aiF: "#3a3524", node: "#d08770", nodeF: "#372a24", serverS: "#5a6377", serverF: "#3b4252", auth: "#c96a4a", authF: "#332218", idp: "#6fafaf", idpF: "#203432" },
     lv: { public: ["#3a2a2d", "#bf616a"], internal: ["#3a3524", "#d0a85f"], restricted: ["#2f3a44", "#81a1c1"], secret: ["#312a3a", "#a38bbd"] }
   }),
   solarized: mkTheme({
     pal: { bg: "#fdf6e3", text: "#586e75", sub: "#657b83", muted: "#93a1a1", cFill: "#eee8d5", cStroke: "#c9c1a8", nFill: "#fdf6e3", nStroke: "#93a1a1", edge: "#657b83", div: "#ded8c3", halo: "#fdf6e3", aStroke: "#268bd2", aText: "#073642", chip: ["#f2e9c8", "#b58900", "#5c4a00"], badge: ["#fdf6e3", "#b3aa90"] },
-    h: { blue: "#268bd2", blueF: "#e3edf3", amber: "#b58900", amberF: "#f2ecd6", app: "#268bd2", appF: "#e3edf3", gold: "#cb9b2e", goldF: "#f4eed6", violet: "#6c71c4", violetF: "#e8e6f2", red: "#dc322f", redF: "#f7e2d9", purple: "#d33682", purpleF: "#f6e0ea", green: "#2aa198", greenF: "#dff0ec", siteS: "#93a1a1", siteF: "#eee8d5", leafF: "#fdf6e3", leafS: "#657b83", aiS: "#b58900", aiF: "#f2ecd6", node: "#cb4b16", nodeF: "#f7e4d6", serverS: "#657b83", serverF: "#fdf6e3" },
+    h: { blue: "#268bd2", blueF: "#e3edf3", amber: "#b58900", amberF: "#f2ecd6", app: "#268bd2", appF: "#e3edf3", gold: "#cb9b2e", goldF: "#f4eed6", violet: "#6c71c4", violetF: "#e8e6f2", red: "#dc322f", redF: "#f7e2d9", purple: "#d33682", purpleF: "#f6e0ea", green: "#2aa198", greenF: "#dff0ec", siteS: "#93a1a1", siteF: "#eee8d5", leafF: "#fdf6e3", leafS: "#657b83", aiS: "#b58900", aiF: "#f2ecd6", node: "#cb4b16", nodeF: "#f7e4d6", serverS: "#657b83", serverF: "#fdf6e3", auth: "#b85a30", authF: "#f5e6dd", idp: "#2aa198", idpF: "#dff0ec" },
     lv: { public: ["#f7ddd6", "#dc322f"], internal: ["#f2e6c8", "#b58900"], restricted: ["#e3edf3", "#268bd2"], secret: ["#e8e6f2", "#6c71c4"] }
   })
 };
@@ -92869,7 +92893,16 @@ function parse(src) {
       }
       const key = next();
       let kindTarget;
-      if (at("id")) kindTarget = next().text;
+      if (at("id")) {
+        const t = next();
+        if (t.text === "__proto__" || t.text === "constructor" || t.text === "prototype") {
+          err(`\`${t.text}\` is a reserved name and can't be styled`, t.span);
+          syncLine();
+          skipNl();
+          continue;
+        }
+        kindTarget = t.text;
+      }
       if (!at("colon")) {
         err("`:` expected after the style property", peek().span);
         syncLine();
@@ -92977,7 +93010,9 @@ function parse(src) {
       if (at("colon")) {
         next();
         if (at("str")) flow.label = next().text;
-        else err("flow label expected after `:`", peek().span, 'e.g. `A -> B : "Quote request"`');
+        else if (!at("lparen") && !at("lbrack") && !at("lbrace") && !at("nl") && !at("rbrace") && !at("eof")) {
+          err("flow label expected after `:`", peek().span, 'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`');
+        }
       }
       if (at("lparen")) {
         const open = next();
@@ -93059,7 +93094,7 @@ function parse(src) {
 var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
 var LABEL_POS = /* @__PURE__ */ new Set(["on-line", "above", "below"]);
 function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
-  const strokeFrom = (vals, span) => {
+  const strokeFrom = (vals, _span) => {
     const s = {};
     for (const v of vals) {
       if (v.kind === "color") {
@@ -93206,29 +93241,46 @@ function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
 
 // src/validate.ts
 function validate(model) {
-  const diags = [];
   const view = model.type ? views[model.type] : void 0;
   if (model.type && !view) {
-    diags.push({
+    return [{
       code: "E0200",
       severity: "error",
       message: `unknown diagram type \`${model.type}\``,
       span: model.typeSpan,
       help: `available types: ${Object.keys(views).join(", ")} (application and infrastructure land in phase 3)`
-    });
-    return diags;
+    }];
   }
-  if (!view) return diags;
-  const all = [];
-  (function walk(els) {
+  if (!view) return [];
+  const elements = flatten(model.elements);
+  return [
+    ...checkDuplicateIds(elements),
+    ...checkUnknownKinds(elements, view),
+    ...checkMissingLabels(elements),
+    ...checkNesting(elements, view),
+    ...checkFlows(model, view),
+    ...checkElementAttributes(elements, view),
+    ...checkTrustBoundaries(model, view),
+    ...checkBusinessObjects(model, view),
+    ...checkMinimumCounts(elements, model, view),
+    ...checkIsolatedElements(model, view, elements)
+  ];
+}
+function flatten(roots) {
+  const out = [];
+  (function collect(els) {
     for (const e of els) {
-      all.push(e);
-      walk(e.children);
+      out.push(e);
+      collect(e.children);
     }
-  })(model.elements);
-  const seen = /* @__PURE__ */ new Map();
-  for (const e of all) {
-    const prev = seen.get(e.id);
+  })(roots);
+  return out;
+}
+function checkDuplicateIds(elements) {
+  const diags = [];
+  const firstSeen = /* @__PURE__ */ new Map();
+  for (const e of elements) {
+    const prev = firstSeen.get(e.id);
     if (prev) {
       diags.push({
         code: "E0202",
@@ -93238,74 +93290,88 @@ function validate(model) {
         note: `already declared at line ${prev.idSpan.line}`,
         help: `rename one of the two, e.g. \`${e.id}_2\` (decision D1: flat unique IDs)`
       });
-    } else seen.set(e.id, e);
+    } else firstSeen.set(e.id, e);
   }
-  for (const e of all) {
-    if (!view.kinds.includes(e.kind)) {
-      diags.push({
-        code: "E0201",
-        severity: "error",
-        message: `unknown element kind \`${e.kind}\``,
-        span: e.kindSpan,
-        note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
-        help: nearest(e.kind, view.kinds) ? `did you mean \`${nearest(e.kind, view.kinds)}\`?` : void 0
-      });
-    }
+  return diags;
+}
+function checkUnknownKinds(elements, view) {
+  const diags = [];
+  for (const e of elements) {
+    if (view.kinds.includes(e.kind)) continue;
+    const suggestion = nearest(e.kind, view.kinds);
+    diags.push({
+      code: "E0201",
+      severity: "error",
+      message: `unknown element kind \`${e.kind}\``,
+      span: e.kindSpan,
+      note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
+      help: suggestion ? `did you mean \`${suggestion}\`?` : void 0
+    });
   }
-  for (const e of all) {
-    if (!e.label) {
-      diags.push({
-        code: "W0502",
-        severity: "warning",
-        message: `element without a label (\`${e.id}\` will be displayed as-is)`,
-        span: e.idSpan,
-        help: `add a display label: \`${e.kind} ${e.id} "Readable name"\``
-      });
-    }
+  return diags;
+}
+function checkMissingLabels(elements) {
+  const diags = [];
+  for (const e of elements) {
+    if (e.label) continue;
+    diags.push({
+      code: "W0502",
+      severity: "warning",
+      message: `element without a label (\`${e.id}\` will be displayed as-is)`,
+      span: e.idSpan,
+      help: `add a display label: \`${e.kind} ${e.id} "Readable name"\``
+    });
   }
+  return diags;
+}
+function checkNesting(elements, view) {
+  const diags = [];
   for (const rule of view.nesting) {
-    for (const e of all) {
+    for (const e of elements) {
       if (e.kind !== rule.child) continue;
-      const pk = e.parent?.kind;
-      if (!pk || !rule.parents.includes(pk)) {
+      const parentKind = e.parent?.kind;
+      if (!parentKind || !rule.parents.includes(parentKind)) {
         diags.push({
           code: rule.code,
           severity: "error",
           message: rule.message + ` (\`${e.id}\`)`,
           span: e.idSpan,
-          note: pk ? `current parent: \`${pk}\`` : "declared at the diagram root",
+          note: parentKind ? `current parent: \`${parentKind}\`` : "declared at the diagram root",
           help: rule.help
         });
       }
     }
   }
+  return diags;
+}
+function checkFlows(model, view) {
+  const diags = [];
+  const isActor = (id) => {
+    const kind = model.index.get(id)?.kind;
+    return kind === "actor" || kind === "actor-group";
+  };
   for (const f of model.flows) {
     for (const [ref, span] of [[f.from, f.fromSpan], [f.to, f.toSpan]]) {
       if (!model.index.has(ref)) {
+        const suggestion = nearest(ref, [...model.index.keys()]);
         diags.push({
           code: "E0220",
           severity: "error",
           message: `unknown reference \`${ref}\``,
           span,
-          help: nearest(ref, [...model.index.keys()]) ? `did you mean \`${nearest(ref, [...model.index.keys()])}\`?` : "declare this element before referencing it"
+          help: suggestion ? `did you mean \`${suggestion}\`?` : "declare this element before referencing it"
         });
       }
     }
-    if (view.flowTechRecommended && !f.tech?.protocol) {
-      const isActor = (id) => {
-        const k = model.index.get(id)?.kind;
-        return k === "actor" || k === "actor-group";
-      };
-      if (!isActor(f.from) && !isActor(f.to)) {
-        diags.push({
-          code: view.flowTechRecommended.code,
-          severity: "warning",
-          message: view.flowTechRecommended.message,
-          span: f.span,
-          note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
-          help: view.flowTechRecommended.help
-        });
-      }
+    if (view.flowTechRecommended && !f.tech?.protocol && !isActor(f.from) && !isActor(f.to)) {
+      diags.push({
+        code: view.flowTechRecommended.code,
+        severity: "warning",
+        message: view.flowTechRecommended.message,
+        span: f.span,
+        note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
+        help: view.flowTechRecommended.help
+      });
     }
     if (view.flowTechRequired && !f.tech?.protocol) {
       diags.push({
@@ -93330,169 +93396,220 @@ function validate(model) {
       });
     }
   }
-  if (view.attrSpec) {
-    const spec = view.attrSpec;
-    for (const e of all) {
-      if (e.kind !== spec.kind) continue;
-      if (!e.attr) {
-        diags.push({
-          code: spec.code,
-          severity: "error",
-          message: spec.message + ` (\`${e.id}\`)`,
-          span: e.idSpan,
-          help: spec.help
-        });
-      } else if (!spec.values.includes(e.attr.value)) {
-        diags.push({
-          code: spec.code,
-          severity: "error",
-          message: `invalid ${spec.kind} value \`${e.attr.value}\` (\`${e.id}\`)`,
-          span: e.attr.span,
-          note: `allowed: ${spec.values.join(", ")}`,
-          help: nearest(e.attr.value, spec.values) ? `did you mean \`${nearest(e.attr.value, spec.values)}\`?` : spec.help
-        });
-      }
+  return diags;
+}
+function checkElementAttributes(elements, view) {
+  const spec = view.attrSpec;
+  if (!spec) return [];
+  const diags = [];
+  for (const e of elements) {
+    if (e.kind !== spec.kind) continue;
+    if (!e.attr) {
+      diags.push({
+        code: spec.code,
+        severity: "error",
+        message: spec.message + ` (\`${e.id}\`)`,
+        span: e.idSpan,
+        help: spec.help
+      });
+    } else if (!spec.values.includes(e.attr.value)) {
+      const suggestion = nearest(e.attr.value, spec.values);
+      diags.push({
+        code: spec.code,
+        severity: "error",
+        message: `invalid ${spec.kind} value \`${e.attr.value}\` (\`${e.id}\`)`,
+        span: e.attr.span,
+        note: `allowed: ${spec.values.join(", ")}`,
+        help: suggestion ? `did you mean \`${suggestion}\`?` : spec.help
+      });
     }
   }
-  if (view.boundaryLint || view.crossZoneTechRecommended) {
-    const zoneOf = (id) => {
-      for (let a = model.index.get(id)?.parent; a; a = a.parent) if (a.kind === "trust-zone") return a;
-      return void 0;
-    };
-    const levelOf = (id) => {
-      const z = zoneOf(id);
-      const v = z?.attr?.value;
-      return v && view.trustOrder?.[v] !== void 0 ? view.trustOrder[v] : -1;
-    };
-    for (const f of model.flows) {
-      if (!model.index.has(f.from) || !model.index.has(f.to)) continue;
-      const zf = zoneOf(f.from), zt = zoneOf(f.to);
-      const crossing = zf !== zt;
-      if (view.boundaryLint) {
-        const bl = view.boundaryLint;
-        const isNode = (id) => model.index.get(id)?.kind === bl.nodeKind;
-        if (levelOf(f.to) > levelOf(f.from) && !isNode(f.from) && !isNode(f.to)) {
-          diags.push({
-            code: bl.code,
-            severity: "warning",
-            message: bl.message,
-            span: f.span,
-            note: `flow enters a more-trusted zone without passing a \`${bl.nodeKind}\``,
-            help: bl.help
-          });
-        }
-      }
-      if (view.crossZoneTechRecommended && crossing && !f.tech?.protocol) {
+  return diags;
+}
+function checkTrustBoundaries(model, view) {
+  if (!view.boundaryLint && !view.crossZoneTechRecommended) return [];
+  const diags = [];
+  const zoneOf = (id) => {
+    for (let a = model.index.get(id)?.parent; a; a = a.parent) if (a.kind === "trust-zone") return a;
+    return void 0;
+  };
+  const trustLevelOf = (id) => {
+    const level = zoneOf(id)?.attr?.value;
+    return level && view.trustOrder?.[level] !== void 0 ? view.trustOrder[level] : -1;
+  };
+  for (const f of model.flows) {
+    if (!model.index.has(f.from) || !model.index.has(f.to)) continue;
+    const crossesZone = zoneOf(f.from) !== zoneOf(f.to);
+    if (view.boundaryLint) {
+      const lint = view.boundaryLint;
+      const isSecurityNode = (id) => model.index.get(id)?.kind === lint.nodeKind;
+      if (trustLevelOf(f.to) > trustLevelOf(f.from) && !isSecurityNode(f.from) && !isSecurityNode(f.to)) {
         diags.push({
-          code: view.crossZoneTechRecommended.code,
+          code: lint.code,
           severity: "warning",
-          message: view.crossZoneTechRecommended.message,
+          message: lint.message,
           span: f.span,
-          note: "inter-zone flow \u2014 state how the traffic is protected",
-          help: view.crossZoneTechRecommended.help
+          note: `flow enters a more-trusted zone without passing a \`${lint.nodeKind}\``,
+          help: lint.help
         });
       }
     }
+    if (view.crossZoneTechRecommended && crossesZone && !f.tech?.protocol) {
+      diags.push({
+        code: view.crossZoneTechRecommended.code,
+        severity: "warning",
+        message: view.crossZoneTechRecommended.message,
+        span: f.span,
+        note: "inter-zone flow \u2014 state how the traffic is protected",
+        help: view.crossZoneTechRecommended.help
+      });
+    }
   }
-  const boIds = new Map(model.businessObjects.map((b) => [b.id, b]));
-  for (const b of model.businessObjects) {
-    if (model.index.has(b.id)) {
+  return diags;
+}
+function checkBusinessObjects(model, view) {
+  const diags = [];
+  if (!view.businessObjects) {
+    for (const bo of model.businessObjects) {
+      diags.push({
+        code: "E0222",
+        severity: "error",
+        message: `business objects are not part of the \`${view.name}\` view (\`${bo.id}\`)`,
+        span: bo.idSpan,
+        help: "business objects belong to the `logical` view \u2014 remove it, or model the exchange with the flow label"
+      });
+    }
+    for (const f of model.flows) {
+      for (const o of f.objects ?? []) {
+        diags.push({
+          code: "E0222",
+          severity: "error",
+          message: `business-object reference \`[${o.id}]\` is not part of the \`${view.name}\` view`,
+          span: o.span,
+          help: "drop the `[\u2026]` reference \u2014 business objects are a logical-view feature"
+        });
+      }
+    }
+    return diags;
+  }
+  const declaredIds = /* @__PURE__ */ new Map();
+  for (const bo of model.businessObjects) {
+    const prev = declaredIds.get(bo.id);
+    if (prev) {
       diags.push({
         code: "E0202",
         severity: "error",
-        message: `duplicate identifier \`${b.id}\` (already used by an element)`,
-        span: b.idSpan,
+        message: `duplicate identifier \`${bo.id}\``,
+        span: bo.idSpan,
+        note: `already declared at line ${prev.idSpan.line}`,
+        help: `rename one of the two, e.g. \`${bo.id}_2\` (decision D1: flat unique IDs)`
+      });
+    } else if (model.index.has(bo.id)) {
+      diags.push({
+        code: "E0202",
+        severity: "error",
+        message: `duplicate identifier \`${bo.id}\` (already used by an element)`,
+        span: bo.idSpan,
         help: "business objects share the flat ID namespace (decision D1)"
       });
     }
+    if (!prev) declaredIds.set(bo.id, bo);
   }
   const carried = /* @__PURE__ */ new Set();
   for (const f of model.flows) {
     for (const o of f.objects ?? []) {
-      if (!boIds.has(o.id)) {
+      if (!declaredIds.has(o.id)) {
+        const suggestion = nearest(o.id, [...declaredIds.keys()]);
         diags.push({
           code: "E0221",
           severity: "error",
           message: `unknown business-object reference \`${o.id}\``,
           span: o.span,
-          help: nearest(o.id, [...boIds.keys()]) ? `did you mean \`${nearest(o.id, [...boIds.keys()])}\`?` : "declare it: `business-object " + o.id + ' "Name" "description"`'
+          help: suggestion ? `did you mean \`${suggestion}\`?` : "declare it: `business-object " + o.id + ' "Name" "description"`'
         });
       } else carried.add(o.id);
     }
   }
-  for (const b of model.businessObjects) {
-    if (!carried.has(b.id)) {
+  for (const bo of model.businessObjects) {
+    if (!carried.has(bo.id)) {
       diags.push({
         code: "W0530",
         severity: "warning",
-        message: `business object \`${b.id}\` is never carried by any flow`,
-        span: b.idSpan,
+        message: `business object \`${bo.id}\` is never carried by any flow`,
+        span: bo.idSpan,
         note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  for (const mc of view.minCounts) {
-    const n = all.filter((e) => e.kind === mc.kind).length;
-    if (n < mc.min) {
+  return diags;
+}
+function checkMinimumCounts(elements, model, view) {
+  const diags = [];
+  for (const rule of view.minCounts) {
+    const declared = elements.filter((e) => e.kind === rule.kind).length;
+    if (declared < rule.min) {
       diags.push({
-        code: mc.code,
+        code: rule.code,
         severity: "warning",
-        message: mc.message,
+        message: rule.message,
         span: model.typeSpan ?? { line: 1, col: 1, len: 7 },
         note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  if (view.isolatedWarn) {
-    const touched = /* @__PURE__ */ new Set();
-    const touch = (id) => {
-      const el = model.index.get(id);
-      if (!el) return;
-      (function down(e) {
-        touched.add(e.id);
-        e.children.forEach(down);
-      })(el);
-      for (let a = el.parent; a; a = a.parent) touched.add(a.id);
-    };
-    for (const f of model.flows) {
-      touch(f.from);
-      touch(f.to);
-    }
-    for (const e of all) {
-      if (view.isolatedWarn.kinds.includes(e.kind) && !touched.has(e.id)) {
-        diags.push({
-          code: view.isolatedWarn.code,
-          severity: "warning",
-          message: view.isolatedWarn.message + ` (\`${e.id}\`)`,
-          span: e.idSpan,
-          note: `completeness check of the \`${view.name}\` view`
-        });
-      }
+  return diags;
+}
+function checkIsolatedElements(model, view, elements) {
+  if (!view.isolatedWarn) return [];
+  const diags = [];
+  const connected = /* @__PURE__ */ new Set();
+  const markConnected = (id) => {
+    const el = model.index.get(id);
+    if (!el) return;
+    (function markSubtree(e) {
+      connected.add(e.id);
+      e.children.forEach(markSubtree);
+    })(el);
+    for (let a = el.parent; a; a = a.parent) connected.add(a.id);
+  };
+  for (const f of model.flows) {
+    markConnected(f.from);
+    markConnected(f.to);
+  }
+  for (const e of elements) {
+    if (view.isolatedWarn.kinds.includes(e.kind) && !connected.has(e.id)) {
+      diags.push({
+        code: view.isolatedWarn.code,
+        severity: "warning",
+        message: view.isolatedWarn.message + ` (\`${e.id}\`)`,
+        span: e.idSpan,
+        note: `completeness check of the \`${view.name}\` view`
+      });
     }
   }
   return diags;
 }
 function nearest(word, candidates) {
-  let best, bestD = 3;
-  for (const c of candidates) {
-    const d = lev(word.toLowerCase(), c.toLowerCase(), bestD);
-    if (d < bestD) {
-      bestD = d;
-      best = c;
+  let best, bestDistance = 3;
+  for (const candidate of candidates) {
+    const distance = levenshtein(word.toLowerCase(), candidate.toLowerCase(), bestDistance);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
     }
   }
   return best;
 }
-function lev(a, b, cap) {
+function levenshtein(a, b, cap) {
   if (Math.abs(a.length - b.length) > cap) return cap + 1;
   const dp = Array.from({ length: a.length + 1 }, (_, i) => i);
   for (let j = 1; j <= b.length; j++) {
     let prev = dp[0];
     dp[0] = j;
     for (let i = 1; i <= a.length; i++) {
-      const t = dp[i];
+      const above = dp[i];
       dp[i] = Math.min(dp[i] + 1, dp[i - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = t;
+      prev = above;
     }
   }
   return dp[a.length];
@@ -93649,9 +93766,9 @@ async function foldedLayout(model, view, elk) {
       edges: [
         ...internalFlows.filter((f) => topOf.get(f.from) === sys).map((f) => {
           if (numbered) return { id: f.id, sources: [f.from], targets: [f.to], labels: [numLabel(f)] };
-          const text = f.label ? wrapText(f.label, LABEL_WRAP + 4) : "";
+          const text = f.label ? wrapText(f.label, LABEL_WRAP + 4) : techText(f.tech);
           const chips = chipsOf(f);
-          return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, void 0, FS_SCALE) }] : [] };
+          return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, f.label ? techText(f.tech) : void 0, FS_SCALE) }] : [] };
         }),
         ...interFlows.filter((f) => topOf.get(f.from) === sys).map((f) => ({ id: `${f.id}_oe`, sources: [f.from], targets: [`${f.id}_out`] })),
         ...interFlows.filter((f) => topOf.get(f.to) === sys).map((f) => ({ id: `${f.id}_ie`, sources: [`${f.id}_in`], targets: [f.to] }))
@@ -93833,9 +93950,9 @@ async function foldedLayout(model, view, elk) {
     const merged = [...pre, ...pts, ...post];
     let label;
     const chips = chipsOf(f);
-    const text = numbered ? numLabel(f).text : f.label ? wrapText(f.label, LABEL_WRAP) : chips.length ? "" : void 0;
+    const text = numbered ? numLabel(f).text : f.label ? wrapText(f.label, LABEL_WRAP) : techText(f.tech) || (chips.length ? "" : void 0);
     if (text !== void 0) {
-      const m = numbered ? { width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) } : flowLabelBox(text, chips, FS_EDGE, void 0, FS_SCALE);
+      const m = numbered ? { width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) } : flowLabelBox(text, chips, FS_EDGE, f.label ? techText(f.tech) : void 0, FS_SCALE);
       if (pts.length >= 6) {
         const segL = Math.min(pts[2].x, pts[3].x), segR = Math.max(pts[2].x, pts[3].x);
         const span = Math.max(40, segR - segL - m.width - 20);
@@ -93953,14 +94070,16 @@ async function layout(model, view) {
         };
       }
       const wrap = opts?.labelWrap ?? (compact ? COMPACT_WRAP : void 0);
-      const text = f.label && wrap ? wrapText(f.label, wrap) : f.label;
+      const raw = f.label && wrap ? wrapText(f.label, wrap) : f.label;
       const chips = (f.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
       const tech = techText(f.tech);
+      const text = raw || (tech ? tech : "");
+      const subTech = raw ? tech : void 0;
       return {
         id: f.id,
         sources: [f.from],
         targets: [f.to],
-        labels: text || chips.length || tech ? [{ text: text ?? "", ...flowLabelBox(text ?? "", chips, FS_EDGE, tech, FS_SCALE) }] : []
+        labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, subTech, FS_SCALE) }] : []
       };
     })
   });
@@ -93987,7 +94106,7 @@ async function layout(model, view) {
           y: ay,
           w: c.width,
           h: c.height,
-          container: !!(c.children && c.children.length)
+          container: !!c.children?.length
         });
         walk(c, ax, ay);
       }
@@ -94053,370 +94172,419 @@ async function layout(model, view) {
 }
 
 // src/render.ts
-var HOP_R = 5;
+var HOP_RADIUS = 5;
 var SEC_LEVEL_FR = { public: "public", internal: "interne", restricted: "restreint", secret: "secret" };
 var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-var dashArray = (style) => style === "dashed" ? "5 3" : style === "dotted" ? "2 2.5" : void 0;
-var inter = (a, b) => !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
+var escAttr = (s) => esc(s).replace(/"/g, "&quot;");
+var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
+var overlaps = (a, b) => !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
 function render(model, view, scene) {
-  const ds = model.style;
-  const F = fontSizes(ds.font.size);
-  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT } = F;
-  const r1 = (n) => Math.round(n * 10) / 10;
-  const A = {
-    tech: r1(F.tech),
-    chip: r1(F.chip),
-    tag: r1(F.tag),
-    band: r1(F.band),
-    bandTitle: r1(F.bandTitle),
-    chipH: Math.round(F.chipH),
-    scale: F.scale,
-    chipRectH: Math.round(15 * F.scale),
-    chipTextDy: r1(11 * F.scale)
+  const style = model.style;
+  const fonts = fontSizes(style.font.size);
+  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT } = fonts;
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const annot = {
+    tech: round1(fonts.tech),
+    chip: round1(fonts.chip),
+    tag: round1(fonts.tag),
+    band: round1(fonts.band),
+    bandTitle: round1(fonts.bandTitle),
+    chipH: Math.round(fonts.chipH),
+    scale: fonts.scale,
+    chipRectH: Math.round(15 * fonts.scale),
+    chipTextDy: round1(11 * fonts.scale)
   };
-  const bs = (n) => r1(n * F.scale);
-  const { palette: pal, kinds: kindDefaults, levels: levelDefaults } = themeFor(ds.theme, view);
-  const darkTheme = ["dark", "nord", "classic-dark"].includes(ds.theme);
-  const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : ds.accent ?? pal.edge;
-  const srcColor = /* @__PURE__ */ new Map();
-  if (ds.flowColor === "by-source") {
-    const hues = flowPalette[darkTheme ? "dark" : "light"];
-    for (const f of model.flows) if (!srcColor.has(f.from)) srcColor.set(f.from, hues[srcColor.size % hues.length]);
+  const scaled = (n) => round1(n * fonts.scale);
+  const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
+  const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
+  const edgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
+  const sourceHue = /* @__PURE__ */ new Map();
+  if (style.flowColor === "by-source") {
+    const hues = flowPalette[isDarkTheme ? "dark" : "light"];
+    for (const flow of model.flows) if (!sourceHue.has(flow.from)) sourceHue.set(flow.from, hues[sourceHue.size % hues.length]);
   }
-  const flowColorOf = (f) => f?.style?.stroke?.color ?? (ds.flowColor === "by-source" ? srcColor.get(f?.from ?? "") ?? edge : edge);
-  const arrowMk = /* @__PURE__ */ new Map();
+  const flowColorOf = (flow) => flow?.style?.stroke?.color ?? (style.flowColor === "by-source" ? sourceHue.get(flow?.from ?? "") ?? edgeColor : edgeColor);
+  const arrowMarkers = /* @__PURE__ */ new Map();
   const markerId = (color) => {
-    let id = arrowMk.get(color);
+    let id = arrowMarkers.get(color);
     if (!id) {
-      id = arrowMk.size === 0 ? "arr" : `arr${arrowMk.size}`;
-      arrowMk.set(color, id);
+      id = arrowMarkers.size === 0 ? "arr" : `arr${arrowMarkers.size}`;
+      arrowMarkers.set(color, id);
     }
     return id;
   };
   const flowById = new Map(model.flows.map((f) => [f.id, f]));
-  const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
-  const numbered = ds.flowText === "numbered";
-  const t = UI[ds.lang] ?? UI.en;
-  const legendNames = ds.lang === "fr" ? view.legendNamesFr : view.legendNames;
-  const legendFlowLabel = ds.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
-  const elStyle = /* @__PURE__ */ new Map();
-  const elAttr = /* @__PURE__ */ new Map();
-  (function walk(els) {
+  const objectName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
+  const numbered = style.flowText === "numbered";
+  const ui = UI[style.lang] ?? UI.en;
+  const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
+  const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
+  const elementStyle = /* @__PURE__ */ new Map();
+  const elementAttr = /* @__PURE__ */ new Map();
+  (function index(els) {
     for (const e of els) {
-      elStyle.set(e.id, e.style);
-      elAttr.set(e.id, e.attr?.value);
-      walk(e.children);
+      elementStyle.set(e.id, e.style);
+      elementAttr.set(e.id, e.attr?.value);
+      index(e.children);
     }
   })(model.elements);
-  const resolve = (kind, id) => {
-    let a = kindDefaults[kind] ?? {};
-    const lvl = elAttr.get(id);
-    if (kind === "trust-zone" && lvl && levelDefaults?.[lvl]) a = levelDefaults[lvl];
-    const b = ds.kind[kind] ?? {};
-    const c = elStyle.get(id) ?? {};
+  const resolveStyle = (kind, id) => {
+    let base = kindDefaults[kind] ?? {};
+    const level = elementAttr.get(id);
+    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
+    const perKind = style.kind[kind] ?? {};
+    const inline = elementStyle.get(id) ?? {};
     return {
-      fill: c.fill ?? b.fill ?? a.fill,
-      stroke: { ...a.stroke, ...b.stroke, ...c.stroke },
-      text: c.text ?? b.text ?? a.text
+      fill: inline.fill ?? perKind.fill ?? base.fill,
+      stroke: { ...base.stroke, ...perKind.stroke, ...inline.stroke },
+      text: inline.text ?? perKind.text ?? base.text
     };
   };
-  const leafBoxes = scene.nodes.filter((n) => !n.container).map((n) => ({ x: n.x, y: n.y, w: n.w, h: n.h }));
-  const allLabels = scene.edges.flatMap((e) => e.labels);
-  for (const l of allLabels) {
-    const pos = flowById.get(l.flowId)?.style?.label ?? ds.flowLabel;
-    if (pos === "above") l.y -= l.h / 2 + 5;
-    else if (pos === "below") l.y += l.h / 2 + 5;
-  }
-  const boxes = allLabels.map((l) => l);
-  const countOverlaps = () => {
-    let n = 0;
-    for (let i = 0; i < boxes.length; i++) {
-      for (let j = i + 1; j < boxes.length; j++) if (inter(boxes[i], boxes[j])) n++;
-      for (const nb of leafBoxes) if (inter(boxes[i], nb)) n++;
+  const nodeBoxes = scene.nodes.filter((n) => !n.container).map((n) => ({ x: n.x, y: n.y, w: n.w, h: n.h }));
+  const labels = scene.edges.flatMap((e) => e.labels);
+  const labelBoxes = labels.map((l) => l);
+  const countLabelOverlaps = () => {
+    let count = 0;
+    for (let i = 0; i < labelBoxes.length; i++) {
+      for (let j = i + 1; j < labelBoxes.length; j++) if (overlaps(labelBoxes[i], labelBoxes[j])) count++;
+      for (const node of nodeBoxes) if (overlaps(labelBoxes[i], node)) count++;
     }
-    return n;
+    return count;
   };
-  const overlapsBefore = countOverlaps();
-  for (const lb of allLabels) {
-    const collides = () => boxes.some((o) => o !== lb && inter(o, lb)) || leafBoxes.some((nb) => inter(nb, lb));
-    if (!collides()) continue;
-    const y0 = lb.y, x0 = lb.x;
-    let done = false;
-    outer: for (const dx of [0, -24, 24, -48, 48]) {
-      for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
-        for (const dir of step === 0 ? [1] : [-1, 1]) {
-          lb.y = y0 + dir * step;
-          lb.x = x0 + dx;
-          if (!collides()) {
-            done = true;
-            break outer;
+  const settleLabelPositions = () => {
+    for (const label of labels) {
+      const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
+      if (requested === "above") label.y -= label.h / 2 + 5;
+      else if (requested === "below") label.y += label.h / 2 + 5;
+    }
+    for (const label of labels) {
+      const collides = () => labelBoxes.some((o) => o !== label && overlaps(o, label)) || nodeBoxes.some((node) => overlaps(node, label));
+      if (!collides()) continue;
+      const originY = label.y, originX = label.x;
+      let settled = false;
+      outer: for (const dx of [0, -24, 24, -48, 48]) {
+        for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
+          for (const dir of step === 0 ? [1] : [-1, 1]) {
+            label.y = originY + dir * step;
+            label.x = originX + dx;
+            if (!collides()) {
+              settled = true;
+              break outer;
+            }
           }
         }
       }
+      if (!settled) {
+        label.x = originX;
+        label.y = originY;
+      }
     }
-    if (!done) {
-      lb.x = x0;
-      lb.y = y0;
-    }
-  }
-  const overlapsAfter = countOverlaps();
-  const vSegs = [];
-  if (ds.crossingHops) {
+  };
+  const overlapsBefore = countLabelOverlaps();
+  settleLabelPositions();
+  const overlapsAfter = countLabelOverlaps();
+  const verticalSegments = [];
+  if (style.crossingHops) {
     for (const e of scene.edges) {
       for (let i = 0; i + 1 < e.pts.length; i++) {
         const a = e.pts[i], b = e.pts[i + 1];
-        if (Math.abs(a.x - b.x) < 0.5) vSegs.push({ x: a.x, y1: Math.min(a.y, b.y), y2: Math.max(a.y, b.y) });
+        if (Math.abs(a.x - b.x) < 0.5) verticalSegments.push({ x: a.x, y1: Math.min(a.y, b.y), y2: Math.max(a.y, b.y) });
       }
     }
   }
-  function edgePath(pts) {
+  const edgePath = (pts) => {
     let d = `M ${pts[0].x} ${pts[0].y}`;
     for (let i = 0; i + 1 < pts.length; i++) {
       const a = pts[i], b = pts[i + 1];
-      if (ds.crossingHops && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5) {
+      if (style.crossingHops && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5) {
         const dir = Math.sign(b.x - a.x);
-        const lo = Math.min(a.x, b.x) + HOP_R + 1, hi = Math.max(a.x, b.x) - HOP_R - 1;
-        const xs = vSegs.filter((v) => v.x > lo && v.x < hi && a.y > v.y1 + 1 && a.y < v.y2 - 1).map((v) => v.x).sort((p, q) => dir > 0 ? p - q : q - p);
-        for (const cx of xs) d += ` L ${cx - dir * HOP_R} ${a.y} A ${HOP_R} ${HOP_R} 0 0 ${dir > 0 ? 1 : 0} ${cx + dir * HOP_R} ${a.y}`;
+        const lo = Math.min(a.x, b.x) + HOP_RADIUS + 1, hi = Math.max(a.x, b.x) - HOP_RADIUS - 1;
+        const crossings = verticalSegments.filter((v) => v.x > lo && v.x < hi && a.y > v.y1 + 1 && a.y < v.y2 - 1).map((v) => v.x).sort((p, q) => dir > 0 ? p - q : q - p);
+        for (const cx of crossings) d += ` L ${cx - dir * HOP_RADIUS} ${a.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${dir > 0 ? 1 : 0} ${cx + dir * HOP_RADIUS} ${a.y}`;
       }
       d += ` L ${b.x} ${b.y}`;
     }
     return d;
-  }
-  const W = scene.width, H = scene.height;
-  const font = ds.font.family;
-  let out = "";
-  for (const n of scene.nodes.filter((n2) => n2.container)) {
-    const s = resolve(n.kind, n.id);
-    const da = dashArray(s.stroke?.style);
-    out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6" fill="${s.fill ?? pal.containerFill}" stroke="${s.stroke?.color ?? pal.containerStroke}" stroke-width="${s.stroke?.width ?? 1.2}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+  };
+  const centeredNodeLabel = (lines, centerX, topBaseline, fill) => lines.map((line, i) => `<text x="${centerX}" y="${topBaseline + i * (FS_NODE2 + 2)}" font-size="${FS_NODE2}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
+`).join("");
+  const centerLinesY = (top, h, lineCount) => top + h / 2 - (lineCount - 1) * (FS_NODE2 + 2) / 2 + 4;
+  const renderContainerNode = (n) => {
+    const s = resolveStyle(n.kind, n.id);
+    const dash = dashArray(s.stroke?.style);
+    let svg2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6" fill="${s.fill ?? palette.containerFill}" stroke="${s.stroke?.color ?? palette.containerStroke}" stroke-width="${s.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
     n.label.split("\n").forEach((line, i) => {
-      out += `<text x="${n.x + 10}" y="${n.y + 18 + i * 14}" font-size="${FS_CONT}" font-weight="bold" fill="${s.text ?? pal.containerLabel}">${esc(line)}</text>
+      svg2 += `<text x="${n.x + 10}" y="${n.y + 18 + i * 14}" font-size="${FS_CONT}" font-weight="bold" fill="${s.text ?? palette.containerLabel}">${esc(line)}</text>
 `;
     });
-    const lvl = n.kind === "trust-zone" ? elAttr.get(n.id) : void 0;
-    if (lvl) {
-      const word = (ds.lang === "fr" ? SEC_LEVEL_FR[lvl] : lvl) ?? lvl;
-      out += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="${A.tag}" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? pal.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
+    const level = n.kind === "trust-zone" ? elementAttr.get(n.id) : void 0;
+    if (level) {
+      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
+      svg2 += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? palette.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
 `;
     }
-  }
-  for (const n of scene.nodes.filter((n2) => !n2.container)) {
-    const s = resolve(n.kind, n.id);
+    return svg2;
+  };
+  const renderActor = (n, s, lines) => {
+    const cx = n.x + n.w / 2;
+    const stroke = s.stroke?.color ?? palette.actorStroke;
+    let svg2 = `<circle cx="${cx}" cy="${n.y + 10}" r="7" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+<path d="M ${cx - 11} ${n.y + 32} q 11 -19 22 0" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+`;
+    lines.forEach((line, i) => {
+      svg2 += `<text x="${cx}" y="${n.y + 44 + i * 11}" font-size="${FS_NODE2 - 1.5}" text-anchor="middle" fill="${s.text ?? palette.actorText}">${esc(line)}</text>
+`;
+    });
+    return svg2;
+  };
+  const renderDatastore = (n, s, lines) => {
+    const ry = 7, stroke = s.stroke?.color ?? palette.nodeStroke, fill = s.fill ?? palette.nodeFill;
+    const body2 = `<path d="M ${n.x} ${n.y + ry} v ${n.h - 2 * ry} a ${n.w / 2} ${ry} 0 0 0 ${n.w} 0 v ${-(n.h - 2 * ry)}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${n.x + n.w / 2}" cy="${n.y + ry}" rx="${n.w / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    const cy = n.y + ry + (n.h - ry) / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
+    return body2 + centeredNodeLabel(lines, n.x + n.w / 2, cy, s.text ?? palette.nodeText);
+  };
+  const renderQueue = (n, s, lines) => {
+    const rx = 8;
+    const fill = escAttr(s.fill ?? palette.nodeFill), stroke = escAttr(s.stroke?.color ?? palette.nodeStroke), text = escAttr(s.text ?? palette.nodeText);
+    const body2 = `<path d="M ${n.x + rx} ${n.y} h ${n.w - 2 * rx} a ${rx} ${n.h / 2} 0 0 1 0 ${n.h} h ${-(n.w - 2 * rx)} a ${rx} ${n.h / 2} 0 0 1 0 ${-n.h}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${n.x + rx}" cy="${n.y + n.h / 2}" rx="${rx}" ry="${n.h / 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    return body2 + centeredNodeLabel(lines, n.x + rx + (n.w - rx) / 2, centerLinesY(n.y, n.h, lines.length), text);
+  };
+  const renderGateway = (n, s, lines) => {
+    const cx = n.x + n.w / 2;
+    const fill = escAttr(s.fill ?? palette.nodeFill), stroke = escAttr(s.stroke?.color ?? palette.nodeStroke), text = escAttr(s.text ?? palette.nodeText);
+    const body2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${round1(n.x + 8)} ${round1(n.y + 8)} L ${round1(n.x + 22)} ${round1(n.y + 8)} Q ${round1(n.x + 24)} ${round1(n.y + 13)} ${round1(n.x + 15)} ${round1(n.y + 20)} Q ${round1(n.x + 6)} ${round1(n.y + 13)} ${round1(n.x + 8)} ${round1(n.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    return body2 + centeredNodeLabel(lines, cx + 10, centerLinesY(n.y, n.h, lines.length), text);
+  };
+  const renderAuth = (n, s, lines) => {
+    const cx = n.x + n.w / 2;
+    const fill = escAttr(s.fill ?? palette.nodeFill), stroke = escAttr(s.stroke?.color ?? palette.nodeStroke), text = escAttr(s.text ?? palette.nodeText);
+    const body2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<rect x="${n.x + 6}" y="${n.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${n.x + 10} ${n.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<circle cx="${n.x + 15}" cy="${n.y + 16}" r="2.5" fill="${stroke}"/>
+`;
+    return body2 + centeredNodeLabel(lines, cx + 10, centerLinesY(n.y, n.h, lines.length), text);
+  };
+  const renderPlainBox = (n, s, lines) => {
+    const dash = dashArray(s.stroke?.style);
+    const body2 = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${s.fill ?? palette.nodeFill}" stroke="${s.stroke?.color ?? palette.nodeStroke}" stroke-width="${s.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+`;
+    return body2 + centeredNodeLabel(lines, n.x + n.w / 2, centerLinesY(n.y, n.h, lines.length), s.text ?? palette.nodeText);
+  };
+  const renderLeafNode = (n) => {
+    const s = resolveStyle(n.kind, n.id);
     const lines = n.label.split("\n");
-    if (n.kind === "actor") {
-      const cx = n.x + n.w / 2;
-      const ac = s.stroke?.color ?? pal.actorStroke;
-      out += `<circle cx="${cx}" cy="${n.y + 10}" r="7" fill="none" stroke="${ac}" stroke-width="1.5"/>
-<path d="M ${cx - 11} ${n.y + 32} q 11 -19 22 0" fill="none" stroke="${ac}" stroke-width="1.5"/>
-`;
-      lines.forEach((l, i) => {
-        out += `<text x="${cx}" y="${n.y + 44 + i * 11}" font-size="${FS_NODE2 - 1.5}" text-anchor="middle" fill="${s.text ?? pal.actorText}">${esc(l)}</text>
-`;
-      });
-    } else if (n.kind === "datastore") {
-      const ry = 7, c = s.stroke?.color ?? pal.nodeStroke, f = s.fill ?? pal.nodeFill;
-      out += `<path d="M ${n.x} ${n.y + ry} v ${n.h - 2 * ry} a ${n.w / 2} ${ry} 0 0 0 ${n.w} 0 v ${-(n.h - 2 * ry)}" fill="${f}" stroke="${c}" stroke-width="1.3"/>
-`;
-      out += `<ellipse cx="${n.x + n.w / 2}" cy="${n.y + ry}" rx="${n.w / 2}" ry="${ry}" fill="${f}" stroke="${c}" stroke-width="1.3"/>
-`;
-      const cy = n.y + ry + (n.h - ry) / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
-      lines.forEach((l, i) => {
-        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE2 + 2)}" font-size="${FS_NODE2}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
-`;
-      });
-    } else {
-      const da = dashArray(s.stroke?.style);
-      out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}" stroke-width="${s.stroke?.width ?? 1.3}"${da ? ` stroke-dasharray="${da}"` : ""}/>
-`;
-      const cy = n.y + n.h / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
-      lines.forEach((l, i) => {
-        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE2 + 2)}" font-size="${FS_NODE2}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
-`;
-      });
+    switch (n.kind) {
+      case "actor":
+        return renderActor(n, s, lines);
+      case "datastore":
+        return renderDatastore(n, s, lines);
+      case "queue":
+        return renderQueue(n, s, lines);
+      case "gateway":
+        return renderGateway(n, s, lines);
+      case "auth":
+        return renderAuth(n, s, lines);
+      default:
+        return renderPlainBox(n, s, lines);
     }
-  }
-  for (const e of scene.edges) {
-    const f = flowById.get(e.id);
-    const fst = f?.style;
-    const color = flowColorOf(f);
-    const headColor = ds.flowColor === "by-source" ? color : edge;
-    const style = fst?.stroke?.style ?? ds.flowStroke.style;
-    const width = fst?.stroke?.width ?? ds.flowStroke.width;
-    const da = dashArray(style);
+  };
+  const renderNumberedBadge = (label) => {
+    const cx = label.x + label.w / 2, cy = label.y + label.h / 2 + scaled(3.6), size = scaled(10.5);
+    return `<text x="${cx}" y="${cy}" font-size="${size}" text-anchor="middle" fill="${palette.halo}" stroke="${palette.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(label.text)}</text>
+<text x="${cx}" y="${cy}" font-size="${size}" text-anchor="middle" fill="${palette.edgeLabel}" font-weight="bold">${esc(label.text)}</text>
+`;
+  };
+  const renderTextLabel = (label, flowStyle) => {
+    const lines = label.text ? label.text.split("\n") : [];
+    const color = flowStyle?.text ?? palette.edgeLabel;
+    let svg2 = lines.map((line, i) => `<text x="${label.x + label.w / 2}" y="${label.y + FS_EDGE + 1 + i * (FS_EDGE + 3)}" font-size="${FS_EDGE}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
+`).join("");
+    const flow = flowById.get(label.flowId);
+    const tech = techText(flow?.tech);
+    if (tech && flow?.label) {
+      svg2 += `<text x="${label.x + label.w / 2}" y="${label.y + FS_EDGE + 1 + lines.length * (FS_EDGE + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
+`;
+    }
+    const chips = (flow?.objects ?? []).map((o) => objectName.get(o.id) ?? o.id);
+    if (chips.length) {
+      const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
+      let cx = label.x + label.w / 2 - totalW / 2;
+      const cy = label.y + label.h - annot.chipH + 2;
+      for (const name of chips) {
+        const w = chipW(name, annot.scale);
+        svg2 += `<rect x="${cx}" y="${cy}" width="${w}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
+`;
+        svg2 += `<text x="${cx + w / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
+`;
+        cx += w + 4;
+      }
+    }
+    return svg2;
+  };
+  const renderEdge = (e) => {
+    const flow = flowById.get(e.id);
+    const flowStyle = flow?.style;
+    const color = flowColorOf(flow);
+    const headColor = style.flowColor === "by-source" ? color : edgeColor;
+    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
+    const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
+    let svg2 = "";
     if (e.pts.length) {
-      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ""} marker-end="url(#${markerId(headColor)})"/>
+      svg2 += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerId(headColor)})"/>
 `;
     }
-    for (const l of e.labels) {
-      if (numbered) {
-        const nx = l.x + l.w / 2, ny = l.y + l.h / 2 + bs(3.6), nfs = bs(10.5);
-        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.halo}" stroke="${pal.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(l.text)}</text>
-`;
-        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.edgeLabel}" font-weight="bold">${esc(l.text)}</text>
-`;
-        continue;
-      }
-      const lines = l.text ? l.text.split("\n") : [];
-      const labelColor = fst?.text ?? pal.edgeLabel;
-      lines.forEach((line, i) => {
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + i * (FS_EDGE + 3)}" font-size="${FS_EDGE}" text-anchor="middle" fill="${labelColor}" font-style="italic" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
-`;
-      });
-      const tech = techText(flowById.get(l.flowId)?.tech);
-      if (tech) {
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + lines.length * (FS_EDGE + 3)}" font-size="${A.tech}" text-anchor="middle" fill="${pal.techText}" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
-`;
-      }
-      const chips = (flowById.get(l.flowId)?.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
-      if (chips.length) {
-        const totalW = chips.reduce((s, n) => s + chipW(n, A.scale) + 4, -4);
-        let cx = l.x + l.w / 2 - totalW / 2;
-        const cy = l.y + l.h - A.chipH + 2;
-        for (const name of chips) {
-          const w = chipW(name, A.scale);
-          out += `<rect x="${cx}" y="${cy}" width="${w}" height="${A.chipRectH}" rx="${A.chipRectH / 2}" fill="${pal.chipFill}" stroke="${pal.chipStroke}" stroke-width="1"/>
-`;
-          out += `<text x="${cx + w / 2}" y="${cy + A.chipTextDy}" font-size="${A.chip}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
-`;
-          cx += w + 4;
-        }
-      }
+    for (const label of e.labels) {
+      svg2 += numbered ? renderNumberedBadge(label) : renderTextLabel(label, flowStyle);
     }
-  }
-  let by = H;
-  let bands = "";
+    return svg2;
+  };
+  let bandY = scene.height;
+  let bandsSvg = "";
+  const contentX = 150;
   const chip = (x, y, name) => {
-    const w = chipW(name, A.scale);
+    const w = chipW(name, annot.scale);
     return {
-      svg: `<rect x="${x}" y="${y}" width="${w}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.chipFill}" stroke="${pal.chipStroke}"/>
-<text x="${x + w / 2}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
+      svg: `<rect x="${x}" y="${y}" width="${w}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.chipFill}" stroke="${palette.chipStroke}"/>
+<text x="${x + w / 2}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
 `,
       w
     };
   };
-  const bandStart = (title) => {
-    bands += `<line x1="20" y1="${by + 10}" x2="${W - 20}" y2="${by + 10}" stroke="${pal.divider}" stroke-width="1"/>
+  const beginBand = (title) => {
+    bandsSvg += `<line x1="20" y1="${bandY + 10}" x2="${scene.width - 20}" y2="${bandY + 10}" stroke="${palette.divider}" stroke-width="1"/>
 `;
-    bands += `<text x="20" y="${by + bs(32)}" font-size="${bs(11)}" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>
+    bandsSvg += `<text x="20" y="${bandY + scaled(32)}" font-size="${scaled(11)}" font-weight="bold" fill="${palette.bandTitle}">${esc(title)}</text>
 `;
-    by += bs(20);
+    bandY += scaled(20);
   };
-  const contentX = 150;
-  if (numbered && model.flows.length) {
-    bandStart(t.flows);
-    const BADGE = bs(34);
-    const GUT = bs(28);
-    const LH = bs(13.5);
+  const renderFlowsBand = () => {
+    beginBand(ui.flows);
+    const BADGE = scaled(34);
+    const GUTTER = scaled(28);
+    const LINE_H = scaled(13.5);
     const COL_TARGET = 520;
-    const avail = W - contentX - 20;
-    let cols = Math.max(1, Math.min(3, Math.floor((avail + GUT) / (COL_TARGET + GUT))));
+    const avail = scene.width - contentX - 20;
+    let cols = Math.max(1, Math.min(3, Math.floor((avail + GUTTER) / (COL_TARGET + GUTTER))));
     cols = Math.min(cols, model.flows.length);
-    const colW = Math.floor((avail - (cols - 1) * GUT) / cols);
-    const entries = model.flows.map((f) => {
-      const tech = techText(f.tech);
-      const chipsW = (f.objects ?? []).reduce((s, o) => s + chipW(boName.get(o.id) ?? o.id, A.scale) + 4, 0);
+    const colW = Math.floor((avail - (cols - 1) * GUTTER) / cols);
+    const entries = model.flows.map((flow) => {
+      const tech = techText(flow.tech);
+      const chipsW = (flow.objects ?? []).reduce((sum, o) => sum + chipW(objectName.get(o.id) ?? o.id, annot.scale) + 4, 0);
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
-      const maxChars = Math.max(6, Math.floor(textW / (bs(10) * 0.52)));
-      const raw = (f.label ?? "") + (tech ? "  " + tech : "");
-      const lines = raw.split("\n").flatMap((seg) => wrapText(seg, maxChars).split("\n"));
-      return { f, lines };
+      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * 0.52)));
+      const raw = (flow.label ?? "") + (tech ? "  " + tech : "");
+      const lines = raw.split("\n").flatMap((segment) => wrapText(segment, maxChars).split("\n"));
+      return { flow, lines };
     });
     const rows = Math.ceil(entries.length / cols);
-    const yBase = by;
-    const colY = new Array(cols).fill(yBase);
-    entries.forEach((e, i) => {
+    const colY = new Array(cols).fill(bandY);
+    entries.forEach((entry, i) => {
       const col = Math.floor(i / rows);
-      const x = contentX + col * (colW + GUT);
+      const x = contentX + col * (colW + GUTTER);
       const y = colY[col];
-      bands += `<rect x="${x}" y="${y}" width="${bs(24)}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}"/>
+      bandsSvg += `<rect x="${x}" y="${y}" width="${scaled(24)}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.badgeFill}" stroke="${palette.badgeStroke}"/>
 `;
-      bands += `<text x="${x + bs(12)}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${i + 1}</text>
+      bandsSvg += `<text x="${x + scaled(12)}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.bandText}" font-weight="bold">${i + 1}</text>
 `;
-      e.lines.forEach((line, li) => {
-        bands += `<text x="${x + BADGE}" y="${y + bs(11) + li * LH}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(line)}</text>
+      entry.lines.forEach((line, li) => {
+        bandsSvg += `<text x="${x + BADGE}" y="${y + scaled(11) + li * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>
 `;
       });
-      if (e.f.objects?.length) {
-        const last = e.lines[e.lines.length - 1] ?? "";
-        let cx = x + BADGE + Math.ceil(last.length * bs(10) * 0.52) + 6;
-        const cy = y + 1 + (e.lines.length - 1) * LH;
-        for (const o of e.f.objects) {
-          const c = chip(cx, cy, boName.get(o.id) ?? o.id);
-          bands += c.svg;
+      if (entry.flow.objects?.length) {
+        const last = entry.lines[entry.lines.length - 1] ?? "";
+        let cx = x + BADGE + Math.ceil(last.length * scaled(10) * 0.52) + 6;
+        const cy = y + 1 + (entry.lines.length - 1) * LINE_H;
+        for (const o of entry.flow.objects) {
+          const c = chip(cx, cy, objectName.get(o.id) ?? o.id);
+          bandsSvg += c.svg;
           cx += c.w + 4;
         }
       }
-      colY[col] = y + Math.max(bs(20), e.lines.length * LH + bs(7));
+      colY[col] = y + Math.max(scaled(20), entry.lines.length * LINE_H + scaled(7));
     });
-    by = Math.max(...colY) + 6;
-  }
-  if (model.businessObjects.length) {
-    bandStart(t.objects);
-    for (const b of model.businessObjects) {
-      const c = chip(contentX, by + 2, b.name);
-      bands += c.svg;
-      if (b.description) bands += `<text x="${contentX + c.w + 10}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandMuted}">\u2014 ${esc(b.description)}</text>
+    bandY = Math.max(...colY) + 6;
+  };
+  const renderObjectsBand = () => {
+    beginBand(ui.objects);
+    for (const bo of model.businessObjects) {
+      const c = chip(contentX, bandY + 2, bo.name);
+      bandsSvg += c.svg;
+      if (bo.description) bandsSvg += `<text x="${contentX + c.w + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">\u2014 ${esc(bo.description)}</text>
 `;
-      by += bs(24);
+      bandY += scaled(24);
     }
-    by += 6;
-  }
-  if (ds.legend === "auto") {
-    bandStart(t.legend);
+    bandY += 6;
+  };
+  const renderLegendBand = () => {
+    beginBand(ui.legend);
     let lx = contentX;
     const kindsUsed = [...new Set(scene.nodes.map((n) => n.kind))].filter((k) => legendNames[k] && (k !== "actor" || view.actorLegend));
-    for (const k of kindsUsed) {
-      const s = resolve(k, "");
-      if (k === "actor") {
-        const ac = s.stroke?.color ?? pal.actorStroke;
-        bands += `<circle cx="${lx + bs(13)}" cy="${by + bs(5)}" r="${bs(3)}" fill="none" stroke="${ac}" stroke-width="1.2"/>
+    for (const kind of kindsUsed) {
+      const s = resolveStyle(kind, "");
+      if (kind === "actor") {
+        const stroke = s.stroke?.color ?? palette.actorStroke;
+        bandsSvg += `<circle cx="${lx + scaled(13)}" cy="${bandY + scaled(5)}" r="${scaled(3)}" fill="none" stroke="${stroke}" stroke-width="1.2"/>
 `;
-        bands += `<path d="M ${lx + bs(8)} ${by + bs(15)} q ${bs(5)} ${bs(-7)} ${bs(10)} 0" fill="none" stroke="${ac}" stroke-width="1.2"/>
+        bandsSvg += `<path d="M ${lx + scaled(8)} ${bandY + scaled(15)} q ${scaled(5)} ${scaled(-7)} ${scaled(10)} 0" fill="none" stroke="${stroke}" stroke-width="1.2"/>
 `;
       } else {
-        const da = dashArray(s.stroke?.style);
-        bands += `<rect x="${lx}" y="${by + 2}" width="${bs(26)}" height="${bs(14)}" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+        const dash = dashArray(s.stroke?.style);
+        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${s.fill ?? palette.nodeFill}" stroke="${s.stroke?.color ?? palette.nodeStroke}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
       }
-      const name = legendNames[k];
-      bands += `<text x="${lx + bs(32)}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(name)}</text>
+      const name = legendNames[kind];
+      bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>
 `;
-      lx += bs(40) + Math.ceil(name.length * bs(10) * 0.52) + bs(24);
-      if (lx > W - 220) {
+      lx += scaled(40) + Math.ceil(name.length * scaled(10) * 0.52) + scaled(24);
+      if (lx > scene.width - 220) {
         lx = contentX;
-        by += bs(22);
+        bandY += scaled(22);
       }
     }
-    by += bs(24);
-    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#${markerId(edge)})"/>
+    bandY += scaled(24);
+    bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${edgeColor}" stroke-width="1.3" marker-end="url(#${markerId(edgeColor)})"/>
 `;
-    const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + t.numberedSuffix : legendFlowLabel) + (ds.flowColor === "by-source" ? ds.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
-    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(flowLabelText)}</text>
+    const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + ui.numberedSuffix : legendFlowLabel) + (style.flowColor === "by-source" ? style.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
+    bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
 `;
     if (model.businessObjects.length) {
-      const c = chip(contentX + 330, by + 1, t.businessObject);
-      bands += c.svg;
-      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(t.carriedByFlow)}</text>
+      const c = chip(contentX + 330, bandY + 1, ui.businessObject);
+      bandsSvg += c.svg;
+      bandsSvg += `<text x="${contentX + 330 + c.w + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>
 `;
     }
-    by += bs(24);
+    bandY += scaled(24);
     for (const note of model.legendNotes) {
-      bands += `<text x="${contentX}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}" font-style="italic">${esc(note)}</text>
+      bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>
 `;
-      by += bs(20);
+      bandY += scaled(20);
     }
-  }
-  const totalH = by > H ? by + 14 : H;
-  const mw = ds.arrows === "large" ? r1(11 * F.scale) : 7;
-  if (arrowMk.size === 0) markerId(edge);
-  const markers = [...arrowMk].map(([color, id]) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${mw}" markerHeight="${mw}" orient="auto-start-reverse">
+  };
+  let body = "";
+  for (const n of scene.nodes) if (n.container) body += renderContainerNode(n);
+  for (const n of scene.nodes) if (!n.container) body += renderLeafNode(n);
+  for (const e of scene.edges) body += renderEdge(e);
+  if (numbered && model.flows.length) renderFlowsBand();
+  if (model.businessObjects.length) renderObjectsBand();
+  if (style.legend === "auto") renderLegendBand();
+  const W = scene.width, H = scene.height;
+  const totalH = bandY > H ? bandY + 14 : H;
+  const markerSize = style.arrows === "large" ? round1(11 * fonts.scale) : 7;
+  if (arrowMarkers.size === 0) markerId(edgeColor);
+  const markers = [...arrowMarkers].map(([color, id]) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${markerSize}" markerHeight="${markerSize}" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("\n");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${esc(font)},Arial,sans-serif">
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${escAttr(style.font.family)},Arial,sans-serif">
 <defs>${markers}</defs>
-<rect width="${W}" height="${totalH}" fill="${ds.background ?? pal.background}"/>
-` + out + bands + "</svg>\n";
+<rect width="${W}" height="${totalH}" fill="${style.background ?? palette.background}"/>
+` + body + bandsSvg + "</svg>\n";
   return { svg, overlapsBefore, overlapsAfter };
 }
 
