@@ -30,13 +30,21 @@ CI also runs a `label overlaps: 0` gate across every example, and builds the
 Bun binary and playground bundle (Node-only tests can't cover those — run
 `npm run test:binary` locally if you touch bundling or the elkjs worker).
 
+If you modify `src/`, see
+[documentation/PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src)
+— the "Update playground after modifying `src/`" section covers when and how
+to rebuild the playground bundles.
+
 ## What you can't break
 
 Invariants detailed in `CLAUDE.md`. In short:
 - **Zero label overlaps.** **Byte-deterministic output.**
-- **No build step, one runtime dep (elkjs).**
-- **User text is untrusted** — `esc()` / `escAttr()` into SVG.
-- **Diagnostics are coded, never thrown** — reuse `E0xxx`/`W0xxx` scheme.
+- **Every flow is a distinct arrow with a distinct label** — flows are never visually merged.
+- **Labels are mandatory in logical view (E0203)** — optional in application, infrastructure and security.
+- **Protocol is mandatory in infrastructure view (E0240)** — recommended (warning) in application (W0540) and for cross-zone security flows (W0561)
+- **Nesting rules are enforced per view (E0210–E0218)** — layout partitions depend on correct parentage.
+- **Duplicate IDs are rejected (E0202)** — flat ID space; every element must be uniquely referenceable.
+- **Dangling flow references are rejected (E0220)** — an edge to nowhere breaks the diagram.
 
 ## When a snapshot gate fails — is it my change or a regression?
 
