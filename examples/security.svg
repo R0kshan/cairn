@@ -69,12 +69,12 @@
 <text x="20" y="333" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="323" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="182" y="334" font-size="10" fill="#17202c">Trust zone (sensitivity)</text>
-<rect x="339" y="323" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
-<text x="371" y="334" font-size="10" fill="#17202c">Filtering / security node</text>
-<rect x="533" y="323" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="565" y="334" font-size="10" fill="#17202c">Sensitive asset</text>
-<rect x="675" y="323" width="26" height="14" rx="3" fill="#fdecea" stroke="#cf4b3f" stroke-dasharray="5 3"/>
-<text x="707" y="334" font-size="10" fill="#17202c">Untrusted external</text>
+<rect x="349" y="323" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
+<text x="381" y="334" font-size="10" fill="#17202c">Filtering / security node</text>
+<rect x="553" y="323" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="585" y="334" font-size="10" fill="#17202c">Sensitive asset</text>
+<rect x="702" y="323" width="26" height="14" rx="3" fill="#fdecea" stroke="#cf4b3f" stroke-dasharray="5 3"/>
+<text x="734" y="334" font-size="10" fill="#17202c">Untrusted external</text>
 <line x1="150" y1="353" x2="176" y2="353" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="357" font-size="10" fill="#17202c">Security flow — cross-zone flows should be filtered and encrypted</text>
 <text x="150" y="381" font-size="10" fill="#17202c" font-style="italic">W0560 flags any flow entering a more-trusted zone without a security-node</text>

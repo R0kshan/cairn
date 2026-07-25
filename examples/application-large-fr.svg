@@ -141,16 +141,16 @@
 <text x="20" y="543" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
 <rect x="150" y="533" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="544" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="533" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
-<text x="330" y="544" font-size="10" fill="#17202c">Application</text>
-<rect x="420" y="533" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="452" y="544" font-size="10" fill="#17202c">Module applicatif</text>
-<rect x="573" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="605" y="544" font-size="10" fill="#17202c">File de messages / broker</text>
-<rect x="767" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="799" y="544" font-size="10" fill="#17202c">Entrepôt / référentiel</text>
-<rect x="946" y="533" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="978" y="544" font-size="10" fill="#17202c">Système externe</text>
+<rect x="304" y="533" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="336" y="544" font-size="10" fill="#17202c">Application</text>
+<rect x="430" y="533" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="462" y="544" font-size="10" fill="#17202c">Module applicatif</text>
+<rect x="590" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="622" y="544" font-size="10" fill="#17202c">File de messages / broker</text>
+<rect x="794" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="826" y="544" font-size="10" fill="#17202c">Entrepôt / référentiel</text>
+<rect x="982" y="533" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="1014" y="544" font-size="10" fill="#17202c">Système externe</text>
 <line x1="150" y1="563" x2="176" y2="563" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="567" font-size="10" fill="#17202c">Flux applicatif — (protocole, format) sous le libellé</text>
 </svg>

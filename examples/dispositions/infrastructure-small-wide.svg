@@ -39,12 +39,12 @@
 <text x="20" y="245" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="235" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
 <text x="182" y="246" font-size="10" fill="#17202c">Site / data center</text>
-<rect x="308" y="235" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
-<text x="340" y="246" font-size="10" fill="#17202c">Network zone</text>
-<rect x="435" y="235" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="467" y="246" font-size="10" fill="#17202c">Server / VM</text>
-<rect x="557" y="235" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
-<text x="589" y="246" font-size="10" fill="#17202c">Deployed application</text>
+<rect x="315" y="235" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<text x="347" y="246" font-size="10" fill="#17202c">Network zone</text>
+<rect x="447" y="235" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="479" y="246" font-size="10" fill="#17202c">Server / VM</text>
+<rect x="573" y="235" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="605" y="246" font-size="10" fill="#17202c">Deployed application</text>
 <circle cx="163" cy="260" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
 <path d="M 158 270 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
 <text x="182" y="268" font-size="10" fill="#17202c">User / consumer</text>

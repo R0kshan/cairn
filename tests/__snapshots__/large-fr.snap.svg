@@ -291,14 +291,14 @@
 <text x="20" y="1171" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
 <rect x="150" y="1161" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="1172" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="1161" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="330" y="1172" font-size="10" fill="#17202c">Système</text>
-<rect x="399" y="1161" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="431" y="1172" font-size="10" fill="#17202c">Couche</text>
-<rect x="495" y="1161" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="527" y="1172" font-size="10" fill="#17202c">Bloc fonctionnel</text>
-<rect x="643" y="1161" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="675" y="1172" font-size="10" fill="#17202c">Système externe</text>
+<rect x="304" y="1161" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="336" y="1172" font-size="10" fill="#17202c">Système</text>
+<rect x="408" y="1161" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="440" y="1172" font-size="10" fill="#17202c">Couche</text>
+<rect x="506" y="1161" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="538" y="1172" font-size="10" fill="#17202c">Bloc fonctionnel</text>
+<rect x="660" y="1161" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="692" y="1172" font-size="10" fill="#17202c">Système externe</text>
 <line x1="150" y1="1191" x2="176" y2="1191" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="1195" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
 <rect x="480" y="1184" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>

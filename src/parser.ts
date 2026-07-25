@@ -8,11 +8,17 @@
  *
  *   file    := nl* header stmt*
  *   header  := 'diagram' ID STRING?
- *   stmt    := styleBlock | element | flow
- *   element := ID(kind) ID(id) STRING? ('{' stmt* '}')?
- *   flow    := ID '->' ID (':' STRING)? ('{' styleEntry* '}')?
+ *   stmt    := styleBlock | legend | business-object | element | flow
+ *             (legend and business-object are top-level only)
+ *   element := ID(kind) ID(id) STRING? ('(' attr ')')? ('{' stmt* '}')?
+ *   flow    := ID '->' ID (':' STRING)? ('(' tech ')')? ('[' refs ']')? ('{' styleEntry* '}')?
+ *   tech    := id (',' id)?
+ *   refs    := id (',' id)*
  *   styleBlock := 'style' '{' styleEntry* '}'
- *   styleEntry := ID (ID)? ':' value+ NL   (values: color | num | str | id)
+ *   legend  := 'legend' '{' note* '}'
+ *   note    := 'note' STRING
+ *   business-object := 'business-object' ID STRING STRING?
+ *   styleEntry := ID (ID)? ':' value+   (values: color | num | str | id; same-line transitions: `{ fill: #a  stroke: #b }`)
  */
 
 import { lex, type Tok } from './lexer.ts';

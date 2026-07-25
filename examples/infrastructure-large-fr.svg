@@ -123,23 +123,23 @@
 <text x="20" y="582" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
 <rect x="150" y="572" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
 <text x="182" y="583" font-size="10" fill="#17202c">Site / centre de données</text>
-<rect x="339" y="572" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
-<text x="371" y="583" font-size="10" fill="#17202c">Zone réseau</text>
-<rect x="461" y="572" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="493" y="583" font-size="10" fill="#17202c">Serveur / VM</text>
-<rect x="588" y="572" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
-<text x="620" y="583" font-size="10" fill="#17202c">Application déployée</text>
-<rect x="756" y="572" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
-<text x="788" y="583" font-size="10" fill="#17202c">Passerelle / proxy</text>
-<rect x="914" y="572" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
-<text x="946" y="583" font-size="10" fill="#17202c">Middleware d'authentification</text>
-<rect x="1129" y="572" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
-<text x="1161" y="583" font-size="10" fill="#17202c">Fournisseur d'identité (IdP)</text>
-<circle cx="1352" cy="575" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<path d="M 1347 585 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<text x="1371" y="583" font-size="10" fill="#17202c">Utilisateur / consommateur</text>
-<rect x="1539" y="572" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="1571" y="583" font-size="10" fill="#17202c">Système externe</text>
+<rect x="349" y="572" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<text x="381" y="583" font-size="10" fill="#17202c">Zone réseau</text>
+<rect x="475" y="572" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="507" y="583" font-size="10" fill="#17202c">Serveur / VM</text>
+<rect x="607" y="572" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="639" y="583" font-size="10" fill="#17202c">Application déployée</text>
+<rect x="784" y="572" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
+<text x="816" y="583" font-size="10" fill="#17202c">Passerelle / proxy</text>
+<rect x="949" y="572" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
+<text x="981" y="583" font-size="10" fill="#17202c">Middleware d'authentification</text>
+<rect x="1176" y="572" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
+<text x="1208" y="583" font-size="10" fill="#17202c">Fournisseur d'identité (IdP)</text>
+<circle cx="1410" cy="575" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<path d="M 1405 585 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<text x="1429" y="583" font-size="10" fill="#17202c">Utilisateur / consommateur</text>
+<rect x="1607" y="572" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="1639" y="583" font-size="10" fill="#17202c">Système externe</text>
 <line x1="150" y1="602" x2="176" y2="602" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="606" font-size="10" fill="#17202c">Flux technique (protocole, port)</text>
 <text x="150" y="630" font-size="10" fill="#17202c" font-style="italic">Flux inter-zones et inter-sites filtrés par pare-feu (matrice des flux jointe au dossier d'architecture)</text>

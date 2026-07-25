@@ -48,14 +48,14 @@
 <text x="20" y="251" font-size="11" font-weight="bold" fill="#c2ccd6">LEGEND</text>
 <rect x="150" y="241" width="26" height="14" rx="3" fill="#233242" stroke="#5aa9e6" stroke-dasharray="5 3"/>
 <text x="182" y="252" font-size="10" fill="#e6edf3">Actor group</text>
-<rect x="272" y="241" width="26" height="14" rx="3" fill="#332a1b" stroke="#e0a955"/>
-<text x="304" y="252" font-size="10" fill="#e6edf3">System</text>
-<rect x="368" y="241" width="26" height="14" rx="3" fill="#2e2a1a" stroke="#d8c15f"/>
-<text x="400" y="252" font-size="10" fill="#e6edf3">Layer</text>
-<rect x="458" y="241" width="26" height="14" rx="3" fill="#252c37" stroke="#6b7885"/>
-<text x="490" y="252" font-size="10" fill="#e6edf3">Functional block</text>
-<rect x="606" y="241" width="26" height="14" rx="3" fill="#2a2436" stroke="#b48ad6" stroke-dasharray="5 3"/>
-<text x="638" y="252" font-size="10" fill="#e6edf3">External system</text>
+<rect x="276" y="241" width="26" height="14" rx="3" fill="#332a1b" stroke="#e0a955"/>
+<text x="308" y="252" font-size="10" fill="#e6edf3">System</text>
+<rect x="374" y="241" width="26" height="14" rx="3" fill="#2e2a1a" stroke="#d8c15f"/>
+<text x="406" y="252" font-size="10" fill="#e6edf3">Layer</text>
+<rect x="467" y="241" width="26" height="14" rx="3" fill="#252c37" stroke="#6b7885"/>
+<text x="499" y="252" font-size="10" fill="#e6edf3">Functional block</text>
+<rect x="621" y="241" width="26" height="14" rx="3" fill="#2a2436" stroke="#b48ad6" stroke-dasharray="5 3"/>
+<text x="653" y="252" font-size="10" fill="#e6edf3">External system</text>
 <line x1="150" y1="271" x2="176" y2="271" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="275" font-size="10" fill="#e6edf3">Functional flow (label = exchanged data)</text>
 <rect x="480" y="264" width="96" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a"/>

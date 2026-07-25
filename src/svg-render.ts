@@ -26,7 +26,7 @@
 import type { Model, View, StyleProps, Flow } from './model.ts';
 import { themeFor, flowPalette, UI } from './model.ts';
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from './scene-layout.ts';
-import { chipW, techText, wrapText, fontSizes } from './text-metrics.ts';
+import { chipW, techText, wrapText, fontSizes, CW } from './text-metrics.ts';
 
 const HOP_RADIUS = 5;
 const SEC_LEVEL_FR: Record<string, string> = { public: 'public', internal: 'interne', restricted: 'restreint', secret: 'secret' };
@@ -399,7 +399,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       const tech = techText(flow.tech);
       const chipsW = (flow.objects ?? []).reduce((sum, o) => sum + chipW(objectName.get(o.id) ?? o.id, annot.scale) + 4, 0);
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
-      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * 0.52)));
+      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * CW)));
       const raw = (flow.label ?? '') + (tech ? '  ' + tech : '');
       const lines = raw.split('\n').flatMap(segment => wrapText(segment, maxChars).split('\n'));
       return { flow, lines };
@@ -418,7 +418,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       });
       if (entry.flow.objects?.length) {
         const last = entry.lines[entry.lines.length - 1] ?? '';
-        let cx = x + BADGE + Math.ceil(last.length * scaled(10) * 0.52) + 6;
+        let cx = x + BADGE + Math.ceil(last.length * scaled(10) * CW) + 6;
         const cy = y + 1 + (entry.lines.length - 1) * LINE_H;
         for (const o of entry.flow.objects) { const c = chip(cx, cy, objectName.get(o.id) ?? o.id); bandsSvg += c.svg; cx += c.w + 4; }
       }
@@ -459,7 +459,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       }
       const name = legendNames[kind];
       bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>\n`;
-      lx += scaled(40) + Math.ceil(name.length * scaled(10) * 0.52) + scaled(24);
+      lx += scaled(40) + Math.ceil(name.length * scaled(10) * CW) + scaled(24);
       if (lx > scene.width - 220) { lx = contentX; bandY += scaled(22); }
     }
     bandY += scaled(24);

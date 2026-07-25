@@ -123,23 +123,23 @@
 <text x="20" y="1375" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="1365" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
 <text x="182" y="1376" font-size="10" fill="#17202c">Site / data center</text>
-<rect x="308" y="1365" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
-<text x="340" y="1376" font-size="10" fill="#17202c">Network zone</text>
-<rect x="435" y="1365" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="467" y="1376" font-size="10" fill="#17202c">Server / VM</text>
-<rect x="557" y="1365" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
-<text x="589" y="1376" font-size="10" fill="#17202c">Deployed application</text>
+<rect x="315" y="1365" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<text x="347" y="1376" font-size="10" fill="#17202c">Network zone</text>
+<rect x="447" y="1365" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="479" y="1376" font-size="10" fill="#17202c">Server / VM</text>
+<rect x="573" y="1365" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="605" y="1376" font-size="10" fill="#17202c">Deployed application</text>
 <rect x="150" y="1387" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
 <text x="182" y="1398" font-size="10" fill="#17202c">Gateway / reverse proxy</text>
-<rect x="334" y="1387" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
-<text x="366" y="1398" font-size="10" fill="#17202c">Auth middleware</text>
-<rect x="476" y="1387" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
-<text x="508" y="1398" font-size="10" fill="#17202c">Identity provider (IdP)</text>
+<rect x="343" y="1387" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
+<text x="375" y="1398" font-size="10" fill="#17202c">Auth middleware</text>
+<rect x="492" y="1387" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
+<text x="524" y="1398" font-size="10" fill="#17202c">Identity provider (IdP)</text>
 <circle cx="163" cy="1412" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
 <path d="M 158 1422 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
 <text x="182" y="1420" font-size="10" fill="#17202c">User / consumer</text>
-<rect x="292" y="1409" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="324" y="1420" font-size="10" fill="#17202c">External system</text>
+<rect x="299" y="1409" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="331" y="1420" font-size="10" fill="#17202c">External system</text>
 <line x1="150" y1="1439" x2="176" y2="1439" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="1443" font-size="10" fill="#17202c">Technical flow (protocol, port)</text>
 <text x="150" y="1467" font-size="10" fill="#17202c" font-style="italic">Inter-zone and inter-site flows filtered by firewall (flow matrix in the architecture dossier)</text>

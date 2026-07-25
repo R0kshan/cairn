@@ -41,16 +41,16 @@
 <text x="20" y="261" font-size="11" font-weight="bold" fill="#465264">LEGEND</text>
 <rect x="150" y="251" width="26" height="14" rx="3" fill="#e8eff6" stroke="#3b6ea5" stroke-dasharray="5 3"/>
 <text x="182" y="262" font-size="10" fill="#26303c">Actor group</text>
-<rect x="272" y="251" width="26" height="14" rx="3" fill="#e8eff6" stroke="#3b6ea5"/>
-<text x="304" y="262" font-size="10" fill="#26303c">Application</text>
-<rect x="394" y="251" width="26" height="14" rx="3" fill="#ffffff" stroke="#516070"/>
-<text x="426" y="262" font-size="10" fill="#26303c">Application module</text>
-<rect x="552" y="251" width="26" height="14" rx="3" fill="#efecf6" stroke="#8a6fae"/>
-<text x="584" y="262" font-size="10" fill="#26303c">Message queue / broker</text>
+<rect x="276" y="251" width="26" height="14" rx="3" fill="#e8eff6" stroke="#3b6ea5"/>
+<text x="308" y="262" font-size="10" fill="#26303c">Application</text>
+<rect x="402" y="251" width="26" height="14" rx="3" fill="#ffffff" stroke="#516070"/>
+<text x="434" y="262" font-size="10" fill="#26303c">Application module</text>
+<rect x="567" y="251" width="26" height="14" rx="3" fill="#efecf6" stroke="#8a6fae"/>
+<text x="599" y="262" font-size="10" fill="#26303c">Message queue / broker</text>
 <rect x="150" y="273" width="26" height="14" rx="3" fill="#efecf6" stroke="#8a6fae"/>
 <text x="182" y="284" font-size="10" fill="#26303c">Datastore / registry</text>
-<rect x="318" y="273" width="26" height="14" rx="3" fill="#efecf5" stroke="#7d6ba8" stroke-dasharray="5 3"/>
-<text x="350" y="284" font-size="10" fill="#26303c">External system</text>
+<rect x="327" y="273" width="26" height="14" rx="3" fill="#efecf5" stroke="#7d6ba8" stroke-dasharray="5 3"/>
+<text x="359" y="284" font-size="10" fill="#26303c">External system</text>
 <line x1="150" y1="303" x2="176" y2="303" stroke="#5b6673" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="307" font-size="10" fill="#26303c">Application flow — (protocol, format) under the label</text>
 </svg>
