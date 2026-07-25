@@ -276,6 +276,12 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     return body + centeredNodeLabel(lines, n.x + n.w / 2, centerLinesY(n.y, n.h, lines.length), text);
   };
 
+  const renderIdp = (n: SceneNode, s: StyleProps, lines: string[]): string => {
+    const fill = escAttr(s.fill ?? palette.nodeFill), stroke = escAttr(s.stroke?.color ?? palette.nodeStroke), text = escAttr(s.text ?? palette.nodeText);
+    const body = `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${s.stroke?.width ?? 1.3}"/>\n`;
+    return body + centeredNodeLabel(lines, n.x + n.w / 2, centerLinesY(n.y, n.h, lines.length), text);
+  };
+
   const renderLeafNode = (n: SceneNode): string => {
     const s = resolveStyle(n.kind, n.id);
     const lines = n.label.split('\n');
@@ -285,7 +291,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       case 'queue': return renderQueue(n, s, lines);
       case 'gateway': return renderGateway(n, s, lines);
       case 'auth': return renderAuth(n, s, lines);
-      case 'idp': return renderPlainBox(n, s, lines);
+      case 'idp': return renderIdp(n, s, lines);
       default: return renderPlainBox(n, s, lines);
     }
   };
