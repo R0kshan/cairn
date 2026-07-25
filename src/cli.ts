@@ -15,12 +15,12 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { parse } from './parse.ts';
-import { validate } from './validate.ts';
-import { renderHuman, renderJson } from './diag.ts';
-import { layout } from './layout.ts';
-import { render } from './render.ts';
-import { matrixCsv, matrixMd, matrixSvg } from './matrix.ts';
+import { parse } from './parser.ts';
+import { validate } from './validator.ts';
+import { renderHuman, renderJson } from './diagnostics.ts';
+import { layout } from './scene-layout.ts';
+import { render } from './svg-render.ts';
+import { matrixCsv, matrixMd, matrixSvg } from './flow-matrix.ts';
 import { views, explanations, type Diagnostic } from './model.ts';
 import { watchCommand } from './watch.ts';
 

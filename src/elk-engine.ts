@@ -19,7 +19,7 @@ export function setElkFactory(f: () => any) {
 export async function getElk(): Promise<any> {
   if (instance) return instance;
   if (!factory) {
-    const spec = './elk-node' + '.ts'; // computed: not followed by bundlers
+    const spec = './elk-worker' + '.ts'; // computed: not followed by bundlers
     const mod = await import(/* @vite-ignore */ spec);
     factory = mod.nodeElkFactory;
   }

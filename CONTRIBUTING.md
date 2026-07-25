@@ -30,6 +30,7 @@ Invariants detailed in `CLAUDE.md`. In short:
 | When… | `npm test` | `npm run typecheck` + `npm run lint` | `npm run snapshots` | `npm run examples` |
 |---|---|---|---|---|
 | Checking for regressions | ✅ run **first** | ✅ run | — | — |
+| Refactoring (no visible change) | ✅ must pass | ✅ must pass | ✅ run (must produce **zero** diffs) | ✅ run (must produce **zero** diffs) |
 | A snapshot gate failed and the diff is intended | ✅ must pass | ✅ must pass | ✅ run to accept | — |
 | You added/renamed a `.cairn` example file | ✅ must pass | ✅ must pass | ✅ run | ✅ run (commit the SVG) |
 | You changed a `.cairn` source file (bug fix / feature) | ✅ must pass | ✅ must pass | ✅ run if output changed | ✅ run if output changed |

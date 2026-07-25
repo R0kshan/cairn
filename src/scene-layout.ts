@@ -20,9 +20,9 @@
  */
 
 import type { Model, Element, View } from './model.ts';
-import { measure, wrapText, flowLabelBox, techText, fontSizes } from './text.ts';
-import { foldedLayout } from './fold.ts';
-import { getElk } from './elk.ts';
+import { measure, wrapText, flowLabelBox, techText, fontSizes } from './text-metrics.ts';
+import { foldedLayout } from './slide-fold.ts';
+import { getElk } from './elk-engine.ts';
 
 export interface SceneNode { id: string; kind: string; label: string; x: number; y: number; w: number; h: number; container: boolean; }
 export interface SceneLabel { flowId: string; text: string; x: number; y: number; w: number; h: number; }

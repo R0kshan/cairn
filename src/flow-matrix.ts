@@ -13,7 +13,7 @@
 
 import type { Model, View } from './model.ts';
 import { UI, palettes, lightPalette } from './model.ts';
-import { measure } from './text.ts';
+import { measure } from './text-metrics.ts';
 
 export interface MatrixRow {
   n: number; source: string; dest: string;

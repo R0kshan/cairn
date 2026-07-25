@@ -15,8 +15,8 @@
  */
 
 import type { Model, Element, View } from './model.ts';
-import type { Scene, SceneNode, SceneEdge, SceneLabel } from './layout.ts';
-import { measure, wrapText, nodeSize, flowLabelBox, techText, fontSizes } from './text.ts';
+import type { Scene, SceneNode, SceneEdge, SceneLabel } from './scene-layout.ts';
+import { measure, wrapText, nodeSize, flowLabelBox, techText, fontSizes } from './text-metrics.ts';
 
 const PAD_TOP = 30, PAD = 12;
 const LANE_STEP = 10;   // horizontal spacing of vertical lanes

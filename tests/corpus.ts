@@ -23,10 +23,10 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse } from '../src/parse.ts';
-import { validate } from '../src/validate.ts';
-import { layout } from '../src/layout.ts';
-import { render } from '../src/render.ts';
+import { parse } from '../src/parser.ts';
+import { validate } from '../src/validator.ts';
+import { layout } from '../src/scene-layout.ts';
+import { render } from '../src/svg-render.ts';
 import { views } from '../src/model.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));

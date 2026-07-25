@@ -9,11 +9,11 @@
  */
 
 import ELK from 'elkjs/lib/elk.bundled.js';
-import { setElkFactory } from './elk.ts';
-import { parse } from './parse.ts';
-import { validate } from './validate.ts';
-import { layout } from './layout.ts';
-import { render } from './render.ts';
+import { setElkFactory } from './elk-engine.ts';
+import { parse } from './parser.ts';
+import { validate } from './validator.ts';
+import { layout } from './scene-layout.ts';
+import { render } from './svg-render.ts';
 import { views, themeNames, type Diagnostic } from './model.ts';
 
 setElkFactory(() => new (ELK as any)());

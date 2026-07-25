@@ -9,11 +9,11 @@
 
 import { watch as fsWatch, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, basename } from 'node:path';
-import { parse } from './parse.ts';
-import { validate } from './validate.ts';
-import { renderHuman } from './diag.ts';
-import { layout } from './layout.ts';
-import { render } from './render.ts';
+import { parse } from './parser.ts';
+import { validate } from './validator.ts';
+import { renderHuman } from './diagnostics.ts';
+import { layout } from './scene-layout.ts';
+import { render } from './svg-render.ts';
 import { views, type Diagnostic } from './model.ts';
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

@@ -15,7 +15,7 @@
  *   styleEntry := ID (ID)? ':' value+ NL   (values: color | num | str | id)
  */
 
-import { lex, type Tok } from './lex.ts';
+import { lex, type Tok } from './lexer.ts';
 import type { Model, Element, Flow, Diagnostic, StyleProps, DiagramStyle, Span } from './model.ts';
 import { defaultDiagramStyle, themeNames } from './model.ts';
 

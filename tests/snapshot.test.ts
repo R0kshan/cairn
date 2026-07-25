@@ -30,11 +30,11 @@ import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parse } from '../src/parse.ts';
-import { validate } from '../src/validate.ts';
-import { layout } from '../src/layout.ts';
-import { render } from '../src/render.ts';
-import { matrixCsv, matrixMd, matrixSvg } from '../src/matrix.ts';
+import { parse } from '../src/parser.ts';
+import { validate } from '../src/validator.ts';
+import { layout } from '../src/scene-layout.ts';
+import { render } from '../src/svg-render.ts';
+import { matrixCsv, matrixMd, matrixSvg } from '../src/flow-matrix.ts';
 import { views } from '../src/model.ts';
 
 const HERE = dirname(fileURLToPath(import.meta.url));

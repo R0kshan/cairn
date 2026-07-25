@@ -25,8 +25,8 @@
 
 import type { Model, View, StyleProps, Flow } from './model.ts';
 import { themeFor, flowPalette, UI } from './model.ts';
-import type { Scene, SceneNode, SceneEdge, SceneLabel } from './layout.ts';
-import { chipW, techText, wrapText, fontSizes } from './text.ts';
+import type { Scene, SceneNode, SceneEdge, SceneLabel } from './scene-layout.ts';
+import { chipW, techText, wrapText, fontSizes } from './text-metrics.ts';
 
 const HOP_RADIUS = 5;
 const SEC_LEVEL_FR: Record<string, string> = { public: 'public', internal: 'interne', restricted: 'restreint', secret: 'secret' };
