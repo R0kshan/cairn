@@ -1,4 +1,19 @@
-// Core model types. Every AST node carries a source span for diagnostics.
+/**
+ * The shared vocabulary of the whole pipeline.
+ *
+ * Three things live here, all consumed by the stages downstream:
+ *   • Types — the AST (Element, Flow, BusinessObject, Model), the resolved
+ *     DiagramStyle, and Diagnostic. Every AST node carries a source Span so a
+ *     diagnostic can point back at the exact characters.
+ *   • The view registry (`views`) — each of the four views (logical,
+ *     application, infrastructure, security) declares its own kinds, nesting
+ *     rules, partitions, and per-view checks. This is the one place a new
+ *     view/diagnostic is added; parse/validate/layout/render just read it.
+ *   • Themes & palettes — a theme is a chrome palette plus role colours; views
+ *     map their kinds to roles, so each theme is defined once and applies to all.
+ *
+ * `explanations` backs `cairn explain <code>`.
+ */
 
 export interface Span { line: number; col: number; len: number; }
 

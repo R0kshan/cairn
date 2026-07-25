@@ -1,8 +1,13 @@
-// Node/Bun ELK loader — sync fake-worker mode, using the self-contained bundled
-// ELK (elk.bundled.js) that has the worker embedded inline.
-// bun build --compile cannot follow createRequire/require('elkjs/lib/elk-worker*'),
-// so we must use the pre-bundled file where all internal require() calls resolve
-// within the bundle, not against the filesystem / the compiled binary's virtual fs.
+/**
+ * Load ELK for Node/Bun using the self-contained bundled build.
+ *
+ * Uses elkjs's pre-bundled `elk.bundled.js` (worker embedded inline) in sync
+ * fake-worker mode. `bun build --compile` cannot follow the dynamic
+ * require('elkjs/lib/elk-worker*'), so the pre-bundled file — where every
+ * internal require() resolves inside the bundle rather than against the
+ * filesystem / the compiled binary's virtual fs — is the only variant that
+ * works in the compiled binary.
+ */
 
 import ELKConstructor from 'elkjs/lib/elk.bundled.js';
 

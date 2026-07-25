@@ -1,5 +1,23 @@
-// Model -> ELK constraint compilation -> absolute-coordinate scene.
-// Ported from the phase 0 spike; view conventions drive the ELK options.
+/**
+ * Position everything by compiling the model into an ELK graph.
+ *
+ * The middle stage of the pipeline: turn the validated model into a Scene of
+ * absolute x/y/width/height boxes and routed edge points, which render.ts then
+ * draws. All positioning is delegated to ELK (elkjs); this file's job is to
+ * translate cairn's semantics into ELK options and read the result back.
+ *
+ * The translation cares about three things:
+ *   • Direction & bands — disposition picks a LOCKED layout direction so the
+ *     actor band always lands on the expected side (wide/slide → actors left,
+ *     tall/page → actors top); `partition` numbers keep kinds in reading order.
+ *   • Fit — slide/page lay out several candidates (varying label wrap and
+ *     spacing) and keep whichever scales largest onto the target frame.
+ *   • Text metrics — node/label sizes come from text.ts (pure arithmetic), so
+ *     the reserved space matches what render.ts draws and output stays stable.
+ *
+ * For slide disposition with several systems, the folded layout (fold.ts) may
+ * be used instead.
+ */
 
 import type { Model, Element, View } from './model.ts';
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from './text.ts';

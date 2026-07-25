@@ -1,39 +1,47 @@
-// Diagnostic rendering: Rust-style human output + JSON mode.
+/**
+ * Format Diagnostics for humans and machines.
+ *
+ * Two renderers over the coded Diagnostics that parse/validate produce:
+ *   renderHuman  a Rust-style report — severity, code, the source line, a caret
+ *                under the offending span, and an optional help line (ANSI
+ *                colour when writing to a TTY).
+ *   renderJson   the same diagnostics as structured JSON, for editors/tooling.
+ */
 
 import type { Diagnostic } from './model.ts';
 
 const RESET = '\x1b[0m', BOLD = '\x1b[1m', RED = '\x1b[31m', YEL = '\x1b[33m', BLUE = '\x1b[34m', DIM = '\x1b[2m';
 
 export function renderHuman(file: string, src: string, diags: Diagnostic[], color = true): string {
-  const c = (code: string, s: string) => (color ? code + s + RESET : s);
-  const lines = src.split('\n');
-  const out: string[] = [];
-  const sorted = [...diags].sort((a, b) => a.span.line - b.span.line || a.span.col - b.span.col);
+  const paint = (ansi: string, text: string) => (color ? ansi + text + RESET : text);
+  const srcLines = src.split('\n');
+  const report: string[] = [];
+  const byPosition = [...diags].sort((a, b) => a.span.line - b.span.line || a.span.col - b.span.col);
 
-  for (const d of sorted) {
-    const sevColor = d.severity === 'error' ? RED : YEL;
-    const gutter = String(d.span.line).length;
-    const pad = ' '.repeat(gutter);
-    out.push(c(BOLD + sevColor, `${d.severity === 'error' ? 'error' : 'warning'}[${d.code}]`) + c(BOLD, `: ${d.message}`));
-    out.push(c(BLUE, `${pad}--> `) + `${file}:${d.span.line}:${d.span.col}`);
-    const srcLine = lines[d.span.line - 1] ?? '';
-    out.push(c(BLUE, `${pad} |`));
-    out.push(c(BLUE, `${d.span.line} | `) + srcLine);
-    out.push(c(BLUE, `${pad} | `) + ' '.repeat(Math.max(0, d.span.col - 1)) + c(sevColor, '^'.repeat(Math.max(1, Math.min(d.span.len, srcLine.length - d.span.col + 1 || 1)))));
-    if (d.note) out.push(c(BLUE, `${pad} = `) + c(DIM, `note: ${d.note}`));
-    if (d.help) out.push(c(BOLD, 'help') + `: ${d.help}`);
-    out.push('');
+  for (const d of byPosition) {
+    const severityColor = d.severity === 'error' ? RED : YEL;
+    const gutterPad = ' '.repeat(String(d.span.line).length);
+    const srcLine = srcLines[d.span.line - 1] ?? '';
+    const caretCount = Math.max(1, Math.min(d.span.len, srcLine.length - d.span.col + 1 || 1));
+    report.push(paint(BOLD + severityColor, `${d.severity === 'error' ? 'error' : 'warning'}[${d.code}]`) + paint(BOLD, `: ${d.message}`));
+    report.push(paint(BLUE, `${gutterPad}--> `) + `${file}:${d.span.line}:${d.span.col}`);
+    report.push(paint(BLUE, `${gutterPad} |`));
+    report.push(paint(BLUE, `${d.span.line} | `) + srcLine);
+    report.push(paint(BLUE, `${gutterPad} | `) + ' '.repeat(Math.max(0, d.span.col - 1)) + paint(severityColor, '^'.repeat(caretCount)));
+    if (d.note) report.push(paint(BLUE, `${gutterPad} = `) + paint(DIM, `note: ${d.note}`));
+    if (d.help) report.push(paint(BOLD, 'help') + `: ${d.help}`);
+    report.push('');
   }
 
-  const ne = diags.filter(d => d.severity === 'error').length;
-  const nw = diags.filter(d => d.severity === 'warning').length;
-  if (ne + nw > 0) {
+  const errorCount = diags.filter(d => d.severity === 'error').length;
+  const warningCount = diags.filter(d => d.severity === 'warning').length;
+  if (errorCount + warningCount > 0) {
     const parts = [];
-    if (ne) parts.push(c(BOLD + RED, `${ne} error${ne > 1 ? 's' : ''}`));
-    if (nw) parts.push(c(BOLD + YEL, `${nw} warning${nw > 1 ? 's' : ''}`));
-    out.push(parts.join(', ') + c(DIM, ' — run `cairn explain <code>` for the rule rationale'));
+    if (errorCount) parts.push(paint(BOLD + RED, `${errorCount} error${errorCount > 1 ? 's' : ''}`));
+    if (warningCount) parts.push(paint(BOLD + YEL, `${warningCount} warning${warningCount > 1 ? 's' : ''}`));
+    report.push(parts.join(', ') + paint(DIM, ' — run `cairn explain <code>` for the rule rationale'));
   }
-  return out.join('\n');
+  return report.join('\n');
 }
 
 export function renderJson(file: string, diags: Diagnostic[]): string {

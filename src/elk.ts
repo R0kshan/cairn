@@ -1,7 +1,12 @@
-// Runtime-agnostic ELK provider. The CLI (Node/Bun) registers the sync
-// fake-worker loader; the browser playground registers the bundled worker.
-// If nothing registered, fall back to the Node loader via a computed dynamic
-// import (kept out of browser bundles by the indirection).
+/**
+ * Runtime-agnostic provider for the ELK layout engine.
+ *
+ * Lets the same engine code run in different hosts without importing ELK
+ * directly: the CLI (Node/Bun) registers the sync fake-worker loader, the
+ * browser playground registers the bundled worker. If nothing registered, we
+ * fall back to the Node loader via a computed dynamic import (kept out of
+ * browser bundles by the indirection).
+ */
 
 let factory: (() => any) | null = null;
 let instance: any = null;

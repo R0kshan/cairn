@@ -1,4 +1,12 @@
-// Shared text metrics (approx, 1 char ~ 0.56 * fontSize for sans).
+/**
+ * Pure text measurement, shared by layout and render.
+ *
+ * Both stages must agree on how big a label is: layout reserves the space,
+ * render draws into it. They agree because size is arithmetic, never a real
+ * font — width ≈ charCount × fontSize × 0.56. Using no system-font lookup means
+ * the same input measures identically on every OS, which is what keeps the SVG
+ * output byte-for-byte deterministic across platforms.
+ */
 
 // Default text sizes (base = node size). `style { font-size: N }` overrides the
 // base; edge labels sit one point below the node size, container titles a touch

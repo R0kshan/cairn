@@ -1,11 +1,15 @@
-// Matrice des flux techniques — the primary deliverable of the physical /
-// infrastructure view in French EA practice (Dossier d'Architecture). Emitted
-// as a companion file (CSV or Markdown) next to the diagram on `cairn build`,
-// so it can be dropped straight into the DA table.
-//
-// Columns: N° · Source (zone) · Destination (zone) · Protocole · Port · Nature du flux
-// Protocol/port are split from the infra tech tail `(HTTPS/443)` on the last
-// `/`; a trailing all-digit segment becomes the Port column.
+/**
+ * Export the "matrice des flux techniques" from a model.
+ *
+ * The primary deliverable of the infrastructure / physical view in French EA
+ * practice (Dossier d'Architecture): a table of every flow with its protocol
+ * and port. Emitted as CSV, Markdown, or a standalone themed SVG so it can be
+ * dropped straight into the DA next to the diagram.
+ *
+ * Columns: N° · Source (zone) · Destination (zone) · Protocole · Port · Nature du flux
+ * Protocol/port are split from the infra tech tail `(HTTPS/443)` on the last
+ * `/`; a trailing all-digit segment becomes the Port column.
+ */
 
 import type { Model, View } from './model.ts';
 import { UI, palettes, lightPalette } from './model.ts';

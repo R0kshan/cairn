@@ -1,6 +1,11 @@
-// Hand-rolled lexer. Newlines are tokens (style entries are line-terminated).
-// `#` starts a comment UNLESS immediately followed by 3-8 hex digits and a
-// word boundary, in which case it is a COLOR literal (documented heuristic).
+/**
+ * Hand-written tokenizer for the cairn DSL.
+ *
+ * Turns source text into a flat token stream for parse.ts. Newlines are real
+ * tokens (style entries are line-terminated). One deliberate quirk: `#` starts
+ * a comment UNLESS it is immediately followed by 3–8 hex digits and a word
+ * boundary, in which case it is a COLOR literal (e.g. `#1f77b4`).
+ */
 
 import type { Span, Diagnostic } from './model.ts';
 

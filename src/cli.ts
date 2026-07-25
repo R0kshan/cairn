@@ -1,6 +1,18 @@
 #!/usr/bin/env node
-// cairn — diagram-as-code CLI (phase 1)
-// Commands: validate | build | new | explain
+/**
+ * The `cairn` command-line entry point.
+ *
+ * Parses argv, dispatches one subcommand, and maps the result to a process exit
+ * code. Each verb drives the pipeline stages:
+ *   validate  parse + validate, print diagnostics       (exit 1 on any error)
+ *   build     …then layout + render to an .svg          (-o overrides the path)
+ *   matrix    …then export the technical flow matrix    (--format csv|md|svg)
+ *   watch     rebuild on every save (delegated to watch.ts)
+ *   new       scaffold a typed template file            (-L/-A/-I/-S)
+ *   explain   print the rationale text for a diagnostic code
+ *
+ * Exit codes: 0 = ok (or warnings only), 1 = errors, 2 = usage / file problem.
+ */
 
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { parse } from './parse.ts';
@@ -179,6 +191,10 @@ const TEMPLATES: Record<string, string> = {
 const args = process.argv.slice(2);
 const cmd = args[0];
 
+// The single positional argument every command takes is the .cairn file: the
+// first non-flag token that isn't the command verb itself.
+const positionalFile = (): string | undefined => args.find(a => !a.startsWith('-') && a !== cmd);
+
 function usage(): never {
   console.log(`cairn — architecture diagrams as code
 
@@ -206,8 +222,24 @@ function loadAndCheck(file: string): { src: string; model: any; diags: Diagnosti
   return { src, model, diags };
 }
 
+// Output path: an explicit `-o <path>`, else the input file with its `.cairn`
+// extension swapped for `suffix` (e.g. `.svg`, `.flow.csv`).
+function resolveOutputPath(file: string, suffix: string): string {
+  const oIdx = args.indexOf('-o');
+  return oIdx >= 0 ? args[oIdx + 1] : file.replace(/\.cairn$/, '') + suffix;
+}
+
+// Errors are fatal: print the full diagnostic report to stderr and stop before
+// any artifact is written. Warnings alone don't halt the build.
+function exitIfErrors(file: string, src: string, diags: Diagnostic[]): void {
+  if (diags.some(d => d.severity === 'error')) {
+    console.error(renderHuman(file, src, diags, process.stderr.isTTY ?? false));
+    process.exit(1);
+  }
+}
+
 if (cmd === 'validate') {
-  const file = args.find(a => !a.startsWith('-') && a !== 'validate');
+  const file = positionalFile();
   if (!file) usage();
   const json = args.includes('--format') && args[args.indexOf('--format') + 1] === 'json';
   const strict = args.includes('--strict');
@@ -220,16 +252,11 @@ if (cmd === 'validate') {
   process.exit(errors > 0 || (strict && warnings > 0) ? 1 : 0);
 
 } else if (cmd === 'build') {
-  const file = args.find(a => !a.startsWith('-') && a !== 'build');
+  const file = positionalFile();
   if (!file) usage();
-  const oIdx = args.indexOf('-o');
-  const outFile = oIdx >= 0 ? args[oIdx + 1] : file.replace(/\.cairn$/, '') + '.svg';
+  const outFile = resolveOutputPath(file, '.svg');
   const { src, model, diags } = loadAndCheck(file);
-  const errors = diags.filter(d => d.severity === 'error');
-  if (errors.length) {
-    console.error(renderHuman(file, src, diags, process.stderr.isTTY ?? false));
-    process.exit(1);
-  }
+  exitIfErrors(file, src, diags);
   const view = views[model.type];
   layout(model, view).then(scene => {
     const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
@@ -258,7 +285,7 @@ if (cmd === 'validate') {
   }).catch(e => { console.error('layout error:', e.message); process.exit(1); });
 
 } else if (cmd === 'matrix') {
-  const file = args.find(a => !a.startsWith('-') && a !== 'matrix');
+  const file = positionalFile();
   if (!file) usage();
   const fIdx = args.indexOf('--format');
   const format = fIdx >= 0 ? args[fIdx + 1] : 'csv';
@@ -266,16 +293,11 @@ if (cmd === 'validate') {
     console.error(`error: unknown --format \`${format}\` (csv | md | svg)`); process.exit(2);
   }
   const { src, model, diags } = loadAndCheck(file);
-  const errors = diags.filter(d => d.severity === 'error');
-  if (errors.length) {
-    console.error(renderHuman(file, src, diags, process.stderr.isTTY ?? false));
-    process.exit(1);
-  }
+  exitIfErrors(file, src, diags);
   const view = views[model.type];
   if (!model.flows.length) { console.error(`error: \`${file}\` declares no flows — nothing to tabulate`); process.exit(1); }
   const ext = format === 'svg' ? 'svg' : format === 'md' ? 'md' : 'csv';
-  const oIdx = args.indexOf('-o');
-  const outFile = oIdx >= 0 ? args[oIdx + 1] : file.replace(/\.cairn$/, '') + '.flow.' + ext;
+  const outFile = resolveOutputPath(file, '.flow.' + ext);
   const lang = model.style.lang;
   const content = format === 'svg' ? matrixSvg(model, view, lang)
     : format === 'md' ? matrixMd(model, view, lang)
@@ -284,15 +306,13 @@ if (cmd === 'validate') {
   console.log(`✓ ${outFile} (matrice des flux — ${model.flows.length} flows, ${format}, lang: ${lang})`);
 
 } else if (cmd === 'watch') {
-  const file = args.find(a => !a.startsWith('-') && a !== 'watch');
+  const file = positionalFile();
   if (!file) usage();
-  const oIdx = args.indexOf('-o');
-  const outFile = oIdx >= 0 ? args[oIdx + 1] : file.replace(/\.cairn$/, '') + '.svg';
-  watchCommand(file, outFile);
+  watchCommand(file, resolveOutputPath(file, '.svg'));
 
 } else if (cmd === 'new') {
   const type = args.map(a => TYPE_FLAGS[a]).find(Boolean);
-  const file = args.find(a => !a.startsWith('-') && a !== 'new');
+  const file = positionalFile();
   if (!type || !file) usage();
   if (!views[type]) {
     console.error(`error: unknown view \`${type}\` (available: ${Object.keys(views).join(', ')})`);

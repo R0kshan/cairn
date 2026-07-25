@@ -1,5 +1,12 @@
-// Browser entry: the whole engine, client-side. Bundled by
-// scripts/build-playground.sh into playground/cairn-engine.js (ESM).
+/**
+ * One entry point bundled for the browser playground and the Vercel /api/svg
+ * function (see documentation/PLAYGROUND_BUILD.md).
+ *
+ * Wires the whole engine behind a single `compile(source)` call: parse →
+ * validate → layout → render, returning the SVG plus diagnostics and metrics.
+ * It also registers the browser ELK factory. esbuild inlines elkjs into the
+ * bundles, so they ship with no runtime dependencies.
+ */
 
 import ELK from 'elkjs/lib/elk.bundled.js';
 import { setElkFactory } from './elk.ts';

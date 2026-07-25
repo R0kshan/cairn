@@ -1,6 +1,11 @@
-// cairn watch — rebuild on save, diagnostics in the terminal, SVG always fresh.
-// On errors the SVG becomes an error panel (never a stale diagram), so an
-// editor auto-refresh preview always reflects the current state of the file.
+/**
+ * `cairn watch`: rebuild the SVG on every save.
+ *
+ * Watches the source file and re-runs parse → validate → layout → render on
+ * each change, keeping the output SVG fresh for an editor's auto-refresh
+ * preview. On errors the SVG is replaced with an error panel (never a stale
+ * diagram), so the preview always reflects the file's current state.
+ */
 
 import { watch as fsWatch, readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { dirname, basename } from 'node:path';

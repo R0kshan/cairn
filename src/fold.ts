@@ -1,12 +1,18 @@
-// Folded composite layout (slide mode): each middle system is laid out
-// independently by ELK, systems are stacked as ROWS in a middle column,
-// actor-groups form a left column, externals a right column. Inter-group
-// flows are routed through gutters via phantom ports so they exit/enter
-// groups on clean, ELK-routed internal segments.
-//
-// Row gaps are sized from measured gutter demand BEFORE placement, so trunk
-// lanes can never overflow into a system box. Lane allocation uses interval
-// coloring: overlapping spans never share a lane.
+/**
+ * The "folded" slide layout: a readable grid instead of one ribbon.
+ *
+ * An alternative to layout.ts, used for slide disposition when there are several
+ * systems. Instead of one global ELK pass (which tends to sprawl into a wide
+ * ribbon), each middle system is laid out independently by ELK and the pieces
+ * are arranged as a grid: actor-groups in a left column, systems stacked as
+ * ROWS in a middle column, externals in a right column. Inter-group flows are
+ * routed through gutters via phantom ports, so they exit/enter groups on clean,
+ * ELK-routed internal segments.
+ *
+ * Row gaps are sized from measured gutter demand BEFORE placement, so trunk
+ * lanes can never overflow into a system box. Lane allocation uses interval
+ * colouring: overlapping spans never share a lane.
+ */
 
 import type { Model, Element, View } from './model.ts';
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from './layout.ts';

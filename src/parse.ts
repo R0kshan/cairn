@@ -1,11 +1,19 @@
-// Recursive-descent parser for DSL v0.1.
-// file    := nl* header stmt*
-// header  := 'diagram' ID STRING?
-// stmt    := styleBlock | element | flow
-// element := ID(kind) ID(id) STRING? ('{' stmt* '}')?
-// flow    := ID '->' ID (':' STRING)? ('{' styleEntry* '}')?
-// styleBlock := 'style' '{' styleEntry* '}'
-// styleEntry := ID (ID)? ':' value+ NL   (values: color | num | str | id)
+/**
+ * Recursive-descent parser: tokens (lex.ts) → Model AST.
+ *
+ * Consumes the token stream into the Model that validate/layout/render use.
+ * Syntax problems are recorded as coded Diagnostics (E01xx) and the parser
+ * recovers to the next line rather than throwing, so a single typo doesn't hide
+ * the rest of the file's errors. Grammar (EBNF-ish):
+ *
+ *   file    := nl* header stmt*
+ *   header  := 'diagram' ID STRING?
+ *   stmt    := styleBlock | element | flow
+ *   element := ID(kind) ID(id) STRING? ('{' stmt* '}')?
+ *   flow    := ID '->' ID (':' STRING)? ('{' styleEntry* '}')?
+ *   styleBlock := 'style' '{' styleEntry* '}'
+ *   styleEntry := ID (ID)? ':' value+ NL   (values: color | num | str | id)
+ */
 
 import { lex, type Tok } from './lex.ts';
 import type { Model, Element, Flow, Diagnostic, StyleProps, DiagramStyle, Span } from './model.ts';
