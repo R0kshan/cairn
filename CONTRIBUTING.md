@@ -1,12 +1,10 @@
 # Contributing to cairn
 
-Contributions and ideas are welcome. **Open an issue first** so we can agree on
-the approach before you invest in a PR.
+**Open an issue first** so we can agree on the approach before you invest in a PR.
 
 ## Getting started
 
-cairn has **no build step** — TypeScript runs directly on **Node ≥ 22.6** via
-`node --experimental-strip-types`. So there's nothing to compile:
+No build step — TypeScript runs directly on **Node ≥ 22.6** via `node --experimental-strip-types`.
 
 ```sh
 npm install
@@ -14,134 +12,53 @@ npm run cairn -- new -L my.cairn     # scaffold a diagram
 npm run cairn -- build my.cairn      # render it to SVG
 ```
 
-The only runtime dependency is `elkjs` (the layout engine); the dev toolchain is
-just biome + typescript. Please keep both lists that short — a new dependency is
-permanent maintenance for a solo project.
-
-## The three checks (all must be green)
-
-```sh
-npm run typecheck     # tsc --noEmit — the runtime strips types, so this is the ONLY type check
-npm run lint          # biome (lint-only; don't reformat existing code)
-npm test              # unit tests + the non-regression gates
-```
-
-CI also runs a `label overlaps: 0` gate across every example, and builds the
-Bun binary and playground bundle (Node-only tests can't cover those — run
-`npm run test:binary` locally if you touch bundling or the elkjs worker).
-
-If you modify `src/`, see
-[documentation/PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src)
-— the "Update playground after modifying `src/`" section covers when and how
-to rebuild the playground bundles.
+The only runtime dependency is `elkjs`; the dev toolchain is just biome + typescript. Keep both lists that short.
 
 ## What you can't break
 
 Invariants detailed in `CLAUDE.md`. In short:
-- **Zero label overlaps.** **Byte-deterministic output.**
+- **Zero label overlaps. Byte-deterministic output.**
 - **Every flow is a distinct arrow with a distinct label** — flows are never visually merged.
 - **Labels are mandatory in logical view (E0203)** — optional in application, infrastructure and security.
-- **Protocol is mandatory in infrastructure view (E0240)** — recommended (warning) in application (W0540) and for cross-zone security flows (W0561)
+- **Protocol is mandatory in infrastructure view (E0240)** — recommended (warning) in application (W0540) and for cross-zone security flows (W0561).
 - **Nesting rules are enforced per view (E0210–E0218)** — layout partitions depend on correct parentage.
 - **Duplicate IDs are rejected (E0202)** — flat ID space; every element must be uniquely referenceable.
 - **Dangling flow references are rejected (E0220)** — an edge to nowhere breaks the diagram.
 
-## When a snapshot gate fails — is it my change or a regression?
+## Commands — when to run what
 
-`npm test` compares current output against committed reference files (the digest,
-the README SVGs, and detailed snapshots). When one mismatches, the test fails.
+| When… | `npm test` | `npm run typecheck` + `npm run lint` | `npm run snapshots` | `npm run examples` |
+|---|---|---|---|---|
+| Checking for regressions | ✅ run **first** | ✅ run | — | — |
+| A snapshot gate failed and the diff is intended | ✅ must pass | ✅ must pass | ✅ run to accept | — |
+| You added/renamed a `.cairn` example file | ✅ must pass | ✅ must pass | ✅ run | ✅ run (commit the SVG) |
+| You changed a `.cairn` source file (bug fix / feature) | ✅ must pass | ✅ must pass | ✅ run if output changed | ✅ run if output changed |
+| You changed the render/layout pipeline | ✅ must pass | ✅ must pass | ✅ run | ✅ run |
 
-**Don't reflexively regenerate.** Follow this procedure:
+### Step by step when a snapshot gate fails
 
-### Step 1 — preview what changed
+1. **Preview** — `npm run snapshots:report` (groups changes by kind: geometry / colour / text)
+2. **Decide** — is the change related to your edit? If yes → intended. If not → regression (find the bug).
+3. **If intended** — `npm run snapshots` then commit the updated references.
+4. **Verify** — open a few changed SVGs in your browser to confirm they look right.
 
-```sh
-npm run snapshots:report
-```
+**Never regenerate to silence a diff you don't understand** — that turns the gate into noise.
 
-It prints a grouped summary. Examples:
+### Background
 
-| `snapshots:report` says… | Meaning |
+`npm test` runs three layers against committed reference files:
+
+| Layer | Guards |
 |---|---|
-| `⚠ GEOMETRY moved (2): large.cairn, large-fr.cairn` | Coordinates, sizes, or structure changed — a layout shift |
-| `· colour only (5): themes/dark.cairn, …` | Only colours changed (fill, stroke, palette) |
-| `· text only (2): large-fr.cairn, …` | Only label text or i18n changed |
+| **Structural digest** (`tests/corpus.test.ts`) | Every `.cairn` example → one digest line per diagram, split by geom/color/text |
+| **Example-SVG fidelity** (`tests/corpus.test.ts`) | Committed `examples/*.svg` stay in sync with the code |
+| **Detailed snapshots** (`tests/snapshot.test.ts`) | A chosen set: one per view (EN+FR), every theme, matrix exports |
 
-### Step 2 — decide: intended or regression?
+`npm run snapshots` regenerates all three at once. `npm run examples` only refreshes the `examples/*.svg` files (subset of snapshots).
 
-| If you made… | and `snapshots:report` shows… | then… |
-|---|---|---|
-| A theme/colour edit | `colour only` on affected files | ✅ intended |
-| A layout/spacing/ELK change | `⚠ GEOMETRY moved` on affected files | ✅ intended |
-| A label/i18n change | `text only` on affected files | ✅ intended |
-| A change that touches all three | a mix of `colour` + `geom` + `text` | ✅ intended |
-| Something else entirely | *any* change | ❌ regression — find the bug |
-| Nothing render-related | no change | ✅ you're clean |
-| Nothing render-related | *any* change | ❌ regression — find the bug |
-
-> **What about detailed snapshots?** `snapshots:report` only covers the corpus
-> digest. You might also see *"<file>.snap.svg changed vs its committed
-> snapshot"* from the snapshot tests (`tests/snapshot.test.ts`). Same decision:
-> was your change supposed to alter that diagram's render? If yes → intended.
-> If no → regression. `npm run snapshots` refreshes those too.
-
-### Step 3 — if intended, regenerate
-
-```sh
-npm run snapshots     # refreshes the digest, README SVGs, AND detailed snapshots
-git add tests/__snapshots__ examples
-```
-
-The reference output is now updated. That diff is the record of your change — reviewers
-read it next to your code.
-
-### Step 4 — verify the result
-
-Open a few of the changed SVGs (`tests/__snapshots__/*.snap.svg` or
-`examples/*.svg`) in your browser. Do they look right? A geometry shift you
-didn't intend is still a regression, even with passing tests.
-
-**Never regenerate to silence a diff you don't understand** — that turns the
-gate into noise.
-
----
-
-### How the three snapshot layers work (background)
-
-`npm test` runs three checks. `npm run snapshots` updates all three at once:
-
-| Layer | What it guards | How it reports |
-|---|---|---|
-| **Structural digest** — `tests/corpus.test.ts` | Every `.cairn` example → one digest line per diagram, split by `geom` / `color` / `text` | `snapshots:report` tells you *which* fingerprint moved |
-| **Example-SVG fidelity** — `tests/corpus.test.ts` | Committed `examples/*.svg` (the README images) stay in sync with the code | Fails if a README image would be stale |
-| **Detailed snapshots** — `tests/snapshot.test.ts` | A chosen set: one diagram per view (EN+FR), every theme, matrix exports | Fails with a literal file diff — inspect the failing file |
-
-The `geom`/`color`/`text` split is the key idea: it answers "is this my feature
-or a regression?" at a glance — geometry moves are risky, colour changes are
-almost always intentional, text changes are label/i18n edits.
-
-### Why reference output is "normalized"
-
-`Math.hypot` (numbered-flow label placement) isn't identical to the last bit
-across OSes. The digest rounds decimals to 1 dp before comparing, so sub-pixel
-drift doesn't false-fail while any real change (≥0.1px, colour, text, structure)
-is still caught. Safe to generate on macOS, check on Linux CI.
-
-### Adding an example or a snapshot
-
-Drop a `.cairn` file in `examples/` — `npm run snapshots` records it in the
-structural digest automatically. To also snapshot it at full detail, add it
-to the `CANARIES` / `THEMES` list in `tests/snapshot.test.ts`. Keep that set
-small. Examples can be bulk-regenerated with `npm run examples`.
+CI also runs a `label overlaps: 0` gate and builds the Bun binary + playground bundle. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
 
 ## Opening a PR
 
-- The three checks are green. If you changed render/layout on purpose, the
-  regenerated reference output is committed in the same PR.
-- **Don't commit — leave changes staged and ask the maintainer to review.**
-- Keep it focused — one concern per PR keeps the snapshot diff reviewable.
+- Keep it focused — one concern per PR.
 - Link the PR to an issue.
-- Extending the pipeline (view / diagnostic / theme / style property) starts in
-  `src/model.ts`.
-- Releases: lowercase `vX.Y.Z` tag drives everything (`RELEASING.md`).
-- **Fast iteration loop:** edit → `node --experimental-strip-types src/cli.ts build examples/<file>.cairn -o /tmp/test.svg` → open SVG.
