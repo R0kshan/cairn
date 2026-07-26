@@ -1,26 +1,16 @@
-/**
- * Runtime-agnostic provider for the ELK layout engine.
- *
- * Lets the same engine code run in different hosts without importing ELK
- * directly: the CLI (Node/Bun) registers the sync fake-worker loader, the
- * browser playground registers the bundled worker. If nothing registered, we
- * fall back to the Node loader via a computed dynamic import (kept out of
- * browser bundles by the indirection).
- */
-
 let factory: (() => any) | null = null;
 let instance: any = null;
 
-export function setElkFactory(f: () => any) {
-  factory = f;
+export function setElkFactory(elkFactory: () => any) {
+  factory = elkFactory;
   instance = null;
 }
 
 export async function getElk(): Promise<any> {
   if (instance) return instance;
   if (!factory) {
-    const spec = './elk-worker' + '.ts'; // computed: not followed by bundlers
-    const mod = await import(/* @vite-ignore */ spec);
+    const modulePath = "./elk-worker" + ".ts";
+    const mod = await import(/* @vite-ignore */ modulePath);
     factory = mod.nodeElkFactory;
   }
   instance = factory!();

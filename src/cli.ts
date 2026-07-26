@@ -1,34 +1,24 @@
 #!/usr/bin/env node
-/**
- * The `cairn` command-line entry point.
- *
- * Parses argv, dispatches one subcommand, and maps the result to a process exit
- * code. Each verb drives the pipeline stages:
- *   validate  parse + validate, print diagnostics       (exit 1 on any error)
- *   build     …then layout + render to an .svg          (-o overrides the path)
- *   matrix    …then export the technical flow matrix    (--format csv|md|svg)
- *   watch     rebuild on every save (delegated to watch.ts)
- *   new       scaffold a typed template file            (-L/-A/-I/-S)
- *   explain   print the rationale text for a diagnostic code
- *
- * Exit codes: 0 = ok (or warnings only), 1 = errors, 2 = usage / file problem.
- */
 
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
-import { parse } from './parser.ts';
-import { validate } from './validator.ts';
-import { renderHuman, renderJson } from './diagnostics.ts';
-import { layout } from './scene-layout.ts';
-import { render } from './svg-render.ts';
-import { matrixCsv, matrixMd, matrixSvg } from './flow-matrix.ts';
-import { views, explanations, type Diagnostic } from './model.ts';
-import { watchCommand } from './watch.ts';
+import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { parse } from "./parser.ts";
+import { validate } from "./validator.ts";
+import { renderHuman, renderJson } from "./diagnostics.ts";
+import { layout } from "./scene-layout.ts";
+import { render } from "./svg-render.ts";
+import { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
+import { views, explanations, type Diagnostic } from "./model.ts";
+import { watchCommand } from "./watch.ts";
 
 const TYPE_FLAGS: Record<string, string> = {
-  '--logical-architecture': 'logical', '-L': 'logical',
-  '--application-architecture': 'application', '-A': 'application',
-  '--infrastructure-architecture': 'infrastructure', '-I': 'infrastructure',
-  '--security-architecture': 'security', '-S': 'security',
+  "--logical-architecture": "logical",
+  "-L": "logical",
+  "--application-architecture": "application",
+  "-A": "application",
+  "--infrastructure-architecture": "infrastructure",
+  "-I": "infrastructure",
+  "--security-architecture": "security",
+  "-S": "security",
 };
 
 const TEMPLATE_LOGICAL = `diagram logical "Diagram title"
@@ -184,23 +174,25 @@ APP   -> DB  : "Read/write" (TLS1.3)
 `;
 
 const TEMPLATES: Record<string, string> = {
-  logical: TEMPLATE_LOGICAL, application: TEMPLATE_APPLICATION,
-  infrastructure: TEMPLATE_INFRASTRUCTURE, security: TEMPLATE_SECURITY,
+  logical: TEMPLATE_LOGICAL,
+  application: TEMPLATE_APPLICATION,
+  infrastructure: TEMPLATE_INFRASTRUCTURE,
+  security: TEMPLATE_SECURITY,
 };
 
 const args = process.argv.slice(2);
-const cmd = args[0];
+const command = args[0];
 
-// The single positional argument every command takes is the .cairn file: the
-// first non-flag token that isn't the command verb and isn't the value of a
-// value-taking flag (`-o`, `--format`).
-const VALUE_FLAGS = new Set(['-o', '--format']);
+const VALUE_FLAGS = new Set(["-o", "--format"]);
 const positionalFile = (): string | undefined => {
-  for (let i = 0; i < args.length; i++) {
-    const a = args[i];
-    if (VALUE_FLAGS.has(a)) { i++; continue; }
-    if (a.startsWith('-') || a === cmd) continue;
-    return a;
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (VALUE_FLAGS.has(arg)) {
+      index++;
+      continue;
+    }
+    if (arg.startsWith("-") || arg === command) continue;
+    return arg;
   }
   return undefined;
 };
@@ -224,124 +216,153 @@ Usage:
   process.exit(2);
 }
 
-function loadAndCheck(file: string): { src: string; model: any; diags: Diagnostic[] } {
-  if (!existsSync(file)) { console.error(`error: file not found \`${file}\``); process.exit(2); }
-  const src = readFileSync(file, 'utf8');
+function loadAndCheck(file: string): {
+  src: string;
+  model: any;
+  diagnostics: Diagnostic[];
+} {
+  if (!existsSync(file)) {
+    console.error(`error: file not found \`${file}\``);
+    process.exit(2);
+  }
+  const src = readFileSync(file, "utf8");
   const { model, diags } = parse(src);
   diags.push(...validate(model));
-  return { src, model, diags };
+  return { src, model, diagnostics: diags };
 }
 
-// Output path: an explicit `-o <path>`, else the input file with its `.cairn`
-// extension swapped for `suffix` (e.g. `.svg`, `.flow.csv`).
 function resolveOutputPath(file: string, suffix: string): string {
-  const oIdx = args.indexOf('-o');
-  if (oIdx >= 0) {
-    const out = args[oIdx + 1];
-    if (!out || out.startsWith('-')) usage();
+  const optionIndex = args.indexOf("-o");
+  if (optionIndex >= 0) {
+    const out = args[optionIndex + 1];
+    if (!out || out.startsWith("-")) usage();
     return out;
   }
-  return file.replace(/\.cairn$/, '') + suffix;
+  return file.replace(/\.cairn$/, "") + suffix;
 }
 
-// Errors are fatal: print the full diagnostic report to stderr and stop before
-// any artifact is written. Warnings alone don't halt the build.
-function exitIfErrors(file: string, src: string, diags: Diagnostic[]): void {
-  if (diags.some(d => d.severity === 'error')) {
-    console.error(renderHuman(file, src, diags, process.stderr.isTTY ?? false));
+function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): void {
+  if (diagnostics.some((d) => d.severity === "error")) {
+    console.error(renderHuman(file, src, diagnostics, process.stderr.isTTY ?? false));
     process.exit(1);
   }
 }
 
-if (cmd === 'validate') {
+if (command === "validate") {
   const file = positionalFile();
   if (!file) usage();
-  const json = args.includes('--format') && args[args.indexOf('--format') + 1] === 'json';
-  const strict = args.includes('--strict');
-  const { src, diags } = loadAndCheck(file);
-  if (json) console.log(renderJson(file, diags));
-  else if (diags.length) console.log(renderHuman(file, src, diags, process.stdout.isTTY ?? false));
-  else console.log(`✓ ${file}: no issues found`);
-  const errors = diags.filter(d => d.severity === 'error').length;
-  const warnings = diags.filter(d => d.severity === 'warning').length;
+  const json = args.includes("--format") && args[args.indexOf("--format") + 1] === "json";
+  const strict = args.includes("--strict");
+  const { src, diagnostics } = loadAndCheck(file);
+  if (json) console.log(renderJson(file, diagnostics));
+  else if (diagnostics.length)
+    console.log(renderHuman(file, src, diagnostics, process.stdout.isTTY ?? false));
+  else console.log(`\u2713 ${file}: no issues found`);
+  const errors = diagnostics.filter((d) => d.severity === "error").length;
+  const warnings = diagnostics.filter((d) => d.severity === "warning").length;
   process.exit(errors > 0 || (strict && warnings > 0) ? 1 : 0);
-
-} else if (cmd === 'build') {
+} else if (command === "build") {
   const file = positionalFile();
   if (!file) usage();
-  const outFile = resolveOutputPath(file, '.svg');
-  const { src, model, diags } = loadAndCheck(file);
-  exitIfErrors(file, src, diags);
+  const outFile = resolveOutputPath(file, ".svg");
+  const { src, model, diagnostics } = loadAndCheck(file);
+  exitIfErrors(file, src, diagnostics);
   const view = views[model.type];
-  layout(model, view).then(scene => {
-    const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
-    writeFileSync(outFile, svg);
-    const warn = diags.filter(d => d.severity === 'warning');
-    if (warn.length) console.error(renderHuman(file, src, warn, process.stderr.isTTY ?? false));
-    const disp = model.style.disposition;
-    const frames: Record<string, { w: number; h: number; name: string }> = {
-      slide: { w: 1280, h: 720, name: '16:9 slide' },
-      page: { w: 700, h: 1000, name: 'A4 page' },
-    };
-    let fitInfo = '';
-    if (frames[disp]) {
-      const f = frames[disp];
-      const scale = Math.min(f.w / scene.width, f.h / scene.height);
-      const effFont = 10.5 * scale;
-      fitInfo = `, fits ${f.name} at ${(scale * 100).toFixed(0)}% (labels ≈ ${effFont.toFixed(1)}px)`;
-      if (effFont < 7) {
-        console.error(`warning[W0520]: too dense for a readable single ${f.name} — labels would render at ~${effFont.toFixed(1)}px`);
-        console.error(`  = note: ${scene.nodes.filter(n => !n.container).length} elements / ${scene.edges.length} flows exceed what one ${f.name} can show readably`);
-        console.error(`help: split the view into sub-diagrams (e.g. one per system), or keep \`wide\`/\`tall\` for full-screen and print use`);
+  layout(model, view)
+    .then((scene) => {
+      const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
+      writeFileSync(outFile, svg);
+      const warnings = diagnostics.filter((d) => d.severity === "warning");
+      if (warnings.length)
+        console.error(renderHuman(file, src, warnings, process.stderr.isTTY ?? false));
+      const disposition = model.style.disposition;
+      const frames: Record<string, { width: number; height: number; name: string }> = {
+        slide: { width: 1280, height: 720, name: "16:9 slide" },
+        page: { width: 700, height: 1000, name: "A4 page" },
+      };
+      let fitInfo = "";
+      if (frames[disposition]) {
+        const frame = frames[disposition];
+        const scale = Math.min(frame.width / scene.width, frame.height / scene.height);
+        const effectiveFont = 10.5 * scale;
+        fitInfo = `, fits ${frame.name} at ${(scale * 100).toFixed(0)}% (labels \u2248 ${effectiveFont.toFixed(1)}px)`;
+        if (effectiveFont < 7) {
+          console.error(
+            `warning[W0520]: too dense for a readable single ${frame.name} — labels would render at ~${effectiveFont.toFixed(1)}px`,
+          );
+          console.error(
+            `  = note: ${scene.nodes.filter((node) => !node.container).length} elements / ${scene.edges.length} flows exceed what one ${frame.name} can show readably`,
+          );
+          console.error(
+            `help: split the view into sub-diagrams (e.g. one per system), or keep \`wide\`/\`tall\` for full-screen and print use`,
+          );
+        }
       }
-    }
-    console.log(`✓ ${outFile} (${scene.width}×${scene.height}${fitInfo}, layout ${scene.layoutMs} ms, label overlaps: ${overlapsAfter}${overlapsBefore !== overlapsAfter ? ` (resolved: ${overlapsBefore - overlapsAfter})` : ''})`);
-    process.exit(0);
-  }).catch(e => { console.error('layout error:', e.message); process.exit(1); });
-
-} else if (cmd === 'matrix') {
+      console.log(
+        `\u2713 ${outFile} (${scene.width}\u00d7${scene.height}${fitInfo}, layout ${scene.layoutMs} ms, label overlaps: ${overlapsAfter}${overlapsBefore !== overlapsAfter ? ` (resolved: ${overlapsBefore - overlapsAfter})` : ""})`,
+      );
+      process.exit(0);
+    })
+    .catch((error: any) => {
+      console.error("layout error:", error.message);
+      process.exit(1);
+    });
+} else if (command === "matrix") {
   const file = positionalFile();
   if (!file) usage();
-  const fIdx = args.indexOf('--format');
-  const format = fIdx >= 0 ? args[fIdx + 1] : 'csv';
-  if (!['csv', 'md', 'svg'].includes(format)) {
-    console.error(`error: unknown --format \`${format}\` (csv | md | svg)`); process.exit(2);
+  const formatIndex = args.indexOf("--format");
+  const format = formatIndex >= 0 ? args[formatIndex + 1] : "csv";
+  if (!["csv", "md", "svg"].includes(format)) {
+    console.error(`error: unknown --format \`${format}\` (csv | md | svg)`);
+    process.exit(2);
   }
-  const { src, model, diags } = loadAndCheck(file);
-  exitIfErrors(file, src, diags);
+  const { src, model, diagnostics } = loadAndCheck(file);
+  exitIfErrors(file, src, diagnostics);
   const view = views[model.type];
-  if (!model.flows.length) { console.error(`error: \`${file}\` declares no flows — nothing to tabulate`); process.exit(1); }
-  const ext = format === 'svg' ? 'svg' : format === 'md' ? 'md' : 'csv';
-  const outFile = resolveOutputPath(file, '.flow.' + ext);
+  if (!model.flows.length) {
+    console.error(`error: \`${file}\` declares no flows — nothing to tabulate`);
+    process.exit(1);
+  }
+  const ext = format === "svg" ? "svg" : format === "md" ? "md" : "csv";
+  const outFile = resolveOutputPath(file, ".flow." + ext);
   const lang = model.style.lang;
-  const content = format === 'svg' ? matrixSvg(model, view, lang)
-    : format === 'md' ? matrixMd(model, view, lang)
-    : matrixCsv(model, lang);
+  const content =
+    format === "svg"
+      ? matrixSvg(model, view, lang)
+      : format === "md"
+        ? matrixMd(model, view, lang)
+        : matrixCsv(model, lang);
   writeFileSync(outFile, content);
-  console.log(`✓ ${outFile} (matrice des flux — ${model.flows.length} flows, ${format}, lang: ${lang})`);
-
-} else if (cmd === 'watch') {
+  console.log(
+    `\u2713 ${outFile} (matrice des flux — ${model.flows.length} flows, ${format}, lang: ${lang})`,
+  );
+} else if (command === "watch") {
   const file = positionalFile();
   if (!file) usage();
-  watchCommand(file, resolveOutputPath(file, '.svg'));
-
-} else if (cmd === 'new') {
-  const type = args.map(a => TYPE_FLAGS[a]).find(Boolean);
+  watchCommand(file, resolveOutputPath(file, ".svg"));
+} else if (command === "new") {
+  const type = args.map((arg) => TYPE_FLAGS[arg]).find(Boolean);
   const file = positionalFile();
   if (!type || !file) usage();
   if (!views[type]) {
-    console.error(`error: unknown view \`${type}\` (available: ${Object.keys(views).join(', ')})`);
+    console.error(`error: unknown view \`${type}\` (available: ${Object.keys(views).join(", ")})`);
     process.exit(2);
   }
-  if (existsSync(file)) { console.error(`error: \`${file}\` already exists`); process.exit(2); }
+  if (existsSync(file)) {
+    console.error(`error: \`${file}\` already exists`);
+    process.exit(2);
+  }
   writeFileSync(file, TEMPLATES[type]);
-  console.log(`✓ ${file} created (${type} view) — fill in the sections, then run \`cairn validate ${file}\``);
-
-} else if (cmd === 'explain') {
+  console.log(
+    `\u2713 ${file} created (${type} view) — fill in the sections, then run \`cairn validate ${file}\``,
+  );
+} else if (command === "explain") {
   const code = args[1];
   if (!code) usage();
-  const ex = explanations[code.toUpperCase()];
-  if (ex) console.log(`${code.toUpperCase()} — ${ex}`);
-  else { console.error(`unknown code \`${code}\` (codes: ${Object.keys(explanations).join(', ')})`); process.exit(2); }
-
+  const explanation = explanations[code.toUpperCase()];
+  if (explanation) console.log(`${code.toUpperCase()} — ${explanation}`);
+  else {
+    console.error(`unknown code \`${code}\` (codes: ${Object.keys(explanations).join(", ")})`);
+    process.exit(2);
+  }
 } else usage();

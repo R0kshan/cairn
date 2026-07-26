@@ -16,47 +16,54 @@
  *   3. MATRIX — infrastructure flow-matrix exporters (csv/md/svg)
  */
 
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { parse } from '../src/parser.ts';
-import { validate } from '../src/validator.ts';
-import { layout } from '../src/scene-layout.ts';
-import { render } from '../src/svg-render.ts';
-import { matrixCsv, matrixMd, matrixSvg } from '../src/flow-matrix.ts';
-import { views } from '../src/model.ts';
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse } from "../src/parser.ts";
+import { validate } from "../src/validator.ts";
+import { layout } from "../src/scene-layout.ts";
+import { render } from "../src/svg-render.ts";
+import { matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
+import { views } from "../src/model.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const EX = join(HERE, '..', 'examples');
-const SNAP = join(HERE, '__snapshots__');
+const EX = join(HERE, "..", "examples");
+const SNAP = join(HERE, "__snapshots__");
 const UPDATE = !!process.env.UPDATE_SNAPSHOTS;
 
 // Curated canary set — deliberately small so an intended change produces a
 // reviewable diff. Covers each view at large/dense scale in both languages,
 // plus the reroute-heavy numbered case and custom per-element colours.
 const CANARIES = [
-  'logical.cairn',                  // logical view, canonical (small) example
-  'large.cairn',                    // logical view, large — en
-  'large-fr.cairn',                 // logical view, large — fr
-  'application-large.cairn',        // application view, large — en
-  'application-large-fr.cairn',     // application view, large — fr
-  'infrastructure-large.cairn',     // infrastructure view, large — en
-  'infrastructure-large-fr.cairn',  // infrastructure view, large — fr
-  'large-numbered.cairn',           // numbered flows (exercises the hypot path)
-  'colors-custom.cairn',            // per-element fill/stroke/text rendering
-  'infrastructure-fr.cairn',        // lang: fr on a smaller diagram
+  "logical.cairn", // logical view, canonical (small) example
+  "large.cairn", // logical view, large — en
+  "large-fr.cairn", // logical view, large — fr
+  "application-large.cairn", // application view, large — en
+  "application-large-fr.cairn", // application view, large — fr
+  "infrastructure-large.cairn", // infrastructure view, large — en
+  "infrastructure-large-fr.cairn", // infrastructure view, large — fr
+  "large-numbered.cairn", // numbered flows (exercises the hypot path)
+  "colors-custom.cairn", // per-element fill/stroke/text rendering
+  "infrastructure-fr.cairn", // lang: fr on a smaller diagram
 ];
 
 // One example per built-in theme — guards every palette against shared-code changes that only show up on non-default themes.
 const THEMES = [
-  'classic', 'classic-dark', 'contrast', 'dark',
-  'light', 'nord', 'sand', 'slate', 'solarized',
+  "classic",
+  "classic-dark",
+  "contrast",
+  "dark",
+  "light",
+  "nord",
+  "sand",
+  "slate",
+  "solarized",
 ];
 
 // Read a file and normalize line endings.
-const load = (dir: string, f: string) => readFileSync(join(dir, f), 'utf8').replace(/\r\n/g, '\n');
+const load = (dir: string, f: string) => readFileSync(join(dir, f), "utf8").replace(/\r\n/g, "\n");
 
 // Round every decimal to 1dp; leave integers untouched. Absorbs cross-platform Math.hypot drift.
 const normalize = (svg: string): string =>
@@ -67,8 +74,9 @@ const parseAndValidate = (src: string) => {
   const { model, diags } = parse(src);
   diags.push(...validate(model));
   assert.equal(
-    diags.filter((d) => d.severity === 'error').length, 0,
-    'snapshot precondition — build has no errors',
+    diags.filter((d) => d.severity === "error").length,
+    0,
+    "snapshot precondition — build has no errors",
   );
   return model;
 };
@@ -89,12 +97,13 @@ function snapshotAssert(name: string, actual: string) {
     writeFileSync(path, actual);
     return; // regenerating / first run: record, don't assert
   }
-  const expected = readFileSync(path, 'utf8').replace(/\r\n/g, '\n');
+  const expected = readFileSync(path, "utf8").replace(/\r\n/g, "\n");
   assert.equal(
-    actual, expected,
+    actual,
+    expected,
     `${name} changed vs its committed snapshot. If this change is INTENTIONAL, ` +
-    `run \`npm run snapshots\` and commit tests/__snapshots__/ in the same PR. ` +
-    `If it is NOT, you've hit a regression.`,
+      `run \`npm run snapshots\` and commit tests/__snapshots__/ in the same PR. ` +
+      `If it is NOT, you've hit a regression.`,
   );
 }
 
@@ -103,13 +112,13 @@ function snapshotAssert(name: string, actual: string) {
 for (const file of CANARIES) {
   test(`snapshot: ${file}`, async () => {
     const actual = normalize(await buildSvg(EX, file));
-    snapshotAssert(file.replace(/\.cairn$/, '.snap.svg'), actual);
+    snapshotAssert(file.replace(/\.cairn$/, ".snap.svg"), actual);
   });
 }
 
 // ---------- 2. themes ----------
 
-const THEMES_DIR = join(EX, 'themes');
+const THEMES_DIR = join(EX, "themes");
 
 for (const theme of THEMES) {
   test(`snapshot: theme ${theme}`, async () => {
@@ -123,23 +132,23 @@ for (const theme of THEMES) {
 // (src/matrix.ts) — the DSL -> Model parsing is shared, but each exporter has
 // its own formatting logic, so each format gets its own snapshot.
 
-const MATRIX_SOURCE = 'infrastructure-large.cairn';
+const MATRIX_SOURCE = "infrastructure-large.cairn";
 
-test('snapshot: matrix csv', () => {
+test("snapshot: matrix csv", () => {
   const model = parseAndValidate(load(EX, MATRIX_SOURCE));
-  snapshotAssert('matrix-infrastructure-large.csv', matrixCsv(model, 'en'));
+  snapshotAssert("matrix-infrastructure-large.csv", matrixCsv(model, "en"));
 });
 
-test('snapshot: matrix md', () => {
+test("snapshot: matrix md", () => {
   const model = parseAndValidate(load(EX, MATRIX_SOURCE));
   const view = views[model.type!];
-  snapshotAssert('matrix-infrastructure-large.md', matrixMd(model, view, 'en'));
+  snapshotAssert("matrix-infrastructure-large.md", matrixMd(model, view, "en"));
 });
 
-test('snapshot: matrix svg', () => {
+test("snapshot: matrix svg", () => {
   const model = parseAndValidate(load(EX, MATRIX_SOURCE));
   const view = views[model.type!];
-  snapshotAssert('matrix-infrastructure-large.snap.svg', normalize(matrixSvg(model, view, 'en')));
+  snapshotAssert("matrix-infrastructure-large.snap.svg", normalize(matrixSvg(model, view, "en")));
 });
 
 // ---------- determinism invariants (never need acknowledging) ----------
@@ -147,16 +156,16 @@ test('snapshot: matrix svg', () => {
 // get false regressions) — worth catching directly rather than as a mystery
 // snapshot diff.
 
-test('render is deterministic (same input → identical SVG)', async () => {
-  const a = await buildSvg(EX, 'large-numbered.cairn');
-  const b = await buildSvg(EX, 'large-numbered.cairn');
-  assert.equal(a, b, 'non-deterministic render — output must be stable for snapshotting to work');
+test("render is deterministic (same input → identical SVG)", async () => {
+  const a = await buildSvg(EX, "large-numbered.cairn");
+  const b = await buildSvg(EX, "large-numbered.cairn");
+  assert.equal(a, b, "non-deterministic render — output must be stable for snapshotting to work");
 });
 
-test('matrix generation is deterministic (same input → identical output)', () => {
+test("matrix generation is deterministic (same input → identical output)", () => {
   const model = parseAndValidate(load(EX, MATRIX_SOURCE));
   const view = views[model.type!];
-  assert.equal(matrixCsv(model, 'en'), matrixCsv(model, 'en'));
-  assert.equal(matrixMd(model, view, 'en'), matrixMd(model, view, 'en'));
-  assert.equal(matrixSvg(model, view, 'en'), matrixSvg(model, view, 'en'));
+  assert.equal(matrixCsv(model, "en"), matrixCsv(model, "en"));
+  assert.equal(matrixMd(model, view, "en"), matrixMd(model, view, "en"));
+  assert.equal(matrixSvg(model, view, "en"), matrixSvg(model, view, "en"));
 });

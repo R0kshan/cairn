@@ -1,30 +1,34 @@
 /** Smoke suite: freezes the behaviours the project's non-negotiables depend on. Run via `npm test`. */
 
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { parse } from '../src/parser.ts';
-import { validate } from '../src/validator.ts';
-import { layout } from '../src/scene-layout.ts';
-import { render } from '../src/svg-render.ts';
-import { matrixCsv, matrixMd, matrixSvg } from '../src/flow-matrix.ts';
-import { views } from '../src/model.ts';
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse } from "../src/parser.ts";
+import { validate } from "../src/validator.ts";
+import { layout } from "../src/scene-layout.ts";
+import { render } from "../src/svg-render.ts";
+import { matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
+import { views } from "../src/model.ts";
 
-const EX = join(dirname(fileURLToPath(import.meta.url)), '..', 'examples');
+const EX = join(dirname(fileURLToPath(import.meta.url)), "..", "examples");
 // Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.
-const load = (f: string) => readFileSync(join(EX, f), 'utf8').replace(/\r\n/g, '\n');
+const load = (f: string) => readFileSync(join(EX, f), "utf8").replace(/\r\n/g, "\n");
 // Parse and validate `src`, returning the model, diagnostics, and diagnostic codes.
 const check = (src: string) => {
   const { model, diags } = parse(src);
   diags.push(...validate(model));
-  return { model, diags, codes: diags.map(d => d.code) };
+  return { model, diags, codes: diags.map((d) => d.code) };
 };
 // Build `src` through the full pipeline: parse → validate → layout → render. Asserts zero errors as a precondition.
 const build = async (src: string) => {
   const { model, diags } = check(src);
-  assert.equal(diags.filter(d => d.severity === 'error').length, 0, 'build precondition: no errors');
+  assert.equal(
+    diags.filter((d) => d.severity === "error").length,
+    0,
+    "build precondition: no errors",
+  );
   const view = views[model.type!];
   const scene = await layout(model, view);
   return { model, view, scene, ...render(model, view, scene) };
@@ -32,51 +36,63 @@ const build = async (src: string) => {
 
 // ---------- diagnostics ----------
 
-test('broken.cairn raises exactly the seeded diagnostic codes', () => {
-  const { codes } = check(load('broken.cairn'));
-  for (const c of ['E0210', 'E0202', 'E0201', 'E0203', 'E0220']) assert.ok(codes.includes(c), c);
-  assert.equal(codes.filter(c => c === 'W0510').length, 2);
+test("broken.cairn raises exactly the seeded diagnostic codes", () => {
+  const { codes } = check(load("broken.cairn"));
+  for (const c of ["E0210", "E0202", "E0201", "E0203", "E0220"]) assert.ok(codes.includes(c), c);
+  assert.equal(codes.filter((c) => c === "W0510").length, 2);
 });
 
-test('unknown kind suggests the nearest valid kind', () => {
+test("unknown kind suggests the nearest valid kind", () => {
   const { diags } = check('diagram logical "t"\nsytem S "x"\n');
-  const d = diags.find(d => d.code === 'E0201')!;
-  assert.match(d.help ?? '', /system/);
+  const d = diags.find((d) => d.code === "E0201")!;
+  assert.match(d.help ?? "", /system/);
 });
 
-test('infrastructure requires protocol (E0240), application recommends it (W0540, actors exempt)', () => {
-  const infra = check('diagram infrastructure "t"\nsite S "s" {\n network-zone Z "z" {\n server V "v" { app-instance A "a" }\n server V2 "v2" { app-instance B "b" }\n }\n}\nA -> B : "x"\n');
-  assert.ok(infra.codes.includes('E0240'));
+test("infrastructure requires protocol (E0240), application recommends it (W0540, actors exempt)", () => {
+  const infra = check(
+    'diagram infrastructure "t"\nsite S "s" {\n network-zone Z "z" {\n server V "v" { app-instance A "a" }\n server V2 "v2" { app-instance B "b" }\n }\n}\nA -> B : "x"\n',
+  );
+  assert.ok(infra.codes.includes("E0240"));
 
-  const app = check('diagram application "t"\nactor-group G "g" { actor U "u" }\napplication P "p" { module M "m" }\ndatastore D "d"\nU -> M : "human"\nM -> D : "sys"\n');
-  assert.equal(app.diags.filter(d => d.code === 'W0540').length, 1); // only the system flow
+  const app = check(
+    'diagram application "t"\nactor-group G "g" { actor U "u" }\napplication P "p" { module M "m" }\ndatastore D "d"\nU -> M : "human"\nM -> D : "sys"\n',
+  );
+  assert.equal(app.diags.filter((d) => d.code === "W0540").length, 1); // only the system flow
 });
 
-test('business objects: unknown ref E0221, unused W0530', () => {
-  const { codes } = check('diagram logical "t"\nactor-group G "g" { actor U "u" }\nsystem S "s" { layer L "l" { block B "b" } }\nbusiness-object BO_X "X" "d"\nU -> B : "x" [BO_MISSING]\n');
-  assert.ok(codes.includes('E0221'));
-  assert.ok(codes.includes('W0530'));
+test("business objects: unknown ref E0221, unused W0530", () => {
+  const { codes } = check(
+    'diagram logical "t"\nactor-group G "g" { actor U "u" }\nsystem S "s" { layer L "l" { block B "b" } }\nbusiness-object BO_X "X" "d"\nU -> B : "x" [BO_MISSING]\n',
+  );
+  assert.ok(codes.includes("E0221"));
+  assert.ok(codes.includes("W0530"));
 });
 
 // ---------- the non-negotiables (§1.1) ----------
 
-for (const f of ['small.cairn', 'medium.cairn', 'large.cairn', 'application-large.cairn', 'infrastructure-large.cairn']) {
+for (const f of [
+  "small.cairn",
+  "medium.cairn",
+  "large.cairn",
+  "application-large.cairn",
+  "infrastructure-large.cairn",
+]) {
   test(`${f}: zero label overlaps after post-pass`, async () => {
     const { overlapsAfter } = await build(load(f));
     assert.equal(overlapsAfter, 0);
   });
 }
 
-test('every flow keeps a distinct edge (never merged)', async () => {
-  const { model, scene } = await build(load('medium.cairn'));
-  const sceneEdgeIds = new Set(scene.edges.map(e => e.id));
+test("every flow keeps a distinct edge (never merged)", async () => {
+  const { model, scene } = await build(load("medium.cairn"));
+  const sceneEdgeIds = new Set(scene.edges.map((e) => e.id));
   for (const f of model.flows) assert.ok(sceneEdgeIds.has(f.id), f.id);
 });
 
 // ---------- dispositions ----------
 
-test('slide is always landscape, page always portrait (medium)', async () => {
-  const base = load('medium.cairn');
+test("slide is always landscape, page always portrait (medium)", async () => {
+  const base = load("medium.cairn");
   const slide = await build(base.replace('"\n', '"\nstyle { disposition: slide }\n'));
   assert.ok(slide.scene.width >= slide.scene.height);
   const page = await build(base.replace('"\n', '"\nstyle { disposition: page }\n'));
@@ -86,24 +102,28 @@ test('slide is always landscape, page always portrait (medium)', async () => {
 // Reading-order invariant: actors LEFT for wide/slide, TOP for tall/page.
 // This is enforced by locking layout direction per disposition (src/layout.ts),
 // so it must hold for every disposition — not just land there by fitness luck.
-const actorSide = (scene: { nodes: { kind: string; x: number; y: number; w: number; h: number }[] }) => {
-  const actors = scene.nodes.filter(n => n.kind === 'actor-group' || n.kind === 'actor');
-  const others = scene.nodes.filter(n => n.kind !== 'actor-group' && n.kind !== 'actor');
-  const acx = (Math.min(...actors.map(a => a.x)) + Math.max(...actors.map(a => a.x + a.w))) / 2;
-  const acy = (Math.min(...actors.map(a => a.y)) + Math.max(...actors.map(a => a.y + a.h))) / 2;
-  const ocx = others.reduce((s, n) => s + n.x + n.w / 2, 0) / others.length;
-  const ocy = others.reduce((s, n) => s + n.y + n.h / 2, 0) / others.length;
+const actorSide = (scene: {
+  nodes: { kind: string; x: number; y: number; width: number; height: number }[];
+}) => {
+  const actors = scene.nodes.filter((n) => n.kind === "actor-group" || n.kind === "actor");
+  const others = scene.nodes.filter((n) => n.kind !== "actor-group" && n.kind !== "actor");
+  const acx =
+    (Math.min(...actors.map((a) => a.x)) + Math.max(...actors.map((a) => a.x + a.width))) / 2;
+  const acy =
+    (Math.min(...actors.map((a) => a.y)) + Math.max(...actors.map((a) => a.y + a.height))) / 2;
+  const ocx = others.reduce((s, n) => s + n.x + n.width / 2, 0) / others.length;
+  const ocy = others.reduce((s, n) => s + n.y + n.height / 2, 0) / others.length;
   return { left: acx < ocx, top: acy < ocy };
 };
 
-test('actors are LEFT for wide/slide and TOP for tall/page (all sizes)', async () => {
-  for (const f of ['small.cairn', 'medium.cairn', 'large.cairn', 'application-large.cairn']) {
+test("actors are LEFT for wide/slide and TOP for tall/page (all sizes)", async () => {
+  for (const f of ["small.cairn", "medium.cairn", "large.cairn", "application-large.cairn"]) {
     const base = load(f);
-    for (const disp of ['wide', 'slide'] as const) {
+    for (const disp of ["wide", "slide"] as const) {
       const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
       assert.ok(actorSide(scene).left, `${f} ${disp}: actors must be on the LEFT`);
     }
-    for (const disp of ['tall', 'page'] as const) {
+    for (const disp of ["tall", "page"] as const) {
       const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
       assert.ok(actorSide(scene).top, `${f} ${disp}: actors must be on TOP`);
     }
@@ -114,27 +134,32 @@ test('actors are LEFT for wide/slide and TOP for tall/page (all sizes)', async (
 // user-facing sources sit on the entry side, downstream partners on the exit
 // side. In infra, users are `actor` elements; in security they are untrusted
 // `external`s. Guards the "Internet visitors on the left" fix.
-const nodeSide = (scene: { nodes: { id: string; kind: string; x: number; y: number; w: number; h: number }[] }, id: string) => {
-  const n = scene.nodes.find(m => m.id === id)!;
-  const others = scene.nodes.filter(m => m.kind !== 'external' && m.kind !== 'actor');
-  const ocx = others.reduce((s, m) => s + m.x + m.w / 2, 0) / others.length;
-  const ocy = others.reduce((s, m) => s + m.y + m.h / 2, 0) / others.length;
-  return { left: n.x + n.w / 2 < ocx, top: n.y + n.h / 2 < ocy };
+const nodeSide = (
+  scene: {
+    nodes: { id: string; kind: string; x: number; y: number; width: number; height: number }[];
+  },
+  id: string,
+) => {
+  const n = scene.nodes.find((m) => m.id === id)!;
+  const others = scene.nodes.filter((m) => m.kind !== "external" && m.kind !== "actor");
+  const ocx = others.reduce((s, m) => s + m.x + m.width / 2, 0) / others.length;
+  const ocy = others.reduce((s, m) => s + m.y + m.height / 2, 0) / others.length;
+  return { left: n.x + n.width / 2 < ocx, top: n.y + n.height / 2 < ocy };
 };
 
-test('user-facing sources sit on the entry side in infra/security views', async () => {
+test("user-facing sources sit on the entry side in infra/security views", async () => {
   const cases: [string, string, string][] = [
-    ['infrastructure.cairn', 'USERS', 'EDI'],       // actor users vs egress partner
-    ['security.cairn', 'USERS', 'PARTNER'],         // untrusted end users vs partner
+    ["infrastructure.cairn", "USERS", "EDI"], // actor users vs egress partner
+    ["security.cairn", "USERS", "PARTNER"], // untrusted end users vs partner
   ];
   for (const [f, ingress, egress] of cases) {
     const base = load(f);
-    for (const disp of ['wide', 'slide'] as const) {
+    for (const disp of ["wide", "slide"] as const) {
       const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
       assert.ok(nodeSide(scene, ingress).left, `${f} ${disp}: ${ingress} (users) must be LEFT`);
       assert.ok(!nodeSide(scene, egress).left, `${f} ${disp}: ${egress} (partner) must be RIGHT`);
     }
-    for (const disp of ['tall', 'page'] as const) {
+    for (const disp of ["tall", "page"] as const) {
       const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
       assert.ok(nodeSide(scene, ingress).top, `${f} ${disp}: ${ingress} (users) must be TOP`);
       assert.ok(!nodeSide(scene, egress).top, `${f} ${disp}: ${egress} (partner) must be BOTTOM`);
@@ -142,96 +167,101 @@ test('user-facing sources sit on the entry side in infra/security views', async 
   }
 });
 
-test('infrastructure models users as actor (person glyph + legend key), distinct from external systems', async () => {
-  const { model, svg } = await build(load('infrastructure-small.cairn'));
-  const visitors = model.index.get('VISITORS')!;
-  assert.equal(visitors.kind, 'actor', 'the user is an actor, not an external');
+test("infrastructure models users as actor (person glyph + legend key), distinct from external systems", async () => {
+  const { model, svg } = await build(load("infrastructure-small.cairn"));
+  const visitors = model.index.get("VISITORS")!;
+  assert.equal(visitors.kind, "actor", "the user is an actor, not an external");
   // person glyph is rendered (head circle r=7), and the legend keys it
   assert.match(svg, /<circle cx="[\d.]+" cy="[\d.]+" r="7"/);
   assert.match(svg, />User \/ consumer</);
   // `actor` is accepted by the infrastructure view (no E0201)
-  const { codes } = check(load('infrastructure-small.cairn'));
-  assert.ok(!codes.includes('E0201'));
+  const { codes } = check(load("infrastructure-small.cairn"));
+  assert.ok(!codes.includes("E0201"));
 });
 
-test('compact style yields a smaller canvas with zero overlaps', async () => {
-  for (const f of ['small.cairn', 'medium.cairn', 'application.cairn', 'infrastructure.cairn']) {
+test("compact style yields a smaller canvas with zero overlaps", async () => {
+  for (const f of ["small.cairn", "medium.cairn", "application.cairn", "infrastructure.cairn"]) {
     const base = load(f);
     const normal = await build(base);
     const compact = await build(base.replace('"\n', '"\nstyle { compact: on }\n'));
     const aN = normal.scene.width * normal.scene.height;
     const aC = compact.scene.width * compact.scene.height;
-    assert.ok(aC < aN, `${f}: compact (${compact.scene.width}x${compact.scene.height}) must be smaller than normal (${normal.scene.width}x${normal.scene.height})`);
+    assert.ok(
+      aC < aN,
+      `${f}: compact (${compact.scene.width}x${compact.scene.height}) must be smaller than normal (${normal.scene.width}x${normal.scene.height})`,
+    );
     assert.equal(compact.overlapsAfter, 0, `${f}: compact must keep zero label overlaps`);
   }
   // compact is off by default
-  const { model } = await build(load('small.cairn'));
+  const { model } = await build(load("small.cairn"));
   assert.equal(model.style.compact, false);
 });
 
-test('font-size scales the text and is measured into the layout', async () => {
-  const base = 'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "Node label" }\nA -> B : "flow"\n';
-  const def = await build(base.replace('STYLE\n', ''));
-  assert.equal(def.model.style.font.size, 12.5, 'default base font is 12.5');
+test("font-size scales the text and is measured into the layout", async () => {
+  const base =
+    'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "Node label" }\nA -> B : "flow"\n';
+  const def = await build(base.replace("STYLE\n", ""));
+  assert.equal(def.model.style.font.size, 12.5, "default base font is 12.5");
   assert.match(def.svg, /font-size="12.5"[^>]*>Node label/);
-  const big = await build(base.replace('STYLE', 'style { font-size: 18 }'));
+  const big = await build(base.replace("STYLE", "style { font-size: 18 }"));
   assert.match(big.svg, /font-size="18"[^>]*>Node label/);
-  assert.ok(big.scene.width >= def.scene.width, 'larger font is measured into node width');
+  assert.ok(big.scene.width >= def.scene.width, "larger font is measured into node width");
   assert.equal(big.overlapsAfter, 0);
-  const small = await build(base.replace('STYLE', 'style { font-size: 9 }'));
+  const small = await build(base.replace("STYLE", "style { font-size: 9 }"));
   assert.match(small.svg, /font-size="9"[^>]*>Node label/);
 });
 
-test('flow readability: endpoint number, larger arrows, color-by-source', async () => {
-  const base = 'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" block C "c" }\nA -> B : "one"\nB -> C : "two"\n';
+test("flow readability: endpoint number, larger arrows, color-by-source", async () => {
+  const base =
+    'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" block C "c" }\nA -> B : "one"\nB -> C : "two"\n';
   // default: single arrowhead marker, width 7
-  const def = await build(base.replace('STYLE\n', ''));
+  const def = await build(base.replace("STYLE\n", ""));
   assert.match(def.svg, /markerWidth="7"/);
   assert.equal((def.svg.match(/<marker /g) ?? []).length, 1);
   // B — arrows: large gives a bigger marker
-  const large = await build(base.replace('STYLE', 'style { arrows: large }'));
+  const large = await build(base.replace("STYLE", "style { arrows: large }"));
   assert.match(large.svg, /markerWidth="11"/);
   // C — by-source: one marker per source color + colored strokes + legend hint
-  const col = await build(base.replace('STYLE', 'style { flow-color: by-source }'));
-  assert.ok((col.svg.match(/<marker /g) ?? []).length >= 2, 'a marker per source color');
-  assert.match(col.svg, /stroke="#1f77b4"/);           // first source hue
-  assert.match(col.svg, /colour = source/);            // legend hint
+  const col = await build(base.replace("STYLE", "style { flow-color: by-source }"));
+  assert.ok((col.svg.match(/<marker /g) ?? []).length >= 2, "a marker per source color");
+  assert.match(col.svg, /stroke="#1f77b4"/); // first source hue
+  assert.match(col.svg, /colour = source/); // legend hint
   assert.equal(col.overlapsAfter, 0);
   // A — numbered badge pinned near the target; must still be overlap-free
-  const num = await build(base.replace('STYLE', 'style { flow-text: numbered }'));
+  const num = await build(base.replace("STYLE", "style { flow-text: numbered }"));
   assert.equal(num.overlapsAfter, 0);
 });
 
 // ---------- bands & rendering ----------
 
-test('legend + registry bands render, and legend: off removes the legend only', async () => {
-  const on = await build(load('small.cairn'));
+test("legend + registry bands render, and legend: off removes the legend only", async () => {
+  const on = await build(load("small.cairn"));
   assert.match(on.svg, /LEGEND/);
   assert.match(on.svg, /BUSINESS OBJECTS/);
-  const off = await build(load('small.cairn').replace('"\n', '"\nstyle { legend: off }\n'));
+  const off = await build(load("small.cairn").replace('"\n', '"\nstyle { legend: off }\n'));
   assert.doesNotMatch(off.svg, /LEGEND/);
   assert.match(off.svg, /BUSINESS OBJECTS/);
 });
 
-test('flow-text: numbered produces badges + FLUX band', async () => {
-  const { svg } = await build(load('large-numbered.cairn'));
+test("flow-text: numbered produces badges + FLUX band", async () => {
+  const { svg } = await build(load("large-numbered.cairn"));
   assert.match(svg, />FLOWS</);
 });
 
-test('technical tail renders under the label', async () => {
-  const { svg } = await build(load('infrastructure-small.cairn'));
+test("technical tail renders under the label", async () => {
+  const { svg } = await build(load("infrastructure-small.cairn"));
   assert.match(svg, /\(HTTPS\/443\)/);
 });
 
-test('datastore renders as a cylinder (ellipse cap)', async () => {
-  const { svg } = await build(load('application-small.cairn'));
+test("datastore renders as a cylinder (ellipse cap)", async () => {
+  const { svg } = await build(load("application-small.cairn"));
   assert.match(svg, /<ellipse/);
 });
 
-test('multi-line container labels are fully rendered', async () => {
-  const { svg } = await build(load('infrastructure-large.cairn'));
-  assert.match(svg, />front</);  // second line of "K8s cluster\nfront"
-  assert.match(svg, />business</);  // second line of "K8s cluster\nbusiness"
+test("multi-line container labels are fully rendered", async () => {
+  const { svg } = await build(load("infrastructure-large.cairn"));
+  assert.match(svg, />front</); // second line of "K8s cluster\nfront"
+  assert.match(svg, />business</); // second line of "K8s cluster\nbusiness"
 });
 
 // ---------- theming & colors ----------
@@ -240,199 +270,262 @@ const THEME_BASE =
   'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\n' +
   'system S "s" { layer L "l" { block B "b" } }\nA -> B : "x"\n';
 
-test('dark theme paints a dark background + light chrome; light stays white', async () => {
-  const dark = await build(THEME_BASE.replace('STYLE', 'style { theme: dark }'));
+test("dark theme paints a dark background + light chrome; light stays white", async () => {
+  const dark = await build(THEME_BASE.replace("STYLE", "style { theme: dark }"));
   assert.match(dark.svg, /<rect width="\d+" height="\d+" fill="#1e2530"\/>/); // dark canvas
-  assert.match(dark.svg, /#c2ccd6/);                                          // light band text
-  const light = await build(THEME_BASE.replace('STYLE\n', ''));               // default = modern light
+  assert.match(dark.svg, /#c2ccd6/); // light band text
+  const light = await build(THEME_BASE.replace("STYLE\n", "")); // default = modern light
   assert.match(light.svg, /<rect width="\d+" height="\d+" fill="#ffffff"\/>/);
   assert.doesNotMatch(light.svg, /#1e2530/);
 });
 
-test('themes: named themes paint their palette, classic keeps the old look, accent retints flows', async () => {
-  const nord = await build(THEME_BASE.replace('STYLE', 'style { theme: nord }'));
-  assert.match(nord.svg, /fill="#2e3440"/);                 // nord canvas
-  const classic = await build(THEME_BASE.replace('STYLE', 'style { theme: classic }'));
-  assert.match(classic.svg, /stroke="#b09a6d"/);            // original system stroke preserved
-  const acc = await build(THEME_BASE.replace('STYLE', 'style { accent: #17876b }'));
-  assert.match(acc.svg, /stroke="#17876b"/);                // accent retints flows
-  const { codes } = check('diagram logical "t"\nstyle { theme: bogus }\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B : "x"\n');
-  assert.ok(codes.includes('E0103'), 'unknown theme is rejected as an invalid value');
+test("themes: named themes paint their palette, classic keeps the old look, accent retints flows", async () => {
+  const nord = await build(THEME_BASE.replace("STYLE", "style { theme: nord }"));
+  assert.match(nord.svg, /fill="#2e3440"/); // nord canvas
+  const classic = await build(THEME_BASE.replace("STYLE", "style { theme: classic }"));
+  assert.match(classic.svg, /stroke="#b09a6d"/); // original system stroke preserved
+  const acc = await build(THEME_BASE.replace("STYLE", "style { accent: #17876b }"));
+  assert.match(acc.svg, /stroke="#17876b"/); // accent retints flows
+  const { codes } = check(
+    'diagram logical "t"\nstyle { theme: bogus }\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B : "x"\n',
+  );
+  assert.ok(codes.includes("E0103"), "unknown theme is rejected as an invalid value");
 });
 
-test('background: overrides the theme default canvas color', async () => {
-  const { svg } = await build(THEME_BASE.replace('STYLE', 'style {\n theme: dark\n background: #0d1117\n}'));
+test("background: overrides the theme default canvas color", async () => {
+  const { svg } = await build(
+    THEME_BASE.replace("STYLE", "style {\n theme: dark\n background: #0d1117\n}"),
+  );
   assert.match(svg, /<rect width="\d+" height="\d+" fill="#0d1117"\/>/);
 });
 
-test('per-element and per-kind colors apply (fill, stroke, text)', async () => {
-  const inline = 'diagram logical "t"\nactor-group G "g" { actor A "a" }\n' +
+test("per-element and per-kind colors apply (fill, stroke, text)", async () => {
+  const inline =
+    'diagram logical "t"\nactor-group G "g" { actor A "a" }\n' +
     'system S "s" { layer L "l" { block B "b" { style { fill: #cc2222  stroke: #ff0000  text: #ffffff } } } }\nA -> B : "x"\n';
   const s1 = await build(inline);
-  assert.match(s1.svg, /fill="#cc2222"/);   // per-element fill
+  assert.match(s1.svg, /fill="#cc2222"/); // per-element fill
   assert.match(s1.svg, /stroke="#ff0000"/); // per-element stroke (same line)
-  const perKind = 'diagram logical "t"\nstyle { text block: #eeff00 }\nactor-group G "g" { actor A "a" }\n' +
+  const perKind =
+    'diagram logical "t"\nstyle { text block: #eeff00 }\nactor-group G "g" { actor A "a" }\n' +
     'system S "s" { block B "b" }\nA -> B : "x"\n';
   const s2 = await build(perKind);
-  assert.match(s2.svg, /fill="#eeff00"/);   // per-kind text color
+  assert.match(s2.svg, /fill="#eeff00"/); // per-kind text color
 });
 
-test('dark theme keeps zero label overlaps (small)', async () => {
-  const { overlapsAfter } = await build(load('small.cairn').replace('"\n', '"\nstyle { theme: dark }\n'));
+test("dark theme keeps zero label overlaps (small)", async () => {
+  const { overlapsAfter } = await build(
+    load("small.cairn").replace('"\n', '"\nstyle { theme: dark }\n'),
+  );
   assert.equal(overlapsAfter, 0);
 });
 
 // ---------- i18n (output localization, keywords stay English) ----------
 
-test('lang: fr localizes band titles, legend and kind names', async () => {
-  const fr = await build(load('infrastructure-small.cairn').replace('"\n', '"\nstyle { lang: fr }\n'));
+test("lang: fr localizes band titles, legend and kind names", async () => {
+  const fr = await build(
+    load("infrastructure-small.cairn").replace('"\n', '"\nstyle { lang: fr }\n'),
+  );
   assert.match(fr.svg, />LÉGENDE</);
   assert.match(fr.svg, /Zone réseau/);
   assert.doesNotMatch(fr.svg, />LEGEND</);
 });
 
-test('lang: en (default) is unchanged — English chrome', async () => {
-  const en = await build(load('infrastructure-small.cairn'));
+test("lang: en (default) is unchanged — English chrome", async () => {
+  const en = await build(load("infrastructure-small.cairn"));
   assert.match(en.svg, />LEGEND</);
   assert.doesNotMatch(en.svg, />LÉGENDE</);
 });
 
 // ---------- matrice des flux techniques ----------
 
-test('matrix CSV: header, one row per flow, protocol/port split, zone annotation', () => {
-  const { model } = check(load('infrastructure.cairn'));
-  const csv = matrixCsv(model, 'en');
-  const lines = csv.trim().split('\n');
-  assert.equal(lines.length, model.flows.length + 1);            // header + one row per flow
+test("matrix CSV: header, one row per flow, protocol/port split, zone annotation", () => {
+  const { model } = check(load("infrastructure.cairn"));
+  const csv = matrixCsv(model, "en");
+  const lines = csv.trim().split("\n");
+  assert.equal(lines.length, model.flows.length + 1); // header + one row per flow
   assert.match(lines[0], /^No\.,Source,Destination,Protocol,Port,Flow$/);
-  assert.doesNotMatch(lines[0], /Business objects/);            // no business-object column
-  assert.ok(lines.some(l => /,HTTPS,443,/.test(l)));             // (HTTPS/443) split into two columns
-  assert.ok(lines.some(l => /\(DMZ\)/.test(l)));                 // endpoint annotated with its zone
+  assert.doesNotMatch(lines[0], /Business objects/); // no business-object column
+  assert.ok(lines.some((l) => /,HTTPS,443,/.test(l))); // (HTTPS/443) split into two columns
+  assert.ok(lines.some((l) => /\(DMZ\)/.test(l))); // endpoint annotated with its zone
 });
 
 // ---------- security view ----------
 
-test('security.cairn: valid reference builds clean with zero overlaps', async () => {
-  const { diags, codes } = check(load('security.cairn'));
-  assert.equal(diags.filter(d => d.severity === 'error').length, 0);
-  assert.ok(!codes.includes('W0560'), 'reference has no unfiltered crossings');
-  assert.ok(!codes.includes('W0561'), 'reference states encryption on cross-zone flows');
-  const { overlapsAfter } = await build(load('security.cairn'));
+test("security.cairn: valid reference builds clean with zero overlaps", async () => {
+  const { diags, codes } = check(load("security.cairn"));
+  assert.equal(diags.filter((d) => d.severity === "error").length, 0);
+  assert.ok(!codes.includes("W0560"), "reference has no unfiltered crossings");
+  assert.ok(!codes.includes("W0561"), "reference states encryption on cross-zone flows");
+  const { overlapsAfter } = await build(load("security.cairn"));
   assert.equal(overlapsAfter, 0);
 });
 
-test('security: W0560 fires on an unfiltered trust-boundary crossing', () => {
-  const src = 'diagram security "t"\n' +
+test("security: W0560 fires on an unfiltered trust-boundary crossing", () => {
+  const src =
+    'diagram security "t"\n' +
     'trust-zone Z0 "Edge" (public) { asset A "a" }\n' +
     'trust-zone Z1 "Core" (restricted) { asset B "b" }\n' +
     'A -> B : "direct" (TLS1.3)\n';
   const { codes } = check(src);
-  assert.ok(codes.includes('W0560'), 'A(public) -> B(restricted) without a security-node');
+  assert.ok(codes.includes("W0560"), "A(public) -> B(restricted) without a security-node");
 });
 
-test('security: routing through a security-node clears W0560', () => {
-  const src = 'diagram security "t"\n' +
+test("security: routing through a security-node clears W0560", () => {
+  const src =
+    'diagram security "t"\n' +
     'trust-zone Z0 "Edge" (public) { security-node FW "fw" }\n' +
     'trust-zone Z1 "Core" (restricted) { asset B "b" }\n' +
     'FW -> B : "filtered" (TLS1.3)\n';
   const { codes } = check(src);
-  assert.ok(!codes.includes('W0560'));
+  assert.ok(!codes.includes("W0560"));
 });
 
-test('security: E0250 on a trust-zone without a valid sensitivity level', () => {
+test("security: E0250 on a trust-zone without a valid sensitivity level", () => {
   const missing = check('diagram security "t"\ntrust-zone Z "z" { asset A "a" }\n');
-  assert.ok(missing.codes.includes('E0250'));
+  assert.ok(missing.codes.includes("E0250"));
   const bad = check('diagram security "t"\ntrust-zone Z "z" (topsecret) { asset A "a" }\n');
-  const d = bad.diags.find(d => d.code === 'E0250')!;
-  assert.match(d.note ?? '', /public, internal, restricted, secret/);
+  const d = bad.diags.find((d) => d.code === "E0250")!;
+  assert.match(d.note ?? "", /public, internal, restricted, secret/);
 });
 
-test('security: trust zones are colored by sensitivity level + tag rendered', async () => {
-  const { svg } = await build(load('security.cairn'));
+test("security: trust zones are colored by sensitivity level + tag rendered", async () => {
+  const { svg } = await build(load("security.cairn"));
   assert.match(svg, /fill="#fdeceb"/); // public level fill (modern light)
   assert.match(svg, /fill="#e9f2fb"/); // restricted level fill (modern light)
   assert.match(svg, />PUBLIC</);
   assert.match(svg, />RESTRICTED</);
 });
 
-test('matrix respects lang: fr headers; md + svg render', () => {
-  const { model, view } = (() => { const { model } = check(load('infrastructure.cairn')); return { model, view: views[model.type!] }; })();
-  assert.match(matrixCsv(model, 'fr').split('\n')[0], /^N°,Source,Destination,Protocole,Port,Nature du flux$/);
-  assert.match(matrixMd(model, view, 'fr'), /MATRICE DES FLUX TECHNIQUES/);
-  const svg = matrixSvg(model, view, 'en');
+test("matrix respects lang: fr headers; md + svg render", () => {
+  const { model, view } = (() => {
+    const { model } = check(load("infrastructure.cairn"));
+    return { model, view: views[model.type!] };
+  })();
+  assert.match(
+    matrixCsv(model, "fr").split("\n")[0],
+    /^N°,Source,Destination,Protocole,Port,Nature du flux$/,
+  );
+  assert.match(matrixMd(model, view, "fr"), /MATRICE DES FLUX TECHNIQUES/);
+  const svg = matrixSvg(model, view, "en");
   assert.match(svg, /^<svg/);
   assert.match(svg, /TECHNICAL FLOW MATRIX/);
 });
 
 // ---------- security ----------
 
-test('security: a font family cannot break out of the SVG attribute (XSS)', async () => {
+test("security: a font family cannot break out of the SVG attribute (XSS)", async () => {
   // A quote in the (user-controlled) font family must be escaped, else it could
   // close the font-family="…" attribute and inject e.g. an onload handler that
   // fires when the SVG is opened standalone.
-  const src = 'diagram logical "t"\nstyle { font: "x\\" onload=\\"alert(1)" 12 }\n'
-    + 'actor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B : "x"\n';
+  const src =
+    'diagram logical "t"\nstyle { font: "x\\" onload=\\"alert(1)" 12 }\n' +
+    'actor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B : "x"\n';
   const { svg } = await build(src);
-  assert.ok(!/onload="alert/.test(svg), 'attribute injection must not appear unescaped');
+  assert.ok(!/onload="alert/.test(svg), "attribute injection must not appear unescaped");
   assert.match(svg, /font-family="x&quot; onload=&quot;alert\(1\)/);
 });
 
-test('security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XSS)', async () => {
+test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XSS)", async () => {
   // Per-element style values (fill, stroke, text) on the new element kinds must
   // be passed through escAttr() so a quote in a user-supplied colour does not
   // break out of the SVG attribute — even though these values normally look like
   // hex colours, custom themes could propagate untrusted strings into them.
-  const src = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" { style { fill: #cc2222 stroke: #ff0000 text: #ffffff } } auth OAUTH2 "OAuth2" { style { fill: #3366cc stroke: #00ff00 text: #ffff00 } } } }\nqueue Q "Queue" { style { fill: #ff00ff stroke: #990099 text: #000000 } }\nactor U "User"\nU -> GW : "Login" (HTTPS/443)\n';
+  const src =
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" { style { fill: #cc2222 stroke: #ff0000 text: #ffffff } } auth OAUTH2 "OAuth2" { style { fill: #3366cc stroke: #00ff00 text: #ffff00 } } } }\nqueue Q "Queue" { style { fill: #ff00ff stroke: #990099 text: #000000 } }\nactor U "User"\nU -> GW : "Login" (HTTPS/443)\n';
   const { svg } = await build(src);
-  assert.match(svg, /fill="#cc2222"/, 'gateway fill must be escAttr-escaped');
-  assert.match(svg, /fill="#3366cc"/, 'auth fill must be escAttr-escaped');
-  assert.match(svg, /fill="#ff00ff"/, 'queue fill must be escAttr-escaped');
-  assert.equal(svg.includes('onload='), false, 'no unescaped attribute injection');
+  assert.match(svg, /fill="#cc2222"/, "gateway fill must be escAttr-escaped");
+  assert.match(svg, /fill="#3366cc"/, "auth fill must be escAttr-escaped");
+  assert.match(svg, /fill="#ff00ff"/, "queue fill must be escAttr-escaped");
+  assert.equal(svg.includes("onload="), false, "no unescaped attribute injection");
 });
 
-test('security: a reserved key cannot be used as a per-kind style target', () => {
+test("security: a reserved key cannot be used as a per-kind style target", () => {
   // `fill __proto__: …` must be rejected, not written into the kind map's
   // prototype slot (defence-in-depth against prototype pollution).
-  const { diags } = check('diagram logical "t"\nstyle { fill __proto__: #fff }\nactor-group G "g" { actor A "a" }\n');
-  assert.ok(diags.some(d => d.severity === 'error' && /reserved/.test(d.message)));
+  const { diags } = check(
+    'diagram logical "t"\nstyle { fill __proto__: #fff }\nactor-group G "g" { actor A "a" }\n',
+  );
+  assert.ok(diags.some((d) => d.severity === "error" && /reserved/.test(d.message)));
 });
 
-test('business objects are logical-only: allowed in logical, E0222 elsewhere', () => {
+test("business objects are logical-only: allowed in logical, E0222 elsewhere", () => {
   const decl = 'business-object BO "Order" "an order"\n';
   // logical: fine
-  assert.ok(!check(`diagram logical "t"\nsystem S "s" { block B "b" }\n${decl}`).codes.includes('E0222'));
+  assert.ok(
+    !check(`diagram logical "t"\nsystem S "s" { block B "b" }\n${decl}`).codes.includes("E0222"),
+  );
   // application / infrastructure / security: rejected
-  assert.ok(check(`diagram application "t"\napplication A "a" { module M "m" }\n${decl}`).codes.includes('E0222'));
-  assert.ok(check(`diagram infrastructure "t"\nsite S "s" { server V "v" }\n${decl}`).codes.includes('E0222'));
-  assert.ok(check(`diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" }\n${decl}`).codes.includes('E0222'));
+  assert.ok(
+    check(`diagram application "t"\napplication A "a" { module M "m" }\n${decl}`).codes.includes(
+      "E0222",
+    ),
+  );
+  assert.ok(
+    check(`diagram infrastructure "t"\nsite S "s" { server V "v" }\n${decl}`).codes.includes(
+      "E0222",
+    ),
+  );
+  assert.ok(
+    check(
+      `diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" }\n${decl}`,
+    ).codes.includes("E0222"),
+  );
 });
 
-test('a `[ref]` on a flow in a non-logical view is E0222', () => {
-  const src = 'diagram application "t"\napplication A "a" { module M "m" }\ndatastore D "d"\nM -> D : "x" [BO]\n';
-  assert.ok(check(src).codes.includes('E0222'));
+test("a `[ref]` on a flow in a non-logical view is E0222", () => {
+  const src =
+    'diagram application "t"\napplication A "a" { module M "m" }\ndatastore D "d"\nM -> D : "x" [BO]\n';
+  assert.ok(check(src).codes.includes("E0222"));
 });
 
-test('queue is a valid kind in application & infrastructure, unknown in logical', () => {
-  assert.ok(!check('diagram application "t"\nqueue Q "q"\napplication A "a" { module M "m" }\nM -> Q : "x"\n').codes.includes('E0201'));
-  assert.ok(!check('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { queue Q "q" server V "v" { app-instance I "i" } } }\nI -> Q : "x" (TCP/9092)\n').codes.includes('E0201'));
+test("queue is a valid kind in application & infrastructure, unknown in logical", () => {
+  assert.ok(
+    !check(
+      'diagram application "t"\nqueue Q "q"\napplication A "a" { module M "m" }\nM -> Q : "x"\n',
+    ).codes.includes("E0201"),
+  );
+  assert.ok(
+    !check(
+      'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { queue Q "q" server V "v" { app-instance I "i" } } }\nI -> Q : "x" (TCP/9092)\n',
+    ).codes.includes("E0201"),
+  );
   // logical does not define `queue`
-  assert.ok(check('diagram logical "t"\nqueue Q "q"\n').codes.includes('E0201'));
+  assert.ok(check('diagram logical "t"\nqueue Q "q"\n').codes.includes("E0201"));
 });
 
-test('queue renders as a horizontal cylinder (path + end-rim ellipse), overlaps 0', async () => {
-  const { svg, overlapsAfter } = await build('diagram application "t"\nqueue Q "q"\napplication A "a" { module M "m" }\nM -> Q : "x" (MQ)\n');
+test("queue renders as a horizontal cylinder (path + end-rim ellipse), overlaps 0", async () => {
+  const { svg, overlapsAfter } = await build(
+    'diagram application "t"\nqueue Q "q"\napplication A "a" { module M "m" }\nM -> Q : "x" (MQ)\n',
+  );
   assert.equal(overlapsAfter, 0);
   assert.match(svg, /<path d="M \d+ \d+ h [\d-]+ a 8 /); // capsule body with rx=8 end caps
   assert.match(svg, /<ellipse cx="\d+" cy="\d+" rx="8"/); // end-rim ellipse
 });
 
-test('flow labels: required on logical/security (E0203), optional on application/infrastructure', () => {
+test("flow labels: required on logical/security (E0203), optional on application/infrastructure", () => {
   // logical + security still require the label
-  assert.ok(check('diagram logical "t"\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B\n').codes.includes('E0203'));
-  assert.ok(check('diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" asset B "b" }\nA -> B\n').codes.includes('E0203'));
+  assert.ok(
+    check(
+      'diagram logical "t"\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B\n',
+    ).codes.includes("E0203"),
+  );
+  assert.ok(
+    check(
+      'diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" asset B "b" }\nA -> B\n',
+    ).codes.includes("E0203"),
+  );
   // application + infrastructure no longer require it
-  assert.ok(!check('diagram application "t"\napplication A "a" { module M "m" }\ndatastore D "d"\nM -> D\n').codes.includes('E0203'));
-  assert.ok(!check('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { server V "v" { app-instance A "a" } app-instance B "b" } }\nA -> B (TCP/9092)\n').codes.includes('E0203'));
+  assert.ok(
+    !check(
+      'diagram application "t"\napplication A "a" { module M "m" }\ndatastore D "d"\nM -> D\n',
+    ).codes.includes("E0203"),
+  );
+  assert.ok(
+    !check(
+      'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { server V "v" { app-instance A "a" } app-instance B "b" } }\nA -> B (TCP/9092)\n',
+    ).codes.includes("E0203"),
+  );
 });
 
 test('flow label after `:` is optional — "text", "", and a bare `:` before the tail all parse', () => {
@@ -441,48 +534,54 @@ test('flow label after `:` is optional — "text", "", and a bare `:` before the
   const emptyStr = check(`${head}M -> D : "" (API_REST, JSON)\n`);
   const noLabel = check(`${head}M -> D : (API_REST, JSON)\n`);
   for (const r of [labelled, emptyStr, noLabel]) {
-    assert.equal(r.diags.filter(d => d.severity === 'error').length, 0);
+    assert.equal(r.diags.filter((d) => d.severity === "error").length, 0);
   }
   // empty string and omitted label both mean "no label"
-  assert.equal(emptyStr.model.flows[0].label ?? '', '');
+  assert.equal(emptyStr.model.flows[0].label ?? "", "");
   assert.equal(noLabel.model.flows[0].label, undefined);
   // but a stray non-label token after `:` is still an error
-  assert.ok(check(`${head}M -> D : foo123\n`).codes.includes('E0101'));
+  assert.ok(check(`${head}M -> D : foo123\n`).codes.includes("E0101"));
 });
 
-test('tail-only flows stay overlap-free on a dense application diagram', async () => {
+test("tail-only flows stay overlap-free on a dense application diagram", async () => {
   // With labels omitted, the protocol tail takes the label's place and is
   // overlap-resolved like a label — a dense example must still reach 0.
-  const { overlapsAfter } = await build(load('application-large.cairn'));
+  const { overlapsAfter } = await build(load("application-large.cairn"));
   assert.equal(overlapsAfter, 0);
 });
 
-test('infrastructure protocol stays mandatory (E0240) even when the label is omitted', () => {
-  const src = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { server V "v" { app-instance A "a" } app-instance B "b" } }\nA -> B\n';
+test("infrastructure protocol stays mandatory (E0240) even when the label is omitted", () => {
+  const src =
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { server V "v" { app-instance A "a" } app-instance B "b" } }\nA -> B\n';
   const { codes } = check(src);
-  assert.ok(codes.includes('E0240'));
-  assert.ok(!codes.includes('E0203')); // label omission is fine; only the protocol is flagged
+  assert.ok(codes.includes("E0240"));
+  assert.ok(!codes.includes("E0203")); // label omission is fine; only the protocol is flagged
 });
 
-test('gateway, auth, and idp are valid in infrastructure, unknown in other views', () => {
-  const infra = 'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway"\nauth OAUTH2 "Auth"\nidp IDP "IdP" } }\n';
-  assert.ok(!check(infra).codes.includes('E0201'));
+test("gateway, auth, and idp are valid in infrastructure, unknown in other views", () => {
+  const infra =
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway"\nauth OAUTH2 "Auth"\nidp IDP "IdP" } }\n';
+  assert.ok(!check(infra).codes.includes("E0201"));
   // rejected in logical, application, security
-  for (const v of ['logical', 'application', 'security']) {
-    assert.ok(check(`diagram ${v} "t"\ngateway GW "Gateway"\n`).codes.includes('E0201'));
-    assert.ok(check(`diagram ${v} "t"\nauth OAUTH2 "Auth"\n`).codes.includes('E0201'));
-    assert.ok(check(`diagram ${v} "t"\nidp IDP "IdP"\n`).codes.includes('E0201'));
+  for (const v of ["logical", "application", "security"]) {
+    assert.ok(check(`diagram ${v} "t"\ngateway GW "Gateway"\n`).codes.includes("E0201"));
+    assert.ok(check(`diagram ${v} "t"\nauth OAUTH2 "Auth"\n`).codes.includes("E0201"));
+    assert.ok(check(`diagram ${v} "t"\nidp IDP "IdP"\n`).codes.includes("E0201"));
   }
 });
 
-test('gateway renders as a rounded rect with shield badge, overlaps 0', async () => {
-  const { svg, overlapsAfter } = await build('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" } }\nauth OAUTH2 "OAuth2"\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\n');
+test("gateway renders as a rounded rect with shield badge, overlaps 0", async () => {
+  const { svg, overlapsAfter } = await build(
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" } }\nauth OAUTH2 "OAuth2"\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\n',
+  );
   assert.equal(overlapsAfter, 0);
   assert.match(svg, /Q \d+ \d+ \d+ \d+/); // kite-shield bezier badge
 });
 
-test('auth renders with a lock icon badge (path + rect), overlaps 0', async () => {
-  const { svg, overlapsAfter } = await build('diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { auth OAUTH2 "OAuth2"\ngateway GW "Gateway" } }\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\nGW -> OAUTH2 : "Forward" (HTTP/80)\n');
+test("auth renders with a lock icon badge (path + rect), overlaps 0", async () => {
+  const { svg, overlapsAfter } = await build(
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { auth OAUTH2 "OAuth2"\ngateway GW "Gateway" } }\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\nGW -> OAUTH2 : "Forward" (HTTP/80)\n',
+  );
   assert.equal(overlapsAfter, 0);
   // lock shackle arc + body rect
   assert.match(svg, /v -4 a 5 5 0 0 1 10 0 v 4/);

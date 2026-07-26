@@ -16,29 +16,29 @@
  * glance: colour-only means a theme edit; geometry means a layout shift.
  */
 
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
-import { createHash } from 'node:crypto';
-import { join, dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { parse } from '../src/parser.ts';
-import { validate } from '../src/validator.ts';
-import { layout } from '../src/scene-layout.ts';
-import { render } from '../src/svg-render.ts';
-import { views } from '../src/model.ts';
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { join, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { parse } from "../src/parser.ts";
+import { validate } from "../src/validator.ts";
+import { layout } from "../src/scene-layout.ts";
+import { render } from "../src/svg-render.ts";
+import { views } from "../src/model.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-export const ROOT = join(HERE, '..');
-export const EXAMPLES_DIR = join(ROOT, 'examples');
-export const DIGEST_PATH = join(HERE, '__snapshots__', 'corpus.digest');
+export const ROOT = join(HERE, "..");
+export const EXAMPLES_DIR = join(ROOT, "examples");
+export const DIGEST_PATH = join(HERE, "__snapshots__", "corpus.digest");
 
 /** All buildable examples, minus deliberately-broken fixtures, sorted for a stable digest order. */
 export function corpusFiles(): string[] {
-  const dirs = [EXAMPLES_DIR, join(EXAMPLES_DIR, 'dispositions'), join(EXAMPLES_DIR, 'themes')];
+  const dirs = [EXAMPLES_DIR, join(EXAMPLES_DIR, "dispositions"), join(EXAMPLES_DIR, "themes")];
   const out: string[] = [];
   for (const d of dirs) {
     if (!existsSync(d)) continue;
     for (const f of readdirSync(d)) {
-      if (f.endsWith('.cairn') && !f.includes('broken')) out.push(join(d, f));
+      if (f.endsWith(".cairn") && !f.includes("broken")) out.push(join(d, f));
     }
   }
   return out.sort((a, b) => relName(a).localeCompare(relName(b)));
@@ -46,9 +46,9 @@ export function corpusFiles(): string[] {
 
 /** Path relative to `examples/` (e.g. `"themes/nord.cairn"`) — the digest key. */
 export const relName = (file: string): string =>
-  file.slice(EXAMPLES_DIR.length + 1).replace(/\\/g, '/');
+  file.slice(EXAMPLES_DIR.length + 1).replace(/\\/g, "/");
 
-const h = (s: string): string => createHash('sha1').update(s).digest('hex').slice(0, 12);
+const h = (s: string): string => createHash("sha1").update(s).digest("hex").slice(0, 12);
 
 /**
  * Round every decimal to 1dp — absorbs the one cross-platform wobble
@@ -60,20 +60,22 @@ export const normalize = (svg: string): string =>
 
 // Geom fingerprint: the normalized SVG with colour values and text content blanked out — everything positional/structural, nothing else.
 const geomHash = (svg: string): string =>
-  h(normalize(svg)
-    .replace(/(fill|stroke|stop-color|color)="[^"]*"/g, '$1=""')
-    .replace(/>[^<]*</g, '><'));
+  h(
+    normalize(svg)
+      .replace(/(fill|stroke|stop-color|color)="[^"]*"/g, '$1=""')
+      .replace(/>[^<]*</g, "><"),
+  );
 
 // Colour fingerprint: the sorted set of every colour value emitted.
 const colorHash = (svg: string): string => {
   const colors = [...svg.matchAll(/(?:fill|stroke|stop-color|color)="([^"]*)"/g)].map((m) => m[1]);
-  return h(colors.sort().join('\n'));
+  return h(colors.sort().join("\n"));
 };
 
 // Text fingerprint: the content of every `<text>` element, in document order.
 const textHash = (svg: string): string => {
   const texts = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
-  return h(texts.join(''));
+  return h(texts.join(""));
 };
 
 /**
@@ -81,27 +83,39 @@ const textHash = (svg: string): string => {
  * full SVG (kept in-memory for the fidelity README-SVG check; not serialized).
  */
 export interface Digest {
-  name: string; geom: string; color: string; text: string;
-  n: number; e: number; ov: number; dim: string;
+  name: string;
+  geom: string;
+  color: string;
+  text: string;
+  n: number;
+  e: number;
+  ov: number;
+  dim: string;
   svg: string;
 }
 
 /** Parse, validate, layout, and render a single `.cairn` file, returning its digest. */
 export async function digestOf(file: string): Promise<Digest> {
-  const src = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+  const src = readFileSync(file, "utf8").replace(/\r\n/g, "\n");
   const { model, diags } = parse(src);
   diags.push(...validate(model));
-  const errors = diags.filter((d) => d.severity === 'error');
+  const errors = diags.filter((d) => d.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
-    throw new Error(`${relName(file)}: build error(s) [${errors.map((d) => d.code).join(', ')}]`);
+    throw new Error(`${relName(file)}: build error(s) [${errors.map((d) => d.code).join(", ")}]`);
   }
   const view = views[model.type];
   const scene = await layout(model, view);
   const { svg, overlapsAfter } = render(model, view, scene);
   return {
-    name: relName(file), geom: geomHash(svg), color: colorHash(svg), text: textHash(svg),
-    n: scene.nodes.length, e: scene.edges.length, ov: overlapsAfter,
-    dim: `${scene.width}x${scene.height}`, svg,
+    name: relName(file),
+    geom: geomHash(svg),
+    color: colorHash(svg),
+    text: textHash(svg),
+    n: scene.nodes.length,
+    e: scene.edges.length,
+    ov: overlapsAfter,
+    dim: `${scene.width}x${scene.height}`,
+    svg,
   };
 }
 
@@ -115,53 +129,112 @@ const line = (d: Digest): string =>
   `${d.name}  dim:${d.dim} n:${d.n} e:${d.e} ov:${d.ov}  geom:${d.geom} color:${d.color} text:${d.text}`;
 
 /** Serialize an array of digests into the digest file format. */
-export const serialize = (ds: Digest[]): string =>
-  ds.map(line).sort().join('\n') + '\n';
+export const serialize = (ds: Digest[]): string => ds.map(line).sort().join("\n") + "\n";
 
 /** A single row parsed back from the digest format — used for change categorization. */
-export interface Row { dim: string; n: string; e: string; ov: string; geom: string; color: string; text: string; }
+export interface Row {
+  dim: string;
+  n: string;
+  e: string;
+  ov: string;
+  geom: string;
+  color: string;
+  text: string;
+}
 
 /** Parse the committed digest file back into a name→Row map for comparison with current output. */
 export function parseDigest(text: string): Map<string, Row> {
   const rows = new Map<string, Row>();
-  for (const l of text.split('\n')) {
-    const m = l.match(/^(.+?) {2}dim:(\S+) n:(\S+) e:(\S+) ov:(\S+) {2}geom:(\S+) color:(\S+) text:(\S+)$/);
-    if (m) rows.set(m[1], { dim: m[2], n: m[3], e: m[4], ov: m[5], geom: m[6], color: m[7], text: m[8] });
+  for (const l of text.split("\n")) {
+    const m = l.match(
+      /^(.+?) {2}dim:(\S+) n:(\S+) e:(\S+) ov:(\S+) {2}geom:(\S+) color:(\S+) text:(\S+)$/,
+    );
+    if (m)
+      rows.set(m[1], {
+        dim: m[2],
+        n: m[3],
+        e: m[4],
+        ov: m[5],
+        geom: m[6],
+        color: m[7],
+        text: m[8],
+      });
   }
   return rows;
 }
 
-const rowOf = (d: Digest): Row =>
-  ({ dim: d.dim, n: String(d.n), e: String(d.e), ov: String(d.ov), geom: d.geom, color: d.color, text: d.text });
+const rowOf = (d: Digest): Row => ({
+  dim: d.dim,
+  n: String(d.n),
+  e: String(d.e),
+  ov: String(d.ov),
+  geom: d.geom,
+  color: d.color,
+  text: d.text,
+});
 
 /**
  * Result of comparing freshly-computed digests against the committed digest.
  * Each bucket lists which examples changed in that dimension.
  */
 export interface Categorized {
-  geometry: string[]; colour: string[]; text: string[]; scalars: string[];
-  added: string[]; removed: string[]; unchanged: number; changed: number;
+  geometry: string[];
+  colour: string[];
+  text: string[];
+  scalars: string[];
+  added: string[];
+  removed: string[];
+  unchanged: number;
+  changed: number;
 }
 
 /** Compare fresh digests against the committed digest and bucket every change by WHAT moved. Geometry is called out first — it's the risky kind. */
 export function categorize(committed: Map<string, Row>, current: Digest[]): Categorized {
-  const c: Categorized = { geometry: [], colour: [], text: [], scalars: [], added: [], removed: [], unchanged: 0, changed: 0 };
+  const c: Categorized = {
+    geometry: [],
+    colour: [],
+    text: [],
+    scalars: [],
+    added: [],
+    removed: [],
+    unchanged: 0,
+    changed: 0,
+  };
   const seen = new Set<string>();
   for (const d of current) {
     seen.add(d.name);
     const was = committed.get(d.name);
     const now = rowOf(d);
-    if (!was) { c.added.push(d.name); c.changed++; continue; }
-    const kinds: string[] = [];
-    if (was.geom !== now.geom) { c.geometry.push(d.name); kinds.push('geom'); }
-    if (was.color !== now.color) { c.colour.push(d.name); kinds.push('color'); }
-    if (was.text !== now.text) { c.text.push(d.name); kinds.push('text'); }
-    if (was.dim !== now.dim || was.n !== now.n || was.e !== now.e || was.ov !== now.ov) {
-      c.scalars.push(d.name); kinds.push('scalar');
+    if (!was) {
+      c.added.push(d.name);
+      c.changed++;
+      continue;
     }
-    if (kinds.length) c.changed++; else c.unchanged++;
+    const kinds: string[] = [];
+    if (was.geom !== now.geom) {
+      c.geometry.push(d.name);
+      kinds.push("geom");
+    }
+    if (was.color !== now.color) {
+      c.colour.push(d.name);
+      kinds.push("color");
+    }
+    if (was.text !== now.text) {
+      c.text.push(d.name);
+      kinds.push("text");
+    }
+    if (was.dim !== now.dim || was.n !== now.n || was.e !== now.e || was.ov !== now.ov) {
+      c.scalars.push(d.name);
+      kinds.push("scalar");
+    }
+    if (kinds.length) c.changed++;
+    else c.unchanged++;
   }
-  for (const name of committed.keys()) if (!seen.has(name)) { c.removed.push(name); c.changed++; }
+  for (const name of committed.keys())
+    if (!seen.has(name)) {
+      c.removed.push(name);
+      c.changed++;
+    }
   return c;
 }
 
@@ -170,14 +243,14 @@ export function formatReport(cat: Categorized): string {
   if (cat.changed === 0) return `✓ corpus unchanged (${cat.unchanged} examples)`;
   const L: string[] = [];
   const group = (label: string, names: string[]) => {
-    if (names.length) L.push(`  ${label} (${names.length}): ${names.join(', ')}`);
+    if (names.length) L.push(`  ${label} (${names.length}): ${names.join(", ")}`);
   };
   L.push(`${cat.changed} example(s) changed, ${cat.unchanged} unchanged:`);
-  group('⚠ GEOMETRY moved  — layout shift, review these', cat.geometry);
-  group('· colour only     — usually an intended theme edit', cat.colour);
-  group('· text only       — label / i18n edit', cat.text);
-  group('· counts/size      — nodes/edges/overlaps/dim', cat.scalars);
-  group('+ new example', cat.added);
-  group('- removed example', cat.removed);
-  return L.join('\n');
+  group("⚠ GEOMETRY moved  — layout shift, review these", cat.geometry);
+  group("· colour only     — usually an intended theme edit", cat.colour);
+  group("· text only       — label / i18n edit", cat.text);
+  group("· counts/size      — nodes/edges/overlaps/dim", cat.scalars);
+  group("+ new example", cat.added);
+  group("- removed example", cat.removed);
+  return L.join("\n");
 }

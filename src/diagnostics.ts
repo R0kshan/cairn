@@ -1,64 +1,94 @@
-/**
- * Format Diagnostics for humans and machines.
- *
- * Two renderers over the coded Diagnostics that parse/validate produce:
- *   renderHuman  a Rust-style report — severity, code, the source line, a caret
- *                under the offending span, and an optional help line (ANSI
- *                colour when writing to a TTY).
- *   renderJson   the same diagnostics as structured JSON, for editors/tooling.
- */
+import type { Diagnostic } from "./model.ts";
 
-import type { Diagnostic } from './model.ts';
+const RESET = "\x1b[0m",
+  BOLD = "\x1b[1m",
+  RED = "\x1b[31m",
+  YEL = "\x1b[33m",
+  BLUE = "\x1b[34m",
+  DIM = "\x1b[2m";
 
-const RESET = '\x1b[0m', BOLD = '\x1b[1m', RED = '\x1b[31m', YEL = '\x1b[33m', BLUE = '\x1b[34m', DIM = '\x1b[2m';
-
-export function renderHuman(file: string, src: string, diags: Diagnostic[], color = true): string {
+export function renderHuman(
+  file: string,
+  src: string,
+  diagnostics: Diagnostic[],
+  color = true,
+): string {
   const paint = (ansi: string, text: string) => (color ? ansi + text + RESET : text);
-  const srcLines = src.split('\n');
+  const srcLines = src.split("\n");
   const report: string[] = [];
-  const byPosition = [...diags].sort((a, b) => a.span.line - b.span.line || a.span.col - b.span.col);
+  const byPosition = [...diagnostics].sort(
+    (diagA, diagB) => diagA.span.line - diagB.span.line || diagA.span.col - diagB.span.col,
+  );
 
-  for (const d of byPosition) {
-    const severityColor = d.severity === 'error' ? RED : YEL;
-    const gutterPad = ' '.repeat(String(d.span.line).length);
-    const srcLine = srcLines[d.span.line - 1] ?? '';
-    const caretCount = Math.max(1, Math.min(d.span.len, srcLine.length - d.span.col + 1 || 1));
-    report.push(paint(BOLD + severityColor, `${d.severity === 'error' ? 'error' : 'warning'}[${d.code}]`) + paint(BOLD, `: ${d.message}`));
-    report.push(paint(BLUE, `${gutterPad}--> `) + `${file}:${d.span.line}:${d.span.col}`);
+  for (const diagnostic of byPosition) {
+    const severityColor = diagnostic.severity === "error" ? RED : YEL;
+    const gutterPad = " ".repeat(String(diagnostic.span.line).length);
+    const srcLine = srcLines[diagnostic.span.line - 1] ?? "";
+    const caretCount = Math.max(
+      1,
+      Math.min(diagnostic.span.len, srcLine.length - diagnostic.span.col + 1 || 1),
+    );
+    report.push(
+      paint(
+        BOLD + severityColor,
+        `${diagnostic.severity === "error" ? "error" : "warning"}[${diagnostic.code}]`,
+      ) + paint(BOLD, `: ${diagnostic.message}`),
+    );
+    report.push(
+      paint(BLUE, `${gutterPad}--> `) + `${file}:${diagnostic.span.line}:${diagnostic.span.col}`,
+    );
     report.push(paint(BLUE, `${gutterPad} |`));
-    report.push(paint(BLUE, `${d.span.line} | `) + srcLine);
-    report.push(paint(BLUE, `${gutterPad} | `) + ' '.repeat(Math.max(0, d.span.col - 1)) + paint(severityColor, '^'.repeat(caretCount)));
-    if (d.note) report.push(paint(BLUE, `${gutterPad} = `) + paint(DIM, `note: ${d.note}`));
-    if (d.help) report.push(paint(BOLD, 'help') + `: ${d.help}`);
-    report.push('');
+    report.push(paint(BLUE, `${diagnostic.span.line} | `) + srcLine);
+    report.push(
+      paint(BLUE, `${gutterPad} | `) +
+        " ".repeat(Math.max(0, diagnostic.span.col - 1)) +
+        paint(severityColor, "^".repeat(caretCount)),
+    );
+    if (diagnostic.note)
+      report.push(paint(BLUE, `${gutterPad} = `) + paint(DIM, `note: ${diagnostic.note}`));
+    if (diagnostic.help) report.push(paint(BOLD, "help") + `: ${diagnostic.help}`);
+    report.push("");
   }
 
-  const errorCount = diags.filter(d => d.severity === 'error').length;
-  const warningCount = diags.filter(d => d.severity === 'warning').length;
+  const errorCount = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
+  const warningCount = diagnostics.filter((diagnostic) => diagnostic.severity === "warning").length;
   if (errorCount + warningCount > 0) {
     const parts = [];
-    if (errorCount) parts.push(paint(BOLD + RED, `${errorCount} error${errorCount > 1 ? 's' : ''}`));
-    if (warningCount) parts.push(paint(BOLD + YEL, `${warningCount} warning${warningCount > 1 ? 's' : ''}`));
-    report.push(parts.join(', ') + paint(DIM, ' — run `cairn explain <code>` for the rule rationale'));
+    if (errorCount)
+      parts.push(paint(BOLD + RED, `${errorCount} error${errorCount > 1 ? "s" : ""}`));
+    if (warningCount)
+      parts.push(paint(BOLD + YEL, `${warningCount} warning${warningCount > 1 ? "s" : ""}`));
+    report.push(
+      parts.join(", ") + paint(DIM, " — run `cairn explain <code>` for the rule rationale"),
+    );
   }
-  return report.join('\n');
+  return report.join("\n");
 }
 
-export function renderJson(file: string, diags: Diagnostic[]): string {
-  return JSON.stringify({
-    file,
-    diagnostics: diags.map(d => ({
-      code: d.code,
-      severity: d.severity,
-      span: { file, line: d.span.line, col: d.span.col, len: d.span.len },
-      message: d.message,
-      note: d.note ?? null,
-      help: d.help ?? null,
-      fix: d.fix ?? null,
-    })),
-    summary: {
-      errors: diags.filter(d => d.severity === 'error').length,
-      warnings: diags.filter(d => d.severity === 'warning').length,
+export function renderJson(file: string, diagnostics: Diagnostic[]): string {
+  return JSON.stringify(
+    {
+      file,
+      diagnostics: diagnostics.map((diagnostic) => ({
+        code: diagnostic.code,
+        severity: diagnostic.severity,
+        span: {
+          file,
+          line: diagnostic.span.line,
+          col: diagnostic.span.col,
+          len: diagnostic.span.len,
+        },
+        message: diagnostic.message,
+        note: diagnostic.note ?? null,
+        help: diagnostic.help ?? null,
+        fix: diagnostic.fix ?? null,
+      })),
+      summary: {
+        errors: diagnostics.filter((diagnostic) => diagnostic.severity === "error").length,
+        warnings: diagnostics.filter((diagnostic) => diagnostic.severity === "warning").length,
+      },
     },
-  }, null, 2);
+    null,
+    2,
+  );
 }

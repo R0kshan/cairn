@@ -1,81 +1,199 @@
-/**
- * Hand-written tokenizer for the cairn DSL.
- *
- * Turns source text into a flat token stream for parse.ts. Newlines are real
- * tokens that the parser uses to recover on error. Style entries may share a
- * line (`fill: #a  stroke: #b`) or span multiple. One deliberate quirk: `#`
- * starts a comment UNLESS it is immediately followed by 3–8 hex digits and a
- * word boundary, in which case it is a COLOR literal (e.g. `#1f77b4`).
- */
+import type { Span, Diagnostic } from "./model.ts";
 
-import type { Span, Diagnostic } from './model.ts';
+export type TokenKind =
+  | "id"
+  | "str"
+  | "num"
+  | "color"
+  | "arrow"
+  | "colon"
+  | "lbrace"
+  | "rbrace"
+  | "lbrack"
+  | "rbrack"
+  | "lparen"
+  | "rparen"
+  | "comma"
+  | "nl"
+  | "eof";
+export interface Token {
+  kind: TokenKind;
+  text: string;
+  span: Span;
+}
 
-export type TokKind = 'id' | 'str' | 'num' | 'color' | 'arrow' | 'colon' | 'lbrace' | 'rbrace' | 'lbrack' | 'rbrack' | 'lparen' | 'rparen' | 'comma' | 'nl' | 'eof';
-export interface Tok { kind: TokKind; text: string; span: Span; }
+const HEX_PATTERN = /^[0-9a-fA-F]{3,8}$/;
+const isIdChar = (char: string) => /[A-Za-z0-9_\-/.]/.test(char);
 
-const HEX = /^[0-9a-fA-F]{3,8}$/;
-const isIdChar = (c: string) => /[A-Za-z0-9_\-/.]/.test(c); // '/' and '.' allowed for protocols like TCP/443, v1.2
+export function lex(src: string, diagnostics: Diagnostic[]): Token[] {
+  const tokens: Token[] = [];
+  let position = 0,
+    line = 1,
+    col = 1;
+  const push = (kind: TokenKind, text: string, lineNumber: number, colNumber: number) =>
+    tokens.push({
+      kind,
+      text,
+      span: {
+        line: lineNumber,
+        col: colNumber,
+        len: Math.max(text.length, 1),
+      },
+    });
 
-export function lex(src: string, diags: Diagnostic[]): Tok[] {
-  const toks: Tok[] = [];
-  let i = 0, line = 1, col = 1;
-  const push = (kind: TokKind, text: string, l: number, c: number) =>
-    toks.push({ kind, text, span: { line: l, col: c, len: Math.max(text.length, 1) } });
-
-  while (i < src.length) {
-    const c = src[i];
-    if (c === '\n') { push('nl', '\n', line, col); i++; line++; col = 1; continue; }
-    if (c === ' ' || c === '\t' || c === '\r') { i++; col++; continue; }
-
-    if (c === '#') {
-      // color or comment?
-      let j = i + 1;
-      while (j < src.length && isIdChar(src[j])) j++;
-      const word = src.slice(i + 1, j);
-      if (HEX.test(word)) {
-        push('color', '#' + word, line, col);
-        col += word.length + 1; i = j; continue;
-      }
-      while (i < src.length && src[i] !== '\n') { i++; col++; } // comment to EOL
+  while (position < src.length) {
+    const char = src[position];
+    if (char === "\n") {
+      push("nl", "\n", line, col);
+      position++;
+      line++;
+      col = 1;
       continue;
     }
-    if (c === '"') {
-      const l = line, cl = col;
-      let out = '', j = i + 1; col++;
-      while (j < src.length && src[j] !== '"') {
-        if (src[j] === '\\' && src[j + 1] === 'n') { out += '\n'; j += 2; col += 2; }
-        else if (src[j] === '\\' && src[j + 1] === '"') { out += '"'; j += 2; col += 2; }
-        else if (src[j] === '\n') { break; }
-        else { out += src[j]; j++; col++; }
-      }
-      if (src[j] !== '"') {
-        diags.push({ code: 'E0101', severity: 'error', message: 'unterminated string', span: { line: l, col: cl, len: j - i }, help: 'add the closing `"` quote' });
-      }
-      push('str', out, l, cl);
-      toks[toks.length - 1].span.len = j - i + 1;
-      i = j + 1; col++; continue;
+    if (char === " " || char === "\t" || char === "\r") {
+      position++;
+      col++;
+      continue;
     }
-    if (c === '-' && src[i + 1] === '>') { push('arrow', '->', line, col); i += 2; col += 2; continue; }
-    if (c === ':') { push('colon', ':', line, col); i++; col++; continue; }
-    if (c === '{') { push('lbrace', '{', line, col); i++; col++; continue; }
-    if (c === '}') { push('rbrace', '}', line, col); i++; col++; continue; }
-    if (c === '[') { push('lbrack', '[', line, col); i++; col++; continue; }
-    if (c === ']') { push('rbrack', ']', line, col); i++; col++; continue; }
-    if (c === '(') { push('lparen', '(', line, col); i++; col++; continue; }
-    if (c === ')') { push('rparen', ')', line, col); i++; col++; continue; }
-    if (c === ',') { push('comma', ',', line, col); i++; col++; continue; }
 
-    if (/[0-9]/.test(c) || (c === '.' && /[0-9]/.test(src[i + 1] ?? ''))) {
-      let j = i; while (j < src.length && /[0-9.]/.test(src[j])) j++;
-      push('num', src.slice(i, j), line, col); col += j - i; i = j; continue;
+    if (char === "#") {
+      let scanIndex = position + 1;
+      while (scanIndex < src.length && isIdChar(src[scanIndex])) scanIndex++;
+      const word = src.slice(position + 1, scanIndex);
+      if (HEX_PATTERN.test(word)) {
+        push("color", "#" + word, line, col);
+        col += word.length + 1;
+        position = scanIndex;
+        continue;
+      }
+      while (position < src.length && src[position] !== "\n") {
+        position++;
+        col++;
+      }
+      continue;
     }
-    if (isIdChar(c)) {
-      let j = i; while (j < src.length && isIdChar(src[j])) j++;
-      push('id', src.slice(i, j), line, col); col += j - i; i = j; continue;
+    if (char === '"') {
+      const startLine = line,
+        startCol = col;
+      let unescaped = "",
+        scanIndex = position + 1;
+      col++;
+      while (scanIndex < src.length && src[scanIndex] !== '"') {
+        if (src[scanIndex] === "\\" && src[scanIndex + 1] === "n") {
+          unescaped += "\n";
+          scanIndex += 2;
+          col += 2;
+        } else if (src[scanIndex] === "\\" && src[scanIndex + 1] === '"') {
+          unescaped += '"';
+          scanIndex += 2;
+          col += 2;
+        } else if (src[scanIndex] === "\n") {
+          break;
+        } else {
+          unescaped += src[scanIndex];
+          scanIndex++;
+          col++;
+        }
+      }
+      if (src[scanIndex] !== '"') {
+        diagnostics.push({
+          code: "E0101",
+          severity: "error",
+          message: "unterminated string",
+          span: {
+            line: startLine,
+            col: startCol,
+            len: scanIndex - position,
+          },
+          help: 'add the closing `"` quote',
+        });
+      }
+      push("str", unescaped, startLine, startCol);
+      tokens[tokens.length - 1].span.len = scanIndex - position + 1;
+      position = scanIndex + 1;
+      col++;
+      continue;
     }
-    diags.push({ code: 'E0101', severity: 'error', message: `unexpected character \`${c}\``, span: { line, col, len: 1 } });
-    i++; col++;
+    if (char === "-" && src[position + 1] === ">") {
+      push("arrow", "->", line, col);
+      position += 2;
+      col += 2;
+      continue;
+    }
+    if (char === ":") {
+      push("colon", ":", line, col);
+      position++;
+      col++;
+      continue;
+    }
+    if (char === "{") {
+      push("lbrace", "{", line, col);
+      position++;
+      col++;
+      continue;
+    }
+    if (char === "}") {
+      push("rbrace", "}", line, col);
+      position++;
+      col++;
+      continue;
+    }
+    if (char === "[") {
+      push("lbrack", "[", line, col);
+      position++;
+      col++;
+      continue;
+    }
+    if (char === "]") {
+      push("rbrack", "]", line, col);
+      position++;
+      col++;
+      continue;
+    }
+    if (char === "(") {
+      push("lparen", "(", line, col);
+      position++;
+      col++;
+      continue;
+    }
+    if (char === ")") {
+      push("rparen", ")", line, col);
+      position++;
+      col++;
+      continue;
+    }
+    if (char === ",") {
+      push("comma", ",", line, col);
+      position++;
+      col++;
+      continue;
+    }
+
+    if (/[0-9]/.test(char) || (char === "." && /[0-9]/.test(src[position + 1] ?? ""))) {
+      let scanIndex = position;
+      while (scanIndex < src.length && /[0-9.]/.test(src[scanIndex])) scanIndex++;
+      push("num", src.slice(position, scanIndex), line, col);
+      col += scanIndex - position;
+      position = scanIndex;
+      continue;
+    }
+    if (isIdChar(char)) {
+      let scanIndex = position;
+      while (scanIndex < src.length && isIdChar(src[scanIndex])) scanIndex++;
+      push("id", src.slice(position, scanIndex), line, col);
+      col += scanIndex - position;
+      position = scanIndex;
+      continue;
+    }
+    diagnostics.push({
+      code: "E0101",
+      severity: "error",
+      message: `unexpected character \`${char}\``,
+      span: { line, col, len: 1 },
+    });
+    position++;
+    col++;
   }
-  push('eof', '', line, col);
-  return toks;
+  push("eof", "", line, col);
+  return tokens;
 }
