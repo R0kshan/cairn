@@ -1,7 +1,7 @@
 No.,Source,Destination,Protocol,Port,Flow
 1,User workstations,WAF (DMZ),HTTPS,443,
 2,WAF (DMZ),Gateway (Application zone),HTTPS,443,
-3,Gateway (Application zone),OAuth2 proxy (Application zone),HTTPS,8443,
+3,Gateway (Application zone),OAuth2 proxy (Application zone),HTTP,80,
 4,OAuth2 proxy (Application zone),LDAP / IdP (Application zone),LDAPS,636,
 5,Gateway (Application zone),Billing (Application zone),HTTPS,8443,
 6,Gateway (Application zone),CRM (Application zone),HTTPS,8444,
