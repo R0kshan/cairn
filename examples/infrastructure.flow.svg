@@ -24,8 +24,8 @@
 <text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
 <text x="55" y="133" font-size="11" text-anchor="start" fill="#444">Gateway (Application zone)</text>
 <text x="285" y="133" font-size="11" text-anchor="start" fill="#444">OAuth2 proxy (Application zone)</text>
-<text x="515" y="133" font-size="11" text-anchor="start" fill="#444">HTTPS</text>
-<text x="606.5" y="133" font-size="11" text-anchor="middle" fill="#444">8443</text>
+<text x="515" y="133" font-size="11" text-anchor="start" fill="#444">HTTP</text>
+<text x="606.5" y="133" font-size="11" text-anchor="middle" fill="#444">80</text>
 <text x="642" y="133" font-size="11" text-anchor="start" fill="#444"></text>
 <rect x="0" y="142" width="683" height="26" fill="#ddd" opacity="0.18"/>
 <text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>

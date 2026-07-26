@@ -3,7 +3,7 @@
  *
  * Both stages must agree on how big a label is: layout reserves the space,
  * render draws into it. They agree because size is arithmetic, never a real
- * font — width ≈ charCount × fontSize × 0.56. Using no system-font lookup means
+ * font — width ≈ charCount × fontSize × 0.52. Using no system-font lookup means
  * the same input measures identically on every OS, which is what keeps the SVG
  * output byte-for-byte deterministic across platforms.
  */
@@ -24,7 +24,7 @@ export const fontSizes = (base: number) => {
     band: 10 * scale, bandTitle: 11 * scale, chipH: 19 * scale,
   };
 };
-export const CW = 0.56;
+export const CW = 0.52;
 
 export const measure = (text: string, fs: number) => {
   const lines = text.split('\n');
