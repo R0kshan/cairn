@@ -33,6 +33,7 @@ Invariants detailed in `CLAUDE.md`. In short:
 - **Nesting rules are enforced per view (E0210–E0218)** — layout partitions depend on correct parentage.
 - **Duplicate IDs are rejected (E0202)** — flat ID space; every element must be uniquely referenceable.
 - **Dangling flow references are rejected (E0220)** — an edge to nowhere breaks the diagram.
+- **All user text is escaped before SVG emission (`esc()`/`escAttr()`)** — user-supplied names, labels, protocols, and style values must never appear raw in SVG output.
 
 ## Commands — when to run what
 
