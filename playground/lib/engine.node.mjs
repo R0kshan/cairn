@@ -94490,7 +94490,7 @@ function render(model, view, scene) {
       const tech = techText(flow.tech);
       const chipsW = (flow.objects ?? []).reduce((sum, o) => sum + chipW(objectName.get(o.id) ?? o.id, annot.scale) + 4, 0);
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
-      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * CW)));
+      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * 0.52)));
       const raw = (flow.label ?? "") + (tech ? "  " + tech : "");
       const lines = raw.split("\n").flatMap((segment) => wrapText(segment, maxChars).split("\n"));
       return { flow, lines };
@@ -94511,7 +94511,7 @@ function render(model, view, scene) {
       });
       if (entry.flow.objects?.length) {
         const last = entry.lines[entry.lines.length - 1] ?? "";
-        let cx = x + BADGE + Math.ceil(last.length * scaled(10) * CW) + 6;
+        let cx = x + BADGE + Math.ceil(last.length * scaled(10) * 0.52) + 6;
         const cy = y + 1 + (entry.lines.length - 1) * LINE_H;
         for (const o of entry.flow.objects) {
           const c = chip(cx, cy, objectName.get(o.id) ?? o.id);
@@ -94554,7 +94554,7 @@ function render(model, view, scene) {
       const name = legendNames[kind];
       bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>
 `;
-      lx += scaled(40) + Math.ceil(name.length * scaled(10) * CW) + scaled(24);
+      lx += scaled(40) + Math.ceil(name.length * scaled(10) * 0.52) + scaled(24);
       if (lx > scene.width - 220) {
         lx = contentX;
         bandY += scaled(22);
