@@ -24,7 +24,7 @@ export const fontSizes = (base: number) => {
     band: 10 * scale, bandTitle: 11 * scale, chipH: 19 * scale,
   };
 };
-export const CW = 0.52;
+export const CW = 0.56;
 
 export const measure = (text: string, fs: number) => {
   const lines = text.split('\n');
