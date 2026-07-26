@@ -12,7 +12,8 @@ This skill only documents things those two files don't cover.
 - All code documentation must be clear, concise, and accurate and in TSDoc. Do NOT paraphrase the code, the code must be self-explanatory.
 
 ## Step 3 - Check for regressions
-Follow instructions in `CONTRIBUTING.md` to run the test suite and snapshot checks. If any snapshot gate fails, follow the step-by-step instructions to determine if the change is intended or a regression.
+- Follow instructions in `CONTRIBUTING.md` to run the test suite and snapshot checks. If any snapshot gate fails, follow the step-by-step instructions to determine if the change is intended or a regression.
+- If there's a regression, fix it, than redo step 2. If there's no regression or the change is intended, updapte examples, snapshots and tests according to instructions in CONTRIBUTING.md, then proceed to step 4.
 
 ## Step 4 - Rebuild the playground 
 Follow the instructions in `CONTRIBUTING.md` to rebuild the playground.
