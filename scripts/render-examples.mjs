@@ -1,4 +1,4 @@
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { readdirSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -38,7 +38,7 @@ for (const flow of flowFiles) {
     continue;
   }
   const fmt = flow.split('.').pop();
-  execSync(`${cairn} matrix "${src}" --format ${fmt} -o "${join(root, 'examples', flow)}"`, { cwd: root });
+  execFileSync('node', ['--experimental-strip-types', 'src/cli.ts', 'matrix', src, '--format', fmt, '-o', join(root, 'examples', flow)], { cwd: root });
   m++;
 }
 console.log(`  ✓ ${m} matrix files`);
