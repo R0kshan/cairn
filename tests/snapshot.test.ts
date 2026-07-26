@@ -1,29 +1,20 @@
-// Non-regression snapshot gate.
-//
-// The idea: a real regression is a change to output that WASN'T supposed to
-// change. CI can't infer intent, so we encode it: the committed snapshots below
-// are the "known-good" render of a curated canary set. On every run we rebuild
-// them and diff. An unintended change => the diff fails the build. An INTENDED
-// change is acknowledged by regenerating and committing the snapshots in the
-// same PR (`npm run snapshots`) — so the diff is clean and CI passes. That
-// commit is the acknowledgement; without it, the gate fires.
-//
-// Why *normalized* snapshots (not raw byte diffs): the render is
-// byte-deterministic on a given machine, but one value in the diagram output
-// path comes from Math.hypot (numbered-flow label placement), which isn't
-// guaranteed identical to the last bit across OSes / Node versions. Rounding
-// every decimal to 1 dp erases that sub-pixel drift while still catching any
-// real change (>=0.1px move, colour, text, or structural change). Integers are
-// pure round/ceil output and are left as-is. The matrix outputs (CSV/MD) are
-// plain text and need no normalization; the matrix SVG goes through the same
-// float-normalizer as diagrams for the same reason.
-//
-// Three things are snapshotted here, each guarding a distinct code path:
-//   1. CANARIES     — diagram rendering (parse -> validate -> layout -> render)
-//   2. THEMES        — one snapshot per built-in theme/palette
-//   3. MATRIX        — the infrastructure flow-matrix exporters (csv/md/svg)
-//
-// Regenerate after an intended change:  npm run snapshots
+/**
+ * Non-regression snapshot gate.
+ *
+ * Committed snapshots are the "known-good" render of a curated canary set. On
+ * every run we rebuild them and diff. An unintended change fails the build; an
+ * INTENDED change is acknowledged by regenerating and committing (`npm run
+ * snapshots`).
+ *
+ * Snapshots are *normalized* (1dp) because one value in the output path comes
+ * from Math.hypot, which isn't bit-identical across OSes / Node versions.
+ * Rounding to 1dp erases sub-pixel drift while catching any real change.
+ *
+ * Three paths are guarded:
+ *   1. CANARIES — diagram rendering (parse → validate → layout → render)
+ *   2. THEMES — one snapshot per built-in theme
+ *   3. MATRIX — infrastructure flow-matrix exporters (csv/md/svg)
+ */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -43,11 +34,8 @@ const SNAP = join(HERE, '__snapshots__');
 const UPDATE = !!process.env.UPDATE_SNAPSHOTS;
 
 // Curated canary set — deliberately small so an intended change produces a
-// reviewable diff, not 60 noisy ones. Covers each view at large/dense scale in
-// BOTH languages (the highest-surface-area case per view: most nodes, most
-// edges, most labels, and — for fr — the full localized chrome), plus the
-// reroute-heavy numbered case and custom per-element colours. A regression in
-// layout, rendering, OR i18n shows up in at least one snapshot.
+// reviewable diff. Covers each view at large/dense scale in both languages,
+// plus the reroute-heavy numbered case and custom per-element colours.
 const CANARIES = [
   'logical.cairn',                  // logical view, canonical (small) example
   'large.cairn',                    // logical view, large — en
@@ -61,21 +49,20 @@ const CANARIES = [
   'infrastructure-fr.cairn',        // lang: fr on a smaller diagram
 ];
 
-// One example per built-in theme (examples/themes/*.cairn) — guards every
-// palette (fills, strokes, text colours) against an accidental shared-code
-// change that only shows up on non-default themes.
+// One example per built-in theme — guards every palette against shared-code changes that only show up on non-default themes.
 const THEMES = [
   'classic', 'classic-dark', 'contrast', 'dark',
   'light', 'nord', 'sand', 'slate', 'solarized',
 ];
 
+// Read a file and normalize line endings.
 const load = (dir: string, f: string) => readFileSync(join(dir, f), 'utf8').replace(/\r\n/g, '\n');
 
-// Round every decimal to 1 dp; leave integers untouched. Stable across
-// platforms; still sensitive to any change a human would call a regression.
+// Round every decimal to 1dp; leave integers untouched. Absorbs cross-platform Math.hypot drift.
 const normalize = (svg: string): string =>
   svg.replace(/-?\d+\.\d+/g, (m) => (Math.round(parseFloat(m) * 10) / 10).toString());
 
+// Parse and validate a source string. Asserts zero errors as a snapshot precondition.
 const parseAndValidate = (src: string) => {
   const { model, diags } = parse(src);
   diags.push(...validate(model));
@@ -86,6 +73,7 @@ const parseAndValidate = (src: string) => {
   return model;
 };
 
+// Build a `.cairn` file through the full pipeline (parse → validate → layout → render), returning the SVG string.
 const buildSvg = async (dir: string, file: string): Promise<string> => {
   const model = parseAndValidate(load(dir, file));
   const view = views[model.type!];
@@ -93,7 +81,7 @@ const buildSvg = async (dir: string, file: string): Promise<string> => {
   return render(model, view, scene).svg;
 };
 
-// Shared assert-or-record logic for every snapshot kind below.
+// Assert that `actual` matches the committed snapshot, or write it if `UPDATE_SNAPSHOTS` is set or the file doesn't exist yet.
 function snapshotAssert(name: string, actual: string) {
   const path = join(SNAP, name);
   if (UPDATE || !existsSync(path)) {

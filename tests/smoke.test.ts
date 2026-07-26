@@ -1,5 +1,4 @@
-// Smoke suite: freezes the behaviors the project's non-negotiables depend on.
-// Run: npm test  (node --experimental-strip-types --test tests/)
+/** Smoke suite: freezes the behaviours the project's non-negotiables depend on. Run via `npm test`. */
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,14 +13,15 @@ import { matrixCsv, matrixMd, matrixSvg } from '../src/flow-matrix.ts';
 import { views } from '../src/model.ts';
 
 const EX = join(dirname(fileURLToPath(import.meta.url)), '..', 'examples');
-// Normalize to LF: tests inject style via `.replace('"\n', …)`, which a CRLF
-// checkout (Windows) would silently defeat. Keeps the suite line-ending-agnostic.
+// Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.
 const load = (f: string) => readFileSync(join(EX, f), 'utf8').replace(/\r\n/g, '\n');
+// Parse and validate `src`, returning the model, diagnostics, and diagnostic codes.
 const check = (src: string) => {
   const { model, diags } = parse(src);
   diags.push(...validate(model));
   return { model, diags, codes: diags.map(d => d.code) };
 };
+// Build `src` through the full pipeline: parse → validate → layout → render. Asserts zero errors as a precondition.
 const build = async (src: string) => {
   const { model, diags } = check(src);
   assert.equal(diags.filter(d => d.severity === 'error').length, 0, 'build precondition: no errors');

@@ -1,23 +1,20 @@
-// Shared corpus tooling for the full-corpus regression gate.
-//
-// Every buildable example is reduced to a one-line "digest" that splits its
-// rendered output into three independent fingerprints:
-//
-//   geom  — the shape: all coordinates, sizes, path data, structure
-//   color — the palette: every fill / stroke / stop-color value
-//   text  — the words: the content of every <text> element
-//
-// plus scalars (node/edge/overlap counts, dimensions). The whole corpus lives
-// in ONE committed file (tests/__snapshots__/corpus.digest), so a change shows
-// up as a small, readable diff instead of dozens of regenerated SVGs — and,
-// crucially, `snapshots:report` can tell you WHICH fingerprint moved:
-//
-//   • only `color` changed  → almost always an intended theme/palette edit
-//   • `geom` changed        → a layout shift — the dangerous kind, review it
-//   • only `text` changed   → a label / i18n edit
-//
-// That geom-vs-color split is the whole point: it makes "is this my feature or a
-// regression?" answerable at a glance.
+/**
+ * Shared corpus tooling for the full-corpus regression gate.
+ *
+ * Every buildable example is reduced to a one-line "digest" that splits its
+ * rendered output into three independent fingerprints:
+ *
+ *   `geom`  — coordinates, sizes, path data, structure
+ *   `color` — every fill / stroke / stop-color value
+ *   `text`  — the content of every `<text>` element
+ *
+ * plus scalars (node/edge/overlap counts, dimensions). The whole corpus lives
+ * in ONE committed file (`tests/__snapshots__/corpus.digest`), so a change
+ * shows up as a small, readable diff.
+ *
+ * The geom-vs-color split answers "is this my feature or a regression?" at a
+ * glance: colour-only means a theme edit; geometry means a layout shift.
+ */
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { createHash } from 'node:crypto';
@@ -34,8 +31,7 @@ export const ROOT = join(HERE, '..');
 export const EXAMPLES_DIR = join(ROOT, 'examples');
 export const DIGEST_PATH = join(HERE, '__snapshots__', 'corpus.digest');
 
-// Every example we can build (each subdir + the top level), minus the
-// deliberately-broken fixtures. Sorted for a stable digest order.
+/** All buildable examples, minus deliberately-broken fixtures, sorted for a stable digest order. */
 export function corpusFiles(): string[] {
   const dirs = [EXAMPLES_DIR, join(EXAMPLES_DIR, 'dispositions'), join(EXAMPLES_DIR, 'themes')];
   const out: string[] = [];
@@ -48,43 +44,49 @@ export function corpusFiles(): string[] {
   return out.sort((a, b) => relName(a).localeCompare(relName(b)));
 }
 
-// Path relative to examples/ (e.g. "themes/nord.cairn") — the digest key.
+/** Path relative to `examples/` (e.g. `"themes/nord.cairn"`) — the digest key. */
 export const relName = (file: string): string =>
   file.slice(EXAMPLES_DIR.length + 1).replace(/\\/g, '/');
 
 const h = (s: string): string => createHash('sha1').update(s).digest('hex').slice(0, 12);
 
-// Round every decimal to 1dp — absorbs the one cross-platform wobble
-// (Math.hypot in numbered-flow label placement) so the digest is stable across
-// OSes / Node versions. Integers (the bulk of the output) are untouched.
+/**
+ * Round every decimal to 1dp — absorbs the one cross-platform wobble
+ * (Math.hypot in numbered-flow label placement) so the digest is stable across
+ * OSes / Node versions. Integers (the bulk of the output) are untouched.
+ */
 export const normalize = (svg: string): string =>
   svg.replace(/-?\d+\.\d+/g, (m) => (Math.round(parseFloat(m) * 10) / 10).toString());
 
-// geom fingerprint: the normalized SVG with colour values and text content
-// blanked out — i.e. everything positional/structural, nothing else.
+// Geom fingerprint: the normalized SVG with colour values and text content blanked out — everything positional/structural, nothing else.
 const geomHash = (svg: string): string =>
   h(normalize(svg)
     .replace(/(fill|stroke|stop-color|color)="[^"]*"/g, '$1=""')
     .replace(/>[^<]*</g, '><'));
 
-// colour fingerprint: the sorted set of every colour value emitted.
+// Colour fingerprint: the sorted set of every colour value emitted.
 const colorHash = (svg: string): string => {
   const colors = [...svg.matchAll(/(?:fill|stroke|stop-color|color)="([^"]*)"/g)].map((m) => m[1]);
   return h(colors.sort().join('\n'));
 };
 
-// text fingerprint: the content of every <text> element, in document order.
+// Text fingerprint: the content of every `<text>` element, in document order.
 const textHash = (svg: string): string => {
   const texts = [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1]);
   return h(texts.join(''));
 };
 
+/**
+ * Per-example digest: name, the three fingerprints, structural scalars, and the
+ * full SVG (kept in-memory for the fidelity README-SVG check; not serialized).
+ */
 export interface Digest {
   name: string; geom: string; color: string; text: string;
   n: number; e: number; ov: number; dim: string;
-  svg: string; // kept in-memory for the fidelity (README-SVG) check; not serialized
+  svg: string;
 }
 
+/** Parse, validate, layout, and render a single `.cairn` file, returning its digest. */
 export async function digestOf(file: string): Promise<Digest> {
   const src = readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
   const { model, diags } = parse(src);
@@ -103,21 +105,23 @@ export async function digestOf(file: string): Promise<Digest> {
   };
 }
 
+/** Compute digests for every buildable example in parallel. */
 export async function computeCorpus(): Promise<Digest[]> {
   return Promise.all(corpusFiles().map(digestOf));
 }
 
-// One line per example. Human-skimmable, greppable, and a small git diff.
+// One line per digest — human-skimmable, greppable, and a small git diff.
 const line = (d: Digest): string =>
   `${d.name}  dim:${d.dim} n:${d.n} e:${d.e} ov:${d.ov}  geom:${d.geom} color:${d.color} text:${d.text}`;
 
+/** Serialize an array of digests into the digest file format. */
 export const serialize = (ds: Digest[]): string =>
   ds.map(line).sort().join('\n') + '\n';
 
-// ---- change categorization (used by the test message and snapshots:report) ----
-
+/** A single row parsed back from the digest format — used for change categorization. */
 export interface Row { dim: string; n: string; e: string; ov: string; geom: string; color: string; text: string; }
 
+/** Parse the committed digest file back into a name→Row map for comparison with current output. */
 export function parseDigest(text: string): Map<string, Row> {
   const rows = new Map<string, Row>();
   for (const l of text.split('\n')) {
@@ -130,13 +134,16 @@ export function parseDigest(text: string): Map<string, Row> {
 const rowOf = (d: Digest): Row =>
   ({ dim: d.dim, n: String(d.n), e: String(d.e), ov: String(d.ov), geom: d.geom, color: d.color, text: d.text });
 
+/**
+ * Result of comparing freshly-computed digests against the committed digest.
+ * Each bucket lists which examples changed in that dimension.
+ */
 export interface Categorized {
   geometry: string[]; colour: string[]; text: string[]; scalars: string[];
   added: string[]; removed: string[]; unchanged: number; changed: number;
 }
 
-// Compare freshly-computed digests against the committed digest and bucket every
-// change by WHAT moved. Geometry is called out first: it's the risky kind.
+/** Compare fresh digests against the committed digest and bucket every change by WHAT moved. Geometry is called out first — it's the risky kind. */
 export function categorize(committed: Map<string, Row>, current: Digest[]): Categorized {
   const c: Categorized = { geometry: [], colour: [], text: [], scalars: [], added: [], removed: [], unchanged: 0, changed: 0 };
   const seen = new Set<string>();
@@ -158,7 +165,7 @@ export function categorize(committed: Map<string, Row>, current: Digest[]): Cate
   return c;
 }
 
-// Pretty, grouped report — shared by the failing test and snapshots:report.
+/** Pretty grouped report — shared by the failing test and `snapshots:report`. */
 export function formatReport(cat: Categorized): string {
   if (cat.changed === 0) return `✓ corpus unchanged (${cat.unchanged} examples)`;
   const L: string[] = [];
