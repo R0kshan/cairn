@@ -358,11 +358,23 @@ if (command === "validate") {
     console.error(`error: unknown view \`${type}\` (available: ${Object.keys(views).join(", ")})`);
     process.exit(2);
   }
-  if (existsSync(file)) {
-    console.error(`error: \`${file}\` already exists`);
+  // Create exclusively rather than checking-then-writing: the `wx` flag is
+  // O_CREAT|O_EXCL, so "does it exist?" and "create it" are one atomic syscall.
+  // A separate existsSync() left a TOCTOU window in which the path could be
+  // swapped between check and write — e.g. for a symlink pointing at a file the
+  // scaffold would then clobber (js/file-system-race, CWE-367).
+  try {
+    writeFileSync(file, TEMPLATES[type], { flag: "wx" });
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code === "EEXIST") {
+      console.error(`error: \`${file}\` already exists`);
+      process.exit(2);
+    }
+    console.error(
+      `error: cannot create \`${file}\`: ${error instanceof Error ? error.message : String(error)}`,
+    );
     process.exit(2);
   }
-  writeFileSync(file, TEMPLATES[type]);
   console.log(
     `\u2713 ${file} created (${type} view) — fill in the sections, then run \`cairn validate ${file}\``,
   );

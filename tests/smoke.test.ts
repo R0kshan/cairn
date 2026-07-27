@@ -2,7 +2,9 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "../src/parser.ts";
@@ -12,7 +14,8 @@ import { render } from "../src/svg-render.ts";
 import { matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
 
-const EX = join(dirname(fileURLToPath(import.meta.url)), "..", "examples");
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const EX = join(ROOT, "examples");
 // Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.
 const load = (f: string) => readFileSync(join(EX, f), "utf8").replace(/\r\n/g, "\n");
 // Parse and validate `src`, returning the model, diagnostics, and diagnostic codes.
@@ -593,6 +596,37 @@ test("gateway renders as a rounded rect with shield badge, overlaps 0", async ()
   );
   assert.equal(overlapsAfter, 0);
   assert.match(svg, /Q \d+ \d+ \d+ \d+/); // kite-shield bezier badge
+});
+
+test("cairn new: refuses to overwrite an existing file, and never clobbers it", () => {
+  // `new` creates with the `wx` flag (O_CREAT|O_EXCL), so "does it exist?" and
+  // "create it" are a single atomic syscall. The previous existsSync()-then-write
+  // left a TOCTOU window in which the path could be swapped between the two
+  // (js/file-system-race, CWE-367). User-visible contract is unchanged: refuse,
+  // explain, exit 2 — and, critically, leave the existing content untouched.
+  const dir = mkdtempSync(join(tmpdir(), "cairn-new-"));
+  try {
+    const target = join(dir, "scaffold.cairn");
+    const runNew = () =>
+      spawnSync(
+        process.execPath,
+        ["--experimental-strip-types", join(ROOT, "src", "cli.ts"), "new", "-L", target],
+        { encoding: "utf8" },
+      );
+
+    const first = runNew();
+    assert.equal(first.status, 0, first.stderr);
+    const scaffolded = readFileSync(target, "utf8");
+    assert.match(scaffolded, /^diagram logical /);
+
+    // Second run hits the pre-existing-file branch — the one that used to race.
+    const second = runNew();
+    assert.equal(second.status, 2, "must refuse with exit code 2");
+    assert.match(second.stderr, /already exists/);
+    assert.equal(readFileSync(target, "utf8"), scaffolded, "existing file must be left intact");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("auth renders with a lock icon badge (path + rect), overlaps 0", async () => {
