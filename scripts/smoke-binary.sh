@@ -10,12 +10,15 @@
 # and fails if any of it doesn't work.
 #
 # Usage:
-#   scripts/smoke-binary.sh                # compile the HOST target with Bun, then smoke it
-#   scripts/smoke-binary.sh <path-to-bin>  # smoke an ALREADY-built binary (used by the release job)
+#   scripts/smoke-binary.sh                          # compile the HOST target with Bun, then smoke it
+#   scripts/smoke-binary.sh <path-to-bin>             # smoke an ALREADY-built binary (used by the release job)
+#   scripts/smoke-binary.sh <path-to-bin> <version>   # also assert `<bin> version` reports exactly this
+#                                                      # (the release job passes the tag here — see release.yml)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 BIN="${1:-}"
+EXPECTED_VERSION="${2:-}"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 if [ -z "$BIN" ]; then
@@ -45,4 +48,12 @@ head -c 5 "$TMP/out.svg" | grep -q "<svg" || fail "build output is not an SVG"
 # 3) explain — exercises the diagnostics table
 "$BIN" explain E0203 >/dev/null || fail "explain exited non-zero"
 
-echo "✓ binary smoke passed — layout, render, matrix, and explain all work in the compiled binary"
+# 4) version — for a released binary this MUST report the tag it was built from
+#    (CAIRN_BUILD_VERSION, baked in via `bun build --define`), not package.json.
+#    Skipped when no expected version is given (plain local compiles, `npm run test:binary`).
+if [ -n "$EXPECTED_VERSION" ]; then
+  reported="$("$BIN" version)"
+  [ "$reported" = "cairn v$EXPECTED_VERSION" ] || fail "version mismatch: binary reported '$reported', expected 'cairn v$EXPECTED_VERSION'"
+fi
+
+echo "✓ binary smoke passed — layout, render, matrix, explain$([ -n "$EXPECTED_VERSION" ] && echo ", and version") all work in the compiled binary"

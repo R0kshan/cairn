@@ -62,7 +62,10 @@ npm run cairn -- <cmd> <file>
 ```
 
 CLI verbs: `validate` (`--format json`, `--strict`) · `build` (`-o`) · `matrix`
-(`--format csv|md|svg`) · `watch` · `new` (`-L|-A|-I|-S`) · `explain <code>`.
+(`--format csv|md|svg`) · `watch` · `new` (`-L|-A|-I|-S`) · `explain <code>` ·
+`version`/`--version`/`-v` (prints `package.json`'s version under plain Node;
+release binaries instead print the exact tag they were built from — see
+`CAIRN_BUILD_VERSION` in `cli.ts` and `scripts/build-binaries.sh`).
 
 `npm test` is Node-only — it can't prove the **bun-compiled binary** or the
 **esbuild playground bundle** work; CI does both, and the release job smoke-runs

@@ -1,4 +1,9 @@
-/** Smoke suite: freezes the behaviours the project's non-negotiables depend on. Run via `npm test`. */
+/**
+ * Behavior suite: direct, deep assertions on parsing, validation, layout, rendering,
+ * matrix export, i18n, theming, and CLI behavior — including exact SVG geometry,
+ * diagnostic codes and determinism. 
+ * Run via `npm test`.
+ */
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -417,7 +422,7 @@ test("matrix respects lang: fr headers; md + svg render", () => {
 
 // ---------- security ----------
 
-test("security: a font family cannot break out of the SVG attribute (XSS)", async () => {
+test("security: a font family cannot break out of the SVG attribute", async () => {
   // A quote in the (user-controlled) font family must be escaped, else it could
   // close the font-family="…" attribute and inject e.g. an onload handler that
   // fires when the SVG is opened standalone.
@@ -429,7 +434,7 @@ test("security: a font family cannot break out of the SVG attribute (XSS)", asyn
   assert.match(svg, /font-family="x&quot; onload=&quot;alert\(1\)/);
 });
 
-test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XSS)", async () => {
+test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped", async () => {
   // Per-element style values (fill, stroke, text) on the new element kinds must
   // be passed through escAttr() so a quote in a user-supplied colour does not
   // break out of the SVG attribute — even though these values normally look like
@@ -443,7 +448,7 @@ test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XS
   assert.equal(svg.includes("onload="), false, "no unescaped attribute injection");
 });
 
-test("security: a background colour cannot break out of the matrix SVG attribute (XSS)", () => {
+test("security: a background colour cannot break out of the matrix SVG attribute", () => {
   // The flow-matrix exporter interpolates `style.background` into a fill="…"
   // attribute. The DSL only admits a #hex colour token there, but the playground
   // and the /api/svg handler set style fields programmatically, so the exporter
@@ -626,6 +631,24 @@ test("cairn new: refuses to overwrite an existing file, and never clobbers it", 
     assert.equal(readFileSync(target, "utf8"), scaffolded, "existing file must be left intact");
   } finally {
     rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("cairn version / --version / -v all print package.json's version under plain Node", () => {
+  // Under plain Node, CAIRN_BUILD_VERSION is never defined (it's only injected by
+  // `bun build --define` — see scripts/build-binaries.sh), so all three forms must
+  // fall back to package.json's version. The "must match the release tag" half of
+  // this contract only exists in a bun-compiled binary and is covered instead by
+  // scripts/smoke-binary.sh, which can assert against the actual tag it was built with.
+  const pkgVersion = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).version;
+  for (const flag of ["version", "--version", "-v"]) {
+    const result = spawnSync(
+      process.execPath,
+      ["--experimental-strip-types", join(ROOT, "src", "cli.ts"), flag],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), `cairn v${pkgVersion}`);
   }
 });
 

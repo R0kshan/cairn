@@ -52,7 +52,9 @@ jobs:
 
       # Don't ship a binary that can't run: smoke the just-built linux binary
       # (the runner can execute it) through the full pipeline before publishing.
-      - run: bash scripts/smoke-binary.sh "dist/cairn-${GITHUB_REF_NAME#v}-linux-x64"
+      # The second arg makes the smoke test assert `cairn version` reports this
+      # exact tag — the whole point of CAIRN_BUILD_VERSION over package.json.
+      - run: bash scripts/smoke-binary.sh "dist/cairn-${GITHUB_REF_NAME#v}-linux-x64" "${GITHUB_REF_NAME#v}"
 
       # Cryptographic provenance: proves each binary was built by this workflow.
       # Verifiable with: gh attestation verify <binary> --repo R0kshan/cairn

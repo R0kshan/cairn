@@ -6,6 +6,7 @@
  */
 
 import ELKConstructor, { type ELK } from "elkjs/lib/elk.bundled.js";
+import pkg from "../package.json" with { type: "json" };
 import { setElkFactory } from "./elk-engine.ts";
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
@@ -58,4 +59,4 @@ export async function compile(
   };
 }
 
-export const version = "0.1.0";
+export const version = pkg.version;

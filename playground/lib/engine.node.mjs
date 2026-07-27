@@ -92081,6 +92081,44 @@ var require_elk_bundled = __commonJS({
 // src/playground.ts
 var import_elk_bundled = __toESM(require_elk_bundled(), 1);
 
+// package.json
+var package_default = {
+  name: "cairn",
+  version: "1.0.0-RC07",
+  description: "Architecture diagrams as code \u2014 typed views, semantic layout, overlap-free labels",
+  type: "module",
+  bin: {
+    cairn: "bin/cairn.js"
+  },
+  files: [
+    "bin/",
+    "src/",
+    "README.md",
+    "documentation/"
+  ],
+  scripts: {
+    cairn: "node --experimental-strip-types src/cli.ts",
+    test: 'node --experimental-strip-types --test "tests/*.test.ts"',
+    snapshots: "node --experimental-strip-types scripts/update-snapshots.mjs",
+    "build:binaries": "bash scripts/build-binaries.sh",
+    "build:playground": "bash scripts/build-playground.sh",
+    lint: "biome lint src tests",
+    format: "biome format --write src tests",
+    typecheck: "tsc --noEmit",
+    "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
+    "test:binary": "bash scripts/smoke-binary.sh",
+    examples: "node --experimental-strip-types scripts/render-examples.mjs"
+  },
+  dependencies: {
+    elkjs: "^0.12.0"
+  },
+  devDependencies: {
+    "@biomejs/biome": "^2.5.4",
+    "@types/node": "^26.1.1",
+    typescript: "^7.0.2"
+  }
+};
+
 // src/elk-engine.ts
 var factory = null;
 var instance = null;
@@ -92363,51 +92401,51 @@ var KIND_ROLE_MAP = {
 };
 var roleForKind = (kind, viewName) => viewName === "security" && kind === "external" ? "untrusted" : KIND_ROLE_MAP[kind] ?? "leaf";
 var buildTheme = (spec) => {
-  const p = spec.pal, h = spec.h;
+  const paletteSpec = spec.pal, accentColors = spec.accentColors;
   const palette = {
-    background: p.bg,
-    containerLabel: p.text,
-    containerFill: p.cFill,
-    containerStroke: p.cStroke,
-    nodeText: p.text,
-    nodeFill: p.nFill,
-    nodeStroke: p.nStroke,
-    actorStroke: p.aStroke,
-    actorText: p.aText,
-    edge: p.edge,
-    edgeLabel: p.sub,
-    techText: p.muted,
-    halo: p.halo,
-    bandTitle: p.sub,
-    bandText: p.text,
-    bandMuted: p.muted,
-    divider: p.div,
-    badgeFill: p.badge[0],
-    badgeStroke: p.badge[1],
-    chipFill: p.chip[0],
-    chipStroke: p.chip[1],
-    chipText: p.chip[2]
+    background: paletteSpec.bg,
+    containerLabel: paletteSpec.text,
+    containerFill: paletteSpec.cFill,
+    containerStroke: paletteSpec.cStroke,
+    nodeText: paletteSpec.text,
+    nodeFill: paletteSpec.nFill,
+    nodeStroke: paletteSpec.nStroke,
+    actorStroke: paletteSpec.aStroke,
+    actorText: paletteSpec.aText,
+    edge: paletteSpec.edge,
+    edgeLabel: paletteSpec.sub,
+    techText: paletteSpec.muted,
+    halo: paletteSpec.halo,
+    bandTitle: paletteSpec.sub,
+    bandText: paletteSpec.text,
+    bandMuted: paletteSpec.muted,
+    divider: paletteSpec.div,
+    badgeFill: paletteSpec.badge[0],
+    badgeStroke: paletteSpec.badge[1],
+    chipFill: paletteSpec.chip[0],
+    chipStroke: paletteSpec.chip[1],
+    chipText: paletteSpec.chip[2]
   };
   return {
     palette,
     roles: {
       actor: {},
-      actorGroup: containerStyle(h.blueF, h.blue, true),
-      system: containerStyle(h.amberF, h.amber),
-      application: containerStyle(h.appF, h.app),
-      layer: containerStyle(h.goldF, h.gold, false, 1),
-      external: containerStyle(h.violetF, h.violet, true),
-      untrusted: containerStyle(h.redF, h.red, true, 1.3),
-      leaf: leafStyle(h.leafF, h.leafS),
-      datastore: leafStyle(h.purpleF, h.purple),
-      site: containerStyle(h.siteF, h.siteS, false, 1.4),
-      networkZone: containerStyle(h.greenF, h.green, true),
-      server: containerStyle(h.serverF, h.serverS, false, 1.5),
-      appInstance: leafStyle(h.aiF, h.aiS, 1.2),
-      securityNode: leafStyle(h.nodeF, h.node, 1.6),
-      authGateway: leafStyle(h.authF, h.auth, 1.4),
-      auth: leafStyle(h.nodeF, h.node, 1.5),
-      identityProvider: leafStyle(h.idpF, h.idp)
+      actorGroup: containerStyle(accentColors.blueF, accentColors.blue, true),
+      system: containerStyle(accentColors.amberF, accentColors.amber),
+      application: containerStyle(accentColors.appF, accentColors.app),
+      layer: containerStyle(accentColors.goldF, accentColors.gold, false, 1),
+      external: containerStyle(accentColors.violetF, accentColors.violet, true),
+      untrusted: containerStyle(accentColors.redF, accentColors.red, true, 1.3),
+      leaf: leafStyle(accentColors.leafF, accentColors.leafS),
+      datastore: leafStyle(accentColors.purpleF, accentColors.purple),
+      site: containerStyle(accentColors.siteF, accentColors.siteS, false, 1.4),
+      networkZone: containerStyle(accentColors.greenF, accentColors.green, true),
+      server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
+      appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
+      securityNode: leafStyle(accentColors.nodeF, accentColors.node, 1.6),
+      authGateway: leafStyle(accentColors.authF, accentColors.auth, 1.4),
+      auth: leafStyle(accentColors.nodeF, accentColors.node, 1.5),
+      identityProvider: leafStyle(accentColors.idpF, accentColors.idp)
     },
     levels: {
       public: containerStyle(spec.lv.public[0], spec.lv.public[1], false, 1.4),
@@ -92436,7 +92474,7 @@ var themes = {
       chip: ["#fff2d4", "#d3a01f", "#6a5111"],
       badge: ["#ffffff", "#8a94a2"]
     },
-    h: {
+    accentColors: {
       blue: "#1f77b4",
       blueF: "#e9f2fb",
       amber: "#c17d1c",
@@ -92493,7 +92531,7 @@ var themes = {
       chip: ["#3a3320", "#b08d2a", "#e0c068"],
       badge: ["#252c37", "#5a6673"]
     },
-    h: {
+    accentColors: {
       blue: "#5aa9e6",
       blueF: "#233242",
       amber: "#e0a955",
@@ -92550,7 +92588,7 @@ var themes = {
       chip: ["#eaeef3", "#8595a8", "#48566a"],
       badge: ["#ffffff", "#93a0b0"]
     },
-    h: {
+    accentColors: {
       blue: "#3b6ea5",
       blueF: "#e8eff6",
       amber: "#5b7a99",
@@ -92607,7 +92645,7 @@ var themes = {
       chip: ["#f4e6c8", "#c19a3f", "#6b5417"],
       badge: ["#fffdf8", "#b3a488"]
     },
-    h: {
+    accentColors: {
       blue: "#3f7a8c",
       blueF: "#e6f0f1",
       amber: "#b07d2a",
@@ -92664,7 +92702,7 @@ var themes = {
       chip: ["#ffe9b0", "#8a6d00", "#3a2e00"],
       badge: ["#ffffff", "#333333"]
     },
-    h: {
+    accentColors: {
       blue: "#005a9c",
       blueF: "#e0edf7",
       amber: "#9a4a00",
@@ -92721,7 +92759,7 @@ var themes = {
       chip: ["#3b3a2a", "#ebcb8b", "#ebcb8b"],
       badge: ["#3b4252", "#4c566a"]
     },
-    h: {
+    accentColors: {
       blue: "#81a1c1",
       blueF: "#333b4a",
       amber: "#ebcb8b",
@@ -92778,7 +92816,7 @@ var themes = {
       chip: ["#f2e9c8", "#b58900", "#5c4a00"],
       badge: ["#fdf6e3", "#b3aa90"]
     },
-    h: {
+    accentColors: {
       blue: "#268bd2",
       blueF: "#e3edf3",
       amber: "#b58900",
@@ -92832,10 +92870,41 @@ function themeFor(name, view) {
       kinds: view.defaultsDark,
       levels: view.levelDefaultsDark ?? {}
     };
-  const t = themes[name] ?? themes.light;
+  const theme = themes[name] ?? themes.light;
   const kinds = {};
-  for (const k of view.kinds) kinds[k] = t.roles[roleForKind(k, view.name)] ?? {};
-  return { palette: t.palette, kinds, levels: t.levels };
+  for (const kind of view.kinds) kinds[kind] = theme.roles[roleForKind(kind, view.name)] ?? {};
+  return { palette: theme.palette, kinds, levels: theme.levels };
+}
+
+// src/element-tree.ts
+function subtreeIds(element) {
+  const ids = [];
+  const stack = [element];
+  while (stack.length) {
+    const node = stack.pop();
+    ids.push(node.id);
+    for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i]);
+  }
+  return ids;
+}
+function subtreeElements(element) {
+  const elements = [];
+  const stack = [element];
+  while (stack.length) {
+    const node = stack.pop();
+    elements.push(node);
+    for (let i = node.children.length - 1; i >= 0; i--) stack.push(node.children[i]);
+  }
+  return elements;
+}
+function indexElementsById(elements) {
+  const result = [];
+  for (const element of elements) {
+    for (const desc of subtreeElements(element)) {
+      result.push([desc.id, desc]);
+    }
+  }
+  return result;
 }
 
 // src/parser.ts
@@ -93139,15 +93208,9 @@ function parse(src) {
     parseStatement(null);
     skipNewlines();
   }
-  (function indexAll(elements) {
-    for (const element of elements) {
-      model.index.set(
-        element.id,
-        model.index.has(element.id) ? model.index.get(element.id) : element
-      );
-      indexAll(element.children);
-    }
-  })(model.elements);
+  for (const [id, element] of indexElementsById(model.elements)) {
+    if (!model.index.has(id)) model.index.set(id, element);
+  }
   return { model, diags: diagnostics };
 }
 var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
@@ -93950,7 +94013,7 @@ function validate(model) {
     ];
   }
   if (!view) return [];
-  const elements = flatten(model.elements);
+  const elements = model.elements.flatMap((element) => subtreeElements(element));
   return [
     ...checkDuplicateIds(elements),
     ...checkUnknownKinds(elements, view),
@@ -93964,31 +94027,23 @@ function validate(model) {
     ...checkIsolatedElements(model, view, elements)
   ];
 }
-function flatten(roots) {
-  const flattened = [];
-  (function collect(elements) {
-    for (const element of elements) {
-      flattened.push(element);
-      collect(element.children);
-    }
-  })(roots);
-  return flattened;
-}
 function checkDuplicateIds(elements) {
   const diagnostics = [];
   const firstSeen = /* @__PURE__ */ new Map();
   for (const element of elements) {
     const previous = firstSeen.get(element.id);
-    if (previous) {
-      diagnostics.push({
-        code: "E0202",
-        severity: "error",
-        message: `duplicate identifier \`${element.id}\``,
-        span: element.idSpan,
-        note: `already declared at line ${previous.idSpan.line}`,
-        help: `rename one of the two, e.g. \`${element.id}_2\` (decision D1: flat unique IDs)`
-      });
-    } else firstSeen.set(element.id, element);
+    if (!previous) {
+      firstSeen.set(element.id, element);
+      continue;
+    }
+    diagnostics.push({
+      code: "E0202",
+      severity: "error",
+      message: `duplicate identifier \`${element.id}\``,
+      span: element.idSpan,
+      note: `already declared at line ${previous.idSpan.line}`,
+      help: `rename one of the two, e.g. \`${element.id}_2\` (decision D1: flat unique IDs)`
+    });
   }
   return diagnostics;
 }
@@ -94139,22 +94194,21 @@ function checkTrustBoundaries(model, view) {
     const level = zoneOf(id)?.attr?.value;
     return level && view.trustOrder?.[level] !== void 0 ? view.trustOrder[level] : -1;
   };
+  const lint = view.boundaryLint;
+  const isSecurityNode = (id) => lint !== void 0 && model.index.get(id)?.kind === lint.nodeKind;
   for (const flow of model.flows) {
     if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;
     const crossesZone = zoneOf(flow.from) !== zoneOf(flow.to);
-    if (view.boundaryLint) {
-      const lint = view.boundaryLint;
-      const isSecurityNode = (id) => model.index.get(id)?.kind === lint.nodeKind;
-      if (trustLevelOf(flow.to) > trustLevelOf(flow.from) && !isSecurityNode(flow.from) && !isSecurityNode(flow.to)) {
-        diagnostics.push({
-          code: lint.code,
-          severity: "warning",
-          message: lint.message,
-          span: flow.span,
-          note: `flow enters a more-trusted zone without passing a \`${lint.nodeKind}\``,
-          help: lint.help
-        });
-      }
+    const boundaryViolation = lint !== void 0 && trustLevelOf(flow.to) > trustLevelOf(flow.from) && !isSecurityNode(flow.from) && !isSecurityNode(flow.to);
+    if (boundaryViolation) {
+      diagnostics.push({
+        code: lint.code,
+        severity: "warning",
+        message: lint.message,
+        span: flow.span,
+        note: `flow enters a more-trusted zone without passing a \`${lint.nodeKind}\``,
+        help: lint.help
+      });
     }
     if (view.crossZoneTechRecommended && crossesZone && !flow.tech?.protocol) {
       diagnostics.push({
@@ -94169,31 +94223,33 @@ function checkTrustBoundaries(model, view) {
   }
   return diagnostics;
 }
-function checkBusinessObjects(model, view) {
+function checkForbiddenBusinessObjects(model, view) {
   const diagnostics = [];
-  if (!view.businessObjects) {
-    for (const businessObject of model.businessObjects) {
+  for (const businessObject of model.businessObjects) {
+    diagnostics.push({
+      code: "E0222",
+      severity: "error",
+      message: `business objects are not part of the \`${view.name}\` view (\`${businessObject.id}\`)`,
+      span: businessObject.idSpan,
+      help: "business objects belong to the `logical` view \u2014 remove it, or model the exchange with the flow label"
+    });
+  }
+  for (const flow of model.flows) {
+    for (const objectRef of flow.objects ?? []) {
       diagnostics.push({
         code: "E0222",
         severity: "error",
-        message: `business objects are not part of the \`${view.name}\` view (\`${businessObject.id}\`)`,
-        span: businessObject.idSpan,
-        help: "business objects belong to the `logical` view \u2014 remove it, or model the exchange with the flow label"
+        message: `business-object reference \`[${objectRef.id}]\` is not part of the \`${view.name}\` view`,
+        span: objectRef.span,
+        help: "drop the `[\u2026]` reference \u2014 business objects are a logical-view feature"
       });
     }
-    for (const flow of model.flows) {
-      for (const objectRef of flow.objects ?? []) {
-        diagnostics.push({
-          code: "E0222",
-          severity: "error",
-          message: `business-object reference \`[${objectRef.id}]\` is not part of the \`${view.name}\` view`,
-          span: objectRef.span,
-          help: "drop the `[\u2026]` reference \u2014 business objects are a logical-view feature"
-        });
-      }
-    }
-    return diagnostics;
   }
+  return diagnostics;
+}
+function checkBusinessObjects(model, view) {
+  if (!view.businessObjects) return checkForbiddenBusinessObjects(model, view);
+  const diagnostics = [];
   const declaredIds = /* @__PURE__ */ new Map();
   for (const businessObject of model.businessObjects) {
     const previous = declaredIds.get(businessObject.id);
@@ -94220,16 +94276,18 @@ function checkBusinessObjects(model, view) {
   const carried = /* @__PURE__ */ new Set();
   for (const flow of model.flows) {
     for (const objectRef of flow.objects ?? []) {
-      if (!declaredIds.has(objectRef.id)) {
-        const suggestion = nearest(objectRef.id, [...declaredIds.keys()]);
-        diagnostics.push({
-          code: "E0221",
-          severity: "error",
-          message: `unknown business-object reference \`${objectRef.id}\``,
-          span: objectRef.span,
-          help: suggestion ? `did you mean \`${suggestion}\`?` : "declare it: `business-object " + objectRef.id + ' "Name" "description"`'
-        });
-      } else carried.add(objectRef.id);
+      if (declaredIds.has(objectRef.id)) {
+        carried.add(objectRef.id);
+        continue;
+      }
+      const suggestion = nearest(objectRef.id, [...declaredIds.keys()]);
+      diagnostics.push({
+        code: "E0221",
+        severity: "error",
+        message: `unknown business-object reference \`${objectRef.id}\``,
+        span: objectRef.span,
+        help: suggestion ? `did you mean \`${suggestion}\`?` : "declare it: `business-object " + objectRef.id + ' "Name" "description"`'
+      });
     }
   }
   for (const businessObject of model.businessObjects) {
@@ -94268,10 +94326,7 @@ function checkIsolatedElements(model, view, elements) {
   const markConnected = (id) => {
     const element = model.index.get(id);
     if (!element) return;
-    (function markSubtree(element2) {
-      connected.add(element2.id);
-      element2.children.forEach(markSubtree);
-    })(element);
+    for (const subtreeId of subtreeIds(element)) connected.add(subtreeId);
     for (let ancestor = element.parent; ancestor; ancestor = ancestor.parent)
       connected.add(ancestor.id);
   };
@@ -94395,17 +94450,95 @@ var LaneAllocator = class {
     const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
     const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
     for (let laneIndex = 0; laneIndex < this.lanes.length; laneIndex++) {
-      if (!this.lanes[laneIndex].some(
+      const hasOverlap = this.lanes[laneIndex].some(
         (existingInterval) => existingInterval.rangeStart < rangeEnd && rangeStart < existingInterval.rangeEnd
-      )) {
-        this.lanes[laneIndex].push({ rangeStart, rangeEnd });
-        return laneIndex;
-      }
+      );
+      if (hasOverlap) continue;
+      this.lanes[laneIndex].push({ rangeStart, rangeEnd });
+      return laneIndex;
     }
     this.lanes.push([{ rangeStart, rangeEnd }]);
     return this.lanes.length - 1;
   }
 };
+function toElkNode(element, containerFontSize, nodeFontSize) {
+  if (element.children.length) {
+    const lineCount = (element.label ?? element.id).split("\n").length;
+    return {
+      id: element.id,
+      layoutOptions: {
+        "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`
+      },
+      labels: [
+        {
+          text: element.label ?? element.id,
+          ...measure(element.label ?? element.id, containerFontSize)
+        }
+      ],
+      children: element.children.map((child) => toElkNode(child, containerFontSize, nodeFontSize))
+    };
+  }
+  const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
+  return { id: element.id, width: size.width, height: size.height };
+}
+function walkFoldedNodes(elkNode, offsetX, offsetY, elementById, syntheticIds) {
+  return (elkNode.children ?? []).flatMap((child) => {
+    const absoluteX = offsetX + child.x;
+    const absoluteY = offsetY + child.y;
+    const origin = { x: absoluteX, y: absoluteY };
+    if (syntheticIds.has(child.id)) return [{ id: child.id, origin, isPort: true }];
+    const element = elementById.get(child.id);
+    const box = { x: absoluteX, y: absoluteY, width: child.width, height: child.height };
+    const node = {
+      id: child.id,
+      kind: element.kind,
+      label: element.label ?? child.id,
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      container: !!child.children?.length
+    };
+    return [
+      { id: child.id, origin, isPort: false, node, box },
+      ...walkFoldedNodes(child, absoluteX, absoluteY, elementById, syntheticIds)
+    ];
+  });
+}
+function collectFoldedEdges(elkNode, origins, rootOffset, syntheticIds) {
+  const edges = [];
+  const edgePoints = [];
+  for (const edge of elkNode.edges ?? []) {
+    const section = edge.sections?.[0];
+    if (!section) continue;
+    const origin = edge.container && origins.get(edge.container) || rootOffset;
+    const points = [section.startPoint, ...section.bendPoints ?? [], section.endPoint].map(
+      (point) => ({
+        x: point.x + origin.x,
+        y: point.y + origin.y
+      })
+    );
+    if (syntheticIds.has(edge.id)) {
+      edgePoints.push([edge.id, points]);
+      continue;
+    }
+    const labels = (edge.labels ?? []).map((label) => ({
+      flowId: edge.id,
+      text: label.text,
+      x: label.x + origin.x,
+      y: label.y + origin.y,
+      width: label.width,
+      height: label.height
+    }));
+    edges.push({ id: edge.id, pts: points, labels });
+  }
+  for (const child of elkNode.children ?? []) {
+    const childResult = collectFoldedEdges(child, origins, rootOffset, syntheticIds);
+    edges.push(...childResult.edges);
+    edgePoints.push(...childResult.edgePoints);
+  }
+  return { edges, edgePoints };
+}
 async function foldedLayout(model, view, elk) {
   const roots = model.elements;
   const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -94432,11 +94565,9 @@ async function foldedLayout(model, view, elk) {
   const middleGroups = middles.filter((middle) => middle.children.length > 0);
   if (middleGroups.length < 2) return null;
   const rootOf = /* @__PURE__ */ new Map();
-  for (const root of roots)
-    (function mark(element) {
-      rootOf.set(element.id, root);
-      element.children.forEach(mark);
-    })(root);
+  for (const root of roots) {
+    for (const element of subtreeElements(root)) rootOf.set(element.id, root);
+  }
   const interFlows = model.flows.filter((flow) => {
     const sourceRoot = rootOf.get(flow.from);
     const destRoot = rootOf.get(flow.to);
@@ -94445,52 +94576,31 @@ async function foldedLayout(model, view, elk) {
   const internalFlows = model.flows.filter(
     (flow) => rootOf.get(flow.from) && rootOf.get(flow.from) === rootOf.get(flow.to)
   );
-  const elementById = /* @__PURE__ */ new Map();
-  (function indexElements(elements) {
-    for (const element of elements) {
-      elementById.set(element.id, element);
-      indexElements(element.children);
-    }
-  })(roots);
-  function toElkNode(element) {
-    if (element.children.length) {
-      const lineCount = (element.label ?? element.id).split("\n").length;
-      return {
-        id: element.id,
-        layoutOptions: {
-          "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`
-        },
-        labels: [
-          {
-            text: element.label ?? element.id,
-            ...measure(element.label ?? element.id, containerFontSize)
-          }
-        ],
-        children: element.children.map(toElkNode)
-      };
-    }
-    const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
-    return { id: element.id, width: size.width, height: size.height };
-  }
+  const elementById = new Map(indexElementsById(roots));
+  const syntheticIds = /* @__PURE__ */ new Set();
   const middleResults = /* @__PURE__ */ new Map();
   for (const group of middleGroups) {
-    const node = toElkNode(group);
+    const node = toElkNode(group, containerFontSize, nodeFontSize);
     const nodeChildren = node.children ??= [];
     for (const flow of interFlows) {
-      if (rootOf.get(flow.from) === group)
+      if (rootOf.get(flow.from) === group) {
+        syntheticIds.add(`${flow.id}_out`);
         nodeChildren.push({
           id: `${flow.id}_out`,
           width: 1,
           height: 1,
           layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" }
         });
-      if (rootOf.get(flow.to) === group)
+      }
+      if (rootOf.get(flow.to) === group) {
+        syntheticIds.add(`${flow.id}_in`);
         nodeChildren.push({
           id: `${flow.id}_in`,
           width: 1,
           height: 1,
           layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" }
         });
+      }
     }
     const graph = {
       id: `fold_${group.id}`,
@@ -94537,16 +94647,22 @@ async function foldedLayout(model, view, elk) {
             ] : []
           };
         }),
-        ...interFlows.filter((flow) => rootOf.get(flow.from) === group).map((flow) => ({
-          id: `${flow.id}_oe`,
-          sources: [flow.from],
-          targets: [`${flow.id}_out`]
-        })),
-        ...interFlows.filter((flow) => rootOf.get(flow.to) === group).map((flow) => ({
-          id: `${flow.id}_ie`,
-          sources: [`${flow.id}_in`],
-          targets: [flow.to]
-        }))
+        ...interFlows.filter((flow) => rootOf.get(flow.from) === group).map((flow) => {
+          syntheticIds.add(`${flow.id}_oe`);
+          return {
+            id: `${flow.id}_oe`,
+            sources: [flow.from],
+            targets: [`${flow.id}_out`]
+          };
+        }),
+        ...interFlows.filter((flow) => rootOf.get(flow.to) === group).map((flow) => {
+          syntheticIds.add(`${flow.id}_ie`);
+          return {
+            id: `${flow.id}_ie`,
+            sources: [`${flow.id}_in`],
+            targets: [flow.to]
+          };
+        })
       ]
     };
     middleResults.set(group.id, await elk.layout(graph));
@@ -94566,22 +94682,22 @@ async function foldedLayout(model, view, elk) {
       measure(group.label ?? group.id, containerFontSize).width + 20,
       ...blocks.map((block) => block.width)
     ) + 2 * PAD;
-    let y = PAD_TOP;
+    let blockY = PAD_TOP;
     for (const block of blocks) {
       block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
-      block.y = y;
-      y += block.height + 14;
+      block.y = blockY;
+      blockY += block.height + 14;
     }
     return {
       element: group,
       width: columnWidth,
-      height: y - 14 + PAD,
+      height: blockY - 14 + PAD,
       blocks
     };
   });
   const sourceColumns = layoutColumn(sources);
   const sinkColumns = layoutColumn(sinks);
-  const rowIndex = new Map(middles.map((middle, i) => [middle.id, i]));
+  const rowIndex = new Map(middles.map((middle, middleIndex) => [middle.id, middleIndex]));
   const classify = (flow) => {
     const sourcePartition = partitionOf(rootOf.get(flow.from));
     const destPartition = partitionOf(rootOf.get(flow.to));
@@ -94651,11 +94767,11 @@ async function foldedLayout(model, view, elk) {
   const middleHeight = yCursor - Math.max(40, gutterHeight(middles.length));
   const placeCol = (cols, x) => {
     const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
-    let y = Math.max(20, 20 + (middleHeight - total) / 2);
+    let colY = Math.max(20, 20 + (middleHeight - total) / 2);
     return cols.map((col) => {
-      const b = { x, y, width: col.width, height: col.height };
-      y += col.height + 30;
-      return { group: col, box: b };
+      const box = { x, y: colY, width: col.width, height: col.height };
+      colY += col.height + 30;
+      return { group: col, box };
     });
   };
   const sourcePlaced = placeCol(sourceColumns, xSource);
@@ -94720,36 +94836,15 @@ async function foldedLayout(model, view, elk) {
       y: box.y - result.children[0].y
     };
     origins.set(result.id, rootOffset);
-    (function walkNodes(elkNode, offsetX, offsetY) {
-      for (const child of elkNode.children ?? []) {
-        const absoluteX = offsetX + child.x;
-        const absoluteY = offsetY + child.y;
-        origins.set(child.id, { x: absoluteX, y: absoluteY });
-        if (/_in$|_out$/.test(child.id)) {
-          absolutePorts.set(child.id, { x: absoluteX, y: absoluteY });
-          continue;
-        }
-        const element2 = elementById.get(child.id);
-        const childBox = {
-          x: absoluteX,
-          y: absoluteY,
-          width: child.width,
-          height: child.height
-        };
-        nodes.push({
-          id: child.id,
-          kind: element2.kind,
-          label: element2.label ?? child.id,
-          x: childBox.x,
-          y: childBox.y,
-          width: childBox.width,
-          height: childBox.height,
-          container: !!child.children?.length
-        });
-        absoluteBoxes.set(child.id, childBox);
-        walkNodes(child, absoluteX, absoluteY);
+    for (const walked of walkFoldedNodes(result, rootOffset.x, rootOffset.y, elementById, syntheticIds)) {
+      origins.set(walked.id, walked.origin);
+      if (walked.isPort) {
+        absolutePorts.set(walked.id, walked.origin);
+        continue;
       }
-    })(result, rootOffset.x, rootOffset.y);
+      nodes.push(walked.node);
+      absoluteBoxes.set(walked.id, walked.box);
+    }
   }
   const edges = [];
   const edgePoints = /* @__PURE__ */ new Map();
@@ -94759,33 +94854,9 @@ async function foldedLayout(model, view, elk) {
       x: box.x - result.children[0].x,
       y: box.y - result.children[0].y
     };
-    (function collectEdges(elkNode) {
-      for (const edge of elkNode.edges ?? []) {
-        const section = edge.sections?.[0];
-        if (!section) continue;
-        const origin = edge.container && origins.get(edge.container) || rootOffset;
-        const points = [section.startPoint, ...section.bendPoints ?? [], section.endPoint].map(
-          (point) => ({
-            x: point.x + origin.x,
-            y: point.y + origin.y
-          })
-        );
-        if (/_oe$|_ie$/.test(edge.id)) {
-          edgePoints.set(edge.id, points);
-          continue;
-        }
-        const labels = (edge.labels ?? []).map((label) => ({
-          flowId: edge.id,
-          text: label.text,
-          x: label.x + origin.x,
-          y: label.y + origin.y,
-          width: label.width,
-          height: label.height
-        }));
-        edges.push({ id: edge.id, pts: points, labels });
-      }
-      (elkNode.children ?? []).forEach(collectEdges);
-    })(result);
+    const collected = collectFoldedEdges(result, origins, rootOffset, syntheticIds);
+    edges.push(...collected.edges);
+    for (const [edgeId, points] of collected.edgePoints) edgePoints.set(edgeId, points);
   }
   const leftLaneAlloc = new LaneAllocator();
   const rightLaneAlloc = new LaneAllocator();
@@ -94908,8 +94979,8 @@ async function foldedLayout(model, view, elk) {
   const totalHeight = Math.ceil(
     Math.max(
       middleHeight + 30,
-      ...sinkPlaced.map((p) => p.box.y + p.box.height + 20),
-      ...sourcePlaced.map((p) => p.box.y + p.box.height + 20)
+      ...sinkPlaced.map((placed) => placed.box.y + placed.box.height + 20),
+      ...sourcePlaced.map((placed) => placed.box.y + placed.box.height + 20)
     )
   );
   return {
@@ -94922,6 +94993,105 @@ async function foldedLayout(model, view, elk) {
 }
 
 // src/scene-layout.ts
+function computeIngressExternalElements(model) {
+  const ingressExternalElements = /* @__PURE__ */ new Set();
+  for (const element of model.elements) {
+    if (element.kind !== "external") continue;
+    const ids = new Set(subtreeIds(element));
+    const feedsInto = model.flows.some((flow) => ids.has(flow.from) && !ids.has(flow.to));
+    const receivesFrom = model.flows.some((flow) => ids.has(flow.to) && !ids.has(flow.from));
+    if (feedsInto && !receivesFrom) ingressExternalElements.add(element.id);
+  }
+  return ingressExternalElements;
+}
+function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
+  if (element.children.length) {
+    const lineCount = (element.label ?? element.id).split("\n").length;
+    return {
+      id: element.id,
+      layoutOptions: {
+        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`
+      },
+      labels: [
+        {
+          text: element.label ?? element.id,
+          ...measure(element.label ?? element.id, containerFontSize)
+        }
+      ],
+      children: element.children.map(
+        (child) => toElkNode2(child, compact, containerFontSize, nodeFontSize)
+      )
+    };
+  }
+  const measured = measure(element.label ?? element.id, nodeFontSize);
+  const isActor = element.kind === "actor";
+  return {
+    id: element.id,
+    width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
+    height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
+  };
+}
+function walkElkNodes(elkNode, offsetX, offsetY, kindOf) {
+  return (elkNode.children ?? []).flatMap((child) => {
+    const absoluteX = offsetX + child.x;
+    const absoluteY = offsetY + child.y;
+    const element = kindOf.get(child.id);
+    const node = {
+      id: child.id,
+      kind: element.kind,
+      label: element.label ?? child.id,
+      x: absoluteX,
+      y: absoluteY,
+      width: child.width,
+      height: child.height,
+      container: !!child.children?.length
+    };
+    return [
+      { id: child.id, x: absoluteX, y: absoluteY, node },
+      ...walkElkNodes(child, absoluteX, absoluteY, kindOf)
+    ];
+  });
+}
+function collectSceneEdges(elkNode, origins, numbered) {
+  const ownEdges = (elkNode.edges ?? []).map((edge) => {
+    const origin = edge.container && origins[edge.container] || { x: 0, y: 0 };
+    const section = edge.sections?.[0];
+    const points = section ? [section.startPoint, ...section.bendPoints ?? [], section.endPoint].map((point) => ({
+      x: point.x + origin.x,
+      y: point.y + origin.y
+    })) : [];
+    const labels = (edge.labels ?? []).map((label) => {
+      let labelX = label.x + origin.x, labelY = label.y + origin.y;
+      if (numbered && points.length >= 2) {
+        const last = points[points.length - 1], secondLast = points[points.length - 2];
+        const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
+        const unitX = (last.x - secondLast.x) / segmentLength, unitY = (last.y - secondLast.y) / segmentLength;
+        const stepBack = Math.min(segmentLength - 2, 20 + label.width / 2);
+        let perpX = -unitY, perpY = unitX;
+        if (perpY > 0) {
+          perpX = -perpX;
+          perpY = -perpY;
+        }
+        const offset = label.height / 2 + 2;
+        labelX = last.x - unitX * stepBack + perpX * offset - label.width / 2;
+        labelY = last.y - unitY * stepBack + perpY * offset - label.height / 2;
+      }
+      return {
+        flowId: edge.id,
+        text: label.text,
+        x: labelX,
+        y: labelY,
+        width: label.width,
+        height: label.height
+      };
+    });
+    return { id: edge.id, pts: points, labels };
+  });
+  const childEdges = (elkNode.children ?? []).flatMap(
+    (child) => collectSceneEdges(child, origins, numbered)
+  );
+  return [...ownEdges, ...childEdges];
+}
 async function layout(model, view) {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -94934,51 +95104,13 @@ async function layout(model, view) {
     cont: containerFontSize,
     scale: fontScale
   } = fontSizes(model.style.font.size);
-  function toElkNode(element) {
-    if (element.children.length) {
-      const lineCount = (element.label ?? element.id).split("\n").length;
-      return {
-        id: element.id,
-        layoutOptions: {
-          "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`
-        },
-        labels: [
-          {
-            text: element.label ?? element.id,
-            ...measure(element.label ?? element.id, containerFontSize)
-          }
-        ],
-        children: element.children.map(toElkNode)
-      };
-    }
-    const measured = measure(element.label ?? element.id, nodeFontSize);
-    const isActor = element.kind === "actor";
-    return {
-      id: element.id,
-      width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
-      height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
-    };
-  }
   const disposition = model.style.disposition;
   const ASPECT_TARGETS = {
     slide: 16 / 9,
     page: 0.71
   };
   const aspectTarget = ASPECT_TARGETS[disposition];
-  const ingressExternalElements = /* @__PURE__ */ new Set();
-  if (view.partitionByOrder) {
-    for (const element of model.elements) {
-      if (element.kind !== "external") continue;
-      const ids = /* @__PURE__ */ new Set();
-      (function collect(child) {
-        ids.add(child.id);
-        child.children.forEach(collect);
-      })(element);
-      const feedsInto = model.flows.some((flow) => ids.has(flow.from) && !ids.has(flow.to));
-      const receivesFrom = model.flows.some((flow) => ids.has(flow.to) && !ids.has(flow.from));
-      if (feedsInto && !receivesFrom) ingressExternalElements.add(element.id);
-    }
-  }
+  const ingressExternalElements = view.partitionByOrder ? computeIngressExternalElements(model) : /* @__PURE__ */ new Set();
   const INGRESS_PARTITION = -1, EGRESS_PARTITION = 900;
   const makeGraph = (direction, options) => ({
     id: "root",
@@ -95018,7 +95150,7 @@ async function layout(model, view) {
       } : {}
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode(element);
+      const elkNode = toElkNode2(element, compact, containerFontSize, nodeFontSize);
       const partition = view.partitionByOrder ? element.kind === "actor" || element.kind === "actor-group" ? INGRESS_PARTITION : element.kind === "external" ? ingressExternalElements.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION : view.partitions[element.kind] !== void 0 ? 90 + view.partitions[element.kind] : index : view.partitions[element.kind] ?? 1;
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
@@ -95062,74 +95194,15 @@ async function layout(model, view) {
       };
     })
   });
-  const kindOf = /* @__PURE__ */ new Map();
-  (function indexElements(elements) {
-    for (const element of elements) {
-      kindOf.set(element.id, element);
-      indexElements(element.children);
-    }
-  })(model.elements);
+  const kindOf = new Map(indexElementsById(model.elements));
   const sceneFromResult = (result2, layoutMs2) => {
     const origins = {
       root: { x: 0, y: 0 }
     };
-    const nodes = [];
-    (function walk(elkNode, offsetX, offsetY) {
-      for (const child of elkNode.children ?? []) {
-        const absoluteX = offsetX + child.x, absoluteY = offsetY + child.y;
-        origins[child.id] = { x: absoluteX, y: absoluteY };
-        const element = kindOf.get(child.id);
-        nodes.push({
-          id: child.id,
-          kind: element.kind,
-          label: element.label ?? child.id,
-          x: absoluteX,
-          y: absoluteY,
-          width: child.width,
-          height: child.height,
-          container: !!child.children?.length
-        });
-        walk(child, absoluteX, absoluteY);
-      }
-    })(result2, 0, 0);
-    const edges = [];
-    (function collect(elkNode) {
-      for (const edge of elkNode.edges ?? []) {
-        const origin = edge.container && origins[edge.container] || { x: 0, y: 0 };
-        const section = edge.sections?.[0];
-        const points = section ? [section.startPoint, ...section.bendPoints ?? [], section.endPoint].map((point) => ({
-          x: point.x + origin.x,
-          y: point.y + origin.y
-        })) : [];
-        const labels = (edge.labels ?? []).map((label) => {
-          let x = label.x + origin.x, y = label.y + origin.y;
-          if (numbered && points.length >= 2) {
-            const last = points[points.length - 1], secondLast = points[points.length - 2];
-            const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
-            const unitX = (last.x - secondLast.x) / segmentLength, unitY = (last.y - secondLast.y) / segmentLength;
-            const stepBack = Math.min(segmentLength - 2, 20 + label.width / 2);
-            let perpX = -unitY, perpY = unitX;
-            if (perpY > 0) {
-              perpX = -perpX;
-              perpY = -perpY;
-            }
-            const offset = label.height / 2 + 2;
-            x = last.x - unitX * stepBack + perpX * offset - label.width / 2;
-            y = last.y - unitY * stepBack + perpY * offset - label.height / 2;
-          }
-          return {
-            flowId: edge.id,
-            text: label.text,
-            x,
-            y,
-            width: label.width,
-            height: label.height
-          };
-        });
-        edges.push({ id: edge.id, pts: points, labels });
-      }
-      (elkNode.children ?? []).forEach(collect);
-    })(result2);
+    const walkedNodes = walkElkNodes(result2, 0, 0, kindOf);
+    const nodes = walkedNodes.map((walked) => walked.node);
+    for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
+    const edges = collectSceneEdges(result2, origins, numbered);
     return {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),
@@ -95217,8 +95290,8 @@ var UI = {
 };
 
 // src/xml-escape.ts
-var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-var escAttr = (s) => esc(s).replace(/"/g, "&quot;");
+var esc = (text) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+var escAttr = (text) => esc(text).replace(/"/g, "&quot;");
 
 // src/geometry.ts
 var boxesOverlap = (boxA, boxB) => !(boxA.x + boxA.width <= boxB.x || boxB.x + boxB.width <= boxA.x || boxA.y + boxA.height <= boxB.y || boxB.y + boxB.height <= boxA.y);
@@ -95233,6 +95306,20 @@ var SEC_LEVEL_FR = {
   secret: "secret"
 };
 var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
+function assignSourceHues(model, hues) {
+  const sourceHue = /* @__PURE__ */ new Map();
+  for (const flow of model.flows) {
+    if (sourceHue.has(flow.from)) continue;
+    sourceHue.set(flow.from, hues[sourceHue.size % hues.length]);
+  }
+  return sourceHue;
+}
+function collectElementStyles(elements) {
+  return elements.flatMap((element) => [
+    { id: element.id, style: element.style, attrValue: element.attr?.value },
+    ...collectElementStyles(element.children)
+  ]);
+}
 function render(model, view, scene) {
   const style = model.style;
   const fonts = fontSizes(style.font.size);
@@ -95253,12 +95340,7 @@ function render(model, view, scene) {
   const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
   const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
   const defaultEdgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
-  const sourceHue = /* @__PURE__ */ new Map();
-  if (style.flowColor === "by-source") {
-    const hues = flowPalette[isDarkTheme ? "dark" : "light"];
-    for (const flow of model.flows)
-      if (!sourceHue.has(flow.from)) sourceHue.set(flow.from, hues[sourceHue.size % hues.length]);
-  }
+  const sourceHue = style.flowColor === "by-source" ? assignSourceHues(model, flowPalette[isDarkTheme ? "dark" : "light"]) : /* @__PURE__ */ new Map();
   const flowColorOf = (flow) => flow?.style?.stroke?.color ?? (style.flowColor === "by-source" ? sourceHue.get(flow?.from ?? "") ?? defaultEdgeColor : defaultEdgeColor);
   const arrowMarkers = /* @__PURE__ */ new Map();
   const markerName = (color) => {
@@ -95277,13 +95359,10 @@ function render(model, view, scene) {
   const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
   const elementStyle = /* @__PURE__ */ new Map();
   const elementAttr = /* @__PURE__ */ new Map();
-  (function index(elements) {
-    for (const element of elements) {
-      elementStyle.set(element.id, element.style);
-      elementAttr.set(element.id, element.attr?.value);
-      index(element.children);
-    }
-  })(model.elements);
+  for (const entry of collectElementStyles(model.elements)) {
+    elementStyle.set(entry.id, entry.style);
+    elementAttr.set(entry.id, entry.attrValue);
+  }
   const resolveStyle = (kind, id) => {
     let base = kindDefaults[kind] ?? {};
     const level = elementAttr.get(id);
@@ -95354,7 +95433,7 @@ function render(model, view, scene) {
     }
   }
   const edgePath = (pts) => {
-    let d = `M ${pts[0].x} ${pts[0].y}`;
+    let path = `M ${pts[0].x} ${pts[0].y}`;
     for (let segmentIndex = 0; segmentIndex + 1 < pts.length; segmentIndex++) {
       const point = pts[segmentIndex], nextPoint = pts[segmentIndex + 1];
       if (style.crossingHops && Math.abs(point.y - nextPoint.y) < 0.5 && Math.abs(point.x - nextPoint.x) >= 0.5) {
@@ -95364,11 +95443,11 @@ function render(model, view, scene) {
           (vertical) => vertical.x > rangeStart && vertical.x < rangeEnd && point.y > vertical.y1 + 1 && point.y < vertical.y2 - 1
         ).map((vertical) => vertical.x).sort((pointA, pointB) => direction > 0 ? pointA - pointB : pointB - pointA);
         for (const crossingX of crossings)
-          d += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
+          path += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
       }
-      d += ` L ${nextPoint.x} ${nextPoint.y}`;
+      path += ` L ${nextPoint.x} ${nextPoint.y}`;
     }
-    return d;
+    return path;
   };
   const centeredNodeLabel = (lines, centerX, topBaseline, fill) => lines.map(
     (line, index) => `<text x="${centerX}" y="${topBaseline + index * (nodeFontSize + 2)}" font-size="${nodeFontSize}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
@@ -95513,19 +95592,18 @@ function render(model, view, scene) {
       svg2 += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
 `;
     }
-    const chips = (flow?.objects ?? []).map((o) => objectName.get(o.id) ?? o.id);
-    if (chips.length) {
-      const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
-      let positionX = label.x + label.width / 2 - totalW / 2;
-      const cy = label.y + label.height - annot.chipH + 2;
-      for (const name of chips) {
-        const w = chipW(name, annot.scale);
-        svg2 += `<rect x="${positionX}" y="${cy}" width="${w}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
+    const chips = (flow?.objects ?? []).map((objectRef) => objectName.get(objectRef.id) ?? objectRef.id);
+    if (!chips.length) return svg2;
+    const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
+    let positionX = label.x + label.width / 2 - totalW / 2;
+    const cy = label.y + label.height - annot.chipH + 2;
+    for (const name of chips) {
+      const chipWidth = chipW(name, annot.scale);
+      svg2 += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
 `;
-        svg2 += `<text x="${positionX + w / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
+      svg2 += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
 `;
-        positionX += w + 4;
-      }
+      positionX += chipWidth + 4;
     }
     return svg2;
   };
@@ -95550,12 +95628,12 @@ function render(model, view, scene) {
   let bandsSvg = "";
   const contentX = 150;
   const chip = (x, y, name) => {
-    const w = chipW(name, annot.scale);
+    const width = chipW(name, annot.scale);
     return {
-      svg: `<rect x="${x}" y="${y}" width="${w}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.chipFill}" stroke="${palette.chipStroke}"/>
-<text x="${x + w / 2}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
+      svg: `<rect x="${x}" y="${y}" width="${width}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.chipFill}" stroke="${palette.chipStroke}"/>
+<text x="${x + width / 2}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
 `,
-      w
+      width
     };
   };
   const beginBand = (title) => {
@@ -95564,6 +95642,17 @@ function render(model, view, scene) {
     bandsSvg += `<text x="20" y="${bandY + scaled(32)}" font-size="${scaled(11)}" font-weight="bold" fill="${palette.bandTitle}">${esc(title)}</text>
 `;
     bandY += scaled(20);
+  };
+  const flowChipsSvg = (flow, startX, startY) => {
+    if (!flow.objects?.length) return "";
+    let out = "";
+    let chipX = startX;
+    for (const objectRef of flow.objects) {
+      const chipResult = chip(chipX, startY, objectName.get(objectRef.id) ?? objectRef.id);
+      out += chipResult.svg;
+      chipX += chipResult.width + 4;
+    }
+    return out;
   };
   const renderFlowsBand = () => {
     beginBand(ui.flows);
@@ -95578,7 +95667,7 @@ function render(model, view, scene) {
     const entries = model.flows.map((flow) => {
       const tech = techText(flow.tech);
       const chipsW = (flow.objects ?? []).reduce(
-        (sum, o) => sum + chipW(objectName.get(o.id) ?? o.id, annot.scale) + 4,
+        (sum, objectRef) => sum + chipW(objectName.get(objectRef.id) ?? objectRef.id, annot.scale) + 4,
         0
       );
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
@@ -95591,37 +95680,31 @@ function render(model, view, scene) {
     const colY = new Array(cols).fill(bandY);
     entries.forEach((entry, index) => {
       const col = Math.floor(index / rows);
-      const x = contentX + col * (colW + GUTTER);
-      const y = colY[col];
-      bandsSvg += `<rect x="${x}" y="${y}" width="${scaled(24)}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.badgeFill}" stroke="${palette.badgeStroke}"/>
+      const entryX = contentX + col * (colW + GUTTER);
+      const entryY = colY[col];
+      bandsSvg += `<rect x="${entryX}" y="${entryY}" width="${scaled(24)}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.badgeFill}" stroke="${palette.badgeStroke}"/>
 `;
-      bandsSvg += `<text x="${x + scaled(12)}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.bandText}" font-weight="bold">${index + 1}</text>
+      bandsSvg += `<text x="${entryX + scaled(12)}" y="${entryY + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.bandText}" font-weight="bold">${index + 1}</text>
 `;
       entry.lines.forEach((line, lineIndex) => {
-        bandsSvg += `<text x="${x + BADGE}" y="${y + scaled(11) + lineIndex * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>
+        bandsSvg += `<text x="${entryX + BADGE}" y="${entryY + scaled(11) + lineIndex * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>
 `;
       });
-      if (entry.flow.objects?.length) {
-        const lastLine = entry.lines[entry.lines.length - 1] ?? "";
-        let chipX = x + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
-        const chipY = y + 1 + (entry.lines.length - 1) * LINE_H;
-        for (const objectRef of entry.flow.objects) {
-          const c = chip(chipX, chipY, objectName.get(objectRef.id) ?? objectRef.id);
-          bandsSvg += c.svg;
-          chipX += c.w + 4;
-        }
-      }
-      colY[col] = y + Math.max(scaled(20), entry.lines.length * LINE_H + scaled(7));
+      const lastLine = entry.lines[entry.lines.length - 1] ?? "";
+      const chipStartX = entryX + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
+      const chipStartY = entryY + 1 + (entry.lines.length - 1) * LINE_H;
+      bandsSvg += flowChipsSvg(entry.flow, chipStartX, chipStartY);
+      colY[col] = entryY + Math.max(scaled(20), entry.lines.length * LINE_H + scaled(7));
     });
     bandY = Math.max(...colY) + 6;
   };
   const renderObjectsBand = () => {
     beginBand(ui.objects);
     for (const bo of model.businessObjects) {
-      const c = chip(contentX, bandY + 2, bo.name);
-      bandsSvg += c.svg;
+      const chipResult = chip(contentX, bandY + 2, bo.name);
+      bandsSvg += chipResult.svg;
       if (bo.description)
-        bandsSvg += `<text x="${contentX + c.w + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">\u2014 ${esc(bo.description)}</text>
+        bandsSvg += `<text x="${contentX + chipResult.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">\u2014 ${esc(bo.description)}</text>
 `;
       bandY += scaled(24);
     }
@@ -95631,7 +95714,7 @@ function render(model, view, scene) {
     beginBand(ui.legend);
     let lx = contentX;
     const kindsUsed = [...new Set(scene.nodes.map((node) => node.kind))].filter(
-      (k) => legendNames[k] && (k !== "actor" || view.actorLegend)
+      (kind) => legendNames[kind] && (kind !== "actor" || view.actorLegend)
     );
     for (const kind of kindsUsed) {
       const nodeStyle = resolveStyle(kind, "");
@@ -95662,9 +95745,9 @@ function render(model, view, scene) {
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
 `;
     if (model.businessObjects.length) {
-      const c = chip(contentX + 330, bandY + 1, ui.businessObject);
-      bandsSvg += c.svg;
-      bandsSvg += `<text x="${contentX + 330 + c.w + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>
+      const chipResult = chip(contentX + 330, bandY + 1, ui.businessObject);
+      bandsSvg += chipResult.svg;
+      bandsSvg += `<text x="${contentX + 330 + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>
 `;
     }
     bandY += scaled(24);
@@ -95703,7 +95786,7 @@ async function compile(source, options) {
   const { model, diags } = parse(source);
   if (options?.theme) model.style.theme = options.theme;
   diags.push(...validate(model));
-  const errors = diags.filter((d) => d.severity === "error");
+  const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
     return { svg: null, diagnostics: diags, metrics: null };
   }
@@ -95721,7 +95804,7 @@ async function compile(source, options) {
     }
   };
 }
-var version = "0.1.0";
+var version = package_default.version;
 export {
   compile,
   themeNames,
