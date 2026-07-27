@@ -43,16 +43,14 @@ export function validate(model: Model): Diagnostic[] {
   ];
 }
 
-function flatten(roots: Element[]): Element[] {
-  const flattened: Element[] = [];
-  function collect(elements: Element[]) {
-    for (const element of elements) {
-      flattened.push(element);
-      collect(element.children);
-    }
-  }
-  collect(roots);
-  return flattened;
+/** Pre-order flatten of the element tree: each element before its children. */
+function flatten(elements: Element[]): Element[] {
+  return elements.flatMap((element) => [element, ...flatten(element.children)]);
+}
+
+/** IDs of `element` and everything beneath it, pre-order. */
+function subtreeIds(element: Element): string[] {
+  return [element.id, ...element.children.flatMap(subtreeIds)];
 }
 
 function checkDuplicateIds(elements: Element[]): Diagnostic[] {
@@ -381,14 +379,10 @@ function checkIsolatedElements(model: Model, view: View, elements: Element[]): D
   const diagnostics: Diagnostic[] = [];
 
   const connected = new Set<string>();
-  function markSubtree(node: Element) {
-    connected.add(node.id);
-    node.children.forEach(markSubtree);
-  }
   const markConnected = (id: string) => {
     const element = model.index.get(id);
     if (!element) return;
-    markSubtree(element);
+    for (const subtreeId of subtreeIds(element)) connected.add(subtreeId);
     for (let ancestor = element.parent; ancestor; ancestor = ancestor.parent)
       connected.add(ancestor.id);
   };

@@ -14,6 +14,14 @@ import type { Diagnostic } from "./models/diagnostic.ts";
 import { defaultDiagramStyle } from "./models/ast.ts";
 import { themeNames } from "./themes.ts";
 
+/** Flattened (id, element) pairs for `elements` and all their descendants, pre-order. */
+function indexElementsById(elements: Element[]): [string, Element][] {
+  return elements.flatMap((element) => [
+    [element.id, element] as [string, Element],
+    ...indexElementsById(element.children),
+  ]);
+}
+
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
   const tokens = lex(src, diagnostics);
@@ -337,16 +345,9 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     skipNewlines();
   }
 
-  function indexAll(elements: Element[]) {
-    for (const element of elements) {
-      model.index.set(
-        element.id,
-        model.index.has(element.id) ? model.index.get(element.id)! : element,
-      );
-      indexAll(element.children);
-    }
+  for (const [id, element] of indexElementsById(model.elements)) {
+    if (!model.index.has(id)) model.index.set(id, element);
   }
-  indexAll(model.elements);
 
   return { model, diags: diagnostics };
 }

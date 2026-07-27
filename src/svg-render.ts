@@ -44,6 +44,20 @@ function assignSourceHues(model: Model, hues: string[]): Map<string, string> {
   return sourceHue;
 }
 
+interface ElementStyleEntry {
+  id: string;
+  style: StyleProps | undefined;
+  attrValue: string | undefined;
+}
+
+/** Flattened per-element style/attr entries for `elements` and all their descendants, pre-order. */
+function collectElementStyles(elements: Model["elements"]): ElementStyleEntry[] {
+  return elements.flatMap((element) => [
+    { id: element.id, style: element.style, attrValue: element.attr?.value },
+    ...collectElementStyles(element.children),
+  ]);
+}
+
 export interface RenderResult {
   svg: string;
   overlapsBefore: number;
@@ -102,14 +116,10 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
 
   const elementStyle = new Map<string, StyleProps | undefined>();
   const elementAttr = new Map<string, string | undefined>();
-  function indexElementStyles(elements: Model["elements"]) {
-    for (const element of elements) {
-      elementStyle.set(element.id, element.style);
-      elementAttr.set(element.id, element.attr?.value);
-      indexElementStyles(element.children);
-    }
+  for (const entry of collectElementStyles(model.elements)) {
+    elementStyle.set(entry.id, entry.style);
+    elementAttr.set(entry.id, entry.attrValue);
   }
-  indexElementStyles(model.elements);
 
   const resolveStyle = (kind: string, id: string): StyleProps => {
     let base = kindDefaults[kind] ?? {};
