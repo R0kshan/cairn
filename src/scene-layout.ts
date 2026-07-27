@@ -1,7 +1,46 @@
-import type { Model, Element, View } from "./model.ts";
+/**
+ * Stage 4: turns the validated `Model` into an absolute-positioned `Scene`
+ * (nodes, edges, labels, canvas size) via elkjs layered layout. Builds the ELK
+ * graph from measured node sizes, runs several candidate layouts for balanced
+ * dispositions (`slide`/`page`) and picks the best fit — optionally deferring to
+ * the folded layout (`slide-fold.ts`). `LaidOutNode`/`LaidOutEdge` describe an
+ * ELK result after layout (coordinates populated) and are shared with slide-fold.
+ */
+
+import type { Model, Element } from "./models/ast.ts";
+import type { ElkNode, ElkEdgeSection } from "elkjs/lib/elk.bundled.js";
+import type { View } from "./views.ts";
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
+
+/**
+ * A node/edge as returned by elk *after* layout: every coordinate is populated,
+ * unlike the input `ElkNode` where they are optional. Local to the render
+ * pipeline; shared with slide-fold so both walk elk results the same way.
+ */
+export interface LaidOutNode {
+  id: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  children?: LaidOutNode[];
+  edges?: LaidOutEdge[];
+}
+export interface LaidOutLabel {
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+export interface LaidOutEdge {
+  id: string;
+  container?: string;
+  sections?: ElkEdgeSection[];
+  labels?: LaidOutLabel[];
+}
 
 export interface SceneNode {
   id: string;
@@ -47,7 +86,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     scale: fontScale,
   } = fontSizes(model.style.font.size);
 
-  function toElkNode(element: Element): any {
+  function toElkNode(element: Element): ElkNode {
     if (element.children.length) {
       const lineCount = (element.label ?? element.id).split("\n").length;
       return {
@@ -104,7 +143,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const makeGraph = (
     direction: "RIGHT" | "DOWN",
     options?: { labelWrap?: number; tight?: boolean; minLayers?: boolean },
-  ) => ({
+  ): ElkNode => ({
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
@@ -212,12 +251,12 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     }
   })(model.elements);
 
-  const sceneFromResult = (result: any, layoutMs: number): Scene => {
+  const sceneFromResult = (result: LaidOutNode, layoutMs: number): Scene => {
     const origins: Record<string, { x: number; y: number }> = {
       root: { x: 0, y: 0 },
     };
     const nodes: SceneNode[] = [];
-    (function walk(elkNode: any, offsetX: number, offsetY: number) {
+    (function walk(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
       for (const child of elkNode.children ?? []) {
         const absoluteX = offsetX + child.x,
           absoluteY = offsetY + child.y;
@@ -238,19 +277,17 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     })(result, 0, 0);
 
     const edges: SceneEdge[] = [];
-    (function collect(elkNode: any) {
+    (function collect(elkNode: LaidOutNode) {
       for (const edge of elkNode.edges ?? []) {
-        const origin = origins[edge.container] ?? { x: 0, y: 0 };
+        const origin = (edge.container && origins[edge.container]) || { x: 0, y: 0 };
         const section = edge.sections?.[0];
         const points = section
-          ? [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map(
-              (point: any) => ({
-                x: point.x + origin.x,
-                y: point.y + origin.y,
-              }),
-            )
+          ? [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map((point) => ({
+              x: point.x + origin.x,
+              y: point.y + origin.y,
+            }))
           : [];
-        const labels: SceneLabel[] = (edge.labels ?? []).map((label: any) => {
+        const labels: SceneLabel[] = (edge.labels ?? []).map((label) => {
           let x = label.x + origin.x,
             y = label.y + origin.y;
           if (numbered && points.length >= 2) {
@@ -294,9 +331,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   };
 
   const startTime = Date.now();
-  let result: any;
+  let result: LaidOutNode;
   if (aspectTarget) {
-    const layoutConfigs: any[] =
+    const layoutConfigs: ElkNode[] =
       disposition === "slide"
         ? [
             makeGraph("RIGHT"),
@@ -305,7 +342,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
             makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true }),
           ]
         : [makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
-    const candidates = await Promise.all(layoutConfigs.map((graph) => elk.layout(graph)));
+    const candidates = (await Promise.all(
+      layoutConfigs.map((graph) => elk.layout(graph)),
+    )) as unknown as LaidOutNode[];
     const preferWide = disposition === "slide";
     const orientedLayouts = candidates.filter((layoutResult) =>
       preferWide
@@ -328,7 +367,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       }
     }
   } else {
-    result = await elk.layout(makeGraph(disposition === "tall" ? "DOWN" : "RIGHT"));
+    result = (await elk.layout(
+      makeGraph(disposition === "tall" ? "DOWN" : "RIGHT"),
+    )) as unknown as LaidOutNode;
   }
   const layoutMs = Date.now() - startTime;
   return sceneFromResult(result, layoutMs);

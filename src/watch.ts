@@ -1,3 +1,10 @@
+/**
+ * `cairn watch`: rebuilds the SVG whenever the source file changes (debounced,
+ * single-file). On success writes the fresh diagram; on failure writes an
+ * `errorPanelSvg` so an editor preview shows the errors instead of going blank.
+ * Serializes concurrent rebuilds via a building/dirty flag.
+ */
+
 import { watch as fsWatch, readFileSync, writeFileSync, existsSync } from "node:fs";
 import { dirname, basename } from "node:path";
 import { parse } from "./parser.ts";
@@ -5,9 +12,9 @@ import { validate } from "./validator.ts";
 import { renderHuman } from "./diagnostics.ts";
 import { layout } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
-import { views, type Diagnostic } from "./model.ts";
-
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+import { views } from "./views.ts";
+import type { Diagnostic } from "./models/diagnostic.ts";
+import { esc } from "./xml-escape.ts";
 
 export function errorPanelSvg(file: string, diagnostics: Diagnostic[]): string {
   const errors = diagnostics.filter((d) => d.severity === "error").slice(0, 10);
@@ -74,20 +81,21 @@ export function watchCommand(file: string, outFile: string) {
         console.log(
           `\u2713 ${outFile} (${scene.width}\u00d7${scene.height}, layout ${scene.layoutMs} ms, label overlaps: ${overlapsAfter})`,
         );
-      } catch (error: any) {
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
         writeFileSync(
           outFile,
           errorPanelSvg(file, [
             {
               code: "E0000",
               severity: "error",
-              message: error.message,
+              message,
               span: { line: 0, col: 0, len: 0 },
               help: "check the terminal for details",
             },
           ]),
         );
-        console.error("layout/render error:", error.message);
+        console.error("layout/render error:", message);
         console.log(`\n\u2717 ${outFile} shows an error panel until the file compiles`);
       }
     }

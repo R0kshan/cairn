@@ -1,6 +1,18 @@
-import { lex, type Token } from "./lexer.ts";
-import type { Model, Element, Flow, Diagnostic, StyleProps, DiagramStyle, Span } from "./model.ts";
-import { defaultDiagramStyle, themeNames } from "./model.ts";
+/**
+ * Stage 2: recursive-descent parser turning the token stream into a `Model`
+ * (elements with nesting, flows, business objects, legend notes, style). Grammar
+ * is `diagram <type> "Title"` then declarations; `applyStyleEntry` handles the
+ * style DSL. Recovers from errors via `syncToNextLine` and reports them as
+ * `E01xx` diagnostics, so a broken file still yields a partial model. Rejects the
+ * reserved keys `__proto__`/`constructor`/`prototype` at parse time.
+ */
+
+import { lex } from "./lexer.ts";
+import type { Token } from "./models/token.ts";
+import type { Model, Element, Flow, StyleProps, DiagramStyle, Span } from "./models/ast.ts";
+import type { Diagnostic } from "./models/diagnostic.ts";
+import { defaultDiagramStyle } from "./models/ast.ts";
+import { themeNames } from "./themes.ts";
 
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
@@ -340,6 +352,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
 
 const LINE_STYLES = new Set(["solid", "dashed", "dotted"]);
 const LABEL_POSITIONS = new Set(["on-line", "above", "below"]);
+const DISPOSITIONS = new Set(["wide", "tall", "slide", "page"]);
 
 function applyStyleEntry(
   key: Token,
@@ -360,7 +373,7 @@ function applyStyleEntry(
         strokeProps.width = parseFloat(token.text);
       } else if (token.kind === "id" && LINE_STYLES.has(token.text)) {
         if (strokeProps.style) reportDuplicate(token);
-        strokeProps.style = token.text as any;
+        strokeProps.style = token.text as NonNullable<StyleProps["stroke"]>["style"];
       } else
         reportBadValue(token, "`#hex` color, `solid|dashed|dotted` line style, or numeric width");
     }
@@ -394,7 +407,7 @@ function applyStyleEntry(
       firstValue()?.kind === "id" &&
       LABEL_POSITIONS.has(firstValue().text)
     )
-      inline.label = firstValue().text as any;
+      inline.label = firstValue().text as StyleProps["label"];
     else
       diagnostics.push({
         code: "E0104",
@@ -424,22 +437,21 @@ function applyStyleEntry(
     case "arrows": {
       const value = firstValue();
       if (value?.kind === "id" && (value.text === "normal" || value.text === "large"))
-        target.arrows = value.text as any;
+        target.arrows = value.text as DiagramStyle["arrows"];
       else reportBadValue(value ?? key, "`normal` or `large`");
       break;
     }
     case "flow-color": {
       const value = firstValue();
       if (value?.kind === "id" && (value.text === "none" || value.text === "by-source"))
-        target.flowColor = value.text as any;
+        target.flowColor = value.text as DiagramStyle["flowColor"];
       else reportBadValue(value ?? key, "`none` or `by-source`");
       break;
     }
     case "disposition": {
       const value = firstValue();
-      const VALID_DISPOSITIONS = new Set(["wide", "tall", "slide", "page"]);
-      if (value?.kind === "id" && VALID_DISPOSITIONS.has(value.text))
-        target.disposition = value.text as any;
+      if (value?.kind === "id" && DISPOSITIONS.has(value.text))
+        target.disposition = value.text as DiagramStyle["disposition"];
       else
         reportBadValue(
           value ?? key,
@@ -450,14 +462,14 @@ function applyStyleEntry(
     case "legend": {
       const value = firstValue();
       if (value?.kind === "id" && (value.text === "auto" || value.text === "off"))
-        target.legend = value.text as any;
+        target.legend = value.text as DiagramStyle["legend"];
       else reportBadValue(value ?? key, "`auto` or `off`");
       break;
     }
     case "flow-text": {
       const value = firstValue();
       if (value?.kind === "id" && (value.text === "full" || value.text === "numbered"))
-        target.flowText = value.text as any;
+        target.flowText = value.text as DiagramStyle["flowText"];
       else
         reportBadValue(
           value ?? key,
@@ -468,7 +480,7 @@ function applyStyleEntry(
     case "flow-label": {
       const value = firstValue();
       if (value?.kind === "id" && LABEL_POSITIONS.has(value.text))
-        target.flowLabel = value.text as any;
+        target.flowLabel = value.text as DiagramStyle["flowLabel"];
       else reportBadValue(value ?? key, "`on-line`, `above` or `below`");
       break;
     }
@@ -493,7 +505,7 @@ function applyStyleEntry(
     case "lang": {
       const value = firstValue();
       if (value?.kind === "id" && (value.text === "en" || value.text === "fr"))
-        target.lang = value.text as any;
+        target.lang = value.text as DiagramStyle["lang"];
       else
         reportBadValue(
           value ?? key,

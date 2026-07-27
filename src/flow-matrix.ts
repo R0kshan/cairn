@@ -1,6 +1,16 @@
-import type { Model, View } from "./model.ts";
-import { UI, palettes, lightPalette } from "./model.ts";
-import { measure } from "./text-metrics.ts";
+/**
+ * The infrastructure *matrice des flux techniques* exporter — the primary
+ * deliverable of the infrastructure view. Builds one row per flow (number,
+ * source/dest with zone, protocol/port split, nature) and renders it as CSV, GFM
+ * table, or a standalone themed SVG. Column headers localize via `style { lang }`.
+ */
+
+import type { Model } from "./models/ast.ts";
+import type { View } from "./views.ts";
+import { UI } from "./localization.ts";
+import { palettes, lightPalette } from "./themes.ts";
+import { esc, escAttr } from "./xml-escape.ts";
+import { measure, CHAR_WIDTH } from "./text-metrics.ts";
 
 export interface MatrixRow {
   num: number;
@@ -10,9 +20,6 @@ export interface MatrixRow {
   port: string;
   nature: string;
 }
-
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const escAttr = (s: string) => esc(s).replace(/"/g, "&quot;");
 
 function zoneOf(model: Model, id: string): string | undefined {
   const element = model.index.get(id);
@@ -160,7 +167,9 @@ export function matrixSvg(model: Model, _view: View, lang: "en" | "fr"): string 
           ? columnXPositions[colIndex] + columnWidths[colIndex] / 2
           : columnXPositions[colIndex] + PADDING_X;
       let text = cellText;
-      const maxChars = Math.floor((columnWidths[colIndex] - 2 * PADDING_X) / (FONT_SIZE * 0.56));
+      const maxChars = Math.floor(
+        (columnWidths[colIndex] - 2 * PADDING_X) / (FONT_SIZE * CHAR_WIDTH),
+      );
       if (text.length > maxChars) text = text.slice(0, Math.max(1, maxChars - 1)) + "…";
       svgOutput += `<text x="${textX}" y="${y + 17}" font-size="${FONT_SIZE}" text-anchor="${anchor}" fill="${pal.bandText}">${esc(text)}</text>\n`;
     });

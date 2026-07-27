@@ -24,7 +24,7 @@ import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
 import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
-import { views } from "../src/model.ts";
+import { views } from "../src/views.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 export const ROOT = join(HERE, "..");

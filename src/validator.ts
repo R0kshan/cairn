@@ -1,5 +1,16 @@
-import type { Model, Element, View, Diagnostic } from "./model.ts";
-import { views } from "./model.ts";
+/**
+ * Stage 3: semantic checks over the parsed `Model`, driven by the active view's
+ * rules (`views` registry). Runs a battery of focused passes — duplicate IDs,
+ * unknown kinds, nesting, flow references, per-view flow requirements, trust
+ * boundaries, business objects, minimum counts, isolated elements — each
+ * returning `Diagnostic[]`. `nearest`/`editDistance` power the "did you mean?"
+ * suggestions. Purely diagnostic: never mutates the model.
+ */
+
+import type { Model, Element } from "./models/ast.ts";
+import type { Diagnostic } from "./models/diagnostic.ts";
+import type { View } from "./views.ts";
+import { views } from "./views.ts";
 
 export function validate(model: Model): Diagnostic[] {
   const view = model.type ? views[model.type] : undefined;

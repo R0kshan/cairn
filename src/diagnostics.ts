@@ -1,4 +1,11 @@
-import type { Diagnostic } from "./model.ts";
+/**
+ * Diagnostic presentation. `renderHuman` formats `Diagnostic[]` as a
+ * Rust-style report with source excerpt, carets, note/help and an optional-ANSI
+ * colour summary; `renderJson` emits the machine-readable form for
+ * `validate --format json`. Rendering only — the checks live in the validator.
+ */
+
+import type { Diagnostic } from "./models/diagnostic.ts";
 
 const RESET = "\x1b[0m",
   BOLD = "\x1b[1m",

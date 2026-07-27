@@ -1,5 +1,12 @@
 #!/usr/bin/env node
 
+/**
+ * CLI entry point and command dispatch. Wires the pipeline together for each
+ * verb — `validate`, `build`, `matrix`, `watch`, `new`, `explain` — parses argv
+ * (flags + positional file), resolves output paths, prints diagnostics, and sets
+ * process exit codes. Also holds the `cairn new` scaffold templates per view.
+ */
+
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
@@ -7,7 +14,10 @@ import { renderHuman, renderJson } from "./diagnostics.ts";
 import { layout } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
-import { views, explanations, type Diagnostic } from "./model.ts";
+import { views } from "./views.ts";
+import { explanations } from "./models/ast.ts";
+import type { Model } from "./models/ast.ts";
+import type { Diagnostic } from "./models/diagnostic.ts";
 import { watchCommand } from "./watch.ts";
 
 const TYPE_FLAGS: Record<string, string> = {
@@ -218,7 +228,7 @@ Usage:
 
 function loadAndCheck(file: string): {
   src: string;
-  model: any;
+  model: Model;
   diagnostics: Diagnostic[];
 } {
   if (!existsSync(file)) {
@@ -267,7 +277,7 @@ if (command === "validate") {
   const outFile = resolveOutputPath(file, ".svg");
   const { src, model, diagnostics } = loadAndCheck(file);
   exitIfErrors(file, src, diagnostics);
-  const view = views[model.type];
+  const view = views[model.type!];
   layout(model, view)
     .then((scene) => {
       const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
@@ -303,8 +313,8 @@ if (command === "validate") {
       );
       process.exit(0);
     })
-    .catch((error: any) => {
-      console.error("layout error:", error.message);
+    .catch((error: unknown) => {
+      console.error("layout error:", error instanceof Error ? error.message : String(error));
       process.exit(1);
     });
 } else if (command === "matrix") {
@@ -318,7 +328,7 @@ if (command === "validate") {
   }
   const { src, model, diagnostics } = loadAndCheck(file);
   exitIfErrors(file, src, diagnostics);
-  const view = views[model.type];
+  const view = views[model.type!];
   if (!model.flows.length) {
     console.error(`error: \`${file}\` declares no flows — nothing to tabulate`);
     process.exit(1);

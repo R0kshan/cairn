@@ -1,9 +1,29 @@
-import type { Model, View, StyleProps, Flow } from "./model.ts";
-import { themeFor, flowPalette, UI } from "./model.ts";
+/**
+ * Stage 5: serializes a laid-out `Scene` to a deterministic SVG string. Resolves
+ * per-element styling (theme → per-kind → inline), draws each node kind with its
+ * own shape function, routes edges with crossing "hops", settles flow-label
+ * positions to keep overlaps at zero, and appends the flows/objects/legend bands.
+ * All text goes through `esc`/`escAttr`; output must stay byte-identical across
+ * runs, so only the arithmetic allowed by CLAUDE.md is used here.
+ */
+
+import type { Model, StyleProps, Flow } from "./models/ast.ts";
+import type { View } from "./views.ts";
+import { themeFor, flowPalette } from "./themes.ts";
+import { UI } from "./localization.ts";
+import { esc, escAttr } from "./xml-escape.ts";
+import { type Box, boxesOverlap } from "./geometry.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from "./scene-layout.ts";
 import { chipW, techText, wrapText, fontSizes } from "./text-metrics.ts";
 
 const HOP_RADIUS = 5;
+/**
+ * Character-width factor for positioning text inside the rendered bands (flow
+ * list, legend). Deliberately narrower than text-metrics' CHAR_WIDTH (0.56):
+ * the bands pack labels tighter, and this 0.52 keeps chip/wrap placement snug.
+ * Changing it shifts band geometry — see the determinism note in CLAUDE.md.
+ */
+const RENDER_CHAR_WIDTH = 0.52;
 const SEC_LEVEL_FR: Record<string, string> = {
   public: "public",
   internal: "interne",
@@ -11,24 +31,8 @@ const SEC_LEVEL_FR: Record<string, string> = {
   secret: "secret",
 };
 
-const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-const escAttr = (s: string) => esc(s).replace(/"/g, "&quot;");
 const dashArray = (lineStyle?: string) =>
   lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : undefined;
-
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-const overlaps = (boxA: Box, boxB: Box) =>
-  !(
-    boxA.x + boxA.width <= boxB.x ||
-    boxB.x + boxB.width <= boxA.x ||
-    boxA.y + boxA.height <= boxB.y ||
-    boxB.y + boxB.height <= boxA.y
-  );
 
 export interface RenderResult {
   svg: string;
@@ -120,8 +124,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     let count = 0;
     for (let index = 0; index < labels.length; index++) {
       for (let otherIndex = index + 1; otherIndex < labels.length; otherIndex++)
-        if (overlaps(labels[index] as Box, labels[otherIndex] as Box)) count++;
-      for (const node of nodeBoxes) if (overlaps(labels[index] as Box, node)) count++;
+        if (boxesOverlap(labels[index] as Box, labels[otherIndex] as Box)) count++;
+      for (const node of nodeBoxes) if (boxesOverlap(labels[index] as Box, node)) count++;
     }
     return count;
   };
@@ -134,8 +138,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     }
     for (const label of labels) {
       const collides = () =>
-        labels.some((other) => other !== label && overlaps(other as Box, label as Box)) ||
-        nodeBoxes.some((node) => overlaps(node, label as Box));
+        labels.some((other) => other !== label && boxesOverlap(other as Box, label as Box)) ||
+        nodeBoxes.some((node) => boxesOverlap(node, label as Box));
       if (!collides()) continue;
       const originY = label.y,
         originX = label.x;
@@ -470,7 +474,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
         0,
       );
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
-      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * 0.52)));
+      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * RENDER_CHAR_WIDTH)));
       const raw = (flow.label ?? "") + (tech ? "  " + tech : "");
       const lines = raw.split("\n").flatMap((segment) => wrapText(segment, maxChars).split("\n"));
       return { flow, lines };
@@ -489,7 +493,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       });
       if (entry.flow.objects?.length) {
         const lastLine = entry.lines[entry.lines.length - 1] ?? "";
-        let chipX = x + BADGE + Math.ceil(lastLine.length * scaled(10) * 0.52) + 6;
+        let chipX = x + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
         const chipY = y + 1 + (entry.lines.length - 1) * LINE_H;
         for (const objectRef of entry.flow.objects) {
           const c = chip(chipX, chipY, objectName.get(objectRef.id) ?? objectRef.id);
@@ -532,7 +536,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       }
       const name = legendNames[kind];
       bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>\n`;
-      lx += scaled(40) + Math.ceil(name.length * scaled(10) * 0.52) + scaled(24);
+      lx += scaled(40) + Math.ceil(name.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
       if (lx > scene.width - 220) {
         lx = contentX;
         bandY += scaled(22);

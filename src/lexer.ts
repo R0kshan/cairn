@@ -1,29 +1,28 @@
-import type { Span, Diagnostic } from "./model.ts";
+/**
+ * Stage 1 of the pipeline: turns raw `.cairn` source into a flat `Token[]`.
+ * Hand-written single-pass scanner tracking line/col for precise spans. Handles
+ * `#`-comments vs `#hex` colors, quoted strings with `\n`/`\"` escapes, `->`,
+ * punctuation, numbers and identifiers. Lexical errors are pushed as `E0101`
+ * diagnostics rather than thrown, so scanning always completes.
+ */
 
-export type TokenKind =
-  | "id"
-  | "str"
-  | "num"
-  | "color"
-  | "arrow"
-  | "colon"
-  | "lbrace"
-  | "rbrace"
-  | "lbrack"
-  | "rbrack"
-  | "lparen"
-  | "rparen"
-  | "comma"
-  | "nl"
-  | "eof";
-export interface Token {
-  kind: TokenKind;
-  text: string;
-  span: Span;
-}
+import type { Diagnostic } from "./models/diagnostic.ts";
+import type { Token, TokenKind } from "./models/token.ts";
 
 const HEX_PATTERN = /^[0-9a-fA-F]{3,8}$/;
 const isIdChar = (char: string) => /[A-Za-z0-9_\-/.]/.test(char);
+
+/** Single-character punctuation tokens, keyed by the character that produces them. */
+const SINGLE_CHAR_TOKENS: Record<string, TokenKind> = {
+  ":": "colon",
+  "{": "lbrace",
+  "}": "rbrace",
+  "[": "lbrack",
+  "]": "rbrack",
+  "(": "lparen",
+  ")": "rparen",
+  ",": "comma",
+};
 
 export function lex(src: string, diagnostics: Diagnostic[]): Token[] {
   const tokens: Token[] = [];
@@ -120,50 +119,9 @@ export function lex(src: string, diagnostics: Diagnostic[]): Token[] {
       col += 2;
       continue;
     }
-    if (char === ":") {
-      push("colon", ":", line, col);
-      position++;
-      col++;
-      continue;
-    }
-    if (char === "{") {
-      push("lbrace", "{", line, col);
-      position++;
-      col++;
-      continue;
-    }
-    if (char === "}") {
-      push("rbrace", "}", line, col);
-      position++;
-      col++;
-      continue;
-    }
-    if (char === "[") {
-      push("lbrack", "[", line, col);
-      position++;
-      col++;
-      continue;
-    }
-    if (char === "]") {
-      push("rbrack", "]", line, col);
-      position++;
-      col++;
-      continue;
-    }
-    if (char === "(") {
-      push("lparen", "(", line, col);
-      position++;
-      col++;
-      continue;
-    }
-    if (char === ")") {
-      push("rparen", ")", line, col);
-      position++;
-      col++;
-      continue;
-    }
-    if (char === ",") {
-      push("comma", ",", line, col);
+    const singleCharKind = SINGLE_CHAR_TOKENS[char];
+    if (singleCharKind) {
+      push(singleCharKind, char, line, col);
       position++;
       col++;
       continue;

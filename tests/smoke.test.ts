@@ -10,7 +10,7 @@ import { validate } from "../src/validator.ts";
 import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
 import { matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
-import { views } from "../src/model.ts";
+import { views } from "../src/views.ts";
 
 const EX = join(dirname(fileURLToPath(import.meta.url)), "..", "examples");
 // Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.

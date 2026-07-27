@@ -26,7 +26,7 @@ import { validate } from "../src/validator.ts";
 import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
 import { matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
-import { views } from "../src/model.ts";
+import { views } from "../src/views.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EX = join(HERE, "..", "examples");

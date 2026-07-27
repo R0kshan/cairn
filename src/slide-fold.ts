@@ -1,23 +1,24 @@
-import type { Model, Element, View } from "./model.ts";
-import type { Scene, SceneNode, SceneEdge, SceneLabel } from "./scene-layout.ts";
+/**
+ * Alternative "folded" layout for `slide` disposition: arranges source / middle
+ * / sink partitions into columns with hand-routed orthogonal connectors through
+ * left/right gutters, so wide source→sink diagrams fit a 16:9 frame better than
+ * the default flow. Lays out each middle group with ELK, then places columns and
+ * routes inter-group flows itself. `LaneAllocator` assigns non-overlapping lanes
+ * to parallel connectors. Returns `null` when folding doesn't apply.
+ */
+
+import type { Model, Element } from "./models/ast.ts";
+import type { ELK, ElkNode } from "elkjs/lib/elk.bundled.js";
+import type { View } from "./views.ts";
+import type { Scene, SceneNode, SceneEdge, SceneLabel, LaidOutNode } from "./scene-layout.ts";
 import { measure, wrapText, nodeSize, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
+import type { Box, Point } from "./geometry.ts";
 
 const PAD_TOP = 30,
   PAD = 12;
 const LANE_STEP = 10;
 const LANE_V = 11;
 const LABEL_WRAP = 16;
-
-interface Box {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-interface Pt {
-  x: number;
-  y: number;
-}
 
 class LaneAllocator {
   lanes: { rangeStart: number; rangeEnd: number }[][] = [];
@@ -40,7 +41,7 @@ class LaneAllocator {
   }
 }
 
-export async function foldedLayout(model: Model, view: View, elk: any): Promise<Scene | null> {
+export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<Scene | null> {
   const roots = model.elements;
   const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";
@@ -93,7 +94,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
     }
   })(roots);
 
-  function toElkNode(element: Element): any {
+  function toElkNode(element: Element): ElkNode {
     if (element.children.length) {
       const lineCount = (element.label ?? element.id).split("\n").length;
       return {
@@ -114,26 +115,27 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
     return { id: element.id, width: size.width, height: size.height };
   }
 
-  const middleResults = new Map<string, any>();
+  const middleResults = new Map<string, LaidOutNode>();
   for (const group of middleGroups) {
     const node = toElkNode(group);
+    const nodeChildren = (node.children ??= []);
     for (const flow of interFlows) {
       if (rootOf.get(flow.from) === group)
-        node.children.push({
+        nodeChildren.push({
           id: `${flow.id}_out`,
           width: 1,
           height: 1,
           layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" },
         });
       if (rootOf.get(flow.to) === group)
-        node.children.push({
+        nodeChildren.push({
           id: `${flow.id}_in`,
           width: 1,
           height: 1,
           layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" },
         });
     }
-    const graph = {
+    const graph: ElkNode = {
       id: `fold_${group.id}`,
       layoutOptions: {
         "elk.algorithm": "layered",
@@ -199,7 +201,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
           })),
       ],
     };
-    middleResults.set(group.id, await elk.layout(graph));
+    middleResults.set(group.id, (await elk.layout(graph)) as unknown as LaidOutNode);
   }
 
   interface ColGroup {
@@ -288,7 +290,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
   const widthSource = Math.max(0, ...sourceColumns.map((col) => col.width));
   const widthMiddleFn = (element: Element) =>
     element.children.length
-      ? middleResults.get(element.id)!.children[0].width
+      ? middleResults.get(element.id)!.children![0].width
       : nodeSize(element.kind, element.label ?? element.id, nodeFontSize).width;
   const widthMiddle = Math.max(...middles.map(widthMiddleFn));
   const widthSink = Math.max(0, ...sinkColumns.map((col) => col.width));
@@ -307,15 +309,15 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
   const rows: {
     element: Element;
     box: Box;
-    result: any | null;
+    result: LaidOutNode | null;
   }[] = [];
   let yCursor = 16 + gutterHeight(0);
   middles.forEach((element, index) => {
     const result = middleResults.get(element.id) ?? null;
     const size = result
       ? {
-          width: result.children[0].width,
-          height: result.children[0].height,
+          width: result.children![0].width,
+          height: result.children![0].height,
         }
       : (() => {
           const node = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
@@ -386,8 +388,8 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
   pushCol(sourcePlaced);
   pushCol(sinkPlaced);
 
-  const absolutePorts = new Map<string, Pt>();
-  const origins = new Map<string, Pt>();
+  const absolutePorts = new Map<string, Point>();
+  const origins = new Map<string, Point>();
   for (const { element, box, result } of rows) {
     if (!result) {
       nodes.push({
@@ -404,11 +406,11 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
       continue;
     }
     const rootOffset = {
-      x: box.x - result.children[0].x,
-      y: box.y - result.children[0].y,
+      x: box.x - result.children![0].x,
+      y: box.y - result.children![0].y,
     };
     origins.set(result.id, rootOffset);
-    (function walkNodes(elkNode: any, offsetX: number, offsetY: number) {
+    (function walkNodes(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
       for (const child of elkNode.children ?? []) {
         const absoluteX = offsetX + child.x;
         const absoluteY = offsetY + child.y;
@@ -441,20 +443,20 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
   }
 
   const edges: SceneEdge[] = [];
-  const edgePoints = new Map<string, Pt[]>();
+  const edgePoints = new Map<string, Point[]>();
   for (const { box, result } of rows) {
     if (!result) continue;
     const rootOffset = {
-      x: box.x - result.children[0].x,
-      y: box.y - result.children[0].y,
+      x: box.x - result.children![0].x,
+      y: box.y - result.children![0].y,
     };
-    (function collectEdges(elkNode: any) {
+    (function collectEdges(elkNode: LaidOutNode) {
       for (const edge of elkNode.edges ?? []) {
         const section = edge.sections?.[0];
         if (!section) continue;
         const origin = (edge.container && origins.get(edge.container)) || rootOffset;
         const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map(
-          (point: any) => ({
+          (point) => ({
             x: point.x + origin.x,
             y: point.y + origin.y,
           }),
@@ -463,7 +465,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
           edgePoints.set(edge.id, points);
           continue;
         }
-        const labels = (edge.labels ?? []).map((label: any) => ({
+        const labels = (edge.labels ?? []).map((label) => ({
           flowId: edge.id,
           text: label.text,
           x: label.x + origin.x,
@@ -494,7 +496,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
       labelY: top + 2 + (laneIndex % 2) * LABEL_ROW,
     };
   };
-  const sideMid = (box: Box, side: "left" | "right"): Pt => ({
+  const sideMid = (box: Box, side: "left" | "right"): Point => ({
     x: side === "left" ? box.x : box.x + box.width,
     y: box.y + box.height / 2,
   });
@@ -511,7 +513,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
       inPort ?? sideMid(absoluteBoxes.get(flow.to) ?? absoluteBoxes.get(destRoot.id)!, "left");
     const preSegments = edgePoints.get(`${flow.id}_oe`) ?? [];
     const postSegments = edgePoints.get(`${flow.id}_ie`) ?? [];
-    const points: Pt[] = [];
+    const points: Point[] = [];
     let flowLaneIndex = 0;
     let gutterY = 0;
     let gutterLabelY = 0;
@@ -534,7 +536,7 @@ export async function foldedLayout(model: Model, view: View, elk: any): Promise<
       );
     } else if (cls === "C" || cls === "D" || cls === "E") {
       const gutterIndex = gutter!;
-      const start: Pt =
+      const start: Point =
         cls === "D"
           ? sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id)!, "left")
           : sourcePoint;
