@@ -26,5 +26,12 @@ jobs:
         with:
           languages: javascript-typescript
           queries: security-extended # broader security query suite than the default
-      # No build step: cairn runs TypeScript directly, so CodeQL needs no autobuild.
+          # Exclude generated bundles. `playground/cairn-engine.js` and
+          # `playground/lib/*.mjs` are build artifacts of `npm run build:playground`
+          # that inline elkjs, so alerts there are (a) third-party code we cannot
+          # patch, and (b) duplicates of what is already scanned in `src/`.
+          config: |
+            paths-ignore:
+              - playground/cairn-engine.js
+              - playground/lib
       - uses: github/codeql-action/analyze@7188fc363630916deb702c7fdcf4e481b751f97a #v4.37.1

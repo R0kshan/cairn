@@ -18,6 +18,14 @@ Not a general diagramming tool.
 - **No build step.** `.ts` runs directly via `node --experimental-strip-types`
   (Node ≥ 22.6). Don't add a transpile/bundle step, emit `dist/`, or rewrite
   imports to `.js` — the explicit `.ts` import extensions are intentional.
+  This flag erases type annotations at runtime without compiling them. It
+  matters in **development only** (the shipped binary uses Bun's compiler
+  and runs without Node). In dev it eliminates the compile step — change
+  source and re-run, no `tsc --watch` or `dist/` overhead. The project uses
+  none of the unsupported TS features (`enum` initializers, `const enum`,
+  `namespace`, legacy decorators). The tradeoff: it's experimental
+  ([node#53725](https://github.com/nodejs/node/issues/53725)). If it changes,
+  the fallback is a one-liner `tsc` compile step.
 - **Type checking exists ONLY in `npm run typecheck`** — the runtime strips
   types without checking them. (TS 7.x native compiler; needs its per-platform
   binary installed.)
@@ -29,17 +37,17 @@ Not a general diagramming tool.
 ## Pipeline & file map (`src/`)
 
 ```
-.cairn → lex.ts → parse.ts → validate.ts → layout.ts (elkjs) → render.ts → SVG
+.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → svg-render.ts → SVG
 ```
 
 - `model.ts` — the heart: types, the `views` registry (kinds, nesting rules,
   per-view diagnostics), themes (`themes`/`mkTheme`/`themeFor`), i18n (`UI`),
   diagnostic `explanations`. Most feature work starts here.
-- `matrix.ts` flow-matrix exporters · `fold.ts` slide/page folding ·
-  `text.ts` **pure-arithmetic** metrics (`len × fontSize × 0.56`, no system
-  fonts — this is why output is platform-independent) · `diag.ts` diagnostic
-  rendering · `cli.ts` dispatch · `watch.ts` · `elk*.ts` elkjs wiring ·
-  `playground-entry.ts` browser bundle entry.
+- `flow-matrix.ts` flow-matrix exporters · `slide-fold.ts` slide/page folding ·
+  `text-metrics.ts` **pure-arithmetic** metrics (`len × fontSize × 0.56`, no system
+  fonts — this is why output is platform-independent) · `diagnostics.ts` diagnostic
+  rendering · `cli.ts` dispatch · `watch.ts` · `elk-*.ts` elkjs wiring ·
+  `playground.ts` browser bundle entry.
 
 ## Commands
 
@@ -107,6 +115,6 @@ checklist and snapshot regeneration procedure.
 
 Adding a **view / diagnostic / theme / style property** all start in `model.ts`
 (the `views` registry / `themes` / `DiagramStyle`), then flow through
-`parse.ts` → `validate.ts` → `render.ts` as needed. After any such change run the
+`parser.ts` → `validator.ts` → `svg-render.ts` as needed. After any such change run the
 full gate **and** `npm run snapshots` to re-baseline. For generic work use the
 `engineering` plugin skills and the `security-review` / `review` commands.

@@ -13,13 +13,13 @@ cd "$(dirname "$0")/.."
 ESBUILD="npx --yes esbuild@0.23"
 
 echo "• building browser bundle → playground/cairn-engine.js"
-$ESBUILD src/playground-entry.ts \
+$ESBUILD src/playground.ts \
   --bundle --format=esm --platform=browser --minify \
   --outfile=playground/cairn-engine.js --log-level=warning
 
 echo "• building node bundle    → playground/lib/engine.node.mjs"
 mkdir -p playground/lib
-$ESBUILD src/playground-entry.ts \
+$ESBUILD src/playground.ts \
   --bundle --format=esm --platform=node \
   --outfile=playground/lib/engine.node.mjs --log-level=warning
 
