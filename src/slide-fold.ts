@@ -13,6 +13,7 @@ import type { View } from "./views.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel, LaidOutNode } from "./scene-layout.ts";
 import { measure, wrapText, nodeSize, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
 import type { Box, Point } from "./geometry.ts";
+import { subtreeElements, indexElementsById } from "./element-tree.ts";
 
 const PAD_TOP = 30,
   PAD = 12;
@@ -26,19 +27,151 @@ class LaneAllocator {
     const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
     const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
     for (let laneIndex = 0; laneIndex < this.lanes.length; laneIndex++) {
-      if (
-        !this.lanes[laneIndex].some(
-          (existingInterval) =>
-            existingInterval.rangeStart < rangeEnd && rangeStart < existingInterval.rangeEnd,
-        )
-      ) {
-        this.lanes[laneIndex].push({ rangeStart, rangeEnd });
-        return laneIndex;
-      }
+      const hasOverlap = this.lanes[laneIndex].some(
+        (existingInterval) =>
+          existingInterval.rangeStart < rangeEnd && rangeStart < existingInterval.rangeEnd,
+      );
+      if (hasOverlap) continue;
+      this.lanes[laneIndex].push({ rangeStart, rangeEnd });
+      return laneIndex;
     }
     this.lanes.push([{ rangeStart, rangeEnd }]);
     return this.lanes.length - 1;
   }
+}
+
+interface WalkedFoldNode {
+  id: string;
+  origin: Point;
+  isPort: boolean;
+  node?: SceneNode;
+  box?: Box;
+}
+
+interface CollectedFoldEdges {
+  edges: SceneEdge[];
+  edgePoints: [string, Point[]][];
+}
+
+interface ColGroup {
+  element: Element;
+  width: number;
+  height: number;
+  blocks: {
+    element: Element;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }[];
+}
+
+type Cls = "A" | "B" | "C" | "D" | "E" | "X";
+
+/** Converts an `Element` (and its children, recursively) into elk's input node shape. */
+function toElkNode(element: Element, containerFontSize: number, nodeFontSize: number): ElkNode {
+  if (element.children.length) {
+    const lineCount = (element.label ?? element.id).split("\n").length;
+    return {
+      id: element.id,
+      layoutOptions: {
+        "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`,
+      },
+      labels: [
+        {
+          text: element.label ?? element.id,
+          ...measure(element.label ?? element.id, containerFontSize),
+        },
+      ],
+      children: element.children.map((child) => toElkNode(child, containerFontSize, nodeFontSize)),
+    };
+  }
+  const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
+  return { id: element.id, width: size.width, height: size.height };
+}
+
+/**
+ * Recursively resolves every descendant of `elkNode` to an absolute origin
+ * (elk positions are parent-relative). Synthetic `_in`/`_out` port nodes
+ * (added for cross-group flow routing) come back as ports with no scene node;
+ * everything else comes back with a `SceneNode` + `Box` ready to place.
+ */
+function walkFoldedNodes(
+  elkNode: LaidOutNode,
+  offsetX: number,
+  offsetY: number,
+  elementById: Map<string, Element>,
+  syntheticIds: Set<string>,
+): WalkedFoldNode[] {
+  return (elkNode.children ?? []).flatMap((child) => {
+    const absoluteX = offsetX + child.x;
+    const absoluteY = offsetY + child.y;
+    const origin = { x: absoluteX, y: absoluteY };
+    if (syntheticIds.has(child.id)) return [{ id: child.id, origin, isPort: true }];
+    const element = elementById.get(child.id)!;
+    const box: Box = { x: absoluteX, y: absoluteY, width: child.width, height: child.height };
+    const node: SceneNode = {
+      id: child.id,
+      kind: element.kind,
+      label: element.label ?? child.id,
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      container: !!child.children?.length,
+    };
+    return [
+      { id: child.id, origin, isPort: false, node, box },
+      ...walkFoldedNodes(child, absoluteX, absoluteY, elementById, syntheticIds),
+    ];
+  });
+}
+
+/**
+ * Recursively collects every edge beneath `elkNode`, resolving its points and
+ * labels to absolute coordinates. Synthetic `_oe`/`_ie` port edges (the stubs
+ * connecting a group's boundary port to its real source/target) are set aside
+ * in `edgePoints` rather than pushed as scene edges — the caller stitches them
+ * onto the matching inter-group connector.
+ */
+function collectFoldedEdges(
+  elkNode: LaidOutNode,
+  origins: Map<string, Point>,
+  rootOffset: Point,
+  syntheticIds: Set<string>,
+): CollectedFoldEdges {
+  const edges: SceneEdge[] = [];
+  const edgePoints: [string, Point[]][] = [];
+  for (const edge of elkNode.edges ?? []) {
+    const section = edge.sections?.[0];
+    if (!section) continue;
+    const origin = (edge.container && origins.get(edge.container)) || rootOffset;
+    const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map(
+      (point) => ({
+        x: point.x + origin.x,
+        y: point.y + origin.y,
+      }),
+    );
+    if (syntheticIds.has(edge.id)) {
+      edgePoints.push([edge.id, points]);
+      continue;
+    }
+    const labels = (edge.labels ?? []).map((label) => ({
+      flowId: edge.id,
+      text: label.text,
+      x: label.x + origin.x,
+      y: label.y + origin.y,
+      width: label.width,
+      height: label.height,
+    }));
+    edges.push({ id: edge.id, pts: points, labels });
+  }
+  for (const child of elkNode.children ?? []) {
+    const childResult = collectFoldedEdges(child, origins, rootOffset, syntheticIds);
+    edges.push(...childResult.edges);
+    edgePoints.push(...childResult.edgePoints);
+  }
+  return { edges, edgePoints };
 }
 
 export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<Scene | null> {
@@ -71,11 +204,9 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   if (middleGroups.length < 2) return null;
 
   const rootOf = new Map<string, Element>();
-  for (const root of roots)
-    (function mark(element: Element) {
-      rootOf.set(element.id, root);
-      element.children.forEach(mark);
-    })(root);
+  for (const root of roots) {
+    for (const element of subtreeElements(root)) rootOf.set(element.id, root);
+  }
 
   const interFlows = model.flows.filter((flow) => {
     const sourceRoot = rootOf.get(flow.from);
@@ -86,54 +217,32 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
     (flow) => rootOf.get(flow.from) && rootOf.get(flow.from) === rootOf.get(flow.to),
   );
 
-  const elementById = new Map<string, Element>();
-  (function indexElements(elements: Element[]) {
-    for (const element of elements) {
-      elementById.set(element.id, element);
-      indexElements(element.children);
-    }
-  })(roots);
-
-  function toElkNode(element: Element): ElkNode {
-    if (element.children.length) {
-      const lineCount = (element.label ?? element.id).split("\n").length;
-      return {
-        id: element.id,
-        layoutOptions: {
-          "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`,
-        },
-        labels: [
-          {
-            text: element.label ?? element.id,
-            ...measure(element.label ?? element.id, containerFontSize),
-          },
-        ],
-        children: element.children.map(toElkNode),
-      };
-    }
-    const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
-    return { id: element.id, width: size.width, height: size.height };
-  }
+  const elementById = new Map(indexElementsById(roots));
+  const syntheticIds = new Set<string>();
 
   const middleResults = new Map<string, LaidOutNode>();
   for (const group of middleGroups) {
-    const node = toElkNode(group);
+    const node = toElkNode(group, containerFontSize, nodeFontSize);
     const nodeChildren = (node.children ??= []);
     for (const flow of interFlows) {
-      if (rootOf.get(flow.from) === group)
+      if (rootOf.get(flow.from) === group) {
+        syntheticIds.add(`${flow.id}_out`);
         nodeChildren.push({
           id: `${flow.id}_out`,
           width: 1,
           height: 1,
           layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" },
         });
-      if (rootOf.get(flow.to) === group)
+      }
+      if (rootOf.get(flow.to) === group) {
+        syntheticIds.add(`${flow.id}_in`);
         nodeChildren.push({
           id: `${flow.id}_in`,
           width: 1,
           height: 1,
           layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" },
         });
+      }
     }
     const graph: ElkNode = {
       id: `fold_${group.id}`,
@@ -187,35 +296,29 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
           }),
         ...interFlows
           .filter((flow) => rootOf.get(flow.from) === group)
-          .map((flow) => ({
+          .map((flow) => {
+            syntheticIds.add(`${flow.id}_oe`);
+            return {
             id: `${flow.id}_oe`,
             sources: [flow.from],
             targets: [`${flow.id}_out`],
-          })),
+            };
+          }),
         ...interFlows
           .filter((flow) => rootOf.get(flow.to) === group)
-          .map((flow) => ({
+          .map((flow) => {
+            syntheticIds.add(`${flow.id}_ie`);
+            return {
             id: `${flow.id}_ie`,
             sources: [`${flow.id}_in`],
             targets: [flow.to],
-          })),
+            };
+          }),
       ],
     };
     middleResults.set(group.id, (await elk.layout(graph)) as unknown as LaidOutNode);
   }
 
-  interface ColGroup {
-    element: Element;
-    width: number;
-    height: number;
-    blocks: {
-      element: Element;
-      x: number;
-      y: number;
-      width: number;
-      height: number;
-    }[];
-  }
   const layoutColumn = (elements: Element[]): ColGroup[] =>
     elements.map((group) => {
       const blocks = group.children.map((child) => {
@@ -234,24 +337,23 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
           ...blocks.map((block) => block.width),
         ) +
         2 * PAD;
-      let y = PAD_TOP;
+      let blockY = PAD_TOP;
       for (const block of blocks) {
         block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
-        block.y = y;
-        y += block.height + 14;
+        block.y = blockY;
+        blockY += block.height + 14;
       }
       return {
         element: group,
         width: columnWidth,
-        height: y - 14 + PAD,
+        height: blockY - 14 + PAD,
         blocks,
       };
     });
   const sourceColumns = layoutColumn(sources);
   const sinkColumns = layoutColumn(sinks);
 
-  const rowIndex = new Map(middles.map((middle, i) => [middle.id, i]));
-  type Cls = "A" | "B" | "C" | "D" | "E" | "X";
+  const rowIndex = new Map(middles.map((middle, middleIndex) => [middle.id, middleIndex]));
   const classify = (flow: (typeof interFlows)[number]): { cls: Cls; gutter?: number } => {
     const sourcePartition = partitionOf(rootOf.get(flow.from)!);
     const destPartition = partitionOf(rootOf.get(flow.to)!);
@@ -339,11 +441,11 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
 
   const placeCol = (cols: ColGroup[], x: number): { group: ColGroup; box: Box }[] => {
     const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
-    let y = Math.max(20, 20 + (middleHeight - total) / 2);
+    let colY = Math.max(20, 20 + (middleHeight - total) / 2);
     return cols.map((col) => {
-      const b = { x, y, width: col.width, height: col.height };
-      y += col.height + 30;
-      return { group: col, box: b };
+      const box = { x, y: colY, width: col.width, height: col.height };
+      colY += col.height + 30;
+      return { group: col, box };
     });
   };
   const sourcePlaced = placeCol(sourceColumns, xSource);
@@ -410,36 +512,15 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
       y: box.y - result.children![0].y,
     };
     origins.set(result.id, rootOffset);
-    (function walkNodes(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
-      for (const child of elkNode.children ?? []) {
-        const absoluteX = offsetX + child.x;
-        const absoluteY = offsetY + child.y;
-        origins.set(child.id, { x: absoluteX, y: absoluteY });
-        if (/_in$|_out$/.test(child.id)) {
-          absolutePorts.set(child.id, { x: absoluteX, y: absoluteY });
-          continue;
-        }
-        const element = elementById.get(child.id)!;
-        const childBox = {
-          x: absoluteX,
-          y: absoluteY,
-          width: child.width,
-          height: child.height,
-        };
-        nodes.push({
-          id: child.id,
-          kind: element.kind,
-          label: element.label ?? child.id,
-          x: childBox.x,
-          y: childBox.y,
-          width: childBox.width,
-          height: childBox.height,
-          container: !!child.children?.length,
-        });
-        absoluteBoxes.set(child.id, childBox);
-        walkNodes(child, absoluteX, absoluteY);
+    for (const walked of walkFoldedNodes(result, rootOffset.x, rootOffset.y, elementById, syntheticIds)) {
+      origins.set(walked.id, walked.origin);
+      if (walked.isPort) {
+        absolutePorts.set(walked.id, walked.origin);
+        continue;
       }
-    })(result, rootOffset.x, rootOffset.y);
+      nodes.push(walked.node!);
+      absoluteBoxes.set(walked.id, walked.box!);
+    }
   }
 
   const edges: SceneEdge[] = [];
@@ -450,33 +531,9 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
       x: box.x - result.children![0].x,
       y: box.y - result.children![0].y,
     };
-    (function collectEdges(elkNode: LaidOutNode) {
-      for (const edge of elkNode.edges ?? []) {
-        const section = edge.sections?.[0];
-        if (!section) continue;
-        const origin = (edge.container && origins.get(edge.container)) || rootOffset;
-        const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map(
-          (point) => ({
-            x: point.x + origin.x,
-            y: point.y + origin.y,
-          }),
-        );
-        if (/_oe$|_ie$/.test(edge.id)) {
-          edgePoints.set(edge.id, points);
-          continue;
-        }
-        const labels = (edge.labels ?? []).map((label) => ({
-          flowId: edge.id,
-          text: label.text,
-          x: label.x + origin.x,
-          y: label.y + origin.y,
-          width: label.width,
-          height: label.height,
-        }));
-        edges.push({ id: edge.id, pts: points, labels });
-      }
-      (elkNode.children ?? []).forEach(collectEdges);
-    })(result);
+    const collected = collectFoldedEdges(result, origins, rootOffset, syntheticIds);
+    edges.push(...collected.edges);
+    for (const [edgeId, points] of collected.edgePoints) edgePoints.set(edgeId, points);
   }
 
   const leftLaneAlloc = new LaneAllocator();
@@ -619,8 +676,8 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   const totalHeight = Math.ceil(
     Math.max(
       middleHeight + 30,
-      ...sinkPlaced.map((p) => p.box.y + p.box.height + 20),
-      ...sourcePlaced.map((p) => p.box.y + p.box.height + 20),
+      ...sinkPlaced.map((placed) => placed.box.y + placed.box.height + 20),
+      ...sourcePlaced.map((placed) => placed.box.y + placed.box.height + 20),
     ),
   );
   return {

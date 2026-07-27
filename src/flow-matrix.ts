@@ -40,10 +40,9 @@ const endpoint = (model: Model, id: string): string => {
 function splitProto(protocol?: string): { proto: string; port: string } {
   if (!protocol) return { proto: "", port: "" };
   const slashIndex = protocol.lastIndexOf("/");
-  if (slashIndex >= 0) {
-    const tail = protocol.slice(slashIndex + 1);
-    if (/^\d+$/.test(tail)) return { proto: protocol.slice(0, slashIndex), port: tail };
-  }
+  const tail = slashIndex >= 0 ? protocol.slice(slashIndex + 1) : "";
+  const hasNumericPort = slashIndex >= 0 && /^\d+$/.test(tail);
+  if (hasNumericPort) return { proto: protocol.slice(0, slashIndex), port: tail };
   return { proto: protocol, port: "" };
 }
 
@@ -61,12 +60,20 @@ export function buildMatrixRows(model: Model): MatrixRow[] {
   });
 }
 
-const csvCell = (s: string): string => (/[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
+const csvCell = (text: string): string =>
+  /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 
 export function matrixCsv(model: Model, lang: "en" | "fr"): string {
-  const h = UI[lang].matrix;
+  const matrixLabels = UI[lang].matrix;
   const rows = buildMatrixRows(model);
-  const header = [h.n, h.source, h.dest, h.proto, h.port, h.nature];
+  const header = [
+    matrixLabels.n,
+    matrixLabels.source,
+    matrixLabels.dest,
+    matrixLabels.proto,
+    matrixLabels.port,
+    matrixLabels.nature,
+  ];
   const lines = [header.map(csvCell).join(",")];
   for (const row of rows) {
     lines.push(
@@ -78,14 +85,21 @@ export function matrixCsv(model: Model, lang: "en" | "fr"): string {
   return lines.join("\n") + "\n";
 }
 
-const mdCell = (s: string): string =>
-  s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n/g, " ");
+const mdCell = (text: string): string =>
+  text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n/g, " ");
 
 export function matrixMd(model: Model, _view: View, lang: "en" | "fr"): string {
-  const h = UI[lang].matrix;
+  const matrixLabels = UI[lang].matrix;
   const rows = buildMatrixRows(model);
-  const title = model.title ? `${h.title} — ${model.title}` : h.title;
-  const cols = [h.n, h.source, h.dest, h.proto, h.port, h.nature];
+  const title = model.title ? `${matrixLabels.title} — ${model.title}` : matrixLabels.title;
+  const cols = [
+    matrixLabels.n,
+    matrixLabels.source,
+    matrixLabels.dest,
+    matrixLabels.proto,
+    matrixLabels.port,
+    matrixLabels.nature,
+  ];
   const outLines: string[] = [`# ${title}`, ""];
   outLines.push("| " + cols.join(" | ") + " |");
   outLines.push("|" + cols.map(() => "---").join("|") + "|");
@@ -102,12 +116,19 @@ export function matrixMd(model: Model, _view: View, lang: "en" | "fr"): string {
 }
 
 export function matrixSvg(model: Model, _view: View, lang: "en" | "fr"): string {
-  const h = UI[lang].matrix;
+  const matrixLabels = UI[lang].matrix;
   const pal = palettes[model.style.theme] ?? lightPalette;
   const rows = buildMatrixRows(model);
-  const title = model.title ? `${h.title} — ${model.title}` : h.title;
+  const title = model.title ? `${matrixLabels.title} — ${model.title}` : matrixLabels.title;
 
-  const headers = [h.n, h.source, h.dest, h.proto, h.port, h.nature];
+  const headers = [
+    matrixLabels.n,
+    matrixLabels.source,
+    matrixLabels.dest,
+    matrixLabels.proto,
+    matrixLabels.port,
+    matrixLabels.nature,
+  ];
   const cells = rows.map((row) => [
     String(row.num),
     row.source,
@@ -136,10 +157,10 @@ export function matrixSvg(model: Model, _view: View, lang: "en" | "fr"): string 
 
   const columnXPositions: number[] = [];
   {
-    let x = 0;
+    let columnX = 0;
     for (const width of columnWidths) {
-      columnXPositions.push(x);
-      x += width;
+      columnXPositions.push(columnX);
+      columnX += width;
     }
   }
 
@@ -158,9 +179,9 @@ export function matrixSvg(model: Model, _view: View, lang: "en" | "fr"): string 
     svgOutput += `<text x="${textX}" y="${headerY + 20}" font-size="${FONT_SIZE}" font-weight="bold" text-anchor="${anchor}" fill="${pal.bandTitle}">${esc(header)}</text>\n`;
   });
   cells.forEach((row, rowIndex) => {
-    const y = headerY + HEADER_HEIGHT + rowIndex * ROW_HEIGHT;
+    const rowY = headerY + HEADER_HEIGHT + rowIndex * ROW_HEIGHT;
     if (rowIndex % 2 === 1)
-      svgOutput += `<rect x="0" y="${y}" width="${totalWidth}" height="${ROW_HEIGHT}" fill="${pal.divider}" opacity="0.18"/>\n`;
+      svgOutput += `<rect x="0" y="${rowY}" width="${totalWidth}" height="${ROW_HEIGHT}" fill="${pal.divider}" opacity="0.18"/>\n`;
     row.forEach((cellText, colIndex) => {
       const anchor = colIndex === 0 || colIndex === 4 ? "middle" : "start";
       const textX =
@@ -172,7 +193,7 @@ export function matrixSvg(model: Model, _view: View, lang: "en" | "fr"): string 
         (columnWidths[colIndex] - 2 * PADDING_X) / (FONT_SIZE * CHAR_WIDTH),
       );
       if (text.length > maxChars) text = text.slice(0, Math.max(1, maxChars - 1)) + "…";
-      svgOutput += `<text x="${textX}" y="${y + 17}" font-size="${FONT_SIZE}" text-anchor="${anchor}" fill="${pal.bandText}">${esc(text)}</text>\n`;
+      svgOutput += `<text x="${textX}" y="${rowY + 17}" font-size="${FONT_SIZE}" text-anchor="${anchor}" fill="${pal.bandText}">${esc(text)}</text>\n`;
     });
   });
   for (let colIndex = 1; colIndex < columnXPositions.length; colIndex++)

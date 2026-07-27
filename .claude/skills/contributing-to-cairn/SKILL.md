@@ -17,6 +17,7 @@ This skill only documents things those two files don't cover.
 - Write unit tests covering edge cases using the AAA (Arrange-Act-Assert) pattern. Use descriptive test names, and use mocks/stubs sparingly and intentionally.
 - Use `camelCase` for variables, functions, and methods; `PascalCase` for classes, interfaces, types, enums; and `UPPER_SNAKE_CASE` for global top-level constants.
 - Write code that is self-explanatory. Use TSDoc comments for public APIs, exported types, and complex algorithms rather than repeating what the code does.
+- Ensure code has no nested functions, no nested Ifs, no nested loops, or deeply nested ternary expressions. Refactor into smaller functions or early returns to improve readability.
 
 ## Step 3 - Check for regressions
 - Follow instructions in `CONTRIBUTING.md` to run the test suite and snapshot checks. If any snapshot gate fails, follow the step-by-step instructions to determine if the change is intended or a regression.

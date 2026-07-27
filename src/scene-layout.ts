@@ -13,6 +13,7 @@ import type { View } from "./views.ts";
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
+import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
  * A node/edge as returned by elk *after* layout: every coordinate is populated,
@@ -73,6 +74,157 @@ export interface Scene {
   layoutMs: number;
 }
 
+interface WalkedElkNode {
+  id: string;
+  x: number;
+  y: number;
+  node: SceneNode;
+}
+
+/**
+ * IDs of top-level `external` elements that only ever feed data in (never
+ * receive it back) — used by `partitionByOrder` views to place them upstream
+ * of everything else instead of wherever elk's layered algorithm lands them.
+ */
+function computeIngressExternalElements(model: Model): Set<string> {
+  const ingressExternalElements = new Set<string>();
+  for (const element of model.elements) {
+    if (element.kind !== "external") continue;
+    const ids = new Set(subtreeIds(element));
+    const feedsInto = model.flows.some((flow) => ids.has(flow.from) && !ids.has(flow.to));
+    const receivesFrom = model.flows.some((flow) => ids.has(flow.to) && !ids.has(flow.from));
+    if (feedsInto && !receivesFrom) ingressExternalElements.add(element.id);
+  }
+  return ingressExternalElements;
+}
+
+/** Converts an `Element` (and its children, recursively) into elk's input node shape. */
+function toElkNode(
+  element: Element,
+  compact: boolean,
+  containerFontSize: number,
+  nodeFontSize: number,
+): ElkNode {
+  if (element.children.length) {
+    const lineCount = (element.label ?? element.id).split("\n").length;
+    return {
+      id: element.id,
+      layoutOptions: {
+        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
+      },
+      labels: [
+        {
+          text: element.label ?? element.id,
+          ...measure(element.label ?? element.id, containerFontSize),
+        },
+      ],
+      children: element.children.map((child) =>
+        toElkNode(child, compact, containerFontSize, nodeFontSize),
+      ),
+    };
+  }
+  const measured = measure(element.label ?? element.id, nodeFontSize);
+  const isActor = element.kind === "actor";
+  return {
+    id: element.id,
+    width: isActor
+      ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8)
+      : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
+    height: isActor
+      ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11
+      : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12)),
+  };
+}
+
+/**
+ * Recursively resolves every laid-out descendant of `elkNode` to absolute
+ * coordinates (elk positions are parent-relative), producing one `SceneNode`
+ * per descendant alongside the absolute origin later used to place its edges.
+ */
+function walkElkNodes(
+  elkNode: LaidOutNode,
+  offsetX: number,
+  offsetY: number,
+  kindOf: Map<string, Element>,
+): WalkedElkNode[] {
+  return (elkNode.children ?? []).flatMap((child) => {
+    const absoluteX = offsetX + child.x;
+    const absoluteY = offsetY + child.y;
+    const element = kindOf.get(child.id)!;
+    const node: SceneNode = {
+      id: child.id,
+      kind: element.kind,
+      label: element.label ?? child.id,
+      x: absoluteX,
+      y: absoluteY,
+      width: child.width,
+      height: child.height,
+      container: !!child.children?.length,
+    };
+    return [
+      { id: child.id, x: absoluteX, y: absoluteY, node },
+      ...walkElkNodes(child, absoluteX, absoluteY, kindOf),
+    ];
+  });
+}
+
+/**
+ * Recursively collects every edge beneath `elkNode`, resolving its points and
+ * labels to absolute coordinates via `origins` (see `walkElkNodes`). Numbered
+ * flows additionally nudge their badge off the line, perpendicular to its
+ * last segment.
+ */
+function collectSceneEdges(
+  elkNode: LaidOutNode,
+  origins: Record<string, { x: number; y: number }>,
+  numbered: boolean,
+): SceneEdge[] {
+  const ownEdges = (elkNode.edges ?? []).map((edge) => {
+    const origin = (edge.container && origins[edge.container]) || { x: 0, y: 0 };
+    const section = edge.sections?.[0];
+    const points = section
+      ? [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map((point) => ({
+          x: point.x + origin.x,
+          y: point.y + origin.y,
+        }))
+      : [];
+    const labels: SceneLabel[] = (edge.labels ?? []).map((label) => {
+      let labelX = label.x + origin.x,
+        labelY = label.y + origin.y;
+      if (numbered && points.length >= 2) {
+        const last = points[points.length - 1],
+          secondLast = points[points.length - 2];
+        const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
+        const unitX = (last.x - secondLast.x) / segmentLength,
+          unitY = (last.y - secondLast.y) / segmentLength;
+        const stepBack = Math.min(segmentLength - 2, 20 + label.width / 2);
+        let perpX = -unitY,
+          perpY = unitX;
+        if (perpY > 0) {
+          perpX = -perpX;
+          perpY = -perpY;
+        }
+        const offset = label.height / 2 + 2;
+        labelX = last.x - unitX * stepBack + perpX * offset - label.width / 2;
+        labelY = last.y - unitY * stepBack + perpY * offset - label.height / 2;
+      }
+      return {
+        flowId: edge.id,
+        text: label.text,
+        x: labelX,
+        y: labelY,
+        width: label.width,
+        height: label.height,
+      };
+    });
+    return { id: edge.id, pts: points, labels };
+  });
+  const childEdges = (elkNode.children ?? []).flatMap((child) =>
+    collectSceneEdges(child, origins, numbered),
+  );
+  return [...ownEdges, ...childEdges];
+}
+
 export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -86,36 +238,6 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     scale: fontScale,
   } = fontSizes(model.style.font.size);
 
-  function toElkNode(element: Element): ElkNode {
-    if (element.children.length) {
-      const lineCount = (element.label ?? element.id).split("\n").length;
-      return {
-        id: element.id,
-        layoutOptions: {
-          "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
-        },
-        labels: [
-          {
-            text: element.label ?? element.id,
-            ...measure(element.label ?? element.id, containerFontSize),
-          },
-        ],
-        children: element.children.map(toElkNode),
-      };
-    }
-    const measured = measure(element.label ?? element.id, nodeFontSize);
-    const isActor = element.kind === "actor";
-    return {
-      id: element.id,
-      width: isActor
-        ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8)
-        : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
-      height: isActor
-        ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11
-        : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12)),
-    };
-  }
-
   const disposition = model.style.disposition;
   const ASPECT_TARGETS: Record<string, number | undefined> = {
     slide: 16 / 9,
@@ -123,20 +245,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   };
   const aspectTarget = ASPECT_TARGETS[disposition];
 
-  const ingressExternalElements = new Set<string>();
-  if (view.partitionByOrder) {
-    for (const element of model.elements) {
-      if (element.kind !== "external") continue;
-      const ids = new Set<string>();
-      (function collect(child: Element) {
-        ids.add(child.id);
-        child.children.forEach(collect);
-      })(element);
-      const feedsInto = model.flows.some((flow) => ids.has(flow.from) && !ids.has(flow.to));
-      const receivesFrom = model.flows.some((flow) => ids.has(flow.to) && !ids.has(flow.from));
-      if (feedsInto && !receivesFrom) ingressExternalElements.add(element.id);
-    }
-  }
+  const ingressExternalElements = view.partitionByOrder
+    ? computeIngressExternalElements(model)
+    : new Set<string>();
   const INGRESS_PARTITION = -1,
     EGRESS_PARTITION = 900;
 
@@ -185,7 +296,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         : {}),
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode(element);
+      const elkNode = toElkNode(element, compact, containerFontSize, nodeFontSize);
       const partition = view.partitionByOrder
         ? element.kind === "actor" || element.kind === "actor-group"
           ? INGRESS_PARTITION
@@ -243,83 +354,17 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     }),
   });
 
-  const kindOf = new Map<string, Element>();
-  (function indexElements(elements: Element[]) {
-    for (const element of elements) {
-      kindOf.set(element.id, element);
-      indexElements(element.children);
-    }
-  })(model.elements);
+  const kindOf = new Map(indexElementsById(model.elements));
 
   const sceneFromResult = (result: LaidOutNode, layoutMs: number): Scene => {
     const origins: Record<string, { x: number; y: number }> = {
       root: { x: 0, y: 0 },
     };
-    const nodes: SceneNode[] = [];
-    (function walk(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
-      for (const child of elkNode.children ?? []) {
-        const absoluteX = offsetX + child.x,
-          absoluteY = offsetY + child.y;
-        origins[child.id] = { x: absoluteX, y: absoluteY };
-        const element = kindOf.get(child.id)!;
-        nodes.push({
-          id: child.id,
-          kind: element.kind,
-          label: element.label ?? child.id,
-          x: absoluteX,
-          y: absoluteY,
-          width: child.width,
-          height: child.height,
-          container: !!child.children?.length,
-        });
-        walk(child, absoluteX, absoluteY);
-      }
-    })(result, 0, 0);
+    const walkedNodes = walkElkNodes(result, 0, 0, kindOf);
+    const nodes = walkedNodes.map((walked) => walked.node);
+    for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
 
-    const edges: SceneEdge[] = [];
-    (function collect(elkNode: LaidOutNode) {
-      for (const edge of elkNode.edges ?? []) {
-        const origin = (edge.container && origins[edge.container]) || { x: 0, y: 0 };
-        const section = edge.sections?.[0];
-        const points = section
-          ? [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map((point) => ({
-              x: point.x + origin.x,
-              y: point.y + origin.y,
-            }))
-          : [];
-        const labels: SceneLabel[] = (edge.labels ?? []).map((label) => {
-          let x = label.x + origin.x,
-            y = label.y + origin.y;
-          if (numbered && points.length >= 2) {
-            const last = points[points.length - 1],
-              secondLast = points[points.length - 2];
-            const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
-            const unitX = (last.x - secondLast.x) / segmentLength,
-              unitY = (last.y - secondLast.y) / segmentLength;
-            const stepBack = Math.min(segmentLength - 2, 20 + label.width / 2);
-            let perpX = -unitY,
-              perpY = unitX;
-            if (perpY > 0) {
-              perpX = -perpX;
-              perpY = -perpY;
-            }
-            const offset = label.height / 2 + 2;
-            x = last.x - unitX * stepBack + perpX * offset - label.width / 2;
-            y = last.y - unitY * stepBack + perpY * offset - label.height / 2;
-          }
-          return {
-            flowId: edge.id,
-            text: label.text,
-            x,
-            y,
-            width: label.width,
-            height: label.height,
-          };
-        });
-        edges.push({ id: edge.id, pts: points, labels });
-      }
-      (elkNode.children ?? []).forEach(collect);
-    })(result);
+    const edges = collectSceneEdges(result, origins, numbered);
 
     return {
       width: Math.ceil(result.width),

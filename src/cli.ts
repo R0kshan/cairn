@@ -12,11 +12,12 @@ import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
 import { renderHuman, renderJson } from "./diagnostics.ts";
 import { layout } from "./scene-layout.ts";
+import type { Scene } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
 import { views } from "./views.ts";
 import { explanations } from "./models/ast.ts";
-import type { Model } from "./models/ast.ts";
+import type { Model, Span } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { watchCommand } from "./watch.ts";
 
@@ -243,16 +244,48 @@ function loadAndCheck(file: string): {
 
 function resolveOutputPath(file: string, suffix: string): string {
   const optionIndex = args.indexOf("-o");
-  if (optionIndex >= 0) {
-    const out = args[optionIndex + 1];
-    if (!out || out.startsWith("-")) usage();
-    return out;
-  }
-  return file.replace(/\.cairn$/, "") + suffix;
+  if (optionIndex < 0) return file.replace(/\.cairn$/, "") + suffix;
+  const out = args[optionIndex + 1];
+  if (!out || out.startsWith("-")) usage();
+  return out;
+}
+
+const PRINT_FRAMES: Record<string, { width: number; height: number; name: string }> = {
+  slide: { width: 1280, height: 720, name: "16:9 slide" },
+  page: { width: 700, height: 1000, name: "A4 page" },
+};
+
+/**
+ * Describes how well `scene` fits the given disposition's print frame, warning
+ * (W0520) when labels would render smaller than 7px. Returns the `, fits …`
+ * suffix for the build success log, or "" when the disposition isn't framed.
+ */
+function densityReport(
+  disposition: string,
+  scene: Scene,
+  typeSpan: Span,
+): { fitInfo: string; diagnostic?: Diagnostic } {
+  const frame = PRINT_FRAMES[disposition];
+  if (!frame) return { fitInfo: "" };
+  const scale = Math.min(frame.width / scene.width, frame.height / scene.height);
+  const effectiveFont = 10.5 * scale;
+  const fitInfo = `, fits ${frame.name} at ${(scale * 100).toFixed(0)}% (labels ≈ ${effectiveFont.toFixed(1)}px)`;
+  if (effectiveFont >= 7) return { fitInfo };
+  return {
+    fitInfo,
+    diagnostic: {
+      code: "W0520",
+      severity: "warning",
+      message: `too dense for a readable single ${frame.name} — labels would render at ~${effectiveFont.toFixed(1)}px`,
+      span: typeSpan,
+      note: `${scene.nodes.filter((node) => !node.container).length} elements / ${scene.edges.length} flows exceed what one ${frame.name} can show readably`,
+      help: "split the view into sub-diagrams (e.g. one per system), or keep `wide`/`tall` for full-screen and print use",
+    },
+  };
 }
 
 function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): void {
-  if (diagnostics.some((d) => d.severity === "error")) {
+  if (diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
     console.error(renderHuman(file, src, diagnostics, process.stderr.isTTY ?? false));
     process.exit(1);
   }
@@ -268,8 +301,8 @@ if (command === "validate") {
   else if (diagnostics.length)
     console.log(renderHuman(file, src, diagnostics, process.stdout.isTTY ?? false));
   else console.log(`\u2713 ${file}: no issues found`);
-  const errors = diagnostics.filter((d) => d.severity === "error").length;
-  const warnings = diagnostics.filter((d) => d.severity === "warning").length;
+  const errors = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
+  const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "warning").length;
   process.exit(errors > 0 || (strict && warnings > 0) ? 1 : 0);
 } else if (command === "build") {
   const file = positionalFile();
@@ -282,32 +315,15 @@ if (command === "validate") {
     .then((scene) => {
       const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
       writeFileSync(outFile, svg);
+      const { fitInfo, diagnostic } = densityReport(
+        model.style.disposition,
+        scene,
+        model.typeSpan ?? { line: 1, col: 1, len: 7 },
+      );
+      if (diagnostic) diagnostics.push(diagnostic);
       const warnings = diagnostics.filter((d) => d.severity === "warning");
       if (warnings.length)
         console.error(renderHuman(file, src, warnings, process.stderr.isTTY ?? false));
-      const disposition = model.style.disposition;
-      const frames: Record<string, { width: number; height: number; name: string }> = {
-        slide: { width: 1280, height: 720, name: "16:9 slide" },
-        page: { width: 700, height: 1000, name: "A4 page" },
-      };
-      let fitInfo = "";
-      if (frames[disposition]) {
-        const frame = frames[disposition];
-        const scale = Math.min(frame.width / scene.width, frame.height / scene.height);
-        const effectiveFont = 10.5 * scale;
-        fitInfo = `, fits ${frame.name} at ${(scale * 100).toFixed(0)}% (labels \u2248 ${effectiveFont.toFixed(1)}px)`;
-        if (effectiveFont < 7) {
-          console.error(
-            `warning[W0520]: too dense for a readable single ${frame.name} — labels would render at ~${effectiveFont.toFixed(1)}px`,
-          );
-          console.error(
-            `  = note: ${scene.nodes.filter((node) => !node.container).length} elements / ${scene.edges.length} flows exceed what one ${frame.name} can show readably`,
-          );
-          console.error(
-            `help: split the view into sub-diagrams (e.g. one per system), or keep \`wide\`/\`tall\` for full-screen and print use`,
-          );
-        }
-      }
       console.log(
         `\u2713 ${outFile} (${scene.width}\u00d7${scene.height}${fitInfo}, layout ${scene.layoutMs} ms, label overlaps: ${overlapsAfter}${overlapsBefore !== overlapsAfter ? ` (resolved: ${overlapsBefore - overlapsAfter})` : ""})`,
       );

@@ -5,7 +5,7 @@
  * of these (see the security convention in CLAUDE.md).
  */
 
-export const esc = (s: string) =>
-  s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+export const esc = (text: string) =>
+  text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-export const escAttr = (s: string) => esc(s).replace(/"/g, "&quot;");
+export const escAttr = (text: string) => esc(text).replace(/"/g, "&quot;");

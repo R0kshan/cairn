@@ -139,7 +139,7 @@ interface ThemeSpec {
     chip: [string, string, string];
     badge: [string, string];
   };
-  h: Record<string, string>;
+  accentColors: Record<string, string>;
   lv: Record<string, [string, string]>;
 }
 
@@ -179,52 +179,52 @@ const roleForKind = (kind: string, viewName: string): string =>
   viewName === "security" && kind === "external" ? "untrusted" : (KIND_ROLE_MAP[kind] ?? "leaf");
 
 const buildTheme = (spec: ThemeSpec): Theme => {
-  const p = spec.pal,
-    h = spec.h;
+  const paletteSpec = spec.pal,
+    accentColors = spec.accentColors;
   const palette: Palette = {
-    background: p.bg,
-    containerLabel: p.text,
-    containerFill: p.cFill,
-    containerStroke: p.cStroke,
-    nodeText: p.text,
-    nodeFill: p.nFill,
-    nodeStroke: p.nStroke,
-    actorStroke: p.aStroke,
-    actorText: p.aText,
-    edge: p.edge,
-    edgeLabel: p.sub,
-    techText: p.muted,
-    halo: p.halo,
-    bandTitle: p.sub,
-    bandText: p.text,
-    bandMuted: p.muted,
-    divider: p.div,
-    badgeFill: p.badge[0],
-    badgeStroke: p.badge[1],
-    chipFill: p.chip[0],
-    chipStroke: p.chip[1],
-    chipText: p.chip[2],
+    background: paletteSpec.bg,
+    containerLabel: paletteSpec.text,
+    containerFill: paletteSpec.cFill,
+    containerStroke: paletteSpec.cStroke,
+    nodeText: paletteSpec.text,
+    nodeFill: paletteSpec.nFill,
+    nodeStroke: paletteSpec.nStroke,
+    actorStroke: paletteSpec.aStroke,
+    actorText: paletteSpec.aText,
+    edge: paletteSpec.edge,
+    edgeLabel: paletteSpec.sub,
+    techText: paletteSpec.muted,
+    halo: paletteSpec.halo,
+    bandTitle: paletteSpec.sub,
+    bandText: paletteSpec.text,
+    bandMuted: paletteSpec.muted,
+    divider: paletteSpec.div,
+    badgeFill: paletteSpec.badge[0],
+    badgeStroke: paletteSpec.badge[1],
+    chipFill: paletteSpec.chip[0],
+    chipStroke: paletteSpec.chip[1],
+    chipText: paletteSpec.chip[2],
   };
   return {
     palette,
     roles: {
       actor: {},
-      actorGroup: containerStyle(h.blueF, h.blue, true),
-      system: containerStyle(h.amberF, h.amber),
-      application: containerStyle(h.appF, h.app),
-      layer: containerStyle(h.goldF, h.gold, false, 1),
-      external: containerStyle(h.violetF, h.violet, true),
-      untrusted: containerStyle(h.redF, h.red, true, 1.3),
-      leaf: leafStyle(h.leafF, h.leafS),
-      datastore: leafStyle(h.purpleF, h.purple),
-      site: containerStyle(h.siteF, h.siteS, false, 1.4),
-      networkZone: containerStyle(h.greenF, h.green, true),
-      server: containerStyle(h.serverF, h.serverS, false, 1.5),
-      appInstance: leafStyle(h.aiF, h.aiS, 1.2),
-      securityNode: leafStyle(h.nodeF, h.node, 1.6),
-      authGateway: leafStyle(h.authF, h.auth, 1.4),
-      auth: leafStyle(h.nodeF, h.node, 1.5),
-      identityProvider: leafStyle(h.idpF, h.idp),
+      actorGroup: containerStyle(accentColors.blueF, accentColors.blue, true),
+      system: containerStyle(accentColors.amberF, accentColors.amber),
+      application: containerStyle(accentColors.appF, accentColors.app),
+      layer: containerStyle(accentColors.goldF, accentColors.gold, false, 1),
+      external: containerStyle(accentColors.violetF, accentColors.violet, true),
+      untrusted: containerStyle(accentColors.redF, accentColors.red, true, 1.3),
+      leaf: leafStyle(accentColors.leafF, accentColors.leafS),
+      datastore: leafStyle(accentColors.purpleF, accentColors.purple),
+      site: containerStyle(accentColors.siteF, accentColors.siteS, false, 1.4),
+      networkZone: containerStyle(accentColors.greenF, accentColors.green, true),
+      server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
+      appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
+      securityNode: leafStyle(accentColors.nodeF, accentColors.node, 1.6),
+      authGateway: leafStyle(accentColors.authF, accentColors.auth, 1.4),
+      auth: leafStyle(accentColors.nodeF, accentColors.node, 1.5),
+      identityProvider: leafStyle(accentColors.idpF, accentColors.idp),
     },
     levels: {
       public: containerStyle(spec.lv.public[0], spec.lv.public[1], false, 1.4),
@@ -254,7 +254,7 @@ export const themes: Record<string, Theme> = {
       chip: ["#fff2d4", "#d3a01f", "#6a5111"],
       badge: ["#ffffff", "#8a94a2"],
     },
-    h: {
+    accentColors: {
       blue: "#1f77b4",
       blueF: "#e9f2fb",
       amber: "#c17d1c",
@@ -311,7 +311,7 @@ export const themes: Record<string, Theme> = {
       chip: ["#3a3320", "#b08d2a", "#e0c068"],
       badge: ["#252c37", "#5a6673"],
     },
-    h: {
+    accentColors: {
       blue: "#5aa9e6",
       blueF: "#233242",
       amber: "#e0a955",
@@ -368,7 +368,7 @@ export const themes: Record<string, Theme> = {
       chip: ["#eaeef3", "#8595a8", "#48566a"],
       badge: ["#ffffff", "#93a0b0"],
     },
-    h: {
+    accentColors: {
       blue: "#3b6ea5",
       blueF: "#e8eff6",
       amber: "#5b7a99",
@@ -425,7 +425,7 @@ export const themes: Record<string, Theme> = {
       chip: ["#f4e6c8", "#c19a3f", "#6b5417"],
       badge: ["#fffdf8", "#b3a488"],
     },
-    h: {
+    accentColors: {
       blue: "#3f7a8c",
       blueF: "#e6f0f1",
       amber: "#b07d2a",
@@ -482,7 +482,7 @@ export const themes: Record<string, Theme> = {
       chip: ["#ffe9b0", "#8a6d00", "#3a2e00"],
       badge: ["#ffffff", "#333333"],
     },
-    h: {
+    accentColors: {
       blue: "#005a9c",
       blueF: "#e0edf7",
       amber: "#9a4a00",
@@ -539,7 +539,7 @@ export const themes: Record<string, Theme> = {
       chip: ["#3b3a2a", "#ebcb8b", "#ebcb8b"],
       badge: ["#3b4252", "#4c566a"],
     },
-    h: {
+    accentColors: {
       blue: "#81a1c1",
       blueF: "#333b4a",
       amber: "#ebcb8b",
@@ -596,7 +596,7 @@ export const themes: Record<string, Theme> = {
       chip: ["#f2e9c8", "#b58900", "#5c4a00"],
       badge: ["#fdf6e3", "#b3aa90"],
     },
-    h: {
+    accentColors: {
       blue: "#268bd2",
       blueF: "#e3edf3",
       amber: "#b58900",
@@ -659,8 +659,8 @@ export function themeFor(
       kinds: view.defaultsDark,
       levels: view.levelDefaultsDark ?? {},
     };
-  const t = themes[name] ?? themes.light;
+  const theme = themes[name] ?? themes.light;
   const kinds: Record<string, StyleProps> = {};
-  for (const k of view.kinds) kinds[k] = t.roles[roleForKind(k, view.name)] ?? {};
-  return { palette: t.palette, kinds, levels: t.levels };
+  for (const kind of view.kinds) kinds[kind] = theme.roles[roleForKind(kind, view.name)] ?? {};
+  return { palette: theme.palette, kinds, levels: theme.levels };
 }

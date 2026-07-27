@@ -11,6 +11,7 @@ import type { Model, Element } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import type { View } from "./views.ts";
 import { views } from "./views.ts";
+import { subtreeIds, subtreeElements } from "./element-tree.ts";
 
 export function validate(model: Model): Diagnostic[] {
   const view = model.type ? views[model.type] : undefined;
@@ -28,7 +29,7 @@ export function validate(model: Model): Diagnostic[] {
   }
   if (!view) return [];
 
-  const elements = flatten(model.elements);
+  const elements = model.elements.flatMap((element) => subtreeElements(element));
   return [
     ...checkDuplicateIds(elements),
     ...checkUnknownKinds(elements, view),
@@ -43,32 +44,23 @@ export function validate(model: Model): Diagnostic[] {
   ];
 }
 
-function flatten(roots: Element[]): Element[] {
-  const flattened: Element[] = [];
-  (function collect(elements: Element[]) {
-    for (const element of elements) {
-      flattened.push(element);
-      collect(element.children);
-    }
-  })(roots);
-  return flattened;
-}
-
 function checkDuplicateIds(elements: Element[]): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
   const firstSeen = new Map<string, Element>();
   for (const element of elements) {
     const previous = firstSeen.get(element.id);
-    if (previous) {
-      diagnostics.push({
-        code: "E0202",
-        severity: "error",
-        message: `duplicate identifier \`${element.id}\``,
-        span: element.idSpan,
-        note: `already declared at line ${previous.idSpan.line}`,
-        help: `rename one of the two, e.g. \`${element.id}_2\` (decision D1: flat unique IDs)`,
-      });
-    } else firstSeen.set(element.id, element);
+    if (!previous) {
+      firstSeen.set(element.id, element);
+      continue;
+    }
+    diagnostics.push({
+      code: "E0202",
+      severity: "error",
+      message: `duplicate identifier \`${element.id}\``,
+      span: element.idSpan,
+      note: `already declared at line ${previous.idSpan.line}`,
+      help: `rename one of the two, e.g. \`${element.id}_2\` (decision D1: flat unique IDs)`,
+    });
   }
   return diagnostics;
 }
@@ -233,27 +225,26 @@ function checkTrustBoundaries(model: Model, view: View): Diagnostic[] {
     const level = zoneOf(id)?.attr?.value;
     return level && view.trustOrder?.[level] !== undefined ? view.trustOrder[level] : -1;
   };
+  const lint = view.boundaryLint;
+  const isSecurityNode = (id: string) => lint !== undefined && model.index.get(id)?.kind === lint.nodeKind;
 
   for (const flow of model.flows) {
     if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;
     const crossesZone = zoneOf(flow.from) !== zoneOf(flow.to);
-    if (view.boundaryLint) {
-      const lint = view.boundaryLint;
-      const isSecurityNode = (id: string) => model.index.get(id)?.kind === lint.nodeKind;
-      if (
-        trustLevelOf(flow.to) > trustLevelOf(flow.from) &&
-        !isSecurityNode(flow.from) &&
-        !isSecurityNode(flow.to)
-      ) {
-        diagnostics.push({
-          code: lint.code,
-          severity: "warning",
-          message: lint.message,
-          span: flow.span,
-          note: `flow enters a more-trusted zone without passing a \`${lint.nodeKind}\``,
-          help: lint.help,
-        });
-      }
+    const boundaryViolation =
+      lint !== undefined &&
+      trustLevelOf(flow.to) > trustLevelOf(flow.from) &&
+      !isSecurityNode(flow.from) &&
+      !isSecurityNode(flow.to);
+    if (boundaryViolation) {
+      diagnostics.push({
+        code: lint!.code,
+        severity: "warning",
+        message: lint!.message,
+        span: flow.span,
+        note: `flow enters a more-trusted zone without passing a \`${lint!.nodeKind}\``,
+        help: lint!.help,
+      });
     }
     if (view.crossZoneTechRecommended && crossesZone && !flow.tech?.protocol) {
       diagnostics.push({
@@ -269,33 +260,36 @@ function checkTrustBoundaries(model: Model, view: View): Diagnostic[] {
   return diagnostics;
 }
 
-function checkBusinessObjects(model: Model, view: View): Diagnostic[] {
+/** Every business object/reference is disallowed outright when the view doesn't support them. */
+function checkForbiddenBusinessObjects(model: Model, view: View): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
-
-  if (!view.businessObjects) {
-    for (const businessObject of model.businessObjects) {
+  for (const businessObject of model.businessObjects) {
+    diagnostics.push({
+      code: "E0222",
+      severity: "error",
+      message: `business objects are not part of the \`${view.name}\` view (\`${businessObject.id}\`)`,
+      span: businessObject.idSpan,
+      help: "business objects belong to the `logical` view — remove it, or model the exchange with the flow label",
+    });
+  }
+  for (const flow of model.flows) {
+    for (const objectRef of flow.objects ?? []) {
       diagnostics.push({
         code: "E0222",
         severity: "error",
-        message: `business objects are not part of the \`${view.name}\` view (\`${businessObject.id}\`)`,
-        span: businessObject.idSpan,
-        help: "business objects belong to the `logical` view — remove it, or model the exchange with the flow label",
+        message: `business-object reference \`[${objectRef.id}]\` is not part of the \`${view.name}\` view`,
+        span: objectRef.span,
+        help: "drop the `[…]` reference — business objects are a logical-view feature",
       });
     }
-    for (const flow of model.flows) {
-      for (const objectRef of flow.objects ?? []) {
-        diagnostics.push({
-          code: "E0222",
-          severity: "error",
-          message: `business-object reference \`[${objectRef.id}]\` is not part of the \`${view.name}\` view`,
-          span: objectRef.span,
-          help: "drop the `[…]` reference — business objects are a logical-view feature",
-        });
-      }
-    }
-    return diagnostics;
   }
+  return diagnostics;
+}
 
+function checkBusinessObjects(model: Model, view: View): Diagnostic[] {
+  if (!view.businessObjects) return checkForbiddenBusinessObjects(model, view);
+
+  const diagnostics: Diagnostic[] = [];
   const declaredIds = new Map<string, (typeof model.businessObjects)[number]>();
   for (const businessObject of model.businessObjects) {
     const previous = declaredIds.get(businessObject.id);
@@ -323,18 +317,20 @@ function checkBusinessObjects(model: Model, view: View): Diagnostic[] {
   const carried = new Set<string>();
   for (const flow of model.flows) {
     for (const objectRef of flow.objects ?? []) {
-      if (!declaredIds.has(objectRef.id)) {
-        const suggestion = nearest(objectRef.id, [...declaredIds.keys()]);
-        diagnostics.push({
-          code: "E0221",
-          severity: "error",
-          message: `unknown business-object reference \`${objectRef.id}\``,
-          span: objectRef.span,
-          help: suggestion
-            ? `did you mean \`${suggestion}\`?`
-            : "declare it: `business-object " + objectRef.id + ' "Name" "description"`',
-        });
-      } else carried.add(objectRef.id);
+      if (declaredIds.has(objectRef.id)) {
+        carried.add(objectRef.id);
+        continue;
+      }
+      const suggestion = nearest(objectRef.id, [...declaredIds.keys()]);
+      diagnostics.push({
+        code: "E0221",
+        severity: "error",
+        message: `unknown business-object reference \`${objectRef.id}\``,
+        span: objectRef.span,
+        help: suggestion
+          ? `did you mean \`${suggestion}\`?`
+          : "declare it: `business-object " + objectRef.id + ' "Name" "description"`',
+      });
     }
   }
 
@@ -377,10 +373,7 @@ function checkIsolatedElements(model: Model, view: View, elements: Element[]): D
   const markConnected = (id: string) => {
     const element = model.index.get(id);
     if (!element) return;
-    (function markSubtree(element: Element) {
-      connected.add(element.id);
-      element.children.forEach(markSubtree);
-    })(element);
+    for (const subtreeId of subtreeIds(element)) connected.add(subtreeId);
     for (let ancestor = element.parent; ancestor; ancestor = ancestor.parent)
       connected.add(ancestor.id);
   };

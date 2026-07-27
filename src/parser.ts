@@ -13,6 +13,7 @@ import type { Model, Element, Flow, StyleProps, DiagramStyle, Span } from "./mod
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { defaultDiagramStyle } from "./models/ast.ts";
 import { themeNames } from "./themes.ts";
+import { indexElementsById } from "./element-tree.ts";
 
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
@@ -337,15 +338,9 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     skipNewlines();
   }
 
-  (function indexAll(elements: Element[]) {
-    for (const element of elements) {
-      model.index.set(
-        element.id,
-        model.index.has(element.id) ? model.index.get(element.id)! : element,
-      );
-      indexAll(element.children);
-    }
-  })(model.elements);
+  for (const [id, element] of indexElementsById(model.elements)) {
+    if (!model.index.has(id)) model.index.set(id, element);
+  }
 
   return { model, diags: diagnostics };
 }
