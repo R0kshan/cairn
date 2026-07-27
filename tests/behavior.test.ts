@@ -1,4 +1,9 @@
-/** Smoke suite: freezes the behaviours the project's non-negotiables depend on. Run via `npm test`. */
+/**
+ * Behavior suite: direct, deep assertions on parsing, validation, layout, rendering,
+ * matrix export, i18n, theming, and CLI behavior — including exact SVG geometry,
+ * diagnostic codes and determinism. 
+ * Run via `npm test`.
+ */
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -417,7 +422,7 @@ test("matrix respects lang: fr headers; md + svg render", () => {
 
 // ---------- security ----------
 
-test("security: a font family cannot break out of the SVG attribute (XSS)", async () => {
+test("security: a font family cannot break out of the SVG attribute", async () => {
   // A quote in the (user-controlled) font family must be escaped, else it could
   // close the font-family="…" attribute and inject e.g. an onload handler that
   // fires when the SVG is opened standalone.
@@ -429,7 +434,7 @@ test("security: a font family cannot break out of the SVG attribute (XSS)", asyn
   assert.match(svg, /font-family="x&quot; onload=&quot;alert\(1\)/);
 });
 
-test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XSS)", async () => {
+test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped", async () => {
   // Per-element style values (fill, stroke, text) on the new element kinds must
   // be passed through escAttr() so a quote in a user-supplied colour does not
   // break out of the SVG attribute — even though these values normally look like
@@ -443,7 +448,7 @@ test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XS
   assert.equal(svg.includes("onload="), false, "no unescaped attribute injection");
 });
 
-test("security: a background colour cannot break out of the matrix SVG attribute (XSS)", () => {
+test("security: a background colour cannot break out of the matrix SVG attribute", () => {
   // The flow-matrix exporter interpolates `style.background` into a fill="…"
   // attribute. The DSL only admits a #hex colour token there, but the playground
   // and the /api/svg handler set style fields programmatically, so the exporter
