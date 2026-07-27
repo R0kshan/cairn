@@ -22,11 +22,16 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with: { persist-credentials: false }
-      # First-party GitHub action; pin to a commit SHA when convenient:
-      #   gh api repos/github/codeql-action/commits/v3 --jq .sha
-      - uses: github/codeql-action/init@v3 # zizmor: ignore[unpinned-uses]
+      - uses: github/codeql-action/init@4187e74d05793876e9989daffde9c3e66b4acd07 #v3
         with:
           languages: javascript-typescript
           queries: security-extended # broader security query suite than the default
-      # No build step: cairn runs TypeScript directly, so CodeQL needs no autobuild.
-      - uses: github/codeql-action/analyze@v3 # zizmor: ignore[unpinned-uses]
+          # Exclude generated bundles. `playground/cairn-engine.js` and
+          # `playground/lib/*.mjs` are build artifacts of `npm run build:playground`
+          # that inline elkjs, so alerts there are (a) third-party code we cannot
+          # patch, and (b) duplicates of what is already scanned in `src/`.
+          config: |
+            paths-ignore:
+              - playground/cairn-engine.js
+              - playground/lib
+      - uses: github/codeql-action/analyze@4187e74d05793876e9989daffde9c3e66b4acd07 #v3

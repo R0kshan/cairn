@@ -440,6 +440,23 @@ test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped (XS
   assert.equal(svg.includes("onload="), false, "no unescaped attribute injection");
 });
 
+test("security: a background colour cannot break out of the matrix SVG attribute (XSS)", () => {
+  // The flow-matrix exporter interpolates `style.background` into a fill="…"
+  // attribute. The DSL only admits a #hex colour token there, but the playground
+  // and the /api/svg handler set style fields programmatically, so the exporter
+  // must not depend on the parser having sanitized it — it escapes the value the
+  // same way svg-render.ts does. Regression guard for the unescaped interpolation.
+  const { model, diags } = check(
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { server A "a" } }\n' +
+      'external B "b"\nA -> B : "x" (HTTPS/443)\n',
+  );
+  assert.equal(diags.filter((d) => d.severity === "error").length, 0, "fixture must build");
+  model.style.background = 'x" onload="alert(1)';
+  const svg = matrixSvg(model, views[model.type!], "en");
+  assert.ok(!/onload="alert/.test(svg), "attribute injection must not appear unescaped");
+  assert.match(svg, /fill="x&quot; onload=&quot;alert\(1\)"/);
+});
+
 test("security: a reserved key cannot be used as a per-kind style target", () => {
   // `fill __proto__: …` must be rejected, not written into the kind map's
   // prototype slot (defence-in-depth against prototype pollution).

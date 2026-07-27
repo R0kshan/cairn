@@ -144,7 +144,7 @@ export function matrixSvg(model: Model, _view: View, lang: "en" | "fr"): string 
   }
 
   let svgOutput = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${viewHeight}" font-family="${escAttr(model.style.font.family)},Arial,sans-serif">\n`;
-  svgOutput += `<rect width="${viewWidth}" height="${viewHeight}" fill="${model.style.background ?? pal.background}"/>\n`;
+  svgOutput += `<rect width="${viewWidth}" height="${viewHeight}" fill="${escAttr(model.style.background ?? pal.background)}"/>\n`;
   svgOutput += `<text x="1" y="22" font-size="13" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>\n`;
 
   const headerY = TITLE_HEIGHT;
