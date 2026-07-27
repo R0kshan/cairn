@@ -197,7 +197,7 @@ function collectSceneEdges(
         const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
         const unitX = (last.x - secondLast.x) / segmentLength,
           unitY = (last.y - secondLast.y) / segmentLength;
-        const stepBack = Math.min(segmentLength - 2, 20 + label.width / 2);
+        const stepBack = Math.max(0, Math.min(segmentLength - 2, 20 + label.width / 2));
         let perpX = -unitY,
           perpY = unitX;
         if (perpY > 0) {
