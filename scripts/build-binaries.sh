@@ -24,7 +24,12 @@ TARGETS=(
 for t in "${TARGETS[@]}"; do
   target="${t%%:*}"; name="${t##*:}"
   echo "→ $name"
-  bun build --compile --minify --target="$target" src/cli.ts --outfile "$OUT/$name"
+  # CAIRN_BUILD_VERSION is baked into the binary at compile time (see the
+  # `declare const` in src/cli.ts) so `cairn version` reports this exact
+  # VERSION — the tag, not whatever package.json happened to say.
+  bun build --compile --minify --target="$target" \
+    --define CAIRN_BUILD_VERSION="\"$VERSION\"" \
+    src/cli.ts --outfile "$OUT/$name"
 done
 
 (cd "$OUT" && shasum -a 256 cairn-* > "cairn-${VERSION}-checksums.txt" 2>/dev/null || sha256sum cairn-* > "cairn-${VERSION}-checksums.txt")

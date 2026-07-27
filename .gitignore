@@ -12,3 +12,5 @@ bun.lock
 
 .claude/*
 !.claude/skills
+.vercel
+.env*

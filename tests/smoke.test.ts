@@ -629,6 +629,24 @@ test("cairn new: refuses to overwrite an existing file, and never clobbers it", 
   }
 });
 
+test("cairn version / --version / -v all print package.json's version under plain Node", () => {
+  // Under plain Node, CAIRN_BUILD_VERSION is never defined (it's only injected by
+  // `bun build --define` — see scripts/build-binaries.sh), so all three forms must
+  // fall back to package.json's version. The "must match the release tag" half of
+  // this contract only exists in a bun-compiled binary and is covered instead by
+  // scripts/smoke-binary.sh, which can assert against the actual tag it was built with.
+  const pkgVersion = JSON.parse(readFileSync(join(ROOT, "package.json"), "utf8")).version;
+  for (const flag of ["version", "--version", "-v"]) {
+    const result = spawnSync(
+      process.execPath,
+      ["--experimental-strip-types", join(ROOT, "src", "cli.ts"), flag],
+      { encoding: "utf8" },
+    );
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout.trim(), `cairn v${pkgVersion}`);
+  }
+});
+
 test("auth renders with a lock icon badge (path + rect), overlaps 0", async () => {
   const { svg, overlapsAfter } = await build(
     'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { auth OAUTH2 "OAuth2"\ngateway GW "Gateway" } }\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\nGW -> OAUTH2 : "Forward" (HTTP/80)\n',

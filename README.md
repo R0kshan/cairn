@@ -246,6 +246,14 @@ E0240 — The infrastructure view requires every flow to carry its protocol (and
 relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)` after the label.
 ```
 
+### Check your version
+
+```sh
+cairn version    # or --version / -v
+```
+
+Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) print the exact tag they were built from. Running from a clone via `npm run cairn` prints `package.json`'s version instead.
+
 ## More
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.

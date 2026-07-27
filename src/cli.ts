@@ -8,6 +8,7 @@
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import pkg from "../package.json" with { type: "json" };
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
 import { renderHuman, renderJson } from "./diagnostics.ts";
@@ -194,6 +195,18 @@ const TEMPLATES: Record<string, string> = {
 const args = process.argv.slice(2);
 const command = args[0];
 
+/**
+ * Injected at compile time for release binaries via `bun build --define`
+ * (see scripts/build-binaries.sh), set to the exact tag the release workflow
+ * built from — the single source of truth for a released binary's version,
+ * since package.json isn't guaranteed to have been bumped before tagging.
+ * Under plain `node src/cli.ts` (dev, npm install) this identifier was never
+ * defined by any bundler, so `typeof` — safe on an undeclared identifier —
+ * falls through to package.json.
+ */
+declare const CAIRN_BUILD_VERSION: string | undefined;
+const version = typeof CAIRN_BUILD_VERSION !== "undefined" ? CAIRN_BUILD_VERSION : pkg.version;
+
 const VALUE_FLAGS = new Set(["-o", "--format"]);
 const positionalFile = (): string | undefined => {
   for (let index = 0; index < args.length; index++) {
@@ -223,6 +236,7 @@ Usage:
                                                       (error panel on failure) for an
                                                       editor auto-refresh preview
   cairn explain <code>                                rule rationale (e.g. E0203)
+  cairn version | --version | -v                      print the installed version
 `);
   process.exit(2);
 }
@@ -291,7 +305,9 @@ function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): voi
   }
 }
 
-if (command === "validate") {
+if (command === "version" || command === "--version" || command === "-v") {
+  console.log(`cairn v${version}`);
+} else if (command === "validate") {
   const file = positionalFile();
   if (!file) usage();
   const json = args.includes("--format") && args[args.indexOf("--format") + 1] === "json";

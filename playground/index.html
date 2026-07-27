@@ -168,7 +168,7 @@ async function run() {
       const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
       if (bg) preview.style.background = bg;
       applyZoom();
-      stat.innerHTML = `<span class="ok">✓</span> ${r.metrics.width}×${r.metrics.height} · layout ${r.metrics.layoutMs} ms · label overlaps: ${r.metrics.overlaps}${nw ? ` · <span style="color:var(--warn)">${nw} warning${nw > 1 ? 's' : ''}</span>` : ''} · engine v${version}`;
+      stat.innerHTML = `<span class="ok">✓</span> ${r.metrics.width}×${r.metrics.height} · layout ${r.metrics.layoutMs} ms${nw ? ` · <span style="color:var(--warn)">${nw} warning${nw > 1 ? 's' : ''}</span>` : ''} · engine v${version}`;
     } else {
       // errors: do NOT render the diagram at all — clear it and show a clear
       // error state so it's unmistakable, pointing to the error list below.
