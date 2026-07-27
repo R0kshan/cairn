@@ -183,7 +183,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     }
   }
   const edgePath = (pts: { x: number; y: number }[]): string => {
-    let d = `M ${pts[0].x} ${pts[0].y}`;
+    let path = `M ${pts[0].x} ${pts[0].y}`;
     for (let segmentIndex = 0; segmentIndex + 1 < pts.length; segmentIndex++) {
       const point = pts[segmentIndex],
         nextPoint = pts[segmentIndex + 1];
@@ -206,11 +206,11 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
           .map((vertical) => vertical.x)
           .sort((pointA, pointB) => (direction > 0 ? pointA - pointB : pointB - pointA));
         for (const crossingX of crossings)
-          d += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
+          path += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
       }
-      d += ` L ${nextPoint.x} ${nextPoint.y}`;
+      path += ` L ${nextPoint.x} ${nextPoint.y}`;
     }
-    return d;
+    return path;
   };
 
   const centeredNodeLabel = (
@@ -405,16 +405,16 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     if (tech && flow?.label) {
       svg += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>\n`;
     }
-    const chips = (flow?.objects ?? []).map((o) => objectName.get(o.id) ?? o.id);
+    const chips = (flow?.objects ?? []).map((objectRef) => objectName.get(objectRef.id) ?? objectRef.id);
     if (chips.length) {
       const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
       let positionX = label.x + label.width / 2 - totalW / 2;
       const cy = label.y + label.height - annot.chipH + 2;
       for (const name of chips) {
-        const w = chipW(name, annot.scale);
-        svg += `<rect x="${positionX}" y="${cy}" width="${w}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>\n`;
-        svg += `<text x="${positionX + w / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>\n`;
-        positionX += w + 4;
+        const chipWidth = chipW(name, annot.scale);
+        svg += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>\n`;
+        svg += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>\n`;
+        positionX += chipWidth + 4;
       }
     }
     return svg;
@@ -442,12 +442,12 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   const contentX = 150;
 
   const chip = (x: number, y: number, name: string) => {
-    const w = chipW(name, annot.scale);
+    const width = chipW(name, annot.scale);
     return {
       svg:
-        `<rect x="${x}" y="${y}" width="${w}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.chipFill}" stroke="${palette.chipStroke}"/>\n` +
-        `<text x="${x + w / 2}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>\n`,
-      w,
+        `<rect x="${x}" y="${y}" width="${width}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.chipFill}" stroke="${palette.chipStroke}"/>\n` +
+        `<text x="${x + width / 2}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>\n`,
+      width,
     };
   };
   const beginBand = (title: string) => {
@@ -470,7 +470,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     const entries = model.flows.map((flow) => {
       const tech = techText(flow.tech);
       const chipsW = (flow.objects ?? []).reduce(
-        (sum, o) => sum + chipW(objectName.get(o.id) ?? o.id, annot.scale) + 4,
+        (sum, objectRef) => sum + chipW(objectName.get(objectRef.id) ?? objectRef.id, annot.scale) + 4,
         0,
       );
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
@@ -484,24 +484,24 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     const colY = new Array(cols).fill(bandY);
     entries.forEach((entry, index) => {
       const col = Math.floor(index / rows);
-      const x = contentX + col * (colW + GUTTER);
-      const y = colY[col];
-      bandsSvg += `<rect x="${x}" y="${y}" width="${scaled(24)}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.badgeFill}" stroke="${palette.badgeStroke}"/>\n`;
-      bandsSvg += `<text x="${x + scaled(12)}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.bandText}" font-weight="bold">${index + 1}</text>\n`;
+      const entryX = contentX + col * (colW + GUTTER);
+      const entryY = colY[col];
+      bandsSvg += `<rect x="${entryX}" y="${entryY}" width="${scaled(24)}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.badgeFill}" stroke="${palette.badgeStroke}"/>\n`;
+      bandsSvg += `<text x="${entryX + scaled(12)}" y="${entryY + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.bandText}" font-weight="bold">${index + 1}</text>\n`;
       entry.lines.forEach((line, lineIndex) => {
-        bandsSvg += `<text x="${x + BADGE}" y="${y + scaled(11) + lineIndex * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>\n`;
+        bandsSvg += `<text x="${entryX + BADGE}" y="${entryY + scaled(11) + lineIndex * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>\n`;
       });
       if (entry.flow.objects?.length) {
         const lastLine = entry.lines[entry.lines.length - 1] ?? "";
-        let chipX = x + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
-        const chipY = y + 1 + (entry.lines.length - 1) * LINE_H;
+        let chipX = entryX + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
+        const chipY = entryY + 1 + (entry.lines.length - 1) * LINE_H;
         for (const objectRef of entry.flow.objects) {
-          const c = chip(chipX, chipY, objectName.get(objectRef.id) ?? objectRef.id);
-          bandsSvg += c.svg;
-          chipX += c.w + 4;
+          const chipResult = chip(chipX, chipY, objectName.get(objectRef.id) ?? objectRef.id);
+          bandsSvg += chipResult.svg;
+          chipX += chipResult.width + 4;
         }
       }
-      colY[col] = y + Math.max(scaled(20), entry.lines.length * LINE_H + scaled(7));
+      colY[col] = entryY + Math.max(scaled(20), entry.lines.length * LINE_H + scaled(7));
     });
     bandY = Math.max(...colY) + 6;
   };
@@ -509,10 +509,10 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   const renderObjectsBand = () => {
     beginBand(ui.objects);
     for (const bo of model.businessObjects) {
-      const c = chip(contentX, bandY + 2, bo.name);
-      bandsSvg += c.svg;
+      const chipResult = chip(contentX, bandY + 2, bo.name);
+      bandsSvg += chipResult.svg;
       if (bo.description)
-        bandsSvg += `<text x="${contentX + c.w + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">— ${esc(bo.description)}</text>\n`;
+        bandsSvg += `<text x="${contentX + chipResult.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">— ${esc(bo.description)}</text>\n`;
       bandY += scaled(24);
     }
     bandY += 6;
@@ -522,7 +522,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     beginBand(ui.legend);
     let lx = contentX;
     const kindsUsed = [...new Set(scene.nodes.map((node) => node.kind))].filter(
-      (k) => legendNames[k] && (k !== "actor" || view.actorLegend),
+      (kind) => legendNames[kind] && (kind !== "actor" || view.actorLegend),
     );
     for (const kind of kindsUsed) {
       const nodeStyle = resolveStyle(kind, "");
@@ -553,9 +553,9 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
         : "");
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>\n`;
     if (model.businessObjects.length) {
-      const c = chip(contentX + 330, bandY + 1, ui.businessObject);
-      bandsSvg += c.svg;
-      bandsSvg += `<text x="${contentX + 330 + c.w + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>\n`;
+      const chipResult = chip(contentX + 330, bandY + 1, ui.businessObject);
+      bandsSvg += chipResult.svg;
+      bandsSvg += `<text x="${contentX + 330 + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>\n`;
     }
     bandY += scaled(24);
     for (const note of model.legendNotes) {

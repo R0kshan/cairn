@@ -39,7 +39,7 @@ export async function compile(
   const { model, diags } = parse(source);
   if (options?.theme) model.style.theme = options.theme;
   diags.push(...validate(model));
-  const errors = diags.filter((d) => d.severity === "error");
+  const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
     return { svg: null, diagnostics: diags, metrics: null };
   }

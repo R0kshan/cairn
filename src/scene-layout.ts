@@ -288,8 +288,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
             }))
           : [];
         const labels: SceneLabel[] = (edge.labels ?? []).map((label) => {
-          let x = label.x + origin.x,
-            y = label.y + origin.y;
+          let labelX = label.x + origin.x,
+            labelY = label.y + origin.y;
           if (numbered && points.length >= 2) {
             const last = points[points.length - 1],
               secondLast = points[points.length - 2];
@@ -304,14 +304,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
               perpY = -perpY;
             }
             const offset = label.height / 2 + 2;
-            x = last.x - unitX * stepBack + perpX * offset - label.width / 2;
-            y = last.y - unitY * stepBack + perpY * offset - label.height / 2;
+            labelX = last.x - unitX * stepBack + perpX * offset - label.width / 2;
+            labelY = last.y - unitY * stepBack + perpY * offset - label.height / 2;
           }
           return {
             flowId: edge.id,
             text: label.text,
-            x,
-            y,
+            x: labelX,
+            y: labelY,
             width: label.width,
             height: label.height,
           };

@@ -252,7 +252,7 @@ function resolveOutputPath(file: string, suffix: string): string {
 }
 
 function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): void {
-  if (diagnostics.some((d) => d.severity === "error")) {
+  if (diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
     console.error(renderHuman(file, src, diagnostics, process.stderr.isTTY ?? false));
     process.exit(1);
   }
@@ -268,8 +268,8 @@ if (command === "validate") {
   else if (diagnostics.length)
     console.log(renderHuman(file, src, diagnostics, process.stdout.isTTY ?? false));
   else console.log(`\u2713 ${file}: no issues found`);
-  const errors = diagnostics.filter((d) => d.severity === "error").length;
-  const warnings = diagnostics.filter((d) => d.severity === "warning").length;
+  const errors = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
+  const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "warning").length;
   process.exit(errors > 0 || (strict && warnings > 0) ? 1 : 0);
 } else if (command === "build") {
   const file = positionalFile();
@@ -282,7 +282,7 @@ if (command === "validate") {
     .then((scene) => {
       const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
       writeFileSync(outFile, svg);
-      const warnings = diagnostics.filter((d) => d.severity === "warning");
+      const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "warning");
       if (warnings.length)
         console.error(renderHuman(file, src, warnings, process.stderr.isTTY ?? false));
       const disposition = model.style.disposition;

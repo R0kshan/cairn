@@ -234,23 +234,23 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
           ...blocks.map((block) => block.width),
         ) +
         2 * PAD;
-      let y = PAD_TOP;
+      let blockY = PAD_TOP;
       for (const block of blocks) {
         block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
-        block.y = y;
-        y += block.height + 14;
+        block.y = blockY;
+        blockY += block.height + 14;
       }
       return {
         element: group,
         width: columnWidth,
-        height: y - 14 + PAD,
+        height: blockY - 14 + PAD,
         blocks,
       };
     });
   const sourceColumns = layoutColumn(sources);
   const sinkColumns = layoutColumn(sinks);
 
-  const rowIndex = new Map(middles.map((middle, i) => [middle.id, i]));
+  const rowIndex = new Map(middles.map((middle, middleIndex) => [middle.id, middleIndex]));
   type Cls = "A" | "B" | "C" | "D" | "E" | "X";
   const classify = (flow: (typeof interFlows)[number]): { cls: Cls; gutter?: number } => {
     const sourcePartition = partitionOf(rootOf.get(flow.from)!);
@@ -339,11 +339,11 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
 
   const placeCol = (cols: ColGroup[], x: number): { group: ColGroup; box: Box }[] => {
     const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
-    let y = Math.max(20, 20 + (middleHeight - total) / 2);
+    let colY = Math.max(20, 20 + (middleHeight - total) / 2);
     return cols.map((col) => {
-      const b = { x, y, width: col.width, height: col.height };
-      y += col.height + 30;
-      return { group: col, box: b };
+      const box = { x, y: colY, width: col.width, height: col.height };
+      colY += col.height + 30;
+      return { group: col, box };
     });
   };
   const sourcePlaced = placeCol(sourceColumns, xSource);
@@ -619,8 +619,8 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   const totalHeight = Math.ceil(
     Math.max(
       middleHeight + 30,
-      ...sinkPlaced.map((p) => p.box.y + p.box.height + 20),
-      ...sourcePlaced.map((p) => p.box.y + p.box.height + 20),
+      ...sinkPlaced.map((placed) => placed.box.y + placed.box.height + 20),
+      ...sourcePlaced.map((placed) => placed.box.y + placed.box.height + 20),
     ),
   );
   return {

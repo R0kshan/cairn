@@ -13,7 +13,7 @@ permissions:
   contents: read
 
 jobs:
-  audit:
+  audit-code:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -23,12 +23,9 @@ jobs:
       - run: npm ci
       - run: npm audit --audit-level=high
 
-  workflows:
+  audit-workflow:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with: { persist-credentials: false }
-      # zizmor audits the workflow files (pipx is preinstalled on the runner).
-      # --min-severity high: fail the build only on high-confidence, high-impact
-      # findings; lower-severity notes are printed but don't block.
       - run: pipx run zizmor --min-severity high .github/workflows
