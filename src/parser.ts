@@ -13,14 +13,7 @@ import type { Model, Element, Flow, StyleProps, DiagramStyle, Span } from "./mod
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { defaultDiagramStyle } from "./models/ast.ts";
 import { themeNames } from "./themes.ts";
-
-/** Flattened (id, element) pairs for `elements` and all their descendants, pre-order. */
-function indexElementsById(elements: Element[]): [string, Element][] {
-  return elements.flatMap((element) => [
-    [element.id, element] as [string, Element],
-    ...indexElementsById(element.children),
-  ]);
-}
+import { indexElementsById } from "./element-tree.ts";
 
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];

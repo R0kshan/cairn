@@ -11,6 +11,7 @@ import type { Model, Element } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import type { View } from "./views.ts";
 import { views } from "./views.ts";
+import { subtreeIds, subtreeElements } from "./element-tree.ts";
 
 export function validate(model: Model): Diagnostic[] {
   const view = model.type ? views[model.type] : undefined;
@@ -28,7 +29,7 @@ export function validate(model: Model): Diagnostic[] {
   }
   if (!view) return [];
 
-  const elements = flatten(model.elements);
+  const elements = model.elements.flatMap((element) => subtreeElements(element));
   return [
     ...checkDuplicateIds(elements),
     ...checkUnknownKinds(elements, view),
@@ -41,16 +42,6 @@ export function validate(model: Model): Diagnostic[] {
     ...checkMinimumCounts(elements, model, view),
     ...checkIsolatedElements(model, view, elements),
   ];
-}
-
-/** Pre-order flatten of the element tree: each element before its children. */
-function flatten(elements: Element[]): Element[] {
-  return elements.flatMap((element) => [element, ...flatten(element.children)]);
-}
-
-/** IDs of `element` and everything beneath it, pre-order. */
-function subtreeIds(element: Element): string[] {
-  return [element.id, ...element.children.flatMap(subtreeIds)];
 }
 
 function checkDuplicateIds(elements: Element[]): Diagnostic[] {

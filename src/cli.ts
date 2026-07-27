@@ -17,7 +17,7 @@ import { render } from "./svg-render.ts";
 import { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
 import { views } from "./views.ts";
 import { explanations } from "./models/ast.ts";
-import type { Model } from "./models/ast.ts";
+import type { Model, Span } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { watchCommand } from "./watch.ts";
 
@@ -260,23 +260,28 @@ const PRINT_FRAMES: Record<string, { width: number; height: number; name: string
  * (W0520) when labels would render smaller than 7px. Returns the `, fits …`
  * suffix for the build success log, or "" when the disposition isn't framed.
  */
-function densityReport(disposition: string, scene: Scene): string {
+function densityReport(
+  disposition: string,
+  scene: Scene,
+  typeSpan: Span,
+): { fitInfo: string; diagnostic?: Diagnostic } {
   const frame = PRINT_FRAMES[disposition];
-  if (!frame) return "";
+  if (!frame) return { fitInfo: "" };
   const scale = Math.min(frame.width / scene.width, frame.height / scene.height);
   const effectiveFont = 10.5 * scale;
   const fitInfo = `, fits ${frame.name} at ${(scale * 100).toFixed(0)}% (labels ≈ ${effectiveFont.toFixed(1)}px)`;
-  if (effectiveFont >= 7) return fitInfo;
-  console.error(
-    `warning[W0520]: too dense for a readable single ${frame.name} — labels would render at ~${effectiveFont.toFixed(1)}px`,
-  );
-  console.error(
-    `  = note: ${scene.nodes.filter((node) => !node.container).length} elements / ${scene.edges.length} flows exceed what one ${frame.name} can show readably`,
-  );
-  console.error(
-    `help: split the view into sub-diagrams (e.g. one per system), or keep \`wide\`/\`tall\` for full-screen and print use`,
-  );
-  return fitInfo;
+  if (effectiveFont >= 7) return { fitInfo };
+  return {
+    fitInfo,
+    diagnostic: {
+      code: "W0520",
+      severity: "warning",
+      message: `too dense for a readable single ${frame.name} — labels would render at ~${effectiveFont.toFixed(1)}px`,
+      span: typeSpan,
+      note: `${scene.nodes.filter((node) => !node.container).length} elements / ${scene.edges.length} flows exceed what one ${frame.name} can show readably`,
+      help: "split the view into sub-diagrams (e.g. one per system), or keep `wide`/`tall` for full-screen and print use",
+    },
+  };
 }
 
 function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): void {
@@ -310,10 +315,15 @@ if (command === "validate") {
     .then((scene) => {
       const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
       writeFileSync(outFile, svg);
-      const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "warning");
+      const { fitInfo, diagnostic } = densityReport(
+        model.style.disposition,
+        scene,
+        model.typeSpan ?? { line: 1, col: 1, len: 7 },
+      );
+      if (diagnostic) diagnostics.push(diagnostic);
+      const warnings = diagnostics.filter((d) => d.severity === "warning");
       if (warnings.length)
         console.error(renderHuman(file, src, warnings, process.stderr.isTTY ?? false));
-      const fitInfo = densityReport(model.style.disposition, scene);
       console.log(
         `\u2713 ${outFile} (${scene.width}\u00d7${scene.height}${fitInfo}, layout ${scene.layoutMs} ms, label overlaps: ${overlapsAfter}${overlapsBefore !== overlapsAfter ? ` (resolved: ${overlapsBefore - overlapsAfter})` : ""})`,
       );

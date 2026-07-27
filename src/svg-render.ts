@@ -34,6 +34,18 @@ const SEC_LEVEL_FR: Record<string, string> = {
 const dashArray = (lineStyle?: string) =>
   lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : undefined;
 
+interface ElementStyleEntry {
+  id: string;
+  style: StyleProps | undefined;
+  attrValue: string | undefined;
+}
+
+export interface RenderResult {
+  svg: string;
+  overlapsBefore: number;
+  overlapsAfter: number;
+}
+
 /** Assigns each unique flow-source its own palette hue, in first-seen order. */
 function assignSourceHues(model: Model, hues: string[]): Map<string, string> {
   const sourceHue = new Map<string, string>();
@@ -44,24 +56,12 @@ function assignSourceHues(model: Model, hues: string[]): Map<string, string> {
   return sourceHue;
 }
 
-interface ElementStyleEntry {
-  id: string;
-  style: StyleProps | undefined;
-  attrValue: string | undefined;
-}
-
 /** Flattened per-element style/attr entries for `elements` and all their descendants, pre-order. */
 function collectElementStyles(elements: Model["elements"]): ElementStyleEntry[] {
   return elements.flatMap((element) => [
     { id: element.id, style: element.style, attrValue: element.attr?.value },
     ...collectElementStyles(element.children),
   ]);
-}
-
-export interface RenderResult {
-  svg: string;
-  overlapsBefore: number;
-  overlapsAfter: number;
 }
 
 export function render(model: Model, view: View, scene: Scene): RenderResult {

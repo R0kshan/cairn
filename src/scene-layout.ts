@@ -13,6 +13,7 @@ import type { View } from "./views.ts";
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
+import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
  * A node/edge as returned by elk *after* layout: every coordinate is populated,
@@ -73,17 +74,11 @@ export interface Scene {
   layoutMs: number;
 }
 
-/** IDs of `element` and everything beneath it, pre-order. */
-function subtreeIds(element: Element): string[] {
-  return [element.id, ...element.children.flatMap(subtreeIds)];
-}
-
-/** Flattened (id, element) pairs for `elements` and all their descendants. */
-function indexElementsById(elements: Element[]): [string, Element][] {
-  return elements.flatMap((element) => [
-    [element.id, element] as [string, Element],
-    ...indexElementsById(element.children),
-  ]);
+interface WalkedElkNode {
+  id: string;
+  x: number;
+  y: number;
+  node: SceneNode;
 }
 
 /**
@@ -139,13 +134,6 @@ function toElkNode(
       ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11
       : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12)),
   };
-}
-
-interface WalkedElkNode {
-  id: string;
-  x: number;
-  y: number;
-  node: SceneNode;
 }
 
 /**
