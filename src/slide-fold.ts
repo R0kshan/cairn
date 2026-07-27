@@ -26,15 +26,13 @@ class LaneAllocator {
     const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
     const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
     for (let laneIndex = 0; laneIndex < this.lanes.length; laneIndex++) {
-      if (
-        !this.lanes[laneIndex].some(
-          (existingInterval) =>
-            existingInterval.rangeStart < rangeEnd && rangeStart < existingInterval.rangeEnd,
-        )
-      ) {
-        this.lanes[laneIndex].push({ rangeStart, rangeEnd });
-        return laneIndex;
-      }
+      const hasOverlap = this.lanes[laneIndex].some(
+        (existingInterval) =>
+          existingInterval.rangeStart < rangeEnd && rangeStart < existingInterval.rangeEnd,
+      );
+      if (hasOverlap) continue;
+      this.lanes[laneIndex].push({ rangeStart, rangeEnd });
+      return laneIndex;
     }
     this.lanes.push([{ rangeStart, rangeEnd }]);
     return this.lanes.length - 1;
@@ -71,11 +69,13 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   if (middleGroups.length < 2) return null;
 
   const rootOf = new Map<string, Element>();
-  for (const root of roots)
-    (function mark(element: Element) {
+  for (const root of roots) {
+    function mark(element: Element) {
       rootOf.set(element.id, root);
       element.children.forEach(mark);
-    })(root);
+    }
+    mark(root);
+  }
 
   const interFlows = model.flows.filter((flow) => {
     const sourceRoot = rootOf.get(flow.from);
@@ -87,12 +87,13 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   );
 
   const elementById = new Map<string, Element>();
-  (function indexElements(elements: Element[]) {
+  function indexElements(elements: Element[]) {
     for (const element of elements) {
       elementById.set(element.id, element);
       indexElements(element.children);
     }
-  })(roots);
+  }
+  indexElements(roots);
 
   function toElkNode(element: Element): ElkNode {
     if (element.children.length) {
@@ -410,7 +411,7 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
       y: box.y - result.children![0].y,
     };
     origins.set(result.id, rootOffset);
-    (function walkNodes(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
+    function walkNodes(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
       for (const child of elkNode.children ?? []) {
         const absoluteX = offsetX + child.x;
         const absoluteY = offsetY + child.y;
@@ -439,7 +440,8 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
         absoluteBoxes.set(child.id, childBox);
         walkNodes(child, absoluteX, absoluteY);
       }
-    })(result, rootOffset.x, rootOffset.y);
+    }
+    walkNodes(result, rootOffset.x, rootOffset.y);
   }
 
   const edges: SceneEdge[] = [];
@@ -450,7 +452,7 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
       x: box.x - result.children![0].x,
       y: box.y - result.children![0].y,
     };
-    (function collectEdges(elkNode: LaidOutNode) {
+    function collectEdges(elkNode: LaidOutNode) {
       for (const edge of elkNode.edges ?? []) {
         const section = edge.sections?.[0];
         if (!section) continue;
@@ -476,7 +478,8 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
         edges.push({ id: edge.id, pts: points, labels });
       }
       (elkNode.children ?? []).forEach(collectEdges);
-    })(result);
+    }
+    collectEdges(result);
   }
 
   const leftLaneAlloc = new LaneAllocator();

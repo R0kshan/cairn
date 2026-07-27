@@ -2,7 +2,7 @@
 #  - audit:     fails if any (dev or runtime) dependency has a high+ advisory.
 #  - workflows: static-analyses the GitHub Actions workflows themselves (pinning,
 #               permissions, injection) with zizmor.
-name: security
+name: supply-chain
 on:
   pull_request:
     branches: [main]

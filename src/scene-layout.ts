@@ -73,6 +73,28 @@ export interface Scene {
   layoutMs: number;
 }
 
+/**
+ * IDs of top-level `external` elements that only ever feed data in (never
+ * receive it back) — used by `partitionByOrder` views to place them upstream
+ * of everything else instead of wherever elk's layered algorithm lands them.
+ */
+function computeIngressExternalElements(model: Model): Set<string> {
+  const ingressExternalElements = new Set<string>();
+  for (const element of model.elements) {
+    if (element.kind !== "external") continue;
+    const ids = new Set<string>();
+    function collect(child: Element) {
+      ids.add(child.id);
+      child.children.forEach(collect);
+    }
+    collect(element);
+    const feedsInto = model.flows.some((flow) => ids.has(flow.from) && !ids.has(flow.to));
+    const receivesFrom = model.flows.some((flow) => ids.has(flow.to) && !ids.has(flow.from));
+    if (feedsInto && !receivesFrom) ingressExternalElements.add(element.id);
+  }
+  return ingressExternalElements;
+}
+
 export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -123,20 +145,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   };
   const aspectTarget = ASPECT_TARGETS[disposition];
 
-  const ingressExternalElements = new Set<string>();
-  if (view.partitionByOrder) {
-    for (const element of model.elements) {
-      if (element.kind !== "external") continue;
-      const ids = new Set<string>();
-      (function collect(child: Element) {
-        ids.add(child.id);
-        child.children.forEach(collect);
-      })(element);
-      const feedsInto = model.flows.some((flow) => ids.has(flow.from) && !ids.has(flow.to));
-      const receivesFrom = model.flows.some((flow) => ids.has(flow.to) && !ids.has(flow.from));
-      if (feedsInto && !receivesFrom) ingressExternalElements.add(element.id);
-    }
-  }
+  const ingressExternalElements = view.partitionByOrder
+    ? computeIngressExternalElements(model)
+    : new Set<string>();
   const INGRESS_PARTITION = -1,
     EGRESS_PARTITION = 900;
 
@@ -244,19 +255,20 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   });
 
   const kindOf = new Map<string, Element>();
-  (function indexElements(elements: Element[]) {
+  function indexElements(elements: Element[]) {
     for (const element of elements) {
       kindOf.set(element.id, element);
       indexElements(element.children);
     }
-  })(model.elements);
+  }
+  indexElements(model.elements);
 
   const sceneFromResult = (result: LaidOutNode, layoutMs: number): Scene => {
     const origins: Record<string, { x: number; y: number }> = {
       root: { x: 0, y: 0 },
     };
     const nodes: SceneNode[] = [];
-    (function walk(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
+    function walkNodes(elkNode: LaidOutNode, offsetX: number, offsetY: number) {
       for (const child of elkNode.children ?? []) {
         const absoluteX = offsetX + child.x,
           absoluteY = offsetY + child.y;
@@ -272,12 +284,13 @@ export async function layout(model: Model, view: View): Promise<Scene> {
           height: child.height,
           container: !!child.children?.length,
         });
-        walk(child, absoluteX, absoluteY);
+        walkNodes(child, absoluteX, absoluteY);
       }
-    })(result, 0, 0);
+    }
+    walkNodes(result, 0, 0);
 
     const edges: SceneEdge[] = [];
-    (function collect(elkNode: LaidOutNode) {
+    function collectEdges(elkNode: LaidOutNode) {
       for (const edge of elkNode.edges ?? []) {
         const origin = (edge.container && origins[edge.container]) || { x: 0, y: 0 };
         const section = edge.sections?.[0];
@@ -318,8 +331,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         });
         edges.push({ id: edge.id, pts: points, labels });
       }
-      (elkNode.children ?? []).forEach(collect);
-    })(result);
+      (elkNode.children ?? []).forEach(collectEdges);
+    }
+    collectEdges(result);
 
     return {
       width: Math.ceil(result.width),

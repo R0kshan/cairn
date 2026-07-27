@@ -34,6 +34,16 @@ const SEC_LEVEL_FR: Record<string, string> = {
 const dashArray = (lineStyle?: string) =>
   lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : undefined;
 
+/** Assigns each unique flow-source its own palette hue, in first-seen order. */
+function assignSourceHues(model: Model, hues: string[]): Map<string, string> {
+  const sourceHue = new Map<string, string>();
+  for (const flow of model.flows) {
+    if (sourceHue.has(flow.from)) continue;
+    sourceHue.set(flow.from, hues[sourceHue.size % hues.length]);
+  }
+  return sourceHue;
+}
+
 export interface RenderResult {
   svg: string;
   overlapsBefore: number;
@@ -63,12 +73,10 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     ? style.flowStroke.color
     : (style.accent ?? palette.edge);
 
-  const sourceHue = new Map<string, string>();
-  if (style.flowColor === "by-source") {
-    const hues = flowPalette[isDarkTheme ? "dark" : "light"];
-    for (const flow of model.flows)
-      if (!sourceHue.has(flow.from)) sourceHue.set(flow.from, hues[sourceHue.size % hues.length]);
-  }
+  const sourceHue =
+    style.flowColor === "by-source"
+      ? assignSourceHues(model, flowPalette[isDarkTheme ? "dark" : "light"])
+      : new Map<string, string>();
   const flowColorOf = (flow?: Flow): string =>
     flow?.style?.stroke?.color ??
     (style.flowColor === "by-source"
@@ -94,13 +102,14 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
 
   const elementStyle = new Map<string, StyleProps | undefined>();
   const elementAttr = new Map<string, string | undefined>();
-  (function index(elements: Model["elements"]) {
+  function indexElementStyles(elements: Model["elements"]) {
     for (const element of elements) {
       elementStyle.set(element.id, element.style);
       elementAttr.set(element.id, element.attr?.value);
-      index(element.children);
+      indexElementStyles(element.children);
     }
-  })(model.elements);
+  }
+  indexElementStyles(model.elements);
 
   const resolveStyle = (kind: string, id: string): StyleProps => {
     let base = kindDefaults[kind] ?? {};
@@ -406,16 +415,15 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       svg += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>\n`;
     }
     const chips = (flow?.objects ?? []).map((objectRef) => objectName.get(objectRef.id) ?? objectRef.id);
-    if (chips.length) {
-      const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
-      let positionX = label.x + label.width / 2 - totalW / 2;
-      const cy = label.y + label.height - annot.chipH + 2;
-      for (const name of chips) {
-        const chipWidth = chipW(name, annot.scale);
-        svg += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>\n`;
-        svg += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>\n`;
-        positionX += chipWidth + 4;
-      }
+    if (!chips.length) return svg;
+    const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
+    let positionX = label.x + label.width / 2 - totalW / 2;
+    const cy = label.y + label.height - annot.chipH + 2;
+    for (const name of chips) {
+      const chipWidth = chipW(name, annot.scale);
+      svg += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>\n`;
+      svg += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>\n`;
+      positionX += chipWidth + 4;
     }
     return svg;
   };
@@ -455,6 +463,18 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     bandsSvg += `<text x="20" y="${bandY + scaled(32)}" font-size="${scaled(11)}" font-weight="bold" fill="${palette.bandTitle}">${esc(title)}</text>\n`;
     bandY += scaled(20);
   };
+  /** Draws a flow's carried-object chips left-to-right starting at (startX, startY); "" when it carries none. */
+  const flowChipsSvg = (flow: Flow, startX: number, startY: number): string => {
+    if (!flow.objects?.length) return "";
+    let out = "";
+    let chipX = startX;
+    for (const objectRef of flow.objects) {
+      const chipResult = chip(chipX, startY, objectName.get(objectRef.id) ?? objectRef.id);
+      out += chipResult.svg;
+      chipX += chipResult.width + 4;
+    }
+    return out;
+  };
 
   const renderFlowsBand = () => {
     beginBand(ui.flows);
@@ -491,16 +511,11 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       entry.lines.forEach((line, lineIndex) => {
         bandsSvg += `<text x="${entryX + BADGE}" y="${entryY + scaled(11) + lineIndex * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>\n`;
       });
-      if (entry.flow.objects?.length) {
-        const lastLine = entry.lines[entry.lines.length - 1] ?? "";
-        let chipX = entryX + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
-        const chipY = entryY + 1 + (entry.lines.length - 1) * LINE_H;
-        for (const objectRef of entry.flow.objects) {
-          const chipResult = chip(chipX, chipY, objectName.get(objectRef.id) ?? objectRef.id);
-          bandsSvg += chipResult.svg;
-          chipX += chipResult.width + 4;
-        }
-      }
+      const lastLine = entry.lines[entry.lines.length - 1] ?? "";
+      const chipStartX =
+        entryX + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
+      const chipStartY = entryY + 1 + (entry.lines.length - 1) * LINE_H;
+      bandsSvg += flowChipsSvg(entry.flow, chipStartX, chipStartY);
       colY[col] = entryY + Math.max(scaled(20), entry.lines.length * LINE_H + scaled(7));
     });
     bandY = Math.max(...colY) + 6;

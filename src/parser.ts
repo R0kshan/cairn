@@ -337,7 +337,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     skipNewlines();
   }
 
-  (function indexAll(elements: Element[]) {
+  function indexAll(elements: Element[]) {
     for (const element of elements) {
       model.index.set(
         element.id,
@@ -345,7 +345,8 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
       );
       indexAll(element.children);
     }
-  })(model.elements);
+  }
+  indexAll(model.elements);
 
   return { model, diags: diagnostics };
 }

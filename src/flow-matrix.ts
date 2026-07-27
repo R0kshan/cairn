@@ -40,10 +40,9 @@ const endpoint = (model: Model, id: string): string => {
 function splitProto(protocol?: string): { proto: string; port: string } {
   if (!protocol) return { proto: "", port: "" };
   const slashIndex = protocol.lastIndexOf("/");
-  if (slashIndex >= 0) {
-    const tail = protocol.slice(slashIndex + 1);
-    if (/^\d+$/.test(tail)) return { proto: protocol.slice(0, slashIndex), port: tail };
-  }
+  const tail = slashIndex >= 0 ? protocol.slice(slashIndex + 1) : "";
+  const hasNumericPort = slashIndex >= 0 && /^\d+$/.test(tail);
+  if (hasNumericPort) return { proto: protocol.slice(0, slashIndex), port: tail };
   return { proto: protocol, port: "" };
 }
 
