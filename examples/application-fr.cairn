@@ -22,29 +22,29 @@ application COMPTABILITE "Comptabilité" {
   module CLIENTS "Comptes\nclients"
 }
 
+queue EVENTS "Bus d'événements\nfacturation"
+
 datastore REF_CLIENTS "Référentiel\nclients"
 datastore REF_OFFRES "Catalogue\nd'offres"
 
 external EDI "Plateforme EDI\npartenaire"
 external PPF "Portail de facturation\nélectronique (PPF)"
 
-# ---- objets métier ----
-business-object BO_FACTURE "Facture" "document de facturation émis vers un client"
-business-object BO_CONTRAT "Contrat" "engagement commercial actif d'un client"
 
-# ---- flux applicatifs : libellé (protocole, format) [objets] ----
-ADMIN_VENTES -> CRM_CONTRATS : "Saisir et mettre\nà jour les contrats" [BO_CONTRAT]
-CRM_COMPTES -> REF_CLIENTS : "Synchroniser les\ncomptes clients" (API_REST, JSON)
-CRM_CONTRATS -> FACT_MOTEUR : "Éléments contractuels\nà facturer" (MQ, JSON) [BO_CONTRAT]
-REF_OFFRES -> FACT_MOTEUR : "Tarifs et\nconditions" (JDBC)
-FACT_MOTEUR -> FACT_EMISSION : "Factures\ncalculées" (MQ, JSON) [BO_FACTURE]
-FACT_EMISSION -> EDI : "Émettre les factures\ndématérialisées" (AS4, UBL) [BO_FACTURE]
-FACT_EMISSION -> PPF : "Transmission\nréglementaire" (API_REST, FacturX) [BO_FACTURE]
-FACT_EMISSION -> CLIENTS : "Écritures de\nventes" (MQ, JSON)
-FACT_RELANCE -> CRM_COMPTES : "Statut de relance\nclient" (API_REST, JSON)
-CLIENTS -> GRAND_LIVRE : "Imputation\ncomptable" (batch, CSV)
-COMPTABLE -> GRAND_LIVRE : "Contrôles et\nclôtures"
-COMPTABLE -> FACT_RELANCE : "Piloter le\nrecouvrement"
+# ---- flux applicatifs : libellé (protocole, format) ----
+ADMIN_VENTES -> CRM_CONTRATS
+CRM_COMPTES -> REF_CLIENTS (API_REST, JSON)
+CRM_CONTRATS -> FACT_MOTEUR (MQ, JSON)
+REF_OFFRES -> FACT_MOTEUR (JDBC)
+FACT_MOTEUR -> EVENTS (MQ, JSON)
+FACT_EMISSION -> EVENTS (MQ, JSON)
+FACT_EMISSION -> EDI (AS4, UBL)
+FACT_EMISSION -> PPF (API_REST, FacturX)
+FACT_EMISSION -> CLIENTS (MQ, JSON)
+FACT_RELANCE -> CRM_COMPTES (API_REST, JSON)
+CLIENTS -> GRAND_LIVRE (batch, CSV)
+COMPTABLE -> GRAND_LIVRE
+COMPTABLE -> FACT_RELANCE
 
 legend {
   note "Factur-X obligatoire depuis la réforme de la facturation électronique"

@@ -11,14 +11,17 @@ application CORE "Core platform" {
   module JOBS "Job runner"
 }
 
+queue BUS "Message broker"
+
 datastore DB "Primary database"
 
 external PAY "Payment provider"
 
-business-object ORDER "Order" "a customer order tracked to fulfilment"
 
-DEV  -> API  : "Create order" (HTTPS, JSON) [ORDER]
-API  -> DB   : "Persist order" (SQL)
-API  -> PAY  : "Charge card" (HTTPS)
-OPS  -> JOBS : "Trigger nightly batch"
-JOBS -> DB   : "Read / write" (SQL)
+DEV  -> API (HTTPS, JSON)
+API  -> DB (SQL)
+API  -> BUS (AMQP)
+BUS  -> JOBS (AMQP)
+API  -> PAY (HTTPS)
+OPS  -> JOBS
+JOBS -> DB (SQL)

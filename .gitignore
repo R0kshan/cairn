@@ -1,4 +1,14 @@
 node_modules/
 dist/
+package.json
+package-lock.json
+
 *.log
 *.bun-build
+bun.lock
+
+.opencode/*
+!.opencode/skills
+
+.claude/*
+!.claude/skills

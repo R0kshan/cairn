@@ -1,10 +1,14 @@
-# Cairn, a specialized Software Architecture Diagrams as code tool
+# Cairn, a specialized Software Architecture Diagram as Code tool
 
 *Just as a mountain trail is marked by cairns, software architecture is understood through a series of views, each revealing a different part of the landscape.*
 
 ## In short,
 
 Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
+
+## Status 
+
+Pre-releases available. Waiting for first issues to be resolved and some community feedback before releasing a stable version.
 
 ## Table of contents
 
@@ -55,6 +59,11 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
       <td>The overlapping issues have been addressed. A caveat remains: the long-distance arrow can affect readability (still working on improvements)</td>
     </tr>
     </table>
+
+## Known limitations I'm working on
+
+* While Cairn ensures 0 label overlap, flows on large diagrams still take a longer than neccessary route to the target element - issue [#26](https://github.com/R0kshan/cairn/issues/26) created to adress this
+* At the moment Cairn doesn't give the user the possibility to control positioning - issue [#8](https://github.com/R0kshan/cairn/issues/8) created to adress this
 
 ## Usage
 

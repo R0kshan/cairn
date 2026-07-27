@@ -1,8 +1,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
-import { parse } from './src/parse.ts';
-import { validate } from './src/validate.ts';
-import { layout } from './src/layout.ts';
-import { render } from './src/render.ts';
+import { parse } from './src/parser.ts';
+import { validate } from './src/validator.ts';
+import { layout } from './src/scene-layout.ts';
+import { render } from './src/svg-render.ts';
 import { views, themeNames } from './src/model.ts';
 const files=readdirSync('examples').filter(f=>f.endsWith('.cairn')&&f!=='broken.cairn').map(f=>'examples/'+f);
 for(const th of themeNames){

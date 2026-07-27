@@ -2,19 +2,22 @@
 
 | No. | Source | Destination | Protocol | Port | Flow |
 |---|---|---|---|---|---|
-| 1 | Internet customers | Application firewall (WAF) (DMZ) | HTTPS | 443 | Client web traffic |
-| 2 | Application firewall (WAF) (DMZ) | Nginx (DMZ) | HTTPS | 443 | Filtered traffic |
-| 3 | Nginx (DMZ) | Sales front (Application zone) | HTTPS | 8443 | Front routing |
-| 4 | Nginx (DMZ) | Checkout funnel (Application zone) | HTTPS | 8444 | Checkout routing |
-| 5 | Sales front (Application zone) | Order management (Application zone) | HTTPS | 8443 | Orders API |
-| 6 | Checkout funnel (Application zone) | Payment hub (Application zone) | HTTPS | 8445 | Payment API |
-| 7 | Payment hub (Application zone) | PSP | HTTPS | 443 | Authorization and capture |
-| 8 | Order management (Application zone) | PostgreSQL primary (Data zone) | TCP | 5432 | Read/write orders |
-| 9 | Payment hub (Application zone) | PostgreSQL primary (Data zone) | TCP | 5432 | Read/write transactions |
-| 10 | Order management (Application zone) | Kafka (Data zone) | TCP | 9092 | Order events |
-| 11 | Sales front (Application zone) | Kafka (Data zone) | TCP | 9092 | Browsing events |
-| 12 | Order management (Application zone) | Transfer gateway (DMZ) | SFTP | 22 | Carrier files |
-| 13 | Transfer gateway (DMZ) | Carrier platforms | AS4 | 443 | Logistics exchanges |
-| 14 | PostgreSQL primary (Data zone) | PostgreSQL replica (DR data zone) | TCP | 5432 | Async replication |
-| 15 | PostgreSQL standby (DR data zone) | Backup server (DR data zone) | TCP | 9095 | Daily backups |
-| 16 | Kafka (Data zone) | Backup server (DR data zone) | TCP | 9095 | Topic archiving |
+| 1 | Internet customers | Application firewall (WAF) (DMZ) | HTTPS | 443 |  |
+| 2 | Application firewall (WAF) (DMZ) | Nginx (DMZ) | HTTPS | 443 |  |
+| 3 | Nginx (DMZ) | Gateway (Application zone) | HTTPS | 443 |  |
+| 4 | Gateway (Application zone) | OAuth2 proxy (Application zone) | HTTPS | 8443 |  |
+| 5 | OAuth2 proxy (Application zone) | LDAP / IdP (Application zone) | LDAPS | 636 |  |
+| 6 | Gateway (Application zone) | Sales front (Application zone) | HTTPS | 8443 |  |
+| 7 | Gateway (Application zone) | Checkout funnel (Application zone) | HTTPS | 8444 |  |
+| 8 | Sales front (Application zone) | Order management (Application zone) | HTTPS | 8443 |  |
+| 9 | Checkout funnel (Application zone) | Payment hub (Application zone) | HTTPS | 8445 |  |
+| 10 | Payment hub (Application zone) | PSP | HTTPS | 443 |  |
+| 11 | Order management (Application zone) | PostgreSQL primary (Data zone) | TCP | 5432 |  |
+| 12 | Payment hub (Application zone) | PostgreSQL primary (Data zone) | TCP | 5432 |  |
+| 13 | Order management (Application zone) | Kafka (Data zone) | TCP | 9092 |  |
+| 14 | Sales front (Application zone) | Kafka (Data zone) | TCP | 9092 |  |
+| 15 | Order management (Application zone) | Transfer gateway (DMZ) | SFTP | 22 |  |
+| 16 | Transfer gateway (DMZ) | Carrier platforms | AS4 | 443 |  |
+| 17 | PostgreSQL primary (Data zone) | PostgreSQL replica (DR data zone) | TCP | 5432 |  |
+| 18 | PostgreSQL standby (DR data zone) | Backup server (DR data zone) | TCP | 9095 |  |
+| 19 | Kafka (Data zone) | Backup server (DR data zone) | TCP | 9095 |  |

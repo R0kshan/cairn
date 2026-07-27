@@ -1,6 +1,6 @@
 {
   "name": "cairn",
-  "version": "1.0.0-RC05",
+  "version": "1.0.0-RC07",
   "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
   "type": "module",
   "bin": {
@@ -15,14 +15,15 @@
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",
     "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
-    "snapshots": "UPDATE_SNAPSHOTS=1 node --experimental-strip-types --test tests/snapshot.test.ts tests/corpus.test.ts",
+    "snapshots": "node --experimental-strip-types scripts/update-snapshots.mjs",
     "build:binaries": "bash scripts/build-binaries.sh",
     "build:playground": "bash scripts/build-playground.sh",
     "lint": "biome lint src tests",
     "format": "biome format --write src tests",
     "typecheck": "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
-    "test:binary": "bash scripts/smoke-binary.sh"
+    "test:binary": "bash scripts/smoke-binary.sh",
+    "examples": "node --experimental-strip-types scripts/render-examples.mjs"
   },
   "dependencies": {
     "elkjs": "^0.12.0"

@@ -10,12 +10,16 @@ site DC "Main data center" {
     server SFTP_GW "Transfer\ngateway"
   }
   network-zone LAN_APP "Application zone" {
+    gateway AUTH_GW "Gateway"
+    auth OAUTH2 "OAuth2\nproxy"
+    idp IDP "LDAP / IdP"
     server VM_BILL "Billing VM" {
       app-instance BILL_I "Billing"
     }
     server VM_CRM "CRM VM" {
       app-instance CRM_I "CRM"
     }
+    queue KAFKA "Message\nbroker"
   }
   network-zone LAN_DATA "Data zone" {
     server DB_SRV "Database\nserver" {
@@ -29,14 +33,19 @@ actor USERS "User\nworkstations"
 external EDI "Partner EDI\nplatform"
 
 # ---- technical flows (protocol REQUIRED) ----
-USERS -> WAF_I : "Web application\naccess" (HTTPS/443)
-WAF_I -> BILL_I : "Filtered billing\ntraffic" (HTTPS/8443)
-WAF_I -> CRM_I : "Filtered CRM\ntraffic" (HTTPS/8444)
-BILL_I -> PG_I : "Read/write\nbilling data" (TCP/5432)
-CRM_I -> PG_I : "Read/write\ncustomer data" (TCP/5432)
-BILL_I -> SFTP_GW : "Drop invoices\nto transmit" (SFTP/22)
-SFTP_GW -> EDI : "Partner\ntransfers" (AS4/443)
-DB_SRV -> BACKUP : "Daily\nbackups" (TCP/9092)
+USERS -> WAF_I : (HTTPS/443)
+WAF_I -> AUTH_GW : (HTTPS/443)
+AUTH_GW -> OAUTH2 : (HTTPS/8443)
+OAUTH2 -> IDP : (LDAPS/636)
+AUTH_GW -> BILL_I : (HTTPS/8443)
+AUTH_GW -> CRM_I : (HTTPS/8444)
+BILL_I -> PG_I : (TCP/5432)
+CRM_I -> PG_I : (TCP/5432)
+BILL_I -> KAFKA : (TCP/9092)
+KAFKA -> CRM_I : (TCP/9092)
+BILL_I -> SFTP_GW : (SFTP/22)
+SFTP_GW -> EDI : (AS4/443)
+DB_SRV -> BACKUP : (TCP/9092)
 
 legend {
   note "Inter-zone flows filtered by firewall (flow matrix attached to the architecture dossier)"

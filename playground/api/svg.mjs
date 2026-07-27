@@ -12,8 +12,14 @@
 
 import { compile, version } from '../lib/engine.node.mjs';
 
+// Escape for BOTH attribute and text contexts: `t` is interpolated into
+// `aria-label="…"` as well as element content, and `msg` is user-influenced
+// (diagnostic text echoes the submitted DSL). Escaping only `<`/`&` would let a
+// `"` close the attribute and inject markup — keep `"` and `'` in the set.
+const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+
 function errSvg(msg) {
-  const t = String(msg).replace(/[<&]/g, c => (c === '<' ? '&lt;' : '&amp;'));
+  const t = String(msg).replace(/[&<>"']/g, c => ESCAPES[c]);
   return `<svg xmlns="http://www.w3.org/2000/svg" width="560" height="60" role="img" aria-label="${t}">` +
     `<rect width="560" height="60" fill="#fff2f0" stroke="#ffb4ab"/>` +
     `<text x="14" y="35" font-family="ui-monospace,Menlo,Consolas,monospace" font-size="13" fill="#b3261e">${t}</text></svg>`;

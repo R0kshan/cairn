@@ -11,15 +11,21 @@ updates:
     schedule:
       interval: "weekly"
       day: "monday"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
+    cooldown:
+      default-days: 7
 
   - package-ecosystem: "npm"
     directory: "/playground"
     schedule:
       interval: "weekly"
       day: "monday"
+    cooldown:
+      default-days: 7

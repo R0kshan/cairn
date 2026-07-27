@@ -116,11 +116,11 @@ var require_elk_bundled = __commonJS({
           }
           return ("string" === r ? String : Number)(t);
         }
-        var ELK2 = exports3["default"] = /* @__PURE__ */ function() {
-          function ELK3() {
+        var ELK = exports3["default"] = /* @__PURE__ */ function() {
+          function ELK2() {
             var _this = this;
             var _ref = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {}, _ref$defaultLayoutOpt = _ref.defaultLayoutOptions, defaultLayoutOptions = _ref$defaultLayoutOpt === void 0 ? {} : _ref$defaultLayoutOpt, _ref$algorithms = _ref.algorithms, algorithms = _ref$algorithms === void 0 ? ["layered", "stress", "mrtree", "radial", "force", "disco", "sporeOverlap", "sporeCompaction", "rectpacking"] : _ref$algorithms, workerFactory = _ref.workerFactory, workerUrl = _ref.workerUrl;
-            _classCallCheck(this, ELK3);
+            _classCallCheck(this, ELK2);
             this.defaultLayoutOptions = defaultLayoutOptions;
             this.initialized = false;
             if (typeof workerUrl === "undefined" && typeof workerFactory === "undefined") {
@@ -144,7 +144,7 @@ var require_elk_bundled = __commonJS({
               return _this.initialized = true;
             })["catch"](console.err);
           }
-          return _createClass(ELK3, [{
+          return _createClass(ELK2, [{
             key: "layout",
             value: function layout2(graph) {
               var _ref2 = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : {}, _ref2$layoutOptions = _ref2.layoutOptions, layoutOptions = _ref2$layoutOptions === void 0 ? this.defaultLayoutOptions : _ref2$layoutOptions, _ref2$logging = _ref2.logging, logging = _ref2$logging === void 0 ? false : _ref2$logging, _ref2$measureExecutio = _ref2.measureExecutionTime, measureExecutionTime = _ref2$measureExecutio === void 0 ? false : _ref2$measureExecutio;
@@ -74464,7 +74464,7 @@ var require_elk_bundled = __commonJS({
               }
               return j;
             };
-            var CW2 = zeb(YBe, "GreedyModelOrderCycleBreaker", 1356);
+            var CW = zeb(YBe, "GreedyModelOrderCycleBreaker", 1356);
             mdb(505, 1, {}, UBc);
             _.a = 0;
             _.b = 0;
@@ -92031,7 +92031,7 @@ var require_elk_bundled = __commonJS({
             return t2.__proto__ = e2, t2;
           }, _setPrototypeOf(t, e);
         }
-        var ELK2 = require2("./elk-api.js")["default"];
+        var ELK = require2("./elk-api.js")["default"];
         var ELKNode = /* @__PURE__ */ function(_ELK) {
           function ELKNode2() {
             var options = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
@@ -92063,7 +92063,7 @@ var require_elk_bundled = __commonJS({
           }
           _inherits(ELKNode2, _ELK);
           return _createClass(ELKNode2);
-        }(ELK2);
+        }(ELK);
         Object.defineProperty(module3.exports, "__esModule", {
           value: true
         });
@@ -92078,23 +92078,23 @@ var require_elk_bundled = __commonJS({
   }
 });
 
-// src/playground-entry.ts
+// src/playground.ts
 var import_elk_bundled = __toESM(require_elk_bundled(), 1);
 
-// src/elk.ts
+// src/elk-engine.ts
 var factory = null;
 var instance = null;
-function setElkFactory(f) {
-  factory = f;
+function setElkFactory(elkFactory) {
+  factory = elkFactory;
   instance = null;
 }
 async function getElk() {
   if (instance) return instance;
   if (!factory) {
-    const spec = "./elk-node.ts";
+    const modulePath = "./elk-worker.ts";
     const mod = await import(
       /* @vite-ignore */
-      spec
+      modulePath
     );
     factory = mod.nodeElkFactory;
   }
@@ -92102,152 +92102,144 @@ async function getElk() {
   return instance;
 }
 
-// src/lex.ts
-var HEX = /^[0-9a-fA-F]{3,8}$/;
-var isIdChar = (c) => /[A-Za-z0-9_\-/.]/.test(c);
-function lex(src, diags) {
-  const toks = [];
-  let i = 0, line = 1, col = 1;
-  const push = (kind, text, l, c) => toks.push({ kind, text, span: { line: l, col: c, len: Math.max(text.length, 1) } });
-  while (i < src.length) {
-    const c = src[i];
-    if (c === "\n") {
+// src/lexer.ts
+var HEX_PATTERN = /^[0-9a-fA-F]{3,8}$/;
+var isIdChar = (char) => /[A-Za-z0-9_\-/.]/.test(char);
+var SINGLE_CHAR_TOKENS = {
+  ":": "colon",
+  "{": "lbrace",
+  "}": "rbrace",
+  "[": "lbrack",
+  "]": "rbrack",
+  "(": "lparen",
+  ")": "rparen",
+  ",": "comma"
+};
+function lex(src, diagnostics) {
+  const tokens = [];
+  let position = 0, line = 1, col = 1;
+  const push = (kind, text, lineNumber, colNumber) => tokens.push({
+    kind,
+    text,
+    span: {
+      line: lineNumber,
+      col: colNumber,
+      len: Math.max(text.length, 1)
+    }
+  });
+  while (position < src.length) {
+    const char = src[position];
+    if (char === "\n") {
       push("nl", "\n", line, col);
-      i++;
+      position++;
       line++;
       col = 1;
       continue;
     }
-    if (c === " " || c === "	" || c === "\r") {
-      i++;
+    if (char === " " || char === "	" || char === "\r") {
+      position++;
       col++;
       continue;
     }
-    if (c === "#") {
-      let j = i + 1;
-      while (j < src.length && isIdChar(src[j])) j++;
-      const word = src.slice(i + 1, j);
-      if (HEX.test(word)) {
+    if (char === "#") {
+      let scanIndex = position + 1;
+      while (scanIndex < src.length && isIdChar(src[scanIndex])) scanIndex++;
+      const word = src.slice(position + 1, scanIndex);
+      if (HEX_PATTERN.test(word)) {
         push("color", "#" + word, line, col);
         col += word.length + 1;
-        i = j;
+        position = scanIndex;
         continue;
       }
-      while (i < src.length && src[i] !== "\n") {
-        i++;
+      while (position < src.length && src[position] !== "\n") {
+        position++;
         col++;
       }
       continue;
     }
-    if (c === '"') {
-      const l = line, cl = col;
-      let out = "", j = i + 1;
+    if (char === '"') {
+      const startLine = line, startCol = col;
+      let unescaped = "", scanIndex = position + 1;
       col++;
-      while (j < src.length && src[j] !== '"') {
-        if (src[j] === "\\" && src[j + 1] === "n") {
-          out += "\n";
-          j += 2;
+      while (scanIndex < src.length && src[scanIndex] !== '"') {
+        if (src[scanIndex] === "\\" && src[scanIndex + 1] === "n") {
+          unescaped += "\n";
+          scanIndex += 2;
           col += 2;
-        } else if (src[j] === "\\" && src[j + 1] === '"') {
-          out += '"';
-          j += 2;
+        } else if (src[scanIndex] === "\\" && src[scanIndex + 1] === '"') {
+          unescaped += '"';
+          scanIndex += 2;
           col += 2;
-        } else if (src[j] === "\n") {
+        } else if (src[scanIndex] === "\n") {
           break;
         } else {
-          out += src[j];
-          j++;
+          unescaped += src[scanIndex];
+          scanIndex++;
           col++;
         }
       }
-      if (src[j] !== '"') {
-        diags.push({ code: "E0101", severity: "error", message: "unterminated string", span: { line: l, col: cl, len: j - i }, help: 'add the closing `"` quote' });
+      if (src[scanIndex] !== '"') {
+        diagnostics.push({
+          code: "E0101",
+          severity: "error",
+          message: "unterminated string",
+          span: {
+            line: startLine,
+            col: startCol,
+            len: scanIndex - position
+          },
+          help: 'add the closing `"` quote'
+        });
       }
-      push("str", out, l, cl);
-      toks[toks.length - 1].span.len = j - i + 1;
-      i = j + 1;
+      push("str", unescaped, startLine, startCol);
+      tokens[tokens.length - 1].span.len = scanIndex - position + 1;
+      position = scanIndex + 1;
       col++;
       continue;
     }
-    if (c === "-" && src[i + 1] === ">") {
+    if (char === "-" && src[position + 1] === ">") {
       push("arrow", "->", line, col);
-      i += 2;
+      position += 2;
       col += 2;
       continue;
     }
-    if (c === ":") {
-      push("colon", ":", line, col);
-      i++;
+    const singleCharKind = SINGLE_CHAR_TOKENS[char];
+    if (singleCharKind) {
+      push(singleCharKind, char, line, col);
+      position++;
       col++;
       continue;
     }
-    if (c === "{") {
-      push("lbrace", "{", line, col);
-      i++;
-      col++;
+    if (/[0-9]/.test(char) || char === "." && /[0-9]/.test(src[position + 1] ?? "")) {
+      let scanIndex = position;
+      while (scanIndex < src.length && /[0-9.]/.test(src[scanIndex])) scanIndex++;
+      push("num", src.slice(position, scanIndex), line, col);
+      col += scanIndex - position;
+      position = scanIndex;
       continue;
     }
-    if (c === "}") {
-      push("rbrace", "}", line, col);
-      i++;
-      col++;
+    if (isIdChar(char)) {
+      let scanIndex = position;
+      while (scanIndex < src.length && isIdChar(src[scanIndex])) scanIndex++;
+      push("id", src.slice(position, scanIndex), line, col);
+      col += scanIndex - position;
+      position = scanIndex;
       continue;
     }
-    if (c === "[") {
-      push("lbrack", "[", line, col);
-      i++;
-      col++;
-      continue;
-    }
-    if (c === "]") {
-      push("rbrack", "]", line, col);
-      i++;
-      col++;
-      continue;
-    }
-    if (c === "(") {
-      push("lparen", "(", line, col);
-      i++;
-      col++;
-      continue;
-    }
-    if (c === ")") {
-      push("rparen", ")", line, col);
-      i++;
-      col++;
-      continue;
-    }
-    if (c === ",") {
-      push("comma", ",", line, col);
-      i++;
-      col++;
-      continue;
-    }
-    if (/[0-9]/.test(c) || c === "." && /[0-9]/.test(src[i + 1] ?? "")) {
-      let j = i;
-      while (j < src.length && /[0-9.]/.test(src[j])) j++;
-      push("num", src.slice(i, j), line, col);
-      col += j - i;
-      i = j;
-      continue;
-    }
-    if (isIdChar(c)) {
-      let j = i;
-      while (j < src.length && isIdChar(src[j])) j++;
-      push("id", src.slice(i, j), line, col);
-      col += j - i;
-      i = j;
-      continue;
-    }
-    diags.push({ code: "E0101", severity: "error", message: `unexpected character \`${c}\``, span: { line, col, len: 1 } });
-    i++;
+    diagnostics.push({
+      code: "E0101",
+      severity: "error",
+      message: `unexpected character \`${char}\``,
+      span: { line, col, len: 1 }
+    });
+    position++;
     col++;
   }
   push("eof", "", line, col);
-  return toks;
+  return tokens;
 }
 
-// src/model.ts
+// src/models/ast.ts
 var defaultDiagramStyle = () => ({
   crossingHops: true,
   compact: false,
@@ -92263,28 +92255,9 @@ var defaultDiagramStyle = () => ({
   lang: "en",
   kind: {},
   font: { family: "Helvetica", size: 12.5 }
-  // base text size; edge = base-1, container = base+0.5
 });
-var UI = {
-  en: {
-    flows: "FLOWS",
-    objects: "BUSINESS OBJECTS",
-    legend: "LEGEND",
-    numberedSuffix: "numbered (text: FLOWS band)",
-    carriedByFlow: "carried by the flow",
-    businessObject: "Business object",
-    matrix: { title: "TECHNICAL FLOW MATRIX", n: "No.", source: "Source", dest: "Destination", proto: "Protocol", port: "Port", nature: "Flow", zone: "zone" }
-  },
-  fr: {
-    flows: "FLUX",
-    objects: "OBJETS M\xC9TIER",
-    legend: "L\xC9GENDE",
-    numberedSuffix: "num\xE9rot\xE9 (texte : bande FLUX)",
-    carriedByFlow: "port\xE9 par le flux",
-    businessObject: "Objet m\xE9tier",
-    matrix: { title: "MATRICE DES FLUX TECHNIQUES", n: "N\xB0", source: "Source", dest: "Destination", proto: "Protocole", port: "Port", nature: "Nature du flux", zone: "zone" }
-  }
-};
+
+// src/themes.ts
 var lightPalette = {
   background: "white",
   containerLabel: "#333",
@@ -92334,9 +92307,1056 @@ var darkPalette = {
   chipText: "#e0c068"
 };
 var flowPalette = {
-  light: ["#1f77b4", "#d62728", "#2e8b57", "#9467bd", "#8c564b", "#c1288a", "#0e8ea6", "#9a9a1e", "#e07b00", "#5a5a5a"],
-  dark: ["#5fa8dc", "#f2695f", "#63c98a", "#b79ae0", "#c08a76", "#e878bd", "#4fc4d6", "#cfcf5a", "#f2a24e", "#a6a6a6"]
+  light: [
+    "#1f77b4",
+    "#d62728",
+    "#2e8b57",
+    "#9467bd",
+    "#8c564b",
+    "#c1288a",
+    "#0e8ea6",
+    "#9a9a1e",
+    "#e07b00",
+    "#5a5a5a"
+  ],
+  dark: [
+    "#5fa8dc",
+    "#f2695f",
+    "#63c98a",
+    "#b79ae0",
+    "#c08a76",
+    "#e878bd",
+    "#4fc4d6",
+    "#cfcf5a",
+    "#f2a24e",
+    "#a6a6a6"
+  ]
 };
+var containerStyle = (fill, stroke, dashed = false, width = 1.2) => ({
+  fill,
+  stroke: { color: stroke, style: dashed ? "dashed" : "solid", width }
+});
+var leafStyle = (fill, stroke, width = 1.3) => ({
+  fill,
+  stroke: { color: stroke, style: "solid", width }
+});
+var KIND_ROLE_MAP = {
+  "actor-group": "actorGroup",
+  actor: "actor",
+  system: "system",
+  application: "application",
+  module: "leaf",
+  layer: "layer",
+  block: "leaf",
+  external: "external",
+  datastore: "datastore",
+  queue: "datastore",
+  gateway: "authGateway",
+  auth: "auth",
+  idp: "identityProvider",
+  site: "site",
+  "network-zone": "networkZone",
+  server: "server",
+  "app-instance": "appInstance",
+  "security-node": "securityNode",
+  asset: "leaf"
+};
+var roleForKind = (kind, viewName) => viewName === "security" && kind === "external" ? "untrusted" : KIND_ROLE_MAP[kind] ?? "leaf";
+var buildTheme = (spec) => {
+  const p = spec.pal, h = spec.h;
+  const palette = {
+    background: p.bg,
+    containerLabel: p.text,
+    containerFill: p.cFill,
+    containerStroke: p.cStroke,
+    nodeText: p.text,
+    nodeFill: p.nFill,
+    nodeStroke: p.nStroke,
+    actorStroke: p.aStroke,
+    actorText: p.aText,
+    edge: p.edge,
+    edgeLabel: p.sub,
+    techText: p.muted,
+    halo: p.halo,
+    bandTitle: p.sub,
+    bandText: p.text,
+    bandMuted: p.muted,
+    divider: p.div,
+    badgeFill: p.badge[0],
+    badgeStroke: p.badge[1],
+    chipFill: p.chip[0],
+    chipStroke: p.chip[1],
+    chipText: p.chip[2]
+  };
+  return {
+    palette,
+    roles: {
+      actor: {},
+      actorGroup: containerStyle(h.blueF, h.blue, true),
+      system: containerStyle(h.amberF, h.amber),
+      application: containerStyle(h.appF, h.app),
+      layer: containerStyle(h.goldF, h.gold, false, 1),
+      external: containerStyle(h.violetF, h.violet, true),
+      untrusted: containerStyle(h.redF, h.red, true, 1.3),
+      leaf: leafStyle(h.leafF, h.leafS),
+      datastore: leafStyle(h.purpleF, h.purple),
+      site: containerStyle(h.siteF, h.siteS, false, 1.4),
+      networkZone: containerStyle(h.greenF, h.green, true),
+      server: containerStyle(h.serverF, h.serverS, false, 1.5),
+      appInstance: leafStyle(h.aiF, h.aiS, 1.2),
+      securityNode: leafStyle(h.nodeF, h.node, 1.6),
+      authGateway: leafStyle(h.authF, h.auth, 1.4),
+      auth: leafStyle(h.nodeF, h.node, 1.5),
+      identityProvider: leafStyle(h.idpF, h.idp)
+    },
+    levels: {
+      public: containerStyle(spec.lv.public[0], spec.lv.public[1], false, 1.4),
+      internal: containerStyle(spec.lv.internal[0], spec.lv.internal[1], false, 1.4),
+      restricted: containerStyle(spec.lv.restricted[0], spec.lv.restricted[1], false, 1.4),
+      secret: containerStyle(spec.lv.secret[0], spec.lv.secret[1], false, 1.4)
+    }
+  };
+};
+var themes = {
+  light: buildTheme({
+    pal: {
+      bg: "#ffffff",
+      text: "#17202c",
+      sub: "#3a4553",
+      muted: "#79828f",
+      cFill: "#f5f6f8",
+      cStroke: "#c7ccd3",
+      nFill: "#ffffff",
+      nStroke: "#48546a",
+      edge: "#5a6675",
+      div: "#e6e9ee",
+      halo: "#ffffff",
+      aStroke: "#1f5e91",
+      aText: "#20364c",
+      chip: ["#fff2d4", "#d3a01f", "#6a5111"],
+      badge: ["#ffffff", "#8a94a2"]
+    },
+    h: {
+      blue: "#1f77b4",
+      blueF: "#e9f2fb",
+      amber: "#c17d1c",
+      amberF: "#fbf4e9",
+      app: "#2f83b6",
+      appF: "#e9f3fa",
+      gold: "#cf9f2f",
+      goldF: "#fdfaf0",
+      violet: "#8659a6",
+      violetF: "#f4eff8",
+      red: "#cf4b3f",
+      redF: "#fdecea",
+      purple: "#8a53a8",
+      purpleF: "#f4edf8",
+      green: "#1a8f66",
+      greenF: "#eaf5ef",
+      siteS: "#7c8794",
+      siteF: "#f3f5f6",
+      leafF: "#ffffff",
+      leafS: "#48546a",
+      aiS: "#c88a2e",
+      aiF: "#fdf4e3",
+      node: "#d1600f",
+      nodeF: "#fdefe3",
+      serverS: "#48546a",
+      serverF: "#ffffff",
+      auth: "#b85a30",
+      authF: "#f5e6dd",
+      idp: "#3a8f8f",
+      idpF: "#e0f0f0"
+    },
+    lv: {
+      public: ["#fdeceb", "#d0463f"],
+      internal: ["#fef2e2", "#cf9436"],
+      restricted: ["#e9f2fb", "#2f7cc4"],
+      secret: ["#efe9f7", "#7a55a8"]
+    }
+  }),
+  dark: buildTheme({
+    pal: {
+      bg: "#1e2530",
+      text: "#e6edf3",
+      sub: "#c2ccd6",
+      muted: "#93a0ab",
+      cFill: "#2a313c",
+      cStroke: "#4a5560",
+      nFill: "#252c37",
+      nStroke: "#5a6673",
+      edge: "#9aa7b4",
+      div: "#3a4149",
+      halo: "#1e2530",
+      aStroke: "#8aa0b8",
+      aText: "#c9d5e1",
+      chip: ["#3a3320", "#b08d2a", "#e0c068"],
+      badge: ["#252c37", "#5a6673"]
+    },
+    h: {
+      blue: "#5aa9e6",
+      blueF: "#233242",
+      amber: "#e0a955",
+      amberF: "#332a1b",
+      app: "#5aa9e6",
+      appF: "#1f2a37",
+      gold: "#d8c15f",
+      goldF: "#2e2a1a",
+      violet: "#b48ad6",
+      violetF: "#2a2436",
+      red: "#e0736a",
+      redF: "#3a2422",
+      purple: "#c085d8",
+      purpleF: "#291f33",
+      green: "#4fc08a",
+      greenF: "#1c2b23",
+      siteS: "#8a95a2",
+      siteF: "#282d34",
+      leafF: "#252c37",
+      leafS: "#6b7885",
+      aiS: "#e0a955",
+      aiF: "#2e2717",
+      node: "#f0894e",
+      nodeF: "#33261c",
+      serverS: "#6b7885",
+      serverF: "#252c37",
+      auth: "#c96a4a",
+      authF: "#332218",
+      idp: "#4fafaf",
+      idpF: "#1a2e2e"
+    },
+    lv: {
+      public: ["#3a2422", "#c25a54"],
+      internal: ["#332a1c", "#c08a44"],
+      restricted: ["#1f2a37", "#4a86b8"],
+      secret: ["#291f33", "#8a6cb0"]
+    }
+  }),
+  slate: buildTheme({
+    pal: {
+      bg: "#f7f9fb",
+      text: "#26303c",
+      sub: "#465264",
+      muted: "#8792a0",
+      cFill: "#eef2f6",
+      cStroke: "#c2ccd6",
+      nFill: "#ffffff",
+      nStroke: "#516070",
+      edge: "#5b6673",
+      div: "#e0e6ec",
+      halo: "#f7f9fb",
+      aStroke: "#3b6ea5",
+      aText: "#2b4560",
+      chip: ["#eaeef3", "#8595a8", "#48566a"],
+      badge: ["#ffffff", "#93a0b0"]
+    },
+    h: {
+      blue: "#3b6ea5",
+      blueF: "#e8eff6",
+      amber: "#5b7a99",
+      amberF: "#eef2f6",
+      app: "#3b6ea5",
+      appF: "#e8eff6",
+      gold: "#7a94ad",
+      goldF: "#f0f3f6",
+      violet: "#7d6ba8",
+      violetF: "#efecf5",
+      red: "#b5544a",
+      redF: "#f7ebe9",
+      purple: "#8a6fae",
+      purpleF: "#efecf6",
+      green: "#4a8f8a",
+      greenF: "#e9f2f1",
+      siteS: "#8792a0",
+      siteF: "#eef1f4",
+      leafF: "#ffffff",
+      leafS: "#516070",
+      aiS: "#6f86a0",
+      aiF: "#eef2f6",
+      node: "#c0603a",
+      nodeF: "#f8ece7",
+      serverS: "#516070",
+      serverF: "#ffffff",
+      auth: "#a85a30",
+      authF: "#f0e4dd",
+      idp: "#3a8f8f",
+      idpF: "#e4f0f0"
+    },
+    lv: {
+      public: ["#f7ece9", "#c05a4a"],
+      internal: ["#f3efe6", "#a8823f"],
+      restricted: ["#e8eff6", "#3b6ea5"],
+      secret: ["#efecf5", "#7d6ba8"]
+    }
+  }),
+  sand: buildTheme({
+    pal: {
+      bg: "#faf6ee",
+      text: "#3a2f22",
+      sub: "#5c4c38",
+      muted: "#8a795f",
+      cFill: "#f2ebdd",
+      cStroke: "#cdbfa3",
+      nFill: "#fffdf8",
+      nStroke: "#6b5d48",
+      edge: "#6b5d48",
+      div: "#e6dcc9",
+      halo: "#faf6ee",
+      aStroke: "#3f7a8c",
+      aText: "#274852",
+      chip: ["#f4e6c8", "#c19a3f", "#6b5417"],
+      badge: ["#fffdf8", "#b3a488"]
+    },
+    h: {
+      blue: "#3f7a8c",
+      blueF: "#e6f0f1",
+      amber: "#b07d2a",
+      amberF: "#f6ecd8",
+      app: "#3f7a8c",
+      appF: "#e6f0f1",
+      gold: "#c99f45",
+      goldF: "#f8f0dd",
+      violet: "#9c6f4a",
+      violetF: "#f1e9df",
+      red: "#c0562a",
+      redF: "#f7e6da",
+      purple: "#8a5f7a",
+      purpleF: "#f2e8ee",
+      green: "#6f8f4a",
+      greenF: "#eef2e2",
+      siteS: "#8a795f",
+      siteF: "#f2ecdf",
+      leafF: "#fffdf8",
+      leafS: "#6b5d48",
+      aiS: "#b07d2a",
+      aiF: "#f7efe0",
+      node: "#c0562a",
+      nodeF: "#f7e6da",
+      serverS: "#6b5d48",
+      serverF: "#fffdf8",
+      auth: "#a85a30",
+      authF: "#f0e5dd",
+      idp: "#3a7a6f",
+      idpF: "#e5f0ed"
+    },
+    lv: {
+      public: ["#f7e2da", "#c0562a"],
+      internal: ["#f6ecd2", "#b0842e"],
+      restricted: ["#e6f0f1", "#3f7a8c"],
+      secret: ["#f0e8ef", "#8a5f7a"]
+    }
+  }),
+  contrast: buildTheme({
+    pal: {
+      bg: "#ffffff",
+      text: "#000000",
+      sub: "#1a1a1a",
+      muted: "#3a3a3a",
+      cFill: "#f2f2f2",
+      cStroke: "#333333",
+      nFill: "#ffffff",
+      nStroke: "#111111",
+      edge: "#1a1a1a",
+      div: "#cccccc",
+      halo: "#ffffff",
+      aStroke: "#003a66",
+      aText: "#000000",
+      chip: ["#ffe9b0", "#8a6d00", "#3a2e00"],
+      badge: ["#ffffff", "#333333"]
+    },
+    h: {
+      blue: "#005a9c",
+      blueF: "#e0edf7",
+      amber: "#9a4a00",
+      amberF: "#f6e9dd",
+      app: "#005a9c",
+      appF: "#e0edf7",
+      gold: "#8a6d00",
+      goldF: "#f6f0da",
+      violet: "#6a2fa0",
+      violetF: "#eee4f7",
+      red: "#c0341a",
+      redF: "#f9e2dd",
+      purple: "#8a1a6a",
+      purpleF: "#f7e0ef",
+      green: "#00695c",
+      greenF: "#daf0ec",
+      siteS: "#333333",
+      siteF: "#eeeeee",
+      leafF: "#ffffff",
+      leafS: "#111111",
+      aiS: "#9a4a00",
+      aiF: "#f6e9dd",
+      node: "#c0341a",
+      nodeF: "#f9e2dd",
+      serverS: "#111111",
+      serverF: "#ffffff",
+      auth: "#993a1a",
+      authF: "#f6e3dd",
+      idp: "#005a5a",
+      idpF: "#daf0f0"
+    },
+    lv: {
+      public: ["#f9dcd6", "#c0341a"],
+      internal: ["#f6e6c8", "#9a6a00"],
+      restricted: ["#e0edf7", "#005a9c"],
+      secret: ["#eee0f7", "#6a2fa0"]
+    }
+  }),
+  nord: buildTheme({
+    pal: {
+      bg: "#2e3440",
+      text: "#eceff4",
+      sub: "#d8dee9",
+      muted: "#9aa3b2",
+      cFill: "#3b4252",
+      cStroke: "#4c566a",
+      nFill: "#3b4252",
+      nStroke: "#4c566a",
+      edge: "#abb2bf",
+      div: "#434c5e",
+      halo: "#2e3440",
+      aStroke: "#88c0d0",
+      aText: "#e5e9f0",
+      chip: ["#3b3a2a", "#ebcb8b", "#ebcb8b"],
+      badge: ["#3b4252", "#4c566a"]
+    },
+    h: {
+      blue: "#81a1c1",
+      blueF: "#333b4a",
+      amber: "#ebcb8b",
+      amberF: "#3a3524",
+      app: "#81a1c1",
+      appF: "#2f3a44",
+      gold: "#d0b47a",
+      goldF: "#37331f",
+      violet: "#b48ead",
+      violetF: "#352d38",
+      red: "#bf616a",
+      redF: "#3a2a2d",
+      purple: "#a38bbd",
+      purpleF: "#312a3a",
+      green: "#8fbcbb",
+      greenF: "#26332f",
+      siteS: "#9aa3b2",
+      siteF: "#353c49",
+      leafF: "#3b4252",
+      leafS: "#5a6377",
+      aiS: "#ebcb8b",
+      aiF: "#3a3524",
+      node: "#d08770",
+      nodeF: "#372a24",
+      serverS: "#5a6377",
+      serverF: "#3b4252",
+      auth: "#c96a4a",
+      authF: "#332218",
+      idp: "#6fafaf",
+      idpF: "#203432"
+    },
+    lv: {
+      public: ["#3a2a2d", "#bf616a"],
+      internal: ["#3a3524", "#d0a85f"],
+      restricted: ["#2f3a44", "#81a1c1"],
+      secret: ["#312a3a", "#a38bbd"]
+    }
+  }),
+  solarized: buildTheme({
+    pal: {
+      bg: "#fdf6e3",
+      text: "#586e75",
+      sub: "#657b83",
+      muted: "#93a1a1",
+      cFill: "#eee8d5",
+      cStroke: "#c9c1a8",
+      nFill: "#fdf6e3",
+      nStroke: "#93a1a1",
+      edge: "#657b83",
+      div: "#ded8c3",
+      halo: "#fdf6e3",
+      aStroke: "#268bd2",
+      aText: "#073642",
+      chip: ["#f2e9c8", "#b58900", "#5c4a00"],
+      badge: ["#fdf6e3", "#b3aa90"]
+    },
+    h: {
+      blue: "#268bd2",
+      blueF: "#e3edf3",
+      amber: "#b58900",
+      amberF: "#f2ecd6",
+      app: "#268bd2",
+      appF: "#e3edf3",
+      gold: "#cb9b2e",
+      goldF: "#f4eed6",
+      violet: "#6c71c4",
+      violetF: "#e8e6f2",
+      red: "#dc322f",
+      redF: "#f7e2d9",
+      purple: "#d33682",
+      purpleF: "#f6e0ea",
+      green: "#2aa198",
+      greenF: "#dff0ec",
+      siteS: "#93a1a1",
+      siteF: "#eee8d5",
+      leafF: "#fdf6e3",
+      leafS: "#657b83",
+      aiS: "#b58900",
+      aiF: "#f2ecd6",
+      node: "#cb4b16",
+      nodeF: "#f7e4d6",
+      serverS: "#657b83",
+      serverF: "#fdf6e3",
+      auth: "#b85a30",
+      authF: "#f5e6dd",
+      idp: "#2aa198",
+      idpF: "#dff0ec"
+    },
+    lv: {
+      public: ["#f7ddd6", "#dc322f"],
+      internal: ["#f2e6c8", "#b58900"],
+      restricted: ["#e3edf3", "#268bd2"],
+      secret: ["#e8e6f2", "#6c71c4"]
+    }
+  })
+};
+var themeNames = [...Object.keys(themes), "classic", "classic-dark"];
+function themeFor(name, view) {
+  if (name === "classic")
+    return {
+      palette: lightPalette,
+      kinds: view.defaults,
+      levels: view.levelDefaults ?? {}
+    };
+  if (name === "classic-dark")
+    return {
+      palette: darkPalette,
+      kinds: view.defaultsDark,
+      levels: view.levelDefaultsDark ?? {}
+    };
+  const t = themes[name] ?? themes.light;
+  const kinds = {};
+  for (const k of view.kinds) kinds[k] = t.roles[roleForKind(k, view.name)] ?? {};
+  return { palette: t.palette, kinds, levels: t.levels };
+}
+
+// src/parser.ts
+function parse(src) {
+  const diagnostics = [];
+  const tokens = lex(src, diagnostics);
+  let position = 0;
+  const lookAhead = (offset = 0) => tokens[Math.min(position + offset, tokens.length - 1)];
+  const matchToken = (kind, text) => lookAhead().kind === kind && (text === void 0 || lookAhead().text === text);
+  const advance = () => tokens[position < tokens.length - 1 ? position++ : position];
+  const skipNewlines = () => {
+    while (matchToken("nl")) advance();
+  };
+  const reportError = (message, span, help) => diagnostics.push({
+    code: "E0101",
+    severity: "error",
+    message,
+    span,
+    help
+  });
+  const syncToNextLine = () => {
+    while (!matchToken("nl") && !matchToken("eof")) advance();
+  };
+  const model = {
+    elements: [],
+    flows: [],
+    businessObjects: [],
+    legendNotes: [],
+    style: defaultDiagramStyle(),
+    index: /* @__PURE__ */ new Map()
+  };
+  let flowSequenceNumber = 0;
+  skipNewlines();
+  if (matchToken("id", "diagram")) {
+    advance();
+    if (matchToken("id")) {
+      const token = advance();
+      model.type = token.text;
+      model.typeSpan = token.span;
+    } else
+      reportError(
+        "diagram type expected after `diagram`",
+        lookAhead().span,
+        'e.g. `diagram logical "Title"`'
+      );
+    if (matchToken("str")) model.title = advance().text;
+  } else {
+    reportError(
+      "missing `diagram <type>` header on the first line",
+      lookAhead().span,
+      'add `diagram logical "Title"` or scaffold a file with `cairn new --logical-architecture`'
+    );
+  }
+  function parseStyleEntries(target, inline) {
+    skipNewlines();
+    while (!matchToken("rbrace") && !matchToken("eof")) {
+      if (!matchToken("id")) {
+        reportError("style property expected", lookAhead().span);
+        syncToNextLine();
+        skipNewlines();
+        continue;
+      }
+      const keyToken = advance();
+      let styleTargetKind;
+      if (matchToken("id")) {
+        const token = advance();
+        if (token.text === "__proto__" || token.text === "constructor" || token.text === "prototype") {
+          reportError(`\`${token.text}\` is a reserved name and can't be styled`, token.span);
+          syncToNextLine();
+          skipNewlines();
+          continue;
+        }
+        styleTargetKind = token.text;
+      }
+      if (!matchToken("colon")) {
+        reportError("`:` expected after the style property", lookAhead().span);
+        syncToNextLine();
+        skipNewlines();
+        continue;
+      }
+      advance();
+      const values = [];
+      while (!matchToken("nl") && !matchToken("rbrace") && !matchToken("eof")) {
+        if (values.length && matchToken("id") && lookAhead(1).kind === "colon") break;
+        values.push(advance());
+      }
+      applyStyleEntry(keyToken, styleTargetKind, values, target, inline, diagnostics);
+      skipNewlines();
+    }
+    if (matchToken("rbrace")) advance();
+    else reportError("`}` expected to close the style block", lookAhead().span);
+  }
+  function parseElementBody(parent) {
+    skipNewlines();
+    while (!matchToken("rbrace") && !matchToken("eof")) {
+      parseStatement(parent);
+      skipNewlines();
+    }
+    if (matchToken("rbrace")) advance();
+    else reportError("`}` expected to close `" + parent.id + "`", lookAhead().span);
+  }
+  function parseStatement(parent) {
+    if (matchToken("nl")) {
+      advance();
+      return;
+    }
+    if (matchToken("id", "style")) {
+      const savedPosition = position;
+      advance();
+      if (matchToken("lbrace")) {
+        advance();
+        if (parent) {
+          parent.style = parent.style ?? {};
+          parseStyleEntries(null, parent.style);
+        } else parseStyleEntries(model.style, null);
+        return;
+      }
+      position = savedPosition;
+    }
+    if (!parent && matchToken("id", "legend")) {
+      const savedPosition = position;
+      advance();
+      if (matchToken("lbrace")) {
+        advance();
+        skipNewlines();
+        while (!matchToken("rbrace") && !matchToken("eof")) {
+          if (matchToken("id", "note")) {
+            advance();
+            if (matchToken("str")) model.legendNotes.push(advance().text);
+            else
+              reportError(
+                "text expected after `note`",
+                lookAhead().span,
+                'e.g. `note "Named-data flows are subject to GDPR"`'
+              );
+          } else {
+            reportError('legend entries are `note "\u2026"` lines', lookAhead().span);
+            syncToNextLine();
+          }
+          skipNewlines();
+        }
+        if (matchToken("rbrace")) advance();
+        else reportError("`}` expected to close the legend block", lookAhead().span);
+        return;
+      }
+      position = savedPosition;
+    }
+    if (!parent && matchToken("id", "business-object")) {
+      advance();
+      if (!matchToken("id")) {
+        reportError(
+          "identifier expected after `business-object`",
+          lookAhead().span,
+          'e.g. `business-object BO_CMD "Commande" "description"`'
+        );
+        syncToNextLine();
+        return;
+      }
+      const idToken = advance();
+      let name = idToken.text, description;
+      if (matchToken("str")) name = advance().text;
+      if (matchToken("str")) description = advance().text;
+      model.businessObjects.push({
+        id: idToken.text,
+        idSpan: idToken.span,
+        name,
+        description
+      });
+      return;
+    }
+    if (!matchToken("id")) {
+      reportError("declaration expected (element, flow or `style`)", lookAhead().span);
+      syncToNextLine();
+      return;
+    }
+    const sourceToken = advance();
+    if (matchToken("arrow")) {
+      advance();
+      if (!matchToken("id")) {
+        reportError("target identifier expected after `->`", lookAhead().span);
+        syncToNextLine();
+        return;
+      }
+      const targetToken = advance();
+      const flow = {
+        id: "F" + String(++flowSequenceNumber).padStart(2, "0"),
+        from: sourceToken.text,
+        fromSpan: sourceToken.span,
+        to: targetToken.text,
+        toSpan: targetToken.span,
+        span: {
+          line: sourceToken.span.line,
+          col: sourceToken.span.col,
+          len: targetToken.span.col + targetToken.span.len - sourceToken.span.col
+        }
+      };
+      if (matchToken("colon")) {
+        advance();
+        if (matchToken("str")) flow.label = advance().text;
+        else if (!matchToken("lparen") && !matchToken("lbrack") && !matchToken("lbrace") && !matchToken("nl") && !matchToken("rbrace") && !matchToken("eof")) {
+          reportError(
+            "flow label expected after `:`",
+            lookAhead().span,
+            'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`'
+          );
+        }
+      }
+      if (matchToken("lparen")) {
+        const openParen = advance();
+        const values = [];
+        while ((matchToken("id") || matchToken("num") || matchToken("str")) && values.length < 2) {
+          values.push(advance().text);
+          if (matchToken("comma")) advance();
+        }
+        if (matchToken("rparen")) advance();
+        else
+          reportError(
+            "`)` expected to close the technical attributes",
+            lookAhead().span,
+            'e.g. `A -> B : "Envoi" (SFTP, XML)`'
+          );
+        flow.tech = {
+          protocol: values[0],
+          format: values[1],
+          span: openParen.span
+        };
+      }
+      if (matchToken("lbrack")) {
+        advance();
+        flow.objects = [];
+        while (matchToken("id")) {
+          const token = advance();
+          flow.objects.push({ id: token.text, span: token.span });
+          if (matchToken("comma")) advance();
+        }
+        if (matchToken("rbrack")) advance();
+        else
+          reportError(
+            "`]` expected to close the business-object list",
+            lookAhead().span,
+            'e.g. `A -> B : "Validation" [BO_CMD]`'
+          );
+      }
+      if (matchToken("lbrace")) {
+        advance();
+        flow.style = {};
+        parseStyleEntries(null, flow.style);
+      }
+      model.flows.push(flow);
+      return;
+    }
+    if (!matchToken("id")) {
+      reportError(
+        `invalid declaration: \`${sourceToken.text}\` alone on this line`,
+        sourceToken.span,
+        'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`'
+      );
+      syncToNextLine();
+      return;
+    }
+    const identifierToken = advance();
+    const element = {
+      kind: sourceToken.text,
+      kindSpan: sourceToken.span,
+      id: identifierToken.text,
+      idSpan: identifierToken.span,
+      children: [],
+      parent: parent ?? void 0
+    };
+    if (matchToken("str")) element.label = advance().text;
+    if (matchToken("lparen")) {
+      advance();
+      if (matchToken("id")) {
+        const token = advance();
+        element.attr = {
+          value: token.text,
+          span: token.span
+        };
+      } else
+        reportError(
+          "attribute value expected after `(`",
+          lookAhead().span,
+          'e.g. `trust-zone DMZ "DMZ" (public)`'
+        );
+      if (matchToken("rparen")) advance();
+      else
+        reportError(
+          "`)` expected to close the attribute",
+          lookAhead().span,
+          'e.g. `trust-zone DMZ "DMZ" (public)`'
+        );
+    }
+    if (matchToken("lbrace")) {
+      advance();
+      parseElementBody(element);
+    }
+    (parent ? parent.children : model.elements).push(element);
+  }
+  skipNewlines();
+  while (!matchToken("eof")) {
+    parseStatement(null);
+    skipNewlines();
+  }
+  (function indexAll(elements) {
+    for (const element of elements) {
+      model.index.set(
+        element.id,
+        model.index.has(element.id) ? model.index.get(element.id) : element
+      );
+      indexAll(element.children);
+    }
+  })(model.elements);
+  return { model, diags: diagnostics };
+}
+var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
+var LABEL_POSITIONS = /* @__PURE__ */ new Set(["on-line", "above", "below"]);
+var DISPOSITIONS = /* @__PURE__ */ new Set(["wide", "tall", "slide", "page"]);
+function applyStyleEntry(key, styleTargetKind, values, target, inline, diagnostics) {
+  const extractStroke = (tokens, _span) => {
+    const strokeProps = {};
+    for (const token of tokens) {
+      if (token.kind === "color") {
+        if (strokeProps.color) reportDuplicate(token);
+        strokeProps.color = token.text;
+      } else if (token.kind === "num") {
+        if (strokeProps.width) reportDuplicate(token);
+        strokeProps.width = parseFloat(token.text);
+      } else if (token.kind === "id" && LINE_STYLES.has(token.text)) {
+        if (strokeProps.style) reportDuplicate(token);
+        strokeProps.style = token.text;
+      } else
+        reportBadValue(token, "`#hex` color, `solid|dashed|dotted` line style, or numeric width");
+    }
+    return strokeProps;
+  };
+  const reportDuplicate = (value) => diagnostics.push({
+    code: "E0102",
+    severity: "error",
+    message: `conflicting values in \`${key.text}\` : \`${value.text}\``,
+    span: value.span,
+    help: "only one value of each type per property"
+  });
+  const reportBadValue = (value, expected) => diagnostics.push({
+    code: "E0103",
+    severity: "error",
+    message: `invalid value \`${value.text}\` for \`${key.text}\``,
+    span: value.span,
+    help: `expected: ${expected}`
+  });
+  const firstValue = () => values[0];
+  const keyText = key.text;
+  if (inline) {
+    if (keyText === "fill" && firstValue()?.kind === "color") inline.fill = firstValue().text;
+    else if (keyText === "stroke") inline.stroke = extractStroke(values, key.span);
+    else if (keyText === "text" && firstValue()?.kind === "color") inline.text = firstValue().text;
+    else if (keyText === "label" && firstValue()?.kind === "id" && LABEL_POSITIONS.has(firstValue().text))
+      inline.label = firstValue().text;
+    else
+      diagnostics.push({
+        code: "E0104",
+        severity: "error",
+        message: `unknown style property here: \`${keyText}\``,
+        span: key.span,
+        help: "inline properties: fill, stroke, text, label"
+      });
+    return;
+  }
+  if (!target) return;
+  switch (keyText) {
+    case "crossing-hops": {
+      const value = firstValue();
+      if (value?.kind === "id" && (value.text === "on" || value.text === "off"))
+        target.crossingHops = value.text === "on";
+      else reportBadValue(value ?? key, "`on` or `off`");
+      break;
+    }
+    case "compact": {
+      const value = firstValue();
+      if (value?.kind === "id" && (value.text === "on" || value.text === "off"))
+        target.compact = value.text === "on";
+      else reportBadValue(value ?? key, "`on` or `off`");
+      break;
+    }
+    case "arrows": {
+      const value = firstValue();
+      if (value?.kind === "id" && (value.text === "normal" || value.text === "large"))
+        target.arrows = value.text;
+      else reportBadValue(value ?? key, "`normal` or `large`");
+      break;
+    }
+    case "flow-color": {
+      const value = firstValue();
+      if (value?.kind === "id" && (value.text === "none" || value.text === "by-source"))
+        target.flowColor = value.text;
+      else reportBadValue(value ?? key, "`none` or `by-source`");
+      break;
+    }
+    case "disposition": {
+      const value = firstValue();
+      if (value?.kind === "id" && DISPOSITIONS.has(value.text))
+        target.disposition = value.text;
+      else
+        reportBadValue(
+          value ?? key,
+          "`wide` (elongated horizontal), `tall` (elongated vertical), `slide` (balanced 16:9), `page` (balanced A4 portrait)"
+        );
+      break;
+    }
+    case "legend": {
+      const value = firstValue();
+      if (value?.kind === "id" && (value.text === "auto" || value.text === "off"))
+        target.legend = value.text;
+      else reportBadValue(value ?? key, "`auto` or `off`");
+      break;
+    }
+    case "flow-text": {
+      const value = firstValue();
+      if (value?.kind === "id" && (value.text === "full" || value.text === "numbered"))
+        target.flowText = value.text;
+      else
+        reportBadValue(
+          value ?? key,
+          "`full` (labels on arrows) or `numbered` (number badges + FLUX table below the diagram)"
+        );
+      break;
+    }
+    case "flow-label": {
+      const value = firstValue();
+      if (value?.kind === "id" && LABEL_POSITIONS.has(value.text))
+        target.flowLabel = value.text;
+      else reportBadValue(value ?? key, "`on-line`, `above` or `below`");
+      break;
+    }
+    case "flow-stroke": {
+      const stroke = extractStroke(values, key.span);
+      target.flowStroke = { ...target.flowStroke, ...stroke };
+      if (stroke.color) target.flowStrokeColorSet = true;
+      break;
+    }
+    case "theme": {
+      const value = firstValue();
+      if (value?.kind === "id" && themeNames.includes(value.text)) target.theme = value.text;
+      else reportBadValue(value ?? key, "`" + themeNames.join("` | `") + "`");
+      break;
+    }
+    case "accent": {
+      const value = firstValue();
+      if (value?.kind === "color") target.accent = value.text;
+      else reportBadValue(value ?? key, "`#hex` color (retints flows on top of the theme)");
+      break;
+    }
+    case "lang": {
+      const value = firstValue();
+      if (value?.kind === "id" && (value.text === "en" || value.text === "fr"))
+        target.lang = value.text;
+      else
+        reportBadValue(
+          value ?? key,
+          "`en` or `fr` (localizes rendered labels; keywords stay English)"
+        );
+      break;
+    }
+    case "background": {
+      const value = firstValue();
+      if (value?.kind === "color") target.background = value.text;
+      else reportBadValue(value ?? key, "`#hex` color (canvas background)");
+      break;
+    }
+    case "fill": {
+      if (styleTargetKind && firstValue()?.kind === "color") {
+        target.kind[styleTargetKind] = {
+          ...target.kind[styleTargetKind],
+          fill: firstValue().text
+        };
+      } else reportBadValue(firstValue() ?? key, "`fill <kind>: #hex`");
+      break;
+    }
+    case "stroke": {
+      if (styleTargetKind)
+        target.kind[styleTargetKind] = {
+          ...target.kind[styleTargetKind],
+          stroke: extractStroke(values, key.span)
+        };
+      else reportBadValue(firstValue() ?? key, "`stroke <kind>: #hex solid|dashed|dotted <width>`");
+      break;
+    }
+    case "text": {
+      if (styleTargetKind && firstValue()?.kind === "color") {
+        target.kind[styleTargetKind] = {
+          ...target.kind[styleTargetKind],
+          text: firstValue().text
+        };
+      } else reportBadValue(firstValue() ?? key, "`text <kind>: #hex`");
+      break;
+    }
+    case "font": {
+      for (const token of values) {
+        if (token.kind === "str") target.font.family = token.text;
+        else if (token.kind === "num") target.font.size = parseFloat(token.text);
+        else reportBadValue(token, '`font: "Family" <size>`');
+      }
+      break;
+    }
+    case "font-size": {
+      const value = firstValue();
+      if (value?.kind === "num") target.font.size = parseFloat(value.text);
+      else reportBadValue(value ?? key, "a number, e.g. `font-size: 14`");
+      break;
+    }
+    default:
+      diagnostics.push({
+        code: "E0104",
+        severity: "error",
+        message: `unknown style property: \`${keyText}\``,
+        span: key.span,
+        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size"
+      });
+  }
+}
+
+// src/views.ts
 var logicalView = {
   name: "logical",
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
@@ -92357,11 +93377,16 @@ var logicalView = {
     block: "Bloc fonctionnel",
     external: "Syst\xE8me externe"
   },
-  bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
+  bandTitles: {
+    flows: "FLOWS",
+    objects: "BUSINESS OBJECTS",
+    legend: "LEGEND"
+  },
   legendFlowLabel: "Functional flow (label = exchanged data)",
   legendFlowLabelFr: "Flux fonctionnel (libell\xE9 = donn\xE9es \xE9chang\xE9es)",
   flowTechRequired: null,
   flowTechRecommended: null,
+  businessObjects: true,
   partitions: { "actor-group": 0, system: 1, external: 2 },
   flowLabelRequired: {
     code: "E0203",
@@ -92392,7 +93417,12 @@ var logicalView = {
     }
   ],
   minCounts: [
-    { code: "W0501", kind: "actor", min: 1, message: "no actor declared" }
+    {
+      code: "W0501",
+      kind: "actor",
+      min: 1,
+      message: "no actor declared"
+    }
   ],
   isolatedWarn: {
     code: "W0510",
@@ -92400,32 +93430,69 @@ var logicalView = {
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
-    "actor-group": { fill: "#eef4fb", stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 } },
-    system: { fill: "#f6f2ea", stroke: { color: "#b09a6d", style: "solid", width: 1.2 } },
-    layer: { fill: "#fdfbf6", stroke: { color: "#c4b258", style: "solid", width: 1 } },
-    external: { fill: "#f0eef5", stroke: { color: "#9187b3", style: "dashed", width: 1.2 } },
-    block: { fill: "#ffffff", stroke: { color: "#666677", style: "solid", width: 1.3 } },
+    "actor-group": {
+      fill: "#eef4fb",
+      stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 }
+    },
+    system: {
+      fill: "#f6f2ea",
+      stroke: { color: "#b09a6d", style: "solid", width: 1.2 }
+    },
+    layer: {
+      fill: "#fdfbf6",
+      stroke: { color: "#c4b258", style: "solid", width: 1 }
+    },
+    external: {
+      fill: "#f0eef5",
+      stroke: { color: "#9187b3", style: "dashed", width: 1.2 }
+    },
+    block: {
+      fill: "#ffffff",
+      stroke: { color: "#666677", style: "solid", width: 1.3 }
+    },
     actor: {}
   },
   defaultsDark: {
-    "actor-group": { fill: "#232a33", stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 } },
-    system: { fill: "#2b2822", stroke: { color: "#9c8558", style: "solid", width: 1.2 } },
-    layer: { fill: "#26241d", stroke: { color: "#a89446", style: "solid", width: 1 } },
-    external: { fill: "#2a2833", stroke: { color: "#7d72a0", style: "dashed", width: 1.2 } },
-    block: { fill: "#252a31", stroke: { color: "#7c8894", style: "solid", width: 1.3 } },
+    "actor-group": {
+      fill: "#232a33",
+      stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 }
+    },
+    system: {
+      fill: "#2b2822",
+      stroke: { color: "#9c8558", style: "solid", width: 1.2 }
+    },
+    layer: {
+      fill: "#26241d",
+      stroke: { color: "#a89446", style: "solid", width: 1 }
+    },
+    external: {
+      fill: "#2a2833",
+      stroke: { color: "#7d72a0", style: "dashed", width: 1.2 }
+    },
+    block: {
+      fill: "#252a31",
+      stroke: { color: "#7c8894", style: "solid", width: 1.3 }
+    },
     actor: {}
   }
 };
 var applicationView = {
   name: "application",
-  kinds: ["actor-group", "actor", "application", "module", "datastore", "external"],
+  kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
   containerKinds: ["actor-group", "application", "external"],
-  partitions: { "actor-group": 0, application: 1, datastore: 1, external: 2 },
+  partitions: {
+    "actor-group": 0,
+    application: 1,
+    queue: 1,
+    datastore: 1,
+    external: 2
+  },
   legendNames: {
     "actor-group": "Actor group",
     actor: "Actor",
     application: "Application",
     module: "Application module",
+    queue: "Message queue / broker",
     datastore: "Datastore / registry",
     external: "External system"
   },
@@ -92434,20 +93501,19 @@ var applicationView = {
     actor: "Acteur",
     application: "Application",
     module: "Module applicatif",
+    queue: "File de messages / broker",
     datastore: "Entrep\xF4t / r\xE9f\xE9rentiel",
     external: "Syst\xE8me externe"
   },
-  bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
+  bandTitles: {
+    flows: "FLOWS",
+    objects: "BUSINESS OBJECTS",
+    legend: "LEGEND"
+  },
   legendFlowLabel: "Application flow \u2014 (protocol, format) under the label",
   legendFlowLabelFr: "Flux applicatif \u2014 (protocole, format) sous le libell\xE9",
-  flowLabelRequired: {
-    code: "E0203",
-    message: "flow without a label",
-    help: 'add a label describing the exchange: `A -> B : "\u2026" (HTTP, JSON)`'
-  },
+  flowLabelRequired: null,
   flowTechRequired: null,
-  // C4 container-diagram practice: inter-process relationships should carry
-  // their technology/protocol. Warning (not error); human/actor flows exempt.
   flowTechRecommended: {
     code: "W0540",
     message: "system-to-system flow without protocol",
@@ -92472,44 +93538,92 @@ var applicationView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["module", "datastore"],
+    kinds: ["module", "queue", "datastore"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
-    "actor-group": { fill: "#eef4fb", stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 } },
-    application: { fill: "#e8f1f8", stroke: { color: "#5b8db8", style: "solid", width: 1.2 } },
-    module: { fill: "#ffffff", stroke: { color: "#5b7a99", style: "solid", width: 1.3 } },
-    datastore: { fill: "#f3eef8", stroke: { color: "#8a6fae", style: "solid", width: 1.3 } },
-    external: { fill: "#f0eef5", stroke: { color: "#9187b3", style: "dashed", width: 1.2 } },
+    "actor-group": {
+      fill: "#eef4fb",
+      stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 }
+    },
+    application: {
+      fill: "#e8f1f8",
+      stroke: { color: "#5b8db8", style: "solid", width: 1.2 }
+    },
+    module: {
+      fill: "#ffffff",
+      stroke: { color: "#5b7a99", style: "solid", width: 1.3 }
+    },
+    queue: {
+      fill: "#f3eef8",
+      stroke: { color: "#8a6fae", style: "solid", width: 1.3 }
+    },
+    datastore: {
+      fill: "#f3eef8",
+      stroke: { color: "#8a6fae", style: "solid", width: 1.3 }
+    },
+    external: {
+      fill: "#f0eef5",
+      stroke: { color: "#9187b3", style: "dashed", width: 1.2 }
+    },
     actor: {}
   },
   defaultsDark: {
-    "actor-group": { fill: "#232a33", stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 } },
-    application: { fill: "#1f2a33", stroke: { color: "#4a7ba6", style: "solid", width: 1.2 } },
-    module: { fill: "#252a31", stroke: { color: "#5f7f9e", style: "solid", width: 1.3 } },
-    datastore: { fill: "#2a2433", stroke: { color: "#7a5f9e", style: "solid", width: 1.3 } },
-    external: { fill: "#2a2833", stroke: { color: "#7d72a0", style: "dashed", width: 1.2 } },
+    "actor-group": {
+      fill: "#232a33",
+      stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 }
+    },
+    application: {
+      fill: "#1f2a33",
+      stroke: { color: "#4a7ba6", style: "solid", width: 1.2 }
+    },
+    module: {
+      fill: "#252a31",
+      stroke: { color: "#5f7f9e", style: "solid", width: 1.3 }
+    },
+    queue: {
+      fill: "#2a2433",
+      stroke: { color: "#7a5f9e", style: "solid", width: 1.3 }
+    },
+    datastore: {
+      fill: "#2a2433",
+      stroke: { color: "#7a5f9e", style: "solid", width: 1.3 }
+    },
+    external: {
+      fill: "#2a2833",
+      stroke: { color: "#7d72a0", style: "dashed", width: 1.2 }
+    },
     actor: {}
   }
 };
 var infrastructureView = {
   name: "infrastructure",
-  // `actor` = the consumer/user of the infrastructure (C4 Person). It has no
-  // network location, so it is not a container and needs no zone; it reads on
-  // the entry edge, distinct from `external` third-party systems on the exit edge.
-  kinds: ["actor", "site", "network-zone", "server", "app-instance", "external"],
+  kinds: [
+    "actor",
+    "site",
+    "network-zone",
+    "server",
+    "app-instance",
+    "queue",
+    "gateway",
+    "auth",
+    "idp",
+    "external"
+  ],
   containerKinds: ["site", "network-zone", "server"],
   partitions: { external: 2 },
   partitionByOrder: true,
-  // zones/sites band left->right in declaration order
   actorLegend: true,
-  // users are standalone actors here — key them in the legend
   legendNames: {
     actor: "User / consumer",
     site: "Site / data center",
     "network-zone": "Network zone",
     server: "Server / VM",
     "app-instance": "Deployed application",
+    queue: "Message queue / broker",
+    gateway: "Gateway / reverse proxy",
+    auth: "Auth middleware",
+    idp: "Identity provider (IdP)",
     external: "External system"
   },
   legendNamesFr: {
@@ -92518,16 +93632,20 @@ var infrastructureView = {
     "network-zone": "Zone r\xE9seau",
     server: "Serveur / VM",
     "app-instance": "Application d\xE9ploy\xE9e",
+    queue: "File de messages / broker",
+    gateway: "Passerelle / proxy",
+    auth: "Middleware d'authentification",
+    idp: "Fournisseur d'identit\xE9 (IdP)",
     external: "Syst\xE8me externe"
   },
-  bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
+  bandTitles: {
+    flows: "FLOWS",
+    objects: "BUSINESS OBJECTS",
+    legend: "LEGEND"
+  },
   legendFlowLabel: "Technical flow (protocol, port)",
   legendFlowLabelFr: "Flux technique (protocole, port)",
-  flowLabelRequired: {
-    code: "E0203",
-    message: "flow without a label",
-    help: 'add a label describing the exchange: `A -> B : "\u2026" (HTTPS/443)`'
-  },
+  flowLabelRequired: null,
   flowTechRecommended: null,
   flowTechRequired: {
     code: "E0240",
@@ -92560,24 +93678,86 @@ var infrastructureView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance"],
+    kinds: ["app-instance", "queue", "gateway", "auth", "idp"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
     actor: {},
-    site: { fill: "#f5f5f4", stroke: { color: "#8a8a85", style: "solid", width: 1.4 } },
-    "network-zone": { fill: "#ecf3ec", stroke: { color: "#6d9a6d", style: "dashed", width: 1.2 } },
-    server: { fill: "#ffffff", stroke: { color: "#55606b", style: "solid", width: 1.5 } },
-    "app-instance": { fill: "#fff7e6", stroke: { color: "#b08d2a", style: "solid", width: 1.2 } },
-    external: { fill: "#f0eef5", stroke: { color: "#9187b3", style: "dashed", width: 1.2 } }
+    site: {
+      fill: "#f5f5f4",
+      stroke: { color: "#8a8a85", style: "solid", width: 1.4 }
+    },
+    "network-zone": {
+      fill: "#ecf3ec",
+      stroke: { color: "#6d9a6d", style: "dashed", width: 1.2 }
+    },
+    server: {
+      fill: "#ffffff",
+      stroke: { color: "#55606b", style: "solid", width: 1.5 }
+    },
+    "app-instance": {
+      fill: "#fff7e6",
+      stroke: { color: "#b08d2a", style: "solid", width: 1.2 }
+    },
+    queue: {
+      fill: "#f3eef8",
+      stroke: { color: "#8a6fae", style: "solid", width: 1.3 }
+    },
+    gateway: {
+      fill: "#f5e6dd",
+      stroke: { color: "#bf5530", style: "solid", width: 1.6 }
+    },
+    auth: {
+      fill: "#fef3e2",
+      stroke: { color: "#d68a2a", style: "solid", width: 1.5 }
+    },
+    idp: {
+      fill: "#e0f0f0",
+      stroke: { color: "#3a8f8f", style: "solid", width: 1.3 }
+    },
+    external: {
+      fill: "#f0eef5",
+      stroke: { color: "#9187b3", style: "dashed", width: 1.2 }
+    }
   },
   defaultsDark: {
     actor: {},
-    site: { fill: "#26261f", stroke: { color: "#8a8a72", style: "solid", width: 1.4 } },
-    "network-zone": { fill: "#20291f", stroke: { color: "#5f8a5f", style: "dashed", width: 1.2 } },
-    server: { fill: "#252a31", stroke: { color: "#6b7885", style: "solid", width: 1.5 } },
-    "app-instance": { fill: "#2e2717", stroke: { color: "#b08d2a", style: "solid", width: 1.2 } },
-    external: { fill: "#2a2833", stroke: { color: "#7d72a0", style: "dashed", width: 1.2 } }
+    site: {
+      fill: "#26261f",
+      stroke: { color: "#8a8a72", style: "solid", width: 1.4 }
+    },
+    "network-zone": {
+      fill: "#20291f",
+      stroke: { color: "#5f8a5f", style: "dashed", width: 1.2 }
+    },
+    server: {
+      fill: "#252a31",
+      stroke: { color: "#6b7885", style: "solid", width: 1.5 }
+    },
+    "app-instance": {
+      fill: "#2e2717",
+      stroke: { color: "#b08d2a", style: "solid", width: 1.2 }
+    },
+    queue: {
+      fill: "#2a2433",
+      stroke: { color: "#7a5f9e", style: "solid", width: 1.3 }
+    },
+    gateway: {
+      fill: "#332218",
+      stroke: { color: "#c96a4a", style: "solid", width: 1.6 }
+    },
+    auth: {
+      fill: "#332614",
+      stroke: { color: "#b88a30", style: "solid", width: 1.5 }
+    },
+    idp: {
+      fill: "#1a2e2e",
+      stroke: { color: "#4fafaf", style: "solid", width: 1.3 }
+    },
+    external: {
+      fill: "#2a2833",
+      stroke: { color: "#7d72a0", style: "dashed", width: 1.2 }
+    }
   }
 };
 var SEC_LEVELS = ["public", "internal", "restricted", "secret"];
@@ -92601,12 +93781,15 @@ var securityView = {
     actor: "Acteur",
     external: "Externe non ma\xEEtris\xE9"
   },
-  bandTitles: { flows: "FLOWS", objects: "BUSINESS OBJECTS", legend: "LEGEND" },
+  bandTitles: {
+    flows: "FLOWS",
+    objects: "BUSINESS OBJECTS",
+    legend: "LEGEND"
+  },
   legendFlowLabel: "Security flow \u2014 cross-zone flows should be filtered and encrypted",
   legendFlowLabelFr: "Flux de s\xE9curit\xE9 \u2014 les flux inter-zones doivent \xEAtre filtr\xE9s et chiffr\xE9s",
   partitions: {},
   partitionByOrder: true,
-  // zones band left→right in declaration order (exposed → protected)
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
@@ -92662,34 +93845,87 @@ var securityView = {
     kinds: ["asset"],
     message: "isolated element: no incoming or outgoing flow"
   },
-  // trust-zone colors come from levelDefaults (by sensitivity); non-zone kinds use these.
   defaults: {
-    "trust-zone": { fill: "#f5f5f4", stroke: { color: "#8a8a85", style: "solid", width: 1.3 } },
-    "security-node": { fill: "#fff7e6", stroke: { color: "#c46b2a", style: "solid", width: 1.6 } },
-    asset: { fill: "#ffffff", stroke: { color: "#55606b", style: "solid", width: 1.3 } },
-    "actor-group": { fill: "#eef4fb", stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 } },
-    external: { fill: "#fdecea", stroke: { color: "#d9534f", style: "dashed", width: 1.3 } },
+    "trust-zone": {
+      fill: "#f5f5f4",
+      stroke: { color: "#8a8a85", style: "solid", width: 1.3 }
+    },
+    "security-node": {
+      fill: "#fff7e6",
+      stroke: { color: "#c46b2a", style: "solid", width: 1.6 }
+    },
+    asset: {
+      fill: "#ffffff",
+      stroke: { color: "#55606b", style: "solid", width: 1.3 }
+    },
+    "actor-group": {
+      fill: "#eef4fb",
+      stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 }
+    },
+    external: {
+      fill: "#fdecea",
+      stroke: { color: "#d9534f", style: "dashed", width: 1.3 }
+    },
     actor: {}
   },
   defaultsDark: {
-    "trust-zone": { fill: "#26261f", stroke: { color: "#8a8a72", style: "solid", width: 1.3 } },
-    "security-node": { fill: "#2e2717", stroke: { color: "#c46b2a", style: "solid", width: 1.6 } },
-    asset: { fill: "#252a31", stroke: { color: "#6b7885", style: "solid", width: 1.3 } },
-    "actor-group": { fill: "#232a33", stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 } },
-    external: { fill: "#3a2422", stroke: { color: "#c25a54", style: "dashed", width: 1.3 } },
+    "trust-zone": {
+      fill: "#26261f",
+      stroke: { color: "#8a8a72", style: "solid", width: 1.3 }
+    },
+    "security-node": {
+      fill: "#2e2717",
+      stroke: { color: "#c46b2a", style: "solid", width: 1.6 }
+    },
+    asset: {
+      fill: "#252a31",
+      stroke: { color: "#6b7885", style: "solid", width: 1.3 }
+    },
+    "actor-group": {
+      fill: "#232a33",
+      stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 }
+    },
+    external: {
+      fill: "#3a2422",
+      stroke: { color: "#c25a54", style: "dashed", width: 1.3 }
+    },
     actor: {}
   },
   levelDefaults: {
-    public: { fill: "#fdecea", stroke: { color: "#d9534f", style: "solid", width: 1.4 } },
-    internal: { fill: "#fff4e5", stroke: { color: "#e0a458", style: "solid", width: 1.4 } },
-    restricted: { fill: "#e8f1f8", stroke: { color: "#5b8db8", style: "solid", width: 1.4 } },
-    secret: { fill: "#ece8f5", stroke: { color: "#7a5fae", style: "solid", width: 1.4 } }
+    public: {
+      fill: "#fdecea",
+      stroke: { color: "#d9534f", style: "solid", width: 1.4 }
+    },
+    internal: {
+      fill: "#fff4e5",
+      stroke: { color: "#e0a458", style: "solid", width: 1.4 }
+    },
+    restricted: {
+      fill: "#e8f1f8",
+      stroke: { color: "#5b8db8", style: "solid", width: 1.4 }
+    },
+    secret: {
+      fill: "#ece8f5",
+      stroke: { color: "#7a5fae", style: "solid", width: 1.4 }
+    }
   },
   levelDefaultsDark: {
-    public: { fill: "#3a2422", stroke: { color: "#c25a54", style: "solid", width: 1.4 } },
-    internal: { fill: "#332a1c", stroke: { color: "#c08a44", style: "solid", width: 1.4 } },
-    restricted: { fill: "#1f2a33", stroke: { color: "#4a7ba6", style: "solid", width: 1.4 } },
-    secret: { fill: "#2a2433", stroke: { color: "#7a5f9e", style: "solid", width: 1.4 } }
+    public: {
+      fill: "#3a2422",
+      stroke: { color: "#c25a54", style: "solid", width: 1.4 }
+    },
+    internal: {
+      fill: "#332a1c",
+      stroke: { color: "#c08a44", style: "solid", width: 1.4 }
+    },
+    restricted: {
+      fill: "#1f2a33",
+      stroke: { color: "#4a7ba6", style: "solid", width: 1.4 }
+    },
+    secret: {
+      fill: "#2a2433",
+      stroke: { color: "#7a5f9e", style: "solid", width: 1.4 }
+    }
   }
 };
 var views = {
@@ -92698,811 +93934,400 @@ var views = {
   infrastructure: infrastructureView,
   security: securityView
 };
-var cont = (fill, stroke, dashed = false, width = 1.2) => ({ fill, stroke: { color: stroke, style: dashed ? "dashed" : "solid", width } });
-var leaf = (fill, stroke, width = 1.3) => ({ fill, stroke: { color: stroke, style: "solid", width } });
-var KIND_ROLE = {
-  "actor-group": "actorGroup",
-  actor: "actor",
-  system: "system",
-  application: "application",
-  module: "leaf",
-  layer: "layer",
-  block: "leaf",
-  external: "external",
-  datastore: "datastore",
-  site: "site",
-  "network-zone": "networkZone",
-  server: "server",
-  "app-instance": "appInstance",
-  "security-node": "securityNode",
-  asset: "leaf"
-};
-var roleFor = (kind, viewName) => viewName === "security" && kind === "external" ? "untrusted" : KIND_ROLE[kind] ?? "leaf";
-var mkTheme = (s) => {
-  const p = s.pal, h = s.h;
-  const palette = {
-    background: p.bg,
-    containerLabel: p.text,
-    containerFill: p.cFill,
-    containerStroke: p.cStroke,
-    nodeText: p.text,
-    nodeFill: p.nFill,
-    nodeStroke: p.nStroke,
-    actorStroke: p.aStroke,
-    actorText: p.aText,
-    edge: p.edge,
-    edgeLabel: p.sub,
-    techText: p.muted,
-    halo: p.halo,
-    bandTitle: p.sub,
-    bandText: p.text,
-    bandMuted: p.muted,
-    divider: p.div,
-    badgeFill: p.badge[0],
-    badgeStroke: p.badge[1],
-    chipFill: p.chip[0],
-    chipStroke: p.chip[1],
-    chipText: p.chip[2]
-  };
-  return {
-    palette,
-    roles: {
-      actor: {},
-      actorGroup: cont(h.blueF, h.blue, true),
-      system: cont(h.amberF, h.amber),
-      application: cont(h.appF, h.app),
-      layer: cont(h.goldF, h.gold, false, 1),
-      external: cont(h.violetF, h.violet, true),
-      untrusted: cont(h.redF, h.red, true, 1.3),
-      leaf: leaf(h.leafF, h.leafS),
-      datastore: leaf(h.purpleF, h.purple),
-      site: cont(h.siteF, h.siteS, false, 1.4),
-      networkZone: cont(h.greenF, h.green, true),
-      server: cont(h.serverF, h.serverS, false, 1.5),
-      appInstance: leaf(h.aiF, h.aiS, 1.2),
-      securityNode: leaf(h.nodeF, h.node, 1.6)
-    },
-    levels: {
-      public: cont(s.lv.public[0], s.lv.public[1], false, 1.4),
-      internal: cont(s.lv.internal[0], s.lv.internal[1], false, 1.4),
-      restricted: cont(s.lv.restricted[0], s.lv.restricted[1], false, 1.4),
-      secret: cont(s.lv.secret[0], s.lv.secret[1], false, 1.4)
-    }
-  };
-};
-var themes = {
-  // modern professional — the new default
-  light: mkTheme({
-    pal: { bg: "#ffffff", text: "#17202c", sub: "#3a4553", muted: "#79828f", cFill: "#f5f6f8", cStroke: "#c7ccd3", nFill: "#ffffff", nStroke: "#48546a", edge: "#5a6675", div: "#e6e9ee", halo: "#ffffff", aStroke: "#1f5e91", aText: "#20364c", chip: ["#fff2d4", "#d3a01f", "#6a5111"], badge: ["#ffffff", "#8a94a2"] },
-    h: { blue: "#1f77b4", blueF: "#e9f2fb", amber: "#c17d1c", amberF: "#fbf4e9", app: "#2f83b6", appF: "#e9f3fa", gold: "#cf9f2f", goldF: "#fdfaf0", violet: "#8659a6", violetF: "#f4eff8", red: "#cf4b3f", redF: "#fdecea", purple: "#8a53a8", purpleF: "#f4edf8", green: "#1a8f66", greenF: "#eaf5ef", siteS: "#7c8794", siteF: "#f3f5f6", leafF: "#ffffff", leafS: "#48546a", aiS: "#c88a2e", aiF: "#fdf4e3", node: "#d1600f", nodeF: "#fdefe3", serverS: "#48546a", serverF: "#ffffff" },
-    lv: { public: ["#fdeceb", "#d0463f"], internal: ["#fef2e2", "#cf9436"], restricted: ["#e9f2fb", "#2f7cc4"], secret: ["#efe9f7", "#7a55a8"] }
-  }),
-  dark: mkTheme({
-    pal: { bg: "#1e2530", text: "#e6edf3", sub: "#c2ccd6", muted: "#93a0ab", cFill: "#2a313c", cStroke: "#4a5560", nFill: "#252c37", nStroke: "#5a6673", edge: "#9aa7b4", div: "#3a4149", halo: "#1e2530", aStroke: "#8aa0b8", aText: "#c9d5e1", chip: ["#3a3320", "#b08d2a", "#e0c068"], badge: ["#252c37", "#5a6673"] },
-    h: { blue: "#5aa9e6", blueF: "#233242", amber: "#e0a955", amberF: "#332a1b", app: "#5aa9e6", appF: "#1f2a37", gold: "#d8c15f", goldF: "#2e2a1a", violet: "#b48ad6", violetF: "#2a2436", red: "#e0736a", redF: "#3a2422", purple: "#c085d8", purpleF: "#291f33", green: "#4fc08a", greenF: "#1c2b23", siteS: "#8a95a2", siteF: "#282d34", leafF: "#252c37", leafS: "#6b7885", aiS: "#e0a955", aiF: "#2e2717", node: "#f0894e", nodeF: "#33261c", serverS: "#6b7885", serverF: "#252c37" },
-    lv: { public: ["#3a2422", "#c25a54"], internal: ["#332a1c", "#c08a44"], restricted: ["#1f2a37", "#4a86b8"], secret: ["#291f33", "#8a6cb0"] }
-  }),
-  slate: mkTheme({
-    pal: { bg: "#f7f9fb", text: "#26303c", sub: "#465264", muted: "#8792a0", cFill: "#eef2f6", cStroke: "#c2ccd6", nFill: "#ffffff", nStroke: "#516070", edge: "#5b6673", div: "#e0e6ec", halo: "#f7f9fb", aStroke: "#3b6ea5", aText: "#2b4560", chip: ["#eaeef3", "#8595a8", "#48566a"], badge: ["#ffffff", "#93a0b0"] },
-    h: { blue: "#3b6ea5", blueF: "#e8eff6", amber: "#5b7a99", amberF: "#eef2f6", app: "#3b6ea5", appF: "#e8eff6", gold: "#7a94ad", goldF: "#f0f3f6", violet: "#7d6ba8", violetF: "#efecf5", red: "#b5544a", redF: "#f7ebe9", purple: "#8a6fae", purpleF: "#efecf6", green: "#4a8f8a", greenF: "#e9f2f1", siteS: "#8792a0", siteF: "#eef1f4", leafF: "#ffffff", leafS: "#516070", aiS: "#6f86a0", aiF: "#eef2f6", node: "#c0603a", nodeF: "#f8ece7", serverS: "#516070", serverF: "#ffffff" },
-    lv: { public: ["#f7ece9", "#c05a4a"], internal: ["#f3efe6", "#a8823f"], restricted: ["#e8eff6", "#3b6ea5"], secret: ["#efecf5", "#7d6ba8"] }
-  }),
-  sand: mkTheme({
-    pal: { bg: "#faf6ee", text: "#3a2f22", sub: "#5c4c38", muted: "#8a795f", cFill: "#f2ebdd", cStroke: "#cdbfa3", nFill: "#fffdf8", nStroke: "#6b5d48", edge: "#6b5d48", div: "#e6dcc9", halo: "#faf6ee", aStroke: "#3f7a8c", aText: "#274852", chip: ["#f4e6c8", "#c19a3f", "#6b5417"], badge: ["#fffdf8", "#b3a488"] },
-    h: { blue: "#3f7a8c", blueF: "#e6f0f1", amber: "#b07d2a", amberF: "#f6ecd8", app: "#3f7a8c", appF: "#e6f0f1", gold: "#c99f45", goldF: "#f8f0dd", violet: "#9c6f4a", violetF: "#f1e9df", red: "#c0562a", redF: "#f7e6da", purple: "#8a5f7a", purpleF: "#f2e8ee", green: "#6f8f4a", greenF: "#eef2e2", siteS: "#8a795f", siteF: "#f2ecdf", leafF: "#fffdf8", leafS: "#6b5d48", aiS: "#b07d2a", aiF: "#f7efe0", node: "#c0562a", nodeF: "#f7e6da", serverS: "#6b5d48", serverF: "#fffdf8" },
-    lv: { public: ["#f7e2da", "#c0562a"], internal: ["#f6ecd2", "#b0842e"], restricted: ["#e6f0f1", "#3f7a8c"], secret: ["#f0e8ef", "#8a5f7a"] }
-  }),
-  contrast: mkTheme({
-    pal: { bg: "#ffffff", text: "#000000", sub: "#1a1a1a", muted: "#3a3a3a", cFill: "#f2f2f2", cStroke: "#333333", nFill: "#ffffff", nStroke: "#111111", edge: "#1a1a1a", div: "#cccccc", halo: "#ffffff", aStroke: "#003a66", aText: "#000000", chip: ["#ffe9b0", "#8a6d00", "#3a2e00"], badge: ["#ffffff", "#333333"] },
-    h: { blue: "#005a9c", blueF: "#e0edf7", amber: "#9a4a00", amberF: "#f6e9dd", app: "#005a9c", appF: "#e0edf7", gold: "#8a6d00", goldF: "#f6f0da", violet: "#6a2fa0", violetF: "#eee4f7", red: "#c0341a", redF: "#f9e2dd", purple: "#8a1a6a", purpleF: "#f7e0ef", green: "#00695c", greenF: "#daf0ec", siteS: "#333333", siteF: "#eeeeee", leafF: "#ffffff", leafS: "#111111", aiS: "#9a4a00", aiF: "#f6e9dd", node: "#c0341a", nodeF: "#f9e2dd", serverS: "#111111", serverF: "#ffffff" },
-    lv: { public: ["#f9dcd6", "#c0341a"], internal: ["#f6e6c8", "#9a6a00"], restricted: ["#e0edf7", "#005a9c"], secret: ["#eee0f7", "#6a2fa0"] }
-  }),
-  nord: mkTheme({
-    pal: { bg: "#2e3440", text: "#eceff4", sub: "#d8dee9", muted: "#9aa3b2", cFill: "#3b4252", cStroke: "#4c566a", nFill: "#3b4252", nStroke: "#4c566a", edge: "#abb2bf", div: "#434c5e", halo: "#2e3440", aStroke: "#88c0d0", aText: "#e5e9f0", chip: ["#3b3a2a", "#ebcb8b", "#ebcb8b"], badge: ["#3b4252", "#4c566a"] },
-    h: { blue: "#81a1c1", blueF: "#333b4a", amber: "#ebcb8b", amberF: "#3a3524", app: "#81a1c1", appF: "#2f3a44", gold: "#d0b47a", goldF: "#37331f", violet: "#b48ead", violetF: "#352d38", red: "#bf616a", redF: "#3a2a2d", purple: "#a38bbd", purpleF: "#312a3a", green: "#8fbcbb", greenF: "#26332f", siteS: "#9aa3b2", siteF: "#353c49", leafF: "#3b4252", leafS: "#5a6377", aiS: "#ebcb8b", aiF: "#3a3524", node: "#d08770", nodeF: "#372a24", serverS: "#5a6377", serverF: "#3b4252" },
-    lv: { public: ["#3a2a2d", "#bf616a"], internal: ["#3a3524", "#d0a85f"], restricted: ["#2f3a44", "#81a1c1"], secret: ["#312a3a", "#a38bbd"] }
-  }),
-  solarized: mkTheme({
-    pal: { bg: "#fdf6e3", text: "#586e75", sub: "#657b83", muted: "#93a1a1", cFill: "#eee8d5", cStroke: "#c9c1a8", nFill: "#fdf6e3", nStroke: "#93a1a1", edge: "#657b83", div: "#ded8c3", halo: "#fdf6e3", aStroke: "#268bd2", aText: "#073642", chip: ["#f2e9c8", "#b58900", "#5c4a00"], badge: ["#fdf6e3", "#b3aa90"] },
-    h: { blue: "#268bd2", blueF: "#e3edf3", amber: "#b58900", amberF: "#f2ecd6", app: "#268bd2", appF: "#e3edf3", gold: "#cb9b2e", goldF: "#f4eed6", violet: "#6c71c4", violetF: "#e8e6f2", red: "#dc322f", redF: "#f7e2d9", purple: "#d33682", purpleF: "#f6e0ea", green: "#2aa198", greenF: "#dff0ec", siteS: "#93a1a1", siteF: "#eee8d5", leafF: "#fdf6e3", leafS: "#657b83", aiS: "#b58900", aiF: "#f2ecd6", node: "#cb4b16", nodeF: "#f7e4d6", serverS: "#657b83", serverF: "#fdf6e3" },
-    lv: { public: ["#f7ddd6", "#dc322f"], internal: ["#f2e6c8", "#b58900"], restricted: ["#e3edf3", "#268bd2"], secret: ["#e8e6f2", "#6c71c4"] }
-  })
-};
-var themeNames = [...Object.keys(themes), "classic", "classic-dark"];
-function themeFor(name, view) {
-  if (name === "classic") return { palette: lightPalette, kinds: view.defaults, levels: view.levelDefaults ?? {} };
-  if (name === "classic-dark") return { palette: darkPalette, kinds: view.defaultsDark, levels: view.levelDefaultsDark ?? {} };
-  const t = themes[name] ?? themes.light;
-  const kinds = {};
-  for (const k of view.kinds) kinds[k] = t.roles[roleFor(k, view.name)] ?? {};
-  return { palette: t.palette, kinds, levels: t.levels };
-}
 
-// src/parse.ts
-function parse(src) {
-  const diags = [];
-  const toks = lex(src, diags);
-  let p = 0;
-  const peek = (k = 0) => toks[Math.min(p + k, toks.length - 1)];
-  const at = (kind, text) => peek().kind === kind && (text === void 0 || peek().text === text);
-  const next = () => toks[p < toks.length - 1 ? p++ : p];
-  const skipNl = () => {
-    while (at("nl")) next();
-  };
-  const err = (message, span, help) => diags.push({ code: "E0101", severity: "error", message, span, help });
-  const syncLine = () => {
-    while (!at("nl") && !at("eof")) next();
-  };
-  const model = {
-    elements: [],
-    flows: [],
-    businessObjects: [],
-    legendNotes: [],
-    style: defaultDiagramStyle(),
-    index: /* @__PURE__ */ new Map()
-  };
-  let flowSeq = 0;
-  skipNl();
-  if (at("id", "diagram")) {
-    next();
-    if (at("id")) {
-      const t = next();
-      model.type = t.text;
-      model.typeSpan = t.span;
-    } else err("diagram type expected after `diagram`", peek().span, 'e.g. `diagram logical "Title"`');
-    if (at("str")) model.title = next().text;
-  } else {
-    err(
-      "missing `diagram <type>` header on the first line",
-      peek().span,
-      'add `diagram logical "Title"` or scaffold a file with `cairn new --logical-architecture`'
-    );
-  }
-  function parseStyleEntries(target, inline) {
-    skipNl();
-    while (!at("rbrace") && !at("eof")) {
-      if (!at("id")) {
-        err("style property expected", peek().span);
-        syncLine();
-        skipNl();
-        continue;
-      }
-      const key = next();
-      let kindTarget;
-      if (at("id")) kindTarget = next().text;
-      if (!at("colon")) {
-        err("`:` expected after the style property", peek().span);
-        syncLine();
-        skipNl();
-        continue;
-      }
-      next();
-      const values = [];
-      while (!at("nl") && !at("rbrace") && !at("eof")) {
-        if (values.length && at("id") && peek(1).kind === "colon") break;
-        values.push(next());
-      }
-      applyStyleEntry(key, kindTarget, values, target, inline, diags);
-      skipNl();
-    }
-    if (at("rbrace")) next();
-    else err("`}` expected to close the style block", peek().span);
-  }
-  function parseElementBody(parent) {
-    skipNl();
-    while (!at("rbrace") && !at("eof")) {
-      parseStmt(parent);
-      skipNl();
-    }
-    if (at("rbrace")) next();
-    else err("`}` expected to close `" + parent.id + "`", peek().span);
-  }
-  function parseStmt(parent) {
-    if (at("nl")) {
-      next();
-      return;
-    }
-    if (at("id", "style")) {
-      const save = p;
-      next();
-      if (at("lbrace")) {
-        next();
-        if (parent) {
-          parent.style = parent.style ?? {};
-          parseStyleEntries(null, parent.style);
-        } else parseStyleEntries(model.style, null);
-        return;
-      }
-      p = save;
-    }
-    if (!parent && at("id", "legend")) {
-      const save = p;
-      next();
-      if (at("lbrace")) {
-        next();
-        skipNl();
-        while (!at("rbrace") && !at("eof")) {
-          if (at("id", "note")) {
-            next();
-            if (at("str")) model.legendNotes.push(next().text);
-            else err("text expected after `note`", peek().span, 'e.g. `note "Named-data flows are subject to GDPR"`');
-          } else {
-            err('legend entries are `note "\u2026"` lines', peek().span);
-            syncLine();
-          }
-          skipNl();
-        }
-        if (at("rbrace")) next();
-        else err("`}` expected to close the legend block", peek().span);
-        return;
-      }
-      p = save;
-    }
-    if (!parent && at("id", "business-object")) {
-      next();
-      if (!at("id")) {
-        err("identifier expected after `business-object`", peek().span, 'e.g. `business-object BO_CMD "Commande" "description"`');
-        syncLine();
-        return;
-      }
-      const idTok2 = next();
-      let name = idTok2.text, description;
-      if (at("str")) name = next().text;
-      if (at("str")) description = next().text;
-      model.businessObjects.push({ id: idTok2.text, idSpan: idTok2.span, name, description });
-      return;
-    }
-    if (!at("id")) {
-      err("declaration expected (element, flow or `style`)", peek().span);
-      syncLine();
-      return;
-    }
-    const first = next();
-    if (at("arrow")) {
-      next();
-      if (!at("id")) {
-        err("target identifier expected after `->`", peek().span);
-        syncLine();
-        return;
-      }
-      const to = next();
-      const flow = {
-        id: "F" + String(++flowSeq).padStart(2, "0"),
-        from: first.text,
-        fromSpan: first.span,
-        to: to.text,
-        toSpan: to.span,
-        span: { line: first.span.line, col: first.span.col, len: to.span.col + to.span.len - first.span.col }
-      };
-      if (at("colon")) {
-        next();
-        if (at("str")) flow.label = next().text;
-        else err("flow label expected after `:`", peek().span, 'e.g. `A -> B : "Quote request"`');
-      }
-      if (at("lparen")) {
-        const open = next();
-        const vals = [];
-        while ((at("id") || at("num") || at("str")) && vals.length < 2) {
-          vals.push(next().text);
-          if (at("comma")) next();
-        }
-        if (at("rparen")) next();
-        else err("`)` expected to close the technical attributes", peek().span, 'e.g. `A -> B : "Envoi" (SFTP, XML)`');
-        flow.tech = { protocol: vals[0], format: vals[1], span: open.span };
-      }
-      if (at("lbrack")) {
-        next();
-        flow.objects = [];
-        while (at("id")) {
-          const t = next();
-          flow.objects.push({ id: t.text, span: t.span });
-          if (at("comma")) next();
-        }
-        if (at("rbrack")) next();
-        else err("`]` expected to close the business-object list", peek().span, 'e.g. `A -> B : "Validation" [BO_CMD]`');
-      }
-      if (at("lbrace")) {
-        next();
-        flow.style = {};
-        parseStyleEntries(null, flow.style);
-      }
-      model.flows.push(flow);
-      return;
-    }
-    if (!at("id")) {
-      err(
-        `invalid declaration: \`${first.text}\` alone on this line`,
-        first.span,
-        'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`'
-      );
-      syncLine();
-      return;
-    }
-    const idTok = next();
-    const el = {
-      kind: first.text,
-      kindSpan: first.span,
-      id: idTok.text,
-      idSpan: idTok.span,
-      children: [],
-      parent: parent ?? void 0
-    };
-    if (at("str")) el.label = next().text;
-    if (at("lparen")) {
-      next();
-      if (at("id")) {
-        const t = next();
-        el.attr = { value: t.text, span: t.span };
-      } else err("attribute value expected after `(`", peek().span, 'e.g. `trust-zone DMZ "DMZ" (public)`');
-      if (at("rparen")) next();
-      else err("`)` expected to close the attribute", peek().span, 'e.g. `trust-zone DMZ "DMZ" (public)`');
-    }
-    if (at("lbrace")) {
-      next();
-      parseElementBody(el);
-    }
-    (parent ? parent.children : model.elements).push(el);
-  }
-  skipNl();
-  while (!at("eof")) {
-    parseStmt(null);
-    skipNl();
-  }
-  (function indexAll(els) {
-    for (const e of els) {
-      model.index.set(e.id, model.index.has(e.id) ? model.index.get(e.id) : e);
-      indexAll(e.children);
-    }
-  })(model.elements);
-  return { model, diags };
-}
-var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
-var LABEL_POS = /* @__PURE__ */ new Set(["on-line", "above", "below"]);
-function applyStyleEntry(key, kindTarget, values, diag, inline, diags) {
-  const strokeFrom = (vals, span) => {
-    const s = {};
-    for (const v of vals) {
-      if (v.kind === "color") {
-        if (s.color) dup(v);
-        s.color = v.text;
-      } else if (v.kind === "num") {
-        if (s.width) dup(v);
-        s.width = parseFloat(v.text);
-      } else if (v.kind === "id" && LINE_STYLES.has(v.text)) {
-        if (s.style) dup(v);
-        s.style = v.text;
-      } else bad(v, "`#hex` color, `solid|dashed|dotted` line style, or numeric width");
-    }
-    return s;
-  };
-  const dup = (v) => diags.push({ code: "E0102", severity: "error", message: `conflicting values in \`${key.text}\` : \`${v.text}\``, span: v.span, help: "only one value of each type per property" });
-  const bad = (v, expected) => diags.push({ code: "E0103", severity: "error", message: `invalid value \`${v.text}\` for \`${key.text}\``, span: v.span, help: `expected: ${expected}` });
-  const one = () => values[0];
-  const k = key.text;
-  if (inline) {
-    if (k === "fill" && one()?.kind === "color") inline.fill = one().text;
-    else if (k === "stroke") inline.stroke = strokeFrom(values, key.span);
-    else if (k === "text" && one()?.kind === "color") inline.text = one().text;
-    else if (k === "label" && one()?.kind === "id" && LABEL_POS.has(one().text)) inline.label = one().text;
-    else diags.push({ code: "E0104", severity: "error", message: `unknown style property here: \`${k}\``, span: key.span, help: "inline properties: fill, stroke, text, label" });
-    return;
-  }
-  if (!diag) return;
-  switch (k) {
-    case "crossing-hops": {
-      const v = one();
-      if (v?.kind === "id" && (v.text === "on" || v.text === "off")) diag.crossingHops = v.text === "on";
-      else bad(v ?? key, "`on` or `off`");
-      break;
-    }
-    case "compact": {
-      const v = one();
-      if (v?.kind === "id" && (v.text === "on" || v.text === "off")) diag.compact = v.text === "on";
-      else bad(v ?? key, "`on` or `off`");
-      break;
-    }
-    case "arrows": {
-      const v = one();
-      if (v?.kind === "id" && (v.text === "normal" || v.text === "large")) diag.arrows = v.text;
-      else bad(v ?? key, "`normal` or `large`");
-      break;
-    }
-    case "flow-color": {
-      const v = one();
-      if (v?.kind === "id" && (v.text === "none" || v.text === "by-source")) diag.flowColor = v.text;
-      else bad(v ?? key, "`none` or `by-source`");
-      break;
-    }
-    case "disposition": {
-      const v = one();
-      const OK = /* @__PURE__ */ new Set(["wide", "tall", "slide", "page"]);
-      if (v?.kind === "id" && OK.has(v.text)) diag.disposition = v.text;
-      else bad(v ?? key, "`wide` (elongated horizontal), `tall` (elongated vertical), `slide` (balanced 16:9), `page` (balanced A4 portrait)");
-      break;
-    }
-    case "legend": {
-      const v = one();
-      if (v?.kind === "id" && (v.text === "auto" || v.text === "off")) diag.legend = v.text;
-      else bad(v ?? key, "`auto` or `off`");
-      break;
-    }
-    case "flow-text": {
-      const v = one();
-      if (v?.kind === "id" && (v.text === "full" || v.text === "numbered")) diag.flowText = v.text;
-      else bad(v ?? key, "`full` (labels on arrows) or `numbered` (number badges + FLUX table below the diagram)");
-      break;
-    }
-    case "flow-label": {
-      const v = one();
-      if (v?.kind === "id" && LABEL_POS.has(v.text)) diag.flowLabel = v.text;
-      else bad(v ?? key, "`on-line`, `above` or `below`");
-      break;
-    }
-    case "flow-stroke": {
-      const s = strokeFrom(values, key.span);
-      diag.flowStroke = { ...diag.flowStroke, ...s };
-      if (s.color) diag.flowStrokeColorSet = true;
-      break;
-    }
-    case "theme": {
-      const v = one();
-      if (v?.kind === "id" && themeNames.includes(v.text)) diag.theme = v.text;
-      else bad(v ?? key, "`" + themeNames.join("` | `") + "`");
-      break;
-    }
-    case "accent": {
-      const v = one();
-      if (v?.kind === "color") diag.accent = v.text;
-      else bad(v ?? key, "`#hex` color (retints flows on top of the theme)");
-      break;
-    }
-    case "lang": {
-      const v = one();
-      if (v?.kind === "id" && (v.text === "en" || v.text === "fr")) diag.lang = v.text;
-      else bad(v ?? key, "`en` or `fr` (localizes rendered labels; keywords stay English)");
-      break;
-    }
-    case "background": {
-      const v = one();
-      if (v?.kind === "color") diag.background = v.text;
-      else bad(v ?? key, "`#hex` color (canvas background)");
-      break;
-    }
-    case "fill": {
-      if (kindTarget && one()?.kind === "color") {
-        diag.kind[kindTarget] = { ...diag.kind[kindTarget], fill: one().text };
-      } else bad(one() ?? key, "`fill <kind>: #hex`");
-      break;
-    }
-    case "stroke": {
-      if (kindTarget) diag.kind[kindTarget] = { ...diag.kind[kindTarget], stroke: strokeFrom(values, key.span) };
-      else bad(one() ?? key, "`stroke <kind>: #hex solid|dashed|dotted <width>`");
-      break;
-    }
-    case "text": {
-      if (kindTarget && one()?.kind === "color") {
-        diag.kind[kindTarget] = { ...diag.kind[kindTarget], text: one().text };
-      } else bad(one() ?? key, "`text <kind>: #hex`");
-      break;
-    }
-    case "font": {
-      for (const v of values) {
-        if (v.kind === "str") diag.font.family = v.text;
-        else if (v.kind === "num") diag.font.size = parseFloat(v.text);
-        else bad(v, '`font: "Family" <size>`');
-      }
-      break;
-    }
-    case "font-size": {
-      const v = one();
-      if (v?.kind === "num") diag.font.size = parseFloat(v.text);
-      else bad(v ?? key, "a number, e.g. `font-size: 14`");
-      break;
-    }
-    default:
-      diags.push({ code: "E0104", severity: "error", message: `unknown style property: \`${k}\``, span: key.span, help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size" });
-  }
-}
-
-// src/validate.ts
+// src/validator.ts
 function validate(model) {
-  const diags = [];
   const view = model.type ? views[model.type] : void 0;
   if (model.type && !view) {
-    diags.push({
-      code: "E0200",
-      severity: "error",
-      message: `unknown diagram type \`${model.type}\``,
-      span: model.typeSpan,
-      help: `available types: ${Object.keys(views).join(", ")} (application and infrastructure land in phase 3)`
-    });
-    return diags;
+    return [
+      {
+        code: "E0200",
+        severity: "error",
+        message: `unknown diagram type \`${model.type}\``,
+        span: model.typeSpan,
+        help: `available types: ${Object.keys(views).join(", ")} (application and infrastructure land in phase 3)`
+      }
+    ];
   }
-  if (!view) return diags;
-  const all = [];
-  (function walk(els) {
-    for (const e of els) {
-      all.push(e);
-      walk(e.children);
+  if (!view) return [];
+  const elements = flatten(model.elements);
+  return [
+    ...checkDuplicateIds(elements),
+    ...checkUnknownKinds(elements, view),
+    ...checkMissingLabels(elements),
+    ...checkNesting(elements, view),
+    ...checkFlows(model, view),
+    ...checkElementAttributes(elements, view),
+    ...checkTrustBoundaries(model, view),
+    ...checkBusinessObjects(model, view),
+    ...checkMinimumCounts(elements, model, view),
+    ...checkIsolatedElements(model, view, elements)
+  ];
+}
+function flatten(roots) {
+  const flattened = [];
+  (function collect(elements) {
+    for (const element of elements) {
+      flattened.push(element);
+      collect(element.children);
     }
-  })(model.elements);
-  const seen = /* @__PURE__ */ new Map();
-  for (const e of all) {
-    const prev = seen.get(e.id);
-    if (prev) {
-      diags.push({
+  })(roots);
+  return flattened;
+}
+function checkDuplicateIds(elements) {
+  const diagnostics = [];
+  const firstSeen = /* @__PURE__ */ new Map();
+  for (const element of elements) {
+    const previous = firstSeen.get(element.id);
+    if (previous) {
+      diagnostics.push({
         code: "E0202",
         severity: "error",
-        message: `duplicate identifier \`${e.id}\``,
-        span: e.idSpan,
-        note: `already declared at line ${prev.idSpan.line}`,
-        help: `rename one of the two, e.g. \`${e.id}_2\` (decision D1: flat unique IDs)`
+        message: `duplicate identifier \`${element.id}\``,
+        span: element.idSpan,
+        note: `already declared at line ${previous.idSpan.line}`,
+        help: `rename one of the two, e.g. \`${element.id}_2\` (decision D1: flat unique IDs)`
       });
-    } else seen.set(e.id, e);
+    } else firstSeen.set(element.id, element);
   }
-  for (const e of all) {
-    if (!view.kinds.includes(e.kind)) {
-      diags.push({
-        code: "E0201",
-        severity: "error",
-        message: `unknown element kind \`${e.kind}\``,
-        span: e.kindSpan,
-        note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
-        help: nearest(e.kind, view.kinds) ? `did you mean \`${nearest(e.kind, view.kinds)}\`?` : void 0
-      });
-    }
+  return diagnostics;
+}
+function checkUnknownKinds(elements, view) {
+  const diagnostics = [];
+  for (const element of elements) {
+    if (view.kinds.includes(element.kind)) continue;
+    const suggestion = nearest(element.kind, view.kinds);
+    diagnostics.push({
+      code: "E0201",
+      severity: "error",
+      message: `unknown element kind \`${element.kind}\``,
+      span: element.kindSpan,
+      note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
+      help: suggestion ? `did you mean \`${suggestion}\`?` : void 0
+    });
   }
-  for (const e of all) {
-    if (!e.label) {
-      diags.push({
-        code: "W0502",
-        severity: "warning",
-        message: `element without a label (\`${e.id}\` will be displayed as-is)`,
-        span: e.idSpan,
-        help: `add a display label: \`${e.kind} ${e.id} "Readable name"\``
-      });
-    }
+  return diagnostics;
+}
+function checkMissingLabels(elements) {
+  const diagnostics = [];
+  for (const element of elements) {
+    if (element.label) continue;
+    diagnostics.push({
+      code: "W0502",
+      severity: "warning",
+      message: `element without a label (\`${element.id}\` will be displayed as-is)`,
+      span: element.idSpan,
+      help: `add a display label: \`${element.kind} ${element.id} "Readable name"\``
+    });
   }
+  return diagnostics;
+}
+function checkNesting(elements, view) {
+  const diagnostics = [];
   for (const rule of view.nesting) {
-    for (const e of all) {
-      if (e.kind !== rule.child) continue;
-      const pk = e.parent?.kind;
-      if (!pk || !rule.parents.includes(pk)) {
-        diags.push({
+    for (const element of elements) {
+      if (element.kind !== rule.child) continue;
+      const parentKind = element.parent?.kind;
+      if (!parentKind || !rule.parents.includes(parentKind)) {
+        diagnostics.push({
           code: rule.code,
           severity: "error",
-          message: rule.message + ` (\`${e.id}\`)`,
-          span: e.idSpan,
-          note: pk ? `current parent: \`${pk}\`` : "declared at the diagram root",
+          message: rule.message + ` (\`${element.id}\`)`,
+          span: element.idSpan,
+          note: parentKind ? `current parent: \`${parentKind}\`` : "declared at the diagram root",
           help: rule.help
         });
       }
     }
   }
-  for (const f of model.flows) {
-    for (const [ref, span] of [[f.from, f.fromSpan], [f.to, f.toSpan]]) {
-      if (!model.index.has(ref)) {
-        diags.push({
+  return diagnostics;
+}
+function checkFlows(model, view) {
+  const diagnostics = [];
+  const isActor = (id) => {
+    const kind = model.index.get(id)?.kind;
+    return kind === "actor" || kind === "actor-group";
+  };
+  for (const flow of model.flows) {
+    for (const [reference, span] of [
+      [flow.from, flow.fromSpan],
+      [flow.to, flow.toSpan]
+    ]) {
+      if (!model.index.has(reference)) {
+        const suggestion = nearest(reference, [...model.index.keys()]);
+        diagnostics.push({
           code: "E0220",
           severity: "error",
-          message: `unknown reference \`${ref}\``,
+          message: `unknown reference \`${reference}\``,
           span,
-          help: nearest(ref, [...model.index.keys()]) ? `did you mean \`${nearest(ref, [...model.index.keys()])}\`?` : "declare this element before referencing it"
+          help: suggestion ? `did you mean \`${suggestion}\`?` : "declare this element before referencing it"
         });
       }
     }
-    if (view.flowTechRecommended && !f.tech?.protocol) {
-      const isActor = (id) => {
-        const k = model.index.get(id)?.kind;
-        return k === "actor" || k === "actor-group";
-      };
-      if (!isActor(f.from) && !isActor(f.to)) {
-        diags.push({
-          code: view.flowTechRecommended.code,
-          severity: "warning",
-          message: view.flowTechRecommended.message,
-          span: f.span,
-          note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
-          help: view.flowTechRecommended.help
-        });
-      }
+    if (view.flowTechRecommended && !flow.tech?.protocol && !isActor(flow.from) && !isActor(flow.to)) {
+      diagnostics.push({
+        code: view.flowTechRecommended.code,
+        severity: "warning",
+        message: view.flowTechRecommended.message,
+        span: flow.span,
+        note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
+        help: view.flowTechRecommended.help
+      });
     }
-    if (view.flowTechRequired && !f.tech?.protocol) {
-      diags.push({
+    if (view.flowTechRequired && !flow.tech?.protocol) {
+      diagnostics.push({
         code: view.flowTechRequired.code,
         severity: "error",
         message: view.flowTechRequired.message,
-        span: f.span,
+        span: flow.span,
         note: `the \`${view.name}\` view requires the protocol on every flow`,
         help: view.flowTechRequired.help,
         fix: { insert: " (HTTPS/443)", atEndOfLine: true }
       });
     }
-    if (view.flowLabelRequired && !f.label) {
-      diags.push({
+    if (view.flowLabelRequired && !flow.label) {
+      diagnostics.push({
         code: view.flowLabelRequired.code,
         severity: "error",
         message: view.flowLabelRequired.message,
-        span: f.span,
+        span: flow.span,
         note: `the \`${view.name}\` view forbids unlabelled arrows`,
         help: view.flowLabelRequired.help,
         fix: { insert: ' : "\u2026"', atEndOfLine: true }
       });
     }
   }
-  if (view.attrSpec) {
-    const spec = view.attrSpec;
-    for (const e of all) {
-      if (e.kind !== spec.kind) continue;
-      if (!e.attr) {
-        diags.push({
-          code: spec.code,
-          severity: "error",
-          message: spec.message + ` (\`${e.id}\`)`,
-          span: e.idSpan,
-          help: spec.help
-        });
-      } else if (!spec.values.includes(e.attr.value)) {
-        diags.push({
-          code: spec.code,
-          severity: "error",
-          message: `invalid ${spec.kind} value \`${e.attr.value}\` (\`${e.id}\`)`,
-          span: e.attr.span,
-          note: `allowed: ${spec.values.join(", ")}`,
-          help: nearest(e.attr.value, spec.values) ? `did you mean \`${nearest(e.attr.value, spec.values)}\`?` : spec.help
-        });
-      }
-    }
-  }
-  if (view.boundaryLint || view.crossZoneTechRecommended) {
-    const zoneOf = (id) => {
-      for (let a = model.index.get(id)?.parent; a; a = a.parent) if (a.kind === "trust-zone") return a;
-      return void 0;
-    };
-    const levelOf = (id) => {
-      const z = zoneOf(id);
-      const v = z?.attr?.value;
-      return v && view.trustOrder?.[v] !== void 0 ? view.trustOrder[v] : -1;
-    };
-    for (const f of model.flows) {
-      if (!model.index.has(f.from) || !model.index.has(f.to)) continue;
-      const zf = zoneOf(f.from), zt = zoneOf(f.to);
-      const crossing = zf !== zt;
-      if (view.boundaryLint) {
-        const bl = view.boundaryLint;
-        const isNode = (id) => model.index.get(id)?.kind === bl.nodeKind;
-        if (levelOf(f.to) > levelOf(f.from) && !isNode(f.from) && !isNode(f.to)) {
-          diags.push({
-            code: bl.code,
-            severity: "warning",
-            message: bl.message,
-            span: f.span,
-            note: `flow enters a more-trusted zone without passing a \`${bl.nodeKind}\``,
-            help: bl.help
-          });
-        }
-      }
-      if (view.crossZoneTechRecommended && crossing && !f.tech?.protocol) {
-        diags.push({
-          code: view.crossZoneTechRecommended.code,
-          severity: "warning",
-          message: view.crossZoneTechRecommended.message,
-          span: f.span,
-          note: "inter-zone flow \u2014 state how the traffic is protected",
-          help: view.crossZoneTechRecommended.help
-        });
-      }
-    }
-  }
-  const boIds = new Map(model.businessObjects.map((b) => [b.id, b]));
-  for (const b of model.businessObjects) {
-    if (model.index.has(b.id)) {
-      diags.push({
-        code: "E0202",
+  return diagnostics;
+}
+function checkElementAttributes(elements, view) {
+  const spec = view.attrSpec;
+  if (!spec) return [];
+  const diagnostics = [];
+  for (const element of elements) {
+    if (element.kind !== spec.kind) continue;
+    if (!element.attr) {
+      diagnostics.push({
+        code: spec.code,
         severity: "error",
-        message: `duplicate identifier \`${b.id}\` (already used by an element)`,
-        span: b.idSpan,
-        help: "business objects share the flat ID namespace (decision D1)"
+        message: spec.message + ` (\`${element.id}\`)`,
+        span: element.idSpan,
+        help: spec.help
+      });
+    } else if (!spec.values.includes(element.attr.value)) {
+      const suggestion = nearest(element.attr.value, spec.values);
+      diagnostics.push({
+        code: spec.code,
+        severity: "error",
+        message: `invalid ${spec.kind} value \`${element.attr.value}\` (\`${element.id}\`)`,
+        span: element.attr.span,
+        note: `allowed: ${spec.values.join(", ")}`,
+        help: suggestion ? `did you mean \`${suggestion}\`?` : spec.help
       });
     }
   }
-  const carried = /* @__PURE__ */ new Set();
-  for (const f of model.flows) {
-    for (const o of f.objects ?? []) {
-      if (!boIds.has(o.id)) {
-        diags.push({
-          code: "E0221",
-          severity: "error",
-          message: `unknown business-object reference \`${o.id}\``,
-          span: o.span,
-          help: nearest(o.id, [...boIds.keys()]) ? `did you mean \`${nearest(o.id, [...boIds.keys()])}\`?` : "declare it: `business-object " + o.id + ' "Name" "description"`'
+  return diagnostics;
+}
+function checkTrustBoundaries(model, view) {
+  if (!view.boundaryLint && !view.crossZoneTechRecommended) return [];
+  const diagnostics = [];
+  const zoneOf = (id) => {
+    for (let ancestor = model.index.get(id)?.parent; ancestor; ancestor = ancestor.parent)
+      if (ancestor.kind === "trust-zone") return ancestor;
+    return void 0;
+  };
+  const trustLevelOf = (id) => {
+    const level = zoneOf(id)?.attr?.value;
+    return level && view.trustOrder?.[level] !== void 0 ? view.trustOrder[level] : -1;
+  };
+  for (const flow of model.flows) {
+    if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;
+    const crossesZone = zoneOf(flow.from) !== zoneOf(flow.to);
+    if (view.boundaryLint) {
+      const lint = view.boundaryLint;
+      const isSecurityNode = (id) => model.index.get(id)?.kind === lint.nodeKind;
+      if (trustLevelOf(flow.to) > trustLevelOf(flow.from) && !isSecurityNode(flow.from) && !isSecurityNode(flow.to)) {
+        diagnostics.push({
+          code: lint.code,
+          severity: "warning",
+          message: lint.message,
+          span: flow.span,
+          note: `flow enters a more-trusted zone without passing a \`${lint.nodeKind}\``,
+          help: lint.help
         });
-      } else carried.add(o.id);
+      }
+    }
+    if (view.crossZoneTechRecommended && crossesZone && !flow.tech?.protocol) {
+      diagnostics.push({
+        code: view.crossZoneTechRecommended.code,
+        severity: "warning",
+        message: view.crossZoneTechRecommended.message,
+        span: flow.span,
+        note: "inter-zone flow \u2014 state how the traffic is protected",
+        help: view.crossZoneTechRecommended.help
+      });
     }
   }
-  for (const b of model.businessObjects) {
-    if (!carried.has(b.id)) {
-      diags.push({
+  return diagnostics;
+}
+function checkBusinessObjects(model, view) {
+  const diagnostics = [];
+  if (!view.businessObjects) {
+    for (const businessObject of model.businessObjects) {
+      diagnostics.push({
+        code: "E0222",
+        severity: "error",
+        message: `business objects are not part of the \`${view.name}\` view (\`${businessObject.id}\`)`,
+        span: businessObject.idSpan,
+        help: "business objects belong to the `logical` view \u2014 remove it, or model the exchange with the flow label"
+      });
+    }
+    for (const flow of model.flows) {
+      for (const objectRef of flow.objects ?? []) {
+        diagnostics.push({
+          code: "E0222",
+          severity: "error",
+          message: `business-object reference \`[${objectRef.id}]\` is not part of the \`${view.name}\` view`,
+          span: objectRef.span,
+          help: "drop the `[\u2026]` reference \u2014 business objects are a logical-view feature"
+        });
+      }
+    }
+    return diagnostics;
+  }
+  const declaredIds = /* @__PURE__ */ new Map();
+  for (const businessObject of model.businessObjects) {
+    const previous = declaredIds.get(businessObject.id);
+    if (previous) {
+      diagnostics.push({
+        code: "E0202",
+        severity: "error",
+        message: `duplicate identifier \`${businessObject.id}\``,
+        span: businessObject.idSpan,
+        note: `already declared at line ${previous.idSpan.line}`,
+        help: `rename one of the two, e.g. \`${businessObject.id}_2\` (decision D1: flat unique IDs)`
+      });
+    } else if (model.index.has(businessObject.id)) {
+      diagnostics.push({
+        code: "E0202",
+        severity: "error",
+        message: `duplicate identifier \`${businessObject.id}\` (already used by an element)`,
+        span: businessObject.idSpan,
+        help: "business objects share the flat ID namespace (decision D1)"
+      });
+    }
+    if (!previous) declaredIds.set(businessObject.id, businessObject);
+  }
+  const carried = /* @__PURE__ */ new Set();
+  for (const flow of model.flows) {
+    for (const objectRef of flow.objects ?? []) {
+      if (!declaredIds.has(objectRef.id)) {
+        const suggestion = nearest(objectRef.id, [...declaredIds.keys()]);
+        diagnostics.push({
+          code: "E0221",
+          severity: "error",
+          message: `unknown business-object reference \`${objectRef.id}\``,
+          span: objectRef.span,
+          help: suggestion ? `did you mean \`${suggestion}\`?` : "declare it: `business-object " + objectRef.id + ' "Name" "description"`'
+        });
+      } else carried.add(objectRef.id);
+    }
+  }
+  for (const businessObject of model.businessObjects) {
+    if (!carried.has(businessObject.id)) {
+      diagnostics.push({
         code: "W0530",
         severity: "warning",
-        message: `business object \`${b.id}\` is never carried by any flow`,
-        span: b.idSpan,
+        message: `business object \`${businessObject.id}\` is never carried by any flow`,
+        span: businessObject.idSpan,
         note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  for (const mc of view.minCounts) {
-    const n = all.filter((e) => e.kind === mc.kind).length;
-    if (n < mc.min) {
-      diags.push({
-        code: mc.code,
+  return diagnostics;
+}
+function checkMinimumCounts(elements, model, view) {
+  const diagnostics = [];
+  for (const rule of view.minCounts) {
+    const declared = elements.filter((element) => element.kind === rule.kind).length;
+    if (declared < rule.min) {
+      diagnostics.push({
+        code: rule.code,
         severity: "warning",
-        message: mc.message,
+        message: rule.message,
         span: model.typeSpan ?? { line: 1, col: 1, len: 7 },
         note: `completeness check of the \`${view.name}\` view`
       });
     }
   }
-  if (view.isolatedWarn) {
-    const touched = /* @__PURE__ */ new Set();
-    const touch = (id) => {
-      const el = model.index.get(id);
-      if (!el) return;
-      (function down(e) {
-        touched.add(e.id);
-        e.children.forEach(down);
-      })(el);
-      for (let a = el.parent; a; a = a.parent) touched.add(a.id);
-    };
-    for (const f of model.flows) {
-      touch(f.from);
-      touch(f.to);
-    }
-    for (const e of all) {
-      if (view.isolatedWarn.kinds.includes(e.kind) && !touched.has(e.id)) {
-        diags.push({
-          code: view.isolatedWarn.code,
-          severity: "warning",
-          message: view.isolatedWarn.message + ` (\`${e.id}\`)`,
-          span: e.idSpan,
-          note: `completeness check of the \`${view.name}\` view`
-        });
-      }
+  return diagnostics;
+}
+function checkIsolatedElements(model, view, elements) {
+  if (!view.isolatedWarn) return [];
+  const diagnostics = [];
+  const connected = /* @__PURE__ */ new Set();
+  const markConnected = (id) => {
+    const element = model.index.get(id);
+    if (!element) return;
+    (function markSubtree(element2) {
+      connected.add(element2.id);
+      element2.children.forEach(markSubtree);
+    })(element);
+    for (let ancestor = element.parent; ancestor; ancestor = ancestor.parent)
+      connected.add(ancestor.id);
+  };
+  for (const flow of model.flows) {
+    markConnected(flow.from);
+    markConnected(flow.to);
+  }
+  for (const element of elements) {
+    if (view.isolatedWarn.kinds.includes(element.kind) && !connected.has(element.id)) {
+      diagnostics.push({
+        code: view.isolatedWarn.code,
+        severity: "warning",
+        message: view.isolatedWarn.message + ` (\`${element.id}\`)`,
+        span: element.idSpan,
+        note: `completeness check of the \`${view.name}\` view`
+      });
     }
   }
-  return diags;
+  return diagnostics;
 }
 function nearest(word, candidates) {
-  let best, bestD = 3;
-  for (const c of candidates) {
-    const d = lev(word.toLowerCase(), c.toLowerCase(), bestD);
-    if (d < bestD) {
-      bestD = d;
-      best = c;
+  let best, bestDistance = 3;
+  for (const candidate of candidates) {
+    const distance = editDistance(word.toLowerCase(), candidate.toLowerCase(), bestDistance);
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      best = candidate;
     }
   }
   return best;
 }
-function lev(a, b, cap) {
-  if (Math.abs(a.length - b.length) > cap) return cap + 1;
-  const dp = Array.from({ length: a.length + 1 }, (_, i) => i);
-  for (let j = 1; j <= b.length; j++) {
-    let prev = dp[0];
-    dp[0] = j;
-    for (let i = 1; i <= a.length; i++) {
-      const t = dp[i];
-      dp[i] = Math.min(dp[i] + 1, dp[i - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1));
-      prev = t;
+function editDistance(wordA, wordB, cap) {
+  if (Math.abs(wordA.length - wordB.length) > cap) return cap + 1;
+  const distances = Array.from({ length: wordA.length + 1 }, (_, index) => index);
+  for (let col = 1; col <= wordB.length; col++) {
+    let prev = distances[0];
+    distances[0] = col;
+    for (let row = 1; row <= wordA.length; row++) {
+      const above = distances[row];
+      distances[row] = Math.min(
+        distances[row] + 1,
+        distances[row - 1] + 1,
+        prev + (wordA[row - 1] === wordB[col - 1] ? 0 : 1)
+      );
+      prev = above;
     }
   }
-  return dp[a.length];
+  return distances[wordA.length];
 }
 
-// src/text.ts
-var FS_NODE = 12.5;
-var REF_BASE = 12.5;
+// src/text-metrics.ts
+var DEFAULT_FONT_SIZE_NODE = 12.5;
+var FONT_SIZE_BASE = 12.5;
+var CHAR_WIDTH = 0.56;
 var fontSizes = (base) => {
-  const scale = base / REF_BASE;
+  const scale = base / FONT_SIZE_BASE;
   return {
     edge: base - 1,
     node: base,
@@ -93516,122 +94341,159 @@ var fontSizes = (base) => {
     chipH: 19 * scale
   };
 };
-var CW = 0.56;
-var measure = (text, fs) => {
+var measure = (text, fontSize) => {
   const lines = text.split("\n");
   return {
     lines,
-    width: Math.ceil(Math.max(...lines.map((l) => l.length)) * fs * CW) + 6,
-    height: lines.length * (fs + 3) + 4
+    width: Math.ceil(Math.max(...lines.map((line) => line.length)) * fontSize * CHAR_WIDTH) + 6,
+    height: lines.length * (fontSize + 3) + 4
   };
 };
 function wrapText(text, maxChars) {
   const words = text.replace(/\n/g, " ").split(/\s+/).filter(Boolean);
   const lines = [];
-  let cur = "";
-  for (const w of words) {
-    if (cur && (cur + " " + w).length > maxChars) {
-      lines.push(cur);
-      cur = w;
-    } else cur = cur ? cur + " " + w : w;
+  let currentLine = "";
+  for (const word of words) {
+    if (currentLine && (currentLine + " " + word).length > maxChars) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else currentLine = currentLine ? currentLine + " " + word : word;
   }
-  if (cur) lines.push(cur);
+  if (currentLine) lines.push(currentLine);
   return lines.join("\n");
 }
-var CHIP_H = 19;
-var chipW = (name, scale = 1) => Math.ceil(name.length * 9.5 * scale * CW) + Math.round(16 * scale);
-var techText = (t) => t?.protocol ? `(${t.protocol}${t.format ? ", " + t.format : ""})` : "";
-var flowLabelBox = (text, chipNames, fs, tech, scale = 1) => {
-  const m = text ? measure(text, fs) : { width: 0, height: 0 };
-  const chips = chipNames.reduce((s, n) => s + chipW(n, scale) + 4, -4);
-  const techW = tech ? Math.ceil(tech.length * 9 * scale * CW) + 6 : 0;
+var CHIP_HEIGHT = 19;
+var chipW = (name, scale = 1) => Math.ceil(name.length * 9.5 * scale * CHAR_WIDTH) + Math.round(16 * scale);
+var techText = (tech) => tech?.protocol ? `(${tech.protocol}${tech.format ? ", " + tech.format : ""})` : "";
+var flowLabelBox = (text, chipNames, fontSize, tech, scale = 1) => {
+  const measured = text ? measure(text, fontSize) : { width: 0, height: 0 };
+  const chips = chipNames.reduce((sum, name) => sum + chipW(name, scale) + 4, -4);
+  const techW = tech ? Math.ceil(tech.length * 9 * scale * CHAR_WIDTH) + 6 : 0;
   return {
-    width: Math.max(m.width, chips > 0 ? chips + 4 : 0, techW),
-    height: m.height + (tech ? 12 * scale : 0) + (chipNames.length ? CHIP_H * scale : 0)
+    width: Math.max(measured.width, chips > 0 ? chips + 4 : 0, techW),
+    height: measured.height + (tech ? 12 * scale : 0) + (chipNames.length ? CHIP_HEIGHT * scale : 0)
   };
 };
-var nodeSize = (kind, label, fs = FS_NODE) => {
+var nodeSize = (kind, label, fontSize = DEFAULT_FONT_SIZE_NODE) => {
   const isActor = kind === "actor";
-  const m = measure(label, isActor ? fs - 1.5 : fs);
+  const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
   return {
-    w: isActor ? Math.max(64, m.width + 8) : Math.max(140, m.width + 16),
-    h: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, m.height + 18)
+    width: isActor ? Math.max(64, measured.width + 8) : Math.max(140, measured.width + 16),
+    height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18)
   };
 };
 
-// src/fold.ts
+// src/slide-fold.ts
 var PAD_TOP = 30;
 var PAD = 12;
 var LANE_STEP = 10;
 var LANE_V = 11;
 var LABEL_WRAP = 16;
-var LaneAlloc = class {
+var LaneAllocator = class {
   lanes = [];
-  alloc(a, b) {
-    const lo = Math.min(a, b) - 4, hi = Math.max(a, b) + 4;
-    for (let i = 0; i < this.lanes.length; i++) {
-      if (!this.lanes[i].some((iv) => iv.a < hi && lo < iv.b)) {
-        this.lanes[i].push({ a: lo, b: hi });
-        return i;
+  alloc(intervalStart, intervalEnd) {
+    const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
+    const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
+    for (let laneIndex = 0; laneIndex < this.lanes.length; laneIndex++) {
+      if (!this.lanes[laneIndex].some(
+        (existingInterval) => existingInterval.rangeStart < rangeEnd && rangeStart < existingInterval.rangeEnd
+      )) {
+        this.lanes[laneIndex].push({ rangeStart, rangeEnd });
+        return laneIndex;
       }
     }
-    this.lanes.push([{ a: lo, b: hi }]);
+    this.lanes.push([{ rangeStart, rangeEnd }]);
     return this.lanes.length - 1;
   }
 };
 async function foldedLayout(model, view, elk) {
   const roots = model.elements;
-  const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
+  const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";
-  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT, scale: FS_SCALE } = fontSizes(model.style.font.size);
-  const chipsOf = (f) => numbered ? [] : (f.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
-  const numLabel = (f) => ({ text: String(parseInt(f.id.slice(1), 10)), width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) });
-  const part = (e) => view.partitions[e.kind] ?? 1;
-  const sources = roots.filter((e) => part(e) === 0);
-  const middles = roots.filter((e) => part(e) === 1);
-  const sinks = roots.filter((e) => part(e) === 2);
-  if (view.partitionByOrder) return null;
-  const middleGroups = middles.filter((m) => m.children.length > 0);
-  if (middleGroups.length < 2) return null;
-  const topOf = /* @__PURE__ */ new Map();
-  for (const r of roots) (function mark(e) {
-    topOf.set(e.id, r);
-    e.children.forEach(mark);
-  })(r);
-  const interFlows = model.flows.filter((f) => {
-    const a = topOf.get(f.from), b = topOf.get(f.to);
-    return a && b && a !== b;
+  const {
+    edge: edgeFontSize,
+    node: nodeFontSize,
+    cont: containerFontSize,
+    scale: fontScale
+  } = fontSizes(model.style.font.size);
+  const chipsOf = (flow) => numbered ? [] : (flow.objects ?? []).map(
+    (objectRef) => businessObjectNames.get(objectRef.id) ?? objectRef.id
+  );
+  const numLabel = (flow) => ({
+    text: String(parseInt(flow.id.slice(1), 10)),
+    width: Math.round(26 * fontScale),
+    height: Math.round(17 * fontScale)
   });
-  const internalFlows = model.flows.filter((f) => topOf.get(f.from) && topOf.get(f.from) === topOf.get(f.to));
-  const elByid = /* @__PURE__ */ new Map();
-  (function idx(els) {
-    for (const e of els) {
-      elByid.set(e.id, e);
-      idx(e.children);
+  const partitionOf = (element) => view.partitions[element.kind] ?? 1;
+  const sources = roots.filter((element) => partitionOf(element) === 0);
+  const middles = roots.filter((element) => partitionOf(element) === 1);
+  const sinks = roots.filter((element) => partitionOf(element) === 2);
+  if (view.partitionByOrder) return null;
+  const middleGroups = middles.filter((middle) => middle.children.length > 0);
+  if (middleGroups.length < 2) return null;
+  const rootOf = /* @__PURE__ */ new Map();
+  for (const root of roots)
+    (function mark(element) {
+      rootOf.set(element.id, root);
+      element.children.forEach(mark);
+    })(root);
+  const interFlows = model.flows.filter((flow) => {
+    const sourceRoot = rootOf.get(flow.from);
+    const destRoot = rootOf.get(flow.to);
+    return sourceRoot && destRoot && sourceRoot !== destRoot;
+  });
+  const internalFlows = model.flows.filter(
+    (flow) => rootOf.get(flow.from) && rootOf.get(flow.from) === rootOf.get(flow.to)
+  );
+  const elementById = /* @__PURE__ */ new Map();
+  (function indexElements(elements) {
+    for (const element of elements) {
+      elementById.set(element.id, element);
+      indexElements(element.children);
     }
   })(roots);
-  function toElkNode(e) {
-    if (e.children.length) {
-      const nLines = (e.label ?? e.id).split("\n").length;
+  function toElkNode(element) {
+    if (element.children.length) {
+      const lineCount = (element.label ?? element.id).split("\n").length;
       return {
-        id: e.id,
-        layoutOptions: { "elk.padding": `[top=${17 + nLines * 13},left=${PAD},bottom=${PAD},right=${PAD}]` },
-        labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT) }],
-        children: e.children.map(toElkNode)
+        id: element.id,
+        layoutOptions: {
+          "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`
+        },
+        labels: [
+          {
+            text: element.label ?? element.id,
+            ...measure(element.label ?? element.id, containerFontSize)
+          }
+        ],
+        children: element.children.map(toElkNode)
       };
     }
-    const s = nodeSize(e.kind, e.label ?? e.id, FS_NODE2);
-    return { id: e.id, width: s.w, height: s.h };
+    const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
+    return { id: element.id, width: size.width, height: size.height };
   }
   const middleResults = /* @__PURE__ */ new Map();
-  for (const sys of middleGroups) {
-    const node = toElkNode(sys);
-    for (const f of interFlows) {
-      if (topOf.get(f.from) === sys) node.children.push({ id: `${f.id}_out`, width: 1, height: 1, layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" } });
-      if (topOf.get(f.to) === sys) node.children.push({ id: `${f.id}_in`, width: 1, height: 1, layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" } });
+  for (const group of middleGroups) {
+    const node = toElkNode(group);
+    const nodeChildren = node.children ??= [];
+    for (const flow of interFlows) {
+      if (rootOf.get(flow.from) === group)
+        nodeChildren.push({
+          id: `${flow.id}_out`,
+          width: 1,
+          height: 1,
+          layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" }
+        });
+      if (rootOf.get(flow.to) === group)
+        nodeChildren.push({
+          id: `${flow.id}_in`,
+          width: 1,
+          height: 1,
+          layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" }
+        });
     }
     const graph = {
-      id: `fold_${sys.id}`,
+      id: `fold_${group.id}`,
       layoutOptions: {
         "elk.algorithm": "layered",
         "elk.direction": "RIGHT",
@@ -93647,268 +94509,489 @@ async function foldedLayout(model, view, elk) {
       },
       children: [node],
       edges: [
-        ...internalFlows.filter((f) => topOf.get(f.from) === sys).map((f) => {
-          if (numbered) return { id: f.id, sources: [f.from], targets: [f.to], labels: [numLabel(f)] };
-          const text = f.label ? wrapText(f.label, LABEL_WRAP + 4) : "";
-          const chips = chipsOf(f);
-          return { id: f.id, sources: [f.from], targets: [f.to], labels: text || chips.length ? [{ text, ...flowLabelBox(text, chips, FS_EDGE, void 0, FS_SCALE) }] : [] };
+        ...internalFlows.filter((flow) => rootOf.get(flow.from) === group).map((flow) => {
+          if (numbered)
+            return {
+              id: flow.id,
+              sources: [flow.from],
+              targets: [flow.to],
+              labels: [numLabel(flow)]
+            };
+          const text = flow.label ? wrapText(flow.label, LABEL_WRAP + 4) : techText(flow.tech);
+          const chips = chipsOf(flow);
+          return {
+            id: flow.id,
+            sources: [flow.from],
+            targets: [flow.to],
+            labels: text || chips.length ? [
+              {
+                text,
+                ...flowLabelBox(
+                  text,
+                  chips,
+                  edgeFontSize,
+                  flow.label ? techText(flow.tech) : void 0,
+                  fontScale
+                )
+              }
+            ] : []
+          };
         }),
-        ...interFlows.filter((f) => topOf.get(f.from) === sys).map((f) => ({ id: `${f.id}_oe`, sources: [f.from], targets: [`${f.id}_out`] })),
-        ...interFlows.filter((f) => topOf.get(f.to) === sys).map((f) => ({ id: `${f.id}_ie`, sources: [`${f.id}_in`], targets: [f.to] }))
+        ...interFlows.filter((flow) => rootOf.get(flow.from) === group).map((flow) => ({
+          id: `${flow.id}_oe`,
+          sources: [flow.from],
+          targets: [`${flow.id}_out`]
+        })),
+        ...interFlows.filter((flow) => rootOf.get(flow.to) === group).map((flow) => ({
+          id: `${flow.id}_ie`,
+          sources: [`${flow.id}_in`],
+          targets: [flow.to]
+        }))
       ]
     };
-    middleResults.set(sys.id, await elk.layout(graph));
+    middleResults.set(group.id, await elk.layout(graph));
   }
-  const layoutColumn = (groups) => groups.map((g) => {
-    const blocks = g.children.map((c) => ({ el: c, ...nodeSize(c.kind, c.label ?? c.id, FS_NODE2), x: 0, y: 0 }));
-    const w = Math.max(measure(g.label ?? g.id, FS_CONT).width + 20, ...blocks.map((b) => b.w)) + 2 * PAD;
+  const layoutColumn = (elements) => elements.map((group) => {
+    const blocks = group.children.map((child) => {
+      const size = nodeSize(child.kind, child.label ?? child.id, nodeFontSize);
+      return {
+        element: child,
+        width: size.width,
+        height: size.height,
+        x: 0,
+        y: 0
+      };
+    });
+    const columnWidth = Math.max(
+      measure(group.label ?? group.id, containerFontSize).width + 20,
+      ...blocks.map((block) => block.width)
+    ) + 2 * PAD;
     let y = PAD_TOP;
-    for (const b of blocks) {
-      b.x = PAD + (w - 2 * PAD - b.w) / 2;
-      b.y = y;
-      y += b.h + 14;
+    for (const block of blocks) {
+      block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
+      block.y = y;
+      y += block.height + 14;
     }
-    return { el: g, w, h: y - 14 + PAD, blocks };
+    return {
+      element: group,
+      width: columnWidth,
+      height: y - 14 + PAD,
+      blocks
+    };
   });
-  const srcCols = layoutColumn(sources);
-  const sinkCols = layoutColumn(sinks);
-  const rowIdx = new Map(middles.map((m, i) => [m.id, i]));
-  const classify = (f) => {
-    const sp = part(topOf.get(f.from)), dp = part(topOf.get(f.to));
-    if (sp === 0 && dp === 1) return { cls: "A" };
-    if (sp === 1 && dp === 2) return { cls: "B" };
-    if (sp === 1 && dp === 1) {
-      const si = rowIdx.get(topOf.get(f.from).id), di = rowIdx.get(topOf.get(f.to).id);
-      return { cls: "C", gutter: di > si ? di : di + 1 };
+  const sourceColumns = layoutColumn(sources);
+  const sinkColumns = layoutColumn(sinks);
+  const rowIndex = new Map(middles.map((middle, i) => [middle.id, i]));
+  const classify = (flow) => {
+    const sourcePartition = partitionOf(rootOf.get(flow.from));
+    const destPartition = partitionOf(rootOf.get(flow.to));
+    if (sourcePartition === 0 && destPartition === 1) return { cls: "A" };
+    if (sourcePartition === 1 && destPartition === 2) return { cls: "B" };
+    if (sourcePartition === 1 && destPartition === 1) {
+      const sourceRowIndex = rowIndex.get(rootOf.get(flow.from).id);
+      const destRowIndex = rowIndex.get(rootOf.get(flow.to).id);
+      return {
+        cls: "C",
+        gutter: destRowIndex > sourceRowIndex ? destRowIndex : destRowIndex + 1
+      };
     }
-    if (sp === 2 && dp === 1) return { cls: "D", gutter: rowIdx.get(topOf.get(f.to).id) };
-    if (sp === 1 && dp === 0) return { cls: "E", gutter: rowIdx.get(topOf.get(f.from).id) };
+    if (sourcePartition === 2 && destPartition === 1)
+      return { cls: "D", gutter: rowIndex.get(rootOf.get(flow.to).id) };
+    if (sourcePartition === 1 && destPartition === 0)
+      return { cls: "E", gutter: rowIndex.get(rootOf.get(flow.from).id) };
     return { cls: "X" };
   };
-  const classified = interFlows.map((f) => ({ f, ...classify(f) }));
-  const gDemand = Array(middles.length + 1).fill(0);
-  for (const c of classified) if (c.gutter !== void 0) gDemand[c.gutter]++;
-  const nLeft = classified.filter((c) => "ACDE".includes(c.cls)).length;
-  const nRight = classified.filter((c) => "BCDE".includes(c.cls)).length;
+  const classified = interFlows.map((flow) => ({
+    flow,
+    ...classify(flow)
+  }));
+  const gutterDemand = Array(middles.length + 1).fill(0);
+  for (const entry of classified) if (entry.gutter !== void 0) gutterDemand[entry.gutter]++;
+  const leftGutterFlowCount = classified.filter((entry) => "ACDE".includes(entry.cls)).length;
+  const rightGutterFlowCount = classified.filter((entry) => "BCDE".includes(entry.cls)).length;
   const LABEL_W = 118;
-  const wLG = 28 + Math.min(Math.ceil(nLeft / 2), 10) * LANE_STEP + LABEL_W;
-  const wRG = 28 + Math.min(Math.ceil(nRight / 2), 10) * LANE_STEP + LABEL_W;
-  const wSrc = Math.max(0, ...srcCols.map((c) => c.w));
-  const midW = (m) => m.children.length ? middleResults.get(m.id).children[0].width : nodeSize(m.kind, m.label ?? m.id, FS_NODE2).w;
-  const wMid = Math.max(...middles.map(midW));
-  const wSink = Math.max(0, ...sinkCols.map((c) => c.w));
-  const xSrc = 10;
-  const xLG = xSrc + wSrc + 10;
-  const xMid = xLG + wLG;
-  const xRG = xMid + wMid + 10;
-  const xSink = xRG + wRG;
-  const hasChips = interFlows.some((f) => f.objects?.length);
+  const widthLeftGutter = 28 + Math.min(Math.ceil(leftGutterFlowCount / 2), 10) * LANE_STEP + LABEL_W;
+  const widthRightGutter = 28 + Math.min(Math.ceil(rightGutterFlowCount / 2), 10) * LANE_STEP + LABEL_W;
+  const widthSource = Math.max(0, ...sourceColumns.map((col) => col.width));
+  const widthMiddleFn = (element) => element.children.length ? middleResults.get(element.id).children[0].width : nodeSize(element.kind, element.label ?? element.id, nodeFontSize).width;
+  const widthMiddle = Math.max(...middles.map(widthMiddleFn));
+  const widthSink = Math.max(0, ...sinkColumns.map((col) => col.width));
+  const xSource = 10;
+  const xLeftGutter = xSource + widthSource + 10;
+  const xMiddle = xLeftGutter + widthLeftGutter;
+  const xRightGutter = xMiddle + widthMiddle + 10;
+  const xSink = xRightGutter + widthRightGutter;
+  const hasChips = interFlows.some((flow) => flow.objects?.length);
   const LABEL_ROW = hasChips ? 48 : 29;
   const LABEL_ZONE = 4 + 2 * LABEL_ROW;
-  const gutterHeight = (g) => 14 + gDemand[g] * LANE_V + (gDemand[g] ? LABEL_ZONE : 0);
+  const gutterHeight = (gutterIndex) => 14 + gutterDemand[gutterIndex] * LANE_V + (gutterDemand[gutterIndex] ? LABEL_ZONE : 0);
   const rows = [];
-  let yCur = 16 + gutterHeight(0);
-  middles.forEach((m, i) => {
-    const res = middleResults.get(m.id) ?? null;
-    const size = res ? { w: res.children[0].width, h: res.children[0].height } : (() => {
-      const s = nodeSize(m.kind, m.label ?? m.id, FS_NODE2);
-      return { w: s.w, h: s.h };
+  let yCursor = 16 + gutterHeight(0);
+  middles.forEach((element, index) => {
+    const result = middleResults.get(element.id) ?? null;
+    const size = result ? {
+      width: result.children[0].width,
+      height: result.children[0].height
+    } : (() => {
+      const node = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
+      return { width: node.width, height: node.height };
     })();
-    rows.push({ el: m, box: { x: xMid, y: yCur, w: size.w, h: size.h }, res });
-    yCur += size.h + Math.max(40, gutterHeight(i + 1));
+    rows.push({
+      element,
+      box: {
+        x: xMiddle,
+        y: yCursor,
+        width: size.width,
+        height: size.height
+      },
+      result
+    });
+    yCursor += size.height + Math.max(40, gutterHeight(index + 1));
   });
-  const midH = yCur - Math.max(40, gutterHeight(middles.length));
+  const middleHeight = yCursor - Math.max(40, gutterHeight(middles.length));
   const placeCol = (cols, x) => {
-    const total = cols.reduce((s, c) => s + c.h, 0) + (cols.length - 1) * 30;
-    let y = Math.max(20, 20 + (midH - total) / 2);
-    return cols.map((c) => {
-      const b = { x, y, w: c.w, h: c.h };
-      y += c.h + 30;
-      return { g: c, box: b };
+    const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
+    let y = Math.max(20, 20 + (middleHeight - total) / 2);
+    return cols.map((col) => {
+      const b = { x, y, width: col.width, height: col.height };
+      y += col.height + 30;
+      return { group: col, box: b };
     });
   };
-  const srcPlaced = placeCol(srcCols, xSrc);
-  const sinkPlaced = placeCol(sinkCols, xSink);
+  const sourcePlaced = placeCol(sourceColumns, xSource);
+  const sinkPlaced = placeCol(sinkColumns, xSink);
   const nodes = [];
-  const absBox = /* @__PURE__ */ new Map();
+  const absoluteBoxes = /* @__PURE__ */ new Map();
   const pushCol = (placed) => {
-    for (const { g, box } of placed) {
-      nodes.push({ id: g.el.id, kind: g.el.kind, label: g.el.label ?? g.el.id, ...box, container: true });
-      absBox.set(g.el.id, box);
-      for (const b of g.blocks) {
-        const nb = { x: box.x + b.x, y: box.y + b.y, w: b.w, h: b.h };
-        nodes.push({ id: b.el.id, kind: b.el.kind, label: b.el.label ?? b.el.id, ...nb, container: false });
-        absBox.set(b.el.id, nb);
+    for (const { group, box } of placed) {
+      nodes.push({
+        id: group.element.id,
+        kind: group.element.kind,
+        label: group.element.label ?? group.element.id,
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        container: true
+      });
+      absoluteBoxes.set(group.element.id, box);
+      for (const block of group.blocks) {
+        const nodeBox = {
+          x: box.x + block.x,
+          y: box.y + block.y,
+          width: block.width,
+          height: block.height
+        };
+        nodes.push({
+          id: block.element.id,
+          kind: block.element.kind,
+          label: block.element.label ?? block.element.id,
+          x: nodeBox.x,
+          y: nodeBox.y,
+          width: nodeBox.width,
+          height: nodeBox.height,
+          container: false
+        });
+        absoluteBoxes.set(block.element.id, nodeBox);
       }
     }
   };
-  pushCol(srcPlaced);
+  pushCol(sourcePlaced);
   pushCol(sinkPlaced);
-  const portAbs = /* @__PURE__ */ new Map();
+  const absolutePorts = /* @__PURE__ */ new Map();
   const origins = /* @__PURE__ */ new Map();
-  for (const { el, box, res } of rows) {
-    if (!res) {
-      nodes.push({ id: el.id, kind: el.kind, label: el.label ?? el.id, ...box, container: false });
-      absBox.set(el.id, box);
+  for (const { element, box, result } of rows) {
+    if (!result) {
+      nodes.push({
+        id: element.id,
+        kind: element.kind,
+        label: element.label ?? element.id,
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        container: false
+      });
+      absoluteBoxes.set(element.id, box);
       continue;
     }
-    const rootOff = { x: box.x - res.children[0].x, y: box.y - res.children[0].y };
-    origins.set(res.id, rootOff);
-    (function walk(n, ox, oy) {
-      for (const c of n.children ?? []) {
-        const ax = ox + c.x, ay = oy + c.y;
-        origins.set(c.id, { x: ax, y: ay });
-        if (/_in$|_out$/.test(c.id)) {
-          portAbs.set(c.id, { x: ax, y: ay });
+    const rootOffset = {
+      x: box.x - result.children[0].x,
+      y: box.y - result.children[0].y
+    };
+    origins.set(result.id, rootOffset);
+    (function walkNodes(elkNode, offsetX, offsetY) {
+      for (const child of elkNode.children ?? []) {
+        const absoluteX = offsetX + child.x;
+        const absoluteY = offsetY + child.y;
+        origins.set(child.id, { x: absoluteX, y: absoluteY });
+        if (/_in$|_out$/.test(child.id)) {
+          absolutePorts.set(child.id, { x: absoluteX, y: absoluteY });
           continue;
         }
-        const el2 = elByid.get(c.id);
-        const b = { x: ax, y: ay, w: c.width, h: c.height };
-        nodes.push({ id: c.id, kind: el2.kind, label: el2.label ?? c.id, ...b, container: !!c.children?.length });
-        absBox.set(c.id, b);
-        walk(c, ax, ay);
+        const element2 = elementById.get(child.id);
+        const childBox = {
+          x: absoluteX,
+          y: absoluteY,
+          width: child.width,
+          height: child.height
+        };
+        nodes.push({
+          id: child.id,
+          kind: element2.kind,
+          label: element2.label ?? child.id,
+          x: childBox.x,
+          y: childBox.y,
+          width: childBox.width,
+          height: childBox.height,
+          container: !!child.children?.length
+        });
+        absoluteBoxes.set(child.id, childBox);
+        walkNodes(child, absoluteX, absoluteY);
       }
-    })(res, rootOff.x, rootOff.y);
+    })(result, rootOffset.x, rootOffset.y);
   }
   const edges = [];
-  const edgePts = /* @__PURE__ */ new Map();
-  for (const { box, res } of rows) {
-    if (!res) continue;
-    const rootOff = { x: box.x - res.children[0].x, y: box.y - res.children[0].y };
-    (function collect(n) {
-      for (const e of n.edges ?? []) {
-        const s = e.sections?.[0];
-        if (!s) continue;
-        const o = e.container && origins.get(e.container) || rootOff;
-        const pts = [s.startPoint, ...s.bendPoints ?? [], s.endPoint].map((p) => ({ x: p.x + o.x, y: p.y + o.y }));
-        if (/_oe$|_ie$/.test(e.id)) {
-          edgePts.set(e.id, pts);
+  const edgePoints = /* @__PURE__ */ new Map();
+  for (const { box, result } of rows) {
+    if (!result) continue;
+    const rootOffset = {
+      x: box.x - result.children[0].x,
+      y: box.y - result.children[0].y
+    };
+    (function collectEdges(elkNode) {
+      for (const edge of elkNode.edges ?? []) {
+        const section = edge.sections?.[0];
+        if (!section) continue;
+        const origin = edge.container && origins.get(edge.container) || rootOffset;
+        const points = [section.startPoint, ...section.bendPoints ?? [], section.endPoint].map(
+          (point) => ({
+            x: point.x + origin.x,
+            y: point.y + origin.y
+          })
+        );
+        if (/_oe$|_ie$/.test(edge.id)) {
+          edgePoints.set(edge.id, points);
           continue;
         }
-        const labels = (e.labels ?? []).map((l) => ({ flowId: e.id, text: l.text, x: l.x + o.x, y: l.y + o.y, w: l.width, h: l.height }));
-        edges.push({ id: e.id, pts, labels });
+        const labels = (edge.labels ?? []).map((label) => ({
+          flowId: edge.id,
+          text: label.text,
+          x: label.x + origin.x,
+          y: label.y + origin.y,
+          width: label.width,
+          height: label.height
+        }));
+        edges.push({ id: edge.id, pts: points, labels });
       }
-      (n.children ?? []).forEach(collect);
-    })(res);
+      (elkNode.children ?? []).forEach(collectEdges);
+    })(result);
   }
-  const allocL = new LaneAlloc(), allocR = new LaneAlloc();
-  const gAllocs = gDemand.map(() => new LaneAlloc());
-  const laneLX = (y1, y2) => xLG + 14 + allocL.alloc(y1, y2) * LANE_STEP;
-  const laneRX = (y1, y2) => xRG + 14 + allocR.alloc(y1, y2) * LANE_STEP;
-  const gutterInfo = (g, x1, x2) => {
-    const top = g === 0 ? 14 : rows[g - 1].box.y + rows[g - 1].box.h + 10;
-    const k = gAllocs[g].alloc(x1, x2);
-    return { y: top + LABEL_ZONE + k * LANE_V, k, labelY: top + 2 + k % 2 * LABEL_ROW };
+  const leftLaneAlloc = new LaneAllocator();
+  const rightLaneAlloc = new LaneAllocator();
+  const gutterAllocators = gutterDemand.map(() => new LaneAllocator());
+  const laneLeftX = (y1, y2) => xLeftGutter + 14 + leftLaneAlloc.alloc(y1, y2) * LANE_STEP;
+  const laneRightX = (y1, y2) => xRightGutter + 14 + rightLaneAlloc.alloc(y1, y2) * LANE_STEP;
+  const gutterInfo = (gutterIndex, x1, x2) => {
+    const top = gutterIndex === 0 ? 14 : rows[gutterIndex - 1].box.y + rows[gutterIndex - 1].box.height + 10;
+    const laneIndex = gutterAllocators[gutterIndex].alloc(x1, x2);
+    return {
+      y: top + LABEL_ZONE + laneIndex * LANE_V,
+      laneIndex,
+      labelY: top + 2 + laneIndex % 2 * LABEL_ROW
+    };
   };
-  const sideMid = (b, side) => ({ x: side === "left" ? b.x : b.x + b.w, y: b.y + b.h / 2 });
-  for (const { f, cls, gutter } of classified) {
-    const srcTop = topOf.get(f.from), dstTop = topOf.get(f.to);
-    const out = portAbs.get(`${f.id}_out`);
-    const inp = portAbs.get(`${f.id}_in`);
-    const srcPt = out ?? sideMid(absBox.get(f.from) ?? absBox.get(srcTop.id), "right");
-    const dstPt = inp ?? sideMid(absBox.get(f.to) ?? absBox.get(dstTop.id), "left");
-    const pre = edgePts.get(`${f.id}_oe`) ?? [];
-    const post = edgePts.get(`${f.id}_ie`) ?? [];
-    const pts = [];
-    let laneK = 0, gy = 0, gLabelY = 0;
+  const sideMid = (box, side) => ({
+    x: side === "left" ? box.x : box.x + box.width,
+    y: box.y + box.height / 2
+  });
+  for (const { flow, cls, gutter } of classified) {
+    const sourceRoot = rootOf.get(flow.from);
+    const destRoot = rootOf.get(flow.to);
+    const outPort = absolutePorts.get(`${flow.id}_out`);
+    const inPort = absolutePorts.get(`${flow.id}_in`);
+    const sourcePoint = outPort ?? sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id), "right");
+    const destPoint = inPort ?? sideMid(absoluteBoxes.get(flow.to) ?? absoluteBoxes.get(destRoot.id), "left");
+    const preSegments = edgePoints.get(`${flow.id}_oe`) ?? [];
+    const postSegments = edgePoints.get(`${flow.id}_ie`) ?? [];
+    const points = [];
+    let flowLaneIndex = 0;
+    let gutterY = 0;
+    let gutterLabelY = 0;
     if (cls === "A") {
-      const lx = laneLX(srcPt.y, dstPt.y);
-      pts.push(srcPt, { x: lx, y: srcPt.y }, { x: lx, y: dstPt.y }, dstPt);
+      const leftX = laneLeftX(sourcePoint.y, destPoint.y);
+      points.push(
+        sourcePoint,
+        { x: leftX, y: sourcePoint.y },
+        { x: leftX, y: destPoint.y },
+        destPoint
+      );
     } else if (cls === "B") {
-      const rx = laneRX(srcPt.y, dstPt.y);
-      pts.push(srcPt, { x: rx, y: srcPt.y }, { x: rx, y: dstPt.y }, dstPt);
+      const rightX = laneRightX(sourcePoint.y, destPoint.y);
+      points.push(
+        sourcePoint,
+        { x: rightX, y: sourcePoint.y },
+        { x: rightX, y: destPoint.y },
+        destPoint
+      );
     } else if (cls === "C" || cls === "D" || cls === "E") {
-      const g = gutter;
-      const start = cls === "D" ? sideMid(absBox.get(f.from) ?? absBox.get(srcTop.id), "left") : srcPt;
-      const gi = gutterInfo(g, xLG, cls === "D" ? xSink : xRG + 120);
-      gy = gi.y;
-      laneK = gi.k;
-      gLabelY = gi.labelY;
-      const rx = laneRX(start.y, gy), lx = laneLX(gy, dstPt.y);
-      pts.push(start, { x: rx, y: start.y }, { x: rx, y: gy }, { x: lx, y: gy }, { x: lx, y: dstPt.y }, dstPt);
+      const gutterIndex = gutter;
+      const start = cls === "D" ? sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id), "left") : sourcePoint;
+      const info = gutterInfo(gutterIndex, xLeftGutter, cls === "D" ? xSink : xRightGutter + 120);
+      gutterY = info.y;
+      flowLaneIndex = info.laneIndex;
+      gutterLabelY = info.labelY;
+      const rightX = laneRightX(start.y, gutterY);
+      const leftX = laneLeftX(gutterY, destPoint.y);
+      points.push(
+        start,
+        { x: rightX, y: start.y },
+        { x: rightX, y: gutterY },
+        { x: leftX, y: gutterY },
+        { x: leftX, y: destPoint.y },
+        destPoint
+      );
     } else {
-      const lx = laneLX(srcPt.y, dstPt.y);
-      pts.push(srcPt, { x: lx, y: srcPt.y }, { x: lx, y: dstPt.y }, dstPt);
+      const leftX = laneLeftX(sourcePoint.y, destPoint.y);
+      points.push(
+        sourcePoint,
+        { x: leftX, y: sourcePoint.y },
+        { x: leftX, y: destPoint.y },
+        destPoint
+      );
     }
-    const merged = [...pre, ...pts, ...post];
+    const mergedPoints = [...preSegments, ...points, ...postSegments];
     let label;
-    const chips = chipsOf(f);
-    const text = numbered ? numLabel(f).text : f.label ? wrapText(f.label, LABEL_WRAP) : chips.length ? "" : void 0;
+    const chips = chipsOf(flow);
+    const text = numbered ? numLabel(flow).text : flow.label ? wrapText(flow.label, LABEL_WRAP) : techText(flow.tech) || (chips.length ? "" : void 0);
     if (text !== void 0) {
-      const m = numbered ? { width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) } : flowLabelBox(text, chips, FS_EDGE, void 0, FS_SCALE);
-      if (pts.length >= 6) {
-        const segL = Math.min(pts[2].x, pts[3].x), segR = Math.max(pts[2].x, pts[3].x);
-        const span = Math.max(40, segR - segL - m.width - 20);
-        const cx = segL + 10 + laneK * 173 % span;
-        label = { flowId: f.id, text, x: cx, y: gLabelY, w: m.width, h: m.height };
+      const measured = numbered ? { width: Math.round(26 * fontScale), height: Math.round(17 * fontScale) } : flowLabelBox(
+        text,
+        chips,
+        edgeFontSize,
+        flow.label ? techText(flow.tech) : void 0,
+        fontScale
+      );
+      if (points.length >= 6) {
+        const segmentLeft = Math.min(points[2].x, points[3].x);
+        const segmentRight = Math.max(points[2].x, points[3].x);
+        const availableSpan = Math.max(40, segmentRight - segmentLeft - measured.width - 20);
+        const centerX = segmentLeft + 10 + flowLaneIndex * 173 % availableSpan;
+        label = {
+          flowId: flow.id,
+          text,
+          x: centerX,
+          y: gutterLabelY,
+          width: measured.width,
+          height: measured.height
+        };
       } else {
-        const a = pts[pts.length - 2], b = pts[pts.length - 1];
-        label = { flowId: f.id, text, x: (a.x + b.x) / 2 - m.width / 2, y: b.y - m.height - 4, w: m.width, h: m.height };
+        const secondLast = points[points.length - 2];
+        const last = points[points.length - 1];
+        label = {
+          flowId: flow.id,
+          text,
+          x: (secondLast.x + last.x) / 2 - measured.width / 2,
+          y: last.y - measured.height - 4,
+          width: measured.width,
+          height: measured.height
+        };
       }
     }
-    edges.push({ id: f.id, pts: merged, labels: label ? [label] : [] });
+    edges.push({
+      id: flow.id,
+      pts: mergedPoints,
+      labels: label ? [label] : []
+    });
   }
-  const W = Math.ceil(xSink + wSink + 10);
-  const H = Math.ceil(Math.max(midH + 30, ...sinkPlaced.map((p) => p.box.y + p.box.h + 20), ...srcPlaced.map((p) => p.box.y + p.box.h + 20)));
-  return { width: W, height: H, nodes, edges, layoutMs: 0 };
+  const totalWidth = Math.ceil(xSink + widthSink + 10);
+  const totalHeight = Math.ceil(
+    Math.max(
+      middleHeight + 30,
+      ...sinkPlaced.map((p) => p.box.y + p.box.height + 20),
+      ...sourcePlaced.map((p) => p.box.y + p.box.height + 20)
+    )
+  );
+  return {
+    width: totalWidth,
+    height: totalHeight,
+    nodes,
+    edges,
+    layoutMs: 0
+  };
 }
 
-// src/layout.ts
+// src/scene-layout.ts
 async function layout(model, view) {
   const elk = await getElk();
-  const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
+  const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";
   const compact = model.style.compact;
   const COMPACT_WRAP = 10;
-  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT, scale: FS_SCALE } = fontSizes(model.style.font.size);
-  function toElkNode(e) {
-    if (e.children.length) {
-      const nLines = (e.label ?? e.id).split("\n").length;
+  const {
+    edge: edgeFontSize,
+    node: nodeFontSize,
+    cont: containerFontSize,
+    scale: fontScale
+  } = fontSizes(model.style.font.size);
+  function toElkNode(element) {
+    if (element.children.length) {
+      const lineCount = (element.label ?? element.id).split("\n").length;
       return {
-        id: e.id,
-        layoutOptions: { "elk.padding": `[top=${(compact ? 11 : 13) + nLines * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]` },
-        labels: [{ text: e.label ?? e.id, ...measure(e.label ?? e.id, FS_CONT) }],
-        children: e.children.map(toElkNode)
+        id: element.id,
+        layoutOptions: {
+          "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`
+        },
+        labels: [
+          {
+            text: element.label ?? element.id,
+            ...measure(element.label ?? element.id, containerFontSize)
+          }
+        ],
+        children: element.children.map(toElkNode)
       };
     }
-    const m = measure(e.label ?? e.id, FS_NODE2);
-    const isActor = e.kind === "actor";
+    const measured = measure(element.label ?? element.id, nodeFontSize);
+    const isActor = element.kind === "actor";
     return {
-      id: e.id,
-      width: isActor ? Math.max(64, measure(e.label ?? e.id, FS_NODE2 - 1.5).width + 8) : Math.max(compact ? 98 : 108, m.width + (compact ? 10 : 12)),
-      height: isActor ? 54 + ((e.label ?? e.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, m.height + (compact ? 10 : 12))
+      id: element.id,
+      width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
+      height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
     };
   }
-  const disp = model.style.disposition;
-  const TARGETS = { slide: 16 / 9, page: 0.71 };
-  const target = TARGETS[disp];
-  const ingressExternal = /* @__PURE__ */ new Set();
+  const disposition = model.style.disposition;
+  const ASPECT_TARGETS = {
+    slide: 16 / 9,
+    page: 0.71
+  };
+  const aspectTarget = ASPECT_TARGETS[disposition];
+  const ingressExternalElements = /* @__PURE__ */ new Set();
   if (view.partitionByOrder) {
-    for (const e of model.elements) {
-      if (e.kind !== "external") continue;
+    for (const element of model.elements) {
+      if (element.kind !== "external") continue;
       const ids = /* @__PURE__ */ new Set();
-      (function collect(x) {
-        ids.add(x.id);
-        x.children.forEach(collect);
-      })(e);
-      const feedsIn = model.flows.some((f) => ids.has(f.from) && !ids.has(f.to));
-      const receives = model.flows.some((f) => ids.has(f.to) && !ids.has(f.from));
-      if (feedsIn && !receives) ingressExternal.add(e.id);
+      (function collect(child) {
+        ids.add(child.id);
+        child.children.forEach(collect);
+      })(element);
+      const feedsInto = model.flows.some((flow) => ids.has(flow.from) && !ids.has(flow.to));
+      const receivesFrom = model.flows.some((flow) => ids.has(flow.to) && !ids.has(flow.from));
+      if (feedsInto && !receivesFrom) ingressExternalElements.add(element.id);
     }
   }
-  const INGRESS_PART = -1, EGRESS_PART = 900;
-  const makeGraph = (direction, opts) => ({
+  const INGRESS_PARTITION = -1, EGRESS_PARTITION = 900;
+  const makeGraph = (direction, options) => ({
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": direction,
-      ...opts?.tight ? {
+      ...options?.tight ? {
         "elk.layered.spacing.nodeNodeBetweenLayers": "14",
         "elk.spacing.nodeNode": "10",
         "elk.spacing.edgeEdge": "8",
         "elk.spacing.edgeNode": "9"
       } : {},
-      ...opts?.minLayers ? { "elk.layered.layering.strategy": "LONGEST_PATH" } : {},
+      ...options?.minLayers ? { "elk.layered.layering.strategy": "LONGEST_PATH" } : {},
       "elk.hierarchyHandling": "INCLUDE_CHILDREN",
       "elk.edgeRouting": "ORTHOGONAL",
       "elk.partitioning.activate": "true",
@@ -93925,10 +95008,7 @@ async function layout(model, view) {
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
-      // Numbered mode carries tiny number badges (not full labels) on the
-      // edges, so there's room to spread blocks apart and let ELK find
-      // shorter, more followable routes: more node/edge spacing + thoroughness.
-      ...numbered && !opts?.tight ? {
+      ...numbered && !options?.tight ? {
         "elk.spacing.nodeNode": "26",
         "elk.layered.spacing.nodeNodeBetweenLayers": "64",
         "elk.spacing.edgeEdge": "14",
@@ -93937,494 +95017,691 @@ async function layout(model, view) {
         "elk.layered.nodePlacement.favorStraightEdges": "true"
       } : {}
     },
-    children: model.elements.map((e, idx) => {
-      const n = toElkNode(e);
-      const p = view.partitionByOrder ? e.kind === "actor" || e.kind === "actor-group" ? INGRESS_PART : e.kind === "external" ? ingressExternal.has(e.id) ? INGRESS_PART : EGRESS_PART : view.partitions[e.kind] !== void 0 ? 90 + view.partitions[e.kind] : idx : view.partitions[e.kind] ?? 1;
-      n.layoutOptions = { ...n.layoutOptions, "elk.partitioning.partition": String(p) };
-      return n;
+    children: model.elements.map((element, index) => {
+      const elkNode = toElkNode(element);
+      const partition = view.partitionByOrder ? element.kind === "actor" || element.kind === "actor-group" ? INGRESS_PARTITION : element.kind === "external" ? ingressExternalElements.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION : view.partitions[element.kind] !== void 0 ? 90 + view.partitions[element.kind] : index : view.partitions[element.kind] ?? 1;
+      elkNode.layoutOptions = {
+        ...elkNode.layoutOptions,
+        "elk.partitioning.partition": String(partition)
+      };
+      return elkNode;
     }),
-    edges: model.flows.map((f) => {
+    edges: model.flows.map((flow) => {
       if (numbered) {
         return {
-          id: f.id,
-          sources: [f.from],
-          targets: [f.to],
-          labels: [{ text: String(parseInt(f.id.slice(1), 10)), width: Math.round(26 * FS_SCALE), height: Math.round(17 * FS_SCALE) }]
+          id: flow.id,
+          sources: [flow.from],
+          targets: [flow.to],
+          labels: [
+            {
+              text: String(parseInt(flow.id.slice(1), 10)),
+              width: Math.round(26 * fontScale),
+              height: Math.round(17 * fontScale)
+            }
+          ]
         };
       }
-      const wrap = opts?.labelWrap ?? (compact ? COMPACT_WRAP : void 0);
-      const text = f.label && wrap ? wrapText(f.label, wrap) : f.label;
-      const chips = (f.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
-      const tech = techText(f.tech);
+      const wrap = options?.labelWrap ?? (compact ? COMPACT_WRAP : void 0);
+      const raw = flow.label && wrap ? wrapText(flow.label, wrap) : flow.label;
+      const chips = (flow.objects ?? []).map(
+        (objectRef) => businessObjectName.get(objectRef.id) ?? objectRef.id
+      );
+      const tech = techText(flow.tech);
+      const text = raw || (tech ? tech : "");
+      const subTitle = raw ? tech : void 0;
       return {
-        id: f.id,
-        sources: [f.from],
-        targets: [f.to],
-        labels: text || chips.length || tech ? [{ text: text ?? "", ...flowLabelBox(text ?? "", chips, FS_EDGE, tech, FS_SCALE) }] : []
+        id: flow.id,
+        sources: [flow.from],
+        targets: [flow.to],
+        labels: text || chips.length ? [
+          {
+            text,
+            ...flowLabelBox(text, chips, edgeFontSize, subTitle, fontScale)
+          }
+        ] : []
       };
     })
   });
   const kindOf = /* @__PURE__ */ new Map();
-  (function idx(els) {
-    for (const e of els) {
-      kindOf.set(e.id, e);
-      idx(e.children);
+  (function indexElements(elements) {
+    for (const element of elements) {
+      kindOf.set(element.id, element);
+      indexElements(element.children);
     }
   })(model.elements);
-  const sceneFromRes = (res2, layoutMs2) => {
-    const origins = { root: { x: 0, y: 0 } };
+  const sceneFromResult = (result2, layoutMs2) => {
+    const origins = {
+      root: { x: 0, y: 0 }
+    };
     const nodes = [];
-    (function walk(n, ox, oy) {
-      for (const c of n.children ?? []) {
-        const ax = ox + c.x, ay = oy + c.y;
-        origins[c.id] = { x: ax, y: ay };
-        const el = kindOf.get(c.id);
+    (function walk(elkNode, offsetX, offsetY) {
+      for (const child of elkNode.children ?? []) {
+        const absoluteX = offsetX + child.x, absoluteY = offsetY + child.y;
+        origins[child.id] = { x: absoluteX, y: absoluteY };
+        const element = kindOf.get(child.id);
         nodes.push({
-          id: c.id,
-          kind: el.kind,
-          label: el.label ?? c.id,
-          x: ax,
-          y: ay,
-          w: c.width,
-          h: c.height,
-          container: !!(c.children && c.children.length)
+          id: child.id,
+          kind: element.kind,
+          label: element.label ?? child.id,
+          x: absoluteX,
+          y: absoluteY,
+          width: child.width,
+          height: child.height,
+          container: !!child.children?.length
         });
-        walk(c, ax, ay);
+        walk(child, absoluteX, absoluteY);
       }
-    })(res2, 0, 0);
+    })(result2, 0, 0);
     const edges = [];
-    (function collect(n) {
-      for (const e of n.edges ?? []) {
-        const o = origins[e.container] ?? { x: 0, y: 0 };
-        const s = e.sections?.[0];
-        const pts = s ? [s.startPoint, ...s.bendPoints ?? [], s.endPoint].map((p) => ({ x: p.x + o.x, y: p.y + o.y })) : [];
-        const labels = (e.labels ?? []).map((l) => {
-          let x = l.x + o.x, y = l.y + o.y;
-          if (numbered && pts.length >= 2) {
-            const b = pts[pts.length - 1], a = pts[pts.length - 2];
-            const len = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-            const ux = (b.x - a.x) / len, uy = (b.y - a.y) / len;
-            const back = Math.min(len - 2, 20 + l.width / 2);
-            let px = -uy, py = ux;
-            if (py > 0) {
-              px = -px;
-              py = -py;
+    (function collect(elkNode) {
+      for (const edge of elkNode.edges ?? []) {
+        const origin = edge.container && origins[edge.container] || { x: 0, y: 0 };
+        const section = edge.sections?.[0];
+        const points = section ? [section.startPoint, ...section.bendPoints ?? [], section.endPoint].map((point) => ({
+          x: point.x + origin.x,
+          y: point.y + origin.y
+        })) : [];
+        const labels = (edge.labels ?? []).map((label) => {
+          let x = label.x + origin.x, y = label.y + origin.y;
+          if (numbered && points.length >= 2) {
+            const last = points[points.length - 1], secondLast = points[points.length - 2];
+            const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
+            const unitX = (last.x - secondLast.x) / segmentLength, unitY = (last.y - secondLast.y) / segmentLength;
+            const stepBack = Math.min(segmentLength - 2, 20 + label.width / 2);
+            let perpX = -unitY, perpY = unitX;
+            if (perpY > 0) {
+              perpX = -perpX;
+              perpY = -perpY;
             }
-            const off = l.height / 2 + 2;
-            x = b.x - ux * back + px * off - l.width / 2;
-            y = b.y - uy * back + py * off - l.height / 2;
+            const offset = label.height / 2 + 2;
+            x = last.x - unitX * stepBack + perpX * offset - label.width / 2;
+            y = last.y - unitY * stepBack + perpY * offset - label.height / 2;
           }
-          return { flowId: e.id, text: l.text, x, y, w: l.width, h: l.height };
+          return {
+            flowId: edge.id,
+            text: label.text,
+            x,
+            y,
+            width: label.width,
+            height: label.height
+          };
         });
-        edges.push({ id: e.id, pts, labels });
+        edges.push({ id: edge.id, pts: points, labels });
       }
-      (n.children ?? []).forEach(collect);
-    })(res2);
-    return { width: Math.ceil(res2.width), height: Math.ceil(res2.height), nodes, edges, layoutMs: layoutMs2 };
+      (elkNode.children ?? []).forEach(collect);
+    })(result2);
+    return {
+      width: Math.ceil(result2.width),
+      height: Math.ceil(result2.height),
+      nodes,
+      edges,
+      layoutMs: layoutMs2
+    };
   };
-  const t0 = Date.now();
-  let res;
-  if (target) {
-    const specs = disp === "slide" ? [
+  const startTime = Date.now();
+  let result;
+  if (aspectTarget) {
+    const layoutConfigs = disposition === "slide" ? [
       makeGraph("RIGHT"),
       makeGraph("RIGHT", { labelWrap: 16 }),
       makeGraph("RIGHT", { labelWrap: 14, tight: true }),
       makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true })
     ] : [makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
-    const candidates = await Promise.all(specs.map((g) => elk.layout(g)));
-    const wantLandscape = disp === "slide";
-    const oriented = candidates.filter((r) => wantLandscape ? r.width >= r.height : r.height >= r.width);
-    const pool = oriented.length ? oriented : candidates;
-    const frame = disp === "slide" ? { w: 1280, h: 720 } : { w: 700, h: 1e3 };
-    const fit = (r) => -Math.min(frame.w / r.width, frame.h / r.height);
-    res = pool.reduce((a, b) => fit(a) <= fit(b) ? a : b);
-    if (disp === "slide") {
-      const fold = await foldedLayout(model, view, elk);
-      if (fold && fit(res) >= fit(fold) * 1.1) {
-        fold.layoutMs = Date.now() - t0;
-        return fold;
+    const candidates = await Promise.all(
+      layoutConfigs.map((graph) => elk.layout(graph))
+    );
+    const preferWide = disposition === "slide";
+    const orientedLayouts = candidates.filter(
+      (layoutResult) => preferWide ? layoutResult.width >= layoutResult.height : layoutResult.height >= layoutResult.width
+    );
+    const viableLayouts = orientedLayouts.length ? orientedLayouts : candidates;
+    const frameSize = disposition === "slide" ? { width: 1280, height: 720 } : { width: 700, height: 1e3 };
+    const fitScore = (layoutResult) => -Math.min(frameSize.width / layoutResult.width, frameSize.height / layoutResult.height);
+    result = viableLayouts.reduce(
+      (candidateA, candidateB) => fitScore(candidateA) <= fitScore(candidateB) ? candidateA : candidateB
+    );
+    if (disposition === "slide") {
+      const folded = await foldedLayout(model, view, elk);
+      if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
+        folded.layoutMs = Date.now() - startTime;
+        return folded;
       }
     }
   } else {
-    res = await elk.layout(makeGraph(disp === "tall" ? "DOWN" : "RIGHT"));
+    result = await elk.layout(
+      makeGraph(disposition === "tall" ? "DOWN" : "RIGHT")
+    );
   }
-  const layoutMs = Date.now() - t0;
-  return sceneFromRes(res, layoutMs);
+  const layoutMs = Date.now() - startTime;
+  return sceneFromResult(result, layoutMs);
 }
 
-// src/render.ts
-var HOP_R = 5;
-var SEC_LEVEL_FR = { public: "public", internal: "interne", restricted: "restreint", secret: "secret" };
-var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-var dashArray = (style) => style === "dashed" ? "5 3" : style === "dotted" ? "2 2.5" : void 0;
-var inter = (a, b) => !(a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y);
-function render(model, view, scene) {
-  const ds = model.style;
-  const F = fontSizes(ds.font.size);
-  const { edge: FS_EDGE, node: FS_NODE2, cont: FS_CONT } = F;
-  const r1 = (n) => Math.round(n * 10) / 10;
-  const A = {
-    tech: r1(F.tech),
-    chip: r1(F.chip),
-    tag: r1(F.tag),
-    band: r1(F.band),
-    bandTitle: r1(F.bandTitle),
-    chipH: Math.round(F.chipH),
-    scale: F.scale,
-    chipRectH: Math.round(15 * F.scale),
-    chipTextDy: r1(11 * F.scale)
-  };
-  const bs = (n) => r1(n * F.scale);
-  const { palette: pal, kinds: kindDefaults, levels: levelDefaults } = themeFor(ds.theme, view);
-  const darkTheme = ["dark", "nord", "classic-dark"].includes(ds.theme);
-  const edge = ds.flowStrokeColorSet ? ds.flowStroke.color : ds.accent ?? pal.edge;
-  const srcColor = /* @__PURE__ */ new Map();
-  if (ds.flowColor === "by-source") {
-    const hues = flowPalette[darkTheme ? "dark" : "light"];
-    for (const f of model.flows) if (!srcColor.has(f.from)) srcColor.set(f.from, hues[srcColor.size % hues.length]);
-  }
-  const flowColorOf = (f) => f?.style?.stroke?.color ?? (ds.flowColor === "by-source" ? srcColor.get(f?.from ?? "") ?? edge : edge);
-  const arrowMk = /* @__PURE__ */ new Map();
-  const markerId = (color) => {
-    let id = arrowMk.get(color);
-    if (!id) {
-      id = arrowMk.size === 0 ? "arr" : `arr${arrowMk.size}`;
-      arrowMk.set(color, id);
+// src/localization.ts
+var UI = {
+  en: {
+    flows: "FLOWS",
+    objects: "BUSINESS OBJECTS",
+    legend: "LEGEND",
+    numberedSuffix: "numbered (text: FLOWS band)",
+    carriedByFlow: "carried by the flow",
+    businessObject: "Business object",
+    matrix: {
+      title: "TECHNICAL FLOW MATRIX",
+      n: "No.",
+      source: "Source",
+      dest: "Destination",
+      proto: "Protocol",
+      port: "Port",
+      nature: "Flow",
+      zone: "zone"
     }
-    return id;
+  },
+  fr: {
+    flows: "FLUX",
+    objects: "OBJETS M\xC9TIER",
+    legend: "L\xC9GENDE",
+    numberedSuffix: "num\xE9rot\xE9 (texte : bande FLUX)",
+    carriedByFlow: "port\xE9 par le flux",
+    businessObject: "Objet m\xE9tier",
+    matrix: {
+      title: "MATRICE DES FLUX TECHNIQUES",
+      n: "N\xB0",
+      source: "Source",
+      dest: "Destination",
+      proto: "Protocole",
+      port: "Port",
+      nature: "Nature du flux",
+      zone: "zone"
+    }
+  }
+};
+
+// src/xml-escape.ts
+var esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+var escAttr = (s) => esc(s).replace(/"/g, "&quot;");
+
+// src/geometry.ts
+var boxesOverlap = (boxA, boxB) => !(boxA.x + boxA.width <= boxB.x || boxB.x + boxB.width <= boxA.x || boxA.y + boxA.height <= boxB.y || boxB.y + boxB.height <= boxA.y);
+
+// src/svg-render.ts
+var HOP_RADIUS = 5;
+var RENDER_CHAR_WIDTH = 0.52;
+var SEC_LEVEL_FR = {
+  public: "public",
+  internal: "interne",
+  restricted: "restreint",
+  secret: "secret"
+};
+var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
+function render(model, view, scene) {
+  const style = model.style;
+  const fonts = fontSizes(style.font.size);
+  const { edge: edgeFontSize, node: nodeFontSize, cont: containerFontSize } = fonts;
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const annot = {
+    tech: round1(fonts.tech),
+    chip: round1(fonts.chip),
+    tag: round1(fonts.tag),
+    band: round1(fonts.band),
+    bandTitle: round1(fonts.bandTitle),
+    chipH: Math.round(fonts.chipH),
+    scale: fonts.scale,
+    chipRectH: Math.round(15 * fonts.scale),
+    chipTextDy: round1(11 * fonts.scale)
   };
-  const flowById = new Map(model.flows.map((f) => [f.id, f]));
-  const boName = new Map(model.businessObjects.map((b) => [b.id, b.name]));
-  const numbered = ds.flowText === "numbered";
-  const t = UI[ds.lang] ?? UI.en;
-  const legendNames = ds.lang === "fr" ? view.legendNamesFr : view.legendNames;
-  const legendFlowLabel = ds.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
-  const elStyle = /* @__PURE__ */ new Map();
-  const elAttr = /* @__PURE__ */ new Map();
-  (function walk(els) {
-    for (const e of els) {
-      elStyle.set(e.id, e.style);
-      elAttr.set(e.id, e.attr?.value);
-      walk(e.children);
+  const scaled = (n) => round1(n * fonts.scale);
+  const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
+  const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
+  const defaultEdgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
+  const sourceHue = /* @__PURE__ */ new Map();
+  if (style.flowColor === "by-source") {
+    const hues = flowPalette[isDarkTheme ? "dark" : "light"];
+    for (const flow of model.flows)
+      if (!sourceHue.has(flow.from)) sourceHue.set(flow.from, hues[sourceHue.size % hues.length]);
+  }
+  const flowColorOf = (flow) => flow?.style?.stroke?.color ?? (style.flowColor === "by-source" ? sourceHue.get(flow?.from ?? "") ?? defaultEdgeColor : defaultEdgeColor);
+  const arrowMarkers = /* @__PURE__ */ new Map();
+  const markerName = (color) => {
+    let name = arrowMarkers.get(color);
+    if (!name) {
+      name = arrowMarkers.size === 0 ? "arr" : `arr${arrowMarkers.size}`;
+      arrowMarkers.set(color, name);
+    }
+    return name;
+  };
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
+  const objectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
+  const numbered = style.flowText === "numbered";
+  const ui = UI[style.lang] ?? UI.en;
+  const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
+  const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
+  const elementStyle = /* @__PURE__ */ new Map();
+  const elementAttr = /* @__PURE__ */ new Map();
+  (function index(elements) {
+    for (const element of elements) {
+      elementStyle.set(element.id, element.style);
+      elementAttr.set(element.id, element.attr?.value);
+      index(element.children);
     }
   })(model.elements);
-  const resolve = (kind, id) => {
-    let a = kindDefaults[kind] ?? {};
-    const lvl = elAttr.get(id);
-    if (kind === "trust-zone" && lvl && levelDefaults?.[lvl]) a = levelDefaults[lvl];
-    const b = ds.kind[kind] ?? {};
-    const c = elStyle.get(id) ?? {};
+  const resolveStyle = (kind, id) => {
+    let base = kindDefaults[kind] ?? {};
+    const level = elementAttr.get(id);
+    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
+    const perKind = style.kind[kind] ?? {};
+    const inline = elementStyle.get(id) ?? {};
     return {
-      fill: c.fill ?? b.fill ?? a.fill,
-      stroke: { ...a.stroke, ...b.stroke, ...c.stroke },
-      text: c.text ?? b.text ?? a.text
+      fill: inline.fill ?? perKind.fill ?? base.fill,
+      stroke: { ...base.stroke, ...perKind.stroke, ...inline.stroke },
+      text: inline.text ?? perKind.text ?? base.text
     };
   };
-  const leafBoxes = scene.nodes.filter((n) => !n.container).map((n) => ({ x: n.x, y: n.y, w: n.w, h: n.h }));
-  const allLabels = scene.edges.flatMap((e) => e.labels);
-  for (const l of allLabels) {
-    const pos = flowById.get(l.flowId)?.style?.label ?? ds.flowLabel;
-    if (pos === "above") l.y -= l.h / 2 + 5;
-    else if (pos === "below") l.y += l.h / 2 + 5;
-  }
-  const boxes = allLabels.map((l) => l);
-  const countOverlaps = () => {
-    let n = 0;
-    for (let i = 0; i < boxes.length; i++) {
-      for (let j = i + 1; j < boxes.length; j++) if (inter(boxes[i], boxes[j])) n++;
-      for (const nb of leafBoxes) if (inter(boxes[i], nb)) n++;
+  const nodeBoxes = scene.nodes.filter((node) => !node.container).map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height }));
+  const labels = scene.edges.flatMap((edge) => edge.labels);
+  const countLabelOverlaps = () => {
+    let count = 0;
+    for (let index = 0; index < labels.length; index++) {
+      for (let otherIndex = index + 1; otherIndex < labels.length; otherIndex++)
+        if (boxesOverlap(labels[index], labels[otherIndex])) count++;
+      for (const node of nodeBoxes) if (boxesOverlap(labels[index], node)) count++;
     }
-    return n;
+    return count;
   };
-  const overlapsBefore = countOverlaps();
-  for (const lb of allLabels) {
-    const collides = () => boxes.some((o) => o !== lb && inter(o, lb)) || leafBoxes.some((nb) => inter(nb, lb));
-    if (!collides()) continue;
-    const y0 = lb.y, x0 = lb.x;
-    let done = false;
-    outer: for (const dx of [0, -24, 24, -48, 48]) {
-      for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
-        for (const dir of step === 0 ? [1] : [-1, 1]) {
-          lb.y = y0 + dir * step;
-          lb.x = x0 + dx;
-          if (!collides()) {
-            done = true;
-            break outer;
+  const settleLabelPositions = () => {
+    for (const label of labels) {
+      const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
+      if (requested === "above") label.y -= label.height / 2 + 5;
+      else if (requested === "below") label.y += label.height / 2 + 5;
+    }
+    for (const label of labels) {
+      const collides = () => labels.some((other) => other !== label && boxesOverlap(other, label)) || nodeBoxes.some((node) => boxesOverlap(node, label));
+      if (!collides()) continue;
+      const originY = label.y, originX = label.x;
+      let settled = false;
+      outer: for (const dx of [0, -24, 24, -48, 48]) {
+        for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
+          for (const dir of step === 0 ? [1] : [-1, 1]) {
+            label.y = originY + dir * step;
+            label.x = originX + dx;
+            if (!collides()) {
+              settled = true;
+              break outer;
+            }
           }
         }
       }
+      if (!settled) {
+        label.x = originX;
+        label.y = originY;
+      }
     }
-    if (!done) {
-      lb.x = x0;
-      lb.y = y0;
-    }
-  }
-  const overlapsAfter = countOverlaps();
-  const vSegs = [];
-  if (ds.crossingHops) {
-    for (const e of scene.edges) {
-      for (let i = 0; i + 1 < e.pts.length; i++) {
-        const a = e.pts[i], b = e.pts[i + 1];
-        if (Math.abs(a.x - b.x) < 0.5) vSegs.push({ x: a.x, y1: Math.min(a.y, b.y), y2: Math.max(a.y, b.y) });
+  };
+  const overlapsBefore = countLabelOverlaps();
+  settleLabelPositions();
+  const overlapsAfter = countLabelOverlaps();
+  const verticalSegments = [];
+  if (style.crossingHops) {
+    for (const edge of scene.edges) {
+      for (let segmentIndex = 0; segmentIndex + 1 < edge.pts.length; segmentIndex++) {
+        const point = edge.pts[segmentIndex], nextPoint = edge.pts[segmentIndex + 1];
+        if (Math.abs(point.x - nextPoint.x) < 0.5)
+          verticalSegments.push({
+            x: point.x,
+            y1: Math.min(point.y, nextPoint.y),
+            y2: Math.max(point.y, nextPoint.y)
+          });
       }
     }
   }
-  function edgePath(pts) {
+  const edgePath = (pts) => {
     let d = `M ${pts[0].x} ${pts[0].y}`;
-    for (let i = 0; i + 1 < pts.length; i++) {
-      const a = pts[i], b = pts[i + 1];
-      if (ds.crossingHops && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5) {
-        const dir = Math.sign(b.x - a.x);
-        const lo = Math.min(a.x, b.x) + HOP_R + 1, hi = Math.max(a.x, b.x) - HOP_R - 1;
-        const xs = vSegs.filter((v) => v.x > lo && v.x < hi && a.y > v.y1 + 1 && a.y < v.y2 - 1).map((v) => v.x).sort((p, q) => dir > 0 ? p - q : q - p);
-        for (const cx of xs) d += ` L ${cx - dir * HOP_R} ${a.y} A ${HOP_R} ${HOP_R} 0 0 ${dir > 0 ? 1 : 0} ${cx + dir * HOP_R} ${a.y}`;
+    for (let segmentIndex = 0; segmentIndex + 1 < pts.length; segmentIndex++) {
+      const point = pts[segmentIndex], nextPoint = pts[segmentIndex + 1];
+      if (style.crossingHops && Math.abs(point.y - nextPoint.y) < 0.5 && Math.abs(point.x - nextPoint.x) >= 0.5) {
+        const direction = Math.sign(nextPoint.x - point.x);
+        const rangeStart = Math.min(point.x, nextPoint.x) + HOP_RADIUS + 1, rangeEnd = Math.max(point.x, nextPoint.x) - HOP_RADIUS - 1;
+        const crossings = verticalSegments.filter(
+          (vertical) => vertical.x > rangeStart && vertical.x < rangeEnd && point.y > vertical.y1 + 1 && point.y < vertical.y2 - 1
+        ).map((vertical) => vertical.x).sort((pointA, pointB) => direction > 0 ? pointA - pointB : pointB - pointA);
+        for (const crossingX of crossings)
+          d += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
       }
-      d += ` L ${b.x} ${b.y}`;
+      d += ` L ${nextPoint.x} ${nextPoint.y}`;
     }
     return d;
-  }
-  const W = scene.width, H = scene.height;
-  const font = ds.font.family;
-  let out = "";
-  for (const n of scene.nodes.filter((n2) => n2.container)) {
-    const s = resolve(n.kind, n.id);
-    const da = dashArray(s.stroke?.style);
-    out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="6" fill="${s.fill ?? pal.containerFill}" stroke="${s.stroke?.color ?? pal.containerStroke}" stroke-width="${s.stroke?.width ?? 1.2}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+  };
+  const centeredNodeLabel = (lines, centerX, topBaseline, fill) => lines.map(
+    (line, index) => `<text x="${centerX}" y="${topBaseline + index * (nodeFontSize + 2)}" font-size="${nodeFontSize}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
+`
+  ).join("");
+  const centerLinesY = (top, height, lineCount) => top + height / 2 - (lineCount - 1) * (nodeFontSize + 2) / 2 + 4;
+  const renderContainerNode = (node) => {
+    const nodeStyle = resolveStyle(node.kind, node.id);
+    const fill = escAttr(nodeStyle.fill ?? palette.containerFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.containerStroke), text = escAttr(nodeStyle.text ?? palette.containerLabel);
+    const dash = dashArray(nodeStyle.stroke?.style);
+    let svg2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
-    n.label.split("\n").forEach((line, i) => {
-      out += `<text x="${n.x + 10}" y="${n.y + 18 + i * 14}" font-size="${FS_CONT}" font-weight="bold" fill="${s.text ?? pal.containerLabel}">${esc(line)}</text>
+    node.label.split("\n").forEach((line, index) => {
+      svg2 += `<text x="${node.x + 10}" y="${node.y + 18 + index * 14}" font-size="${containerFontSize}" font-weight="bold" fill="${text}">${esc(line)}</text>
 `;
     });
-    const lvl = n.kind === "trust-zone" ? elAttr.get(n.id) : void 0;
-    if (lvl) {
-      const word = (ds.lang === "fr" ? SEC_LEVEL_FR[lvl] : lvl) ?? lvl;
-      out += `<text x="${n.x + n.w - 9}" y="${n.y + n.h - 6}" font-size="${A.tag}" text-anchor="end" font-weight="bold" fill="${s.stroke?.color ?? pal.containerStroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
+    const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : void 0;
+    if (level) {
+      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
+      svg2 += `<text x="${node.x + node.width - 9}" y="${node.y + node.height - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
 `;
     }
-  }
-  for (const n of scene.nodes.filter((n2) => !n2.container)) {
-    const s = resolve(n.kind, n.id);
-    const lines = n.label.split("\n");
-    if (n.kind === "actor") {
-      const cx = n.x + n.w / 2;
-      const ac = s.stroke?.color ?? pal.actorStroke;
-      out += `<circle cx="${cx}" cy="${n.y + 10}" r="7" fill="none" stroke="${ac}" stroke-width="1.5"/>
-<path d="M ${cx - 11} ${n.y + 32} q 11 -19 22 0" fill="none" stroke="${ac}" stroke-width="1.5"/>
+    return svg2;
+  };
+  const renderActor = (node, nodeStyle, lines) => {
+    const centerX = node.x + node.width / 2;
+    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.actorStroke);
+    const text = escAttr(nodeStyle.text ?? palette.actorText);
+    let svg2 = `<circle cx="${centerX}" cy="${node.y + 10}" r="7" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+<path d="M ${centerX - 11} ${node.y + 32} q 11 -19 22 0" fill="none" stroke="${stroke}" stroke-width="1.5"/>
 `;
-      lines.forEach((l, i) => {
-        out += `<text x="${cx}" y="${n.y + 44 + i * 11}" font-size="${FS_NODE2 - 1.5}" text-anchor="middle" fill="${s.text ?? pal.actorText}">${esc(l)}</text>
+    lines.forEach((line, index) => {
+      svg2 += `<text x="${centerX}" y="${node.y + 44 + index * 11}" font-size="${nodeFontSize - 1.5}" text-anchor="middle" fill="${text}">${esc(line)}</text>
 `;
-      });
-    } else if (n.kind === "datastore") {
-      const ry = 7, c = s.stroke?.color ?? pal.nodeStroke, f = s.fill ?? pal.nodeFill;
-      out += `<path d="M ${n.x} ${n.y + ry} v ${n.h - 2 * ry} a ${n.w / 2} ${ry} 0 0 0 ${n.w} 0 v ${-(n.h - 2 * ry)}" fill="${f}" stroke="${c}" stroke-width="1.3"/>
+    });
+    return svg2;
+  };
+  const renderDatastore = (node, nodeStyle, lines) => {
+    const ry = 7;
+    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), fill = escAttr(nodeStyle.fill ?? palette.nodeFill);
+    const body2 = `<path d="M ${node.x} ${node.y + ry} v ${node.height - 2 * ry} a ${node.width / 2} ${ry} 0 0 0 ${node.width} 0 v ${-(node.height - 2 * ry)}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
 `;
-      out += `<ellipse cx="${n.x + n.w / 2}" cy="${n.y + ry}" rx="${n.w / 2}" ry="${ry}" fill="${f}" stroke="${c}" stroke-width="1.3"/>
+    const centerY = node.y + ry + (node.height - ry) / 2 - (lines.length - 1) * (nodeFontSize + 2) / 2 + 4;
+    return body2 + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerY,
+      escAttr(nodeStyle.text ?? palette.nodeText)
+    );
+  };
+  const renderQueue = (node, nodeStyle, lines) => {
+    const rx = 8;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body2 = `<path d="M ${node.x + rx} ${node.y} h ${node.width - 2 * rx} a ${rx} ${node.height / 2} 0 0 1 0 ${node.height} h ${-(node.width - 2 * rx)} a ${rx} ${node.height / 2} 0 0 1 0 ${-node.height}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${node.x + rx}" cy="${node.y + node.height / 2}" rx="${rx}" ry="${node.height / 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
 `;
-      const cy = n.y + ry + (n.h - ry) / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
-      lines.forEach((l, i) => {
-        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE2 + 2)}" font-size="${FS_NODE2}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
+    return body2 + centeredNodeLabel(
+      lines,
+      node.x + rx + (node.width - rx) / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderGateway = (node, nodeStyle, lines) => {
+    const centerX = node.x + node.width / 2;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${round1(node.x + 8)} ${round1(node.y + 8)} L ${round1(node.x + 22)} ${round1(node.y + 8)} Q ${round1(node.x + 24)} ${round1(node.y + 13)} ${round1(node.x + 15)} ${round1(node.y + 20)} Q ${round1(node.x + 6)} ${round1(node.y + 13)} ${round1(node.x + 8)} ${round1(node.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>
 `;
-      });
-    } else {
-      const da = dashArray(s.stroke?.style);
-      out += `<rect x="${n.x}" y="${n.y}" width="${n.w}" height="${n.h}" rx="4" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}" stroke-width="${s.stroke?.width ?? 1.3}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+    return body2 + centeredNodeLabel(lines, centerX + 10, centerLinesY(node.y, node.height, lines.length), text);
+  };
+  const renderAuth = (node, nodeStyle, lines) => {
+    const centerX = node.x + node.width / 2;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<rect x="${node.x + 6}" y="${node.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${node.x + 10} ${node.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<circle cx="${node.x + 15}" cy="${node.y + 16}" r="2.5" fill="${stroke}"/>
 `;
-      const cy = n.y + n.h / 2 - (lines.length - 1) * (FS_NODE2 + 2) / 2 + 4;
-      lines.forEach((l, i) => {
-        out += `<text x="${n.x + n.w / 2}" y="${cy + i * (FS_NODE2 + 2)}" font-size="${FS_NODE2}" text-anchor="middle" fill="${s.text ?? pal.nodeText}">${esc(l)}</text>
+    return body2 + centeredNodeLabel(lines, centerX + 10, centerLinesY(node.y, node.height, lines.length), text);
+  };
+  const renderPlainBox = (node, nodeStyle, lines) => {
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const dash = dashArray(nodeStyle.stroke?.style);
+    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
-      });
+    return body2 + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderIdp = (node, nodeStyle, lines) => {
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>
+`;
+    return body2 + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderLeafNode = (node) => {
+    const nodeStyle = resolveStyle(node.kind, node.id);
+    const lines = node.label.split("\n");
+    switch (node.kind) {
+      case "actor":
+        return renderActor(node, nodeStyle, lines);
+      case "datastore":
+        return renderDatastore(node, nodeStyle, lines);
+      case "queue":
+        return renderQueue(node, nodeStyle, lines);
+      case "gateway":
+        return renderGateway(node, nodeStyle, lines);
+      case "auth":
+        return renderAuth(node, nodeStyle, lines);
+      case "idp":
+        return renderIdp(node, nodeStyle, lines);
+      default:
+        return renderPlainBox(node, nodeStyle, lines);
     }
-  }
-  for (const e of scene.edges) {
-    const f = flowById.get(e.id);
-    const fst = f?.style;
-    const color = flowColorOf(f);
-    const headColor = ds.flowColor === "by-source" ? color : edge;
-    const style = fst?.stroke?.style ?? ds.flowStroke.style;
-    const width = fst?.stroke?.width ?? ds.flowStroke.width;
-    const da = dashArray(style);
-    if (e.pts.length) {
-      out += `<path d="${edgePath(e.pts)}" fill="none" stroke="${color}" stroke-width="${width}"${da ? ` stroke-dasharray="${da}"` : ""} marker-end="url(#${markerId(headColor)})"/>
+  };
+  const renderNumberedBadge = (label) => {
+    const centerX = label.x + label.width / 2, centerY = label.y + label.height / 2 + scaled(3.6), size = scaled(10.5);
+    return `<text x="${centerX}" y="${centerY}" font-size="${size}" text-anchor="middle" fill="${palette.halo}" stroke="${palette.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(label.text)}</text>
+<text x="${centerX}" y="${centerY}" font-size="${size}" text-anchor="middle" fill="${palette.edgeLabel}" font-weight="bold">${esc(label.text)}</text>
+`;
+  };
+  const renderTextLabel = (label, flowStyle) => {
+    const lines = label.text ? label.text.split("\n") : [];
+    const color = escAttr(flowStyle?.text ?? palette.edgeLabel);
+    let svg2 = lines.map(
+      (line, index) => `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + index * (edgeFontSize + 3)}" font-size="${edgeFontSize}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
+`
+    ).join("");
+    const flow = flowById.get(label.flowId);
+    const tech = techText(flow?.tech);
+    if (tech && flow?.label) {
+      svg2 += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
 `;
     }
-    for (const l of e.labels) {
-      if (numbered) {
-        const nx = l.x + l.w / 2, ny = l.y + l.h / 2 + bs(3.6), nfs = bs(10.5);
-        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.halo}" stroke="${pal.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(l.text)}</text>
+    const chips = (flow?.objects ?? []).map((o) => objectName.get(o.id) ?? o.id);
+    if (chips.length) {
+      const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
+      let positionX = label.x + label.width / 2 - totalW / 2;
+      const cy = label.y + label.height - annot.chipH + 2;
+      for (const name of chips) {
+        const w = chipW(name, annot.scale);
+        svg2 += `<rect x="${positionX}" y="${cy}" width="${w}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
 `;
-        out += `<text x="${nx}" y="${ny}" font-size="${nfs}" text-anchor="middle" fill="${pal.edgeLabel}" font-weight="bold">${esc(l.text)}</text>
+        svg2 += `<text x="${positionX + w / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
 `;
-        continue;
+        positionX += w + 4;
       }
-      const lines = l.text ? l.text.split("\n") : [];
-      const labelColor = fst?.text ?? pal.edgeLabel;
-      lines.forEach((line, i) => {
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + i * (FS_EDGE + 3)}" font-size="${FS_EDGE}" text-anchor="middle" fill="${labelColor}" font-style="italic" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
-`;
-      });
-      const tech = techText(flowById.get(l.flowId)?.tech);
-      if (tech) {
-        out += `<text x="${l.x + l.w / 2}" y="${l.y + FS_EDGE + 1 + lines.length * (FS_EDGE + 3)}" font-size="${A.tech}" text-anchor="middle" fill="${pal.techText}" stroke="${pal.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
-`;
-      }
-      const chips = (flowById.get(l.flowId)?.objects ?? []).map((o) => boName.get(o.id) ?? o.id);
-      if (chips.length) {
-        const totalW = chips.reduce((s, n) => s + chipW(n, A.scale) + 4, -4);
-        let cx = l.x + l.w / 2 - totalW / 2;
-        const cy = l.y + l.h - A.chipH + 2;
-        for (const name of chips) {
-          const w = chipW(name, A.scale);
-          out += `<rect x="${cx}" y="${cy}" width="${w}" height="${A.chipRectH}" rx="${A.chipRectH / 2}" fill="${pal.chipFill}" stroke="${pal.chipStroke}" stroke-width="1"/>
-`;
-          out += `<text x="${cx + w / 2}" y="${cy + A.chipTextDy}" font-size="${A.chip}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
-`;
-          cx += w + 4;
-        }
-      }
     }
-  }
-  let by = H;
-  let bands = "";
+    return svg2;
+  };
+  const renderEdge = (edge) => {
+    const flow = flowById.get(edge.id);
+    const flowStyle = flow?.style;
+    const color = flowColorOf(flow);
+    const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
+    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
+    const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
+    let svg2 = "";
+    if (edge.pts.length) {
+      svg2 += `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
+`;
+    }
+    for (const label of edge.labels) {
+      svg2 += numbered ? renderNumberedBadge(label) : renderTextLabel(label, flowStyle);
+    }
+    return svg2;
+  };
+  let bandY = scene.height;
+  let bandsSvg = "";
+  const contentX = 150;
   const chip = (x, y, name) => {
-    const w = chipW(name, A.scale);
+    const w = chipW(name, annot.scale);
     return {
-      svg: `<rect x="${x}" y="${y}" width="${w}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.chipFill}" stroke="${pal.chipStroke}"/>
-<text x="${x + w / 2}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.chipText}" font-weight="bold">${esc(name)}</text>
+      svg: `<rect x="${x}" y="${y}" width="${w}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.chipFill}" stroke="${palette.chipStroke}"/>
+<text x="${x + w / 2}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
 `,
       w
     };
   };
-  const bandStart = (title) => {
-    bands += `<line x1="20" y1="${by + 10}" x2="${W - 20}" y2="${by + 10}" stroke="${pal.divider}" stroke-width="1"/>
+  const beginBand = (title) => {
+    bandsSvg += `<line x1="20" y1="${bandY + 10}" x2="${scene.width - 20}" y2="${bandY + 10}" stroke="${palette.divider}" stroke-width="1"/>
 `;
-    bands += `<text x="20" y="${by + bs(32)}" font-size="${bs(11)}" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>
+    bandsSvg += `<text x="20" y="${bandY + scaled(32)}" font-size="${scaled(11)}" font-weight="bold" fill="${palette.bandTitle}">${esc(title)}</text>
 `;
-    by += bs(20);
+    bandY += scaled(20);
   };
-  const contentX = 150;
-  if (numbered && model.flows.length) {
-    bandStart(t.flows);
-    const BADGE = bs(34);
-    const GUT = bs(28);
-    const LH = bs(13.5);
+  const renderFlowsBand = () => {
+    beginBand(ui.flows);
+    const BADGE = scaled(34);
+    const GUTTER = scaled(28);
+    const LINE_H = scaled(13.5);
     const COL_TARGET = 520;
-    const avail = W - contentX - 20;
-    let cols = Math.max(1, Math.min(3, Math.floor((avail + GUT) / (COL_TARGET + GUT))));
+    const avail = scene.width - contentX - 20;
+    let cols = Math.max(1, Math.min(3, Math.floor((avail + GUTTER) / (COL_TARGET + GUTTER))));
     cols = Math.min(cols, model.flows.length);
-    const colW = Math.floor((avail - (cols - 1) * GUT) / cols);
-    const entries = model.flows.map((f) => {
-      const tech = techText(f.tech);
-      const chipsW = (f.objects ?? []).reduce((s, o) => s + chipW(boName.get(o.id) ?? o.id, A.scale) + 4, 0);
+    const colW = Math.floor((avail - (cols - 1) * GUTTER) / cols);
+    const entries = model.flows.map((flow) => {
+      const tech = techText(flow.tech);
+      const chipsW = (flow.objects ?? []).reduce(
+        (sum, o) => sum + chipW(objectName.get(o.id) ?? o.id, annot.scale) + 4,
+        0
+      );
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
-      const maxChars = Math.max(6, Math.floor(textW / (bs(10) * 0.52)));
-      const raw = (f.label ?? "") + (tech ? "  " + tech : "");
-      const lines = raw.split("\n").flatMap((seg) => wrapText(seg, maxChars).split("\n"));
-      return { f, lines };
+      const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * RENDER_CHAR_WIDTH)));
+      const raw = (flow.label ?? "") + (tech ? "  " + tech : "");
+      const lines = raw.split("\n").flatMap((segment) => wrapText(segment, maxChars).split("\n"));
+      return { flow, lines };
     });
     const rows = Math.ceil(entries.length / cols);
-    const yBase = by;
-    const colY = new Array(cols).fill(yBase);
-    entries.forEach((e, i) => {
-      const col = Math.floor(i / rows);
-      const x = contentX + col * (colW + GUT);
+    const colY = new Array(cols).fill(bandY);
+    entries.forEach((entry, index) => {
+      const col = Math.floor(index / rows);
+      const x = contentX + col * (colW + GUTTER);
       const y = colY[col];
-      bands += `<rect x="${x}" y="${y}" width="${bs(24)}" height="${bs(15)}" rx="${bs(7.5)}" fill="${pal.badgeFill}" stroke="${pal.badgeStroke}"/>
+      bandsSvg += `<rect x="${x}" y="${y}" width="${scaled(24)}" height="${scaled(15)}" rx="${scaled(7.5)}" fill="${palette.badgeFill}" stroke="${palette.badgeStroke}"/>
 `;
-      bands += `<text x="${x + bs(12)}" y="${y + bs(11)}" font-size="${bs(9.5)}" text-anchor="middle" fill="${pal.bandText}" font-weight="bold">${i + 1}</text>
+      bandsSvg += `<text x="${x + scaled(12)}" y="${y + scaled(11)}" font-size="${scaled(9.5)}" text-anchor="middle" fill="${palette.bandText}" font-weight="bold">${index + 1}</text>
 `;
-      e.lines.forEach((line, li) => {
-        bands += `<text x="${x + BADGE}" y="${y + bs(11) + li * LH}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(line)}</text>
+      entry.lines.forEach((line, lineIndex) => {
+        bandsSvg += `<text x="${x + BADGE}" y="${y + scaled(11) + lineIndex * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>
 `;
       });
-      if (e.f.objects?.length) {
-        const last = e.lines[e.lines.length - 1] ?? "";
-        let cx = x + BADGE + Math.ceil(last.length * bs(10) * 0.52) + 6;
-        const cy = y + 1 + (e.lines.length - 1) * LH;
-        for (const o of e.f.objects) {
-          const c = chip(cx, cy, boName.get(o.id) ?? o.id);
-          bands += c.svg;
-          cx += c.w + 4;
+      if (entry.flow.objects?.length) {
+        const lastLine = entry.lines[entry.lines.length - 1] ?? "";
+        let chipX = x + BADGE + Math.ceil(lastLine.length * scaled(10) * RENDER_CHAR_WIDTH) + 6;
+        const chipY = y + 1 + (entry.lines.length - 1) * LINE_H;
+        for (const objectRef of entry.flow.objects) {
+          const c = chip(chipX, chipY, objectName.get(objectRef.id) ?? objectRef.id);
+          bandsSvg += c.svg;
+          chipX += c.w + 4;
         }
       }
-      colY[col] = y + Math.max(bs(20), e.lines.length * LH + bs(7));
+      colY[col] = y + Math.max(scaled(20), entry.lines.length * LINE_H + scaled(7));
     });
-    by = Math.max(...colY) + 6;
-  }
-  if (model.businessObjects.length) {
-    bandStart(t.objects);
-    for (const b of model.businessObjects) {
-      const c = chip(contentX, by + 2, b.name);
-      bands += c.svg;
-      if (b.description) bands += `<text x="${contentX + c.w + 10}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandMuted}">\u2014 ${esc(b.description)}</text>
+    bandY = Math.max(...colY) + 6;
+  };
+  const renderObjectsBand = () => {
+    beginBand(ui.objects);
+    for (const bo of model.businessObjects) {
+      const c = chip(contentX, bandY + 2, bo.name);
+      bandsSvg += c.svg;
+      if (bo.description)
+        bandsSvg += `<text x="${contentX + c.w + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">\u2014 ${esc(bo.description)}</text>
 `;
-      by += bs(24);
+      bandY += scaled(24);
     }
-    by += 6;
-  }
-  if (ds.legend === "auto") {
-    bandStart(t.legend);
+    bandY += 6;
+  };
+  const renderLegendBand = () => {
+    beginBand(ui.legend);
     let lx = contentX;
-    const kindsUsed = [...new Set(scene.nodes.map((n) => n.kind))].filter((k) => legendNames[k] && (k !== "actor" || view.actorLegend));
-    for (const k of kindsUsed) {
-      const s = resolve(k, "");
-      if (k === "actor") {
-        const ac = s.stroke?.color ?? pal.actorStroke;
-        bands += `<circle cx="${lx + bs(13)}" cy="${by + bs(5)}" r="${bs(3)}" fill="none" stroke="${ac}" stroke-width="1.2"/>
+    const kindsUsed = [...new Set(scene.nodes.map((node) => node.kind))].filter(
+      (k) => legendNames[k] && (k !== "actor" || view.actorLegend)
+    );
+    for (const kind of kindsUsed) {
+      const nodeStyle = resolveStyle(kind, "");
+      if (kind === "actor") {
+        const stroke = nodeStyle.stroke?.color ?? palette.actorStroke;
+        bandsSvg += `<circle cx="${lx + scaled(13)}" cy="${bandY + scaled(5)}" r="${scaled(3)}" fill="none" stroke="${stroke}" stroke-width="1.2"/>
 `;
-        bands += `<path d="M ${lx + bs(8)} ${by + bs(15)} q ${bs(5)} ${bs(-7)} ${bs(10)} 0" fill="none" stroke="${ac}" stroke-width="1.2"/>
+        bandsSvg += `<path d="M ${lx + scaled(8)} ${bandY + scaled(15)} q ${scaled(5)} ${scaled(-7)} ${scaled(10)} 0" fill="none" stroke="${stroke}" stroke-width="1.2"/>
 `;
       } else {
-        const da = dashArray(s.stroke?.style);
-        bands += `<rect x="${lx}" y="${by + 2}" width="${bs(26)}" height="${bs(14)}" rx="3" fill="${s.fill ?? pal.nodeFill}" stroke="${s.stroke?.color ?? pal.nodeStroke}"${da ? ` stroke-dasharray="${da}"` : ""}/>
+        const dash = dashArray(nodeStyle.stroke?.style);
+        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${nodeStyle.stroke?.color ?? palette.nodeStroke}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
       }
-      const name = legendNames[k];
-      bands += `<text x="${lx + bs(32)}" y="${by + bs(13)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(name)}</text>
+      const name = legendNames[kind];
+      bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>
 `;
-      lx += bs(40) + Math.ceil(name.length * bs(10) * 0.52) + bs(24);
-      if (lx > W - 220) {
+      lx += scaled(40) + Math.ceil(name.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
+      if (lx > scene.width - 220) {
         lx = contentX;
-        by += bs(22);
+        bandY += scaled(22);
       }
     }
-    by += bs(24);
-    bands += `<line x1="${contentX}" y1="${by + 8}" x2="${contentX + bs(26)}" y2="${by + 8}" stroke="${edge}" stroke-width="1.3" marker-end="url(#${markerId(edge)})"/>
+    bandY += scaled(24);
+    bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3" marker-end="url(#${markerName(defaultEdgeColor)})"/>
 `;
-    const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + t.numberedSuffix : legendFlowLabel) + (ds.flowColor === "by-source" ? ds.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
-    bands += `<text x="${contentX + bs(32)}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(flowLabelText)}</text>
+    const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + ui.numberedSuffix : legendFlowLabel) + (style.flowColor === "by-source" ? style.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
+    bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
 `;
     if (model.businessObjects.length) {
-      const c = chip(contentX + 330, by + 1, t.businessObject);
-      bands += c.svg;
-      bands += `<text x="${contentX + 330 + c.w + 8}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}">${esc(t.carriedByFlow)}</text>
+      const c = chip(contentX + 330, bandY + 1, ui.businessObject);
+      bandsSvg += c.svg;
+      bandsSvg += `<text x="${contentX + 330 + c.w + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>
 `;
     }
-    by += bs(24);
+    bandY += scaled(24);
     for (const note of model.legendNotes) {
-      bands += `<text x="${contentX}" y="${by + bs(12)}" font-size="${bs(10)}" fill="${pal.bandText}" font-style="italic">${esc(note)}</text>
+      bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>
 `;
-      by += bs(20);
+      bandY += scaled(20);
     }
-  }
-  const totalH = by > H ? by + 14 : H;
-  const mw = ds.arrows === "large" ? r1(11 * F.scale) : 7;
-  if (arrowMk.size === 0) markerId(edge);
-  const markers = [...arrowMk].map(([color, id]) => `<marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${mw}" markerHeight="${mw}" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="${color}"/></marker>`).join("\n");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${totalH}" font-family="${esc(font)},Arial,sans-serif">
+  };
+  let body = "";
+  for (const node of scene.nodes) if (node.container) body += renderContainerNode(node);
+  for (const node of scene.nodes) if (!node.container) body += renderLeafNode(node);
+  for (const edge of scene.edges) body += renderEdge(edge);
+  if (numbered && model.flows.length) renderFlowsBand();
+  if (model.businessObjects.length) renderObjectsBand();
+  if (style.legend === "auto") renderLegendBand();
+  const viewWidth = scene.width, viewHeight = scene.height;
+  const totalHeight = bandY > viewHeight ? bandY + 14 : viewHeight;
+  const markerSize = style.arrows === "large" ? round1(11 * fonts.scale) : 7;
+  if (arrowMarkers.size === 0) markerName(defaultEdgeColor);
+  const markers = [...arrowMarkers].map(
+    ([color, markerName2]) => `<marker id="${markerName2}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${markerSize}" markerHeight="${markerSize}" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="${escAttr(color)}"/></marker>`
+  ).join("\n");
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${totalHeight}" font-family="${escAttr(style.font.family)},Arial,sans-serif">
 <defs>${markers}</defs>
-<rect width="${W}" height="${totalH}" fill="${ds.background ?? pal.background}"/>
-` + out + bands + "</svg>\n";
+<rect width="${viewWidth}" height="${totalHeight}" fill="${escAttr(style.background ?? palette.background)}"/>
+` + body + bandsSvg + "</svg>\n";
   return { svg, overlapsBefore, overlapsAfter };
 }
 
-// src/playground-entry.ts
-setElkFactory(() => new import_elk_bundled.default());
-async function compile(source, opts) {
+// src/playground.ts
+var ElkClass = import_elk_bundled.default;
+setElkFactory(() => new ElkClass());
+async function compile(source, options) {
   const { model, diags } = parse(source);
-  if (opts?.theme) model.style.theme = opts.theme;
+  if (options?.theme) model.style.theme = options.theme;
   diags.push(...validate(model));
   const errors = diags.filter((d) => d.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
@@ -94436,7 +95713,12 @@ async function compile(source, opts) {
   return {
     svg,
     diagnostics: diags,
-    metrics: { width: scene.width, height: scene.height, layoutMs: scene.layoutMs, overlaps: overlapsAfter }
+    metrics: {
+      width: scene.width,
+      height: scene.height,
+      layoutMs: scene.layoutMs,
+      overlaps: overlapsAfter
+    }
   };
 }
 var version = "0.1.0";

@@ -11,14 +11,17 @@ application PORTAL "HR portal" {
   module APPROVAL "Approval\nworkflow"
 }
 
+queue NOTIFY "Notification\nbus"
+
 datastore HR_REF "HR\nrepository"
 
 external PAYROLL "Payroll HRIS\n(outsourced)"
 
-business-object BO_LEAVE "Leave request" "request submitted by an employee, subject to approval"
 
-EMPLOYEE -> LEAVE : "Submit a request" [BO_LEAVE]
-LEAVE -> APPROVAL : "Submit to the\nworkflow" (internal) [BO_LEAVE]
-MANAGER -> APPROVAL : "Approve or\nreject"
-APPROVAL -> HR_REF : "Update leave\nbalances" (JDBC)
-APPROVAL -> PAYROLL : "Approved variable\nitems" (SFTP, CSV)
+EMPLOYEE -> LEAVE
+LEAVE -> APPROVAL (internal)
+MANAGER -> APPROVAL
+APPROVAL -> HR_REF (JDBC)
+APPROVAL -> NOTIFY (MQ, JSON)
+EMPLOYEE -> NOTIFY (webhook, JSON)
+APPROVAL -> PAYROLL (SFTP, CSV)
