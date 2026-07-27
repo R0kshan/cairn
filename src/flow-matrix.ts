@@ -78,7 +78,8 @@ export function matrixCsv(model: Model, lang: "en" | "fr"): string {
   return lines.join("\n") + "\n";
 }
 
-const mdCell = (s: string): string => s.replace(/\|/g, "\\|").replace(/\n/g, " ");
+const mdCell = (s: string): string =>
+  s.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n/g, " ");
 
 export function matrixMd(model: Model, _view: View, lang: "en" | "fr"): string {
   const h = UI[lang].matrix;
