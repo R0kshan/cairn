@@ -95020,6 +95020,7 @@ var EAST_DESCENT_DELTAS = [
 ];
 var TITLE_CLEARANCE = 8;
 var MIN_SLOT_GAP = 12;
+var MIN_DEPTH_GAIN = 24;
 function pathLength(pts) {
   let length = 0;
   for (let index = 1; index < pts.length; index++)
@@ -95163,49 +95164,61 @@ function rerouteDetours(scene, model, numbered) {
         usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
         usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
       } else {
+        let eastEntry = null;
+        for (const delta of EAST_DESCENT_DELTAS) {
+          const descentX = target.x + target.width + delta;
+          const entryY = findEntryY(
+            target,
+            true,
+            target.x + target.width,
+            descentX,
+            descentX,
+            target.x + target.width
+          );
+          if (entryY === null) continue;
+          if (riserBlockedBelow(descentX, entryY)) continue;
+          if (riserConflicts(descentX, entryY, INF)) continue;
+          eastEntry = { x: descentX, y: entryY };
+          break;
+        }
         const westX = Math.max(4, contentLeft - 12 - westCount * 8);
         const westY = findEntryY(target, true, westX, target.x, westX, target.x);
-        if (westY !== null) {
+        const laneDepth = (descentX) => {
+          const spanLeftX = Math.min(exitX, descentX);
+          const spanRightX = Math.max(exitX, descentX);
+          const spanned = scene.nodes.filter(
+            (node) => node.x < spanRightX && node.x + node.width > spanLeftX
+          );
+          return spanned.length ? Math.max(...spanned.map((node) => node.y + node.height)) : maxNodeBottom;
+        };
+        if (eastEntry && (westY === null || laneDepth(eastEntry.x) < laneDepth(westX) - MIN_DEPTH_GAIN)) {
+          planned = { ...candidate, exitX, entry: { kind: "east", ...eastEntry } };
+          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+          usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
+          usedHorizontals.push({
+            y: eastEntry.y,
+            left: target.x + target.width,
+            right: eastEntry.x
+          });
+        } else if (westY !== null) {
           westCount++;
           planned = { ...candidate, exitX, entry: { kind: "west", x: westX, y: westY } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: westX, top: westY, bottom: INF });
           usedHorizontals.push({ y: westY, left: westX, right: target.x });
-        } else {
-          for (const delta of EAST_DESCENT_DELTAS) {
-            const descentX = target.x + target.width + delta;
-            const entryY = findEntryY(
-              target,
-              true,
-              target.x + target.width,
-              descentX,
-              descentX,
-              target.x + target.width
-            );
-            if (entryY === null) continue;
-            if (riserBlockedBelow(descentX, entryY)) continue;
-            if (riserConflicts(descentX, entryY, INF)) continue;
-            planned = { ...candidate, exitX, entry: { kind: "east", x: descentX, y: entryY } };
-            usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-            usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
-            usedHorizontals.push({ y: entryY, left: target.x + target.width, right: descentX });
-            break;
-          }
-          if (!planned) {
-            for (const delta of WEST_DESCENT_DELTAS) {
-              const descentX = target.x + delta;
-              if (descentX < 4) continue;
-              const entryY = findEntryY(target, true, descentX, target.x, descentX, target.x);
-              if (entryY === null) continue;
-              if (riserBlockedBelow(descentX, entryY)) continue;
-              if (riserConflicts(descentX, entryY, INF)) continue;
-              planned = { ...candidate, exitX, entry: { kind: "west", x: descentX, y: entryY } };
-              usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-              usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
-              usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
-              break;
-            }
-          }
+        }
+        for (const delta of planned ? [] : WEST_DESCENT_DELTAS) {
+          const descentX = target.x + delta;
+          if (descentX < 4) continue;
+          const entryY = findEntryY(target, true, descentX, target.x, descentX, target.x);
+          if (entryY === null) continue;
+          if (riserBlockedBelow(descentX, entryY)) continue;
+          if (riserConflicts(descentX, entryY, INF)) continue;
+          planned = { ...candidate, exitX, entry: { kind: "west", x: descentX, y: entryY } };
+          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+          usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
+          usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
+          break;
         }
       }
     } else {
@@ -95347,11 +95360,29 @@ function rerouteDetours(scene, model, numbered) {
       bottom: node.y + node.height,
       left: node.x,
       right: node.x + node.width,
-      minOverlap: 0
+      minOverlap: 0,
+      nodeId: node.id
     });
-  const bandConflicts = (top, bottom, left, right) => blockingBands.some(
-    (band) => band.top < bottom && top < band.bottom && Math.min(band.right, right) - Math.max(band.left, left) > band.minOverlap
+  const bandConflicts = (top, bottom, left, right, exempt = /* @__PURE__ */ new Set()) => blockingBands.some((band) => {
+    const shared = Math.min(band.right, right) - Math.max(band.left, left);
+    if (band.nodeId && exempt.has(band.nodeId)) {
+      if (shared <= MIN_PARALLEL_RUN) return false;
+      return [band.top, band.bottom].some(
+        (border) => border - LINE_CLEARANCE < bottom && top < border + LINE_CLEARANCE
+      );
+    }
+    return band.top < bottom && top < band.bottom && shared > band.minOverlap;
+  });
+  const containerNodes = scene.nodes.filter((node) => node.container);
+  const enclosersOf = (node) => containerNodes.filter(
+    (box) => box.id !== node.id && box.x <= node.x && node.x + node.width <= box.x + box.width && box.y <= node.y && node.y + node.height <= box.y + box.height
   );
+  const sharedEnclosers = (plan) => {
+    const around = new Set(enclosersOf(plan.source).map((box) => box.id));
+    return new Set(
+      enclosersOf(plan.target).filter((box) => around.has(box.id)).map((box) => box.id)
+    );
+  };
   const isTop = (plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop" || plan.entry.kind === "eastTop";
   const bottomPlans = plans.filter((plan) => !isTop(plan));
   const topPlans = plans.filter(isTop);
@@ -95391,9 +95422,9 @@ function rerouteDetours(scene, model, numbered) {
   assignLanes(bottomPlans, makeAllocator());
   assignLanes(topPlans, makeAllocator());
   const laneOffsets = (subset, direction, anchor) => {
-    const spanAnchor = (left, right) => {
+    const spanAnchor = (left, right, exempt) => {
       const spanned = scene.nodes.filter(
-        (node) => node.x < right && node.x + node.width > left
+        (node) => !exempt.has(node.id) && node.x < right && node.x + node.width > left
       );
       if (!spanned.length) return anchor;
       return direction > 0 ? Math.max(...spanned.map((node) => node.y + node.height)) : Math.min(...spanned.map((node) => node.y));
@@ -95413,11 +95444,26 @@ function rerouteDetours(scene, model, numbered) {
       );
       const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
       const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
-      const base = spanAnchor(left, right);
+      const exempt = /* @__PURE__ */ new Set();
+      if (members.length) {
+        const perMember = members.map(sharedEnclosers);
+        for (const id of perMember[0])
+          if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
+      }
+      const base = spanAnchor(left, right, exempt);
       const ownPosition = direction > 0 ? base + CHANNEL_GAP + labelHeight + 3 : base - CHANNEL_GAP;
       let position = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeight + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
+      const fits = (candidate) => !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
+      if (!fits(position))
+        for (const gap of [8, 6, 4]) {
+          const tighter = position - direction * (CHANNEL_GAP - gap);
+          if (fits(tighter)) {
+            position = tighter;
+            break;
+          }
+        }
       for (let guard = 0; guard < 80; guard++) {
-        if (!bandConflicts(position - labelHeight - 3, position + 1, left, right)) break;
+        if (fits(position)) break;
         position += direction * 6;
       }
       labelHeights.push(labelHeight);

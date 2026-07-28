@@ -113,8 +113,24 @@ Pipeline inside the function, in order:
    where their x-spans overlap by more than `MIN_PARALLEL_RUN`, never an
    anchor. Anchoring on it instead — the original bug — pushed the whole
    channel past every stray wrap, wasting a band and forcing crossings.
-   The anchor is **per lane**, over the nodes that lane's x-span actually
-   overlaps (`spanAnchor`), not the drawing's full extent: in `logical-archi` a
+   A container holding **both ends** of every flow on a lane is exempt from
+   that lane's anchor *and* from its blocking bands (`sharedEnclosers`): a flow
+   between two boxes of the same data centre belongs inside it, and counting
+   its own container as an obstacle pushed the lane under the whole drawing,
+   dragging the canvas down with it (`infrastructure` 467→436 px).
+   The exemption opens the container's **interior only** — its borders stay
+   blocking (with `LINE_CLEARANCE`, over a long shared run), or the lane ends
+   up drawn 10 px under the box edge for 1000 px, which reads as a doubled
+   border. Because that room is finite, lane placement first tries a **tighter
+   approach gap** (10 → 8 → 6 → 4) before pushing outward: `infrastructure`
+   missed fitting inside by 2 px on a fixed 10 px gap.
+   Entry side is **chosen, not ordered**: turning up beside the target (east)
+   keeps the lane short and therefore higher, but crosses whatever lies
+   between, so it is taken only when it lifts the lane by at least
+   `MIN_DEPTH_GAIN`. Making east unconditional cost `logical-fr` four
+   crossings for 11 px; a fixed order in either direction is wrong.
+   The anchor is otherwise **per lane**, over the nodes that lane's x-span
+   actually overlaps (`spanAnchor`), not the drawing's full extent: in `logical-archi` a
    tall actor group at x 25–181 was holding every lane 137 px below content the
    lanes never pass under. Lane order is still monotone (a deeper lane never
    rises above a shallower one), and node boxes are blocking bands so a raised
@@ -155,6 +171,8 @@ work sent back:
   entering from a channel must not cross a flow attached to the same side.
 - **No flow shares an attachment point with another**, on any side, inbound or
   outbound (`edge-tidy.ts`, target `MIN_ATTACH_GAP`).
+- **A flow whose ends share a container stays inside it** — leaving it costs
+  height and reads as though the flow left the system it belongs to.
 - **Every segment is orthogonal, and a run is straight until it really turns** —
   deviations under `SNAP` are elk noise and get collapsed.
 - **No dead height**: a band crossed by nothing but vertical segments is a

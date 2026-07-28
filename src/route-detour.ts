@@ -34,6 +34,8 @@ const EAST_DESCENT_DELTAS = [
 const TITLE_CLEARANCE = 8;
 /** Least distance between two flows attached to the same side of a node. */
 const MIN_SLOT_GAP = 12;
+/** How much higher a lane must sit to justify turning up mid-drawing. */
+const MIN_DEPTH_GAIN = 24;
 
 interface Point {
   x: number;
@@ -291,55 +293,76 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
         usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
         usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
       } else {
+        // Coming back up beside the target (east) keeps the lane short, and a
+        // short lane clears fewer nodes so it also sits higher; the far-left
+        // gutter instead sweeps past groups the flow never had business with.
+        // Neither wins always — take whichever leaves the lane higher, and
+        // keep the gutter on a tie so settled drawings don't churn.
+        let eastEntry: { x: number; y: number } | null = null;
+        for (const delta of EAST_DESCENT_DELTAS) {
+          const descentX = target.x + target.width + delta;
+          const entryY = findEntryY(
+            target,
+            true,
+            target.x + target.width,
+            descentX,
+            descentX,
+            target.x + target.width,
+          );
+          if (entryY === null) continue;
+          if (riserBlockedBelow(descentX, entryY)) continue;
+          if (riserConflicts(descentX, entryY, INF)) continue;
+          eastEntry = { x: descentX, y: entryY };
+          break;
+        }
         const westX = Math.max(4, contentLeft - 12 - westCount * 8);
         const westY = findEntryY(target, true, westX, target.x, westX, target.x);
-        if (westY !== null) {
+        const laneDepth = (descentX: number) => {
+          const spanLeftX = Math.min(exitX, descentX);
+          const spanRightX = Math.max(exitX, descentX);
+          const spanned = scene.nodes.filter(
+            (node) => node.x < spanRightX && node.x + node.width > spanLeftX,
+          );
+          return spanned.length
+            ? Math.max(...spanned.map((node) => node.y + node.height))
+            : maxNodeBottom;
+        };
+        // Only a real gain justifies the swap: turning up in the middle of the
+        // drawing buys a shorter lane at the price of crossing whatever sits
+        // between, so a few px of depth is not worth it.
+        if (
+          eastEntry &&
+          (westY === null || laneDepth(eastEntry.x) < laneDepth(westX) - MIN_DEPTH_GAIN)
+        ) {
+          planned = { ...candidate, exitX, entry: { kind: "east", ...eastEntry } };
+          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+          usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
+          usedHorizontals.push({
+            y: eastEntry.y,
+            left: target.x + target.width,
+            right: eastEntry.x,
+          });
+        } else if (westY !== null) {
           westCount++;
           planned = { ...candidate, exitX, entry: { kind: "west", x: westX, y: westY } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: westX, top: westY, bottom: INF });
           usedHorizontals.push({ y: westY, left: westX, right: target.x });
-        } else {
-          // Interior target: ascend just right of it and enter its east side
-          // (the side facing the source) — the flow drops south immediately
-          // instead of wandering across the drawing.
-          for (const delta of EAST_DESCENT_DELTAS) {
-            const descentX = target.x + target.width + delta;
-            const entryY = findEntryY(
-              target,
-              true,
-              target.x + target.width,
-              descentX,
-              descentX,
-              target.x + target.width,
-            );
-            if (entryY === null) continue;
-            if (riserBlockedBelow(descentX, entryY)) continue;
-            if (riserConflicts(descentX, entryY, INF)) continue;
-            planned = { ...candidate, exitX, entry: { kind: "east", x: descentX, y: entryY } };
-            usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-            usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
-            usedHorizontals.push({ y: entryY, left: target.x + target.width, right: descentX });
-            break;
-          }
-          if (!planned) {
-            // Last resort: ascend in the gutter just left of the target and
-            // enter its west side (bottom-channel mirror of the westTop
-            // descent).
-            for (const delta of WEST_DESCENT_DELTAS) {
-              const descentX = target.x + delta;
-              if (descentX < 4) continue;
-              const entryY = findEntryY(target, true, descentX, target.x, descentX, target.x);
-              if (entryY === null) continue;
-              if (riserBlockedBelow(descentX, entryY)) continue;
-              if (riserConflicts(descentX, entryY, INF)) continue;
-              planned = { ...candidate, exitX, entry: { kind: "west", x: descentX, y: entryY } };
-              usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-              usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
-              usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
-              break;
-            }
-          }
+        }
+        // Last resort: come up in the gutter just left of the target and
+        // enter its west side (bottom-channel mirror of the westTop descent).
+        for (const delta of planned ? [] : WEST_DESCENT_DELTAS) {
+          const descentX = target.x + delta;
+          if (descentX < 4) continue;
+          const entryY = findEntryY(target, true, descentX, target.x, descentX, target.x);
+          if (entryY === null) continue;
+          if (riserBlockedBelow(descentX, entryY)) continue;
+          if (riserConflicts(descentX, entryY, INF)) continue;
+          planned = { ...candidate, exitX, entry: { kind: "west", x: descentX, y: entryY } };
+          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+          usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
+          usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
+          break;
         }
       }
     } else {
@@ -511,6 +534,8 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
     left: number;
     right: number;
     minOverlap: number;
+    /** Set for node boxes, so a lane can be exempted from its own container. */
+    nodeId?: string;
   }[] = [];
   for (const edge of scene.edges) {
     if (rerouted.has(edge.id)) continue;
@@ -546,14 +571,51 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
       left: node.x,
       right: node.x + node.width,
       minOverlap: 0,
+      nodeId: node.id,
     });
-  const bandConflicts = (top: number, bottom: number, left: number, right: number): boolean =>
-    blockingBands.some(
-      (band) =>
-        band.top < bottom &&
-        top < band.bottom &&
-        Math.min(band.right, right) - Math.max(band.left, left) > band.minOverlap,
+  const bandConflicts = (
+    top: number,
+    bottom: number,
+    left: number,
+    right: number,
+    exempt: Set<string> = new Set(),
+  ): boolean =>
+    blockingBands.some((band) => {
+      const shared = Math.min(band.right, right) - Math.max(band.left, left);
+      if (band.nodeId && exempt.has(band.nodeId)) {
+        // The inside of this container is open to the lane, but its borders
+        // are still lines: running alongside one reads as a doubled edge.
+        if (shared <= MIN_PARALLEL_RUN) return false;
+        return [band.top, band.bottom].some(
+          (border) => border - LINE_CLEARANCE < bottom && top < border + LINE_CLEARANCE,
+        );
+      }
+      return band.top < bottom && top < band.bottom && shared > band.minOverlap;
+    });
+
+  // Containers that geometrically hold a node. A flow whose two ends live in
+  // the same container has no business leaving it: that container is neither
+  // an anchor nor an obstacle for its lane, which belongs in the free space
+  // inside it. Without this a flow between two boxes of one data centre dives
+  // under the whole drawing and drags the canvas down with it.
+  const containerNodes = scene.nodes.filter((node) => node.container);
+  const enclosersOf = (node: SceneNode) =>
+    containerNodes.filter(
+      (box) =>
+        box.id !== node.id &&
+        box.x <= node.x &&
+        node.x + node.width <= box.x + box.width &&
+        box.y <= node.y &&
+        node.y + node.height <= box.y + box.height,
     );
+  const sharedEnclosers = (plan: { source: SceneNode; target: SceneNode }): Set<string> => {
+    const around = new Set(enclosersOf(plan.source).map((box) => box.id));
+    return new Set(
+      enclosersOf(plan.target)
+        .filter((box) => around.has(box.id))
+        .map((box) => box.id),
+    );
+  };
 
   const isTop = (plan: Plan) => plan.entry.kind === "north" ||
     plan.entry.kind === "westTop" ||
@@ -617,9 +679,9 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
   // label heights that lane really carries, and the lane is pushed further out
   // only if it would land on geometry sharing its x-span.
   const laneOffsets = (subset: Plan[], direction: 1 | -1, anchor: number): number[] => {
-    const spanAnchor = (left: number, right: number): number => {
+    const spanAnchor = (left: number, right: number, exempt: Set<string>): number => {
       const spanned = scene.nodes.filter(
-        (node) => node.x < right && node.x + node.width > left,
+        (node) => !exempt.has(node.id) && node.x < right && node.x + node.width > left,
       );
       if (!spanned.length) return anchor;
       return direction > 0
@@ -641,7 +703,14 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
       );
       const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
       const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
-      const base = spanAnchor(left, right);
+      // Only a container holding *every* flow on this lane may be entered.
+      const exempt = new Set<string>();
+      if (members.length) {
+        const perMember = members.map(sharedEnclosers);
+        for (const id of perMember[0])
+          if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
+      }
+      const base = spanAnchor(left, right, exempt);
       const ownPosition =
         direction > 0 ? base + CHANNEL_GAP + labelHeight + 3 : base - CHANNEL_GAP;
       // Lanes stay ordered: a deeper lane never rises above a shallower one,
@@ -652,9 +721,22 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
           : direction > 0
             ? Math.max(ownPosition, positions[lane - 1] + labelHeight + 14)
             : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
-      // The lane and the label band above it must clear elk's leftovers.
+      const fits = (candidate: number) =>
+        !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
+      // Before giving up on a spot, try tightening the approach gap. The room
+      // inside a container is finite, and a lane that fits there on a 6px gap
+      // is far better than one pushed out of the container for want of 2px.
+      if (!fits(position))
+        for (const gap of [8, 6, 4]) {
+          const tighter = position - direction * (CHANNEL_GAP - gap);
+          if (fits(tighter)) {
+            position = tighter;
+            break;
+          }
+        }
+      // Otherwise move outward until the lane and its label band are clear.
       for (let guard = 0; guard < 80; guard++) {
-        if (!bandConflicts(position - labelHeight - 3, position + 1, left, right)) break;
+        if (fits(position)) break;
         position += direction * 6;
       }
       labelHeights.push(labelHeight);
