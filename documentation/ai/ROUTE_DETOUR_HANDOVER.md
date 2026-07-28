@@ -231,12 +231,12 @@ Round 6 (crossings + compaction) is done; measured state below. Candidates:
 
 ## 8. Working with the maintainer
 
-Concise, direct, no flattery — he's a senior architect and wants best-practice
-answers, not agreement. He reviews renders and annotates screenshots with red
+Concise, direct, no flattery — they are a senior architect and wants best-practice
+answers, not agreement. They reviews renders and annotates screenshots with red
 tags; treat each tag as a precise, local defect report and confirm your
-reading of it against the actual edge pts before coding. He explicitly asks to
+reading of it against the actual edge pts before coding. They explicitly asks to
 be interviewed (option-style questions) when a design choice is his to make —
-do it *before* implementing, with a recommended option first. Answer his
+do it *before* implementing, with a recommended option first. Answer their
 direct technical questions (e.g. "is this an elk limitation?") with evidence,
-not hedging. He commits between rounds — check `git status` to see what's
+not hedging. They commits between rounds — check `git status` to see what's
 already his baseline vs. your working delta.
