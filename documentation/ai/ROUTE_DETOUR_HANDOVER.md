@@ -72,16 +72,34 @@ Pipeline inside the function, in order:
      NOT veto, or crowded sides become unroutable (this bug cost an hour).
 4. **Redistribution** — attachments sharing a node side get evenly spaced
    slots: free positions sampled at 2 px across the side (title bands and
-   obstacles fragment the range), pick `(i+1)/(n+1)` through the free list,
-   members ordered by **far-end x** (left-going flow takes the left slot — this
-   is what lets two flows share one lane with disjoint spans and zero
-   crossings). A side whose free range is small (titles) spreads as far as it
+   obstacles fragment the range), pick `(i+1)/(n+1)` through the free list.
+   Order is **travel direction first, then reach descending**: opposite-going
+   flows diverge (left-going takes the left slots), and among same-going flows
+   the longest reach sits outermost so their channel spans **nest** instead of
+   interleaving. A side whose free range is small (titles) spreads as far as it
    honestly can.
+   *Why nesting matters:* two channel flows can be drawn without crossing iff
+   their spans are nested or disjoint. Properly interleaved spans force at
+   least one crossing (river-routing result) — so the slot order's job is to
+   produce nesting, and the lane order's job is to exploit it.
 5. **Placement** — lanes via first-fit interval allocator (shared when x-spans
    don't overlap), labels centered on the lane segment (settled later by
    `svg-render`'s existing label-settling), numbered badges near the target.
    Scene width/height recomputed from actual extents (+10) — diagrams often
    *shrink* because the elk wrap defined the old width.
+   Lanes are handed out **innermost span first** via a topological pass over
+   containment (not a sort — containment is only a partial order), so an
+   enclosing span always gets the deeper lane and flows that enclose nothing
+   keep plain flow-id order and don't move. Lane spacing uses the label heights
+   each lane actually carries, not the channel-wide maximum.
+   The channel anchors on the **node content only**: elk geometry outside it
+   (its own wraps and their labels) is a *blocking band* that nudges one lane
+   where their x-spans overlap by more than `MIN_PARALLEL_RUN`, never an
+   anchor. Anchoring on it instead — the original bug — pushed the whole
+   channel past every stray wrap, wasting a band and forcing crossings.
+   `LINE_CLEARANCE` keeps a lane from running alongside an elk horizontal close
+   enough to read as one thick line; scoping it to long shared runs matters,
+   since padding *every* short segment cost `large` 24 px and 8 crossings.
 
 Determinism rules: only `+ - * /`, `Math.round/ceil/min/max/abs`, fixed
 iteration orders (numeric flow id, sorted group keys). `Math.hypot` is banned
@@ -106,7 +124,13 @@ work sent back:
   canary for the bottom-channel path (test exists in `behavior.test.ts`, but
   the byte-compare catches more).
 - Perpendicular crossings are acceptable (crossingHops renders them); what is
-  forbidden is *collinear overlap* and *junction ambiguity*.
+  forbidden is *collinear overlap* and *junction ambiguity*. A near-parallel
+  run counts as collinear: prefer extra perpendicular crossings over two lines
+  drifting alongside each other.
+- **Two flows sharing a node side must not cross each other**, and a flow
+  entering from a channel must not cross a flow attached to the same side.
+- **No dead height**: a band crossed by nothing but vertical segments is a
+  defect, in every disposition (`compact.ts`, gated at 30 px).
 
 ## 5. Verification workflow that works (sandbox has no browser)
 
@@ -119,7 +143,20 @@ work sent back:
   re-baselining — the maintainer reviews renders closely and tags defects.
 - **Coincidence audit** (regression check for the "unmerged flows" rule):
   parse `<path d="...">`, collect vertical segments, count pairs with
-  `|x1−x2| < 3` and y-overlap > 8. Must be 0 on every example.
+  `|x1−x2| < 3` and y-overlap > 8. Must be 0 on every example. Also count
+  **near-parallel** pairs (axis distance < 10, shared run > 40) — a 3 px
+  threshold misses two lines 7 px apart running 600 px, which reads as one.
+- **Crossing + waste audit**: build the scene in-process, split edges into
+  vertical/horizontal segments, count perpendicular crossings between
+  *different* edges, and find y-bands pinned by no node/label/horizontal
+  ("dead bands"). Run it against a baseline copy of the repo
+  (`cp -r` + `git show HEAD:src/... > copy`) for a real before/after table;
+  a `--disp=` flag that injects `style { disposition: … }` (same trick as
+  `behavior.test.ts`) covers the other dispositions.
+  Round-6 baseline → after: `logical-archi` 1078→986 px / 19→16 crossings /
+  159→53 px waste, `large` 1109→1077, `small` 353→287,
+  `small-slide` 529→288, `small-page` 1075→774, `infrastructure-medium-tall`
+  1131→948, `medium-slide` 864→626.
 - **Detour metrics**: for each edge, path length vs manhattan distance between
   node centers; ratio > 1.4 && waste > 300 = detour. Compare before/after
   across all examples — every changed example must improve or hold.
@@ -146,26 +183,35 @@ work sent back:
 - There is no "contributing-to-cairn" skill — when he says that, he means
   `CONTRIBUTING.md`.
 
-## 7. Known remaining work (his "there's still improvements to make")
+## 7. Known remaining work
 
-He hasn't enumerated them yet — interview him. Candidates observed:
+Round 6 (crossings + compaction) is done; measured state below. Candidates:
 
+- **elk's own near-parallel routes**: `large`/`large-fr` carry two horizontals
+  9 px apart running ~1000 px (`F12`/`F13`), from `elk.spacing.edgeEdge: 9`.
+  Pre-existing, not ours, and not fixable in the post-pass — it would need the
+  elk spacing raised (costs width) or a parallel-run separation pass.
 - **F09-type wraps remain**: `logical-fr` `INTER_ASSUREURS→FRAUDE` (external
   column, blocked on all sides, ratio 3.7) and similar external-return flows
   still use elk's wrap. Would need an east-side channel (right of the
   externals column) — symmetric to the west logic, not built yet.
-- **Lane sharing**: two flows may share one lane y with disjoint spans
-  (e.g. logical-archi F10+F13). Space-efficient but colinear segments 34 px
-  apart could be misread as one broken flow. One-line change to give each
-  edge its own lane if he objects.
+- **Forced crossings**: `logical-archi` is down to 16 (from 19) and `large`
+  holds at 78. The remainder are interleaved-span crossings, which are
+  provably unavoidable by ordering alone; reducing them needs a different
+  channel assignment (e.g. splitting a channel into left/right halves).
+- **Sparse-but-pinned bands**: compaction only removes bands free of nodes
+  across the *whole* width. Where an actor group on the left pins a band that
+  is empty in the centre, the space stays. Removing it means per-column
+  compaction, i.e. re-layout — deliberately not attempted.
+- **Candidate selection ignores the post-passes**: `slide`/`page` pick among
+  elk candidates by fit score computed on elk's raw dimensions, before reroute
+  and compaction change them. Scoring post-pass would pick better candidates
+  but re-churns every disposition snapshot.
 - **Title-constrained sides** (COORD north) can only spread ~12 px; a smarter
   option is routing one of the flows to a different side.
 - Numbered-flow and `matrix --format svg` paths through the reroute are
   lightly exercised — `large-numbered` passes but hasn't been reviewed
   closely.
-- The redistribution pass validates slots against *base* obstacles only;
-  pathological cases (slot landing within 7 px of a failed candidate's elk
-  vertical) are theoretically possible.
 
 ## 8. Working with the maintainer
 

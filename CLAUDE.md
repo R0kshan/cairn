@@ -37,16 +37,24 @@ Not a general diagramming tool.
 ## Pipeline & file map (`src/`)
 
 ```
-.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → svg-render.ts → SVG
+.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → compact.ts → svg-render.ts → SVG
 ```
 
 - `route-detour.ts` — deterministic post-layout pass (issue #26): reroutes
   elk's wrap-around backward hierarchical edges through top/bottom channels.
   elk options **cannot** fix these (tested; see
-  [`documentation/ROUTE_DETOUR_HANDOVER.md`](./documentation/ROUTE_DETOUR_HANDOVER.md)
+  [`documentation/ai/ROUTE_DETOUR_HANDOVER.md`](./documentation/ai/ROUTE_DETOUR_HANDOVER.md)
   — read it before touching flow routing). Its extra invariants: no coincident
   segments, attach points spread per node side, no line collinear with a
-  container border, risers never strike container titles.
+  container border, risers never strike container titles, channel spans nest
+  rather than interleave (slot order + lane order together).
+
+- `compact.ts` — removes horizontal bands crossed by nothing but vertical
+  segments, for **every** disposition (`page`/`tall` skip the reroute but still
+  inherit elk's spare corridors). A node, label or horizontal segment anywhere
+  across the width pins its band, which is what keeps containers undistorted
+  and a zero-overlap drawing zero-overlap. Gated by a behaviour test — dead
+  bands must stay under 30px.
 
 - `model.ts` — the heart: types, the `views` registry (kinds, nesting rules,
   per-view diagnostics), themes (`themes`/`mkTheme`/`themeFor`), i18n (`UI`),

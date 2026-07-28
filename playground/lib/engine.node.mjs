@@ -94996,6 +94996,8 @@ async function foldedLayout(model, view, elk) {
 var RATIO_THRESHOLD = 1.4;
 var MIN_WASTE = 300;
 var CHANNEL_GAP = 10;
+var LINE_CLEARANCE = 12;
+var MIN_PARALLEL_RUN = 40;
 var RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64, -72, 72];
 var WEST_DESCENT_DELTAS = [-10, -18, -26, -34];
 var EAST_DESCENT_DELTAS = [10, 14, 18, 22, 26, 30, 34, 42, 50, 58, 66];
@@ -95241,6 +95243,7 @@ function rerouteDetours(scene, model, numbered) {
       if (role === "entry") return plan.exitX;
       return plan.entry.x;
     };
+    const flowNumber = (attachment) => parseInt(attachment.plan.edge.id.slice(1), 10);
     const sortedKeys = [...attachGroups.keys()].sort();
     for (const key of sortedKeys) {
       const { node, members } = attachGroups.get(key);
@@ -95252,8 +95255,10 @@ function rerouteDetours(scene, model, numbered) {
         if (clear) freePositions.push(x);
       }
       if (freePositions.length < members.length) continue;
+      const sideCenterX = node.x + node.width / 2;
+      const travelsLeft = (member) => farEndX(member) < sideCenterX ? 0 : 1;
       members.sort(
-        (memberA, memberB) => farEndX(memberA) - farEndX(memberB) || parseInt(memberA.plan.edge.id.slice(1), 10) - parseInt(memberB.plan.edge.id.slice(1), 10)
+        (memberA, memberB) => travelsLeft(memberA) - travelsLeft(memberB) || farEndX(memberB) - farEndX(memberA) || flowNumber(memberA) - flowNumber(memberB)
       );
       members.forEach((member, index) => {
         const pick = freePositions[Math.round((index + 1) * (freePositions.length - 1) / (members.length + 1))];
@@ -95262,27 +95267,40 @@ function rerouteDetours(scene, model, numbered) {
     }
   }
   const rerouted = new Set(plans.map((plan) => plan.edge.id));
-  let contentBottom = maxNodeBottom;
-  let contentTop = Math.min(...scene.nodes.map((node) => node.y));
+  const contentBottom = maxNodeBottom;
+  const contentTop = Math.min(...scene.nodes.map((node) => node.y));
+  const blockingBands = [];
   for (const edge of scene.edges) {
     if (rerouted.has(edge.id)) continue;
-    for (const point of edge.pts) {
-      contentBottom = Math.max(contentBottom, point.y);
-      contentTop = Math.min(contentTop, point.y);
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const pointA = edge.pts[index];
+      const pointB = edge.pts[index + 1];
+      if (Math.abs(pointA.y - pointB.y) < 0.5 && Math.abs(pointA.x - pointB.x) >= 0.5)
+        blockingBands.push({
+          // Padded: a lane running a few px from an elk horizontal over a long
+          // shared span reads as one thick line, not two flows.
+          top: pointA.y - LINE_CLEARANCE,
+          bottom: pointA.y + LINE_CLEARANCE,
+          left: Math.min(pointA.x, pointB.x),
+          right: Math.max(pointA.x, pointB.x),
+          minOverlap: MIN_PARALLEL_RUN
+        });
     }
-    for (const label of edge.labels) {
-      contentBottom = Math.max(contentBottom, label.y + label.height);
-      contentTop = Math.min(contentTop, label.y);
-    }
+    for (const label of edge.labels)
+      blockingBands.push({
+        top: label.y,
+        bottom: label.y + label.height,
+        left: label.x,
+        right: label.x + label.width,
+        minOverlap: 0
+      });
   }
+  const bandConflicts = (top, bottom, left, right) => blockingBands.some(
+    (band) => band.top < bottom && top < band.bottom && Math.min(band.right, right) - Math.max(band.left, left) > band.minOverlap
+  );
   const isTop = (plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop";
   const bottomPlans = plans.filter((plan) => !isTop(plan));
   const topPlans = plans.filter(isTop);
-  const labelHeightOf = (subset) => Math.max(0, ...subset.flatMap((plan) => plan.edge.labels.map((label) => label.height)));
-  const maxLabelHeight = labelHeightOf(bottomPlans);
-  const laneHeight = maxLabelHeight + 14;
-  const maxLabelHeightTop = labelHeightOf(topPlans);
-  const laneHeightTop = maxLabelHeightTop + 14;
   const makeAllocator = () => {
     const lanes = [];
     return (intervalStart, intervalEnd) => {
@@ -95300,8 +95318,52 @@ function rerouteDetours(scene, model, numbered) {
       return lanes.length - 1;
     };
   };
-  const allocLane = makeAllocator();
-  const allocLaneTop = makeAllocator();
+  const spanLeft = (plan) => Math.min(plan.exitX, plan.entry.x);
+  const spanRight = (plan) => Math.max(plan.exitX, plan.entry.x);
+  const enclosedBy = (inner, outer) => spanLeft(outer) <= spanLeft(inner) && spanRight(inner) <= spanRight(outer) && spanRight(inner) - spanLeft(inner) < spanRight(outer) - spanLeft(outer);
+  const laneIndexOf = /* @__PURE__ */ new Map();
+  const assignLanes = (subset, alloc) => {
+    const remaining = [...subset].sort(
+      (planA, planB) => parseInt(planA.edge.id.slice(1), 10) - parseInt(planB.edge.id.slice(1), 10)
+    );
+    while (remaining.length) {
+      const innermost = remaining.findIndex(
+        (plan2) => !remaining.some((other) => other !== plan2 && enclosedBy(other, plan2))
+      );
+      const [plan] = remaining.splice(innermost < 0 ? 0 : innermost, 1);
+      laneIndexOf.set(plan.edge.id, alloc(plan.exitX, plan.entry.x));
+    }
+  };
+  assignLanes(bottomPlans, makeAllocator());
+  assignLanes(topPlans, makeAllocator());
+  const laneOffsets = (subset, direction, anchor) => {
+    const byLane = /* @__PURE__ */ new Map();
+    for (const plan of subset) {
+      const lane = laneIndexOf.get(plan.edge.id);
+      byLane.set(lane, [...byLane.get(lane) ?? [], plan]);
+    }
+    const labelHeights = [];
+    const positions = [];
+    for (let lane = 0; lane < byLane.size; lane++) {
+      const members = byLane.get(lane) ?? [];
+      const labelHeight = Math.max(
+        0,
+        ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height))
+      );
+      const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
+      const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
+      let position = lane === 0 ? direction > 0 ? anchor + CHANNEL_GAP + labelHeight + 3 : anchor - CHANNEL_GAP : positions[lane - 1] + direction * ((direction > 0 ? labelHeight : labelHeights[lane - 1]) + 14);
+      for (let guard = 0; guard < 80; guard++) {
+        if (!bandConflicts(position - labelHeight - 3, position + 1, left, right)) break;
+        position += direction * 6;
+      }
+      labelHeights.push(labelHeight);
+      positions.push(position);
+    }
+    return positions;
+  };
+  const bottomLaneY = laneOffsets(bottomPlans, 1, contentBottom);
+  const topLaneY = laneOffsets(topPlans, -1, contentTop);
   const placeLaneLabels = (edge, exitX, farX, laneY) => {
     for (const label of edge.labels) {
       const segmentStart = Math.min(exitX, farX);
@@ -95314,8 +95376,7 @@ function rerouteDetours(scene, model, numbered) {
   for (const plan of plans) {
     const { edge, source, target, exitX, entry } = plan;
     if (entry.kind === "north" || entry.kind === "westTop") {
-      const lane2 = allocLaneTop(exitX, entry.x);
-      const laneY2 = contentTop - CHANNEL_GAP - lane2 * laneHeightTop;
+      const laneY2 = topLaneY[laneIndexOf.get(edge.id)];
       edge.pts = entry.kind === "north" ? [
         { x: exitX, y: source.y },
         { x: exitX, y: laneY2 },
@@ -95345,8 +95406,7 @@ function rerouteDetours(scene, model, numbered) {
     }
     const sourceBottom = source.y + source.height;
     const farX = entry.x;
-    const lane = allocLane(exitX, farX);
-    const laneY = contentBottom + CHANNEL_GAP + maxLabelHeight + 3 + lane * laneHeight;
+    const laneY = bottomLaneY[laneIndexOf.get(edge.id)];
     if (entry.kind === "south") {
       const targetBottom = target.y + target.height;
       edge.pts = [
@@ -95421,6 +95481,70 @@ function rerouteDetours(scene, model, numbered) {
   }
   scene.width = Math.ceil(maxX + 10);
   scene.height = Math.ceil(maxY + 10);
+}
+
+// src/compact.ts
+var KEEP_GAP = 14;
+var EDGE_MARGIN = 22;
+var MIN_SAVING = 4;
+function compactVertical(scene) {
+  const pinned = [];
+  for (const node of scene.nodes) pinned.push({ top: node.y, bottom: node.y + node.height });
+  for (const edge of scene.edges) {
+    for (const label of edge.labels) pinned.push({ top: label.y, bottom: label.y + label.height });
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const pointA = edge.pts[index];
+      const pointB = edge.pts[index + 1];
+      if (Math.abs(pointA.y - pointB.y) < 0.5 && Math.abs(pointA.x - pointB.x) >= 0.5)
+        pinned.push({ top: pointA.y - 1, bottom: pointA.y + 1 });
+    }
+    if (edge.pts.length) {
+      const first = edge.pts[0];
+      const last = edge.pts[edge.pts.length - 1];
+      pinned.push({ top: first.y - 1, bottom: first.y + 1 });
+      pinned.push({ top: last.y - 1, bottom: last.y + 1 });
+    }
+  }
+  if (!pinned.length) return;
+  pinned.sort((bandA, bandB) => bandA.top - bandB.top || bandA.bottom - bandB.bottom);
+  const merged = [];
+  for (const band of pinned) {
+    const last = merged[merged.length - 1];
+    if (last && band.top <= last.bottom) last.bottom = Math.max(last.bottom, band.bottom);
+    else merged.push({ ...band });
+  }
+  const cuts = [];
+  const addCut = (from, to, keep) => {
+    const save = Math.round(to - from - keep);
+    if (save >= MIN_SAVING) cuts.push({ from, to, save });
+  };
+  addCut(0, merged[0].top, EDGE_MARGIN);
+  for (let index = 0; index + 1 < merged.length; index++)
+    addCut(merged[index].bottom, merged[index + 1].top, KEEP_GAP);
+  const heightBefore = merged[merged.length - 1].bottom;
+  const bottomMargin = Math.min(scene.height - heightBefore, EDGE_MARGIN);
+  if (!cuts.length && scene.height - heightBefore <= EDGE_MARGIN) return;
+  const shiftAt = (y) => {
+    let shift = 0;
+    for (const cut of cuts) {
+      if (y >= cut.to) shift += cut.save;
+      else if (y > cut.from) shift += Math.min(y - cut.from, cut.save);
+    }
+    return shift;
+  };
+  for (const node of scene.nodes) node.y -= shiftAt(node.y);
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) point.y -= shiftAt(point.y);
+    for (const label of edge.labels) label.y -= shiftAt(label.y);
+  }
+  const heightAfter = Math.max(
+    ...scene.nodes.map((node) => node.y + node.height),
+    ...scene.edges.flatMap((edge) => [
+      ...edge.pts.map((point) => point.y),
+      ...edge.labels.map((label) => label.y + label.height)
+    ])
+  );
+  scene.height = Math.ceil(heightAfter + bottomMargin);
 }
 
 // src/scene-layout.ts
@@ -95643,6 +95767,7 @@ async function layout(model, view) {
       layoutMs: layoutMs2
     };
     if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    compactVertical(scene);
     return scene;
   };
   const startTime = Date.now();
@@ -95671,6 +95796,7 @@ async function layout(model, view) {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
+        compactVertical(folded);
         return folded;
       }
     }

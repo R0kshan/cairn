@@ -21,6 +21,8 @@ import { fontSizes, measure } from "./text-metrics.ts";
 const RATIO_THRESHOLD = 1.4;
 const MIN_WASTE = 300;
 const CHANNEL_GAP = 10;
+const LINE_CLEARANCE = 12;
+const MIN_PARALLEL_RUN = 40;
 const RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64, -72, 72];
 const WEST_DESCENT_DELTAS = [-10, -18, -26, -34];
 const EAST_DESCENT_DELTAS = [10, 14, 18, 22, 26, 30, 34, 42, 50, 58, 66];
@@ -391,6 +393,8 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
       if (role === "entry") return plan.exitX;
       return plan.entry.x;
     };
+    const flowNumber = (attachment: Attachment) =>
+      parseInt(attachment.plan.edge.id.slice(1), 10);
     const sortedKeys = [...attachGroups.keys()].sort();
     for (const key of sortedKeys) {
       const { node, members } = attachGroups.get(key)!;
@@ -408,10 +412,20 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
         if (clear) freePositions.push(x);
       }
       if (freePositions.length < members.length) continue;
+      // Slot order = travel direction, then reach descending. Flows heading
+      // left take the left slots and flows heading right the right ones, so
+      // opposite-direction flows diverge immediately. Among flows heading the
+      // SAME way the longest reach sits outermost, which makes their channel
+      // spans nest instead of interleave — nested spans can be lane-ordered
+      // with no crossing at all (see the lane allocation below), interleaved
+      // ones cannot.
+      const sideCenterX = node.x + node.width / 2;
+      const travelsLeft = (member: Attachment) => (farEndX(member) < sideCenterX ? 0 : 1);
       members.sort(
         (memberA, memberB) =>
-          farEndX(memberA) - farEndX(memberB) ||
-          parseInt(memberA.plan.edge.id.slice(1), 10) - parseInt(memberB.plan.edge.id.slice(1), 10),
+          travelsLeft(memberA) - travelsLeft(memberB) ||
+          farEndX(memberB) - farEndX(memberA) ||
+          flowNumber(memberA) - flowNumber(memberB),
       );
       members.forEach((member, index) => {
         const pick =
@@ -422,29 +436,60 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
   }
 
   const rerouted = new Set(plans.map((plan) => plan.edge.id));
-  let contentBottom = maxNodeBottom;
-  let contentTop = Math.min(...scene.nodes.map((node) => node.y));
+  // Channels hug the node content. Geometry elk left *outside* that content
+  // (its own wrap-around routes and their labels) is deliberately not an
+  // anchor — otherwise one stray wrap pushes the whole channel far off the
+  // drawing, wasting a band and forcing our flows to cross that wrap. Such
+  // geometry instead becomes a blocking band that nudges an individual lane
+  // only where their x-spans actually meet.
+  const contentBottom = maxNodeBottom;
+  const contentTop = Math.min(...scene.nodes.map((node) => node.y));
+  // `minOverlap`: how much shared x-span makes this band a real obstacle. A
+  // label overlapped at all is a collision; a horizontal segment only reads as
+  // a duplicate of our lane when they run alongside each other for a while.
+  const blockingBands: {
+    top: number;
+    bottom: number;
+    left: number;
+    right: number;
+    minOverlap: number;
+  }[] = [];
   for (const edge of scene.edges) {
     if (rerouted.has(edge.id)) continue;
-    for (const point of edge.pts) {
-      contentBottom = Math.max(contentBottom, point.y);
-      contentTop = Math.min(contentTop, point.y);
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const pointA = edge.pts[index];
+      const pointB = edge.pts[index + 1];
+      if (Math.abs(pointA.y - pointB.y) < 0.5 && Math.abs(pointA.x - pointB.x) >= 0.5)
+        blockingBands.push({
+          // Padded: a lane running a few px from an elk horizontal over a long
+          // shared span reads as one thick line, not two flows.
+          top: pointA.y - LINE_CLEARANCE,
+          bottom: pointA.y + LINE_CLEARANCE,
+          left: Math.min(pointA.x, pointB.x),
+          right: Math.max(pointA.x, pointB.x),
+          minOverlap: MIN_PARALLEL_RUN,
+        });
     }
-    for (const label of edge.labels) {
-      contentBottom = Math.max(contentBottom, label.y + label.height);
-      contentTop = Math.min(contentTop, label.y);
-    }
+    for (const label of edge.labels)
+      blockingBands.push({
+        top: label.y,
+        bottom: label.y + label.height,
+        left: label.x,
+        right: label.x + label.width,
+        minOverlap: 0,
+      });
   }
+  const bandConflicts = (top: number, bottom: number, left: number, right: number): boolean =>
+    blockingBands.some(
+      (band) =>
+        band.top < bottom &&
+        top < band.bottom &&
+        Math.min(band.right, right) - Math.max(band.left, left) > band.minOverlap,
+    );
 
   const isTop = (plan: Plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop";
   const bottomPlans = plans.filter((plan) => !isTop(plan));
   const topPlans = plans.filter(isTop);
-  const labelHeightOf = (subset: Plan[]) =>
-    Math.max(0, ...subset.flatMap((plan) => plan.edge.labels.map((label) => label.height)));
-  const maxLabelHeight = labelHeightOf(bottomPlans);
-  const laneHeight = maxLabelHeight + 14;
-  const maxLabelHeightTop = labelHeightOf(topPlans);
-  const laneHeightTop = maxLabelHeightTop + 14;
 
   // Lane allocation: non-overlapping x-intervals share a lane (first fit).
   const makeAllocator = () => {
@@ -464,8 +509,75 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
       return lanes.length - 1;
     };
   };
-  const allocLane = makeAllocator();
-  const allocLaneTop = makeAllocator();
+
+  // Lanes are handed out innermost span first, so a span that *contains*
+  // another always ends up on a deeper lane. Combined with the nesting the
+  // slot order produces, a flow's riser can then never cross the lane of a
+  // flow it encloses — the crossings that remain are only the ones forced by
+  // genuinely interleaved spans. Containment is only a partial order, so this
+  // is a topological pass rather than a sort: flows that don't enclose one
+  // another keep plain flow-id order and their lanes don't move.
+  const spanLeft = (plan: Plan) => Math.min(plan.exitX, plan.entry.x);
+  const spanRight = (plan: Plan) => Math.max(plan.exitX, plan.entry.x);
+  const enclosedBy = (inner: Plan, outer: Plan) =>
+    spanLeft(outer) <= spanLeft(inner) &&
+    spanRight(inner) <= spanRight(outer) &&
+    spanRight(inner) - spanLeft(inner) < spanRight(outer) - spanLeft(outer);
+  const laneIndexOf = new Map<string, number>();
+  const assignLanes = (subset: Plan[], alloc: (start: number, end: number) => number) => {
+    const remaining = [...subset].sort(
+      (planA, planB) =>
+        parseInt(planA.edge.id.slice(1), 10) - parseInt(planB.edge.id.slice(1), 10),
+    );
+    while (remaining.length) {
+      const innermost = remaining.findIndex(
+        (plan) => !remaining.some((other) => other !== plan && enclosedBy(other, plan)),
+      );
+      const [plan] = remaining.splice(innermost < 0 ? 0 : innermost, 1);
+      laneIndexOf.set(plan.edge.id, alloc(plan.exitX, plan.entry.x));
+    }
+  };
+  assignLanes(bottomPlans, makeAllocator());
+  assignLanes(topPlans, makeAllocator());
+
+  // Lane offsets: each lane is spaced by the height of the labels it actually
+  // carries (not the channel-wide maximum), then pushed further out only if
+  // it would land on elk geometry sharing its x-span.
+  const laneOffsets = (subset: Plan[], direction: 1 | -1, anchor: number): number[] => {
+    const byLane = new Map<number, Plan[]>();
+    for (const plan of subset) {
+      const lane = laneIndexOf.get(plan.edge.id)!;
+      byLane.set(lane, [...(byLane.get(lane) ?? []), plan]);
+    }
+    const labelHeights: number[] = [];
+    const positions: number[] = [];
+    for (let lane = 0; lane < byLane.size; lane++) {
+      const members = byLane.get(lane) ?? [];
+      const labelHeight = Math.max(
+        0,
+        ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height)),
+      );
+      const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
+      const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
+      let position =
+        lane === 0
+          ? direction > 0
+            ? anchor + CHANNEL_GAP + labelHeight + 3
+            : anchor - CHANNEL_GAP
+          : positions[lane - 1] +
+            direction * ((direction > 0 ? labelHeight : labelHeights[lane - 1]) + 14);
+      // The lane and the label band above it must clear elk's leftovers.
+      for (let guard = 0; guard < 80; guard++) {
+        if (!bandConflicts(position - labelHeight - 3, position + 1, left, right)) break;
+        position += direction * 6;
+      }
+      labelHeights.push(labelHeight);
+      positions.push(position);
+    }
+    return positions;
+  };
+  const bottomLaneY = laneOffsets(bottomPlans, 1, contentBottom);
+  const topLaneY = laneOffsets(topPlans, -1, contentTop);
 
   const placeLaneLabels = (edge: SceneEdge, exitX: number, farX: number, laneY: number) => {
     for (const label of edge.labels) {
@@ -481,8 +593,7 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
     const { edge, source, target, exitX, entry } = plan;
 
     if (entry.kind === "north" || entry.kind === "westTop") {
-      const lane = allocLaneTop(exitX, entry.x);
-      const laneY = contentTop - CHANNEL_GAP - lane * laneHeightTop;
+      const laneY = topLaneY[laneIndexOf.get(edge.id)!];
       edge.pts =
         entry.kind === "north"
           ? [
@@ -516,8 +627,7 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
 
     const sourceBottom = source.y + source.height;
     const farX = entry.x;
-    const lane = allocLane(exitX, farX);
-    const laneY = contentBottom + CHANNEL_GAP + maxLabelHeight + 3 + lane * laneHeight;
+    const laneY = bottomLaneY[laneIndexOf.get(edge.id)!];
 
     if (entry.kind === "south") {
       const targetBottom = target.y + target.height;

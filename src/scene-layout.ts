@@ -14,6 +14,7 @@ import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-met
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours } from "./route-detour.ts";
+import { compactVertical } from "./compact.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
@@ -379,6 +380,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // Wrap-around detours only occur in RIGHT-direction layouts (issue #26);
     // DOWN layouts (page/tall) are left untouched.
     if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    // Reclaim the bands elk sized for routes that no longer run there — every
+    // disposition, since page/tall skip the reroute but not elk's spare space.
+    compactVertical(scene);
     return scene;
   };
 
@@ -415,6 +419,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
+        compactVertical(folded);
         return folded;
       }
     }

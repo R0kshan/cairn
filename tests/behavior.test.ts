@@ -97,6 +97,89 @@ test("every flow keeps a distinct edge (never merged)", async () => {
   for (const f of model.flows) assert.ok(sceneEdgeIds.has(f.id), f.id);
 });
 
+// Segments of a scene, split by orientation — shared by the routing invariants.
+const segmentsOf = (scene: { edges: { id: string; pts: { x: number; y: number }[] }[] }) => {
+  const vertical: { id: string; x: number; lo: number; hi: number }[] = [];
+  const horizontal: { id: string; y: number; lo: number; hi: number }[] = [];
+  for (const e of scene.edges)
+    for (let i = 0; i + 1 < e.pts.length; i++) {
+      const a = e.pts[i],
+        b = e.pts[i + 1];
+      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+        vertical.push({ id: e.id, x: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) });
+      else if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+        horizontal.push({ id: e.id, y: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x) });
+    }
+  return { vertical, horizontal };
+};
+const edgesCross = (
+  scene: { edges: { id: string; pts: { x: number; y: number }[] }[] },
+  idA: string,
+  idB: string,
+) => {
+  const { vertical, horizontal } = segmentsOf(scene);
+  for (const [first, second] of [
+    [idA, idB],
+    [idB, idA],
+  ])
+    for (const v of vertical.filter((s) => s.id === first))
+      for (const h of horizontal.filter((s) => s.id === second))
+        if (h.lo + 1 < v.x && v.x < h.hi - 1 && v.lo + 1 < h.y && h.y < v.hi - 1) return true;
+  return false;
+};
+
+// Issue #26, channel ordering: two flows sharing a node side must not cross
+// each other. Slot order makes their channel spans nest and lane order gives
+// the enclosing span the deeper lane — a nested pair has a crossing-free
+// arrangement, so any crossing here is a routing bug, not geometry.
+test("flows sharing a node side do not cross each other (logical-archi)", async () => {
+  const { model, scene, overlapsAfter } = await build(load("logical-archi.cairn"));
+  assert.equal(overlapsAfter, 0);
+  const siblings = model.flows.filter((f) => f.from === "COLLECT" && f.to === "SUIV_FLUX");
+  assert.equal(siblings.length, 2, "fixture must keep two COLLECT→SUIV_FLUX flows");
+  assert.ok(
+    !edgesCross(scene, siblings[0].id, siblings[1].id),
+    `${siblings[0].id} and ${siblings[1].id} share both endpoints and must nest, not cross`,
+  );
+  // A channel lane hugs the node content, so it stays inside (below) an elk
+  // wrap-around route that loops over the top of the drawing.
+  const channel = model.flows.find((f) => f.from === "COORD" && f.to === "OPE")!;
+  const wrap = model.flows.find((f) => f.from === "COM_CTR" && f.to === "OBS")!;
+  const { horizontal } = segmentsOf(scene);
+  const laneY = Math.min(...horizontal.filter((s) => s.id === channel.id).map((s) => s.y));
+  const wrapY = Math.min(...horizontal.filter((s) => s.id === wrap.id).map((s) => s.y));
+  assert.ok(laneY > wrapY, `COORD→OPE lane (${laneY}) must run below the elk wrap (${wrapY})`);
+  assert.ok(!edgesCross(scene, channel.id, wrap.id), "COORD→OPE must not cross COM_CTR→OBS");
+});
+
+// Compaction (src/compact.ts): a band crossed by nothing but vertical segments
+// is dead height. elk sizes the drawing for routes it planned, so rerouting or
+// its own spare corridors leave such bands behind in every disposition.
+test("no dead horizontal band survives in any disposition", async () => {
+  for (const file of ["small.cairn", "medium.cairn", "logical-archi.cairn", "large.cairn"])
+    for (const disp of ["wide", "slide", "page"] as const) {
+      const base = load(file);
+      const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
+      const pinned: [number, number][] = scene.nodes.map((n) => [n.y, n.y + n.height]);
+      for (const e of scene.edges)
+        for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
+      for (const s of segmentsOf(scene).horizontal) pinned.push([s.y - 1, s.y + 1]);
+      pinned.sort((a, b) => a[0] - b[0]);
+      let reach = 0;
+      for (const [top, bottom] of pinned) {
+        assert.ok(
+          top - reach < 30,
+          `${file} ${disp}: ${Math.round(top - reach)}px dead band at y≈${Math.round(reach)}`,
+        );
+        reach = Math.max(reach, bottom);
+      }
+      assert.ok(
+        scene.height - reach < 30,
+        `${file} ${disp}: ${Math.round(scene.height - reach)}px dead band at the bottom`,
+      );
+    }
+});
+
 // Issue #26: elk wraps backward hierarchical edges around the whole drawing.
 // The detour reroute (src/route-detour.ts) must bring the two marked flows of
 // logical-fr (CALCUL→RESPONSABLE, DOSSIER→ASSURE) down through a bottom

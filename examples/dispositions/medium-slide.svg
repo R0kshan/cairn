@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2113 864" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2113 850" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2113" height="864" fill="#ffffff"/>
+<rect width="2113" height="850" fill="#ffffff"/>
 <rect x="25" y="62" width="156" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="35" y="80" font-size="13" font-weight="bold" fill="#17202c">Policyholders</text>
 <rect x="57" y="237" width="94" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -140,39 +140,39 @@
 <text x="1880" y="270.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">SEPA transfer</text>
 <rect x="1840" y="278.5" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="1880" y="289.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<path d="M 1009 294.3333333333333 L 1009 630 L 13 630 L 13 116 L 67.33333333333333 116" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="511" y="606.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
-<text x="511" y="621" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">and decision</text>
-<line x1="20" y1="650" x2="2093" y2="650" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="672" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
-<rect x="150" y="662" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="171.5" y="673" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
-<text x="203" y="673" font-size="10" fill="#79828f">— damaging event reported by a policyholder</text>
-<rect x="150" y="686" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="182" y="697" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Case file</text>
-<text x="224" y="697" font-size="10" fill="#79828f">— file opened to investigate a claim</text>
-<rect x="150" y="710" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="203.5" y="721" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
-<text x="267" y="721" font-size="10" fill="#79828f">— quantified conclusions of the appointed expert</text>
-<rect x="150" y="734" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="190" y="745" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<text x="240" y="745" font-size="10" fill="#79828f">— amount approved and paid to the policyholder</text>
-<line x1="20" y1="772" x2="2093" y2="772" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="794" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="784" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="795" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="784" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="304" y="795" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="784" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="400" y="795" font-size="10" fill="#17202c">Layer</text>
-<rect x="458" y="784" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="490" y="795" font-size="10" fill="#17202c">Functional block</text>
-<rect x="606" y="784" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="638" y="795" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="814" x2="176" y2="814" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="818" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
-<rect x="480" y="807" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="528" y="818" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="584" y="818" font-size="10" fill="#17202c">carried by the flow</text>
-<text x="150" y="842" font-size="10" fill="#17202c" font-style="italic">Claim files are retained for 10 years (legal obligation)</text>
+<path d="M 1009 294.3333333333333 L 1009 615.5 L 13 615.5 L 13 116 L 67.33333333333333 116" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="511" y="592" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
+<text x="511" y="606.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">and decision</text>
+<line x1="20" y1="636" x2="2093" y2="636" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="658" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
+<rect x="150" y="648" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="171.5" y="659" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
+<text x="203" y="659" font-size="10" fill="#79828f">— damaging event reported by a policyholder</text>
+<rect x="150" y="672" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="182" y="683" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Case file</text>
+<text x="224" y="683" font-size="10" fill="#79828f">— file opened to investigate a claim</text>
+<rect x="150" y="696" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="203.5" y="707" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
+<text x="267" y="707" font-size="10" fill="#79828f">— quantified conclusions of the appointed expert</text>
+<rect x="150" y="720" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="190" y="731" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
+<text x="240" y="731" font-size="10" fill="#79828f">— amount approved and paid to the policyholder</text>
+<line x1="20" y1="758" x2="2093" y2="758" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="780" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="770" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="781" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="770" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="781" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="770" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="400" y="781" font-size="10" fill="#17202c">Layer</text>
+<rect x="458" y="770" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="490" y="781" font-size="10" fill="#17202c">Functional block</text>
+<rect x="606" y="770" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="638" y="781" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="800" x2="176" y2="800" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="804" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
+<rect x="480" y="793" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="528" y="804" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="584" y="804" font-size="10" fill="#17202c">carried by the flow</text>
+<text x="150" y="828" font-size="10" fill="#17202c" font-style="italic">Claim files are retained for 10 years (legal obligation)</text>
 </svg>
