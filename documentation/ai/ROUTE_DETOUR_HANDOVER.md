@@ -153,6 +153,10 @@ work sent back:
   drifting alongside each other.
 - **Two flows sharing a node side must not cross each other**, and a flow
   entering from a channel must not cross a flow attached to the same side.
+- **No flow shares an attachment point with another**, on any side, inbound or
+  outbound (`edge-tidy.ts`, target `MIN_ATTACH_GAP`).
+- **Every segment is orthogonal, and a run is straight until it really turns** —
+  deviations under `SNAP` are elk noise and get collapsed.
 - **No dead height**: a band crossed by nothing but vertical segments is a
   defect, in every disposition (`compact.ts`, gated at 30 px).
 
@@ -216,6 +220,32 @@ work sent back:
 - There is no "contributing-to-cairn" skill — when he says that, he means
   `CONTRIBUTING.md`.
 
+## 6b. `edge-tidy.ts` — the two rules that apply to *every* edge
+
+Runs after the reroute, before compaction. Straightening first, then
+separation: separation moves a terminal run rigidly, so it cannot reintroduce
+the jog straightening just removed. Hard-won details:
+
+- **Guards on both moves.** Aligning a run, or sliding one 12px aside, must not
+  park it on another flow. `runIsClear` mirrors the two audit metrics exactly
+  (`gap < 4 && shared > 6`, `gap < 11 && shared > 36`) — thresholds a hair
+  looser than the metric let two regressions through unnoticed.
+- **Siblings are exempt from that guard.** Flows leaving the same node side are
+  parallel and close *by construction*; including them made the guard block the
+  very separation it was meant to protect.
+- **Orthogonality must be re-enforced after separation**, not just after
+  straightening: a jog left in place (because straightening it would have
+  merged two flows) tilts when a separation move shifts one of its ends. It is
+  a fixpoint loop — fixing one segment tilts its neighbour.
+- **A terminal may slide along its side but never off its border**; a two-point
+  flow has no interior point to absorb a shift, so both ends move together, and
+  only if the far end can follow.
+- **Straightness couples the two sides a flow connects.** A straight run cannot
+  be 12px apart at one end and 10px at the other, so a crowded side dictates
+  the spacing at *both* ends. This is why the gate asserts "never share or
+  graze a point" as the hard rule and treats `MIN_ATTACH_GAP` as a target
+  bounded by what the tighter side allows — not a bug to chase.
+
 ## 7. Known remaining work
 
 Round 6 (crossings + compaction) is done; measured state below. Candidates:
@@ -224,6 +254,13 @@ Round 6 (crossings + compaction) is done; measured state below. Candidates:
   9 px apart running ~1000 px (`F12`/`F13`), from `elk.spacing.edgeEdge: 9`.
   Pre-existing, not ours, and not fixable in the post-pass — it would need the
   elk spacing raised (costs width) or a parallel-run separation pass.
+- **Converging approach runs**: in `large-fr`, `F04`/`F06` reach the same node
+  side and their approach runs sit 5.9 px apart over 114 px, though the
+  attachments themselves are 8.2 px apart. `edge-tidy` only governs the
+  terminal run, not the whole approach, and siblings are exempt from the merge
+  guard. Fixing it means separating flows along their shared corridor, not just
+  at the border. The behaviour gate covers six examples — `large-fr` is not one
+  of them, so widen it if you take this on.
 - **F09-type wraps remain**: `logical-fr` `INTER_ASSUREURS→FRAUDE` (external
   column, blocked on all sides, ratio 3.7) and similar external-return flows
   still use elk's wrap. Would need an east-side channel (right of the

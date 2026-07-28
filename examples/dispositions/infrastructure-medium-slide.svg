@@ -52,25 +52,25 @@
 <rect x="1502" y="265" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1556" y="285.25" font-size="12.5" text-anchor="middle" fill="#17202c">Partner EDI</text>
 <text x="1556" y="299.75" font-size="12.5" text-anchor="middle" fill="#17202c">platform</text>
-<path d="M 98 393 L 207 392.8333333333333 L 304 392.8333333333333 A 5 5 0 0 1 314 392.8333333333333 L 1079.25 392.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 98 393 L 304 393 A 5 5 0 0 1 314 393 L 1079.25 392.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="152.5" y="408.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
 <path d="M 1133.25 411.8333333333333 L 1133.25 502.8333333333333 L 309 502.8333333333333 L 309 128" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="721.125" y="493.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
-<path d="M 619 276.66666666666663 L 892 276.66666666666663 L 892 188.16666666666663 L 1027 188.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 619 276.66666666666663 L 892 276.66666666666663 L 892 189.16666666666663 L 1027 189.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="940.5" y="203.66666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
-<path d="M 619 189 L 882 189 L 882 177.16666666666663 L 989 177.16666666666663 L 989 175.49999999999994 L 1027 175.49999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 619 189 L 882 189 L 882 177.16666666666663 L 1027 177.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="940.5" y="168.16666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
-<path d="M 363 99.5 L 511 99.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 363 98 L 511 98" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="435" y="115" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
 <path d="M 619 99.5 L 750 99.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="691.5" y="90.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(LDAPS/636)</text>
-<path d="M 363 118.5 L 373 118.5 L 373 283 L 511 282.99999999999994" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 363 122 L 373 122 L 373 283 L 511 282.99999999999994" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="435" y="298.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
-<path d="M 363 109 L 383 109 L 383 189 L 511 189" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 363 110 L 383 110 L 383 189 L 511 189" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="435" y="204.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/8444)</text>
 <path d="M 619 289.3333333333333 L 1079.25 289.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="940.5" y="304.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SFTP/22)</text>
-<path d="M 1187.25 289.3333333333333 L 1406 289 L 1502 289" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1187.25 289.3333333333333 L 1502 289" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1454" y="304.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4/443)</text>
 <path d="M 1144 162.83333333333331 L 1255 162.83333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1199.5" y="178.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9092)</text>

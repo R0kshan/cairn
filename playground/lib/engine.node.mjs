@@ -95616,6 +95616,256 @@ function compactVertical(scene) {
   scene.height = Math.ceil(heightAfter + bottomMargin);
 }
 
+// src/edge-tidy.ts
+var SNAP = 6;
+var MIN_ATTACH_GAP = 12;
+var SIDE_INSET = 6;
+var MIN_SIDE_INSET = 3;
+var segmentLength = (a, b) => Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
+function straighten(points, runIsClear) {
+  const pts = points.map((point) => ({ ...point }));
+  const skipped = /* @__PURE__ */ new Set();
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const deltaX = pts[index + 1].x - pts[index].x;
+    const deltaY = pts[index + 1].y - pts[index].y;
+    if (Math.abs(deltaX) < 0.5 || Math.abs(deltaY) < 0.5) continue;
+    if (Math.min(Math.abs(deltaX), Math.abs(deltaY)) > SNAP) continue;
+    const moveLater = index + 1 < pts.length - 1;
+    const from = moveLater ? pts[index] : pts[index + 1];
+    const to = moveLater ? pts[index + 1] : pts[index];
+    if (Math.abs(deltaX) >= Math.abs(deltaY)) to.y = from.y;
+    else to.x = from.x;
+  }
+  for (let guard = 0; guard < 60; guard++) {
+    let changed = false;
+    for (let index = 1; index + 1 < pts.length; index++) {
+      const straightX = Math.abs(pts[index].x - pts[index - 1].x) < 0.5 && Math.abs(pts[index + 1].x - pts[index].x) < 0.5;
+      const straightY = Math.abs(pts[index].y - pts[index - 1].y) < 0.5 && Math.abs(pts[index + 1].y - pts[index].y) < 0.5;
+      if (straightX || straightY) {
+        pts.splice(index, 1);
+        changed = true;
+        break;
+      }
+    }
+    if (changed) continue;
+    for (let index = 0; index + 1 < pts.length; index++) {
+      const length = segmentLength(pts[index], pts[index + 1]);
+      if (length === 0) {
+        pts.splice(index + 1, 1);
+        changed = true;
+        break;
+      }
+      if (length > SNAP) continue;
+      if (skipped.has(index)) continue;
+      const hasBefore = index - 1 >= 0;
+      const hasAfter = index + 2 < pts.length;
+      if (!hasBefore && !hasAfter) continue;
+      const beforeLength = hasBefore ? segmentLength(pts[index - 1], pts[index]) : -1;
+      const afterLength = hasAfter ? segmentLength(pts[index + 1], pts[index + 2]) : -1;
+      const anchors = (beforeLength >= afterLength ? [hasBefore ? pts[index - 1] : null, hasAfter ? pts[index + 2] : null] : [hasAfter ? pts[index + 2] : null, hasBefore ? pts[index - 1] : null]).filter((point) => point !== null);
+      const vertical = Math.abs(pts[index + 1].x - pts[index].x) < 0.5;
+      const touched = [pts[index], pts[index + 1]];
+      if (hasBefore) touched.push(pts[index - 1]);
+      if (hasAfter) touched.push(pts[index + 2]);
+      const spanOf = (point) => vertical ? point.x : point.y;
+      const from = Math.min(...touched.map(spanOf));
+      const to = Math.max(...touched.map(spanOf));
+      const anchor = anchors.find(
+        (candidate) => runIsClear(!vertical, vertical ? candidate.y : candidate.x, from, to)
+      );
+      if (!anchor) {
+        skipped.add(index);
+        continue;
+      }
+      for (const point of touched) {
+        if (vertical) point.y = anchor.y;
+        else point.x = anchor.x;
+      }
+      changed = true;
+      break;
+    }
+    if (!changed) break;
+  }
+  return pts;
+}
+function sideOf(point, nodes) {
+  for (const node of nodes) {
+    const withinX = point.x > node.x - 2 && point.x < node.x + node.width + 2;
+    const withinY = point.y > node.y - 2 && point.y < node.y + node.height + 2;
+    if (withinX && Math.abs(point.y - node.y) < 2) return { node, side: "north" };
+    if (withinX && Math.abs(point.y - (node.y + node.height)) < 2)
+      return { node, side: "south" };
+    if (withinY && Math.abs(point.x - node.x) < 2) return { node, side: "west" };
+    if (withinY && Math.abs(point.x - (node.x + node.width)) < 2)
+      return { node, side: "east" };
+  }
+  return null;
+}
+function tidyEdges(scene) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const runsExcept = (...edgeIds) => {
+    const horizontal = [];
+    const vertical = [];
+    for (const edge of scene.edges) {
+      if (edgeIds.includes(edge.id)) continue;
+      for (let index = 0; index + 1 < edge.pts.length; index++) {
+        const a = edge.pts[index];
+        const b = edge.pts[index + 1];
+        if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+          horizontal.push({ lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x), at: a.y });
+        else if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+          vertical.push({ lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y), at: a.x });
+      }
+    }
+    return { horizontal, vertical };
+  };
+  const runIsClear = (others, at, from, to) => !others.some((other) => {
+    const gap = Math.abs(other.at - at);
+    const shared = Math.min(other.hi, Math.max(from, to)) - Math.max(other.lo, Math.min(from, to));
+    return gap < 4 && shared > 6 || gap < 11 && shared > 36;
+  });
+  const enforceOrthogonal = (edge) => {
+    const pts = edge.pts;
+    const seats = [sideOf(pts[0], leaves), sideOf(pts[pts.length - 1], leaves)];
+    const borderAxis = (index) => {
+      const seat = index === 0 ? seats[0] : index === pts.length - 1 ? seats[1] : null;
+      if (!seat) return null;
+      return seat.side === "north" || seat.side === "south" ? "y" : "x";
+    };
+    for (let guard = 0; guard < 20; guard++) {
+      let fixed = false;
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const deltaX = pts[index + 1].x - pts[index].x;
+        const deltaY = pts[index + 1].y - pts[index].y;
+        if (Math.abs(deltaX) < 0.5 || Math.abs(deltaY) < 0.5) continue;
+        const axis = Math.abs(deltaX) >= Math.abs(deltaY) ? "y" : "x";
+        const movable = (candidate) => candidate !== 0 && candidate !== pts.length - 1 || borderAxis(candidate) !== axis;
+        const target = movable(index + 1) ? index + 1 : movable(index) ? index : -1;
+        if (target < 0) continue;
+        pts[target][axis] = pts[target === index + 1 ? index : index + 1][axis];
+        fixed = true;
+      }
+      if (!fixed) break;
+    }
+  };
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const before = edge.pts.map((point) => ({ ...point }));
+    const others = runsExcept(edge.id);
+    const after = straighten(
+      edge.pts,
+      (vertical, at, from, to) => runIsClear(vertical ? others.vertical : others.horizontal, at, from, to)
+    );
+    for (const [index, original] of [
+      [0, before[0]],
+      [after.length - 1, before[before.length - 1]]
+    ]) {
+      const seat = sideOf(original, leaves);
+      if (!seat) continue;
+      const { node, side } = seat;
+      const point = after[index];
+      if (side === "north" || side === "south") {
+        point.y = original.y;
+        point.x = Math.min(
+          Math.max(point.x, node.x + SIDE_INSET),
+          node.x + node.width - SIDE_INSET
+        );
+      } else {
+        point.x = original.x;
+        point.y = Math.min(
+          Math.max(point.y, node.y + SIDE_INSET),
+          node.y + node.height - SIDE_INSET
+        );
+      }
+    }
+    edge.pts = after;
+    enforceOrthogonal(edge);
+  }
+  const groups = /* @__PURE__ */ new Map();
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    for (const [terminal, neighbour] of [
+      [0, 1],
+      [edge.pts.length - 1, edge.pts.length - 2]
+    ]) {
+      const seat = sideOf(edge.pts[terminal], leaves);
+      if (!seat) continue;
+      const vertical = seat.side === "east" || seat.side === "west";
+      const key = `${seat.node.id}|${seat.side}`;
+      const group = groups.get(key) ?? { node: seat.node, side: seat.side, members: [] };
+      group.members.push({
+        edge,
+        terminal,
+        neighbour,
+        along: vertical ? edge.pts[terminal].y : edge.pts[terminal].x
+      });
+      groups.set(key, group);
+    }
+  }
+  const sortedKeys = [...groups.keys()].sort();
+  for (let round = 0; round < 3; round++)
+    for (const key of sortedKeys) {
+      const { node, side, members } = groups.get(key);
+      if (members.length < 2) continue;
+      const vertical = side === "east" || side === "west";
+      for (const member of members)
+        member.along = vertical ? member.edge.pts[member.terminal].y : member.edge.pts[member.terminal].x;
+      const start = vertical ? node.y : node.x;
+      const length = vertical ? node.height : node.width;
+      const needed = (members.length - 1) * MIN_ATTACH_GAP;
+      const inset = length - 2 * SIDE_INSET >= needed ? SIDE_INSET : Math.max(MIN_SIDE_INSET, (length - needed) / 2);
+      const low = start + inset;
+      const high = start + length - inset;
+      members.sort(
+        (memberA, memberB) => memberA.along - memberB.along || parseInt(memberA.edge.id.slice(1), 10) - parseInt(memberB.edge.id.slice(1), 10)
+      );
+      if (members.every((member, index) => index === 0 || member.along - members[index - 1].along >= MIN_ATTACH_GAP))
+        continue;
+      const wanted = members.map((member) => member.along);
+      for (let index = 1; index < wanted.length; index++)
+        wanted[index] = Math.max(wanted[index], wanted[index - 1] + MIN_ATTACH_GAP);
+      wanted[wanted.length - 1] = Math.min(wanted[wanted.length - 1], high);
+      for (let index = wanted.length - 2; index >= 0; index--)
+        wanted[index] = Math.min(wanted[index], wanted[index + 1] - MIN_ATTACH_GAP);
+      if (wanted[0] < low) {
+        const step = (high - low) / (members.length - 1);
+        for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
+      }
+      members.forEach((member, index) => {
+        const target = wanted[index];
+        if (Math.abs(target - member.along) < 0.01) return;
+        const { edge, terminal, neighbour } = member;
+        const terminalPoint = edge.pts[terminal];
+        const neighbourPoint = edge.pts[neighbour];
+        const straightRun = vertical ? Math.abs(neighbourPoint.y - terminalPoint.y) < 0.5 : Math.abs(neighbourPoint.x - terminalPoint.x) < 0.5;
+        if (!straightRun) return;
+        if (edge.pts.length === 2) {
+          const farSeat = sideOf(neighbourPoint, leaves);
+          if (!farSeat) return;
+          const farVertical = farSeat.side === "east" || farSeat.side === "west";
+          if (farVertical !== vertical) return;
+          const farStart = vertical ? farSeat.node.y : farSeat.node.x;
+          const farLength = vertical ? farSeat.node.height : farSeat.node.width;
+          if (target < farStart + MIN_SIDE_INSET || target > farStart + farLength - MIN_SIDE_INSET)
+            return;
+        }
+        const others = runsExcept(...members.map((sibling) => sibling.edge.id));
+        const clear = vertical ? runIsClear(others.horizontal, target, terminalPoint.x, neighbourPoint.x) : runIsClear(others.vertical, target, terminalPoint.y, neighbourPoint.y);
+        if (!clear) return;
+        if (vertical) {
+          terminalPoint.y = target;
+          neighbourPoint.y = target;
+        } else {
+          terminalPoint.x = target;
+          neighbourPoint.x = target;
+        }
+        member.along = target;
+      });
+    }
+  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+}
+
 // src/scene-layout.ts
 function computeIngressExternalElements(model) {
   const ingressExternalElements = /* @__PURE__ */ new Set();
@@ -95688,10 +95938,10 @@ function collectSceneEdges(elkNode, origins, numbered) {
       let labelX = label.x + origin.x, labelY = label.y + origin.y;
       if (numbered && points.length >= 2) {
         const last = points[points.length - 1], secondLast = points[points.length - 2];
-        const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
-        const unitX = (last.x - secondLast.x) / segmentLength, unitY = (last.y - secondLast.y) / segmentLength;
+        const segmentLength2 = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
+        const unitX = (last.x - secondLast.x) / segmentLength2, unitY = (last.y - secondLast.y) / segmentLength2;
         const rawStepBack = 20 + label.width / 2;
-        const stepBack = rawStepBack < 0 ? 0 : rawStepBack > segmentLength - 2 ? segmentLength - 2 : rawStepBack;
+        const stepBack = rawStepBack < 0 ? 0 : rawStepBack > segmentLength2 - 2 ? segmentLength2 - 2 : rawStepBack;
         let perpX = -unitY, perpY = unitX;
         if (perpY > 0) {
           perpX = -perpX;
@@ -95836,6 +96086,7 @@ async function layout(model, view) {
       layoutMs: layoutMs2
     };
     if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    tidyEdges(scene);
     compactVertical(scene);
     return scene;
   };

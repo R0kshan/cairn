@@ -37,8 +37,16 @@ Not a general diagramming tool.
 ## Pipeline & file map (`src/`)
 
 ```
-.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → compact.ts → svg-render.ts → SVG
+.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → compact.ts → svg-render.ts → SVG
 ```
+
+- `edge-tidy.ts` — endpoint hygiene for **every** edge, elk's included: collapses
+  deviations under 6px (elk emits 1px staircases and the odd non-orthogonal
+  segment) and keeps two flows on the same node side 12px apart, so an inbound
+  and an outbound flow never share a point. Both moves are refused when they
+  would park a flow on top of another — a merged line is worse than the jog or
+  the shared endpoint it would fix. Straightness couples the two sides a flow
+  connects, so the achieved gap is bounded by the tighter side.
 
 - `route-detour.ts` — deterministic post-layout pass (issue #26): reroutes
   elk's wrap-around backward hierarchical edges through top/bottom channels.

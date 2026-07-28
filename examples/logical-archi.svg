@@ -78,14 +78,14 @@
 <rect x="1432" y="482.5" width="187" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="1525.5" y="502.75" font-size="12.5" text-anchor="middle" fill="#17202c">External data-collection</text>
 <text x="1525.5" y="517.25" font-size="12.5" text-anchor="middle" fill="#17202c">infrastructure</text>
-<path d="M 150.5 582 L 186 582.5 L 426 582.1666666666667 L 446.5 582.1666666666667 A 5 5 0 0 1 456.5 582.1666666666667 L 559 582.1666666666667 A 5 5 0 0 1 569 582.1666666666667 L 917 582.1666666666667 L 917 366.5 L 982 366.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 150.5 582 L 446.5 582 A 5 5 0 0 1 456.5 582 L 559 582 A 5 5 0 0 1 569 582 L 917 582.1666666666667 L 917 366.5 L 982 366.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="304.5" y="598" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Overall control</text>
-<path d="M 172 752 L 186 752.5 L 376 752.5 L 376 604.5 L 426 604.1666666666667 L 446.5 604.1666666666667 A 5 5 0 0 1 456.5 604.1666666666667 L 559 604.1666666666667 A 5 5 0 0 1 569 604.1666666666667 L 937 604.1666666666667 L 937 439.16666666666663 L 1006 439.16666666666663 A 5 5 0 0 1 1016 439.16666666666663 L 1021 439.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 172 752 L 376 752 L 376 604.5 L 446.5 604.5 A 5 5 0 0 1 456.5 604.5 L 559 604.5 A 5 5 0 0 1 569 604.5 L 937 604.1666666666667 L 937 439.16666666666663 L 1006 439.16666666666663 A 5 5 0 0 1 1016 439.16666666666663 L 1021 439.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="298.5" y="768" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Configure the system</text>
 <path d="M 1167.5 340.8333333333333 L 1167.5 101.5 L 641 101.5 A 5 5 0 0 0 631 101.5 L 5.5 101.5 L 5.5 582 L 55.5 582" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="586.5" y="78" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Alerts, notifications and</text>
 <text x="586.5" y="92.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">feeds from various sources</text>
-<path d="M 172 667 L 186 667.5 L 224 667.5 L 224 614.5 L 366 614.5 L 366 593.5 L 426 593.1666666666667 L 446.5 593.1666666666667 A 5 5 0 0 1 456.5 593.1666666666667 L 559 593.1666666666667 A 5 5 0 0 1 569 593.1666666666667 L 927 593.1666666666667 L 927 423.5 L 1006 423.5 A 5 5 0 0 1 1016 423.5 L 1021 423.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 172 667 L 224 667 L 224 614.5 L 366 614.5 L 366 593.5 L 446.5 593.5 A 5 5 0 0 1 456.5 593.5 L 559 593.5 A 5 5 0 0 1 569 593.5 L 927 593.1666666666667 L 927 423.5 L 1006 423.5 A 5 5 0 0 1 1016 423.5 L 1021 423.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="295" y="630" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Enable/disable</text>
 <text x="295" y="644.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">a display terminal</text>
 <path d="M 620 315.1666666666667 L 620 167.5 L 278 167.5 L 278 198 L 180 198" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -93,19 +93,19 @@
 <text x="449" y="139.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">anomalies and inconsistencies</text>
 <rect x="422" y="147.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="449" y="158.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
-<path d="M 180 210 L 194 210.5 L 406 210.5 L 406 405.5 L 426 405.6666666666667 L 446.5 405.6666666666667 A 5 5 0 0 1 456.5 405.6666666666667 L 474 405.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 180 210 L 406 210 L 406 405.5 L 446.5 405.5 A 5 5 0 0 1 456.5 405.5 L 474 405.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="331.5" y="226" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Write and broadcast</text>
 <text x="331.5" y="240.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">messages to central</text>
 <text x="331.5" y="255" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">control</text>
 <rect x="304.5" y="263" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="331.5" y="274" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<path d="M 251 387.5 L 329 387.5 L 329 472.5 L 426 472.6666666666667 L 446.5 472.6666666666667 A 5 5 0 0 1 456.5 472.6666666666667 L 474 472.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 251 387.5 L 329 387.5 L 329 472.5 L 446.5 472.5 A 5 5 0 0 1 456.5 472.5 L 474 472.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="293" y="403" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Consult</text>
-<path d="M 1186 372.1666666666667 L 1234 372.5 L 1418 372 L 1456.5 372" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1186 376.3333333333333 L 1234 376.3333333333333 L 1418 376.3333333333333 L 1456.5 376.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1324" y="388" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Real-time broadcast of</text>
 <text x="1324" y="402.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">disruption information</text>
 <text x="1324" y="417" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">to the relevant lines</text>
-<path d="M 1186 498.3333333333333 L 1234 498.5 L 1408 498.5 L 1408 573.5 L 1418 573 L 1453 573 A 5 5 0 0 1 1463 573 L 1471.5 573" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1186 498.3333333333333 L 1408 498.5 L 1408 573.5 L 1418 573.5 L 1453 573.5 A 5 5 0 0 1 1463 573.5 L 1471.5 573.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1324" y="514" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Export of real-time</text>
 <text x="1324" y="528.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">and configuration data</text>
 <path d="M 1064 588.8333333333333 L 1064 716.6666666666667 L 569 716.6666666666667 A 5 5 0 0 0 559 716.6666666666667 L 451.5 716.6666666666667 L 451.5 338.6666666666667 L 477.5 338.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -125,7 +125,7 @@
 <path d="M 1592 529.5 L 1592 763.6666666666667 L 1530.5 763.6666666666667 A 5 5 0 0 0 1520.5 763.6666666666667 L 1098 763.6666666666667 L 1098 588.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1345" y="740.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Forward external</text>
 <text x="1345" y="754.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">collection data and events</text>
-<path d="M 1589.5 348.5 L 1589.5 167.5 L 1208 167.5 L 1208 364.3333333333333 L 1186 364.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1588.5 348.5 L 1588.5 167.5 L 1208 167.5 L 1208 364.3333333333333 L 1186 364.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1398.75" y="144" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Forward disruption messages</text>
 <text x="1398.75" y="158.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">from the requested transport networks</text>
 <path d="M 1601.5 415.5 L 1601.5 54.5 L 636 54.5 L 636 315.1666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>

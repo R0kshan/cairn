@@ -67,16 +67,16 @@
 <rect x="184" y="1249" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="238" y="1269.25" font-size="12.5" text-anchor="middle" fill="#17202c">Group</text>
 <text x="238" y="1283.75" font-size="12.5" text-anchor="middle" fill="#17202c">ECM</text>
-<path d="M 292.6666666666667 163 L 293 177 L 293 245 L 373 245 L 373 319" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 292.6666666666667 163 L 293 245 L 373 245 L 373 319" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="242.5" y="209.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Report a claim</text>
 <rect x="221" y="217.5" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="242.5" y="228.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
 <path d="M 411 163 L 411 187 L 427 187 L 427 236 L 501 236 L 501 319" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="364" y="219.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Report involvement</text>
-<path d="M 263.3333333333333 163 L 263 177 L 263 187 L 184 187 L 184 245 L 224 245 L 223.5 255 L 223.5 319" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 263.3333333333333 163 L 263 187 L 184 187 L 184 245 L 224 245 L 224 255 L 224 319" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="137" y="214.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Upload photos</text>
 <text x="137" y="229" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">and documents</text>
-<path d="M 223.5 366 L 224 1144 L 224 1207 L 238 1207 L 238 1249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 223.5 366 L 223.5 1207 L 238 1207 L 238 1249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="164" y="1190.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Archive documents</text>
 <path d="M 373 366 L 373 648.5 L 465 648.5 L 465 658.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="310" y="412.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
@@ -88,10 +88,10 @@
 <path d="M 474 705.5 L 474 715.5 L 455 715.5 L 455 778.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="398" y="738" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Systematic check</text>
 <text x="398" y="752.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">at opening</text>
-<path d="M 437 825.5 L 437 849.5 L 357 849.5 L 357 1154 L 371 1154 L 371 1207 L 367 1207 L 367 1249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 437 825.5 L 437 849.5 L 357 849.5 L 357 1154 L 371 1154 L 371 1249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="301.5" y="1176.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Query claims-history</text>
 <text x="301.5" y="1191" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">files</text>
-<path d="M 367 1296 L 367 1320 L 96 1320 L 96 245 L 128 245 L 128 447.5 L 332 447.5 L 332 768.5 L 419 768.5 L 419 778.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 367 1296 L 367 1320 L 96 1320 L 96 245 L 128 245 L 128 447.5 L 218.5 447.5 A 5 5 0 0 1 228.5 447.5 L 332 447.5 L 332 768.5 L 419 768.5 L 419 778.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="52" y="1229.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Policyholder</text>
 <text x="52" y="1244" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">history</text>
 <path d="M 537 658.5 L 537 546.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -123,7 +123,7 @@
 <text x="438" y="1024" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Compensation order</text>
 <rect x="398" y="1032" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="438" y="1043" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<path d="M 501 1116 L 500.5 1217 L 500.5 1249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 501 1116 L 501 1217 L 501 1249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="454" y="1172.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">SEPA transfer</text>
 <rect x="414" y="1180.5" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="454" y="1191.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>

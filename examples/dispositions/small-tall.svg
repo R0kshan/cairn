@@ -45,7 +45,7 @@
 <text x="330" y="546" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
 <path d="M 256 610 L 256 717" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="196" y="670.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
-<path d="M 334.5 118 L 335 127 L 335 203 L 305 203 L 305 405.5 L 256 405.5 L 256 447.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 334.5 118 L 334.5 203 L 305 203 L 305 405.5 L 256 405.5 L 256 447.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="291" y="153.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Open / block</text>
 <text x="291" y="168" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">slots</text>
 <rect x="272" y="176" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>

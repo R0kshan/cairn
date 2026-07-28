@@ -15,6 +15,7 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
+import { tidyEdges } from "./edge-tidy.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
@@ -380,6 +381,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // Wrap-around detours only occur in RIGHT-direction layouts (issue #26);
     // DOWN layouts (page/tall) are left untouched.
     if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    // Straighten routing noise and separate flows sharing a node side, for
+    // every edge — elk's as much as the rerouted ones.
+    tidyEdges(scene);
     // Reclaim the bands elk sized for routes that no longer run there — every
     // disposition, since page/tall skip the reroute but not elk's spare space.
     compactVertical(scene);

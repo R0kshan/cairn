@@ -128,6 +128,83 @@ const edgesCross = (
   return false;
 };
 
+// src/edge-tidy.ts. Two rules that hold whoever routed the flow:
+//   * every segment is orthogonal — elk emits the odd 10px-across/1px-down
+//     segment, which draws as a slanted hair;
+//   * two flows on the same side of a node never share a point, and stand
+//     MIN_ATTACH_GAP apart wherever the side is long enough to allow it.
+test("flows are orthogonal and never share an attachment point", async () => {
+  const MIN_ATTACH_GAP = 12;
+  const MIN_SIDE_INSET = 3;
+  for (const file of [
+    "small.cairn",
+    "medium.cairn",
+    "logical-archi.cairn",
+    "large.cairn",
+    "application.cairn",
+    "infrastructure.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    for (const e of scene.edges)
+      for (let i = 0; i + 1 < e.pts.length; i++) {
+        const a = e.pts[i],
+          b = e.pts[i + 1];
+        assert.ok(
+          Math.abs(a.x - b.x) < 0.5 || Math.abs(a.y - b.y) < 0.5,
+          `${file} ${e.id}: segment (${a.x},${a.y})→(${b.x},${b.y}) is not orthogonal`,
+        );
+      }
+
+    const leaves = scene.nodes.filter((n) => !n.container);
+    const seats = new Map<string, { along: number; id: string }[]>();
+    for (const e of scene.edges) {
+      if (!e.pts.length) continue;
+      for (const p of [e.pts[0], e.pts[e.pts.length - 1]]) {
+        for (const n of leaves) {
+          const withinX = p.x > n.x - 2 && p.x < n.x + n.width + 2;
+          const withinY = p.y > n.y - 2 && p.y < n.y + n.height + 2;
+          let side: string | null = null;
+          if (withinX && Math.abs(p.y - n.y) < 2) side = "north";
+          else if (withinX && Math.abs(p.y - (n.y + n.height)) < 2) side = "south";
+          else if (withinY && Math.abs(p.x - n.x) < 2) side = "west";
+          else if (withinY && Math.abs(p.x - (n.x + n.width)) < 2) side = "east";
+          if (!side) continue;
+          const vertical = side === "east" || side === "west";
+          const key = `${n.id}|${side}|${vertical ? n.height : n.width}`;
+          seats.set(key, [
+            ...(seats.get(key) ?? []),
+            { along: vertical ? p.y : p.x, id: e.id },
+          ]);
+          break;
+        }
+      }
+    }
+    for (const [key, members] of seats) {
+      if (members.length < 2) continue;
+      const sideLength = Number(key.slice(key.lastIndexOf("|") + 1));
+      // Two coupled limits. A side can only offer so much room once it gives
+      // up its corner margin — and because flows are kept straight, a flow
+      // running between two sides is bound by the tighter of them, so the
+      // spacing a side achieves is not decided by that side alone. What must
+      // hold everywhere is that no two flows share a point or touch.
+      const achievable = (sideLength - 2 * MIN_SIDE_INSET) / (members.length - 1);
+      const required = Math.min(MIN_ATTACH_GAP, achievable);
+      const sorted = [...members].sort((a, b) => a.along - b.along);
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = sorted[i].along - sorted[i - 1].along;
+        assert.ok(
+          gap >= 6,
+          `${file} ${key}: ${sorted[i - 1].id} and ${sorted[i].id} sit ${gap.toFixed(1)}px apart — flows must never share or graze an attachment point`,
+        );
+        assert.ok(
+          gap >= required * 0.8,
+          `${file} ${key}: ${sorted[i - 1].id} and ${sorted[i].id} sit ${gap.toFixed(1)}px apart, well under the ${required.toFixed(1)}px this side allows`,
+        );
+      }
+    }
+  }
+});
+
 // Issue #26, channel ordering: two flows sharing a node side must not cross
 // each other. Slot order makes their channel spans nest and lane order gives
 // the enclosing span the deeper lane — a nested pair has a crossing-free
