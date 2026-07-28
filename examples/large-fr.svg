@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3921 1436" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3921 1460" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="3921" height="1436" fill="#ffffff"/>
+<rect width="3921" height="1460" fill="#ffffff"/>
 <rect x="214" y="524" width="113" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="224" y="542" font-size="13" font-weight="bold" fill="#17202c">Clients</text>
 <rect x="10" y="58" width="150" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -287,21 +287,21 @@
 <rect x="150" y="1326" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
 <text x="171.5" y="1337" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Colis</text>
 <text x="203" y="1337" font-size="10" fill="#79828f">— unité d'expédition remise au transporteur</text>
-<line x1="20" y1="1364" x2="3901" y2="1364" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1386" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="1376" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="1387" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="1376" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="330" y="1387" font-size="10" fill="#17202c">Système</text>
-<rect x="399" y="1376" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="431" y="1387" font-size="10" fill="#17202c">Couche</text>
-<rect x="495" y="1376" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="527" y="1387" font-size="10" fill="#17202c">Bloc fonctionnel</text>
-<rect x="643" y="1376" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="675" y="1387" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="1406" x2="176" y2="1406" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="1410" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
-<rect x="446" y="1399" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="486" y="1410" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
-<text x="534" y="1410" font-size="10" fill="#17202c">porté par le flux</text>
+<rect x="150" y="1350" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="190" y="1361" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
+<text x="240" y="1361" font-size="10" fill="#79828f">porté par le flux</text>
+<line x1="20" y1="1388" x2="3901" y2="1388" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1410" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="1400" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="1411" font-size="10" fill="#17202c">Groupe d'acteurs</text>
+<rect x="298" y="1400" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="330" y="1411" font-size="10" fill="#17202c">Système</text>
+<rect x="399" y="1400" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="431" y="1411" font-size="10" fill="#17202c">Couche</text>
+<rect x="495" y="1400" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="527" y="1411" font-size="10" fill="#17202c">Bloc fonctionnel</text>
+<rect x="643" y="1400" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="675" y="1411" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="1430" x2="176" y2="1430" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="1434" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
 </svg>

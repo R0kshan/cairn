@@ -96717,7 +96717,11 @@ function render(model, view, scene) {
 `;
       bandY += scaled(24);
     }
-    bandY += 6;
+    const keyChip = chip(contentX, bandY + 2, ui.businessObject);
+    bandsSvg += keyChip.svg;
+    bandsSvg += `<text x="${contentX + keyChip.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(ui.carriedByFlow)}</text>
+`;
+    bandY += scaled(24) + 6;
   };
   const renderLegendBand = () => {
     beginBand(ui.legend);
@@ -96753,20 +96757,6 @@ function render(model, view, scene) {
     const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + ui.numberedSuffix : legendFlowLabel) + (style.flowColor === "by-source" ? style.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
 `;
-    if (model.businessObjects.length) {
-      const flowEntryWidth = scaled(32) + Math.ceil(flowLabelText.length * scaled(10) * RENDER_CHAR_WIDTH);
-      const captionWidth = Math.ceil(ui.carriedByFlow.length * scaled(10) * RENDER_CHAR_WIDTH);
-      const probe = chip(0, 0, ui.businessObject);
-      let chipX = contentX + flowEntryWidth + scaled(24);
-      if (chipX + probe.width + scaled(8) + captionWidth > scene.width - contentX) {
-        chipX = contentX;
-        bandY += scaled(22);
-      }
-      const chipResult = chip(chipX, bandY + 1, ui.businessObject);
-      bandsSvg += chipResult.svg;
-      bandsSvg += `<text x="${chipX + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>
-`;
-    }
     bandY += scaled(24);
     for (const note of model.legendNotes) {
       bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>

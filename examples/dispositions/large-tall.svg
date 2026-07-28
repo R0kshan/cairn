@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2564 2539" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2564 2563" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2564" height="2539" fill="#ffffff"/>
+<rect width="2564" height="2563" fill="#ffffff"/>
 <rect x="1448" y="85" width="317" height="101" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1458" y="103" font-size="13" font-weight="bold" fill="#17202c">Customers</text>
 <rect x="464" y="22" width="559" height="101" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -287,21 +287,21 @@
 <rect x="150" y="2429" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
 <text x="174" y="2440" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Parcel</text>
 <text x="208" y="2440" font-size="10" fill="#79828f">— shipping unit handed to the carrier</text>
-<line x1="20" y1="2467" x2="2544" y2="2467" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="2489" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="2479" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="2490" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="2479" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="304" y="2490" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="2479" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="400" y="2490" font-size="10" fill="#17202c">Layer</text>
-<rect x="458" y="2479" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="490" y="2490" font-size="10" fill="#17202c">Functional block</text>
-<rect x="606" y="2479" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="638" y="2490" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="2509" x2="176" y2="2509" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="2513" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
-<rect x="414" y="2502" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="462" y="2513" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="518" y="2513" font-size="10" fill="#17202c">carried by the flow</text>
+<rect x="150" y="2453" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="198" y="2464" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="256" y="2464" font-size="10" fill="#79828f">carried by the flow</text>
+<line x1="20" y1="2491" x2="2544" y2="2491" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="2513" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="2503" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="2514" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="2503" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="2514" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="2503" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="400" y="2514" font-size="10" fill="#17202c">Layer</text>
+<rect x="458" y="2503" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="490" y="2514" font-size="10" fill="#17202c">Functional block</text>
+<rect x="606" y="2503" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="638" y="2514" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="2533" x2="176" y2="2533" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="2537" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
 </svg>
