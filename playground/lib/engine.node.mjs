@@ -95476,9 +95476,9 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
           if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
       }
       const base = spanAnchor(left, right, exempt);
-      const ownPosition = direction > 0 ? base + CHANNEL_GAP + labelHeight + 3 : base - CHANNEL_GAP;
-      let position = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeight + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
-      const fits = (candidate) => !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
+      const ownPosition = base + direction * CHANNEL_GAP;
+      let position = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
+      const fits = (candidate) => direction > 0 ? !bandConflicts(candidate - 1, candidate + labelHeight + 3, left, right, exempt) : !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
       if (!fits(position))
         for (const gap of [8, 6, 4]) {
           const tighter = position - direction * (CHANNEL_GAP - gap);
@@ -95498,13 +95498,13 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
   };
   const bottomLaneY = laneOffsets(bottomPlans, 1, contentBottom);
   const topLaneY = laneOffsets(topPlans, -1, contentTop);
-  const placeLaneLabels = (edge, exitX, farX, laneY) => {
+  const placeLaneLabels = (edge, exitX, farX, laneY, outward) => {
     for (const label of edge.labels) {
       const segmentStart = Math.min(exitX, farX);
       const segmentEnd = Math.max(exitX, farX);
       const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
       label.x = Math.min(Math.max(midpoint, segmentStart + 4), segmentEnd - 4 - label.width);
-      label.y = laneY - label.height - 3;
+      label.y = outward > 0 ? laneY + 3 : laneY - label.height - 3;
     }
   };
   for (const plan of plans) {
@@ -95540,7 +95540,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
           }
         }
       } else {
-        placeLaneLabels(edge, exitX, entry.x, laneY2);
+        placeLaneLabels(edge, exitX, entry.x, laneY2, -1);
       }
       continue;
     }
@@ -95590,7 +95590,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
         }
       }
     } else {
-      placeLaneLabels(edge, exitX, farX, laneY);
+      placeLaneLabels(edge, exitX, farX, laneY, 1);
     }
   }
   let minY = 4;
@@ -96754,9 +96754,17 @@ function render(model, view, scene) {
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
 `;
     if (model.businessObjects.length) {
-      const chipResult = chip(contentX + 330, bandY + 1, ui.businessObject);
+      const flowEntryWidth = scaled(32) + Math.ceil(flowLabelText.length * scaled(10) * RENDER_CHAR_WIDTH);
+      const captionWidth = Math.ceil(ui.carriedByFlow.length * scaled(10) * RENDER_CHAR_WIDTH);
+      const probe = chip(0, 0, ui.businessObject);
+      let chipX = contentX + flowEntryWidth + scaled(24);
+      if (chipX + probe.width + scaled(8) + captionWidth > scene.width - contentX) {
+        chipX = contentX;
+        bandY += scaled(22);
+      }
+      const chipResult = chip(chipX, bandY + 1, ui.businessObject);
       bandsSvg += chipResult.svg;
-      bandsSvg += `<text x="${contentX + 330 + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>
+      bandsSvg += `<text x="${chipX + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>
 `;
     }
     bandY += scaled(24);

@@ -34,7 +34,7 @@ const CEILING: Record<string, number> = {
   "jog<=6": 64,
   "jog<=20": 229,
   nearParallel: 39,
-  longDetour: 102,
+  longDetour: 88,
 };
 
 interface Run {

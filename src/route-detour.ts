@@ -774,18 +774,24 @@ export function rerouteDetours(
           if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
       }
       const base = spanAnchor(left, right, exempt);
-      const ownPosition =
-        direction > 0 ? base + CHANNEL_GAP + labelHeight + 3 : base - CHANNEL_GAP;
+      // Labels sit on the *outer* side of their lane, away from the drawing.
+      // The top channel always did; the bottom channel used to put them between
+      // the content and the lane, which pushed every bottom lane out by a whole
+      // label and left a conspicuous gap against the container it hugged on the
+      // other side.
+      const ownPosition = base + direction * CHANNEL_GAP;
       // Lanes stay ordered: a deeper lane never rises above a shallower one,
       // which is what keeps enclosing spans outside the ones they enclose.
       let position =
         lane === 0
           ? ownPosition
           : direction > 0
-            ? Math.max(ownPosition, positions[lane - 1] + labelHeight + 14)
+            ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14)
             : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
       const fits = (candidate: number) =>
-        !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
+        direction > 0
+          ? !bandConflicts(candidate - 1, candidate + labelHeight + 3, left, right, exempt)
+          : !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
       // Before giving up on a spot, try tightening the approach gap. The room
       // inside a container is finite, and a lane that fits there on a 6px gap
       // is far better than one pushed out of the container for want of 2px.
@@ -810,13 +816,20 @@ export function rerouteDetours(
   const bottomLaneY = laneOffsets(bottomPlans, 1, contentBottom);
   const topLaneY = laneOffsets(topPlans, -1, contentTop);
 
-  const placeLaneLabels = (edge: SceneEdge, exitX: number, farX: number, laneY: number) => {
+  const placeLaneLabels = (
+    edge: SceneEdge,
+    exitX: number,
+    farX: number,
+    laneY: number,
+    outward: 1 | -1,
+  ) => {
     for (const label of edge.labels) {
       const segmentStart = Math.min(exitX, farX);
       const segmentEnd = Math.max(exitX, farX);
       const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
       label.x = Math.min(Math.max(midpoint, segmentStart + 4), segmentEnd - 4 - label.width);
-      label.y = laneY - label.height - 3;
+      // Away from the drawing, so the lane itself can hug the content.
+      label.y = outward > 0 ? laneY + 3 : laneY - label.height - 3;
     }
   };
 
@@ -857,7 +870,7 @@ export function rerouteDetours(
           }
         }
       } else {
-        placeLaneLabels(edge, exitX, entry.x, laneY);
+        placeLaneLabels(edge, exitX, entry.x, laneY, -1);
       }
       continue;
     }
@@ -914,7 +927,7 @@ export function rerouteDetours(
         }
       }
     } else {
-      placeLaneLabels(edge, exitX, farX, laneY);
+      placeLaneLabels(edge, exitX, farX, laneY, 1);
     }
   }
 

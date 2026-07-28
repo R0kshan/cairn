@@ -97,9 +97,9 @@
 <text x="1879.5" y="211.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Query</text>
 <text x="1879.5" y="226" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">claims-history</text>
 <text x="1879.5" y="240.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">files</text>
-<path d="M 2075.5 205.5 L 2101.5 205.5 L 2101.5 445.5 L 1506 445.5 A 5 5 0 0 0 1496 445.5 L 1228 445.5 L 1228 242.99999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1664.75" y="422" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Policyholder</text>
-<text x="1664.75" y="436.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">history</text>
+<path d="M 2075.5 205.5 L 2101.5 205.5 L 2101.5 409.5 L 1506 409.5 A 5 5 0 0 0 1496 409.5 L 1228 409.5 L 1228 242.99999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1664.75" y="425" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Policyholder</text>
+<text x="1664.75" y="439.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">history</text>
 <path d="M 955 309.3333333333333 L 774 309.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="849.5" y="320" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Assessment</text>
 <text x="849.5" y="334.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">mission if</text>
@@ -123,10 +123,10 @@
 <path d="M 1063 289.0833333333333 L 1223 289.0833333333333 A 5 5 0 0 1 1233 289.0833333333333 L 1447 289.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1364.5" y="304.3333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approved items</text>
 <text x="1364.5" y="318.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">for pricing</text>
-<path d="M 1501 320.16666666666663 L 1501 586.5 L 104 586.5 L 104 517" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="802.5" y="548.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approval</text>
-<text x="802.5" y="563" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">request beyond</text>
-<text x="802.5" y="577.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">delegation</text>
+<path d="M 1501 320.16666666666663 L 1501 536 L 104 536 L 104 517" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="802.5" y="551.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approval</text>
+<text x="802.5" y="566" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">request beyond</text>
+<text x="802.5" y="580.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">delegation</text>
 <path d="M 142 484.5 L 168 484.5 L 168 475 L 309 475 L 309 390 L 1223 390 A 5 5 0 0 1 1233 390 L 1423 390 L 1423 304.5 L 1447 304.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="216.5" y="490.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approval or</text>
 <text x="216.5" y="505" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">reasoned</text>
@@ -171,8 +171,8 @@
 <text x="638" y="752" font-size="10" fill="#17202c">External system</text>
 <line x1="150" y1="771" x2="176" y2="771" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="775" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
-<rect x="480" y="764" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="528" y="775" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="584" y="775" font-size="10" fill="#17202c">carried by the flow</text>
+<rect x="414" y="764" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="462" y="775" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="518" y="775" font-size="10" fill="#17202c">carried by the flow</text>
 <text x="150" y="799" font-size="10" fill="#17202c" font-style="italic">Claim files are retained for 10 years (legal obligation)</text>
 </svg>

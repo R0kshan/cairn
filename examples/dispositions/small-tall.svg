@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 429 1034" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 429 1056" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="429" height="1034" fill="#ffffff"/>
+<rect width="429" height="1056" fill="#ffffff"/>
 <rect x="106" y="22" width="82" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="116" y="40" font-size="13" font-weight="bold" fill="#17202c">Users</text>
 <rect x="266" y="22" width="137" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -77,8 +77,8 @@
 <text x="182" y="943" font-size="10" fill="#17202c">External system</text>
 <line x1="150" y1="984" x2="176" y2="984" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="988" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
-<rect x="480" y="977" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="528" y="988" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="584" y="988" font-size="10" fill="#17202c">carried by the flow</text>
-<text x="150" y="1012" font-size="10" fill="#17202c" font-style="italic">Health data is stored on certified health-data-hosting infrastructure</text>
+<rect x="150" y="999" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="198" y="1010" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="254" y="1010" font-size="10" fill="#17202c">carried by the flow</text>
+<text x="150" y="1034" font-size="10" fill="#17202c" font-style="italic">Health data is stored on certified health-data-hosting infrastructure</text>
 </svg>

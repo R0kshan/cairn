@@ -121,6 +121,14 @@ Pipeline inside the function, in order:
    their spans are nested or disjoint. Properly interleaved spans force at
    least one crossing (river-routing result) — so the slot order's job is to
    produce nesting, and the lane order's job is to exploit it.
+4b. **Lane labels go on the *outer* side of their lane**, away from the
+   drawing, and lane spacing budgets the *previous* lane's label. The top
+   channel always did this; the bottom channel used to place labels between
+   the content and the lane, so every bottom lane sat a whole label-width out
+   while the top channel hugged its container — the asymmetry the maintainer
+   saw as "unnecessary gap between the outward flows and the containers".
+   Fixing it also shortened routes: corpus `longDetour` 102 → 88.
+
 5. **Placement** — lanes via first-fit interval allocator (shared when x-spans
    don't overlap), labels centered on the lane segment (settled later by
    `svg-render`'s existing label-settling), numbered badges near the target.

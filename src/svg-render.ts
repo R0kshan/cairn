@@ -578,9 +578,22 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
         : "");
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>\n`;
     if (model.businessObjects.length) {
-      const chipResult = chip(contentX + 330, bandY + 1, ui.businessObject);
+      // Sits after the flow entry, not at a fixed offset: a hard-coded column
+      // stranded the chip far to the right of a narrow drawing, or ran it into
+      // a long flow label. Measured like the entries above, and wrapped onto
+      // its own row when the remaining width cannot hold it.
+      const flowEntryWidth =
+        scaled(32) + Math.ceil(flowLabelText.length * scaled(10) * RENDER_CHAR_WIDTH);
+      const captionWidth = Math.ceil(ui.carriedByFlow.length * scaled(10) * RENDER_CHAR_WIDTH);
+      const probe = chip(0, 0, ui.businessObject);
+      let chipX = contentX + flowEntryWidth + scaled(24);
+      if (chipX + probe.width + scaled(8) + captionWidth > scene.width - contentX) {
+        chipX = contentX;
+        bandY += scaled(22);
+      }
+      const chipResult = chip(chipX, bandY + 1, ui.businessObject);
       bandsSvg += chipResult.svg;
-      bandsSvg += `<text x="${contentX + 330 + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>\n`;
+      bandsSvg += `<text x="${chipX + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>\n`;
     }
     bandY += scaled(24);
     for (const note of model.legendNotes) {
