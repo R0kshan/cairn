@@ -13,6 +13,7 @@ import type { View } from "./views.ts";
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
+import { rerouteDetours } from "./route-detour.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
@@ -368,13 +369,17 @@ export async function layout(model: Model, view: View): Promise<Scene> {
 
     const edges = collectSceneEdges(result, origins, numbered);
 
-    return {
+    const scene: Scene = {
       width: Math.ceil(result.width),
       height: Math.ceil(result.height),
       nodes,
       edges,
       layoutMs,
     };
+    // Wrap-around detours only occur in RIGHT-direction layouts (issue #26);
+    // DOWN layouts (page/tall) are left untouched.
+    if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    return scene;
   };
 
   const startTime = Date.now();

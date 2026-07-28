@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2366 593" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2366 625" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2366" height="593" fill="#ffffff"/>
+<rect width="2366" height="625" fill="#ffffff"/>
 <rect x="10" y="183" width="150" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="201" font-size="13" font-weight="bold" fill="#17202c">Équipes internes</text>
 <rect x="493" y="106" width="394" height="185.66666666666666" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
@@ -117,17 +117,17 @@
 <text x="1766.5" y="257.83333333333337" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(internal)</text>
 <path d="M 1960 259.1666666666667 L 1974 259 L 2246 259" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="2059" y="274.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 2246 274 L 2236 274 L 2236 407 L 1560 407 L 1560 275 L 1580 274.83333333333337 L 1822 274.83333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1631.5" y="422.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
+<path d="M 2301 290 L 2301 532.5 L 1891 532.5 L 1891 290.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="2096" y="523.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
 <path d="M 1960 274.83333333333337 L 1974 275 L 1994 275 L 1994 341 L 2095 341" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="2039.5" y="356.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<path d="M 1406 460.6666666666667 L 1420 461 L 1487 461 L 1487 374 L 1555 374 A 5 5 0 0 1 1565 374 L 2085 374 L 2085 356 L 2095 356" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1406 460.6666666666667 L 1420 461 L 1487 461 L 1487 374 L 1647.5 374 A 5 5 0 0 1 1657.5 374 L 1886 374 A 5 5 0 0 1 1896 374 L 2085 374 L 2085 356 L 2095 356" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1605.5" y="389.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <path d="M 151 401.5 L 165 402 L 1282 401.5 L 1297 401.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1405 401.5 L 1420 402 L 1430 402 L 1430 309 L 1555 309 A 5 5 0 0 1 1565 309 L 1580 309.33333333333337 L 1594 309.33333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1405 401.5 L 1420 402 L 1430 402 L 1430 309 L 1580 309.33333333333337 L 1594 309.33333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1495" y="324.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 1711 309.33333333333337 L 1974 309 L 1984 309 L 1984 352 L 1570 352 L 1570 341 L 1565 341 A 5 5 0 0 0 1555 341 L 1435 341 A 5 5 0 0 0 1425 341 L 1038 341 L 1038 272 L 1048 271.55000000000007 L 1072 271.55000000000007 L 1072 270.35 L 1082 270.35" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1514.5" y="356.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<path d="M 1652.5 332.83333333333337 L 1652.5 532.5 L 1151 532.5 L 1151 279.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1401.75" y="523.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <path d="M 1406 476.33333333333337 L 1420 476 L 1497 476" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1458.5" y="491.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <path d="M 1706.8 226.66666666666669 L 1974 227 L 1984 227 L 1984 107 L 2120 107" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -137,20 +137,20 @@
 <path d="M 151 322 L 175 322 L 175 302 L 902 302 L 902 262 L 1048 261.55 L 1072 261.55 L 1072 260.95000000000005 L 1082 260.95000000000005" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2244 53 L 1570 53 L 1570 223 L 1580 222.75000000000003 L 1596.8 222.75000000000003" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1615.5" y="68.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<line x1="20" y1="521" x2="2346" y2="521" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="543" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="533" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="544" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="533" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
-<text x="330" y="544" font-size="10" fill="#17202c">Application</text>
-<rect x="420" y="533" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="452" y="544" font-size="10" fill="#17202c">Module applicatif</text>
-<rect x="573" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="605" y="544" font-size="10" fill="#17202c">File de messages / broker</text>
-<rect x="767" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="799" y="544" font-size="10" fill="#17202c">Entrepôt / référentiel</text>
-<rect x="946" y="533" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="978" y="544" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="563" x2="176" y2="563" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="567" font-size="10" fill="#17202c">Flux applicatif — (protocole, format) sous le libellé</text>
+<line x1="20" y1="553" x2="2346" y2="553" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="575" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="565" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="576" font-size="10" fill="#17202c">Groupe d'acteurs</text>
+<rect x="298" y="565" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="330" y="576" font-size="10" fill="#17202c">Application</text>
+<rect x="420" y="565" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="452" y="576" font-size="10" fill="#17202c">Module applicatif</text>
+<rect x="573" y="565" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="605" y="576" font-size="10" fill="#17202c">File de messages / broker</text>
+<rect x="767" y="565" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="799" y="576" font-size="10" fill="#17202c">Entrepôt / référentiel</text>
+<rect x="946" y="565" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="978" y="576" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="595" x2="176" y2="595" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="599" font-size="10" fill="#17202c">Flux applicatif — (protocole, format) sous le libellé</text>
 </svg>

@@ -113,10 +113,10 @@
 <path d="M 1151 270.8 L 1574 270.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1491.5" y="286.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approved items</text>
 <text x="1491.5" y="300.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">for pricing</text>
-<path d="M 1682 286.5 L 1692 286.5 L 1692 304.3 L 1980 304 L 2000 304 L 2000 518 L 1995 518 A 5 5 0 0 0 1985 518 L 47 518 L 47 467 L 57 466.5 L 71 466.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="402" y="533.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approval request</text>
-<text x="402" y="548" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">beyond delegation</text>
-<path d="M 147 466.5 L 161 467 L 334 467 L 334 343 L 344 342.5 L 1550 342.5 L 1550 286.5 L 1574 286.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1628 302.2 L 1628 554 L 1102 554 A 5 5 0 0 0 1092 554 L 109 554 L 109 499" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="868.5" y="530.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approval request</text>
+<text x="868.5" y="545" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">beyond delegation</text>
+<path d="M 147 466.5 L 161 467 L 334 467 L 334 343 L 344 342.5 L 1092 342.5 A 5 5 0 0 1 1102 342.5 L 1550 342.5 L 1550 286.5 L 1574 286.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="234" y="482.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Approval or</text>
 <text x="234" y="497" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">reasoned refusal</text>
 <path d="M 1682 270.8 L 1844 270.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -127,9 +127,9 @@
 <text x="2055" y="274.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">SEPA transfer</text>
 <rect x="2015" y="282.5" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="2055" y="293.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<path d="M 1151 282.6 L 1433 282.6 L 1433 324.3 L 1545 324.3 A 5 5 0 0 1 1555 324.3 L 1980 324 L 1990 324 L 1990 564 L 10 564 L 10 116 L 67.3 116" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="386" y="579.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
-<text x="386" y="594" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">and decision</text>
+<path d="M 1097 294.3 L 1097 601 L 13 601 L 13 116 L 67.3 116" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="555" y="577.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
+<text x="555" y="592" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">and decision</text>
 <line x1="20" y1="621" x2="2292" y2="621" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="643" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
 <rect x="150" y="633" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>

@@ -94992,6 +94992,169 @@ async function foldedLayout(model, view, elk) {
   };
 }
 
+// src/route-detour.ts
+var RATIO_THRESHOLD = 1.4;
+var MIN_WASTE = 300;
+var CHANNEL_GAP = 10;
+var RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24];
+function pathLength(pts) {
+  let length = 0;
+  for (let index = 1; index < pts.length; index++)
+    length += Math.abs(pts[index].x - pts[index - 1].x) + Math.abs(pts[index].y - pts[index - 1].y);
+  return length;
+}
+function rerouteDetours(scene, model, numbered) {
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const leafBoxes = scene.nodes.filter((node) => !node.container);
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
+  const centerX = (node) => node.x + node.width / 2;
+  const centerY = (node) => node.y + node.height / 2;
+  const candidates = [];
+  for (const edge of scene.edges) {
+    const flow = flowById.get(edge.id);
+    if (!flow || edge.pts.length < 2) continue;
+    const source = nodeById.get(flow.from);
+    const target = nodeById.get(flow.to);
+    if (!source || !target) continue;
+    if (centerX(target) >= centerX(source)) continue;
+    const direct = Math.abs(centerX(source) - centerX(target)) + Math.abs(centerY(source) - centerY(target));
+    const length = pathLength(edge.pts);
+    if (length < RATIO_THRESHOLD * direct || length - direct < MIN_WASTE) continue;
+    candidates.push({ edge, source, target });
+  }
+  if (!candidates.length) return;
+  candidates.sort(
+    (candidateA, candidateB) => parseInt(candidateA.edge.id.slice(1), 10) - parseInt(candidateB.edge.id.slice(1), 10)
+  );
+  const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
+  const riserBlocked = (x, top) => leafBoxes.some(
+    (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1
+  );
+  const findRiserX = (node) => {
+    const center = centerX(node);
+    for (const delta of RISER_DELTAS) {
+      const x = center + delta;
+      if (x < node.x + 4 || x > node.x + node.width - 4) continue;
+      if (!riserBlocked(x, node.y + node.height)) return x;
+    }
+    return null;
+  };
+  const horizontalBlocked = (y, xStart, xEnd, ignore) => leafBoxes.some(
+    (node) => node !== ignore && node.y - 2 <= y && node.y + node.height + 2 >= y && node.x < xEnd && node.x + node.width > xStart
+  );
+  const plans = [];
+  let westCount = 0;
+  for (const candidate of candidates) {
+    const exitX = findRiserX(candidate.source);
+    if (exitX === null) continue;
+    const southX = findRiserX(candidate.target);
+    if (southX !== null) {
+      plans.push({ ...candidate, exitX, entry: { kind: "south", x: southX } });
+      continue;
+    }
+    const entryY = centerY(candidate.target);
+    const westX = Math.max(4, contentLeft - 12 - westCount * 8);
+    if (!horizontalBlocked(entryY, westX, candidate.target.x, candidate.target)) {
+      westCount++;
+      plans.push({ ...candidate, exitX, entry: { kind: "west", y: entryY } });
+    }
+  }
+  if (!plans.length) return;
+  const rerouted = new Set(plans.map((plan) => plan.edge.id));
+  let contentBottom = maxNodeBottom;
+  for (const edge of scene.edges) {
+    if (rerouted.has(edge.id)) continue;
+    for (const point of edge.pts) contentBottom = Math.max(contentBottom, point.y);
+    for (const label of edge.labels)
+      contentBottom = Math.max(contentBottom, label.y + label.height);
+  }
+  const maxLabelHeight = Math.max(
+    0,
+    ...plans.flatMap((plan) => plan.edge.labels.map((label) => label.height))
+  );
+  const laneHeight = maxLabelHeight + 14;
+  const lanes = [];
+  const allocLane = (intervalStart, intervalEnd) => {
+    const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
+    const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
+    for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
+      const hasOverlap = lanes[laneIndex].some(
+        (existing) => existing.rangeStart < rangeEnd && rangeStart < existing.rangeEnd
+      );
+      if (hasOverlap) continue;
+      lanes[laneIndex].push({ rangeStart, rangeEnd });
+      return laneIndex;
+    }
+    lanes.push([{ rangeStart, rangeEnd }]);
+    return lanes.length - 1;
+  };
+  let westIndex = 0;
+  for (const plan of plans) {
+    const { edge, source, target, exitX, entry } = plan;
+    const sourceBottom = source.y + source.height;
+    const farX = entry.kind === "south" ? entry.x : Math.max(4, contentLeft - 12 - westIndex++ * 8);
+    const lane = allocLane(exitX, farX);
+    const laneY = contentBottom + CHANNEL_GAP + maxLabelHeight + 3 + lane * laneHeight;
+    if (entry.kind === "south") {
+      const targetBottom = target.y + target.height;
+      edge.pts = [
+        { x: exitX, y: sourceBottom },
+        { x: exitX, y: laneY },
+        { x: farX, y: laneY },
+        { x: farX, y: targetBottom }
+      ];
+    } else {
+      edge.pts = [
+        { x: exitX, y: sourceBottom },
+        { x: exitX, y: laneY },
+        { x: farX, y: laneY },
+        { x: farX, y: entry.y },
+        { x: target.x, y: entry.y }
+      ];
+    }
+    for (const label of edge.labels) {
+      if (numbered) {
+        if (entry.kind === "south") {
+          label.x = entry.x + 6;
+          label.y = target.y + target.height + 6;
+        } else {
+          label.x = target.x - label.width - 6;
+          label.y = entry.y - label.height - 6;
+        }
+        continue;
+      }
+      const segmentStart = Math.min(exitX, farX);
+      const segmentEnd = Math.max(exitX, farX);
+      const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
+      const clampedX = Math.min(
+        Math.max(midpoint, segmentStart + 4),
+        segmentEnd - 4 - label.width
+      );
+      label.x = clampedX;
+      label.y = laneY - label.height - 3;
+    }
+  }
+  let maxX = 0;
+  let maxY = 0;
+  for (const node of scene.nodes) {
+    maxX = Math.max(maxX, node.x + node.width);
+    maxY = Math.max(maxY, node.y + node.height);
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) {
+      maxX = Math.max(maxX, point.x);
+      maxY = Math.max(maxY, point.y);
+    }
+    for (const label of edge.labels) {
+      maxX = Math.max(maxX, label.x + label.width);
+      maxY = Math.max(maxY, label.y + label.height);
+    }
+  }
+  scene.width = Math.ceil(maxX + 10);
+  scene.height = Math.ceil(maxY + 10);
+}
+
 // src/scene-layout.ts
 function computeIngressExternalElements(model) {
   const ingressExternalElements = /* @__PURE__ */ new Set();
@@ -95066,7 +95229,8 @@ function collectSceneEdges(elkNode, origins, numbered) {
         const last = points[points.length - 1], secondLast = points[points.length - 2];
         const segmentLength = Math.hypot(last.x - secondLast.x, last.y - secondLast.y) || 1;
         const unitX = (last.x - secondLast.x) / segmentLength, unitY = (last.y - secondLast.y) / segmentLength;
-        const stepBack = Math.min(segmentLength - 2, 20 + label.width / 2);
+        const rawStepBack = 20 + label.width / 2;
+        const stepBack = rawStepBack < 0 ? 0 : rawStepBack > segmentLength - 2 ? segmentLength - 2 : rawStepBack;
         let perpX = -unitY, perpY = unitX;
         if (perpY > 0) {
           perpX = -perpX;
@@ -95203,13 +95367,15 @@ async function layout(model, view) {
     const nodes = walkedNodes.map((walked) => walked.node);
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
     const edges = collectSceneEdges(result2, origins, numbered);
-    return {
+    const scene = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),
       nodes,
       edges,
       layoutMs: layoutMs2
     };
+    if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    return scene;
   };
   const startTime = Date.now();
   let result;

@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2276 593" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2276 625" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2276" height="593" fill="#ffffff"/>
+<rect width="2276" height="625" fill="#ffffff"/>
 <rect x="10" y="183" width="143" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="201" font-size="13" font-weight="bold" fill="#17202c">Internal teams</text>
 <rect x="472" y="106" width="394" height="185.7" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
@@ -117,17 +117,17 @@
 <text x="1708.5" y="257.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(internal)</text>
 <path d="M 1874 259.2 L 1888 259 L 2137 259" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1973" y="274.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 2137 274 L 2127 274 L 2127 407 L 1511 407 L 1511 275 L 1531 274.8 L 1764 274.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1582.5" y="422.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
+<path d="M 2191 290 L 2191 532.5 L 1819 532.5 L 1819 290.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="2005" y="523.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
 <path d="M 1874 274.8 L 1888 275 L 1908 275 L 1908 341 L 2009 341" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1953.5" y="356.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<path d="M 1357 460.7 L 1371 461 L 1438 461 L 1438 374 L 1506 374 A 5 5 0 0 1 1516 374 L 1999 374 L 1999 356 L 2009 356" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1357 460.7 L 1371 461 L 1438 461 L 1438 374 L 1594 374 A 5 5 0 0 1 1604 374 L 1814 374 A 5 5 0 0 1 1824 374 L 1999 374 L 1999 356 L 2009 356" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1556.5" y="389.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <path d="M 144 401.5 L 158 402 L 1235 401.5 L 1249 401.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1357 401.5 L 1371 402 L 1381 402 L 1381 309 L 1506 309 A 5 5 0 0 1 1516 309 L 1531 309.3 L 1545 309.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1357 401.5 L 1371 402 L 1381 402 L 1381 309 L 1531 309.3 L 1545 309.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1446" y="324.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 1653 309.3 L 1888 309 L 1898 309 L 1898 352 L 1521 352 L 1521 341 L 1516 341 A 5 5 0 0 0 1506 341 L 1386 341 A 5 5 0 0 0 1376 341 L 1017 341 L 1017 272 L 1027 271.6 L 1051 271.6 L 1051 270.4 L 1061 270.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1465.5" y="356.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<path d="M 1599 332.8 L 1599 532.5 L 1116 532.5 L 1116 279.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1357.5" y="523.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <path d="M 1357 476.3 L 1371 476 L 1448 476" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1409.5" y="491.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <path d="M 1653 226.7 L 1888 227 L 1898 227 L 1898 107 L 2034 107" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -137,20 +137,20 @@
 <path d="M 144 322 L 168 322 L 168 302 L 881 302 L 881 262 L 1027 261.6 L 1051 261.6 L 1051 261 L 1061 261" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2158 53 L 1521 53 L 1521 223 L 1531 222.8 L 1545 222.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1566.5" y="68.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<line x1="20" y1="521" x2="2256" y2="521" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="543" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="533" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="544" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="533" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
-<text x="304" y="544" font-size="10" fill="#17202c">Application</text>
-<rect x="394" y="533" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="426" y="544" font-size="10" fill="#17202c">Application module</text>
-<rect x="552" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="584" y="544" font-size="10" fill="#17202c">Message queue / broker</text>
-<rect x="731" y="533" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="763" y="544" font-size="10" fill="#17202c">Datastore / registry</text>
-<rect x="899" y="533" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="931" y="544" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="563" x2="176" y2="563" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="567" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+<line x1="20" y1="553" x2="2256" y2="553" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="575" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="565" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="576" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="565" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="304" y="576" font-size="10" fill="#17202c">Application</text>
+<rect x="394" y="565" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="426" y="576" font-size="10" fill="#17202c">Application module</text>
+<rect x="552" y="565" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="584" y="576" font-size="10" fill="#17202c">Message queue / broker</text>
+<rect x="731" y="565" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="763" y="576" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="899" y="565" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="931" y="576" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="595" x2="176" y2="595" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="599" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
 </svg>

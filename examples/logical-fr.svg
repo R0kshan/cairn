@@ -113,10 +113,10 @@
 <path d="M 1194 270.8333333333333 L 1662 270.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1573" y="286.3333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Éléments validés</text>
 <text x="1573" y="300.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">pour chiffrage</text>
-<path d="M 1770 286.5 L 1780 286.5 L 1780 304.3333333333333 L 2097 304 L 2117 304 L 2117 518 L 2112 518 A 5 5 0 0 0 2102 518 L 20 518 L 20 467 L 30 466.5 L 44 466.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="405" y="533.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Demande d'accord</text>
-<text x="405" y="548" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">hors délégation</text>
-<path d="M 139 466.5 L 153 467 L 324 467 L 324 343 L 350 342.5 L 1638 342.5 L 1638 286.5 L 1662 286.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1716 302.16666666666663 L 1716 554 L 1133.5 554 A 5 5 0 0 0 1123.5 554 L 91.5 554 L 91.5 499" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="903.75" y="530.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Demande d'accord</text>
+<text x="903.75" y="545" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">hors délégation</text>
+<path d="M 139 466.5 L 153 467 L 324 467 L 324 343 L 350 342.5 L 1123.5 342.5 A 5 5 0 0 1 1133.5 342.5 L 1638 342.5 L 1638 286.5 L 1662 286.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="211" y="482.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Accord ou</text>
 <text x="211" y="497" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">refus motivé</text>
 <path d="M 1770 270.8333333333333 L 1952 270.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -127,9 +127,9 @@
 <text x="2172" y="274.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Virement SEPA</text>
 <rect x="2140" y="282.5" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="2172" y="293.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
-<path d="M 1194 282.5833333333333 L 1508 282.5833333333333 L 1508 324.3333333333333 L 1633 324.3333333333333 A 5 5 0 0 1 1643 324.3333333333333 L 2097 324 L 2107 324 L 2107 564 L 10 564 L 10 116 L 62.66666666666663 116" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="401.5" y="579.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notifier étapes</text>
-<text x="401.5" y="594" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">et décision</text>
+<path d="M 1128.5 294.3333333333333 L 1128.5 601 L 17 601 L 17 116 L 62.666666666666664 116" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="572.75" y="577.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notifier étapes</text>
+<text x="572.75" y="592" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">et décision</text>
 <line x1="20" y1="621" x2="2443" y2="621" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="643" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
 <rect x="150" y="633" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>

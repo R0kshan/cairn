@@ -97,6 +97,38 @@ test("every flow keeps a distinct edge (never merged)", async () => {
   for (const f of model.flows) assert.ok(sceneEdgeIds.has(f.id), f.id);
 });
 
+// Issue #26: elk wraps backward hierarchical edges around the whole drawing.
+// The detour reroute (src/route-detour.ts) must bring the two marked flows of
+// logical-fr (CALCUL→RESPONSABLE, DOSSIER→ASSURE) down through a bottom
+// channel instead — bounded path length relative to the direct distance.
+test("backward flows are rerouted through the bottom channel, not wrapped (logical-fr)", async () => {
+  const { model, scene, overlapsAfter } = await build(load("logical-fr.cairn"));
+  assert.equal(overlapsAfter, 0);
+  const nodeById = new Map(scene.nodes.map((n) => [n.id, n]));
+  const pathLen = (pts: { x: number; y: number }[]) => {
+    let len = 0;
+    for (let i = 1; i < pts.length; i++)
+      len += Math.abs(pts[i].x - pts[i - 1].x) + Math.abs(pts[i].y - pts[i - 1].y);
+    return len;
+  };
+  for (const [from, to] of [
+    ["CALCUL", "RESPONSABLE"],
+    ["DOSSIER", "ASSURE"],
+  ]) {
+    const flow = model.flows.find((f) => f.from === from && f.to === to)!;
+    const edge = scene.edges.find((e) => e.id === flow.id)!;
+    const a = nodeById.get(from)!,
+      b = nodeById.get(to)!;
+    const direct =
+      Math.abs(a.x + a.width / 2 - b.x - b.width / 2) +
+      Math.abs(a.y + a.height / 2 - b.y - b.height / 2);
+    assert.ok(
+      pathLen(edge.pts) < 1.75 * direct,
+      `${from}→${to} must not wrap around the drawing (len ${Math.round(pathLen(edge.pts))} vs direct ${Math.round(direct)})`,
+    );
+  }
+});
+
 // ---------- dispositions ----------
 
 test("slide is always landscape, page always portrait (medium)", async () => {

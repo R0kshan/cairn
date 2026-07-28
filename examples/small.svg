@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1309 464" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1309 529" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1309" height="464" fill="#ffffff"/>
+<rect width="1309" height="529" fill="#ffffff"/>
 <rect x="65" y="87" width="82" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="75" y="105" font-size="13" font-weight="bold" fill="#17202c">Users</text>
 <rect x="10" y="188" width="137" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -50,35 +50,35 @@
 <text x="214" y="237" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">slots</text>
 <rect x="195" y="245" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="214" y="256" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
-<path d="M 700 164.49999999999997 L 710 164.49999999999997 L 710 150.16666666666666 L 1020 150 L 1030 150 L 1030 76.99999999999999 L 50 76.99999999999999 L 50 141 L 74 141" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="320" y="34.499999999999986" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Appointment</text>
-<text x="320" y="48.999999999999986" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">confirmation</text>
-<rect x="282.5" y="56.999999999999986" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="320" y="67.99999999999999" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<line x1="20" y1="298" x2="1289" y2="298" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="320" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
-<rect x="150" y="310" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="187.5" y="321" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<text x="235" y="321" font-size="10" fill="#79828f">— slot booked by a patient with a practitioner</text>
-<rect x="150" y="334" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="169" y="345" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
-<text x="198" y="345" font-size="10" fill="#79828f">— time window open for booking</text>
-<line x1="20" y1="372" x2="1289" y2="372" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="394" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="384" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="395" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="384" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="304" y="395" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="384" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="400" y="395" font-size="10" fill="#17202c">Layer</text>
-<rect x="458" y="384" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="490" y="395" font-size="10" fill="#17202c">Functional block</text>
-<rect x="606" y="384" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="638" y="395" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="414" x2="176" y2="414" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="418" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
-<rect x="480" y="407" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="528" y="418" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="584" y="418" font-size="10" fill="#17202c">carried by the flow</text>
-<text x="150" y="442" font-size="10" fill="#17202c" font-style="italic">Health data is stored on certified health-data-hosting infrastructure</text>
+<path d="M 646 195.83333333333331 L 646 343 L 4 343 L 4 141 L 74 141" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="325" y="300.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Appointment</text>
+<text x="325" y="315" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">confirmation</text>
+<rect x="287.5" y="323" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="325" y="334" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<line x1="20" y1="363" x2="1289" y2="363" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="385" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
+<rect x="150" y="375" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="187.5" y="386" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<text x="235" y="386" font-size="10" fill="#79828f">— slot booked by a patient with a practitioner</text>
+<rect x="150" y="399" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="169" y="410" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
+<text x="198" y="410" font-size="10" fill="#79828f">— time window open for booking</text>
+<line x1="20" y1="437" x2="1289" y2="437" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="459" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="449" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="460" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="449" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="460" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="449" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="400" y="460" font-size="10" fill="#17202c">Layer</text>
+<rect x="458" y="449" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="490" y="460" font-size="10" fill="#17202c">Functional block</text>
+<rect x="606" y="449" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="638" y="460" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="479" x2="176" y2="479" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="483" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
+<rect x="480" y="472" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="528" y="483" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="584" y="483" font-size="10" fill="#17202c">carried by the flow</text>
+<text x="150" y="507" font-size="10" fill="#17202c" font-style="italic">Health data is stored on certified health-data-hosting infrastructure</text>
 </svg>
