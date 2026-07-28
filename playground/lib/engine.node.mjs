@@ -92106,6 +92106,7 @@ var package_default = {
     format: "biome format --write src tests",
     typecheck: "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
+    sweep: "node --experimental-strip-types scripts/sweep.ts",
     "test:binary": "bash scripts/smoke-binary.sh",
     examples: "node --experimental-strip-types scripts/render-examples.mjs"
   },
@@ -95061,6 +95062,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
     (candidateA, candidateB) => parseInt(candidateA.edge.id.slice(1), 10) - parseInt(candidateB.edge.id.slice(1), 10)
   );
   const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  const minNodeTop = Math.min(...scene.nodes.map((node) => node.y));
   const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
   const INF = 1e9;
   const usedVerticals = [];
@@ -95156,7 +95158,10 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
     const { source, target } = candidate;
     let planned = null;
     let exitVia;
-    let exitX = findRiserX(source, "south");
+    const bottomRisers = maxNodeBottom - (source.y + source.height) + (maxNodeBottom - (target.y + target.height));
+    const topRisers = source.y - minNodeTop + (target.y - minNodeTop);
+    const preferTop = topRisers < bottomRisers * 0.75 && findRiserX(source, "north") !== null && findRiserX(target, "north") !== null;
+    let exitX = preferTop ? null : findRiserX(source, "south");
     if (exitX === null && findRiserX(source, "north") === null) {
       for (const delta of EAST_DESCENT_DELTAS) {
         const turnX = source.x + source.width + delta;

@@ -86,6 +86,7 @@ npm run typecheck         # tsc --noEmit — the only type check
 npm run lint              # biome (lint-only; leave formatting alone)
 npm run snapshots         # accept intended render changes (regenerate reference output)
 npm run snapshots:report  # preview a render change, grouped by KIND
+npm run sweep             # readability gate: every example × every disposition
 npm run test:binary       # compile the host bun binary + smoke-run it (needs Bun)
 npm run cairn -- <cmd> <file>
 ```
@@ -119,7 +120,13 @@ break the binary — hence `test:binary`.
    is the risky kind; colour-only is usually an intended theme edit. A change
    outside your edit's blast radius is a regression. **Never regenerate to
    silence a diff you don't understand** — that's the one instinct to override.
-4. **Flow labels are required on the logical & security views** (`E0203`),
+4. **Readability is gated by `npm run sweep`** across every example × every
+   disposition. Four invariants must stay at **0**: label overlaps, segments
+   off orthogonal, runs crossing a leaf box, dead horizontal bands. The rest
+   (staircases, coincident/near-parallel runs, shared attachments, long
+   detours) are a **ratchet**: current counts are ceilings and may only fall.
+   Lower a ceiling when a change earns it; never raise one to go green.
+5. **Flow labels are required on the logical & security views** (`E0203`),
    optional on application & infrastructure. Infrastructure flows must still
    carry `protocol/port` (`(HTTPS/443)` — `E0240`) even when unlabelled.
 

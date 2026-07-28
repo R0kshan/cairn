@@ -109,6 +109,7 @@ export function rerouteDetours(
   );
 
   const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  const minNodeTop = Math.min(...scene.nodes.map((node) => node.y));
   const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
 
   // A southbound riser is blocked when it would pierce a leaf node anywhere
@@ -312,7 +313,22 @@ export function rerouteDetours(
     // a flow keeps elk's route, which is how `medium-page`'s
     // INTERINSURER→FRAUD stayed a 2275px wander around the whole page.
     let exitVia: { y: number } | undefined;
-    let exitX = findRiserX(source, "south");
+    // Which channel to use is a choice, not a preference. Both ends have to
+    // reach the lane, so the cost of a side is the two risers it demands; the
+    // horizontal run is the same either way. Taking the near side spares a
+    // flow the trip out to the far edge and back — `medium-page`'s "Notify
+    // steps and decision" was travelling 346px right to a channel only to
+    // come 612px back left to a target sitting near the left edge.
+    // Only divert when the gain is clear and the other channel is certain to
+    // plan, so a diverted flow can never end up worse off than before.
+    const bottomRisers =
+      maxNodeBottom - (source.y + source.height) + (maxNodeBottom - (target.y + target.height));
+    const topRisers = source.y - minNodeTop + (target.y - minNodeTop);
+    const preferTop =
+      topRisers < bottomRisers * 0.75 &&
+      findRiserX(source, "north") !== null &&
+      findRiserX(target, "north") !== null;
+    let exitX = preferTop ? null : findRiserX(source, "south");
     if (exitX === null && findRiserX(source, "north") === null) {
       for (const delta of EAST_DESCENT_DELTAS) {
         const turnX = source.x + source.width + delta;
