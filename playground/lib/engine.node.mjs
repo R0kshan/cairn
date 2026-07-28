@@ -94996,7 +94996,9 @@ async function foldedLayout(model, view, elk) {
 var RATIO_THRESHOLD = 1.4;
 var MIN_WASTE = 300;
 var CHANNEL_GAP = 10;
-var RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24];
+var RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64, -72, 72];
+var WEST_DESCENT_DELTAS = [-10, -18, -26, -34];
+var EAST_DESCENT_DELTAS = [10, 14, 18, 22, 26, 30, 34, 42, 50, 58, 66];
 function pathLength(pts) {
   let length = 0;
   for (let index = 1; index < pts.length; index++)
@@ -95028,72 +95030,321 @@ function rerouteDetours(scene, model, numbered) {
   );
   const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
   const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
-  const riserBlocked = (x, top) => leafBoxes.some(
+  const { cont: containerFontSize } = fontSizes(model.style.font.size);
+  const compact = model.style.compact;
+  const titleBoxes = scene.nodes.filter((node) => node.container).map((node) => {
+    const lineCount = node.label.split("\n").length;
+    return {
+      x: node.x + 4,
+      y: node.y,
+      width: measure(node.label, containerFontSize).width + 12,
+      height: (compact ? 11 : 13) + lineCount * 14
+    };
+  });
+  const INF = 1e9;
+  const usedVerticals = [];
+  const usedHorizontals = [];
+  const addEdgeVerticals = (edge) => {
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const pointA = edge.pts[index];
+      const pointB = edge.pts[index + 1];
+      if (Math.abs(pointA.x - pointB.x) < 0.5 && Math.abs(pointA.y - pointB.y) >= 0.5)
+        usedVerticals.push({
+          x: pointA.x,
+          top: Math.min(pointA.y, pointB.y),
+          bottom: Math.max(pointA.y, pointB.y)
+        });
+      if (Math.abs(pointA.y - pointB.y) < 0.5 && Math.abs(pointA.x - pointB.x) >= 0.5)
+        usedHorizontals.push({
+          y: pointA.y,
+          left: Math.min(pointA.x, pointB.x),
+          right: Math.max(pointA.x, pointB.x)
+        });
+    }
+  };
+  const candidateIds = new Set(candidates.map((candidate) => candidate.edge.id));
+  for (const edge of scene.edges) if (!candidateIds.has(edge.id)) addEdgeVerticals(edge);
+  for (const node of scene.nodes)
+    if (node.container) {
+      usedVerticals.push({ x: node.x, top: node.y, bottom: node.y + node.height });
+      usedVerticals.push({ x: node.x + node.width, top: node.y, bottom: node.y + node.height });
+    }
+  const riserConflicts = (x, top, bottom) => usedVerticals.some(
+    (segment) => Math.abs(segment.x - x) < 7 && segment.top < bottom && top < segment.bottom
+  );
+  const horizontalConflicts = (y, left, right) => usedHorizontals.some(
+    (segment) => Math.abs(segment.y - y) < 7 && segment.left < right && left < segment.right
+  );
+  const baseVerticals = usedVerticals.slice();
+  const baseRiserConflicts = (x, top, bottom) => baseVerticals.some(
+    (segment) => Math.abs(segment.x - x) < 7 && segment.top < bottom && top < segment.bottom
+  );
+  const riserBlockedBelow = (x, top) => leafBoxes.some(
     (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1
   );
-  const findRiserX = (node) => {
+  const riserBlockedAbove = (x, bottom) => leafBoxes.some(
+    (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1
+  ) || titleBoxes.some(
+    (box) => x >= box.x - 2 && x <= box.x + box.width + 2 && box.y < bottom - 1
+  );
+  const findRiserX = (node, side) => {
     const center = centerX(node);
     for (const delta of RISER_DELTAS) {
       const x = center + delta;
       if (x < node.x + 4 || x > node.x + node.width - 4) continue;
-      if (!riserBlocked(x, node.y + node.height)) return x;
+      if (side === "south") {
+        if (riserBlockedBelow(x, node.y + node.height)) continue;
+        if (riserConflicts(x, node.y + node.height, INF)) continue;
+      } else {
+        if (riserBlockedAbove(x, node.y)) continue;
+        if (riserConflicts(x, -INF, node.y)) continue;
+      }
+      return x;
     }
     return null;
   };
   const horizontalBlocked = (y, xStart, xEnd, ignore) => leafBoxes.some(
     (node) => node !== ignore && node.y - 2 <= y && node.y + node.height + 2 >= y && node.x < xEnd && node.x + node.width > xStart
   );
+  const ENTRY_Y_DELTAS_DOWN = [0, 6, 12, 18, 24, -6, -12, -18, -24];
+  const ENTRY_Y_DELTAS_UP = [0, -6, -12, -18, -24, 6, 12, 18, 24];
+  const containerBoxes = scene.nodes.filter((node) => node.container);
+  const crossesForeignContainer = (y, xStart, xEnd, target) => containerBoxes.some(
+    (box) => !(box.x <= target.x && target.x + target.width <= box.x + box.width && box.y <= target.y && target.y + target.height <= box.y + box.height) && box.y < y && y < box.y + box.height && box.x < xEnd && box.x + box.width > xStart
+  );
+  const findEntryY = (target, fromBelow, xStart, xEnd, descentX, edgeX) => {
+    for (const delta of fromBelow ? ENTRY_Y_DELTAS_DOWN : ENTRY_Y_DELTAS_UP) {
+      const y = centerY(target) + delta;
+      if (y < target.y + 4 || y > target.y + target.height - 4) continue;
+      if (horizontalConflicts(y, xStart, xEnd)) continue;
+      if (horizontalBlocked(y, xStart, xEnd, target)) continue;
+      if (crossesForeignContainer(y, xStart, xEnd, target)) continue;
+      const descentCrosses = usedHorizontals.some(
+        (segment) => (Math.abs(segment.left - edgeX) < 3 || Math.abs(segment.right - edgeX) < 3) && segment.left < descentX && descentX < segment.right && (fromBelow ? segment.y > y + 1 : segment.y < y - 1) && segment.y > target.y - 2 && segment.y < target.y + target.height + 2
+      );
+      if (descentCrosses) continue;
+      return y;
+    }
+    return null;
+  };
   const plans = [];
   let westCount = 0;
   for (const candidate of candidates) {
-    const exitX = findRiserX(candidate.source);
-    if (exitX === null) continue;
-    const southX = findRiserX(candidate.target);
-    if (southX !== null) {
-      plans.push({ ...candidate, exitX, entry: { kind: "south", x: southX } });
-      continue;
+    const { source, target } = candidate;
+    let planned = null;
+    const exitX = findRiserX(source, "south");
+    if (exitX !== null) {
+      const southX = findRiserX(target, "south");
+      if (southX !== null) {
+        planned = { ...candidate, exitX, entry: { kind: "south", x: southX } };
+        usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+        usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
+      } else {
+        const westX = Math.max(4, contentLeft - 12 - westCount * 8);
+        const westY = findEntryY(target, true, westX, target.x, westX, target.x);
+        if (westY !== null) {
+          westCount++;
+          planned = { ...candidate, exitX, entry: { kind: "west", x: westX, y: westY } };
+          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+          usedVerticals.push({ x: westX, top: westY, bottom: INF });
+          usedHorizontals.push({ y: westY, left: westX, right: target.x });
+        } else {
+          for (const delta of EAST_DESCENT_DELTAS) {
+            const descentX = target.x + target.width + delta;
+            const entryY = findEntryY(
+              target,
+              true,
+              target.x + target.width,
+              descentX,
+              descentX,
+              target.x + target.width
+            );
+            if (entryY === null) continue;
+            if (riserBlockedBelow(descentX, entryY)) continue;
+            if (riserConflicts(descentX, entryY, INF)) continue;
+            planned = { ...candidate, exitX, entry: { kind: "east", x: descentX, y: entryY } };
+            usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+            usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
+            usedHorizontals.push({ y: entryY, left: target.x + target.width, right: descentX });
+            break;
+          }
+          if (!planned) {
+            for (const delta of WEST_DESCENT_DELTAS) {
+              const descentX = target.x + delta;
+              if (descentX < 4) continue;
+              const entryY = findEntryY(target, true, descentX, target.x, descentX, target.x);
+              if (entryY === null) continue;
+              if (riserBlockedBelow(descentX, entryY)) continue;
+              if (riserConflicts(descentX, entryY, INF)) continue;
+              planned = { ...candidate, exitX, entry: { kind: "west", x: descentX, y: entryY } };
+              usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
+              usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
+              usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
+              break;
+            }
+          }
+        }
+      }
+    } else {
+      const exitXNorth = findRiserX(source, "north");
+      if (exitXNorth !== null) {
+        const entryXNorth = findRiserX(target, "north");
+        if (entryXNorth !== null) {
+          planned = { ...candidate, exitX: exitXNorth, entry: { kind: "north", x: entryXNorth } };
+          usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
+          usedVerticals.push({ x: entryXNorth, top: -INF, bottom: target.y });
+        } else {
+          for (const delta of WEST_DESCENT_DELTAS) {
+            const descentX = target.x + delta;
+            if (descentX < 4) continue;
+            const entryY = findEntryY(target, false, descentX, target.x, descentX, target.x);
+            if (entryY === null) continue;
+            if (riserBlockedAbove(descentX, entryY)) continue;
+            if (riserConflicts(descentX, -INF, entryY)) continue;
+            planned = {
+              ...candidate,
+              exitX: exitXNorth,
+              entry: { kind: "westTop", x: descentX, y: entryY }
+            };
+            usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
+            usedVerticals.push({ x: descentX, top: -INF, bottom: entryY });
+            usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
+            break;
+          }
+        }
+      }
     }
-    const entryY = centerY(candidate.target);
-    const westX = Math.max(4, contentLeft - 12 - westCount * 8);
-    if (!horizontalBlocked(entryY, westX, candidate.target.x, candidate.target)) {
-      westCount++;
-      plans.push({ ...candidate, exitX, entry: { kind: "west", y: entryY } });
-    }
+    if (planned) plans.push(planned);
+    else addEdgeVerticals(candidate.edge);
   }
   if (!plans.length) return;
+  {
+    const attachGroups = /* @__PURE__ */ new Map();
+    const addAttachment = (plan, role, node, side) => {
+      const key = `${node.id}|${side}`;
+      const group = attachGroups.get(key) ?? { node, members: [] };
+      group.members.push({ plan, role });
+      attachGroups.set(key, group);
+    };
+    for (const plan of plans) {
+      const topPlan = plan.entry.kind === "north" || plan.entry.kind === "westTop";
+      addAttachment(plan, "exit", plan.source, topPlan ? "north" : "south");
+      if (plan.entry.kind === "south") addAttachment(plan, "entry", plan.target, "south");
+      if (plan.entry.kind === "north") addAttachment(plan, "entry", plan.target, "north");
+    }
+    const setAttachmentX = (attachment, x) => {
+      if (attachment.role === "exit") attachment.plan.exitX = x;
+      else attachment.plan.entry.x = x;
+    };
+    const farEndX = (attachment) => {
+      const { plan, role } = attachment;
+      if (role === "entry") return plan.exitX;
+      return plan.entry.x;
+    };
+    const sortedKeys = [...attachGroups.keys()].sort();
+    for (const key of sortedKeys) {
+      const { node, members } = attachGroups.get(key);
+      if (members.length < 2) continue;
+      const side = key.slice(key.indexOf("|") + 1);
+      const freePositions = [];
+      for (let x = node.x + 4; x <= node.x + node.width - 4; x += 2) {
+        const clear = side === "south" ? !riserBlockedBelow(x, node.y + node.height) && !baseRiserConflicts(x, node.y + node.height, INF) : !riserBlockedAbove(x, node.y) && !baseRiserConflicts(x, -INF, node.y);
+        if (clear) freePositions.push(x);
+      }
+      if (freePositions.length < members.length) continue;
+      members.sort(
+        (memberA, memberB) => farEndX(memberA) - farEndX(memberB) || parseInt(memberA.plan.edge.id.slice(1), 10) - parseInt(memberB.plan.edge.id.slice(1), 10)
+      );
+      members.forEach((member, index) => {
+        const pick = freePositions[Math.round((index + 1) * (freePositions.length - 1) / (members.length + 1))];
+        setAttachmentX(member, pick);
+      });
+    }
+  }
   const rerouted = new Set(plans.map((plan) => plan.edge.id));
   let contentBottom = maxNodeBottom;
+  let contentTop = Math.min(...scene.nodes.map((node) => node.y));
   for (const edge of scene.edges) {
     if (rerouted.has(edge.id)) continue;
-    for (const point of edge.pts) contentBottom = Math.max(contentBottom, point.y);
-    for (const label of edge.labels)
-      contentBottom = Math.max(contentBottom, label.y + label.height);
-  }
-  const maxLabelHeight = Math.max(
-    0,
-    ...plans.flatMap((plan) => plan.edge.labels.map((label) => label.height))
-  );
-  const laneHeight = maxLabelHeight + 14;
-  const lanes = [];
-  const allocLane = (intervalStart, intervalEnd) => {
-    const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
-    const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
-    for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
-      const hasOverlap = lanes[laneIndex].some(
-        (existing) => existing.rangeStart < rangeEnd && rangeStart < existing.rangeEnd
-      );
-      if (hasOverlap) continue;
-      lanes[laneIndex].push({ rangeStart, rangeEnd });
-      return laneIndex;
+    for (const point of edge.pts) {
+      contentBottom = Math.max(contentBottom, point.y);
+      contentTop = Math.min(contentTop, point.y);
     }
-    lanes.push([{ rangeStart, rangeEnd }]);
-    return lanes.length - 1;
+    for (const label of edge.labels) {
+      contentBottom = Math.max(contentBottom, label.y + label.height);
+      contentTop = Math.min(contentTop, label.y);
+    }
+  }
+  const isTop = (plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop";
+  const bottomPlans = plans.filter((plan) => !isTop(plan));
+  const topPlans = plans.filter(isTop);
+  const labelHeightOf = (subset) => Math.max(0, ...subset.flatMap((plan) => plan.edge.labels.map((label) => label.height)));
+  const maxLabelHeight = labelHeightOf(bottomPlans);
+  const laneHeight = maxLabelHeight + 14;
+  const maxLabelHeightTop = labelHeightOf(topPlans);
+  const laneHeightTop = maxLabelHeightTop + 14;
+  const makeAllocator = () => {
+    const lanes = [];
+    return (intervalStart, intervalEnd) => {
+      const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
+      const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
+      for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
+        const hasOverlap = lanes[laneIndex].some(
+          (existing) => existing.rangeStart < rangeEnd && rangeStart < existing.rangeEnd
+        );
+        if (hasOverlap) continue;
+        lanes[laneIndex].push({ rangeStart, rangeEnd });
+        return laneIndex;
+      }
+      lanes.push([{ rangeStart, rangeEnd }]);
+      return lanes.length - 1;
+    };
   };
-  let westIndex = 0;
+  const allocLane = makeAllocator();
+  const allocLaneTop = makeAllocator();
+  const placeLaneLabels = (edge, exitX, farX, laneY) => {
+    for (const label of edge.labels) {
+      const segmentStart = Math.min(exitX, farX);
+      const segmentEnd = Math.max(exitX, farX);
+      const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
+      label.x = Math.min(Math.max(midpoint, segmentStart + 4), segmentEnd - 4 - label.width);
+      label.y = laneY - label.height - 3;
+    }
+  };
   for (const plan of plans) {
     const { edge, source, target, exitX, entry } = plan;
+    if (entry.kind === "north" || entry.kind === "westTop") {
+      const lane2 = allocLaneTop(exitX, entry.x);
+      const laneY2 = contentTop - CHANNEL_GAP - lane2 * laneHeightTop;
+      edge.pts = entry.kind === "north" ? [
+        { x: exitX, y: source.y },
+        { x: exitX, y: laneY2 },
+        { x: entry.x, y: laneY2 },
+        { x: entry.x, y: target.y }
+      ] : [
+        { x: exitX, y: source.y },
+        { x: exitX, y: laneY2 },
+        { x: entry.x, y: laneY2 },
+        { x: entry.x, y: entry.y },
+        { x: target.x, y: entry.y }
+      ];
+      if (numbered) {
+        for (const label of edge.labels) {
+          if (entry.kind === "north") {
+            label.x = entry.x + 6;
+            label.y = target.y - label.height - 6;
+          } else {
+            label.x = target.x - label.width - 6;
+            label.y = entry.y - label.height - 6;
+          }
+        }
+      } else {
+        placeLaneLabels(edge, exitX, entry.x, laneY2);
+      }
+      continue;
+    }
     const sourceBottom = source.y + source.height;
-    const farX = entry.kind === "south" ? entry.x : Math.max(4, contentLeft - 12 - westIndex++ * 8);
+    const farX = entry.x;
     const lane = allocLane(exitX, farX);
     const laneY = contentBottom + CHANNEL_GAP + maxLabelHeight + 3 + lane * laneHeight;
     if (entry.kind === "south") {
@@ -95104,6 +95355,14 @@ function rerouteDetours(scene, model, numbered) {
         { x: farX, y: laneY },
         { x: farX, y: targetBottom }
       ];
+    } else if (entry.kind === "east") {
+      edge.pts = [
+        { x: exitX, y: sourceBottom },
+        { x: exitX, y: laneY },
+        { x: farX, y: laneY },
+        { x: farX, y: entry.y },
+        { x: target.x + target.width, y: entry.y }
+      ];
     } else {
       edge.pts = [
         { x: exitX, y: sourceBottom },
@@ -95113,26 +95372,35 @@ function rerouteDetours(scene, model, numbered) {
         { x: target.x, y: entry.y }
       ];
     }
-    for (const label of edge.labels) {
-      if (numbered) {
+    if (numbered) {
+      for (const label of edge.labels) {
         if (entry.kind === "south") {
           label.x = entry.x + 6;
           label.y = target.y + target.height + 6;
+        } else if (entry.kind === "east") {
+          label.x = target.x + target.width + 6;
+          label.y = entry.y - label.height - 6;
         } else {
           label.x = target.x - label.width - 6;
           label.y = entry.y - label.height - 6;
         }
-        continue;
       }
-      const segmentStart = Math.min(exitX, farX);
-      const segmentEnd = Math.max(exitX, farX);
-      const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
-      const clampedX = Math.min(
-        Math.max(midpoint, segmentStart + 4),
-        segmentEnd - 4 - label.width
-      );
-      label.x = clampedX;
-      label.y = laneY - label.height - 3;
+    } else {
+      placeLaneLabels(edge, exitX, farX, laneY);
+    }
+  }
+  let minY = 4;
+  if (topPlans.length)
+    for (const edge of scene.edges) {
+      for (const point of edge.pts) minY = Math.min(minY, point.y);
+      for (const label of edge.labels) minY = Math.min(minY, label.y);
+    }
+  if (minY < 4) {
+    const shift = 4 - minY;
+    for (const node of scene.nodes) node.y += shift;
+    for (const edge of scene.edges) {
+      for (const point of edge.pts) point.y += shift;
+      for (const label of edge.labels) label.y += shift;
     }
   }
   let maxX = 0;

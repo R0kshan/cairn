@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3917 1313" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3917 1360" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="3917" height="1313" fill="#ffffff"/>
+<rect width="3917" height="1360" fill="#ffffff"/>
 <rect x="214" y="569" width="113" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="224" y="587" font-size="13" font-weight="bold" fill="#17202c">Clients</text>
 <rect x="10" y="103" width="150" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -134,13 +134,13 @@
 <rect x="3715" y="306" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="3784" y="326.25" font-size="12.5" text-anchor="middle" fill="#17202c">Plateforme d'avis</text>
 <text x="3784" y="340.75" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
-<path d="M 318 782 L 337 782 A 5 5 0 0 1 347 782 L 347 782 A 5 5 0 0 1 357 782 L 357 782 A 5 5 0 0 1 367 782 L 1492 782 L 1492 754 L 1649 754 A 5 5 0 0 1 1659 754 L 1664 754 L 1664 741 L 1674 741.1666666666666 L 1722 741.1666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 318 782 L 337 782 A 5 5 0 0 1 347 782 L 347 782 A 5 5 0 0 1 357 782 L 357 782 A 5 5 0 0 1 367 782 L 1492 782 L 1492 754 L 1664 754 L 1664 741 L 1674 741.1666666666666 L 1722 741.1666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1573" y="769.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Naviguer, rechercher,</text>
 <text x="1573" y="784" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">commander</text>
-<path d="M 318 708 L 337 708 A 5 5 0 0 1 347 708 L 347 708 A 5 5 0 0 1 357 708 L 357 708 A 5 5 0 0 1 367 708 L 1649 708 A 5 5 0 0 1 1659 708 L 1664 708 L 1664 682 L 1722 682" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 318 708 L 337 708 A 5 5 0 0 1 347 708 L 347 708 A 5 5 0 0 1 357 708 L 357 708 A 5 5 0 0 1 367 708 L 1664 708 L 1664 682 L 1722 682" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="427" y="723.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Parcours d'achat</text>
 <text x="427" y="738" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">mobile</text>
-<path d="M 318 628.5 L 332 629 L 337 629 A 5 5 0 0 1 347 629 L 347 629 A 5 5 0 0 1 357 629 L 357 629 A 5 5 0 0 1 367 629 L 372 629 L 372 662 L 1649 662 A 5 5 0 0 1 1659 662 L 1664 662 L 1664 615 L 1722 615" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 318 628.5 L 332 629 L 337 629 A 5 5 0 0 1 347 629 L 347 629 A 5 5 0 0 1 357 629 L 357 629 A 5 5 0 0 1 367 629 L 372 629 L 372 662 L 1664 662 L 1664 615 L 1722 615" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="449.5" y="677.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Vérifier le stock et</text>
 <text x="449.5" y="692" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">commander en magasin</text>
 <path d="M 1830 749 L 1850 749 L 1850 679.8333333333333 L 2072 679.8333333333334 L 2072 771.5 L 2196 771.5 L 2196 767.375 L 2227.125 767.375" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -157,15 +157,15 @@
 <path d="M 1830 674.1666666666667 L 1835 674.1666666666667 A 5 5 0 0 1 1845 674.1666666666667 L 1850 674.1666666666667 L 1850 605 L 1900 605 L 1900 473.5 L 2132 473.5 L 2132 695.8333333333334 L 2226 695.8333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1981" y="489" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Panier mobile</text>
 <text x="1981" y="503.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">synchronisé</text>
-<path d="M 2343 695.8333333333334 L 2618 695.8333333333334 L 2618 874.5 L 2642 875 L 2652 875 L 2652 894 L 2527 894 A 5 5 0 0 0 2517 894 L 2527 894 A 5 5 0 0 0 2517 894 L 1781 894 A 5 5 0 0 0 1771 894 L 1669 894 A 5 5 0 0 0 1659 894 L 1659 894 A 5 5 0 0 0 1649 894 L 367 894 A 5 5 0 0 0 357 894 L 352 894 L 352 361 L 382 361.41666666666663 L 401 361.41666666666663 A 5 5 0 0 1 411 361.41666666666663 L 897 361.41666666666663 A 5 5 0 0 1 907 361.41666666666663 L 1083 361.41666666666674" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2343 695.8333333333334 L 2618 695.8333333333334 L 2618 874.5 L 2642 875 L 2652 875 L 2652 894 L 2547 894 A 5 5 0 0 0 2537 894 L 2507 894 A 5 5 0 0 0 2497 894 L 2352 894 A 5 5 0 0 0 2342 894 L 2286.125 894 A 5 5 0 0 0 2276.125 894 L 1781 894 A 5 5 0 0 0 1771 894 L 367 894 A 5 5 0 0 0 357 894 L 352 894 L 352 361 L 382 361.41666666666663 L 401 361.41666666666663 A 5 5 0 0 1 411 361.41666666666663 L 897 361.41666666666663 A 5 5 0 0 1 907 361.41666666666663 L 1083 361.41666666666674" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1576.5" y="909.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Appliquer les offres</text>
 <text x="1576.5" y="924" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">en cours</text>
-<path d="M 2335.125 761.5 L 2460 761.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2335.125 761.5 L 2342 761.5 A 5 5 0 0 1 2352 761.5 L 2460 761.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="2401.5" y="777" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Contexte de</text>
 <text x="2401.5" y="791.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">navigation</text>
-<path d="M 2522 777.1666666666666 L 2522 1052 L 1776 1052 L 1776 772.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="2149" y="1028.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Suggestions</text>
-<text x="2149" y="1043" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
+<path d="M 2502 777.1666666666666 L 2502 1052 L 2352 1052 A 5 5 0 0 0 2342 1052 L 2286.125 1052 A 5 5 0 0 0 2276.125 1052 L 1776 1052 L 1776 772.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="2139" y="1028.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Suggestions</text>
+<text x="2139" y="1043" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
 <path d="M 2337 621 L 2652 621 L 2652 382 L 1513 382 A 5 5 0 0 0 1503 382 L 1498 382 L 1498 92 L 372 92 L 372 140 L 887 140 A 5 5 0 0 1 897 140 L 1059 140 L 1059 215.41666666666663 L 1083 215.41666666666674" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1583" y="397.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Solde et avantages</text>
 <text x="1583" y="412" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">de fidélité</text>
@@ -206,7 +206,7 @@
 <path d="M 3839 128.5 L 3867 129 L 3877 129 L 3877 68 L 357 68 A 5 5 0 0 0 347 68 L 342 68 L 342 311 L 347 311 A 5 5 0 0 1 357 311 L 382 311.08333333333326 L 430 311.08333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="3620.5" y="83.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Événements de suivi</text>
 <text x="3620.5" y="98" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">des colis</text>
-<path d="M 568 330.6666666666667 L 902 330.66666666666663 L 902 480.91666666666663 L 1488 481 L 1518 481 L 1518 430 L 1649 430 A 5 5 0 0 1 1659 430 L 2152 430.00000000000017 L 2152 628.8333333333335 L 2229 628.8333333333335" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 568 330.6666666666667 L 902 330.66666666666663 L 902 480.91666666666663 L 1488 481 L 1518 481 L 1518 430 L 2152 430.00000000000017 L 2152 628.8333333333335 L 2229 628.8333333333335" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1586" y="445.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Suivi de commande</text>
 <text x="1586" y="460" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">client</text>
 <path d="M 151 236.5 L 165 237 L 238 237 L 238 235 L 382 234.49999999999994 L 445 234.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -226,15 +226,15 @@
 <path d="M 703 613.5833333333333 L 1488 614 L 1608 614 L 1608 554 L 1674 553.5 L 1885 553.5 A 5 5 0 0 1 1895 553.5 L 1895 553.5 A 5 5 0 0 1 1905 553.5 L 2092 553.5 L 2092 751.5 L 2196 751.5 L 2196 755.625 L 2227.125 755.625" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1553" y="629.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Prix de vente</text>
 <text x="1553" y="644" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">en cours</text>
-<path d="M 3853 254.66666666666666 L 3867 255 L 3907 255 L 3907 970 L 3487 970 A 5 5 0 0 0 3477 970 L 2527 970 A 5 5 0 0 0 2517 970 L 2527 970 A 5 5 0 0 0 2517 970 L 1781 970 A 5 5 0 0 0 1771 970 L 342 970 L 342 551 L 347 551 A 5 5 0 0 1 357 551 L 382 551.0833333333333 L 595 551.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3853 254.66666666666666 L 3867 255 L 3907 255 L 3907 970 L 3789 970 A 5 5 0 0 0 3779 970 L 3725 970 A 5 5 0 0 0 3715 970 L 3487 970 A 5 5 0 0 0 3477 970 L 2547 970 A 5 5 0 0 0 2537 970 L 2507 970 A 5 5 0 0 0 2497 970 L 2352 970 A 5 5 0 0 0 2342 970 L 2286.125 970 A 5 5 0 0 0 2276.125 970 L 1781 970 A 5 5 0 0 0 1771 970 L 342 970 L 342 551 L 347 551 A 5 5 0 0 1 357 551 L 382 551.0833333333333 L 595 551.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="3765.5" y="985.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Mouvements de stock</text>
 <text x="3765.5" y="1000" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">comptables</text>
-<path d="M 703 551.0833333333333 L 1488 551 L 1498 551 L 1498 549 L 1649 549 A 5 5 0 0 1 1659 549 L 1664 549 L 1664 543 L 1674 542.5 L 1885 542.5 A 5 5 0 0 1 1895 542.5 L 1895 542.5 A 5 5 0 0 1 1905 542.5 L 2102 542.5 L 2102 741.5 L 2206 741.5 L 2206 749.75 L 2227.125 749.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 703 551.0833333333333 L 1488 551 L 1498 551 L 1498 549 L 1664 549 L 1664 543 L 1674 542.5 L 1885 542.5 A 5 5 0 0 1 1895 542.5 L 1895 542.5 A 5 5 0 0 1 1905 542.5 L 2102 542.5 L 2102 741.5 L 2206 741.5 L 2206 749.75 L 2227.125 749.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1553" y="564.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Disponibilité</text>
 <text x="1553" y="579" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">produit</text>
 <rect x="1526" y="587" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="1553" y="598" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
-<path d="M 3853 270.33333333333337 L 3867 270 L 3897 270 L 3897 960 L 3487 960 A 5 5 0 0 0 3477 960 L 2527 960 A 5 5 0 0 0 2517 960 L 2527 960 A 5 5 0 0 0 2517 960 L 1781 960 A 5 5 0 0 0 1771 960 L 362 960 L 362 614 L 382 613.5833333333333 L 595 613.5833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3853 270.33333333333337 L 3867 270 L 3897 270 L 3897 960 L 3789 960 A 5 5 0 0 0 3779 960 L 3725 960 A 5 5 0 0 0 3715 960 L 3487 960 A 5 5 0 0 0 3477 960 L 2547 960 A 5 5 0 0 0 2537 960 L 2507 960 A 5 5 0 0 0 2497 960 L 2352 960 A 5 5 0 0 0 2342 960 L 2286.125 960 A 5 5 0 0 0 2276.125 960 L 1781 960 A 5 5 0 0 0 1771 960 L 362 960 L 362 614 L 382 613.5833333333333 L 595 613.5833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="3637" y="936.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Coûts d'achat de</text>
 <text x="3637" y="951" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">référence</text>
 <path d="M 1830 760.75 L 1890 760.75 L 1890 864.5 L 2642 865 L 2672 865 L 2672 415 L 2798 414.5 L 2833.5 414.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -252,15 +252,15 @@
 <path d="M 3304 355.3333333333333 L 3428 355.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="3366" y="370.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Calculer les</text>
 <text x="3366" y="385.3333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">segments</text>
-<path d="M 3482 378.8333333333333 L 3482 1099 L 2522 1099 L 2522 777.1666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="3002" y="1075.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Segments d'audience</text>
-<text x="3002" y="1090" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">pour personnalisation</text>
-<path d="M 3536 347.5 L 3564 348 L 3691 348 L 3691 397 L 3701 396.5 L 3730 396.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3482 378.8333333333333 L 3482 1052 L 2542 1052 L 2542 777.1666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="3012" y="1028.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Segments d'audience</text>
+<text x="3012" y="1043" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">pour personnalisation</text>
+<path d="M 3536 347.5 L 3564 348 L 3691 348 L 3691 397 L 3701 396.5 L 3715 396.5 A 5 5 0 0 1 3725 396.5 L 3730 396.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="3632.5" y="363.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Audiences pour</text>
 <text x="3632.5" y="378" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">campagnes</text>
-<path d="M 3838 396.5 L 3867 397 L 3877 397 L 3877 903 L 3487 903 A 5 5 0 0 0 3477 903 L 2527 903 A 5 5 0 0 0 2517 903 L 2527 903 A 5 5 0 0 0 2517 903 L 1781 903 A 5 5 0 0 0 1771 903 L 1669 903 A 5 5 0 0 0 1659 903 L 1654 903 L 1654 419 L 2162 419 L 2162 613.1666666666666 L 2229 613.1666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="3749.5" y="879.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Sollicitations</text>
-<text x="3749.5" y="894" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
+<path d="M 3784 420 L 3784 1099 L 3725 1099 A 5 5 0 0 0 3715 1099 L 2347 1099 L 2347 633 L 2337 633" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="3065.5" y="1075.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Sollicitations</text>
+<text x="3065.5" y="1090" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
 <path d="M 151 157 L 337 157 A 5 5 0 0 1 347 157 L 357 157 A 5 5 0 0 1 367 157 L 372 157 L 372 162 L 887 162 A 5 5 0 0 1 897 162 L 1039 161.99999999999994 L 1039 259.91666666666663 L 1196 259.91666666666663 A 5 5 0 0 1 1206 259.91666666666663 L 1292 259.9166666666667 L 1292 260.6666666666667 L 1302 260.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="283.5" y="172.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Rapprocher les</text>
 <text x="283.5" y="187" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">encaissements</text>
@@ -270,38 +270,38 @@
 <path d="M 1191 294.4166666666667 L 1488 294 L 1493 294 A 5 5 0 0 1 1503 294 L 1544 294 L 1544 259 L 1549 259 A 5 5 0 0 1 1559 259 L 3574 259 L 3574 330 L 3701 329.5 L 3715 329.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1619" y="274.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Demander un avis</text>
 <text x="1619" y="289" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">après livraison</text>
-<path d="M 3853 329.5 L 3867 330 L 3887 330 L 3887 913 L 3487 913 A 5 5 0 0 0 3477 913 L 2527 913 A 5 5 0 0 0 2517 913 L 2527 913 A 5 5 0 0 0 2517 913 L 1781 913 A 5 5 0 0 0 1771 913 L 1664 913 L 1664 792 L 1674 791.5 L 1771 791.5 A 5 5 0 0 1 1781 791.5 L 1885 791.5 A 5 5 0 0 1 1895 791.5 L 2216 791.5 L 2216 779.125 L 2227.125 779.125" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="3746" y="928.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notes et avis</text>
-<text x="3746" y="943" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">produit</text>
-<line x1="20" y1="1119" x2="3897" y2="1119" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1141" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
-<rect x="150" y="1131" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="179.5" y="1142" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
-<text x="219" y="1142" font-size="10" fill="#79828f">— panier validé par un client, suivi jusqu'à la livraison</text>
-<rect x="150" y="1155" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="179.5" y="1166" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
-<text x="219" y="1166" font-size="10" fill="#79828f">— transaction financière liée à une commande</text>
-<rect x="150" y="1179" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="177" y="1190" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
-<text x="214" y="1190" font-size="10" fill="#79828f">— article du catalogue avec prix et disponibilité</text>
-<rect x="150" y="1203" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="171.5" y="1214" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Colis</text>
-<text x="203" y="1214" font-size="10" fill="#79828f">— unité d'expédition remise au transporteur</text>
-<line x1="20" y1="1241" x2="3897" y2="1241" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1263" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="1253" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="1264" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="1253" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="330" y="1264" font-size="10" fill="#17202c">Système</text>
-<rect x="399" y="1253" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="431" y="1264" font-size="10" fill="#17202c">Couche</text>
-<rect x="495" y="1253" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="527" y="1264" font-size="10" fill="#17202c">Bloc fonctionnel</text>
-<rect x="643" y="1253" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="675" y="1264" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="1283" x2="176" y2="1283" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="1287" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
-<rect x="480" y="1276" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="520" y="1287" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
-<text x="568" y="1287" font-size="10" fill="#17202c">porté par le flux</text>
+<path d="M 3720 353 L 3720 1146 L 2281.125 1146 L 2281.125 785" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="3000.5625" y="1122.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Notes et avis</text>
+<text x="3000.5625" y="1137" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">produit</text>
+<line x1="20" y1="1166" x2="3897" y2="1166" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1188" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
+<rect x="150" y="1178" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="179.5" y="1189" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
+<text x="219" y="1189" font-size="10" fill="#79828f">— panier validé par un client, suivi jusqu'à la livraison</text>
+<rect x="150" y="1202" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="179.5" y="1213" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
+<text x="219" y="1213" font-size="10" fill="#79828f">— transaction financière liée à une commande</text>
+<rect x="150" y="1226" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="177" y="1237" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
+<text x="214" y="1237" font-size="10" fill="#79828f">— article du catalogue avec prix et disponibilité</text>
+<rect x="150" y="1250" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="171.5" y="1261" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Colis</text>
+<text x="203" y="1261" font-size="10" fill="#79828f">— unité d'expédition remise au transporteur</text>
+<line x1="20" y1="1288" x2="3897" y2="1288" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1310" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="1300" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="1311" font-size="10" fill="#17202c">Groupe d'acteurs</text>
+<rect x="298" y="1300" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="330" y="1311" font-size="10" fill="#17202c">Système</text>
+<rect x="399" y="1300" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="431" y="1311" font-size="10" fill="#17202c">Couche</text>
+<rect x="495" y="1300" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="527" y="1311" font-size="10" fill="#17202c">Bloc fonctionnel</text>
+<rect x="643" y="1300" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="675" y="1311" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="1330" x2="176" y2="1330" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="1334" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
+<rect x="480" y="1323" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="520" y="1334" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
+<text x="568" y="1334" font-size="10" fill="#17202c">porté par le flux</text>
 </svg>

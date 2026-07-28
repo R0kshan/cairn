@@ -37,8 +37,16 @@ Not a general diagramming tool.
 ## Pipeline & file map (`src/`)
 
 ```
-.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → svg-render.ts → SVG
+.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → svg-render.ts → SVG
 ```
+
+- `route-detour.ts` — deterministic post-layout pass (issue #26): reroutes
+  elk's wrap-around backward hierarchical edges through top/bottom channels.
+  elk options **cannot** fix these (tested; see
+  [`documentation/ROUTE_DETOUR_HANDOVER.md`](./documentation/ROUTE_DETOUR_HANDOVER.md)
+  — read it before touching flow routing). Its extra invariants: no coincident
+  segments, attach points spread per node side, no line collinear with a
+  container border, risers never strike container titles.
 
 - `model.ts` — the heart: types, the `views` registry (kinds, nesting rules,
   per-view diagnostics), themes (`themes`/`mkTheme`/`themeFor`), i18n (`UI`),

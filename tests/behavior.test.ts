@@ -129,6 +129,30 @@ test("backward flows are rerouted through the bottom channel, not wrapped (logic
   }
 });
 
+// Issue #26, top channel: when nodes below block the south exit (logical-archi
+// COORD→OPE — three blocks stacked under COORD), the reroute must mirror the
+// route north instead of leaving elk's wrap in place.
+test("south-blocked backward flows use the top channel instead (logical-archi)", async () => {
+  const { model, scene, overlapsAfter } = await build(load("logical-archi.cairn"));
+  assert.equal(overlapsAfter, 0);
+  const nodeById = new Map(scene.nodes.map((n) => [n.id, n]));
+  const flow = model.flows.find((f) => f.from === "COORD" && f.to === "OPE")!;
+  const edge = scene.edges.find((e) => e.id === flow.id)!;
+  let len = 0;
+  for (let i = 1; i < edge.pts.length; i++)
+    len +=
+      Math.abs(edge.pts[i].x - edge.pts[i - 1].x) + Math.abs(edge.pts[i].y - edge.pts[i - 1].y);
+  const a = nodeById.get("COORD")!,
+    b = nodeById.get("OPE")!;
+  const direct =
+    Math.abs(a.x + a.width / 2 - b.x - b.width / 2) +
+    Math.abs(a.y + a.height / 2 - b.y - b.height / 2);
+  assert.ok(
+    len < 2.2 * direct,
+    `COORD→OPE must route via the top channel (len ${Math.round(len)} vs direct ${Math.round(direct)})`,
+  );
+});
+
 // ---------- dispositions ----------
 
 test("slide is always landscape, page always portrait (medium)", async () => {
