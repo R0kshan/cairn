@@ -287,6 +287,12 @@ export function rerouteDetours(
     source: SceneNode;
     target: SceneNode;
     exitX: number;
+    /**
+     * Set when the source is boxed in on both channel sides and the flow has
+     * to leave sideways first: it departs the source's east edge at `y`, runs
+     * to `exitX`, and only then turns into the channel.
+     */
+    exitVia?: { y: number };
     entry:
       | { kind: "south"; x: number }
       | { kind: "west"; x: number; y: number }
@@ -300,11 +306,37 @@ export function rerouteDetours(
   for (const candidate of candidates) {
     const { source, target } = candidate;
     let planned: Plan | null = null;
-    const exitX = findRiserX(source, "south");
+    // A source hemmed in on both channel sides can still leave sideways: out
+    // of its east edge, clear of whatever sits beside it, then down into the
+    // channel. This mirrors the east/west *entry* fallbacks — without it such
+    // a flow keeps elk's route, which is how `medium-page`'s
+    // INTERINSURER→FRAUD stayed a 2275px wander around the whole page.
+    let exitVia: { y: number } | undefined;
+    let exitX = findRiserX(source, "south");
+    if (exitX === null && findRiserX(source, "north") === null) {
+      for (const delta of EAST_DESCENT_DELTAS) {
+        const turnX = source.x + source.width + delta;
+        const leaveY = findEntryY(
+          source,
+          true,
+          source.x + source.width,
+          turnX,
+          turnX,
+          source.x + source.width,
+        );
+        if (leaveY === null) continue;
+        if (riserBlockedBelow(turnX, leaveY)) continue;
+        if (riserConflicts(turnX, leaveY, INF)) continue;
+        exitVia = { y: leaveY };
+        exitX = turnX;
+        usedHorizontals.push({ y: leaveY, left: source.x + source.width, right: turnX });
+        break;
+      }
+    }
     if (exitX !== null) {
       const southX = findRiserX(target, "south");
       if (southX !== null) {
-        planned = { ...candidate, exitX, entry: { kind: "south", x: southX } };
+        planned = { ...candidate, exitX, exitVia, entry: { kind: "south", x: southX } };
         usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
         usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
       } else {
@@ -349,7 +381,7 @@ export function rerouteDetours(
           eastEntry &&
           (westY === null || laneDepth(eastEntry.x) < laneDepth(westX) - MIN_DEPTH_GAIN)
         ) {
-          planned = { ...candidate, exitX, entry: { kind: "east", ...eastEntry } };
+          planned = { ...candidate, exitX, exitVia, entry: { kind: "east", ...eastEntry } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
           usedHorizontals.push({
@@ -359,7 +391,7 @@ export function rerouteDetours(
           });
         } else if (westY !== null) {
           westCount++;
-          planned = { ...candidate, exitX, entry: { kind: "west", x: westX, y: westY } };
+          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: westX, y: westY } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: westX, top: westY, bottom: INF });
           usedHorizontals.push({ y: westY, left: westX, right: target.x });
@@ -373,7 +405,7 @@ export function rerouteDetours(
           if (entryY === null) continue;
           if (riserBlockedBelow(descentX, entryY)) continue;
           if (riserConflicts(descentX, entryY, INF)) continue;
-          planned = { ...candidate, exitX, entry: { kind: "west", x: descentX, y: entryY } };
+          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: descentX, y: entryY } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
           usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
@@ -817,27 +849,35 @@ export function rerouteDetours(
     const sourceBottom = source.y + source.height;
     const farX = entry.x;
     const laneY = bottomLaneY[laneIndexOf.get(edge.id)!];
+    // A boxed-in source leaves sideways and turns down; otherwise it drops
+    // straight out of the edge facing the channel.
+    const head = plan.exitVia
+      ? [
+          { x: source.x + source.width, y: plan.exitVia.y },
+          { x: exitX, y: plan.exitVia.y },
+          { x: exitX, y: laneY },
+        ]
+      : [
+          { x: exitX, y: sourceBottom },
+          { x: exitX, y: laneY },
+        ];
 
     if (entry.kind === "south") {
-      const targetBottom = target.y + target.height;
       edge.pts = [
-        { x: exitX, y: sourceBottom },
-        { x: exitX, y: laneY },
+        ...head,
         { x: farX, y: laneY },
-        { x: farX, y: targetBottom },
+        { x: farX, y: target.y + target.height },
       ];
     } else if (entry.kind === "east") {
       edge.pts = [
-        { x: exitX, y: sourceBottom },
-        { x: exitX, y: laneY },
+        ...head,
         { x: farX, y: laneY },
         { x: farX, y: entry.y },
         { x: target.x + target.width, y: entry.y },
       ];
     } else {
       edge.pts = [
-        { x: exitX, y: sourceBottom },
-        { x: exitX, y: laneY },
+        ...head,
         { x: farX, y: laneY },
         { x: farX, y: entry.y },
         { x: target.x, y: entry.y },

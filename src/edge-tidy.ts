@@ -24,8 +24,17 @@
 
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 
-/** Deviations up to this read as routing noise rather than a real turn. */
+/** A segment this far off orthogonal is a rounding artefact, not a turn. */
 const SNAP = 6;
+/**
+ * A step this short between two runs going the same way is a staircase, not a
+ * detour. Kept at 6 deliberately: collapsing wider steps means moving a run by
+ * that much, and a sweep over every example × disposition showed 20px trading
+ * 264 staircases for 24 flows dragged through node boxes, 12 merged lines and
+ * 14 shared attachment points. Widening this needs every mutation in the pass
+ * guarded and iterated to a fixpoint, not a bigger number.
+ */
+const JOG_SNAP = 6;
 /** Least distance between two flows attached to the same side of a node. */
 const MIN_ATTACH_GAP = 12;
 /** Keep attachments off the corners — squeezed toward `MIN_SIDE_INSET` when a
@@ -97,7 +106,7 @@ function straighten(
         changed = true;
         break;
       }
-      if (length > SNAP) continue;
+      if (length > JOG_SNAP) continue;
       if (skipped.has(index)) continue;
       const hasBefore = index - 1 >= 0;
       const hasAfter = index + 2 < pts.length;
@@ -186,6 +195,21 @@ export function tidyEdges(scene: Scene): void {
   // Mirrors the two readability metrics exactly: a run must not become
   // collinear with another (touching at all over a shared stretch), nor drift
   // alongside one for long enough to read as a single thick line.
+  // A straightened or shifted run must not be dragged across a node either.
+  // Widening the jog threshold without this put 26 flows through boxes.
+  const runHitsNode = (vertical: boolean, at: number, from: number, to: number) => {
+    const lo = Math.min(from, to);
+    const hi = Math.max(from, to);
+    return leaves.some((node) => {
+      const across = vertical
+        ? at > node.x + 1 && at < node.x + node.width - 1
+        : at > node.y + 1 && at < node.y + node.height - 1;
+      if (!across) return false;
+      return vertical
+        ? node.y < hi - 1 && node.y + node.height > lo + 1
+        : node.x < hi - 1 && node.x + node.width > lo + 1;
+    });
+  };
   const runIsClear = (
     others: { lo: number; hi: number; at: number }[],
     at: number,
@@ -220,8 +244,19 @@ export function tidyEdges(scene: Scene): void {
         const axis: "x" | "y" = Math.abs(deltaX) >= Math.abs(deltaY) ? "y" : "x";
         const movable = (candidate: number) =>
           (candidate !== 0 && candidate !== pts.length - 1) || borderAxis(candidate) !== axis;
-        const target = movable(index + 1) ? index + 1 : movable(index) ? index : -1;
-        if (target < 0) continue;
+        // Squaring a segment moves a point, and after a wide jog collapse that
+        // move can be large enough to drag the run across a node. Prefer the
+        // end that keeps it clear; if neither does, squareness still wins —
+        // a slanted flow is never acceptable.
+        const options = [index + 1, index].filter(movable);
+        if (!options.length) continue;
+        const clear = options.find((candidate) => {
+          const other = candidate === index + 1 ? index : index + 1;
+          const at = pts[other][axis];
+          const span = axis === "y" ? [pts[index].x, pts[index + 1].x] : [pts[index].y, pts[index + 1].y];
+          return !runHitsNode(axis === "x", at, span[0], span[1]);
+        });
+        const target = clear ?? options[0];
         pts[target][axis] = pts[target === index + 1 ? index : index + 1][axis];
         fixed = true;
       }
@@ -233,8 +268,11 @@ export function tidyEdges(scene: Scene): void {
     if (edge.pts.length < 2) continue;
     const before = edge.pts.map((point) => ({ ...point }));
     const others = runsExcept(edge.id);
-    const after = straighten(edge.pts, (vertical, at, from, to) =>
-      runIsClear(vertical ? others.vertical : others.horizontal, at, from, to),
+    const after = straighten(
+      edge.pts,
+      (vertical, at, from, to) =>
+        !runHitsNode(vertical, at, from, to) &&
+        runIsClear(vertical ? others.vertical : others.horizontal, at, from, to),
     );
     // Straightening may slide an endpoint along its border; keep it on the
     // node, away from the corners.
@@ -332,7 +370,19 @@ export function tidyEdges(scene: Scene): void {
       for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
     }
 
-    members.forEach((member, index) => {
+    // Two passes. The first keeps every guard; the second runs only for flows
+    // still sharing a point afterwards, and drops the parallel-run guard for
+    // them — two flows drifting alongside each other is a blemish, two flows
+    // leaving a node at the same point is unreadable, so the blemish wins.
+    for (const relaxed of [false, true]) {
+      if (relaxed) {
+        const sorted = [...members].sort((a, b) => a.along - b.along);
+        const stillShared = sorted.some(
+          (member, index) => index > 0 && member.along - sorted[index - 1].along < 6,
+        );
+        if (!stillShared) break;
+      }
+      members.forEach((member, index) => {
       const target = wanted[index];
       if (Math.abs(target - member.along) < 0.01) return;
       const { edge, terminal, neighbour } = member;
@@ -361,9 +411,20 @@ export function tidyEdges(scene: Scene): void {
       // close they may end up. Without this the guard blocks the very
       // separation it is meant to protect.
       const others = runsExcept(...members.map((sibling) => sibling.edge.id));
-      const clear = vertical
-        ? runIsClear(others.horizontal, target, terminalPoint.x, neighbourPoint.x)
-        : runIsClear(others.vertical, target, terminalPoint.y, neighbourPoint.y);
+      const runFrom = vertical ? terminalPoint.x : terminalPoint.y;
+      const runTo = vertical ? neighbourPoint.x : neighbourPoint.y;
+      const list = vertical ? others.horizontal : others.vertical;
+      const clear =
+        !runHitsNode(!vertical, target, runFrom, runTo) &&
+        (relaxed
+          ? !list.some(
+              (other) =>
+                Math.abs(other.at - target) < 4 &&
+                Math.min(other.hi, Math.max(runFrom, runTo)) -
+                  Math.max(other.lo, Math.min(runFrom, runTo)) >
+                  6,
+            )
+          : runIsClear(list, target, runFrom, runTo));
       // Leave the flow where elk put it rather than merge it into another.
       if (!clear) return;
       if (vertical) {
@@ -374,7 +435,8 @@ export function tidyEdges(scene: Scene): void {
         neighbourPoint.x = target;
       }
       member.along = target;
-    });
+      });
+    }
   }
 
   // A separation move can tilt a jog that straightening had to leave in place.

@@ -95155,11 +95155,32 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
   for (const candidate of candidates) {
     const { source, target } = candidate;
     let planned = null;
-    const exitX = findRiserX(source, "south");
+    let exitVia;
+    let exitX = findRiserX(source, "south");
+    if (exitX === null && findRiserX(source, "north") === null) {
+      for (const delta of EAST_DESCENT_DELTAS) {
+        const turnX = source.x + source.width + delta;
+        const leaveY = findEntryY(
+          source,
+          true,
+          source.x + source.width,
+          turnX,
+          turnX,
+          source.x + source.width
+        );
+        if (leaveY === null) continue;
+        if (riserBlockedBelow(turnX, leaveY)) continue;
+        if (riserConflicts(turnX, leaveY, INF)) continue;
+        exitVia = { y: leaveY };
+        exitX = turnX;
+        usedHorizontals.push({ y: leaveY, left: source.x + source.width, right: turnX });
+        break;
+      }
+    }
     if (exitX !== null) {
       const southX = findRiserX(target, "south");
       if (southX !== null) {
-        planned = { ...candidate, exitX, entry: { kind: "south", x: southX } };
+        planned = { ...candidate, exitX, exitVia, entry: { kind: "south", x: southX } };
         usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
         usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
       } else {
@@ -95191,7 +95212,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
           return spanned.length ? Math.max(...spanned.map((node) => node.y + node.height)) : maxNodeBottom;
         };
         if (eastEntry && (westY === null || laneDepth(eastEntry.x) < laneDepth(westX) - MIN_DEPTH_GAIN)) {
-          planned = { ...candidate, exitX, entry: { kind: "east", ...eastEntry } };
+          planned = { ...candidate, exitX, exitVia, entry: { kind: "east", ...eastEntry } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
           usedHorizontals.push({
@@ -95201,7 +95222,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
           });
         } else if (westY !== null) {
           westCount++;
-          planned = { ...candidate, exitX, entry: { kind: "west", x: westX, y: westY } };
+          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: westX, y: westY } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: westX, top: westY, bottom: INF });
           usedHorizontals.push({ y: westY, left: westX, right: target.x });
@@ -95213,7 +95234,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
           if (entryY === null) continue;
           if (riserBlockedBelow(descentX, entryY)) continue;
           if (riserConflicts(descentX, entryY, INF)) continue;
-          planned = { ...candidate, exitX, entry: { kind: "west", x: descentX, y: entryY } };
+          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: descentX, y: entryY } };
           usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
           usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
           usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
@@ -95521,26 +95542,30 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
     const sourceBottom = source.y + source.height;
     const farX = entry.x;
     const laneY = bottomLaneY[laneIndexOf.get(edge.id)];
+    const head = plan.exitVia ? [
+      { x: source.x + source.width, y: plan.exitVia.y },
+      { x: exitX, y: plan.exitVia.y },
+      { x: exitX, y: laneY }
+    ] : [
+      { x: exitX, y: sourceBottom },
+      { x: exitX, y: laneY }
+    ];
     if (entry.kind === "south") {
-      const targetBottom = target.y + target.height;
       edge.pts = [
-        { x: exitX, y: sourceBottom },
-        { x: exitX, y: laneY },
+        ...head,
         { x: farX, y: laneY },
-        { x: farX, y: targetBottom }
+        { x: farX, y: target.y + target.height }
       ];
     } else if (entry.kind === "east") {
       edge.pts = [
-        { x: exitX, y: sourceBottom },
-        { x: exitX, y: laneY },
+        ...head,
         { x: farX, y: laneY },
         { x: farX, y: entry.y },
         { x: target.x + target.width, y: entry.y }
       ];
     } else {
       edge.pts = [
-        { x: exitX, y: sourceBottom },
-        { x: exitX, y: laneY },
+        ...head,
         { x: farX, y: laneY },
         { x: farX, y: entry.y },
         { x: target.x, y: entry.y }
@@ -95663,6 +95688,7 @@ function compactVertical(scene) {
 
 // src/edge-tidy.ts
 var SNAP = 6;
+var JOG_SNAP = 6;
 var MIN_ATTACH_GAP = 12;
 var SIDE_INSET = 6;
 var MIN_SIDE_INSET = 3;
@@ -95700,7 +95726,7 @@ function straighten(points, runIsClear) {
         changed = true;
         break;
       }
-      if (length > SNAP) continue;
+      if (length > JOG_SNAP) continue;
       if (skipped.has(index)) continue;
       const hasBefore = index - 1 >= 0;
       const hasAfter = index + 2 < pts.length;
@@ -95765,6 +95791,15 @@ function tidyEdges(scene) {
     }
     return { horizontal, vertical };
   };
+  const runHitsNode = (vertical, at, from, to) => {
+    const lo = Math.min(from, to);
+    const hi = Math.max(from, to);
+    return leaves.some((node) => {
+      const across = vertical ? at > node.x + 1 && at < node.x + node.width - 1 : at > node.y + 1 && at < node.y + node.height - 1;
+      if (!across) return false;
+      return vertical ? node.y < hi - 1 && node.y + node.height > lo + 1 : node.x < hi - 1 && node.x + node.width > lo + 1;
+    });
+  };
   const runIsClear = (others, at, from, to) => !others.some((other) => {
     const gap = Math.abs(other.at - at);
     const shared = Math.min(other.hi, Math.max(from, to)) - Math.max(other.lo, Math.min(from, to));
@@ -95786,8 +95821,15 @@ function tidyEdges(scene) {
         if (Math.abs(deltaX) < 0.5 || Math.abs(deltaY) < 0.5) continue;
         const axis = Math.abs(deltaX) >= Math.abs(deltaY) ? "y" : "x";
         const movable = (candidate) => candidate !== 0 && candidate !== pts.length - 1 || borderAxis(candidate) !== axis;
-        const target = movable(index + 1) ? index + 1 : movable(index) ? index : -1;
-        if (target < 0) continue;
+        const options = [index + 1, index].filter(movable);
+        if (!options.length) continue;
+        const clear = options.find((candidate) => {
+          const other = candidate === index + 1 ? index : index + 1;
+          const at = pts[other][axis];
+          const span = axis === "y" ? [pts[index].x, pts[index + 1].x] : [pts[index].y, pts[index + 1].y];
+          return !runHitsNode(axis === "x", at, span[0], span[1]);
+        });
+        const target = clear ?? options[0];
         pts[target][axis] = pts[target === index + 1 ? index : index + 1][axis];
         fixed = true;
       }
@@ -95800,7 +95842,7 @@ function tidyEdges(scene) {
     const others = runsExcept(edge.id);
     const after = straighten(
       edge.pts,
-      (vertical, at, from, to) => runIsClear(vertical ? others.vertical : others.horizontal, at, from, to)
+      (vertical, at, from, to) => !runHitsNode(vertical, at, from, to) && runIsClear(vertical ? others.vertical : others.horizontal, at, from, to)
     );
     for (const [index, original] of [
       [0, before[0]],
@@ -95877,36 +95919,50 @@ function tidyEdges(scene) {
         const step = (high - low) / (members.length - 1);
         for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
       }
-      members.forEach((member, index) => {
-        const target = wanted[index];
-        if (Math.abs(target - member.along) < 0.01) return;
-        const { edge, terminal, neighbour } = member;
-        const terminalPoint = edge.pts[terminal];
-        const neighbourPoint = edge.pts[neighbour];
-        const straightRun = vertical ? Math.abs(neighbourPoint.y - terminalPoint.y) < 0.5 : Math.abs(neighbourPoint.x - terminalPoint.x) < 0.5;
-        if (!straightRun) return;
-        if (edge.pts.length === 2) {
-          const farSeat = sideOf(neighbourPoint, leaves);
-          if (!farSeat) return;
-          const farVertical = farSeat.side === "east" || farSeat.side === "west";
-          if (farVertical !== vertical) return;
-          const farStart = vertical ? farSeat.node.y : farSeat.node.x;
-          const farLength = vertical ? farSeat.node.height : farSeat.node.width;
-          if (target < farStart + MIN_SIDE_INSET || target > farStart + farLength - MIN_SIDE_INSET)
-            return;
+      for (const relaxed of [false, true]) {
+        if (relaxed) {
+          const sorted = [...members].sort((a, b) => a.along - b.along);
+          const stillShared = sorted.some(
+            (member, index) => index > 0 && member.along - sorted[index - 1].along < 6
+          );
+          if (!stillShared) break;
         }
-        const others = runsExcept(...members.map((sibling) => sibling.edge.id));
-        const clear = vertical ? runIsClear(others.horizontal, target, terminalPoint.x, neighbourPoint.x) : runIsClear(others.vertical, target, terminalPoint.y, neighbourPoint.y);
-        if (!clear) return;
-        if (vertical) {
-          terminalPoint.y = target;
-          neighbourPoint.y = target;
-        } else {
-          terminalPoint.x = target;
-          neighbourPoint.x = target;
-        }
-        member.along = target;
-      });
+        members.forEach((member, index) => {
+          const target = wanted[index];
+          if (Math.abs(target - member.along) < 0.01) return;
+          const { edge, terminal, neighbour } = member;
+          const terminalPoint = edge.pts[terminal];
+          const neighbourPoint = edge.pts[neighbour];
+          const straightRun = vertical ? Math.abs(neighbourPoint.y - terminalPoint.y) < 0.5 : Math.abs(neighbourPoint.x - terminalPoint.x) < 0.5;
+          if (!straightRun) return;
+          if (edge.pts.length === 2) {
+            const farSeat = sideOf(neighbourPoint, leaves);
+            if (!farSeat) return;
+            const farVertical = farSeat.side === "east" || farSeat.side === "west";
+            if (farVertical !== vertical) return;
+            const farStart = vertical ? farSeat.node.y : farSeat.node.x;
+            const farLength = vertical ? farSeat.node.height : farSeat.node.width;
+            if (target < farStart + MIN_SIDE_INSET || target > farStart + farLength - MIN_SIDE_INSET)
+              return;
+          }
+          const others = runsExcept(...members.map((sibling) => sibling.edge.id));
+          const runFrom = vertical ? terminalPoint.x : terminalPoint.y;
+          const runTo = vertical ? neighbourPoint.x : neighbourPoint.y;
+          const list = vertical ? others.horizontal : others.vertical;
+          const clear = !runHitsNode(!vertical, target, runFrom, runTo) && (relaxed ? !list.some(
+            (other) => Math.abs(other.at - target) < 4 && Math.min(other.hi, Math.max(runFrom, runTo)) - Math.max(other.lo, Math.min(runFrom, runTo)) > 6
+          ) : runIsClear(list, target, runFrom, runTo));
+          if (!clear) return;
+          if (vertical) {
+            terminalPoint.y = target;
+            neighbourPoint.y = target;
+          } else {
+            terminalPoint.x = target;
+            neighbourPoint.x = target;
+          }
+          member.along = target;
+        });
+      }
     }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }

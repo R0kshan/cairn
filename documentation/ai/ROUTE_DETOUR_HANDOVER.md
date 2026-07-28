@@ -81,6 +81,15 @@ Pipeline inside the function, in order:
      target only to hook back) → descend on the far side (`westTop`). Content
      may be shifted down afterward if lanes go above y=4 — the shift is
      guarded on `topPlans.length` so bottom-only diagrams stay byte-identical.
+   - **Side exits** (`exitVia`): a source hemmed in on both channel sides can
+     still leave through its perpendicular edge, run clear of whatever sits
+     beside it, then turn into the channel. For five rounds only *entries* had
+     east/west fallbacks while exits were limited to two sides, so any boxed-in
+     source silently kept elk's route — that is what made `medium-page`'s
+     `INTERINSURER→FRAUD` ("Policyholder history") a 2275 px wander around the
+     page (1508 px after, and 20 long detours removed corpus-wide). When a
+     planning failure reports `southExit null northExit null`, this is the
+     mechanism to reach for.
    - Descent deltas reach ±106 px on purpose: a node inside a container is
      often reachable only from *outside* that container, past both its border
      and the title text overflowing it. Too short a reach is why
@@ -277,6 +286,37 @@ the jog straightening just removed. Hard-won details:
   the spacing at *both* ends. This is why the gate asserts "never share or
   graze a point" as the hard rule and treats `MIN_ATTACH_GAP` as a target
   bounded by what the tighter side allows — not a bug to chase.
+
+## 6c. The sweep — run it before claiming anything is fixed everywhere
+
+`documentation/ai/` has no scripts, so keep this one to hand: build every
+example × every disposition (`wide/slide/page/tall`) in one process and count
+violations per kind — overlaps, non-orthogonal segments, staircases (by size),
+shared/tight attachments, coincident and near-parallel runs, runs crossing a
+node box (**both** axes — an earlier check only tested horizontals and missed
+26 vertical cases), dead bands, and detours over 2.2× direct.
+
+Two findings that only a full sweep surfaces:
+
+- **Per-example spot checks lie.** Everything looked clean on the diagrams
+  under discussion while `page`/`tall` carried the defects untouched.
+- **Widening the straightening threshold is not a knob.** `JOG_SNAP` 6 → 20
+  removes 264 staircases but introduces 24 flows dragged through node boxes,
+  12 merged lines and 14 shared attachment points, because every mutation in
+  `edge-tidy` (diagonal snap, jog collapse, orthogonality fixpoint, separation)
+  moves points and only some are guarded. Doing this properly means guarding
+  *all* of them against nodes and other flows, then iterating the whole pass to
+  a fixpoint — not raising the number.
+
+Current sweep state (JOG_SNAP = 6): `overlaps 0, diagonal 0, throughBox 0,
+deadBand 0`; remaining `attachShared 2, attachTight 4, coincident 9,
+jog≤6 64, jog≤20 229, nearParallel 39, longDetour 106`.
+
+Next two pieces, in order of value: restructure `edge-tidy` so every mutation
+is guarded and the pass iterates to a fixpoint (unlocks the ~290 staircases
+safely), then look at the remaining `longDetour` cases — the side-exit work
+took the obvious ones, so what is left needs inspecting individually rather
+than a new mechanism.
 
 ## 7. Known remaining work
 
