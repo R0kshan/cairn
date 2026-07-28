@@ -103,6 +103,29 @@ attribute is a regression by definition.
 - **When they name a resource that doesn't exist** (a skill, a file), say so
   and use the nearest real equivalent — don't silently guess.
 
+## Committing is the maintainer's, the message is yours
+
+**Never run `git commit`, `git add`, `git stash`, `git checkout`, `git reset`
+or `git push`.** The working tree and the history belong to the maintainer —
+they stage and commit themselves, often reordering or splitting the work, and
+an agent-made commit takes that choice away. Read-only git (`status`, `diff`,
+`log`, `show`) is always fine and is how you check what is already theirs
+versus what is your delta.
+
+**Finish every piece of work by proposing a commit message.** Not a vague one
+— write the message you would use, ready to paste:
+
+- a subject line under ~72 characters, in the repo's existing style (check
+  `git log --oneline`; here that means a `type(#issue):` prefix where one fits);
+- a body explaining *why* the change was needed, not a restatement of the diff;
+- the measured effect (before → after numbers), since that is what a reviewer
+  cannot re-derive from the code;
+- what was re-baselined, and anything deliberately left unchanged;
+- any gate you could not run (here: `npm run test:binary`, which needs Bun).
+
+Offer it as a suggestion, in a code block so it can be copied verbatim, and
+leave the decision to commit — and how to split it — entirely to them.
+
 ## Change hygiene
 
 - One concern per round; finish its gates before starting the next.
@@ -110,7 +133,9 @@ attribute is a regression by definition.
   canary `cmp` → targeted rebuild of affected examples → audits → full test
   suite → typecheck → lint → derived artifacts (bundles) → re-baseline.
 - Check `git status` at the start of a round: the user commits between rounds,
-  so the working-tree delta tells you exactly what is yours.
+  so the working-tree delta tells you exactly what is yours. Watch the staging
+  column too — files may be staged but not yet committed, which means the work
+  is still awaiting the message you owe them.
 - Leave every temp artifact in `/tmp`; the repo only receives deliverables.
 - End significant work by updating the durable records (handover doc, project
   memory) — the next session, or the next model, starts from those.

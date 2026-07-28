@@ -94999,8 +94999,27 @@ var CHANNEL_GAP = 10;
 var LINE_CLEARANCE = 12;
 var MIN_PARALLEL_RUN = 40;
 var RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64, -72, 72];
-var WEST_DESCENT_DELTAS = [-10, -18, -26, -34];
-var EAST_DESCENT_DELTAS = [10, 14, 18, 22, 26, 30, 34, 42, 50, 58, 66];
+var WEST_DESCENT_DELTAS = [-10, -18, -26, -34, -42, -50, -58, -66, -74, -82, -90, -98, -106];
+var EAST_DESCENT_DELTAS = [
+  10,
+  14,
+  18,
+  22,
+  26,
+  30,
+  34,
+  42,
+  50,
+  58,
+  66,
+  74,
+  82,
+  90,
+  98,
+  106
+];
+var TITLE_CLEARANCE = 8;
+var MIN_SLOT_GAP = 12;
 function pathLength(pts) {
   let length = 0;
   for (let index = 1; index < pts.length; index++)
@@ -95071,23 +95090,25 @@ function rerouteDetours(scene, model, numbered) {
       usedVerticals.push({ x: node.x, top: node.y, bottom: node.y + node.height });
       usedVerticals.push({ x: node.x + node.width, top: node.y, bottom: node.y + node.height });
     }
-  const riserConflicts = (x, top, bottom) => usedVerticals.some(
-    (segment) => Math.abs(segment.x - x) < 7 && segment.top < bottom && top < segment.bottom
-  );
+  const verticalConflict = (segment, x, top, bottom) => {
+    const shared = Math.min(segment.bottom, bottom) - Math.max(segment.top, top);
+    if (shared <= 0) return false;
+    const gap = Math.abs(segment.x - x);
+    return gap < 7 || gap < LINE_CLEARANCE && shared > MIN_PARALLEL_RUN;
+  };
+  const riserConflicts = (x, top, bottom) => usedVerticals.some((segment) => verticalConflict(segment, x, top, bottom));
   const horizontalConflicts = (y, left, right) => usedHorizontals.some(
     (segment) => Math.abs(segment.y - y) < 7 && segment.left < right && left < segment.right
   );
   const baseVerticals = usedVerticals.slice();
-  const baseRiserConflicts = (x, top, bottom) => baseVerticals.some(
-    (segment) => Math.abs(segment.x - x) < 7 && segment.top < bottom && top < segment.bottom
-  );
+  const baseRiserConflicts = (x, top, bottom) => baseVerticals.some((segment) => verticalConflict(segment, x, top, bottom));
   const riserBlockedBelow = (x, top) => leafBoxes.some(
     (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1
   );
   const riserBlockedAbove = (x, bottom) => leafBoxes.some(
     (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1
   ) || titleBoxes.some(
-    (box) => x >= box.x - 2 && x <= box.x + box.width + 2 && box.y < bottom - 1
+    (box) => x >= box.x - TITLE_CLEARANCE && x <= box.x + box.width + TITLE_CLEARANCE && box.y < bottom - 1
   );
   const findRiserX = (node, side) => {
     const center = centerX(node);
@@ -95196,7 +95217,30 @@ function rerouteDetours(scene, model, numbered) {
           usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
           usedVerticals.push({ x: entryXNorth, top: -INF, bottom: target.y });
         } else {
-          for (const delta of WEST_DESCENT_DELTAS) {
+          for (const delta of EAST_DESCENT_DELTAS) {
+            const descentX = target.x + target.width + delta;
+            const entryY = findEntryY(
+              target,
+              false,
+              target.x + target.width,
+              descentX,
+              descentX,
+              target.x + target.width
+            );
+            if (entryY === null) continue;
+            if (riserBlockedAbove(descentX, entryY)) continue;
+            if (riserConflicts(descentX, -INF, entryY)) continue;
+            planned = {
+              ...candidate,
+              exitX: exitXNorth,
+              entry: { kind: "eastTop", x: descentX, y: entryY }
+            };
+            usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
+            usedVerticals.push({ x: descentX, top: -INF, bottom: entryY });
+            usedHorizontals.push({ y: entryY, left: target.x + target.width, right: descentX });
+            break;
+          }
+          for (const delta of planned ? [] : WEST_DESCENT_DELTAS) {
             const descentX = target.x + delta;
             if (descentX < 4) continue;
             const entryY = findEntryY(target, false, descentX, target.x, descentX, target.x);
@@ -95229,7 +95273,7 @@ function rerouteDetours(scene, model, numbered) {
       attachGroups.set(key, group);
     };
     for (const plan of plans) {
-      const topPlan = plan.entry.kind === "north" || plan.entry.kind === "westTop";
+      const topPlan = plan.entry.kind === "north" || plan.entry.kind === "westTop" || plan.entry.kind === "eastTop";
       addAttachment(plan, "exit", plan.source, topPlan ? "north" : "south");
       if (plan.entry.kind === "south") addAttachment(plan, "entry", plan.target, "south");
       if (plan.entry.kind === "north") addAttachment(plan, "entry", plan.target, "north");
@@ -95255,6 +95299,8 @@ function rerouteDetours(scene, model, numbered) {
         if (clear) freePositions.push(x);
       }
       if (freePositions.length < members.length) continue;
+      const usable = freePositions[freePositions.length - 1] - freePositions[0];
+      if (usable / (members.length + 1) < MIN_SLOT_GAP) continue;
       const sideCenterX = node.x + node.width / 2;
       const travelsLeft = (member) => farEndX(member) < sideCenterX ? 0 : 1;
       members.sort(
@@ -95306,7 +95352,7 @@ function rerouteDetours(scene, model, numbered) {
   const bandConflicts = (top, bottom, left, right) => blockingBands.some(
     (band) => band.top < bottom && top < band.bottom && Math.min(band.right, right) - Math.max(band.left, left) > band.minOverlap
   );
-  const isTop = (plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop";
+  const isTop = (plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop" || plan.entry.kind === "eastTop";
   const bottomPlans = plans.filter((plan) => !isTop(plan));
   const topPlans = plans.filter(isTop);
   const makeAllocator = () => {
@@ -95392,7 +95438,7 @@ function rerouteDetours(scene, model, numbered) {
   };
   for (const plan of plans) {
     const { edge, source, target, exitX, entry } = plan;
-    if (entry.kind === "north" || entry.kind === "westTop") {
+    if (entry.kind === "north" || entry.kind === "westTop" || entry.kind === "eastTop") {
       const laneY2 = topLaneY[laneIndexOf.get(edge.id)];
       edge.pts = entry.kind === "north" ? [
         { x: exitX, y: source.y },
@@ -95404,13 +95450,19 @@ function rerouteDetours(scene, model, numbered) {
         { x: exitX, y: laneY2 },
         { x: entry.x, y: laneY2 },
         { x: entry.x, y: entry.y },
-        { x: target.x, y: entry.y }
+        {
+          x: entry.kind === "eastTop" ? target.x + target.width : target.x,
+          y: entry.y
+        }
       ];
       if (numbered) {
         for (const label of edge.labels) {
           if (entry.kind === "north") {
             label.x = entry.x + 6;
             label.y = target.y - label.height - 6;
+          } else if (entry.kind === "eastTop") {
+            label.x = target.x + target.width + 6;
+            label.y = entry.y - label.height - 6;
           } else {
             label.x = target.x - label.width - 6;
             label.y = entry.y - label.height - 6;

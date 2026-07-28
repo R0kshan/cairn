@@ -43,12 +43,17 @@ Pipeline inside the function, in order:
    byte-identical.
 2. **Obstacle model** — leaf nodes (containers are pierceable through their
    *horizontal* borders); container **title bands** (top-left, measured with
-   `text-metrics` at the container font size — a riser must never strike title
-   text); container **vertical borders** (a riser/descent may not run along a
-   dashed edge); a registry of existing **vertical segments** (`usedVerticals`,
-   ≥7 px clearance when spans overlap) and **horizontal segments**
-   (`usedHorizontals`, ≥7 px). Registries are seeded from non-candidate edges;
-   candidates that fail planning contribute their elk verticals afterward.
+   `text-metrics` at the container font size, plus `TITLE_CLEARANCE` — edges
+   are drawn *last* and titles carry no halo, so a riser crossing one strikes
+   through the words); container **vertical borders** (a riser/descent may not
+   run along a dashed edge); a registry of existing **vertical segments**
+   (`usedVerticals`) and **horizontal segments** (`usedHorizontals`).
+   Registries are seeded from non-candidate edges; candidates that fail
+   planning contribute their elk verticals afterward.
+   Proximity rule for both registries: a hard 7 px minimum for any overlap,
+   *plus* `LINE_CLEARANCE` (12 px) whenever the shared extent exceeds
+   `MIN_PARALLEL_RUN` (40 px) — two lines 8 px apart running 170 px read as
+   one, which a flat 7 px test happily allows.
 3. **Planning** — per candidate, a fallback chain; first feasible wins:
    - **Bottom channel** (preferred — maintainer's explicit policy): south
      riser out of the source, then entry = south riser into target → far-left
@@ -56,10 +61,17 @@ Pipeline inside the function, in order:
      near-west gutter descent (mirror of westTop). Every riser x is searched
      center-first through `RISER_DELTAS` (±72 max, clamped to the node).
    - **Top channel** (only when the south exit is blocked): north riser, lane
-     above the content, entry = north riser → near-west descent below the
-     title band (`westTop`). Content may be shifted down afterward if lanes go
-     above y=4 — the shift is guarded on `topPlans.length` so bottom-only
-     diagrams stay byte-identical.
+     above the content, entry = north riser → descend beside the target and
+     enter its **east** side (`eastTop`, tried first: these flows travel
+     leftward, so the side facing the source avoids running the lane past the
+     target only to hook back) → descend on the far side (`westTop`). Content
+     may be shifted down afterward if lanes go above y=4 — the shift is
+     guarded on `topPlans.length` so bottom-only diagrams stay byte-identical.
+   - Descent deltas reach ±106 px on purpose: a node inside a container is
+     often reachable only from *outside* that container, past both its border
+     and the title text overflowing it. Too short a reach is why
+     `logical-archi`'s `COM_CTR→OBS` kept elk's full-diagram wrap for four
+     rounds — its only opening was 42 px out, and the list stopped at 34.
    - Entry **y** for side entries comes from `findEntryY`: center-first,
      bounded to the node ±4, avoiding (a) horizontal clashes ≥7 px, (b) leaf
      boxes, (c) **foreign containers** — an entry segment may pierce only
@@ -76,8 +88,12 @@ Pipeline inside the function, in order:
    Order is **travel direction first, then reach descending**: opposite-going
    flows diverge (left-going takes the left slots), and among same-going flows
    the longest reach sits outermost so their channel spans **nest** instead of
-   interleaving. A side whose free range is small (titles) spreads as far as it
-   honestly can.
+   interleaving. A side whose free range cannot hold the members `MIN_SLOT_GAP`
+   apart is **left alone**: the greedy positions from planning already clear
+   each other, and cramming evenly-spaced slots into the strip left over beside
+   a title puts two flows a few px apart. The flow that cannot fit then falls
+   through to a side (east/west) approach — which is the right answer anyway,
+   and is how `NET01→COM_CTR` came to enter its target from the right.
    *Why nesting matters:* two channel flows can be drawn without crossing iff
    their spans are nested or disjoint. Properly interleaved spans force at
    least one crossing (river-routing result) — so the slot order's job is to
@@ -165,7 +181,12 @@ work sent back:
   159→53 px waste, `large` 1109→1077, `small` 353→287,
   `small-slide` 529→288, `small-page` 1075→774, `infrastructure-medium-tall`
   1131→948, `medium-slide` 864→626. Round 7 (per-lane anchor) took
-  `logical-archi` 986→849 with crossings unchanged at 16.
+  `logical-archi` 986→849 with crossings unchanged at 16. Round 8 (side
+  approaches + parallel-run clearance) took it to 821 / 15 crossings and
+  removed its last elk wrap; `application` went 1→0 crossings.
+  Note `large`/`large-fr`/`application-compact` each keep one or two
+  near-parallel pairs that are **elk's own** edges (`elk.spacing.edgeEdge: 9`)
+  — check a flagged pair's edge ids before assuming the post-pass caused it.
 - **Leaf-box audit**: no horizontal edge segment may pass through a leaf node's
   interior. Cheap to compute and the direct regression check for any change
   that raises lanes toward the content.
@@ -207,6 +228,14 @@ Round 6 (crossings + compaction) is done; measured state below. Candidates:
   column, blocked on all sides, ratio 3.7) and similar external-return flows
   still use elk's wrap. Would need an east-side channel (right of the
   externals column) — symmetric to the west logic, not built yet.
+- **A literal "enter from the top" is impossible under a container title.**
+  In `logical-archi` the `Role group - Remote site` title spans x 74–267 while
+  its only actor spans 79–180, so every vertical approach to that actor's top
+  crosses the text; the flow enters from the side instead. Changing this needs
+  a *style* decision, not a routing one: give container titles the same halo
+  flow labels already use (`paint-order="stroke"`, `svg-render.ts`), after
+  which a line may cross a title legibly. Ask before doing it — it restyles
+  every diagram and re-baselines every snapshot.
 - **Forced crossings**: `logical-archi` is down to 16 (from 19) and `large`
   holds at 78. The remainder are interleaved-span crossings, which are
   provably unavoidable by ordering alone; reducing them needs a different
