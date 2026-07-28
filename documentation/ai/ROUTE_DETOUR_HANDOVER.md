@@ -14,8 +14,22 @@ re-verify anything that contradicts the code — the code wins.
 Issue #26: elk routes some flows as huge wrap-around detours ("loops") in
 large diagrams. Root cause and fix are in `src/route-detour.ts`, a
 deterministic post-layout pass called from `sceneFromResult` in
-`scene-layout.ts` (RIGHT-direction layouts only; `page`/`tall` dispositions
-are untouched). Issue #8 (manual placement, scoped by the maintainer as *full
+`scene-layout.ts`.
+
+**It applies to every disposition.** For eight rounds it did not — it was
+scoped to RIGHT-direction layouts, so `page`/`tall` kept elk's raw wraps and
+every improvement silently passed them by. The maintainer spotted it from a
+portrait screenshot that had not changed at all. A DOWN layout is the same
+problem rotated: its backward flows wrap around the sides and want left/right
+channels. `scene-layout.ts` therefore **transposes the scene across the
+diagonal** around the pass, so one implementation and one set of gated
+invariants serve both. Two things do not rotate with the geometry: container
+titles (computed by `titleBoxesOf` before transposing and passed in) and label
+text — swapping a label's width and height on the way in is deliberate, since
+a vertical lane must be spaced by label *width*.
+Lesson worth keeping: when the maintainer says "every disposition", check that
+the entry point is even reached before reporting the work as done — grep the
+call site, don't infer it from a passing corpus. Issue #8 (manual placement, scoped by the maintainer as *full
 position pinning*) is deliberately deferred until #26 is finished — do not
 propose placement DSL yet.
 
@@ -272,6 +286,13 @@ Round 6 (crossings + compaction) is done; measured state below. Candidates:
   9 px apart running ~1000 px (`F12`/`F13`), from `elk.spacing.edgeEdge: 9`.
   Pre-existing, not ours, and not fixable in the post-pass — it would need the
   elk spacing raised (costs width) or a parallel-run separation pass.
+- **Legend overflows a narrow canvas**: on portrait/small diagrams the legend
+  band emits text out to x≈584 regardless of the scene width, so it is clipped
+  by the viewBox (`dispositions/small-page`, both before and after the DOWN
+  routing work — pre-existing, in `svg-render.ts`, not a routing bug).
+- **The folded slide layout still routes its own connectors** (`slide-fold.ts`)
+  — it now gets `edge-tidy` and compaction, but not the detour reroute, since
+  it is a different layout strategy rather than an elk result to repair.
 - **Converging approach runs**: in `large-fr`, `F04`/`F06` reach the same node
   side and their approach runs sit 5.9 px apart over 114 px, though the
   attachments themselves are 8.2 px apart. `edge-tidy` only governs the

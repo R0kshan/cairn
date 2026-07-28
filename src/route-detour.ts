@@ -50,7 +50,38 @@ function pathLength(pts: Point[]): number {
   return length;
 }
 
-export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): void {
+/**
+ * A container's title band in scene coordinates. Passed in rather than derived
+ * here because for a DOWN layout the scene is transposed around this pass,
+ * while the title text is not — it stays horizontal on the page.
+ */
+export interface TitleBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Title bands as drawn: top-left of each container, text running across. */
+export function titleBoxesOf(scene: Scene, model: Model): TitleBox[] {
+  const { cont: containerFontSize } = fontSizes(model.style.font.size);
+  const compact = model.style.compact;
+  return scene.nodes
+    .filter((node) => node.container)
+    .map((node) => ({
+      x: node.x + 4,
+      y: node.y,
+      width: measure(node.label, containerFontSize).width + 12,
+      height: (compact ? 11 : 13) + node.label.split("\n").length * 14,
+    }));
+}
+
+export function rerouteDetours(
+  scene: Scene,
+  model: Model,
+  numbered: boolean,
+  titleBoxes: TitleBox[] = [],
+): void {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const leafBoxes = scene.nodes.filter((node) => !node.container);
   const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
@@ -79,22 +110,6 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
 
   const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
   const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
-
-  // Container title bands (label text at the container's top-left) — obstacles
-  // for northbound risers, which would otherwise strike through the title.
-  const { cont: containerFontSize } = fontSizes(model.style.font.size);
-  const compact = model.style.compact;
-  const titleBoxes = scene.nodes
-    .filter((node) => node.container)
-    .map((node) => {
-      const lineCount = node.label.split("\n").length;
-      return {
-        x: node.x + 4,
-        y: node.y,
-        width: measure(node.label, containerFontSize).width + 12,
-        height: (compact ? 11 : 13) + lineCount * 14,
-      };
-    });
 
   // A southbound riser is blocked when it would pierce a leaf node anywhere
   // below `top`; a northbound riser when a leaf node or a container title band

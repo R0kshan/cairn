@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 662 1116" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 754 1116" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="662" height="1116" fill="#ffffff"/>
+<rect width="754" height="1116" fill="#ffffff"/>
 <rect x="10" y="135" width="642" height="707" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="20" y="153" font-size="13" font-weight="bold" fill="#17202c">Main data center</text>
 <rect x="352" y="602.375" width="272" height="134" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -54,8 +54,8 @@
 <text x="415" y="925.75" font-size="12.5" text-anchor="middle" fill="#17202c">platform</text>
 <path d="M 552 87 L 552 675.375" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="511.5" y="115.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
-<path d="M 552 713.375 L 552 823 L 642 823 L 642 172 L 557 172 A 5 5 0 0 0 547 172 L 141 172 L 141 214" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="601.5" y="547.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<path d="M 606 694.375 L 744 694.375 L 744 233 L 557 233 A 5 5 0 0 0 547 233 L 195 233" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="702.5" y="466.9375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
 <path d="M 379 390.5 L 379 525 L 265 525 L 265 651.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="303.5" y="547.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/5432)</text>
 <path d="M 251 390.5 L 251 563.5 L 229 563.5 L 229 651.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -74,7 +74,7 @@
 <text x="381" y="868.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AS4/443)</text>
 <path d="M 193 698.5 L 193 757" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="155.5" y="731" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TCP/9092)</text>
-<line x1="20" y1="958" x2="642" y2="958" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="20" y1="958" x2="734" y2="958" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="980" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="970" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
 <text x="182" y="981" font-size="10" fill="#17202c">Site / data center</text>
@@ -86,15 +86,15 @@
 <text x="182" y="1003" font-size="10" fill="#17202c">Deployed application</text>
 <rect x="318" y="992" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
 <text x="350" y="1003" font-size="10" fill="#17202c">Gateway / reverse proxy</text>
-<rect x="150" y="1014" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
-<text x="182" y="1025" font-size="10" fill="#17202c">Auth middleware</text>
-<rect x="292" y="1014" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
-<text x="324" y="1025" font-size="10" fill="#17202c">Identity provider (IdP)</text>
-<circle cx="163" cy="1039" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<path d="M 158 1049 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<text x="182" y="1047" font-size="10" fill="#17202c">User / consumer</text>
-<rect x="292" y="1036" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="324" y="1047" font-size="10" fill="#17202c">External system</text>
+<rect x="502" y="992" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
+<text x="534" y="1003" font-size="10" fill="#17202c">Auth middleware</text>
+<rect x="150" y="1014" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
+<text x="182" y="1025" font-size="10" fill="#17202c">Identity provider (IdP)</text>
+<circle cx="347" cy="1017" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<path d="M 342 1027 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<text x="366" y="1025" font-size="10" fill="#17202c">User / consumer</text>
+<rect x="476" y="1014" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="508" y="1025" font-size="10" fill="#17202c">External system</text>
 <line x1="150" y1="1066" x2="176" y2="1066" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="1070" font-size="10" fill="#17202c">Technical flow (protocol, port)</text>
 <text x="150" y="1094" font-size="10" fill="#17202c" font-style="italic">Inter-zone flows filtered by firewall (flow matrix attached to the architecture dossier)</text>

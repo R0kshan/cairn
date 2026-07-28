@@ -13,7 +13,7 @@ import type { View } from "./views.ts";
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
-import { rerouteDetours } from "./route-detour.ts";
+import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
 import { tidyEdges } from "./edge-tidy.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
@@ -230,6 +230,37 @@ function collectSceneEdges(
   return [...ownEdges, ...childEdges];
 }
 
+/**
+ * Mirrors a scene across the diagonal. `route-detour` reasons in one
+ * orientation — flows run right-to-left and channels sit above or below. A
+ * DOWN layout is the same problem rotated: its backward flows run bottom-to-top
+ * and want channels to the left or right. Transposing in and out lets it run
+ * through the very same rules (and the same gated invariants) instead of a
+ * second, parallel implementation.
+ *
+ * Label boxes swap with everything else on the way in, so lane spacing budgets
+ * a label's width where the drawing needs width; the text itself is never
+ * rotated, which is why title bands are computed before transposing.
+ */
+function transpose(scene: Scene, titleBoxes: TitleBox[]): void {
+  for (const node of scene.nodes) {
+    [node.x, node.y] = [node.y, node.x];
+    [node.width, node.height] = [node.height, node.width];
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) [point.x, point.y] = [point.y, point.x];
+    for (const label of edge.labels) {
+      [label.x, label.y] = [label.y, label.x];
+      [label.width, label.height] = [label.height, label.width];
+    }
+  }
+  for (const box of titleBoxes) {
+    [box.x, box.y] = [box.y, box.x];
+    [box.width, box.height] = [box.height, box.width];
+  }
+  [scene.width, scene.height] = [scene.height, scene.width];
+}
+
 export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -378,9 +409,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       edges,
       layoutMs,
     };
-    // Wrap-around detours only occur in RIGHT-direction layouts (issue #26);
-    // DOWN layouts (page/tall) are left untouched.
-    if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    // Issue #26 applies to every disposition. A DOWN layout wraps its backward
+    // flows around the sides rather than the top, so it is routed through the
+    // same pass with the scene mirrored across the diagonal.
+    const titleBoxes = titleBoxesOf(scene, model);
+    const sideways = disposition === "page" || disposition === "tall";
+    if (sideways) transpose(scene, titleBoxes);
+    rerouteDetours(scene, model, numbered, titleBoxes);
+    if (sideways) transpose(scene, titleBoxes);
     // Straighten routing noise and separate flows sharing a node side, for
     // every edge — elk's as much as the rerouted ones.
     tidyEdges(scene);
@@ -423,6 +459,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
+        // The folded layout hand-routes its own connectors, so it keeps them —
+        // but the endpoint invariants apply to it like everything else.
+        tidyEdges(folded);
         compactVertical(folded);
         return folded;
       }

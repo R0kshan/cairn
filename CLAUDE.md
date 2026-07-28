@@ -50,6 +50,11 @@ Not a general diagramming tool.
 
 - `route-detour.ts` — deterministic post-layout pass (issue #26): reroutes
   elk's wrap-around backward hierarchical edges through top/bottom channels.
+  Runs for **every** disposition: a DOWN layout (`page`/`tall`) wraps its
+  backward flows around the sides instead, so `scene-layout.ts` mirrors the
+  scene across the diagonal around this pass and it comes out with left/right
+  channels. Container titles don't rotate — their bands are computed before
+  transposing (`titleBoxesOf`) and passed in.
   elk options **cannot** fix these (tested; see
   [`documentation/ai/ROUTE_DETOUR_HANDOVER.md`](./documentation/ai/ROUTE_DETOUR_HANDOVER.md)
   — read it before touching flow routing). Its extra invariants: no coincident

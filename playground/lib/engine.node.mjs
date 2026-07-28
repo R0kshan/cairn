@@ -95027,7 +95027,17 @@ function pathLength(pts) {
     length += Math.abs(pts[index].x - pts[index - 1].x) + Math.abs(pts[index].y - pts[index - 1].y);
   return length;
 }
-function rerouteDetours(scene, model, numbered) {
+function titleBoxesOf(scene, model) {
+  const { cont: containerFontSize } = fontSizes(model.style.font.size);
+  const compact = model.style.compact;
+  return scene.nodes.filter((node) => node.container).map((node) => ({
+    x: node.x + 4,
+    y: node.y,
+    width: measure(node.label, containerFontSize).width + 12,
+    height: (compact ? 11 : 13) + node.label.split("\n").length * 14
+  }));
+}
+function rerouteDetours(scene, model, numbered, titleBoxes = []) {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const leafBoxes = scene.nodes.filter((node) => !node.container);
   const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
@@ -95052,17 +95062,6 @@ function rerouteDetours(scene, model, numbered) {
   );
   const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
   const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
-  const { cont: containerFontSize } = fontSizes(model.style.font.size);
-  const compact = model.style.compact;
-  const titleBoxes = scene.nodes.filter((node) => node.container).map((node) => {
-    const lineCount = node.label.split("\n").length;
-    return {
-      x: node.x + 4,
-      y: node.y,
-      width: measure(node.label, containerFontSize).width + 12,
-      height: (compact ? 11 : 13) + lineCount * 14
-    };
-  });
   const INF = 1e9;
   const usedVerticals = [];
   const usedHorizontals = [];
@@ -96013,6 +96012,24 @@ function collectSceneEdges(elkNode, origins, numbered) {
   );
   return [...ownEdges, ...childEdges];
 }
+function transpose(scene, titleBoxes) {
+  for (const node of scene.nodes) {
+    [node.x, node.y] = [node.y, node.x];
+    [node.width, node.height] = [node.height, node.width];
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) [point.x, point.y] = [point.y, point.x];
+    for (const label of edge.labels) {
+      [label.x, label.y] = [label.y, label.x];
+      [label.width, label.height] = [label.height, label.width];
+    }
+  }
+  for (const box of titleBoxes) {
+    [box.x, box.y] = [box.y, box.x];
+    [box.width, box.height] = [box.height, box.width];
+  }
+  [scene.width, scene.height] = [scene.height, scene.width];
+}
 async function layout(model, view) {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -96131,7 +96148,11 @@ async function layout(model, view) {
       edges,
       layoutMs: layoutMs2
     };
-    if (disposition !== "page" && disposition !== "tall") rerouteDetours(scene, model, numbered);
+    const titleBoxes = titleBoxesOf(scene, model);
+    const sideways = disposition === "page" || disposition === "tall";
+    if (sideways) transpose(scene, titleBoxes);
+    rerouteDetours(scene, model, numbered, titleBoxes);
+    if (sideways) transpose(scene, titleBoxes);
     tidyEdges(scene);
     compactVertical(scene);
     return scene;
@@ -96162,6 +96183,7 @@ async function layout(model, view) {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
+        tidyEdges(folded);
         compactVertical(folded);
         return folded;
       }
