@@ -1,5 +1,5 @@
 application-compact.cairn  dim:1122x408 n:18 e:13 ov:0  geom:9ec8f7c2b905 color:e4579a40eca1 text:25578bcb9ca8
-application-fr.cairn  dim:1202x440 n:18 e:13 ov:0  geom:3fb3fbd94b5e color:e4579a40eca1 text:1ace99f2a170
+application-fr.cairn  dim:1202x431 n:18 e:13 ov:0  geom:e637918bcd26 color:e4579a40eca1 text:1ace99f2a170
 application-large-fr.cairn  dim:2366x543 n:29 e:27 ov:0  geom:b662dffafa2c color:91f4c67cfcfe text:ef556d931761
 application-large.cairn  dim:2276x543 n:29 e:27 ov:0  geom:12f2b40b5fd5 color:91f4c67cfcfe text:c75d1f873e2c
 application-medium.cairn  dim:1182x427 n:18 e:13 ov:0  geom:9b89f4e0e090 color:e4579a40eca1 text:25578bcb9ca8
@@ -52,7 +52,7 @@ infrastructure.cairn  dim:1874x467 n:20 e:13 ov:0  geom:1506091d7bbf color:de167
 large-fr.cairn  dim:3917x1124 n:47 e:42 ov:0  geom:1d57b26d44e4 color:5c0997ab7e68 text:2440969b9e33
 large-numbered.cairn  dim:3249x873 n:47 e:42 ov:0  geom:3ed2cd44e458 color:4fd6e12b388b text:6dc3d577a833
 large.cairn  dim:3530x1077 n:47 e:42 ov:0  geom:12bdbbd4a860 color:5c0997ab7e68 text:b417a988995c
-logical-archi.cairn  dim:1638x986 n:26 e:17 ov:0  geom:03db9124577f color:8e6f60b007b7 text:35f07dc7629a
+logical-archi.cairn  dim:1638x849 n:26 e:17 ov:0  geom:0b458d097ab3 color:8e6f60b007b7 text:35f07dc7629a
 logical-fr.cairn  dim:2463x611 n:23 e:19 ov:0  geom:11857807508e color:da05fe9f00bf text:1cf09abd6b84
 logical.cairn  dim:2312x611 n:23 e:19 ov:0  geom:6364aed05aff color:da05fe9f00bf text:173501eb92b5
 medium.cairn  dim:2312x611 n:23 e:19 ov:0  geom:6364aed05aff color:da05fe9f00bf text:173501eb92b5

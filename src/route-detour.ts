@@ -479,6 +479,16 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
         minOverlap: 0,
       });
   }
+  // Node boxes block too, now that a lane may be raised alongside the content
+  // instead of always sitting past all of it.
+  for (const node of scene.nodes)
+    blockingBands.push({
+      top: node.y,
+      bottom: node.y + node.height,
+      left: node.x,
+      right: node.x + node.width,
+      minOverlap: 0,
+    });
   const bandConflicts = (top: number, bottom: number, left: number, right: number): boolean =>
     blockingBands.some(
       (band) =>
@@ -540,10 +550,22 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
   assignLanes(bottomPlans, makeAllocator());
   assignLanes(topPlans, makeAllocator());
 
-  // Lane offsets: each lane is spaced by the height of the labels it actually
-  // carries (not the channel-wide maximum), then pushed further out only if
-  // it would land on elk geometry sharing its x-span.
+  // Lane offsets: each lane sits just outside the content it actually spans —
+  // anchoring on the drawing's full extent lets a node the lane never passes
+  // under (a tall actor group off to one side) push it far out, leaving a band
+  // of nothing between the lane and the boxes it serves. Spacing then uses the
+  // label heights that lane really carries, and the lane is pushed further out
+  // only if it would land on geometry sharing its x-span.
   const laneOffsets = (subset: Plan[], direction: 1 | -1, anchor: number): number[] => {
+    const spanAnchor = (left: number, right: number): number => {
+      const spanned = scene.nodes.filter(
+        (node) => node.x < right && node.x + node.width > left,
+      );
+      if (!spanned.length) return anchor;
+      return direction > 0
+        ? Math.max(...spanned.map((node) => node.y + node.height))
+        : Math.min(...spanned.map((node) => node.y));
+    };
     const byLane = new Map<number, Plan[]>();
     for (const plan of subset) {
       const lane = laneIndexOf.get(plan.edge.id)!;
@@ -559,13 +581,17 @@ export function rerouteDetours(scene: Scene, model: Model, numbered: boolean): v
       );
       const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
       const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
+      const base = spanAnchor(left, right);
+      const ownPosition =
+        direction > 0 ? base + CHANNEL_GAP + labelHeight + 3 : base - CHANNEL_GAP;
+      // Lanes stay ordered: a deeper lane never rises above a shallower one,
+      // which is what keeps enclosing spans outside the ones they enclose.
       let position =
         lane === 0
-          ? direction > 0
-            ? anchor + CHANNEL_GAP + labelHeight + 3
-            : anchor - CHANNEL_GAP
-          : positions[lane - 1] +
-            direction * ((direction > 0 ? labelHeight : labelHeights[lane - 1]) + 14);
+          ? ownPosition
+          : direction > 0
+            ? Math.max(ownPosition, positions[lane - 1] + labelHeight + 14)
+            : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
       // The lane and the label band above it must clear elk's leftovers.
       for (let guard = 0; guard < 80; guard++) {
         if (!bandConflicts(position - labelHeight - 3, position + 1, left, right)) break;

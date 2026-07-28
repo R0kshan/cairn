@@ -95295,6 +95295,14 @@ function rerouteDetours(scene, model, numbered) {
         minOverlap: 0
       });
   }
+  for (const node of scene.nodes)
+    blockingBands.push({
+      top: node.y,
+      bottom: node.y + node.height,
+      left: node.x,
+      right: node.x + node.width,
+      minOverlap: 0
+    });
   const bandConflicts = (top, bottom, left, right) => blockingBands.some(
     (band) => band.top < bottom && top < band.bottom && Math.min(band.right, right) - Math.max(band.left, left) > band.minOverlap
   );
@@ -95337,6 +95345,13 @@ function rerouteDetours(scene, model, numbered) {
   assignLanes(bottomPlans, makeAllocator());
   assignLanes(topPlans, makeAllocator());
   const laneOffsets = (subset, direction, anchor) => {
+    const spanAnchor = (left, right) => {
+      const spanned = scene.nodes.filter(
+        (node) => node.x < right && node.x + node.width > left
+      );
+      if (!spanned.length) return anchor;
+      return direction > 0 ? Math.max(...spanned.map((node) => node.y + node.height)) : Math.min(...spanned.map((node) => node.y));
+    };
     const byLane = /* @__PURE__ */ new Map();
     for (const plan of subset) {
       const lane = laneIndexOf.get(plan.edge.id);
@@ -95352,7 +95367,9 @@ function rerouteDetours(scene, model, numbered) {
       );
       const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
       const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
-      let position = lane === 0 ? direction > 0 ? anchor + CHANNEL_GAP + labelHeight + 3 : anchor - CHANNEL_GAP : positions[lane - 1] + direction * ((direction > 0 ? labelHeight : labelHeights[lane - 1]) + 14);
+      const base = spanAnchor(left, right);
+      const ownPosition = direction > 0 ? base + CHANNEL_GAP + labelHeight + 3 : base - CHANNEL_GAP;
+      let position = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeight + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
       for (let guard = 0; guard < 80; guard++) {
         if (!bandConflicts(position - labelHeight - 3, position + 1, left, right)) break;
         position += direction * 6;

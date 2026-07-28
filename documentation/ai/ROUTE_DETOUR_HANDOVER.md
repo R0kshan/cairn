@@ -97,6 +97,14 @@ Pipeline inside the function, in order:
    where their x-spans overlap by more than `MIN_PARALLEL_RUN`, never an
    anchor. Anchoring on it instead — the original bug — pushed the whole
    channel past every stray wrap, wasting a band and forcing crossings.
+   The anchor is **per lane**, over the nodes that lane's x-span actually
+   overlaps (`spanAnchor`), not the drawing's full extent: in `logical-archi` a
+   tall actor group at x 25–181 was holding every lane 137 px below content the
+   lanes never pass under. Lane order is still monotone (a deeper lane never
+   rises above a shallower one), and node boxes are blocking bands so a raised
+   lane cannot land on one — audit with "horizontal segments through a leaf
+   box", which must be 0 (a horizontal through a *container* is fine, elk
+   routes through container padding legitimately).
    `LINE_CLEARANCE` keeps a lane from running alongside an elk horizontal close
    enough to read as one thick line; scoping it to long shared runs matters,
    since padding *every* short segment cost `large` 24 px and 8 crossings.
@@ -156,7 +164,11 @@ work sent back:
   Round-6 baseline → after: `logical-archi` 1078→986 px / 19→16 crossings /
   159→53 px waste, `large` 1109→1077, `small` 353→287,
   `small-slide` 529→288, `small-page` 1075→774, `infrastructure-medium-tall`
-  1131→948, `medium-slide` 864→626.
+  1131→948, `medium-slide` 864→626. Round 7 (per-lane anchor) took
+  `logical-archi` 986→849 with crossings unchanged at 16.
+- **Leaf-box audit**: no horizontal edge segment may pass through a leaf node's
+  interior. Cheap to compute and the direct regression check for any change
+  that raises lanes toward the content.
 - **Detour metrics**: for each edge, path length vs manhattan distance between
   node centers; ratio > 1.4 && waste > 300 = detour. Compare before/after
   across all examples — every changed example must improve or hold.
@@ -199,10 +211,14 @@ Round 6 (crossings + compaction) is done; measured state below. Candidates:
   holds at 78. The remainder are interleaved-span crossings, which are
   provably unavoidable by ordering alone; reducing them needs a different
   channel assignment (e.g. splitting a channel into left/right halves).
-- **Sparse-but-pinned bands**: compaction only removes bands free of nodes
-  across the *whole* width. Where an actor group on the left pins a band that
-  is empty in the centre, the space stays. Removing it means per-column
-  compaction, i.e. re-layout — deliberately not attempted.
+- **Sparse-but-pinned bands**: `compact.ts` only removes bands free of nodes
+  across the *whole* width, so where an actor group pins a band that is empty
+  in the centre the space stays. The common case — a channel lane held far
+  from the content it serves — is now solved upstream by the per-lane anchor
+  instead (round 7); what remains would need per-column compaction, i.e.
+  re-layout. Note the lesson: "a node pins the band" was the right rule for
+  the compaction pass but the wrong answer to the user's complaint, because
+  the real fix belonged in the routing, not the compaction.
 - **Candidate selection ignores the post-passes**: `slide`/`page` pick among
   elk candidates by fit score computed on elk's raw dimensions, before reroute
   and compaction change them. Scoring post-pass would pick better candidates
