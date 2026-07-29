@@ -67,10 +67,12 @@ Invariants detailed in `CLAUDE.md`. In short:
 
 `npm run snapshots` regenerates all three at once. `npm run examples` only refreshes the `examples/*.svg` files (subset of snapshots).
 
-It then chains **`npm run sweep`**, the readability gate: every example × every
-disposition (108 drawings), four invariants that must be `0` and seven ratcheted
-ceilings that may only fall. Run it alone while iterating — `npm run sweep
---detail` lists each defect with its edge id.
+It then chains **`npm run sweep`**, the readability gate: every `.cairn`
+fixture under `examples/` (top level plus `dispositions/` and `themes/`) ×
+every disposition (288 drawings), six invariants that must be `0` and five
+ratcheted ceilings — expressed as a rate per swept flow-instance so the gate
+stays stable as fixtures are added — that may only fall. Run it alone while
+iterating — `npm run sweep -- --detail` lists each defect with its edge id.
 
 CI also builds the Bun binary + playground bundle. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
 
