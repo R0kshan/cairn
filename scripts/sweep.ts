@@ -2,8 +2,11 @@
  * Readability sweep: builds every example in every disposition and counts
  * layout defects by kind. Run with `npm run sweep`.
  *
- * Two kinds of gate:
+ * Three kinds of gate:
  *
+ * - Coverage — every example × disposition cell must actually render. A cell
+ *   that fails to validate, lay out or render is reported and fails the run;
+ *   skipping it quietly would let the gate pass over drawings it never drew.
  * - `MUST_BE_ZERO` — invariants. A flow slanted off orthogonal, dragged across
  *   a node box, or leaving a band of dead height is a bug, full stop.
  * - `CEILING` — a ratchet over debt that cannot be zero yet. The numbers are
@@ -48,25 +51,38 @@ const totals: Record<string, number> = {};
 const examples: string[] = [];
 const detail = process.argv.includes("--detail");
 const hits: string[] = [];
+/**
+ * Cells the matrix was meant to cover, and the ones that never produced a
+ * scene. A skipped cell is not a clean cell: silently dropping it would let
+ * the gate report success over a corpus it never actually drew.
+ */
+let expected = 0;
+const unevaluated: string[] = [];
 
 for (const file of readdirSync(join(ROOT, "examples"))
   .filter((f) => f.endsWith(".cairn") && !f.includes("broken"))
   .sort()) {
   const base = readFileSync(join(ROOT, "examples", file), "utf8").replace(/\r\n/g, "\n");
   for (const disp of DISPOSITIONS) {
+    expected++;
+    const tag = `${file.replace(".cairn", "")}/${disp}`;
     let scene: Awaited<ReturnType<typeof layout>>;
     let model: ReturnType<typeof parse>["model"];
     let overlaps: number;
     try {
       const parsed = parse(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
       model = parsed.model;
-      if (validate(model).some((d) => d.severity === "error")) continue;
+      const errors = validate(model).filter((d) => d.severity === "error");
+      if (errors.length) {
+        unevaluated.push(`${tag.padEnd(32)} ${errors[0].code} ${errors[0].message}`);
+        continue;
+      }
       scene = await layout(model, views[model.type!]);
       overlaps = render(model, views[model.type!], scene).overlapsAfter;
-    } catch {
+    } catch (error) {
+      unevaluated.push(`${tag.padEnd(32)} ${error instanceof Error ? error.message : String(error)}`);
       continue;
     }
-    const tag = `${file.replace(".cairn", "")}/${disp}`;
     examples.push(tag);
     const leaves = scene.nodes.filter((n) => !n.container);
     const note = (kind: string, msg: string) => {
@@ -161,6 +177,10 @@ for (const file of readdirSync(join(ROOT, "examples"))
       if (top - reach >= 30) note("deadBand", `${Math.round(top - reach)}px at y=${Math.round(reach)}`);
       reach = Math.max(reach, bottom);
     }
+    // Dead height below the last pinned band is just as much a defect as a gap
+    // between two of them, and only this check can see it.
+    if (scene.height - reach >= 30)
+      note("deadBand", `${Math.round(scene.height - reach)}px trailing at y=${Math.round(reach)}`);
 
     const byId = new Map(scene.nodes.map((n) => [n.id, n]));
     for (const e of scene.edges) {
@@ -180,8 +200,15 @@ for (const file of readdirSync(join(ROOT, "examples"))
   }
 }
 
-console.log(`swept ${examples.length} drawings (${DISPOSITIONS.length} dispositions)\n`);
+console.log(
+  `swept ${examples.length}/${expected} drawings (${DISPOSITIONS.length} dispositions)\n`,
+);
 let failed = false;
+if (unevaluated.length) {
+  console.log(`  ✗ ${"unevaluated".padEnd(13)} ${unevaluated.length}  (every cell must render)`);
+  for (const miss of unevaluated) console.log(`      ${miss}`);
+  failed = true;
+}
 for (const kind of MUST_BE_ZERO) {
   const count = totals[kind] ?? 0;
   console.log(`  ${count === 0 ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (invariant: must be 0)`);
@@ -196,6 +223,6 @@ for (const kind of Object.keys(CEILING).sort()) {
 }
 if (detail) for (const h of hits) console.log(h);
 if (failed) {
-  console.error("\nsweep failed — an invariant broke or a ceiling rose.");
+  console.error("\nsweep failed — a cell went unevaluated, an invariant broke, or a ceiling rose.");
   process.exit(1);
 }

@@ -63,11 +63,12 @@ Not a general diagramming tool.
   rather than interleave (slot order + lane order together).
 
 - `compact.ts` — removes horizontal bands crossed by nothing but vertical
-  segments, for **every** disposition (`page`/`tall` skip the reroute but still
-  inherit elk's spare corridors). A node, label or horizontal segment anywhere
-  across the width pins its band, which is what keeps containers undistorted
-  and a zero-overlap drawing zero-overlap. Gated by a behaviour test — dead
-  bands must stay under 30px.
+  segments, for **every** disposition. elk sizes a drawing for the routes it
+  planned, so a corridor it reserves and then routes around is left as dead
+  height regardless of what the detour pass did. A node, label or horizontal
+  segment anywhere across the width pins its band, which is what keeps
+  containers undistorted and a zero-overlap drawing zero-overlap. Gated by a
+  behaviour test — dead bands must stay under 30px.
 
 - `model.ts` — the heart: types, the `views` registry (kinds, nesting rules,
   per-view diagnostics), themes (`themes`/`mkTheme`/`themeFor`), i18n (`UI`),
@@ -81,12 +82,12 @@ Not a general diagramming tool.
 ## Commands
 
 ```sh
-npm test                  # unit + the non-regression gates (Node-only)
+npm test                  # unit + non-regression gates, then `sweep` (Node-only)
 npm run typecheck         # tsc --noEmit — the only type check
 npm run lint              # biome (lint-only; leave formatting alone)
 npm run snapshots         # accept intended render changes (regenerate reference output)
 npm run snapshots:report  # preview a render change, grouped by KIND
-npm run sweep             # readability gate: every example × every disposition
+npm run sweep             # readability gate alone: every example × every disposition
 npm run test:binary       # compile the host bun binary + smoke-run it (needs Bun)
 npm run cairn -- <cmd> <file>
 ```
@@ -121,8 +122,12 @@ break the binary — hence `test:binary`.
    outside your edit's blast radius is a regression. **Never regenerate to
    silence a diff you don't understand** — that's the one instinct to override.
 4. **Readability is gated by `npm run sweep`** across every example × every
-   disposition. Four invariants must stay at **0**: label overlaps, segments
-   off orthogonal, runs crossing a leaf box, dead horizontal bands. The rest
+   disposition — chained off the end of `npm test`, so it runs in CI too; run
+   it alone (`--detail` for per-defect edge ids) while iterating. Every cell
+   must render: one that fails to validate, lay out or draw fails the gate
+   rather than being skipped. Four invariants must stay at **0**: label
+   overlaps, segments off orthogonal, runs crossing a leaf box, dead
+   horizontal bands. The rest
    (staircases, coincident/near-parallel runs, shared attachments, long
    detours) are a **ratchet**: current counts are ceilings and may only fall.
    Lower a ceiling when a change earns it; never raise one to go green.

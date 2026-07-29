@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",
-    "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
+    "test": "node --experimental-strip-types --test \"tests/*.test.ts\" && npm run sweep",
     "snapshots": "node --experimental-strip-types scripts/update-snapshots.mjs",
     "build:binaries": "bash scripts/build-binaries.sh",
     "build:playground": "bash scripts/build-playground.sh",

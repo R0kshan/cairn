@@ -8,11 +8,14 @@ was actually exercised.
 
 ## The core loop
 
-Reproduce → diagnose → cheapest-experiment-first → decide (with the user when
-it's their call) → implement → verify with more than one signal → run the
-gates. Never skip a stage, and never reorder the first three: proposing a fix
-before reproducing wastes everyone's time, and implementing before the cheap
-experiment risks building the wrong thing well.
+Read `CLAUDE.md` → reproduce → diagnose → cheapest-experiment-first → decide
+(with the user when it's their call) → implement → verify with more than one
+signal → run the gates. The preflight is not optional: the project's
+invariants decide which fixes are even admissible, and finding that out after
+implementing wastes the round. Never skip a stage, and never reorder the
+first three after it: proposing a fix before reproducing wastes everyone's
+time, and implementing before the cheap experiment risks building the wrong
+thing well.
 
 Concretely: when the user reported wrap-around flows, the first acts were to
 find the reproducing example in the repo, measure the pathology numerically
@@ -118,9 +121,12 @@ versus what is your delta.
 - a subject line under ~72 characters, in the repo's existing style (check
   `git log --oneline`; here that means a `type(#issue):` prefix where one fits);
 - a body explaining *why* the change was needed, not a restatement of the diff;
-- the measured effect (before → after numbers), since that is what a reviewer
-  cannot re-derive from the code;
-- what was re-baselined, and anything deliberately left unchanged;
+- the measured effect (before → after numbers) **where the change has one**,
+  since that is what a reviewer cannot re-derive from the code — a
+  documentation- or tooling-only change legitimately has none, and inventing
+  numbers to fill the slot is worse than omitting it;
+- what was re-baselined **if anything was**, and anything deliberately left
+  unchanged;
 - any gate you could not run (here: `npm run test:binary`, which needs Bun).
 
 Offer it as a suggestion, in a code block so it can be copied verbatim, and

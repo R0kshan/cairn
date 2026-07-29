@@ -3,8 +3,8 @@
  * segments. elk sizes a drawing for the routes it planned, so once
  * `route-detour.ts` pulls a wrap-around flow out of the margin — or elk simply
  * reserves a corridor it then routes around — the freed band stays as dead
- * height nobody reclaims. This pass removes it for every disposition, since
- * `page`/`tall` skip the detour pass but still inherit elk's spare bands.
+ * height nobody reclaims. This pass removes it for every disposition: the
+ * detour pass runs on all of them, and elk leaves spare bands either way.
  *
  * Only bands where *nothing* sits are removed: a node (leaf or container), a
  * label, or a horizontal segment anywhere across the width pins its band. That
@@ -97,12 +97,15 @@ export function compactVertical(scene: Scene): void {
     for (const label of edge.labels) label.y -= shiftAt(label.y);
   }
 
-  const heightAfter = Math.max(
-    ...scene.nodes.map((node) => node.y + node.height),
-    ...scene.edges.flatMap((edge) => [
-      ...edge.pts.map((point) => point.y),
-      ...edge.labels.map((label) => label.y + label.height),
-    ]),
-  );
+  // Accumulated rather than spread: a large diagram can push more coordinates
+  // through `Math.max(...)` than the engine accepts as arguments, and the
+  // intermediate arrays are pure waste. Same value, including the
+  // `-Infinity` an empty scene would yield.
+  let heightAfter = Number.NEGATIVE_INFINITY;
+  for (const node of scene.nodes) heightAfter = Math.max(heightAfter, node.y + node.height);
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) heightAfter = Math.max(heightAfter, point.y);
+    for (const label of edge.labels) heightAfter = Math.max(heightAfter, label.y + label.height);
+  }
   scene.height = Math.ceil(heightAfter + bottomMargin);
 }

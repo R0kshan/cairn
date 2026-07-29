@@ -421,7 +421,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // every edge — elk's as much as the rerouted ones.
     tidyEdges(scene);
     // Reclaim the bands elk sized for routes that no longer run there — every
-    // disposition, since page/tall skip the reroute but not elk's spare space.
+    // disposition, since elk leaves spare corridors whether or not the reroute
+    // above moved anything.
     compactVertical(scene);
     return scene;
   };

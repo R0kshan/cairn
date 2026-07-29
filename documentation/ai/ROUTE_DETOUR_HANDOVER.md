@@ -182,9 +182,13 @@ These came from four rounds of screenshot review; violating them will get the
 work sent back:
 
 - **Every flow individually traceable.** No coincident vertical (or
-  horizontal) segments, no shared attach point. Flows must not start/end at a
-  node's center when several share a side — spread by count, on **every**
-  side.
+  horizontal) segments, no shared attach point. This is the target, not yet
+  the gate: `npm run sweep` carries `coincident` and `attachShared` as
+  **ceilings** (see CLAUDE.md invariant 4), because the corpus still has a
+  handful the current passes cannot remove. They may only fall — treat a new
+  one as a regression even though the ceiling would absorb it. Flows must not
+  start/end at a node's center when several share a side — spread by count, on
+  **every** side.
 - **No line collinear with a container border.**
 - **No arrow ambiguity at entries**: an approach must not cross another flow
   attached to the same side right at the node edge (inbound under outbound).
@@ -240,9 +244,11 @@ work sent back:
   Note `large`/`large-fr`/`application-compact` each keep one or two
   near-parallel pairs that are **elk's own** edges (`elk.spacing.edgeEdge: 9`)
   — check a flagged pair's edge ids before assuming the post-pass caused it.
-- **Leaf-box audit**: no horizontal edge segment may pass through a leaf node's
-  interior. Cheap to compute and the direct regression check for any change
-  that raises lanes toward the content.
+- **Leaf-box audit**: no edge segment may pass through a leaf node's interior —
+  check **both** axes. Vertical runs were missed for several rounds precisely
+  because the audit only looked at horizontal ones, so a clean result on one
+  axis proves nothing. Cheap to compute and the direct regression check for
+  any change that raises lanes toward the content.
 - **Detour metrics**: for each edge, path length vs manhattan distance between
   node centers; ratio > 1.4 && waste > 300 = detour. Compare before/after
   across all examples — every changed example must improve or hold.
@@ -316,9 +322,11 @@ Two findings that only a full sweep surfaces:
   *all* of them against nodes and other flows, then iterating the whole pass to
   a fixpoint — not raising the number.
 
-Current sweep state (JOG_SNAP = 6): `overlaps 0, diagonal 0, throughBox 0,
-deadBand 0`; remaining `attachShared 2, attachTight 4, coincident 9,
-jog≤6 64, jog≤20 229, nearParallel 39, longDetour 106`.
+Current sweep state (JOG_SNAP = 6), 108/108 cells rendered: invariants
+`overlaps 0, diagonal 0, throughBox 0, deadBand 0`; ceilings `attachShared 2,
+attachTight 4, coincident 9, jog≤6 64, jog≤20 229, nearParallel 39,
+longDetour 88`. The ceilings are the ratchet — a run fails if any of them
+grows, and the number here must match `CEILING` in `scripts/sweep.ts`.
 
 Next two pieces, in order of value: restructure `edge-tidy` so every mutation
 is guarded and the pass iterates to a fixpoint (unlocks the ~290 staircases

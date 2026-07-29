@@ -21,7 +21,11 @@ jobs:
       # `npm test` includes the non-regression snapshot gate (tests/snapshot.test.ts):
       # canary renders are diffed against committed snapshots. An intended change is
       # acknowledged with `npm run snapshots` + commit; otherwise this step fails.
+      # It then chains `npm run sweep` — the readability gate over every top-level
+      # example × every disposition (invariants at 0, ceilings that may only fall).
       - run: npm test
+      # Still needed after the sweep: it reads only top-level examples/*.cairn, so
+      # examples/dispositions/*.cairn are covered here and nowhere else.
       # regression gate: every example must build with zero label overlaps
       - run: |
           for f in examples/*.cairn examples/dispositions/*.cairn; do
