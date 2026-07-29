@@ -3,8 +3,8 @@
  * segments. elk sizes a drawing for the routes it planned, so once
  * `route-detour.ts` pulls a wrap-around flow out of the margin — or elk simply
  * reserves a corridor it then routes around — the freed band stays as dead
- * height nobody reclaims. This pass removes it for every disposition, since
- * `page`/`tall` skip the detour pass but still inherit elk's spare bands.
+ * height nobody reclaims. This pass removes it for every disposition: the
+ * detour pass runs on all of them, and elk leaves spare bands either way.
  *
  * Only bands where *nothing* sits are removed: a node (leaf or container), a
  * label, or a horizontal segment anywhere across the width pins its band. That

@@ -2,8 +2,11 @@
  * Readability sweep: builds every example in every disposition and counts
  * layout defects by kind. Run with `npm run sweep`.
  *
- * Two kinds of gate:
+ * Three kinds of gate:
  *
+ * - Coverage — every example × disposition cell must actually render. A cell
+ *   that fails to validate, lay out or render is reported and fails the run;
+ *   skipping it quietly would let the gate pass over drawings it never drew.
  * - `MUST_BE_ZERO` — invariants. A flow slanted off orthogonal, dragged across
  *   a node box, or leaving a band of dead height is a bug, full stop.
  * - `CEILING_RATE` — a ratchet over debt that cannot be zero yet, expressed as
@@ -61,6 +64,8 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
   .sort()) {
   const base = readFileSync(join(ROOT, "examples", file), "utf8").replace(/\r\n/g, "\n");
   for (const disp of DISPOSITIONS) {
+    expected++;
+    const tag = `${file.replace(".cairn", "")}/${disp}`;
     let scene: Awaited<ReturnType<typeof layout>>;
     let model: ReturnType<typeof parse>["model"];
     let overlaps: number;
@@ -82,7 +87,6 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
       failures.push(`${file.replace(".cairn", "")}/${disp}: exception — ${(e as Error).message}`);
       continue;
     }
-    const tag = `${file.replace(".cairn", "")}/${disp}`;
     examples.push(tag);
     totalFlows += model.flows.length;
     const leaves = scene.nodes.filter((n) => !n.container);
@@ -205,6 +209,11 @@ console.log(
   `swept ${examples.length} drawings (${DISPOSITIONS.length} dispositions, ${totalFlows} flow-instances)\n`,
 );
 let failed = false;
+if (unevaluated.length) {
+  console.log(`  ✗ ${"unevaluated".padEnd(13)} ${unevaluated.length}  (every cell must render)`);
+  for (const miss of unevaluated) console.log(`      ${miss}`);
+  failed = true;
+}
 for (const kind of MUST_BE_ZERO) {
   const count = totals[kind] ?? 0;
   console.log(`  ${count === 0 ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (invariant: must be 0)`);

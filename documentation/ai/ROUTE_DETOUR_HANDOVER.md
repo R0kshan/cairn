@@ -182,9 +182,13 @@ These came from four rounds of screenshot review; violating them will get the
 work sent back:
 
 - **Every flow individually traceable.** No coincident vertical (or
-  horizontal) segments, no shared attach point. Flows must not start/end at a
-  node's center when several share a side — spread by count, on **every**
-  side.
+  horizontal) segments, no shared attach point. This is the target, not yet
+  the gate: `npm run sweep` carries `coincident` and `attachShared` as
+  **ceilings** (see CLAUDE.md invariant 4), because the corpus still has a
+  handful the current passes cannot remove. They may only fall — treat a new
+  one as a regression even though the ceiling would absorb it. Flows must not
+  start/end at a node's center when several share a side — spread by count, on
+  **every** side.
 - **No line collinear with a container border.**
 - **No arrow ambiguity at entries**: an approach must not cross another flow
   attached to the same side right at the node edge (inbound under outbound).
