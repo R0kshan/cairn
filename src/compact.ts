@@ -97,12 +97,13 @@ export function compactVertical(scene: Scene): void {
     for (const label of edge.labels) label.y -= shiftAt(label.y);
   }
 
-  const heightAfter = Math.max(
-    ...scene.nodes.map((node) => node.y + node.height),
-    ...scene.edges.flatMap((edge) => [
-      ...edge.pts.map((point) => point.y),
-      ...edge.labels.map((label) => label.y + label.height),
-    ]),
-  );
+  // Incremental max, not Math.max(...spread): a spread over every node/point/
+  // label in a large diagram can blow the call-stack argument limit.
+  let heightAfter = 0;
+  for (const node of scene.nodes) heightAfter = Math.max(heightAfter, node.y + node.height);
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) heightAfter = Math.max(heightAfter, point.y);
+    for (const label of edge.labels) heightAfter = Math.max(heightAfter, label.y + label.height);
+  }
   scene.height = Math.ceil(heightAfter + bottomMargin);
 }

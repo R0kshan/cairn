@@ -101,11 +101,11 @@
 <text x="331.5" y="274" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
 <path d="M 251 387.5 L 329 387.5 L 329 472.5 L 446.5 472.5 A 5 5 0 0 1 456.5 472.5 L 474 472.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="293" y="403" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Consult</text>
-<path d="M 1186 376.3333333333333 L 1234 376.3333333333333 L 1418 376.3333333333333 L 1456.5 376.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1186 376.3333333333333 L 1456.5 376.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1324" y="388" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Real-time broadcast of</text>
 <text x="1324" y="402.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">disruption information</text>
 <text x="1324" y="417" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">to the relevant lines</text>
-<path d="M 1186 498.3333333333333 L 1408 498.5 L 1408 573.5 L 1418 573.5 L 1453 573.5 A 5 5 0 0 1 1463 573.5 L 1471.5 573.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1186 498.3333333333333 L 1408 498.5 L 1408 573.5 L 1453 573.5 A 5 5 0 0 1 1463 573.5 L 1471.5 573.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1324" y="514" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Export of real-time</text>
 <text x="1324" y="528.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">and configuration data</text>
 <path d="M 1064 588.8333333333333 L 1064 666.1666666666667 L 569 666.1666666666667 A 5 5 0 0 0 559 666.1666666666667 L 451.5 666.1666666666667 L 451.5 338.6666666666667 L 477.5 338.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>

@@ -63,8 +63,7 @@ Not a general diagramming tool.
   rather than interleave (slot order + lane order together).
 
 - `compact.ts` — removes horizontal bands crossed by nothing but vertical
-  segments, for **every** disposition (`page`/`tall` skip the reroute but still
-  inherit elk's spare corridors). A node, label or horizontal segment anywhere
+  segments, for **every** disposition. A node, label or horizontal segment anywhere
   across the width pins its band, which is what keeps containers undistorted
   and a zero-overlap drawing zero-overlap. Gated by a behaviour test — dead
   bands must stay under 30px.
@@ -81,12 +80,12 @@ Not a general diagramming tool.
 ## Commands
 
 ```sh
-npm test                  # unit + the non-regression gates (Node-only)
+npm test                  # sweep + unit + the non-regression gates (Node-only)
 npm run typecheck         # tsc --noEmit — the only type check
 npm run lint              # biome (lint-only; leave formatting alone)
 npm run snapshots         # accept intended render changes (regenerate reference output)
 npm run snapshots:report  # preview a render change, grouped by KIND
-npm run sweep             # readability gate: every example × every disposition
+npm run sweep             # readability gate only (already included in npm test)
 npm run test:binary       # compile the host bun binary + smoke-run it (needs Bun)
 npm run cairn -- <cmd> <file>
 ```
@@ -120,12 +119,16 @@ break the binary — hence `test:binary`.
    is the risky kind; colour-only is usually an intended theme edit. A change
    outside your edit's blast radius is a regression. **Never regenerate to
    silence a diff you don't understand** — that's the one instinct to override.
-4. **Readability is gated by `npm run sweep`** across every example × every
-   disposition. Four invariants must stay at **0**: label overlaps, segments
-   off orthogonal, runs crossing a leaf box, dead horizontal bands. The rest
-   (staircases, coincident/near-parallel runs, shared attachments, long
-   detours) are a **ratchet**: current counts are ceilings and may only fall.
-   Lower a ceiling when a change earns it; never raise one to go green.
+4. **Readability is gated by `npm run sweep`**, which recursively sweeps every
+   `.cairn` fixture under `examples/` (top level plus `dispositions/` and
+   `themes/`) × every disposition. Six invariants must stay at **0**: label
+   overlaps, segments off orthogonal, runs crossing a leaf box, dead
+   horizontal bands, coincident segments, shared attachment points. The rest
+   (staircases, tight attachments, near-parallel runs, long detours) are a
+   **ratchet**, expressed as a rate per swept flow-instance (not a raw count)
+   so adding fixtures doesn't spuriously fail the gate: current rates are
+   ceilings and may only fall. Lower a rate when a change earns it; never
+   raise one to go green.
 5. **Flow labels are required on the logical & security views** (`E0203`),
    optional on application & infrastructure. Infrastructure flows must still
    carry `protocol/port` (`(HTTPS/443)` — `E0240`) even when unlabelled.

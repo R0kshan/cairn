@@ -29,7 +29,7 @@
 <rect x="703" y="142" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="757" y="162.25" font-size="12.5" text-anchor="middle" fill="#17202c">Payroll HRIS</text>
 <text x="757" y="176.75" font-size="12.5" text-anchor="middle" fill="#17202c">(outsourced)</text>
-<path d="M 83 85 L 107 85 L 107 130 L 117 130 L 131 130" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 83 85 L 107 85 L 107 130 L 131 130" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 239 129.5 L 350 129.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="294.5" y="120.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(internal)</text>
 <path d="M 83 150 L 107 150 L 107 163 L 340 163 L 340 145.16666666666669 L 350 145.16666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>

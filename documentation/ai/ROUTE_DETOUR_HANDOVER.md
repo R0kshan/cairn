@@ -240,9 +240,10 @@ work sent back:
   Note `large`/`large-fr`/`application-compact` each keep one or two
   near-parallel pairs that are **elk's own** edges (`elk.spacing.edgeEdge: 9`)
   — check a flagged pair's edge ids before assuming the post-pass caused it.
-- **Leaf-box audit**: no horizontal edge segment may pass through a leaf node's
-  interior. Cheap to compute and the direct regression check for any change
-  that raises lanes toward the content.
+- **Leaf-box audit**: no horizontal or vertical edge segment may pass through a
+  leaf node's interior. Cheap to compute and the direct regression check for any
+  change that raises lanes toward the content (an earlier version only checked
+  horizontals, which missed 26 instances).
 - **Detour metrics**: for each edge, path length vs manhattan distance between
   node centers; ratio > 1.4 && waste > 300 = detour. Compare before/after
   across all examples — every changed example must improve or hold.
@@ -316,9 +317,14 @@ Two findings that only a full sweep surfaces:
   *all* of them against nodes and other flows, then iterating the whole pass to
   a fixpoint — not raising the number.
 
-Current sweep state (JOG_SNAP = 6): `overlaps 0, diagonal 0, throughBox 0,
-deadBand 0`; remaining `attachShared 2, attachTight 4, coincident 9,
-jog≤6 64, jog≤20 229, nearParallel 39, longDetour 106`.
+Current sweep state (JOG_SNAP = 6), over 288 drawings / 4352 flow-instances
+now that `sweep.ts` recursively covers `examples/dispositions` and
+`examples/themes` too: `overlaps 0, diagonal 0, throughBox 0, deadBand 0,
+coincident 0, attachShared 0` (zero-gated); remaining `attachTight 8`
+(0.00184/flow), `jog≤6 128` (0.02941/flow), `jog≤20 592` (0.13603/flow),
+`nearParallel 73` (0.01677/flow), `longDetour 218` (0.05009/flow) — ceilings
+are now rates per swept flow-instance, not raw counts, so the corpus can grow
+without retriggering the gate.
 
 Next two pieces, in order of value: restructure `edge-tidy` so every mutation
 is guarded and the pass iterates to a fixpoint (unlocks the ~290 staircases

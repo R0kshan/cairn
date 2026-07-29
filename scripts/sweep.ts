@@ -6,9 +6,13 @@
  *
  * - `MUST_BE_ZERO` — invariants. A flow slanted off orthogonal, dragged across
  *   a node box, or leaving a band of dead height is a bug, full stop.
- * - `CEILING` — a ratchet over debt that cannot be zero yet. The numbers are
- *   what the corpus carries today; the run fails if any of them grows. Lower a
- *   ceiling whenever a change earns it — never raise one to make a run pass.
+ * - `CEILING_RATE` — a ratchet over debt that cannot be zero yet, expressed as
+ *   defects per swept flow-instance (edge × disposition) rather than a raw
+ *   count. These defects scale with how many flows the corpus contains, so a
+ *   rate is what stays comparable as examples/fixtures are added — a raw
+ *   count would spuriously fail every time the corpus grows even though
+ *   nothing got worse per drawing. Lower a rate whenever a change earns it —
+ *   never raise one to make a run pass.
  *
  * Per-example spot checks repeatedly missed defects that only a full
  * example × disposition matrix reveals, which is why this exists.
@@ -26,15 +30,16 @@ import { views } from "../src/views.ts";
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DISPOSITIONS = ["wide", "slide", "page", "tall"] as const;
 
-const MUST_BE_ZERO = ["overlaps", "diagonal", "throughBox", "deadBand"] as const;
-const CEILING: Record<string, number> = {
-  attachShared: 2,
-  attachTight: 4,
-  coincident: 9,
-  "jog<=6": 64,
-  "jog<=20": 229,
-  nearParallel: 39,
-  longDetour: 88,
+const MUST_BE_ZERO = ["overlaps", "diagonal", "throughBox", "deadBand", "coincident", "attachShared"] as const;
+// Calibrated against the corpus at the time recursive discovery started
+// covering examples/dispositions and examples/themes (4352 flow-instances,
+// 288 drawings): rate = count / totalFlows, rounded up slightly for stability.
+const CEILING_RATE: Record<string, number> = {
+  attachTight: 0.0018382,
+  "jog<=6": 0.0294117,
+  "jog<=20": 0.1360294,
+  nearParallel: 0.0167738,
+  longDetour: 0.0500919,
 };
 
 interface Run {
@@ -48,8 +53,10 @@ const totals: Record<string, number> = {};
 const examples: string[] = [];
 const detail = process.argv.includes("--detail");
 const hits: string[] = [];
+const failures: string[] = [];
+let totalFlows = 0;
 
-for (const file of readdirSync(join(ROOT, "examples"))
+for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encoding: "utf8" })
   .filter((f) => f.endsWith(".cairn") && !f.includes("broken"))
   .sort()) {
   const base = readFileSync(join(ROOT, "examples", file), "utf8").replace(/\r\n/g, "\n");
@@ -58,16 +65,26 @@ for (const file of readdirSync(join(ROOT, "examples"))
     let model: ReturnType<typeof parse>["model"];
     let overlaps: number;
     try {
-      const parsed = parse(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
+      // Parse first, then force the disposition post-parse — some fixtures
+      // (examples/dispositions/*) carry their own `style { disposition }`,
+      // and a source style must never win over the one this matrix cell tests.
+      const parsed = parse(base);
       model = parsed.model;
-      if (validate(model).some((d) => d.severity === "error")) continue;
+      model.style.disposition = disp;
+      const errors = [...parsed.diags, ...validate(model)].filter((d) => d.severity === "error");
+      if (errors.length) {
+        failures.push(`${file.replace(".cairn", "")}/${disp}: ${errors.length} validation error(s) — ${errors.map((d) => d.code).join(", ")}`);
+        continue;
+      }
       scene = await layout(model, views[model.type!]);
       overlaps = render(model, views[model.type!], scene).overlapsAfter;
-    } catch {
+    } catch (e) {
+      failures.push(`${file.replace(".cairn", "")}/${disp}: exception — ${(e as Error).message}`);
       continue;
     }
     const tag = `${file.replace(".cairn", "")}/${disp}`;
     examples.push(tag);
+    totalFlows += model.flows.length;
     const leaves = scene.nodes.filter((n) => !n.container);
     const note = (kind: string, msg: string) => {
       totals[kind] = (totals[kind] ?? 0) + 1;
@@ -157,10 +174,14 @@ for (const file of readdirSync(join(ROOT, "examples"))
     for (const s of H) pinned.push([s.at - 1, s.at + 1]);
     pinned.sort((a, b) => a[0] - b[0]);
     let reach = 0;
+    let sceneBot = 0;
     for (const [top, bottom] of pinned) {
       if (top - reach >= 30) note("deadBand", `${Math.round(top - reach)}px at y=${Math.round(reach)}`);
       reach = Math.max(reach, bottom);
+      if (bottom > sceneBot) sceneBot = bottom;
     }
+    const remain = sceneBot - reach;
+    if (remain >= 30) note("deadBand", `${Math.round(remain)}px trailing at y=${Math.round(reach)}`);
 
     const byId = new Map(scene.nodes.map((n) => [n.id, n]));
     for (const e of scene.edges) {
@@ -180,22 +201,33 @@ for (const file of readdirSync(join(ROOT, "examples"))
   }
 }
 
-console.log(`swept ${examples.length} drawings (${DISPOSITIONS.length} dispositions)\n`);
+console.log(
+  `swept ${examples.length} drawings (${DISPOSITIONS.length} dispositions, ${totalFlows} flow-instances)\n`,
+);
 let failed = false;
 for (const kind of MUST_BE_ZERO) {
   const count = totals[kind] ?? 0;
   console.log(`  ${count === 0 ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (invariant: must be 0)`);
   if (count > 0) failed = true;
 }
-for (const kind of Object.keys(CEILING).sort()) {
+for (const kind of Object.keys(CEILING_RATE).sort()) {
   const count = totals[kind] ?? 0;
-  const ok = count <= CEILING[kind];
-  const arrow = count < CEILING[kind] ? ` — lower the ceiling to ${count}` : "";
-  console.log(`  ${ok ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (ceiling ${CEILING[kind]})${arrow}`);
+  const rate = totalFlows > 0 ? count / totalFlows : 0;
+  const ceiling = Math.ceil(CEILING_RATE[kind] * totalFlows);
+  const ok = count <= ceiling;
+  const arrow = count < ceiling ? ` — lower the rate to ${rate.toFixed(5)}` : "";
+  console.log(
+    `  ${ok ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (rate ${rate.toFixed(5)}/flow, ceiling ${ceiling} @ ${CEILING_RATE[kind]}/flow)${arrow}`,
+  );
   if (!ok) failed = true;
 }
 if (detail) for (const h of hits) console.log(h);
+if (failures.length) {
+  console.log(`\nfailures (${failures.length}):`);
+  for (const f of failures) console.log(`  ${f}`);
+  failed = true;
+}
 if (failed) {
-  console.error("\nsweep failed — an invariant broke or a ceiling rose.");
+  console.error("\nsweep failed");
   process.exit(1);
 }

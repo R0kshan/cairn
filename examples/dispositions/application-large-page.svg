@@ -86,7 +86,7 @@
 <rect x="53" y="901" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="107" y="921.25" font-size="12.5" text-anchor="middle" fill="#17202c">Group</text>
 <text x="107" y="935.75" font-size="12.5" text-anchor="middle" fill="#17202c">ERP</text>
-<path d="M 468.5 114 L 468.5 128 L 468.5 176" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 468.5 114 L 468.5 176" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 469 223 L 469 257 L 446 257 L 446 296 L 352 296 L 352 338" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="504" y="279.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <path d="M 341 223 L 341 247 L 430 247 L 430 286 L 325 286 L 325 338" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -103,13 +103,13 @@
 <text x="396" y="417.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <path d="M 435 490.5 L 435 842 L 561 842 L 561 894" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="397.5" y="576.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<path d="M 471 490.5 L 471 515 L 558 515 L 558 554 L 546 554 L 546 564 L 546 596" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 471 490.5 L 471 515 L 558 515 L 558 554 L 546 554 L 546 596" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="501" y="537.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <path d="M 529 643 L 529 711.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="491.5" y="685.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(internal)</text>
 <path d="M 556.5 643 L 556.5 663 L 593 663 L 593 783 L 440 783 A 5 5 0 0 0 430 783 L 362 783 L 362 1187" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="420" y="874.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 326 1187 L 326 1177 L 352 1177 L 352 554 L 430 554 A 5 5 0 0 1 440 554 L 524 554 L 524 564 L 524 596" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 326 1187 L 326 1177 L 352 1177 L 352 554 L 430 554 A 5 5 0 0 1 440 554 L 524 554 L 524 596" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="298.5" y="874.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
 <path d="M 584 643 L 584 653 L 604 653 L 604 793 L 558 793 L 558 832 L 588 832 L 588 894" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="520.5" y="815.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
@@ -134,7 +134,7 @@
 <text x="284" y="1093.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(batch, parquet)</text>
 <path d="M 307 385 L 307 395 L 265 395 A 5 5 0 0 0 255 395 L 249 395 L 249 515 L 218 515 L 218 1110 L 270 1110 L 270 1120" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="158" y="537.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(streaming, avro)</text>
-<path d="M 574 114 L 574 564 L 574 596" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 574 114 L 574 596" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 125 901 L 125 891 L 173 891 L 173 852 L 213 852 A 5 5 0 0 1 223 852 L 347 852 A 5 5 0 0 1 357 852 L 357 852 A 5 5 0 0 1 367 852 L 534 852 L 534 894" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="135.5" y="874.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <line x1="20" y1="1250" x2="1187" y2="1250" stroke="#e6e9ee" stroke-width="1"/>

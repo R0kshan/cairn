@@ -8,11 +8,13 @@ was actually exercised.
 
 ## The core loop
 
-Reproduce → diagnose → cheapest-experiment-first → decide (with the user when
-it's their call) → implement → verify with more than one signal → run the
-gates. Never skip a stage, and never reorder the first three: proposing a fix
-before reproducing wastes everyone's time, and implementing before the cheap
-experiment risks building the wrong thing well.
+Read `CLAUDE.md` → reproduce → diagnose → cheapest-experiment-first → decide
+(with the user when it's their call) → implement → verify with more than one
+signal → run the gates. Never skip a stage, and never reorder the first four:
+skipping the project's own ground rules risks re-deriving or contradicting a
+constraint that is already written down, proposing a fix before reproducing
+wastes everyone's time, and implementing before the cheap experiment risks
+building the wrong thing well.
 
 Concretely: when the user reported wrap-around flows, the first acts were to
 find the reproducing example in the repo, measure the pathology numerically
@@ -112,8 +114,10 @@ an agent-made commit takes that choice away. Read-only git (`status`, `diff`,
 `log`, `show`) is always fine and is how you check what is already theirs
 versus what is your delta.
 
-**Finish every piece of work by proposing a commit message.** Not a vague one
-— write the message you would use, ready to paste:
+**Finish every piece of work by proposing a commit message, when applicable.**
+Doc-only or trivial edits don't need the full template below — a plain
+one-line summary is enough. For anything functional, write the message you
+would use, ready to paste, not a vague one:
 
 - a subject line under ~72 characters, in the repo's existing style (check
   `git log --oneline`; here that means a `type(#issue):` prefix where one fits);

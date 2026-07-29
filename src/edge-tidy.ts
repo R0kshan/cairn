@@ -83,11 +83,11 @@ function straighten(
     // Drop a point that no longer turns anything.
     for (let index = 1; index + 1 < pts.length; index++) {
       const straightX =
-        Math.abs(pts[index].x - pts[index - 1].x) < 0.5 &&
-        Math.abs(pts[index + 1].x - pts[index].x) < 0.5;
+        Math.abs(pts[index].x - pts[index - 1].x) <= 0.5 &&
+        Math.abs(pts[index + 1].x - pts[index].x) <= 0.5;
       const straightY =
-        Math.abs(pts[index].y - pts[index - 1].y) < 0.5 &&
-        Math.abs(pts[index + 1].y - pts[index].y) < 0.5;
+        Math.abs(pts[index].y - pts[index - 1].y) <= 0.5 &&
+        Math.abs(pts[index + 1].y - pts[index].y) <= 0.5;
       if (straightX || straightY) {
         pts.splice(index, 1);
         changed = true;
@@ -440,5 +440,86 @@ export function tidyEdges(scene: Scene): void {
   }
 
   // A separation move can tilt a jog that straightening had to leave in place.
+  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+
+  // Post-pass: push apart parallel runs from different edges that are within 3px
+  // with >8px shared overlap (coincident). For each pair, shift the corner point
+  // of one run by 8px and add an intermediate segment to keep node attachments.
+  const runs: { edge: SceneEdge; vert: boolean; at: number; lo: number; hi: number }[] = [];
+  for (const edge of scene.edges) {
+    for (let i = 0; i + 1 < edge.pts.length; i++) {
+      const a = edge.pts[i], b = edge.pts[i + 1];
+      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+        runs.push({ edge, vert: true, at: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) });
+      if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+        runs.push({ edge, vert: false, at: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x) });
+    }
+  }
+
+  const coincidentPairs: [typeof runs[0], typeof runs[0]][] = [];
+  for (let i = 0; i < runs.length; i++)
+    for (let j = i + 1; j < runs.length; j++) {
+      if (runs[i].edge.id === runs[j].edge.id) continue;
+      if (runs[i].vert !== runs[j].vert) continue;
+      const gap = Math.abs(runs[i].at - runs[j].at);
+      const shared = Math.min(runs[i].hi, runs[j].hi) - Math.max(runs[i].lo, runs[j].lo);
+      if (gap < 3 && shared > 8) coincidentPairs.push([runs[i], runs[j]]);
+    }
+
+  for (const [a, b] of coincidentPairs) {
+    // Try to push edge B's run away from A's by 8px
+    const delta = a.at > b.at ? -8 : 8;
+    const newAt = b.at + delta;
+    const pts = b.edge.pts;
+    if (b.vert) {
+      // Identify the vertical segment(s) at x==b.at and shift them
+      const segments: [number, number][] = [];
+      for (let i = 0; i + 1 < pts.length; i++) {
+        if (Math.abs(pts[i].x - b.at) < 0.5 && Math.abs(pts[i + 1].x - b.at) < 0.5 && Math.abs(pts[i].y - pts[i + 1].y) >= 0.5)
+          segments.push([i, i + 1]);
+      }
+      if (!segments.length) continue;
+      const se = segments[0], ee = segments[segments.length - 1];
+      const loIdx = pts[se[0]].y < pts[se[1]].y ? se[0] : se[1];
+      const hiIdx = pts[ee[0]].y > pts[ee[1]].y ? ee[0] : ee[1];
+      const loSeat = sideOf(pts[loIdx], leaves);
+      const hiSeat = sideOf(pts[hiIdx], leaves);
+      const loFree = !loSeat || loSeat.side === "west" || loSeat.side === "east";
+      const hiFree = !hiSeat || hiSeat.side === "west" || hiSeat.side === "east";
+      // Only shift if at least one end is free (not on a constrained border)
+      if (!loFree && !hiFree) continue;
+      // Don't shift if it would push the run off the drawing
+      if (newAt < 4) continue;
+      // Shift all points in the vertical segment range
+      for (const [si, ei] of segments) {
+        pts[si].x = newAt;
+        pts[ei].x = newAt;
+      }
+      // If a terminal point was on a node border and the shift moved it off,
+      // add a horizontal segment to reconnect.
+      if (loSeat) {
+        const targetX = loSeat.side === "west" ? loSeat.node.x : loSeat.node.x + loSeat.node.width;
+        if (Math.abs(pts[loIdx].x - targetX) > 0.5) {
+          const newPt = { x: targetX, y: pts[loIdx].y };
+          pts.splice(loIdx, 0, newPt);
+        }
+      }
+      if (hiSeat && hiIdx !== loIdx) {
+        const targetX = hiSeat.side === "west" ? hiSeat.node.x : hiSeat.node.x + hiSeat.node.width;
+        const idx = hiIdx > loIdx ? hiIdx + (loSeat ? 1 : 0) : hiIdx;
+        if (Math.abs(pts[idx].x - targetX) > 0.5) {
+          const newPt = { x: targetX, y: pts[idx].y };
+          pts.splice(idx, 0, newPt);
+        }
+      }
+    } else {
+      // Horizontal run: shift y by delta, adjust vertical neighbours
+      for (let i = 0; i < pts.length; i++) {
+        if (Math.abs(pts[i].y - b.at) < 0.5) pts[i].y = newAt;
+      }
+    }
+  }
+
+  // Fix any orthogonality broken by the de-coincidence shifts
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }

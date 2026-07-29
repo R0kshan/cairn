@@ -32,7 +32,7 @@
 <text x="339.5" y="211.5" font-size="11.5" text-anchor="middle" fill="#1a1a1a" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
 <path d="M 240 106 L 331 106.33333333333333" fill="none" stroke="#1a1a1a" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="278.5" y="121.5" font-size="11.5" text-anchor="middle" fill="#1a1a1a" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
-<path d="M 439 159 L 695 159" fill="none" stroke="#1a1a1a" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 439 159 L 473 159 L 695 159" fill="none" stroke="#1a1a1a" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="519" y="174.5" font-size="11.5" text-anchor="middle" fill="#1a1a1a" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(HTTPS)</text>
 <path d="M 89 76 L 250 76 L 250 94 L 331 93.66666666666666" fill="none" stroke="#1a1a1a" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 439 100 L 538 100 L 538 115 L 548 115" fill="none" stroke="#1a1a1a" stroke-width="1.3" marker-end="url(#arr)"/>

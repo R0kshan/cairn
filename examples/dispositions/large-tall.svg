@@ -218,7 +218,7 @@
 <path d="M 966.5 114 L 966.5 158 L 1054 158 L 1054 370" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1003.5" y="180.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Enrich product</text>
 <text x="1003.5" y="195" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">pages</text>
-<path d="M 1054 417 L 1054 899 L 1102 899 L 1102 1021 L 1203 1021 L 1203 1057 L 1203 1407" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1054 417 L 1054 899 L 1102 899 L 1102 1021 L 1203 1021 L 1203 1407" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1061.5" y="971.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Publish the</text>
 <text x="1061.5" y="986" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">catalog</text>
 <rect x="1034.5" y="994" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
@@ -237,10 +237,10 @@
 <path d="M 603 2260 L 603 2310 L 722 2310 A 5 5 0 0 1 732 2310 L 2312 2310 L 2312 393.5 L 2193 393.5 A 5 5 0 0 0 2183 393.5 L 1906 393.5 A 5 5 0 0 0 1896 393.5 L 1717 393.5 A 5 5 0 0 0 1707 393.5 L 1599.5 393.5 A 5 5 0 0 0 1589.5 393.5 L 1494 393.5 A 5 5 0 0 0 1484 393.5 L 1348 393.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="2376" y="1362.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Reference purchase</text>
 <text x="2376" y="1377.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">costs</text>
-<path d="M 1584 1188 L 1584 1252 L 1738 1252 L 1738 1608 L 1122 1608 L 1122 1642 L 820 1642 L 820 1694 L 820 1758" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1584 1188 L 1584 1252 L 1738 1252 L 1738 1608 L 1122 1608 L 1122 1642 L 820 1642 L 820 1758" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="789" y="1664.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Browsing</text>
 <text x="789" y="1679" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">events</text>
-<path d="M 1018 417 L 1018 939 L 705 939 L 705 1100 L 683 1100 L 683 1694 L 683 1758" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1018 417 L 1018 939 L 705 939 L 705 1100 L 683 1100 L 683 1758" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="654.5" y="1069.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Reference-data</text>
 <text x="654.5" y="1084" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">changes</text>
 <path d="M 819.5 1805 L 819.5 1924" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>

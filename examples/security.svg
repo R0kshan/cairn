@@ -34,14 +34,14 @@
 <rect x="657" y="22" width="108" height="47" rx="4" fill="#fdecea" stroke="#cf4b3f" stroke-width="1.3" stroke-dasharray="5 3"/>
 <text x="711" y="42.25" font-size="12.5" text-anchor="middle" fill="#17202c">Partner EDI</text>
 <text x="711" y="56.75" font-size="12.5" text-anchor="middle" fill="#17202c">platform</text>
-<path d="M 118 165 L 221 165 L 235 165" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 118 165 L 235 165" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="169.5" y="180.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Web access</text>
 <text x="169.5" y="195" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<path d="M 345 156.66666666666669 L 359 157 L 501 157 L 515 157" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 345 156.66666666666669 L 515 156.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="430" y="121.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Filtered billing</text>
 <text x="430" y="136" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">traffic</text>
 <text x="430" y="150.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
-<path d="M 345 172.33333333333334 L 491 172 L 491 224 L 501 224 L 515 224" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 345 172.33333333333334 L 491 172 L 491 224 L 515 224" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="439" y="187.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Filtered CRM</text>
 <text x="439" y="202" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">traffic</text>
 <text x="439" y="216.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>

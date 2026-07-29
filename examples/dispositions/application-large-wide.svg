@@ -86,7 +86,7 @@
 <rect x="2158" y="22" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="2212" y="42.25" font-size="12.5" text-anchor="middle" fill="#17202c">Group</text>
 <text x="2212" y="56.75" font-size="12.5" text-anchor="middle" fill="#17202c">ERP</text>
-<path d="M 144 242.5 L 168 242.5 L 168 260 L 178 260 L 192 260" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 144 242.5 L 168 242.5 L 168 260 L 192 260" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 300 259.5 L 331 259.5 L 331 204.41666666666666 L 481 204.41666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="396" y="219.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <path d="M 300 192.41666666666666 L 481 192.41666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -95,7 +95,7 @@
 <text x="382" y="121.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <path d="M 297 90.66666666666667 L 457 91 L 457 156 L 594 156 A 5 5 0 0 1 604 156 L 749 155.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="392" y="81.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<path d="M 2158 38 L 165 38 L 165 99 L 175 99 L 189 99" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2158 38 L 165 38 L 165 99 L 189 99" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="1472.5" y="53.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
 <path d="M 589 200 L 604 200 A 5 5 0 0 1 614 200 L 739 200 L 739 179.75 L 749 179.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="674" y="215.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">(internal)</text>
