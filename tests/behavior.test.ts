@@ -97,6 +97,222 @@ test("every flow keeps a distinct edge (never merged)", async () => {
   for (const f of model.flows) assert.ok(sceneEdgeIds.has(f.id), f.id);
 });
 
+// Segments of a scene, split by orientation — shared by the routing invariants.
+const segmentsOf = (scene: { edges: { id: string; pts: { x: number; y: number }[] }[] }) => {
+  const vertical: { id: string; x: number; lo: number; hi: number }[] = [];
+  const horizontal: { id: string; y: number; lo: number; hi: number }[] = [];
+  for (const e of scene.edges)
+    for (let i = 0; i + 1 < e.pts.length; i++) {
+      const a = e.pts[i],
+        b = e.pts[i + 1];
+      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+        vertical.push({ id: e.id, x: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) });
+      else if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+        horizontal.push({ id: e.id, y: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x) });
+    }
+  return { vertical, horizontal };
+};
+const edgesCross = (
+  scene: { edges: { id: string; pts: { x: number; y: number }[] }[] },
+  idA: string,
+  idB: string,
+) => {
+  const { vertical, horizontal } = segmentsOf(scene);
+  for (const [first, second] of [
+    [idA, idB],
+    [idB, idA],
+  ])
+    for (const v of vertical.filter((s) => s.id === first))
+      for (const h of horizontal.filter((s) => s.id === second))
+        if (h.lo + 1 < v.x && v.x < h.hi - 1 && v.lo + 1 < h.y && h.y < v.hi - 1) return true;
+  return false;
+};
+
+// src/edge-tidy.ts. Two rules that hold whoever routed the flow:
+//   * every segment is orthogonal — elk emits the odd 10px-across/1px-down
+//     segment, which draws as a slanted hair;
+//   * two flows on the same side of a node never share a point, and stand
+//     MIN_ATTACH_GAP apart wherever the side is long enough to allow it.
+test("flows are orthogonal and never share an attachment point", async () => {
+  const MIN_ATTACH_GAP = 12;
+  const MIN_SIDE_INSET = 3;
+  for (const file of [
+    "small.cairn",
+    "medium.cairn",
+    "logical-archi.cairn",
+    "large.cairn",
+    "application.cairn",
+    "infrastructure.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    for (const e of scene.edges)
+      for (let i = 0; i + 1 < e.pts.length; i++) {
+        const a = e.pts[i],
+          b = e.pts[i + 1];
+        assert.ok(
+          Math.abs(a.x - b.x) < 0.5 || Math.abs(a.y - b.y) < 0.5,
+          `${file} ${e.id}: segment (${a.x},${a.y})→(${b.x},${b.y}) is not orthogonal`,
+        );
+      }
+
+    const leaves = scene.nodes.filter((n) => !n.container);
+    const seats = new Map<string, { along: number; id: string }[]>();
+    for (const e of scene.edges) {
+      if (!e.pts.length) continue;
+      for (const p of [e.pts[0], e.pts[e.pts.length - 1]]) {
+        for (const n of leaves) {
+          const withinX = p.x > n.x - 2 && p.x < n.x + n.width + 2;
+          const withinY = p.y > n.y - 2 && p.y < n.y + n.height + 2;
+          let side: string | null = null;
+          if (withinX && Math.abs(p.y - n.y) < 2) side = "north";
+          else if (withinX && Math.abs(p.y - (n.y + n.height)) < 2) side = "south";
+          else if (withinY && Math.abs(p.x - n.x) < 2) side = "west";
+          else if (withinY && Math.abs(p.x - (n.x + n.width)) < 2) side = "east";
+          if (!side) continue;
+          const vertical = side === "east" || side === "west";
+          const key = `${n.id}|${side}|${vertical ? n.height : n.width}`;
+          seats.set(key, [
+            ...(seats.get(key) ?? []),
+            { along: vertical ? p.y : p.x, id: e.id },
+          ]);
+          break;
+        }
+      }
+    }
+    for (const [key, members] of seats) {
+      if (members.length < 2) continue;
+      const sideLength = Number(key.slice(key.lastIndexOf("|") + 1));
+      // Two coupled limits. A side can only offer so much room once it gives
+      // up its corner margin — and because flows are kept straight, a flow
+      // running between two sides is bound by the tighter of them, so the
+      // spacing a side achieves is not decided by that side alone. What must
+      // hold everywhere is that no two flows share a point or touch.
+      const achievable = (sideLength - 2 * MIN_SIDE_INSET) / (members.length - 1);
+      const required = Math.min(MIN_ATTACH_GAP, achievable);
+      const sorted = [...members].sort((a, b) => a.along - b.along);
+      for (let i = 1; i < sorted.length; i++) {
+        const gap = sorted[i].along - sorted[i - 1].along;
+        assert.ok(
+          gap >= 6,
+          `${file} ${key}: ${sorted[i - 1].id} and ${sorted[i].id} sit ${gap.toFixed(1)}px apart — flows must never share or graze an attachment point`,
+        );
+        assert.ok(
+          gap >= required * 0.8,
+          `${file} ${key}: ${sorted[i - 1].id} and ${sorted[i].id} sit ${gap.toFixed(1)}px apart, well under the ${required.toFixed(1)}px this side allows`,
+        );
+      }
+    }
+  }
+});
+
+// Issue #26, channel ordering: two flows sharing a node side must not cross
+// each other. Slot order makes their channel spans nest and lane order gives
+// the enclosing span the deeper lane — a nested pair has a crossing-free
+// arrangement, so any crossing here is a routing bug, not geometry.
+test("flows sharing a node side do not cross each other (logical-archi)", async () => {
+  const { model, scene, overlapsAfter } = await build(load("logical-archi.cairn"));
+  assert.equal(overlapsAfter, 0);
+  const siblings = model.flows.filter((f) => f.from === "COLLECT" && f.to === "SUIV_FLUX");
+  assert.equal(siblings.length, 2, "fixture must keep two COLLECT→SUIV_FLUX flows");
+  assert.ok(
+    !edgesCross(scene, siblings[0].id, siblings[1].id),
+    `${siblings[0].id} and ${siblings[1].id} share both endpoints and must nest, not cross`,
+  );
+  // A channel lane hugs the node content, so it stays inside (below) an elk
+  // wrap-around route that loops over the top of the drawing.
+  const channel = model.flows.find((f) => f.from === "COORD" && f.to === "OPE")!;
+  const wrap = model.flows.find((f) => f.from === "COM_CTR" && f.to === "OBS")!;
+  const { horizontal } = segmentsOf(scene);
+  const laneY = Math.min(...horizontal.filter((s) => s.id === channel.id).map((s) => s.y));
+  const wrapY = Math.min(...horizontal.filter((s) => s.id === wrap.id).map((s) => s.y));
+  assert.ok(laneY > wrapY, `COORD→OPE lane (${laneY}) must run below the elk wrap (${wrapY})`);
+  assert.ok(!edgesCross(scene, channel.id, wrap.id), "COORD→OPE must not cross COM_CTR→OBS");
+});
+
+// Compaction (src/compact.ts): a band crossed by nothing but vertical segments
+// is dead height. elk sizes the drawing for routes it planned, so rerouting or
+// its own spare corridors leave such bands behind in every disposition.
+test("no dead horizontal band survives in any disposition", async () => {
+  for (const file of ["small.cairn", "medium.cairn", "logical-archi.cairn", "large.cairn"])
+    for (const disp of ["wide", "slide", "page"] as const) {
+      const base = load(file);
+      const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
+      const pinned: [number, number][] = scene.nodes.map((n) => [n.y, n.y + n.height]);
+      for (const e of scene.edges)
+        for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
+      for (const s of segmentsOf(scene).horizontal) pinned.push([s.y - 1, s.y + 1]);
+      pinned.sort((a, b) => a[0] - b[0]);
+      let reach = 0;
+      for (const [top, bottom] of pinned) {
+        assert.ok(
+          top - reach < 30,
+          `${file} ${disp}: ${Math.round(top - reach)}px dead band at y≈${Math.round(reach)}`,
+        );
+        reach = Math.max(reach, bottom);
+      }
+      assert.ok(
+        scene.height - reach < 30,
+        `${file} ${disp}: ${Math.round(scene.height - reach)}px dead band at the bottom`,
+      );
+    }
+});
+
+// Issue #26: elk wraps backward hierarchical edges around the whole drawing.
+// The detour reroute (src/route-detour.ts) must bring the two marked flows of
+// logical-fr (CALCUL→RESPONSABLE, DOSSIER→ASSURE) down through a bottom
+// channel instead — bounded path length relative to the direct distance.
+test("backward flows are rerouted through the bottom channel, not wrapped (logical-fr)", async () => {
+  const { model, scene, overlapsAfter } = await build(load("logical-fr.cairn"));
+  assert.equal(overlapsAfter, 0);
+  const nodeById = new Map(scene.nodes.map((n) => [n.id, n]));
+  const pathLen = (pts: { x: number; y: number }[]) => {
+    let len = 0;
+    for (let i = 1; i < pts.length; i++)
+      len += Math.abs(pts[i].x - pts[i - 1].x) + Math.abs(pts[i].y - pts[i - 1].y);
+    return len;
+  };
+  for (const [from, to] of [
+    ["CALCUL", "RESPONSABLE"],
+    ["DOSSIER", "ASSURE"],
+  ]) {
+    const flow = model.flows.find((f) => f.from === from && f.to === to)!;
+    const edge = scene.edges.find((e) => e.id === flow.id)!;
+    const a = nodeById.get(from)!,
+      b = nodeById.get(to)!;
+    const direct =
+      Math.abs(a.x + a.width / 2 - b.x - b.width / 2) +
+      Math.abs(a.y + a.height / 2 - b.y - b.height / 2);
+    assert.ok(
+      pathLen(edge.pts) < 1.75 * direct,
+      `${from}→${to} must not wrap around the drawing (len ${Math.round(pathLen(edge.pts))} vs direct ${Math.round(direct)})`,
+    );
+  }
+});
+
+// Issue #26, top channel: when nodes below block the south exit (logical-archi
+// COORD→OPE — three blocks stacked under COORD), the reroute must mirror the
+// route north instead of leaving elk's wrap in place.
+test("south-blocked backward flows use the top channel instead (logical-archi)", async () => {
+  const { model, scene, overlapsAfter } = await build(load("logical-archi.cairn"));
+  assert.equal(overlapsAfter, 0);
+  const nodeById = new Map(scene.nodes.map((n) => [n.id, n]));
+  const flow = model.flows.find((f) => f.from === "COORD" && f.to === "OPE")!;
+  const edge = scene.edges.find((e) => e.id === flow.id)!;
+  let len = 0;
+  for (let i = 1; i < edge.pts.length; i++)
+    len +=
+      Math.abs(edge.pts[i].x - edge.pts[i - 1].x) + Math.abs(edge.pts[i].y - edge.pts[i - 1].y);
+  const a = nodeById.get("COORD")!,
+    b = nodeById.get("OPE")!;
+  const direct =
+    Math.abs(a.x + a.width / 2 - b.x - b.width / 2) +
+    Math.abs(a.y + a.height / 2 - b.y - b.height / 2);
+  assert.ok(
+    len < 2.2 * direct,
+    `COORD→OPE must route via the top channel (len ${Math.round(len)} vs direct ${Math.round(direct)})`,
+  );
+});
+
 // ---------- dispositions ----------
 
 test("slide is always landscape, page always portrait (medium)", async () => {

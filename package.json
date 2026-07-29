@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",
-    "test": "node --experimental-strip-types --test \"tests/*.test.ts\"",
+    "test": "node --experimental-strip-types scripts/sweep.ts && node --experimental-strip-types --test \"tests/*.test.ts\"",
     "snapshots": "node --experimental-strip-types scripts/update-snapshots.mjs",
     "build:binaries": "bash scripts/build-binaries.sh",
     "build:playground": "bash scripts/build-playground.sh",
@@ -22,6 +22,7 @@
     "format": "biome format --write src tests",
     "typecheck": "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
+    "sweep": "node --experimental-strip-types scripts/sweep.ts",
     "test:binary": "bash scripts/smoke-binary.sh",
     "examples": "node --experimental-strip-types scripts/render-examples.mjs"
   },

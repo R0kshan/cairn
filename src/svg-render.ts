@@ -540,7 +540,12 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
         bandsSvg += `<text x="${contentX + chipResult.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">— ${esc(bo.description)}</text>\n`;
       bandY += scaled(24);
     }
-    bandY += 6;
+    // What a chip means belongs with the objects it describes, not among the
+    // legend's shape keys.
+    const keyChip = chip(contentX, bandY + 2, ui.businessObject);
+    bandsSvg += keyChip.svg;
+    bandsSvg += `<text x="${contentX + keyChip.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(ui.carriedByFlow)}</text>\n`;
+    bandY += scaled(24) + 6;
   };
 
   const renderLegendBand = () => {
@@ -577,11 +582,6 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
           : " — colour = source"
         : "");
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>\n`;
-    if (model.businessObjects.length) {
-      const chipResult = chip(contentX + 330, bandY + 1, ui.businessObject);
-      bandsSvg += chipResult.svg;
-      bandsSvg += `<text x="${contentX + 330 + chipResult.width + 8}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(ui.carriedByFlow)}</text>\n`;
-    }
     bandY += scaled(24);
     for (const note of model.legendNotes) {
       bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>\n`;

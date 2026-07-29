@@ -37,8 +37,36 @@ Not a general diagramming tool.
 ## Pipeline & file map (`src/`)
 
 ```
-.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → svg-render.ts → SVG
+.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → compact.ts → svg-render.ts → SVG
 ```
+
+- `edge-tidy.ts` — endpoint hygiene for **every** edge, elk's included: collapses
+  deviations under 6px (elk emits 1px staircases and the odd non-orthogonal
+  segment) and keeps two flows on the same node side 12px apart, so an inbound
+  and an outbound flow never share a point. Both moves are refused when they
+  would park a flow on top of another — a merged line is worse than the jog or
+  the shared endpoint it would fix. Straightness couples the two sides a flow
+  connects, so the achieved gap is bounded by the tighter side.
+
+- `route-detour.ts` — deterministic post-layout pass (issue #26): reroutes
+  elk's wrap-around backward hierarchical edges through top/bottom channels.
+  Runs for **every** disposition: a DOWN layout (`page`/`tall`) wraps its
+  backward flows around the sides instead, so `scene-layout.ts` mirrors the
+  scene across the diagonal around this pass and it comes out with left/right
+  channels. Container titles don't rotate — their bands are computed before
+  transposing (`titleBoxesOf`) and passed in.
+  elk options **cannot** fix these (tested; see
+  [`documentation/ai/ROUTE_DETOUR_HANDOVER.md`](./documentation/ai/ROUTE_DETOUR_HANDOVER.md)
+  — read it before touching flow routing). Its extra invariants: no coincident
+  segments, attach points spread per node side, no line collinear with a
+  container border, risers never strike container titles, channel spans nest
+  rather than interleave (slot order + lane order together).
+
+- `compact.ts` — removes horizontal bands crossed by nothing but vertical
+  segments, for **every** disposition. A node, label or horizontal segment anywhere
+  across the width pins its band, which is what keeps containers undistorted
+  and a zero-overlap drawing zero-overlap. Gated by a behaviour test — dead
+  bands must stay under 30px.
 
 - `model.ts` — the heart: types, the `views` registry (kinds, nesting rules,
   per-view diagnostics), themes (`themes`/`mkTheme`/`themeFor`), i18n (`UI`),
@@ -52,11 +80,12 @@ Not a general diagramming tool.
 ## Commands
 
 ```sh
-npm test                  # unit + the non-regression gates (Node-only)
+npm test                  # sweep + unit + the non-regression gates (Node-only)
 npm run typecheck         # tsc --noEmit — the only type check
 npm run lint              # biome (lint-only; leave formatting alone)
 npm run snapshots         # accept intended render changes (regenerate reference output)
 npm run snapshots:report  # preview a render change, grouped by KIND
+npm run sweep             # readability gate only (already included in npm test)
 npm run test:binary       # compile the host bun binary + smoke-run it (needs Bun)
 npm run cairn -- <cmd> <file>
 ```
@@ -90,7 +119,17 @@ break the binary — hence `test:binary`.
    is the risky kind; colour-only is usually an intended theme edit. A change
    outside your edit's blast radius is a regression. **Never regenerate to
    silence a diff you don't understand** — that's the one instinct to override.
-4. **Flow labels are required on the logical & security views** (`E0203`),
+4. **Readability is gated by `npm run sweep`**, which recursively sweeps every
+   `.cairn` fixture under `examples/` (top level plus `dispositions/` and
+   `themes/`) × every disposition. Six invariants must stay at **0**: label
+   overlaps, segments off orthogonal, runs crossing a leaf box, dead
+   horizontal bands, coincident segments, shared attachment points. The rest
+   (staircases, tight attachments, near-parallel runs, long detours) are a
+   **ratchet**, expressed as a rate per swept flow-instance (not a raw count)
+   so adding fixtures doesn't spuriously fail the gate: current rates are
+   ceilings and may only fall. Lower a rate when a change earns it; never
+   raise one to go green.
+5. **Flow labels are required on the logical & security views** (`E0203`),
    optional on application & infrastructure. Infrastructure flows must still
    carry `protocol/port` (`(HTTPS/443)` — `E0240`) even when unlabelled.
 
