@@ -25,7 +25,7 @@ The tradeoff: it's experimental (track [node#53725](https://github.com/nodejs/no
 
 ## What you can't break
 
-Invariants detailed in `CLAUDE.md`. In short:
+Invariants detailed in [`INVARIANTS.md`](./INVARIANTS.md). In short:
 - **Zero label overlaps. Byte-deterministic output.**
 - **Every flow is a distinct arrow with a distinct label** — flows are never visually merged.
 - **Labels are mandatory in logical view (E0203)** — optional in application, infrastructure and security.
