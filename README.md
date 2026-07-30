@@ -6,9 +6,9 @@
 
 Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
 
-## Status 
+## Status
 
-Pre-releases available. Waiting for first issues to be resolved and some community feedback before releasing a stable version.
+**Ongoing development** - Pre-releases are available. Stable version will be release when all opened issues are resolved.
 
 ## Table of contents
 
