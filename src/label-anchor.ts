@@ -26,6 +26,7 @@
 
 import { type Box, boxToPolylineSq, boxToSegmentSq } from "./geometry.ts";
 import type { Scene, SceneEdge, SceneLabel } from "./scene-layout.ts";
+import type { TitleBox } from "./route-detour.ts";
 
 /**
  * Beyond this a label has visibly left its flow, whatever else is near it.
@@ -100,7 +101,7 @@ function seatAt(label: SceneLabel, x: number, y: number): Box {
   };
 }
 
-export function anchorFlowLabels(scene: Scene): void {
+export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): void {
   const routes = scene.edges.filter((edge) => edge.pts.length >= 2);
   const leaves = scene.nodes.filter((node) => !node.container);
   /** Nearest foreign run to a box, squared. */
@@ -120,14 +121,20 @@ export function anchorFlowLabels(scene: Scene): void {
    * label *off* its run, which is the one thing this pass exists to prevent.
    * Cheaper to not choose it.
    */
+  const overlaps = (
+    box: Box,
+    other: { x: number; y: number; width: number; height: number },
+  ) =>
+    box.x < other.x + other.width &&
+    other.x < box.x + box.width &&
+    box.y < other.y + other.height &&
+    other.y < box.y + box.height;
+  // A seat over a node box, or over a container's *name* (§4e) — a title has no
+  // halo to hide behind, so a label parked on one buries the words. Both are
+  // refused here rather than left to the settler, whose only escape is to take
+  // the label off its run.
   const coversNode = (box: Box) =>
-    leaves.some(
-      (node) =>
-        box.x < node.x + node.width &&
-        node.x < box.x + box.width &&
-        box.y < node.y + node.height &&
-        node.y < box.y + box.height,
-    );
+    leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
   const seated: {
     label: SceneLabel;
     from: { x: number; y: number };
@@ -202,10 +209,19 @@ export function anchorFlowLabels(scene: Scene): void {
       // Keep every on-line seat this label could take, clear of node boxes, so
       // a collision found below can be answered by sliding along the run before
       // anyone has to leave it.
+      // Two tiers. Clean seats first; then seats that only overlap a container
+      // title. A label on a title is a §4e blemish, a label off its run breaks
+      // §4d — so when the collision loop below has to choose, it takes the
+      // blemish. Without the second tier it reverted to elk's placement instead,
+      // which took two labels off their line in `security-fr`.
       const alternatives: Box[] = [];
+      const tolerated: Box[] = [];
       for (const segment of segmentOrder)
-        for (const candidate of seatsOf(segment))
+        for (const candidate of seatsOf(segment)) {
           if (!coversNode(candidate)) alternatives.push(candidate);
+          else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
+        }
+      alternatives.push(...tolerated);
       seated.push({ label, from: { x: label.x, y: label.y }, own, alternatives });
       label.x = seat.x;
       label.y = seat.y;

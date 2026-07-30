@@ -441,7 +441,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // Every pass above moves routes without moving the labels that name them.
     // Put each label back on its own flow before anything measures where labels
     // are — `compact` below is the first thing that does.
-    anchorFlowLabels(scene);
+    anchorFlowLabels(scene, titleBoxes);
     // Reclaim the bands elk sized for routes that no longer run there — every
     // disposition, since elk leaves spare corridors whether or not the reroute
     // above moved anything.
@@ -484,8 +484,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         folded.layoutMs = Date.now() - startTime;
         // The folded layout hand-routes its own connectors, so it keeps them —
         // but the endpoint invariants apply to it like everything else.
-        tidyEdges(folded);
-        anchorFlowLabels(folded);
+        tidyEdges(folded, titleBoxesOf(folded, model));
+        anchorFlowLabels(folded, titleBoxesOf(folded, model));
         compactVertical(folded);
         return folded;
       }

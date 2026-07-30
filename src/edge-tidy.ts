@@ -568,7 +568,43 @@ export function tidyEdges(scene: Scene, titleBoxes: TitleBox[] = []): void {
     const srcSeat = sideOf(edge.pts[0], leaves);
     const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
     if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
-    if (!wrapAround(edge.pts, srcSeat.node, dstSeat.node)) continue;
+    // Two reasons to re-side a flow. A wrap-around (§4c) sends the eye the wrong
+    // way; and a flow that *crosses a sibling* — another flow sharing one of its
+    // endpoints — tangles with traffic it is guaranteed to run alongside.
+    //
+    // The second is what the round trip between two distant nodes needs. In
+    // `logical` the pair COMPENSATION↔SUPERVISOR crossed because the return leg
+    // rose to the container's west side at x=1550 while the outbound leg ran
+    // left at y=439 all the way from x=1628 — and *every* riser position between
+    // the two nodes crosses it, so no interior lane can fix it (§4f leaves it
+    // alone for exactly that reason). Only entering from the other side does,
+    // which is a terminal-side decision and therefore this pass's.
+    const siblingCrossings = (pts: Point[]) => {
+      let total = 0;
+      for (const other of scene.edges) {
+        if (other === edge || other.pts.length < 2) continue;
+        // Only the *return leg*: a flow joining the same two nodes the other
+        // way. A round trip is the one case where a crossing is never
+        // necessary — the two legs can always nest — so it is safe to spend a
+        // little length untangling. Widening this to any flow merely *sharing*
+        // an endpoint was measured and rejected: it disturbed three `large-slide`
+        // drawings (longDetour and attachAway up) for tangles that were not
+        // structurally avoidable.
+        const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
+          (p) => sideOf(p, leaves)?.node,
+        );
+        const isReturnLeg =
+          ends.includes(srcSeat.node) && ends.includes(dstSeat.node) && ends[0] !== ends[1];
+        if (!isReturnLeg) continue;
+        for (let i = 0; i + 1 < pts.length; i++)
+          for (let j = 0; j + 1 < other.pts.length; j++)
+            if (segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1])) total++;
+      }
+      return total;
+    };
+    const wrapped = wrapAround(edge.pts, srcSeat.node, dstSeat.node);
+    const tangledBefore = siblingCrossings(edge.pts);
+    if (!wrapped && tangledBefore === 0) continue;
 
     const src = srcSeat.node;
     const dst = dstSeat.node;
@@ -664,7 +700,17 @@ export function tidyEdges(scene: Scene, titleBoxes: TitleBox[] = []): void {
       if (wrapAround(pts, src, dst)) {
         continue;
       }
-      if (pathLength(pts) >= currentLength - 12) {
+      // What "better" means depends on why the flow is being re-sided. A
+      // wrap-around is a detour, so the replacement has to be shorter. A tangle
+      // is not about length at all: untangling a round trip means entering from
+      // the other side, which is usually a little *longer* than cutting across
+      // its partner. So a tangle-driven candidate must remove crossings and may
+      // spend at most a node's width (64px) doing it — beyond that the
+      // cure reads worse than the tangle.
+      const untangles = tangledBefore > 0 && siblingCrossings(pts) < tangledBefore;
+      if (untangles) {
+        if (pathLength(pts) > currentLength + 64) continue;
+      } else if (pathLength(pts) >= currentLength - 12) {
         continue;
       }
       let ok = true;
@@ -1141,6 +1187,160 @@ export function tidyEdges(scene: Scene, titleBoxes: TitleBox[] = []): void {
     }
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+
+  // Nest corridor risers (INVARIANTS §4f).
+  //
+  // Flows crossing the same corridor usually keep their relative order end to
+  // end — and flows that never change order never *need* to cross. When they do
+  // it is because their vertical risers were placed in the wrong left-to-right
+  // order. `infrastructure-large` had three flows in strict top-to-bottom order
+  // at both ends crossing four times, purely because the one descending deepest
+  // turned last instead of first.
+  //
+  // The rule is the one `route-detour` already applies to its channels ("travel
+  // direction first, then reach descending, so spans nest instead of
+  // interleave"), here for ordinary traffic. Two things make it safe where two
+  // earlier attempts at rearranging routes were not:
+  //
+  // - **The lanes are a fixed set, only their owners change.** Every x a group
+  //   uses was already legal for *some* flow, so no new corridor is invented.
+  // - **Permutations are scored, never reasoned about.** Hand-derived orderings
+  //   were wrong twice: a pairwise swap of the three flows above fixes its own
+  //   pair (2 crossings → 0) and costs 2 elsewhere, because the correct answer
+  //   is a 3-cycle no swap can express. So every permutation is applied,
+  //   validated, and counted against the whole drawing; the best wins only if it
+  //   is strictly better overall.
+  const riserIndexOf = (edge: SceneEdge): number => {
+    let found = -1;
+    for (let index = 1; index + 2 < edge.pts.length; index++) {
+      const a = edge.pts[index];
+      const b = edge.pts[index + 1];
+      if (Math.abs(a.x - b.x) >= 0.5 || Math.abs(a.y - b.y) < 0.5) continue;
+      if (Math.abs(edge.pts[index - 1].y - a.y) >= 0.5) continue;
+      if (Math.abs(edge.pts[index + 2].y - b.y) >= 0.5) continue;
+      // Keep the *last* riser — the one nearest the target, which is the lane
+      // the flow approaches on and therefore the one that orders it against its
+      // neighbours. Requiring exactly one riser instead was what made the first
+      // version of this pass a no-op on the case it was written for: the flow at
+      // the centre of the tangle turned twice, so it was excluded, leaving a
+      // pair whose only fix is a 3-cycle it could not express.
+      found = index;
+    }
+    return found;
+  };
+  const crossCount = (a: Point[], b: Point[]): number => {
+    let total = 0;
+    for (let i = 0; i + 1 < a.length; i++)
+      for (let j = 0; j + 1 < b.length; j++)
+        if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) total++;
+    return total;
+  };
+  const flowRank = (edge: SceneEdge) => Number.parseInt(edge.id.slice(1), 10) || 0;
+
+  const risers = scene.edges
+    .map((edge) => ({ edge, riser: riserIndexOf(edge) }))
+    .filter((entry) => entry.riser >= 0)
+    .sort((a, b) => flowRank(a.edge) - flowRank(b.edge));
+
+  // Groups are the connected components of "these two flows actually cross".
+  // Grouping by geometry instead would need a corridor width to guess at; this
+  // needs nothing, and by construction only touches flows that have a defect.
+  const parent = risers.map((_, index) => index);
+  const find = (index: number): number => {
+    let root = index;
+    while (parent[root] !== root) root = parent[root];
+    while (parent[index] !== root) {
+      const next = parent[index];
+      parent[index] = root;
+      index = next;
+    }
+    return root;
+  };
+  for (let i = 0; i < risers.length; i++)
+    for (let j = i + 1; j < risers.length; j++)
+      if (crossCount(risers[i].edge.pts, risers[j].edge.pts) > 0)
+        parent[find(i)] = find(j);
+
+  const riserGroups = new Map<number, number[]>();
+  for (let index = 0; index < risers.length; index++) {
+    const root = find(index);
+    riserGroups.set(root, [...(riserGroups.get(root) ?? []), index]);
+  }
+
+  const permutationsOf = (n: number): number[][] => {
+    if (n === 1) return [[0]];
+    const out: number[][] = [];
+    for (const rest of permutationsOf(n - 1))
+      for (let slot = 0; slot < n; slot++)
+        out.push([...rest.slice(0, slot), n - 1, ...rest.slice(slot)]);
+    return out.sort((a, b) => a.join().localeCompare(b.join()));
+  };
+
+  for (const key of [...riserGroups.keys()].sort((a, b) => a - b)) {
+    const members: { edge: SceneEdge; riser: number }[] = riserGroups.get(key)!.map(
+      (index) => risers[index],
+    );
+    // 2..4 keeps the permutation count at 24 and the scoring exhaustive. Larger
+    // tangles are not a lane-ordering problem — they need elk to lay them out
+    // differently — and guessing at them is how a pass starts shuffling damage.
+    if (members.length < 2 || members.length > 4) continue;
+    const ids = members.map((member) => member.edge.id);
+    const outsiders = scene.edges.filter((edge) => !ids.includes(edge.id));
+    const outside = runsExcept(...ids);
+
+    const scoreOf = (shapes: Point[][]) => {
+      let total = 0;
+      for (let i = 0; i < shapes.length; i++) {
+        for (let j = i + 1; j < shapes.length; j++) total += crossCount(shapes[i], shapes[j]);
+        for (const other of outsiders) total += crossCount(shapes[i], other.pts);
+      }
+      return total;
+    };
+    const clean = (pts: Point[]) => {
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        const deltaX = Math.abs(a.x - b.x);
+        const deltaY = Math.abs(a.y - b.y);
+        if (deltaX >= 0.5 && deltaY >= 0.5) return false;
+        const runVertical = deltaX < 0.5;
+        const at = runVertical ? a.x : a.y;
+        const from = runVertical ? a.y : a.x;
+        const to = runVertical ? b.y : b.x;
+        if (runHitsNode(runVertical, at, from, to)) return false;
+        if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+          return false;
+        if (!runVertical && bandFor(a, b)) return false;
+        const length = deltaX + deltaY;
+        if (index > 0 && index + 2 < pts.length && length > 0 && length <= JOG_SNAP) return false;
+      }
+      return true;
+    };
+
+    const lanes = members.map((member) => member.edge.pts[member.riser].x);
+    const current: Point[][] = members.map((member) => member.edge.pts.map((p) => ({ ...p })));
+    let bestScore = scoreOf(current);
+    let best: Point[][] | null = null;
+    for (const permutation of permutationsOf(members.length)) {
+      if (permutation.every((lane, index) => lane === index)) continue;
+      const shapes: Point[][] = members.map((member, index) => {
+        const pts: Point[] = member.edge.pts.map((p) => ({ ...p }));
+        pts[member.riser].x = lanes[permutation[index]];
+        pts[member.riser + 1].x = lanes[permutation[index]];
+        return pts;
+      });
+      if (!shapes.every(clean)) continue;
+      const score = scoreOf(shapes);
+      if (score < bestScore) {
+        bestScore = score;
+        best = shapes;
+      }
+    }
+    if (!best) continue;
+    members.forEach((member, index) => {
+      member.edge.pts = best![index];
+    });
+  }
 
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }

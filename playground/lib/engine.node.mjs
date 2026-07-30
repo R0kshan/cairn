@@ -96097,7 +96097,24 @@ function tidyEdges(scene, titleBoxes = []) {
     const srcSeat = sideOf(edge.pts[0], leaves);
     const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
     if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
-    if (!wrapAround(edge.pts, srcSeat.node, dstSeat.node)) continue;
+    const siblingCrossings = (pts) => {
+      let total = 0;
+      for (const other of scene.edges) {
+        if (other === edge || other.pts.length < 2) continue;
+        const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
+          (p) => sideOf(p, leaves)?.node
+        );
+        const isReturnLeg = ends.includes(srcSeat.node) && ends.includes(dstSeat.node) && ends[0] !== ends[1];
+        if (!isReturnLeg) continue;
+        for (let i = 0; i + 1 < pts.length; i++)
+          for (let j = 0; j + 1 < other.pts.length; j++)
+            if (segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1])) total++;
+      }
+      return total;
+    };
+    const wrapped = wrapAround(edge.pts, srcSeat.node, dstSeat.node);
+    const tangledBefore = siblingCrossings(edge.pts);
+    if (!wrapped && tangledBefore === 0) continue;
     const src = srcSeat.node;
     const dst = dstSeat.node;
     const srcC = { x: src.x + src.width / 2, y: src.y + src.height / 2 };
@@ -96166,7 +96183,10 @@ function tidyEdges(scene, titleBoxes = []) {
       if (wrapAround(pts, src, dst)) {
         continue;
       }
-      if (pathLength2(pts) >= currentLength - 12) {
+      const untangles = tangledBefore > 0 && siblingCrossings(pts) < tangledBefore;
+      if (untangles) {
+        if (pathLength2(pts) > currentLength + 64) continue;
+      } else if (pathLength2(pts) >= currentLength - 12) {
         continue;
       }
       let ok = true;
@@ -96530,6 +96550,116 @@ function tidyEdges(scene, titleBoxes = []) {
     }
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+  const riserIndexOf = (edge) => {
+    let found = -1;
+    for (let index = 1; index + 2 < edge.pts.length; index++) {
+      const a = edge.pts[index];
+      const b = edge.pts[index + 1];
+      if (Math.abs(a.x - b.x) >= 0.5 || Math.abs(a.y - b.y) < 0.5) continue;
+      if (Math.abs(edge.pts[index - 1].y - a.y) >= 0.5) continue;
+      if (Math.abs(edge.pts[index + 2].y - b.y) >= 0.5) continue;
+      found = index;
+    }
+    return found;
+  };
+  const crossCount = (a, b) => {
+    let total = 0;
+    for (let i = 0; i + 1 < a.length; i++)
+      for (let j = 0; j + 1 < b.length; j++)
+        if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) total++;
+    return total;
+  };
+  const flowRank = (edge) => Number.parseInt(edge.id.slice(1), 10) || 0;
+  const risers = scene.edges.map((edge) => ({ edge, riser: riserIndexOf(edge) })).filter((entry) => entry.riser >= 0).sort((a, b) => flowRank(a.edge) - flowRank(b.edge));
+  const parent = risers.map((_, index) => index);
+  const find = (index) => {
+    let root = index;
+    while (parent[root] !== root) root = parent[root];
+    while (parent[index] !== root) {
+      const next = parent[index];
+      parent[index] = root;
+      index = next;
+    }
+    return root;
+  };
+  for (let i = 0; i < risers.length; i++)
+    for (let j = i + 1; j < risers.length; j++)
+      if (crossCount(risers[i].edge.pts, risers[j].edge.pts) > 0)
+        parent[find(i)] = find(j);
+  const riserGroups = /* @__PURE__ */ new Map();
+  for (let index = 0; index < risers.length; index++) {
+    const root = find(index);
+    riserGroups.set(root, [...riserGroups.get(root) ?? [], index]);
+  }
+  const permutationsOf = (n) => {
+    if (n === 1) return [[0]];
+    const out = [];
+    for (const rest of permutationsOf(n - 1))
+      for (let slot = 0; slot < n; slot++)
+        out.push([...rest.slice(0, slot), n - 1, ...rest.slice(slot)]);
+    return out.sort((a, b) => a.join().localeCompare(b.join()));
+  };
+  for (const key of [...riserGroups.keys()].sort((a, b) => a - b)) {
+    const members = riserGroups.get(key).map(
+      (index) => risers[index]
+    );
+    if (members.length < 2 || members.length > 4) continue;
+    const ids = members.map((member) => member.edge.id);
+    const outsiders = scene.edges.filter((edge) => !ids.includes(edge.id));
+    const outside = runsExcept(...ids);
+    const scoreOf = (shapes) => {
+      let total = 0;
+      for (let i = 0; i < shapes.length; i++) {
+        for (let j = i + 1; j < shapes.length; j++) total += crossCount(shapes[i], shapes[j]);
+        for (const other of outsiders) total += crossCount(shapes[i], other.pts);
+      }
+      return total;
+    };
+    const clean = (pts) => {
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        const deltaX = Math.abs(a.x - b.x);
+        const deltaY = Math.abs(a.y - b.y);
+        if (deltaX >= 0.5 && deltaY >= 0.5) return false;
+        const runVertical = deltaX < 0.5;
+        const at = runVertical ? a.x : a.y;
+        const from = runVertical ? a.y : a.x;
+        const to = runVertical ? b.y : b.x;
+        if (runHitsNode(runVertical, at, from, to)) return false;
+        if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+          return false;
+        if (!runVertical && bandFor(a, b)) return false;
+        const length = deltaX + deltaY;
+        if (index > 0 && index + 2 < pts.length && length > 0 && length <= JOG_SNAP) return false;
+      }
+      return true;
+    };
+    const lanes = members.map((member) => member.edge.pts[member.riser].x);
+    const current = members.map((member) => member.edge.pts.map((p) => ({ ...p })));
+    let bestScore = scoreOf(current);
+    let best = null;
+    for (const permutation of permutationsOf(members.length)) {
+      if (permutation.every((lane, index) => lane === index)) continue;
+      const shapes = members.map((member, index) => {
+        const pts = member.edge.pts.map((p) => ({ ...p }));
+        pts[member.riser].x = lanes[permutation[index]];
+        pts[member.riser + 1].x = lanes[permutation[index]];
+        return pts;
+      });
+      if (!shapes.every(clean)) continue;
+      const score = scoreOf(shapes);
+      if (score < bestScore) {
+        bestScore = score;
+        best = shapes;
+      }
+    }
+    if (!best) continue;
+    members.forEach((member, index) => {
+      member.edge.pts = best[index];
+    });
+  }
+  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }
 
 // src/geometry.ts
@@ -96597,7 +96727,7 @@ function seatAt(label, x, y) {
     height: label.height
   };
 }
-function anchorFlowLabels(scene) {
+function anchorFlowLabels(scene, titleBoxes = []) {
   const routes = scene.edges.filter((edge) => edge.pts.length >= 2);
   const leaves = scene.nodes.filter((node) => !node.container);
   const nearestOtherSq = (box, own) => {
@@ -96609,9 +96739,8 @@ function anchorFlowLabels(scene) {
     }
     return best;
   };
-  const coversNode = (box) => leaves.some(
-    (node) => box.x < node.x + node.width && node.x < box.x + box.width && box.y < node.y + node.height && node.y < box.y + box.height
-  );
+  const overlaps = (box, other) => box.x < other.x + other.width && other.x < box.x + box.width && box.y < other.y + other.height && other.y < box.y + box.height;
+  const coversNode = (box) => leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
   const seated = [];
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
@@ -96656,9 +96785,13 @@ function anchorFlowLabels(scene) {
       }
       if (!seat) seat = seatOn(host);
       const alternatives = [];
+      const tolerated = [];
       for (const segment of segmentOrder)
-        for (const candidate of seatsOf(segment))
+        for (const candidate of seatsOf(segment)) {
           if (!coversNode(candidate)) alternatives.push(candidate);
+          else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
+        }
+      alternatives.push(...tolerated);
       seated.push({ label, from: { x: label.x, y: label.y }, own, alternatives });
       label.x = seat.x;
       label.y = seat.y;
@@ -96944,7 +97077,7 @@ async function layout(model, view) {
     rerouteDetours(scene, model, numbered, titleBoxes);
     if (sideways) transpose(scene, titleBoxes);
     tidyEdges(scene, titleBoxes);
-    anchorFlowLabels(scene);
+    anchorFlowLabels(scene, titleBoxes);
     compactVertical(scene);
     return scene;
   };
@@ -96974,8 +97107,8 @@ async function layout(model, view) {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
-        tidyEdges(folded);
-        anchorFlowLabels(folded);
+        tidyEdges(folded, titleBoxesOf(folded, model));
+        anchorFlowLabels(folded, titleBoxesOf(folded, model));
         compactVertical(folded);
         return folded;
       }

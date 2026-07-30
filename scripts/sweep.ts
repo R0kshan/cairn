@@ -50,7 +50,7 @@ const MUST_BE_ZERO = [
 const CEILING_RATE: Record<string, number> = {
   attachTight: 0.0009191,
   "jog<=6": 0.0234375,
-  "jog<=20": 0.1100643,
+  "jog<=20": 0.1084558,
   nearParallel: 0.0135569,
   // Raised 0.0436580 -> 0.0461855 (190 -> 201) when labels moved onto their
   // runs (§4d). A label pins the horizontal band it sits in, so seating them on
@@ -58,7 +58,14 @@ const CEILING_RATE: Record<string, number> = {
   // some drawings tighten (large-fr lost 29px of height), a few loosen, and 11
   // flows crossed the len > 2.2x-direct threshold either way. The routes did not
   // get worse — the distances they are measured against moved.
-  longDetour: 0.0461855,
+  // Raised 0.0438878 -> 0.0450367 (191 -> 196), with attachAway, when folded
+  // slide layouts finally got the container title bands passed to `tidyEdges`.
+  // They had been routing without them, so the reroute there was free to cross a
+  // container's name; protecting the titles costs one drawing (in its four
+  // fixture copies) a longer route and two wrap-around attachments. A run
+  // through a container's name is worse than a longer route, so the trade is
+  // taken deliberately — see §4e.
+  longDetour: 0.0450367,
   // Flows bundled tightly enough that no position exists which is both free of
   // overlaps and nearer its own run than its neighbours'. Lowering this means
   // giving the settler somewhere better to go, not relaxing the check.
@@ -83,13 +90,18 @@ const CEILING_RATE: Record<string, number> = {
   // `route-detour` has always avoided them when planning a channel; elk has not,
   // and the repair pass in edge-tidy can only move a run that has somewhere
   // clean to go.
-  titleStruck: 0.2431066,
+  titleStruck: 0.2061580,
+  // Flows crossing anywhere in the drawing (INVARIANTS §4f). Most are inherent
+  // to the topology; the ones that are not come from risers placed in the wrong
+  // left-to-right order, which the nesting pass in edge-tidy repairs. Lowering
+  // this means better lane ordering, never fewer flows.
+  crossings: 1.0250459,
   // Wrap-around attachments (INVARIANTS §4c): a terminal departing away from
   // its counterpart, or arriving from beyond it. The reroute pass in edge-tidy
   // replaces the ones it can prove clean (~25% of the population elk + the
   // channel planner produced); the remainder needs elk port constraints or
   // channel-side planning, not another post-pass.
-  attachAway: 0.0643382,
+  attachAway: 0.0666359,
 };
 
 interface Run {
@@ -487,6 +499,19 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
           note("labelPierced", `${e.id} "${text}" run ${nearestId} crosses its box`);
       }
     }
+
+    // Invariant §4f: flows that cross. Counted over the whole drawing, unlike
+    // `fanTangle`, which only sees crossings inside a node's fan — the corridor
+    // weave this exists to catch happens in open space between containers.
+    for (let i = 0; i < scene.edges.length; i++)
+      for (let j = i + 1; j < scene.edges.length; j++) {
+        const A = scene.edges[i];
+        const B = scene.edges[j];
+        for (let m = 0; m + 1 < A.pts.length; m++)
+          for (let n = 0; n + 1 < B.pts.length; n++)
+            if (segmentsCross(A.pts[m], A.pts[m + 1], B.pts[n], B.pts[n + 1]))
+              note("crossings", `${A.id}x${B.id}`);
+      }
 
     // Invariant §4e: nothing is drawn across a container's title.
     for (const band of titleBoxesOf(scene, model)) {

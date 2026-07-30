@@ -1,165 +1,165 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1638 981" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1638 968" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1638" height="981" fill="#ffffff"/>
-<rect x="25" y="507.5" width="156" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="35" y="525.5" font-size="13" font-weight="bold" fill="#17202c">Role group - Central zone</text>
-<rect x="70" y="135.5" width="119" height="101" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="80" y="153.5" font-size="13" font-weight="bold" fill="#17202c">Role group - Remote site</text>
-<rect x="77" y="247.5" width="174" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="87" y="265.5" font-size="13" font-weight="bold" fill="#17202c">External targets</text>
-<rect x="431" y="162.5" width="798" height="478.6666666666667" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="441" y="180.5" font-size="13" font-weight="bold" fill="#17202c">Main infrastructure</text>
-<rect x="982" y="298.8333333333333" width="213" height="284" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="992" y="316.8333333333333" font-size="13" font-weight="bold" fill="#17202c">Central control layer</text>
-<rect x="465" y="273.1666666666667" width="198" height="284" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="475" y="291.1666666666667" font-size="13" font-weight="bold" fill="#17202c">Remote site layer</text>
-<rect x="1423" y="306.5" width="205" height="284" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1433" y="324.5" font-size="13" font-weight="bold" fill="#17202c">External resources</text>
-<circle cx="103" cy="544.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 92 566.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="103" y="578.5" font-size="11" text-anchor="middle" fill="#20364c">Control agent</text>
-<text x="103" y="589.5" font-size="11" text-anchor="middle" fill="#20364c">Main zone</text>
-<circle cx="112.5" cy="714.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 101.5 736.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="112.5" y="748.5" font-size="11" text-anchor="middle" fill="#20364c">Functional and</text>
-<text x="112.5" y="759.5" font-size="11" text-anchor="middle" fill="#20364c">technical manager</text>
-<circle cx="103" cy="629.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 92 651.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="103" y="663.5" font-size="11" text-anchor="middle" fill="#20364c">Resource technicians</text>
-<text x="103" y="674.5" font-size="11" text-anchor="middle" fill="#20364c">Main zone</text>
-<circle cx="129.5" cy="172.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 118.5 194.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="129.5" y="206.5" font-size="11" text-anchor="middle" fill="#20364c">Field operator</text>
-<text x="129.5" y="217.5" font-size="11" text-anchor="middle" fill="#20364c">Remote site</text>
-<circle cx="164" cy="369.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 153 391.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="164" y="403.5" font-size="11" text-anchor="middle" fill="#20364c">Concerned person</text>
-<circle cx="164" cy="443.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 153 465.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="164" y="477.5" font-size="11" text-anchor="middle" fill="#20364c">Passenger-service agent</text>
-<circle cx="164" cy="284.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 153 306.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="164" y="318.5" font-size="11" text-anchor="middle" fill="#20364c">Remote-site</text>
-<text x="164" y="329.5" font-size="11" text-anchor="middle" fill="#20364c">manager</text>
-<rect x="1021" y="325.8333333333333" width="165" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1103.5" y="346.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Central communication</text>
-<text x="1103.5" y="360.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
-<rect x="1062" y="459.8333333333333" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1124" y="480.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Data processing</text>
-<text x="1124" y="494.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
-<rect x="1021" y="392.8333333333333" width="158" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1100" y="413.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">System configuration</text>
-<text x="1100" y="427.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
-<rect x="1026" y="526.8333333333333" width="145" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1098.5" y="547.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Real-time activity</text>
-<text x="1098.5" y="561.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">tracking block</text>
-<rect x="477.5" y="300.1666666666667" width="173" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="564" y="320.4166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Satellite coordination</text>
-<text x="564" y="334.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
-<rect x="474" y="367.1666666666667" width="151" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="549.5" y="387.4166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Local communication</text>
-<text x="549.5" y="401.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
-<rect x="474" y="501.16666666666674" width="180" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="564" y="521.4166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Satellite communication</text>
-<text x="564" y="535.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
-<rect x="474" y="434.1666666666667" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="532.5" y="454.4166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Remote display</text>
-<text x="532.5" y="468.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">channels</text>
-<rect x="1488" y="400.5" width="131" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1553.5" y="420.75" font-size="12.5" text-anchor="middle" fill="#17202c">External display</text>
-<text x="1553.5" y="435.25" font-size="12.5" text-anchor="middle" fill="#17202c">infrastructure</text>
-<rect x="1456.5" y="333.5" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1525.5" y="353.75" font-size="12.5" text-anchor="middle" fill="#17202c">Third-party</text>
-<text x="1525.5" y="368.25" font-size="12.5" text-anchor="middle" fill="#17202c">broadcast network</text>
-<rect x="1471.5" y="534.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1525.5" y="554.75" font-size="12.5" text-anchor="middle" fill="#17202c">Data export</text>
-<text x="1525.5" y="569.25" font-size="12.5" text-anchor="middle" fill="#17202c">service</text>
-<rect x="1432" y="467.5" width="187" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1525.5" y="487.75" font-size="12.5" text-anchor="middle" fill="#17202c">External data-collection</text>
-<text x="1525.5" y="502.25" font-size="12.5" text-anchor="middle" fill="#17202c">infrastructure</text>
-<path d="M 150.5 567 L 371 567 A 5 5 0 0 1 381 567 L 446.5 567 A 5 5 0 0 1 456.5 567 L 559 567 A 5 5 0 0 1 569 567 L 917 567.1666666666667 L 917 351.5 L 982 351.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 172 737 L 376 737 L 376 424.16666666666663 L 446.5 424.16666666666663 A 5 5 0 0 1 456.5 424.16666666666663 L 673 424.16666666666663 A 5 5 0 0 1 683 424.16666666666663 L 912 424.16666666666663 A 5 5 0 0 1 922 424.16666666666663 L 922 424.16666666666663 A 5 5 0 0 1 932 424.16666666666663 L 1006 424.16666666666663 A 5 5 0 0 1 1016 424.16666666666663 L 1021 424.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1167.5 325.8333333333333 L 1167.5 92.5 L 641 92.5 A 5 5 0 0 0 631 92.5 L 5.5 92.5 L 5.5 567 L 55.5 567" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 172 652 L 224 652 L 224 599.5 L 366 599.5 L 366 578.5 L 371 578.5 A 5 5 0 0 1 381 578.5 L 446.5 578.5 A 5 5 0 0 1 456.5 578.5 L 559 578.5 A 5 5 0 0 1 569 578.5 L 927 578.1666666666667 L 927 408.5 L 1006 408.5 A 5 5 0 0 1 1016 408.5 L 1021 408.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 620 300.1666666666667 L 620 139 L 278 139 L 278 183 L 180 183" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 180 195 L 406 195 L 406 390.5 L 446.5 390.5 A 5 5 0 0 1 456.5 390.5 L 474 390.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 251 372.5 L 329 372.5 L 329 457.5 L 371 457.5 A 5 5 0 0 1 381 457.5 L 446.5 457.5 A 5 5 0 0 1 456.5 457.5 L 474 457.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1186 361.3333333333333 L 1456.5 361.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1186 483.3333333333333 L 1408 483.5 L 1408 558.5 L 1453 558.5 A 5 5 0 0 1 1463 558.5 L 1471.5 558.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1064 573.8333333333333 L 1064 651.1666666666667 L 569 651.1666666666667 A 5 5 0 0 0 559 651.1666666666667 L 451.5 651.1666666666667 L 451.5 323.6666666666667 L 477.5 323.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 650.5 331.5 L 1011 331.5 L 1011 538.5833333333333 L 1026 538.5833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 654 524.6666666666667 L 678 524.6666666666667 L 678 342.5 L 917 342.5 L 917 341.5 L 1006 341.5 A 5 5 0 0 1 1016 341.5 L 1021 341.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1592 514.5 L 1592 712.6666666666667 L 1530.5 712.6666666666667 A 5 5 0 0 0 1520.5 712.6666666666667 L 1098 712.6666666666667 L 1098 573.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1588.5 333.5 L 1588.5 152.5 L 1208 152.5 L 1208 349.3333333333333 L 1186 349.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1601.5 400.5 L 1601.5 45.5 L 636 45.5 L 636 300.1666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1525.5 581.5 L 1525.5 759.6666666666667 L 564 759.6666666666667 L 564 548.1666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1458 514.5 L 1458 651.1666666666667 L 1132 651.1666666666667 L 1132 573.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="699.625" y="570.3333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Overall control</text>
-<text x="274" y="740.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Configure the system</text>
+<rect width="1638" height="968" fill="#ffffff"/>
+<rect x="25" y="494.5" width="156" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="35" y="512.5" font-size="13" font-weight="bold" fill="#17202c">Role group - Central zone</text>
+<rect x="70" y="122.5" width="119" height="101" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="80" y="140.5" font-size="13" font-weight="bold" fill="#17202c">Role group - Remote site</text>
+<rect x="77" y="234.5" width="174" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="87" y="252.5" font-size="13" font-weight="bold" fill="#17202c">External targets</text>
+<rect x="431" y="149.5" width="798" height="478.6666666666667" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="441" y="167.5" font-size="13" font-weight="bold" fill="#17202c">Main infrastructure</text>
+<rect x="982" y="285.8333333333333" width="213" height="284" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="992" y="303.8333333333333" font-size="13" font-weight="bold" fill="#17202c">Central control layer</text>
+<rect x="465" y="260.1666666666667" width="198" height="284" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="475" y="278.1666666666667" font-size="13" font-weight="bold" fill="#17202c">Remote site layer</text>
+<rect x="1423" y="293.5" width="205" height="284" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1433" y="311.5" font-size="13" font-weight="bold" fill="#17202c">External resources</text>
+<circle cx="103" cy="531.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 92 553.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="103" y="565.5" font-size="11" text-anchor="middle" fill="#20364c">Control agent</text>
+<text x="103" y="576.5" font-size="11" text-anchor="middle" fill="#20364c">Main zone</text>
+<circle cx="112.5" cy="701.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 101.5 723.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="112.5" y="735.5" font-size="11" text-anchor="middle" fill="#20364c">Functional and</text>
+<text x="112.5" y="746.5" font-size="11" text-anchor="middle" fill="#20364c">technical manager</text>
+<circle cx="103" cy="616.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 92 638.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="103" y="650.5" font-size="11" text-anchor="middle" fill="#20364c">Resource technicians</text>
+<text x="103" y="661.5" font-size="11" text-anchor="middle" fill="#20364c">Main zone</text>
+<circle cx="129.5" cy="159.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 118.5 181.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="129.5" y="193.5" font-size="11" text-anchor="middle" fill="#20364c">Field operator</text>
+<text x="129.5" y="204.5" font-size="11" text-anchor="middle" fill="#20364c">Remote site</text>
+<circle cx="164" cy="356.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 153 378.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="164" y="390.5" font-size="11" text-anchor="middle" fill="#20364c">Concerned person</text>
+<circle cx="164" cy="430.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 153 452.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="164" y="464.5" font-size="11" text-anchor="middle" fill="#20364c">Passenger-service agent</text>
+<circle cx="164" cy="271.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 153 293.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="164" y="305.5" font-size="11" text-anchor="middle" fill="#20364c">Remote-site</text>
+<text x="164" y="316.5" font-size="11" text-anchor="middle" fill="#20364c">manager</text>
+<rect x="1021" y="312.8333333333333" width="165" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1103.5" y="333.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Central communication</text>
+<text x="1103.5" y="347.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
+<rect x="1062" y="446.8333333333333" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1124" y="467.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Data processing</text>
+<text x="1124" y="481.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
+<rect x="1021" y="379.8333333333333" width="158" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1100" y="400.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">System configuration</text>
+<text x="1100" y="414.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
+<rect x="1026" y="513.8333333333333" width="145" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1098.5" y="534.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Real-time activity</text>
+<text x="1098.5" y="548.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">tracking block</text>
+<rect x="477.5" y="287.1666666666667" width="173" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="564" y="307.4166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Satellite coordination</text>
+<text x="564" y="321.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
+<rect x="474" y="354.1666666666667" width="151" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="549.5" y="374.4166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Local communication</text>
+<text x="549.5" y="388.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
+<rect x="474" y="488.16666666666674" width="180" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="564" y="508.41666666666674" font-size="12.5" text-anchor="middle" fill="#17202c">Satellite communication</text>
+<text x="564" y="522.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">module</text>
+<rect x="474" y="421.1666666666667" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="532.5" y="441.4166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Remote display</text>
+<text x="532.5" y="455.9166666666667" font-size="12.5" text-anchor="middle" fill="#17202c">channels</text>
+<rect x="1488" y="387.5" width="131" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1553.5" y="407.75" font-size="12.5" text-anchor="middle" fill="#17202c">External display</text>
+<text x="1553.5" y="422.25" font-size="12.5" text-anchor="middle" fill="#17202c">infrastructure</text>
+<rect x="1456.5" y="320.5" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1525.5" y="340.75" font-size="12.5" text-anchor="middle" fill="#17202c">Third-party</text>
+<text x="1525.5" y="355.25" font-size="12.5" text-anchor="middle" fill="#17202c">broadcast network</text>
+<rect x="1471.5" y="521.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1525.5" y="541.75" font-size="12.5" text-anchor="middle" fill="#17202c">Data export</text>
+<text x="1525.5" y="556.25" font-size="12.5" text-anchor="middle" fill="#17202c">service</text>
+<rect x="1432" y="454.5" width="187" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1525.5" y="474.75" font-size="12.5" text-anchor="middle" fill="#17202c">External data-collection</text>
+<text x="1525.5" y="489.25" font-size="12.5" text-anchor="middle" fill="#17202c">infrastructure</text>
+<path d="M 150.5 554 L 371 554 A 5 5 0 0 1 381 554 L 446.5 554 A 5 5 0 0 1 456.5 554 L 559 554 A 5 5 0 0 1 569 554 L 917 554.1666666666667 L 917 338.5 L 982 338.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 172 724 L 376 724 L 376 411.16666666666663 L 446.5 411.16666666666663 A 5 5 0 0 1 456.5 411.16666666666663 L 673 411.16666666666663 A 5 5 0 0 1 683 411.16666666666663 L 912 411.16666666666663 A 5 5 0 0 1 922 411.16666666666663 L 922 411.16666666666663 A 5 5 0 0 1 932 411.16666666666663 L 1006 411.16666666666663 A 5 5 0 0 1 1016 411.16666666666663 L 1021 411.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1167.5 312.8333333333333 L 1167.5 92.5 L 641 92.5 A 5 5 0 0 0 631 92.5 L 5.5 92.5 L 5.5 554 L 55.5 554" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 172 639 L 224 639 L 224 586.5 L 366 586.5 L 366 565.5 L 371 565.5 A 5 5 0 0 1 381 565.5 L 446.5 565.5 A 5 5 0 0 1 456.5 565.5 L 559 565.5 A 5 5 0 0 1 569 565.5 L 927 565.1666666666667 L 927 395.5 L 1006 395.5 A 5 5 0 0 1 1016 395.5 L 1021 395.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 620 287.1666666666667 L 620 126 L 278 126 L 278 170 L 180 170" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 180 182 L 406 182 L 406 377.5 L 446.5 377.5 A 5 5 0 0 1 456.5 377.5 L 474 377.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 251 359.5 L 329 359.5 L 329 444.5 L 371 444.5 A 5 5 0 0 1 381 444.5 L 446.5 444.5 A 5 5 0 0 1 456.5 444.5 L 474 444.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1186 348.3333333333333 L 1456.5 348.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1186 470.3333333333333 L 1408 470.5 L 1408 545.5 L 1453 545.5 A 5 5 0 0 1 1463 545.5 L 1471.5 545.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1064 560.8333333333333 L 1064 638.1666666666667 L 569 638.1666666666667 A 5 5 0 0 0 559 638.1666666666667 L 451.5 638.1666666666667 L 451.5 310.6666666666667 L 477.5 310.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 650.5 318.5 L 1011 318.5 L 1011 525.5833333333333 L 1026 525.5833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 654 511.66666666666674 L 678 511.66666666666674 L 678 329.5 L 917 329.5 L 917 328.5 L 1006 328.5 A 5 5 0 0 1 1016 328.5 L 1021 328.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1592 501.5 L 1592 699.6666666666667 L 1530.5 699.6666666666667 A 5 5 0 0 0 1520.5 699.6666666666667 L 1098 699.6666666666667 L 1098 560.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1588.5 320.5 L 1588.5 139.5 L 1208 139.5 L 1208 336.3333333333333 L 1186 336.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1601.5 387.5 L 1601.5 45.5 L 636 45.5 L 636 287.1666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1525.5 568.5 L 1525.5 746.6666666666667 L 564 746.6666666666667 L 564 535.1666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1458 501.5 L 1458 638.1666666666667 L 1132 638.1666666666667 L 1132 560.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="699.625" y="557.3333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Overall control</text>
+<text x="274" y="727.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Configure the system</text>
 <text x="339.5" y="88.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alerts, notifications and</text>
 <text x="339.5" y="103" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">feeds from various sources</text>
-<text x="295" y="595.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Enable/disable</text>
-<text x="295" y="610" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">a display terminal</text>
-<text x="449" y="135" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report of</text>
-<text x="449" y="149.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">anomalies and inconsistencies</text>
-<rect x="422" y="157.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="449" y="168.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
-<text x="406" y="249.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Write and broadcast</text>
-<text x="406" y="263.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages to central</text>
-<text x="406" y="278.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">control</text>
-<rect x="379" y="286.25" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="406" y="297.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="290" y="375.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consult</text>
-<text x="1321.25" y="350.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Real-time broadcast of</text>
-<text x="1321.25" y="364.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">disruption information</text>
-<text x="1321.25" y="379.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">to the relevant lines</text>
-<text x="1297" y="479.41666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Export of real-time</text>
-<text x="1297" y="493.91666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and configuration data</text>
-<text x="757.75" y="639.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Broadcast of information</text>
-<text x="757.75" y="654.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and messages about upcoming flows</text>
-<text x="757.75" y="668.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">entered by the central team</text>
-<text x="830.75" y="320.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward the</text>
-<text x="830.75" y="334.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages entered by staff</text>
-<text x="830.75" y="349.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">present on site</text>
-<rect x="803.75" y="357.25" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="830.75" y="368.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="678" y="456.00000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archive of</text>
-<text x="678" y="470.50000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">the messaging broadcast</text>
-<text x="678" y="485.00000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">locally at the remote site</text>
-<text x="1345" y="708.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward external</text>
-<text x="1345" y="723.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">collection data and events</text>
-<text x="1398.25" y="148.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward disruption messages</text>
-<text x="1398.25" y="163" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">from the requested transport networks</text>
+<text x="295" y="582.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Enable/disable</text>
+<text x="295" y="597" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">a display terminal</text>
+<text x="467.625" y="122" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report of</text>
+<text x="467.625" y="136.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">anomalies and inconsistencies</text>
+<rect x="440.625" y="144.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="467.625" y="155.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
+<text x="406" y="252.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Write and broadcast</text>
+<text x="406" y="266.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages to central</text>
+<text x="406" y="281.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">control</text>
+<rect x="379" y="289.375" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="406" y="300.375" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="290" y="362.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consult</text>
+<text x="1321.25" y="337.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Real-time broadcast of</text>
+<text x="1321.25" y="351.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">disruption information</text>
+<text x="1321.25" y="366.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">to the relevant lines</text>
+<text x="1297" y="466.41666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Export of real-time</text>
+<text x="1297" y="480.91666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and configuration data</text>
+<text x="757.75" y="626.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Broadcast of information</text>
+<text x="757.75" y="641.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and messages about upcoming flows</text>
+<text x="757.75" y="655.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">entered by the central team</text>
+<text x="830.75" y="307.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward the</text>
+<text x="830.75" y="321.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages entered by staff</text>
+<text x="830.75" y="336.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">present on site</text>
+<rect x="803.75" y="344.25" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="830.75" y="355.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="678" y="443.00000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archive of</text>
+<text x="678" y="457.50000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">the messaging broadcast</text>
+<text x="678" y="472.00000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">locally at the remote site</text>
+<text x="1345" y="695.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward external</text>
+<text x="1345" y="710.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">collection data and events</text>
+<text x="1398.25" y="135.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward disruption messages</text>
+<text x="1398.25" y="150" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">from the requested transport networks</text>
 <text x="1118.75" y="34.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward the list of upcoming</text>
 <text x="1118.75" y="48.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">flows and the lead-vehicle identity</text>
 <text x="1118.75" y="63.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">for periodic control</text>
-<text x="1044.75" y="755.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Traffic notifications</text>
-<text x="1044.75" y="770.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and user messaging</text>
-<text x="1295" y="654.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward the associated missions and services</text>
-<line x1="20" y1="811" x2="1618" y2="811" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="833" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
-<rect x="150" y="823" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="177" y="834" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="214" y="834" font-size="10" fill="#79828f">— information message broadcast to sites and display channels</text>
-<rect x="150" y="847" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="177" y="858" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
-<text x="214" y="858" font-size="10" fill="#79828f">— incident or inconsistency reported on a site</text>
-<rect x="150" y="871" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="198" y="882" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="256" y="882" font-size="10" fill="#79828f">carried by the flow</text>
-<line x1="20" y1="909" x2="1618" y2="909" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="931" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="921" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="932" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="921" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="304" y="932" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="921" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="400" y="932" font-size="10" fill="#17202c">Layer</text>
-<rect x="458" y="921" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="490" y="932" font-size="10" fill="#17202c">Functional block</text>
-<rect x="606" y="921" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="638" y="932" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="951" x2="176" y2="951" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="955" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
+<text x="1044.75" y="742.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Traffic notifications</text>
+<text x="1044.75" y="757.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and user messaging</text>
+<text x="1295" y="641.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Forward the associated missions and services</text>
+<line x1="20" y1="798" x2="1618" y2="798" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="820" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
+<rect x="150" y="810" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="177" y="821" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="214" y="821" font-size="10" fill="#79828f">— information message broadcast to sites and display channels</text>
+<rect x="150" y="834" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="177" y="845" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
+<text x="214" y="845" font-size="10" fill="#79828f">— incident or inconsistency reported on a site</text>
+<rect x="150" y="858" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="198" y="869" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="256" y="869" font-size="10" fill="#79828f">carried by the flow</text>
+<line x1="20" y1="896" x2="1618" y2="896" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="918" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="908" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="919" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="908" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="919" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="908" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="400" y="919" font-size="10" fill="#17202c">Layer</text>
+<rect x="458" y="908" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="490" y="919" font-size="10" fill="#17202c">Functional block</text>
+<rect x="606" y="908" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="638" y="919" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="938" x2="176" y2="938" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="942" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
 </svg>

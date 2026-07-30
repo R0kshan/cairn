@@ -19,7 +19,7 @@ Sweeps every `.cairn` fixture × every disposition. Seven invariants must stay a
 horizontal bands, coincident segments, shared attachment points, and labels
 adrift from their own flow (§4a). The rest (staircases, tight attachments,
 near-parallel runs, long detours, orphaned labels, pierced labels, fan tangles,
-wrap-around attachments §4c, labels off their line §4d, struck titles §4e) are a **ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
+wrap-around attachments §4c, labels off their line §4d, struck titles §4e, crossings §4f) are a **ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
 adding fixtures doesn't spuriously fail the gate. Current rates are ceilings
 that may only fall. Lower a rate when a change earns it; never raise one to go
 green.
@@ -98,6 +98,21 @@ eye the wrong way before doubling back (`attachAway`, ratchet). Edges routed
 through §11 channels that keep their channel are exempt: their wrap is the
 design.
 
+The same pass also re-sides a flow that **crosses its own return leg** — the
+other flow joining the same two nodes the opposite way. A round trip is the one
+case where a crossing is never necessary, because the two legs can always nest,
+so a tangle-driven candidate may be up to 64px *longer* than what it replaces
+(untangling usually means entering from the far side rather than cutting across
+your partner). In `logical` the pair COMPENSATION↔SUPERVISOR crossed because the
+return leg rose to the container's west side at x=1550 while the outbound leg ran
+left at y=439 from x=1628 — and *every* riser position between the two nodes
+crosses that run, so no interior lane can fix it (§4f leaves it alone for exactly
+that reason). Entering from the south at x=1646, outside the outbound leg, does.
+
+Restricted to the return leg on purpose: widening it to any flow merely *sharing*
+an endpoint was measured and rejected, since it disturbed three `large-slide`
+drawings for tangles that were not structurally avoidable.
+
 The reroute pass in `edge-tidy` replaces a wrap-around with the direct L or Z
 between facing sides **only when it can prove the replacement clean**: no node
 crossed, no other flow merged into, no seated label pierced, no container title
@@ -150,6 +165,39 @@ Vertical runs are **not** repaired yet, which is most of the remaining 1058:
 `page`/`tall` layouts are transposed, so their band crossings are vertical.
 Lowering this rate means teaching the pass to shift a riser sideways, or giving
 elk the bands as obstacles in the first place.
+
+### 4f. Corridor risers nest, they do not interleave
+
+Flows crossing the same corridor almost always keep their relative order end to
+end — and flows that never change order never *need* to cross (`crossings`,
+ratchet). When they do, it is because their vertical risers sit in the wrong
+left-to-right order: `infrastructure-large` had three flows in strict
+top-to-bottom order at both ends crossing four times, purely because the one
+descending deepest turned last instead of first.
+
+This is the rule `route-detour` already applies to its channels ("travel
+direction first, then reach descending, so spans **nest** instead of
+interleave"), here for ordinary traffic. Two things make it safe where two
+earlier attempts at rearranging routes were not:
+
+- **The lanes are a fixed set; only their owners change.** Every x a group uses
+  was already legal for some flow, so no new corridor is invented and whatever
+  made those lanes legal still holds.
+- **Permutations are scored, never reasoned about.** Hand-derived orderings were
+  wrong twice. A pairwise swap of those three flows fixes its own pair (2
+  crossings → 0) and costs 2 elsewhere, because the correct answer is a 3-cycle
+  no swap can express. So the pass applies every permutation of a group's lanes,
+  validates each, counts crossings across the **whole drawing**, and keeps the
+  best only if it is strictly better overall.
+
+Groups are the connected components of "these two flows actually cross" — no
+corridor width to guess at, and by construction only flows that have a defect
+are touched. Capped at 4 members (24 permutations, exhaustively scored); larger
+tangles are not a lane-ordering problem and guessing at them is how a pass
+starts shuffling damage around. The riser taken is the one nearest the target:
+requiring exactly one riser per flow made the first version a no-op on the very
+case it was written for, because the flow at the centre of the tangle turned
+twice.
 
 ## 5. Security
 
