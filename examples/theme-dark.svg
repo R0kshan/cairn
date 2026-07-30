@@ -26,19 +26,19 @@
 <rect x="1136" y="81" width="108" height="38" rx="4" fill="#252c37" stroke="#6b7885" stroke-width="1.3"/>
 <text x="1190" y="104" font-size="12.5" text-anchor="middle" fill="#e6edf3">SMS gateway</text>
 <path d="M 83 100 L 260 100" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="164.5" y="115.5" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Search and book</text>
-<rect x="127" y="123.5" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a" stroke-width="1"/>
-<text x="164.5" y="134.5" font-size="9.5" text-anchor="middle" fill="#e0c068" font-weight="bold">Appointment</text>
 <path d="M 368 99.5 L 546 99.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="460.5" y="115" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Booking request</text>
-<rect x="423" y="123" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a" stroke-width="1"/>
-<text x="460.5" y="134" font-size="9.5" text-anchor="middle" fill="#e0c068" font-weight="bold">Appointment</text>
 <path d="M 654 99.5 L 836 99.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="745" y="115" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Appointment confirmed</text>
-<rect x="707.5" y="123" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a" stroke-width="1"/>
-<text x="745" y="134" font-size="9.5" text-anchor="middle" fill="#e0c068" font-weight="bold">Appointment</text>
 <path d="M 946 99.5 L 1136 99.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1048" y="115.5" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
+<text x="171.5" y="103.25" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Search and book</text>
+<rect x="134" y="111.25" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a" stroke-width="1"/>
+<text x="171.5" y="122.25" font-size="9.5" text-anchor="middle" fill="#e0c068" font-weight="bold">Appointment</text>
+<text x="457" y="102.75" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Booking request</text>
+<rect x="419.5" y="110.75" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a" stroke-width="1"/>
+<text x="457" y="121.75" font-size="9.5" text-anchor="middle" fill="#e0c068" font-weight="bold">Appointment</text>
+<text x="745" y="102.75" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment confirmed</text>
+<rect x="707.5" y="110.75" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a" stroke-width="1"/>
+<text x="745" y="121.75" font-size="9.5" text-anchor="middle" fill="#e0c068" font-weight="bold">Appointment</text>
+<text x="1041" y="102.75" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
 <line x1="20" y1="179" x2="1243" y2="179" stroke="#3a4149" stroke-width="1"/>
 <text x="20" y="201" font-size="11" font-weight="bold" fill="#c2ccd6">BUSINESS OBJECTS</text>
 <rect x="150" y="191" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a"/>

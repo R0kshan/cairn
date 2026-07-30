@@ -14,20 +14,142 @@ introduce `Date.now()`, randomness, or locale-formatted numbers.
 
 ## 3. Readability is gated by `npm run sweep`
 
-Sweeps every `.cairn` fixture × every disposition. Six invariants must stay at
+Sweeps every `.cairn` fixture × every disposition. Seven invariants must stay at
 **0**: label overlaps, segments off orthogonal, runs crossing a leaf box, dead
-horizontal bands, coincident segments, shared attachment points. The rest
-(staircases, tight attachments, near-parallel runs, long detours) are a
-**ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
+horizontal bands, coincident segments, shared attachment points, and labels
+adrift from their own flow (§4a). The rest (staircases, tight attachments,
+near-parallel runs, long detours, orphaned labels, pierced labels, fan tangles,
+wrap-around attachments §4c, labels off their line §4d, struck titles §4e) are a **ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
 adding fixtures doesn't spuriously fail the gate. Current rates are ceilings
 that may only fall. Lower a rate when a change earns it; never raise one to go
 green.
+
+**No individual drawing may regress on any metric.** The corpus-wide rates have
+a blind spot this repo has been bitten by: a change can improve sixty drawings,
+quietly make one worse, and every total still falls.
+`tests/__snapshots__/readability.baseline` records the accepted defect count per
+drawing × metric; exceeding any recorded count fails the sweep. Improvements are
+locked in with `npm run sweep -- --update-baseline` — floors only fall, like the
+rates. Treat the baseline like a snapshot: never regenerate to silence a
+regression you don't understand.
+
+`--only=<substring>` and `--shard=i/n` restrict the matrix for iteration and CI
+parallelism. Partial runs report the rates without gating them — a rate over
+part of the corpus cannot judge a corpus-wide ceiling — but the per-drawing
+baseline still gates, since each drawing is judged against its own line.
 
 ## 4. Flow labels
 
 Flow labels are **required** on logical view (`E0203`), optional on
 application & infrastructure. Infrastructure flows must still carry
 `protocol/port` (`(HTTPS/443)` — `E0240`) even when unlabelled.
+
+### 4a. Every label belongs to a visible flow
+
+Where a label sits is §4d; this section is about which flow it names. A reader
+must never have to guess which run a label annotates. Three rules, all
+swept, catching three different ways attribution fails:
+
+- **`labelAdrift` — must be 0.** No label sits more than 20px from its own
+  polyline. `src/label-anchor.ts` re-centres labels on their own route after
+  the passes that move routes (`route-detour`, `edge-tidy`) and *before*
+  `compact`, which measures where labels are.
+- **`labelOrphan` — ratchet.** No other flow's run may be closer to a label
+  than its own, once the label is more than 6px off its own run. Inside 6px it
+  is visibly sitting on its run and a grazing neighbour changes nothing.
+- **`labelPierced` — ratchet.** No foreign run may be drawn *through* the box of
+  a label that is **off** its own line (§4d). Neither rule above sees this: a
+  floating label sits beside one flow while a second crosses its words, and
+  distance alone cannot tell them apart. On-line labels are exempt — their run
+  is masked behind the halo and position already settles attribution. Because a
+  pierced label need not overlap anything, `settleLabelPositions` moves a label
+  when it is *either* colliding or unattributable, not on collision alone.
+
+All three fight invariant §1. An overlapping label is unreadable; an ambiguous
+one is only misleading, so **zero overlaps wins**. `settleLabelPositions` tries
+every escape that preserves attribution first — including re-seating the label
+on a different run of the same flow — and only then a round that abandons it.
+That relaxed round is the one path that can break `labelAdrift`. If it ever
+fires, widen the attribution search; do not move the gate.
+
+What is left in the two ratchets is one shape of problem: a corridor of flows
+`MIN_ATTACH_GAP` (12px) apart, where a two-line label carrying a business-object
+chip is simply taller than any gap between the runs. No placement can win there;
+the bundle has to be spread instead.
+
+### 4b. Flows leaving one node side must not tangle in its fan
+
+Two flows attached to the same node side must not cross each other within 48px
+of that node (`fanTangle`, ratchet). Spreading attachment points is pointless if
+the runs immediately cross back over each other.
+
+This is **not** fixable after routing. Reseating a flow without rerouting its
+body just moves the tangle further along: a seat-permutation pass measured
+across the corpus cut the inverted cases from 207 to 26 while pushing total
+crossings from 287 to 501, and broke `coincident` and `nearParallel`. The real
+fix is port ordering inside the elk graph.
+
+### 4c. A flow's terminals face its counterpart
+
+A terminal segment must not set off *away* from the flow's other end, nor
+arrive from beyond it, when the two nodes are genuinely offset (>24px) on that
+axis — a flow that leaves eastward for a target up-and-left sends the reader's
+eye the wrong way before doubling back (`attachAway`, ratchet). Edges routed
+through §11 channels that keep their channel are exempt: their wrap is the
+design.
+
+The reroute pass in `edge-tidy` replaces a wrap-around with the direct L or Z
+between facing sides **only when it can prove the replacement clean**: no node
+crossed, no other flow merged into, no seated label pierced, no container title
+band struck, no container border ridden, no new fan tangle, no crowding of an
+occupied side, the edge's own labels re-seatable, and strictly shorter. If any
+check fails, the wrap stays — a wrap is a blemish, each of those is worse. Do
+not weaken a check to reroute more; the remainder needs elk port constraints.
+
+### 4d. Labels sit **on** their flow, never beside it
+
+A flow label's **text** is centred on its own run — not above, below, left or
+right of it (`labelOffLine`, ratchet). The run passes behind the words and is
+masked by the label's halo, so the text is not struck through; a protocol line
+and any business-object chips hang below the line, under the text they belong to.
+
+Two mechanics make this work, and both are load-bearing:
+
+- **Text, not box.** The text rows sit at the *top* of the label box; centring
+  the box puts the run between the text and the chip — under the words, which is
+  exactly what "on the line" is not. `SceneLabel.textH` carries the text height
+  so `label-anchor` and the sweep centre the same thing.
+- **All flow lines are drawn before any label.** The halo can only mask a line
+  already on the canvas. While the renderer emitted each edge's path and its
+  labels together, a label's halo hid its own flow and nothing else, so every
+  edge drawn afterwards struck straight through the words.
+
+The escape ladder is ordered by what it costs the reader: seats *along* the run
+first (sliding never leaves the line), then off-line seats that keep
+attribution, then anything overlap-free. A pierced seat on the run beats a clean
+one beside it, because a crossing run is masked while a floating label is not —
+which is why `labelPierced` only counts labels that are already off their line.
+
+### 4e. Nothing is drawn across a container's name
+
+No run and no label may cross a container's title band (`titleStruck`, ratchet).
+Edges are emitted after every box and a title carries no halo, so anything
+crossing one strikes through the words — in `infrastructure-large` a flow ran
+the length of the "K8s cluster business" title with its own label parked on top.
+
+`route-detour` has always treated title bands as obstacles when planning a
+channel; elk never learned to, so the runs it plans itself go straight through.
+The repair pass in `edge-tidy` slides an offending **interior horizontal** run
+clear of the band — below it first, since a container's body is routable and its
+name is not — validated like every other mutation here, and refused if it would
+leave a neighbouring segment shorter than `JOG_SNAP` (a struck title traded for
+a visible wobble is not a fix: without that guard, 9 drawings gained a sub-6px
+jog).
+
+Vertical runs are **not** repaired yet, which is most of the remaining 1058:
+`page`/`tall` layouts are transposed, so their band crossings are vertical.
+Lowering this rate means teaching the pass to shift a riser sideways, or giving
+elk the bands as obstacles in the first place.
 
 ## 5. Security
 
@@ -67,9 +189,12 @@ width). These are hard layout constraints.
 
 ## 11. Backward flow rerouting
 
-Backward hierarchical edges that cross container boundaries must be rerouted
-through dedicated top/bottom channels, not left as elk's native wrap-around
-detours. Rerouting applies to every disposition. Deterministic: no-op
+Backward hierarchical edges that cross container boundaries must never be left
+as elk's native wrap-around detours. The dedicated top/bottom channels are the
+default replacement; the §4c reroute may substitute a **validated, strictly
+shorter direct route** for a channel — the channel planner never tries direct
+routes, so this is the only path to one. Priority: direct beats channel beats
+elk wrap. Rerouting applies to every disposition. Deterministic: no-op
 (byte-identical scene) when nothing qualifies.
 
 ## 12. Element kind validity per view

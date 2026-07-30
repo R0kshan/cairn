@@ -891,6 +891,7 @@ export function rerouteDetours(
           { x: exitX, y: laneY },
         ];
 
+    edge.detour = true;
     if (entry.kind === "south") {
       edge.pts = [
         ...head,

@@ -31,7 +31,7 @@ typed validation, deterministic output.
 ## Pipeline (`src/`)
 
 ```
-.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → compact.ts → svg-render.ts → SVG
+.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → label-anchor.ts → compact.ts → svg-render.ts → SVG
 ```
 
 Key passes an agent can't infer from names:
@@ -42,6 +42,12 @@ Key passes an agent can't infer from names:
   is a deep-dive handover for this pass — read it before touching flow routing.
 - `edge-tidy.ts` — endpoint hygiene for every edge: collapses micro-jogs under 6px,
   spreads attachment points 12px apart on the same node side.
+- `label-anchor.ts` — elk places each edge label against the route elk planned;
+  the two passes above then move that route and leave the label behind, sometimes
+  nearer a *different* flow. This re-centres each label on its own run. Its
+  position in the pipeline is load-bearing in both directions: after `edge-tidy`
+  (anchoring to a run that then moves is worthless) and before `compact` (a label
+  pins the band it sits in). See [`INVARIANTS.md`](./INVARIANTS.md) §4a.
 - `compact.ts` — removes horizontal bands crossed only by vertical segments
   (dead space elk doesn't reclaim). Gated: dead bands must stay under 30px.
 

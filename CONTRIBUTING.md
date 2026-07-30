@@ -69,10 +69,23 @@ Invariants detailed in [`INVARIANTS.md`](./INVARIANTS.md). In short:
 
 It then chains **`npm run sweep`**, the readability gate: every `.cairn`
 fixture under `examples/` (top level plus `dispositions/` and `themes/`) ×
-every disposition (288 drawings), six invariants that must be `0` and five
+every disposition (288 drawings), seven invariants that must be `0` and eleven
 ratcheted ceilings — expressed as a rate per swept flow-instance so the gate
 stays stable as fixtures are added — that may only fall. Run it alone while
 iterating — `npm run sweep -- --detail` lists each defect with its edge id.
+
+On top of the rates, a **per-drawing baseline**
+(`tests/__snapshots__/readability.baseline`) pins the accepted defect count for
+every drawing × metric: no single drawing may get worse on any metric, even if
+the corpus totals improve. When your change improves drawings, run
+`npm run sweep -- --update-baseline` and commit the file — floors only fall.
+
+Two flags narrow the matrix while iterating: `--only=<substring>` keeps just the
+fixtures whose path contains it, and `--shard=i/n` takes every n-th fixture (for
+splitting across CI jobs). Partial runs don't gate the corpus-wide rates — a
+rate over part of the corpus can't judge a corpus-wide ceiling — but they do
+gate the per-drawing baseline, and `--update-baseline` on a partial run updates
+only the drawings actually swept.
 
 CI also builds the Bun binary + playground bundle. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
 

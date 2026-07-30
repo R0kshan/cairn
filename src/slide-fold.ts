@@ -139,6 +139,7 @@ function collectFoldedEdges(
   origins: Map<string, Point>,
   rootOffset: Point,
   syntheticIds: Set<string>,
+  edgeFontSize: number,
 ): CollectedFoldEdges {
   const edges: SceneEdge[] = [];
   const edgePoints: [string, Point[]][] = [];
@@ -163,11 +164,12 @@ function collectFoldedEdges(
       y: label.y + origin.y,
       width: label.width,
       height: label.height,
+      textH: label.text ? label.text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
     }));
     edges.push({ id: edge.id, pts: points, labels });
   }
   for (const child of elkNode.children ?? []) {
-    const childResult = collectFoldedEdges(child, origins, rootOffset, syntheticIds);
+    const childResult = collectFoldedEdges(child, origins, rootOffset, syntheticIds, edgeFontSize);
     edges.push(...childResult.edges);
     edgePoints.push(...childResult.edgePoints);
   }
@@ -531,7 +533,7 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
       x: box.x - result.children![0].x,
       y: box.y - result.children![0].y,
     };
-    const collected = collectFoldedEdges(result, origins, rootOffset, syntheticIds);
+    const collected = collectFoldedEdges(result, origins, rootOffset, syntheticIds, edgeFontSize);
     edges.push(...collected.edges);
     for (const [edgeId, points] of collected.edgePoints) edgePoints.set(edgeId, points);
   }
@@ -651,6 +653,7 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
           y: gutterLabelY,
           width: measured.width,
           height: measured.height,
+          textH: text ? text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
         };
       } else {
         const secondLast = points[points.length - 2];
@@ -662,6 +665,7 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
           y: last.y - measured.height - 4,
           width: measured.width,
           height: measured.height,
+          textH: text ? text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
         };
       }
     }

@@ -16,6 +16,7 @@ import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
 import { tidyEdges } from "./edge-tidy.ts";
+import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
@@ -63,11 +64,25 @@ export interface SceneLabel {
   y: number;
   width: number;
   height: number;
+  /**
+   * Height of the *text* rows inside the box, which sit at its top; a
+   * protocol line and business-object chips fill the rest below them. Seating a
+   * label on its run means centring this, not the box — centre the box and the
+   * run lands between the text and the chip, which is neither on the line nor
+   * under it. 0 when the label is chips only.
+   */
+  textH: number;
 }
 export interface SceneEdge {
   id: string;
   pts: { x: number; y: number }[];
   labels: SceneLabel[];
+  /**
+   * Set by `route-detour` on edges it sent through a top/bottom channel.
+   * Those wrap around by design (invariant §11), so the attachment-direction
+   * rule (§4c) and its `attachAway` gate exempt them.
+   */
+  detour?: boolean;
 }
 export interface Scene {
   width: number;
@@ -181,6 +196,7 @@ function collectSceneEdges(
   elkNode: LaidOutNode,
   origins: Record<string, { x: number; y: number }>,
   numbered: boolean,
+  edgeFontSize: number,
 ): SceneEdge[] {
   const ownEdges = (elkNode.edges ?? []).map((edge) => {
     const origin = (edge.container && origins[edge.container]) || { x: 0, y: 0 };
@@ -220,12 +236,14 @@ function collectSceneEdges(
         y: labelY,
         width: label.width,
         height: label.height,
+        // Mirrors `measure()` in text-metrics, which is what sized the box.
+        textH: label.text ? label.text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
       };
     });
     return { id: edge.id, pts: points, labels };
   });
   const childEdges = (elkNode.children ?? []).flatMap((child) =>
-    collectSceneEdges(child, origins, numbered),
+    collectSceneEdges(child, origins, numbered, edgeFontSize),
   );
   return [...ownEdges, ...childEdges];
 }
@@ -400,7 +418,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const nodes = walkedNodes.map((walked) => walked.node);
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
 
-    const edges = collectSceneEdges(result, origins, numbered);
+    const edges = collectSceneEdges(result, origins, numbered, edgeFontSize);
 
     const scene: Scene = {
       width: Math.ceil(result.width),
@@ -419,7 +437,11 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     if (sideways) transpose(scene, titleBoxes);
     // Straighten routing noise and separate flows sharing a node side, for
     // every edge — elk's as much as the rerouted ones.
-    tidyEdges(scene);
+    tidyEdges(scene, titleBoxes);
+    // Every pass above moves routes without moving the labels that name them.
+    // Put each label back on its own flow before anything measures where labels
+    // are — `compact` below is the first thing that does.
+    anchorFlowLabels(scene);
     // Reclaim the bands elk sized for routes that no longer run there — every
     // disposition, since elk leaves spare corridors whether or not the reroute
     // above moved anything.
@@ -463,6 +485,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         // The folded layout hand-routes its own connectors, so it keeps them —
         // but the endpoint invariants apply to it like everything else.
         tidyEdges(folded);
+        anchorFlowLabels(folded);
         compactVertical(folded);
         return folded;
       }

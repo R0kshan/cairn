@@ -12,11 +12,19 @@ import type { View } from "./views.ts";
 import { themeFor, flowPalette } from "./themes.ts";
 import { UI } from "./localization.ts";
 import { esc, escAttr } from "./xml-escape.ts";
-import { type Box, boxesOverlap } from "./geometry.ts";
+import { type Box, boundsOf, boxesOverlap, boxGapSq, boxToPolylineSq } from "./geometry.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from "./scene-layout.ts";
+import { compactVertical } from "./compact.ts";
 import { chipW, techText, wrapText, fontSizes } from "./text-metrics.ts";
 
 const HOP_RADIUS = 5;
+/**
+ * Halo stroked behind flow-label text. Labels sit *on* their run, so this is
+ * what stops the line reading as a strike-through: at 4 the halos of adjacent
+ * glyphs meet, masking the run across the whole word instead of outlining each
+ * letter and letting the line show through the gaps between them.
+ */
+const LABEL_HALO = 4;
 /**
  * Character-width factor for positioning text inside the rendered bands (flow
  * list, legend). Deliberately narrower than text-metrics' CHAR_WIDTH (0.56):
@@ -149,6 +157,124 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     return count;
   };
 
+  const ownRun = new Map<SceneLabel, SceneEdge>();
+  for (const edge of scene.edges) for (const label of edge.labels) ownRun.set(label, edge);
+  const routes = scene.edges
+    .filter((edge) => edge.pts.length >= 2)
+    .map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
+
+  /**
+   * How far a label may sit from its own flow. Squared, like everything else
+   * here. 20px matches the sweep's `labelAdrift` gate: past it the label is
+   * further from its flow than `MIN_ATTACH_GAP` puts the neighbouring one, so
+   * there is nothing left to tell the reader which run it annotates.
+   */
+  const ADRIFT_SQ = 20 * 20;
+  /** Within this a label reads as sitting on its run whatever else is nearby. */
+  const ATTACHED_SQ = 6 * 6;
+
+  const offOwnRun = (label: SceneLabel) => {
+    const edge = ownRun.get(label);
+    return edge && edge.pts.length >= 2 ? boxToPolylineSq(label as Box, edge.pts) : 0;
+  };
+  /**
+   * Is some other flow's run closer to this label than its own run is? If so the
+   * reader will attribute the label to the wrong flow, which is the whole defect
+   * this guards against.
+   *
+   * A label within `ATTACHED_SQ` of its own run is exempt: it is visibly sitting
+   * on that run, and a neighbour grazing 1px nearer changes nothing a reader
+   * would notice. That case is two flows running close together, which
+   * `nearParallel` already accounts for.
+   */
+  const stolen = (label: SceneLabel, own: number) => {
+    if (own <= ATTACHED_SQ) return false;
+    const mine = ownRun.get(label);
+    return routes.some(
+      (route) =>
+        route.edge !== mine &&
+        boxGapSq(label as Box, route.bounds) < own &&
+        boxToPolylineSq(label as Box, route.edge.pts) < own,
+    );
+  };
+
+  /**
+   * Is another flow's run drawn straight *through* the label box?
+   *
+   * This is the worst ambiguity and the one neither rule above can see. A label
+   * centred on its own run has `own` of 0 — inside `ATTACHED_SQ`, and nothing
+   * can be nearer than its own flow — so it passes both checks while a second
+   * flow crosses the words themselves. The reader gets no cue at all.
+   *
+   * Not measured at exactly 0: the renderer strokes a halo behind label text, so
+   * a line grazing the box edge stays legible. It is the line through the middle
+   * that has to go.
+   */
+  const PIERCE_SQ = 1;
+  const pierced = (label: SceneLabel) => {
+    const mine = ownRun.get(label);
+    return routes.some(
+      (route) =>
+        route.edge !== mine &&
+        boxGapSq(label as Box, route.bounds) <= PIERCE_SQ &&
+        boxToPolylineSq(label as Box, route.edge.pts) <= PIERCE_SQ,
+    );
+  };
+
+  /**
+   * Where the label would sit centred on each run of its own flow, in segment
+   * order. A label crowded off its preferred run can often still sit — clearly
+   * attached, on the right flow — somewhere else along the same route, which
+   * beats being flung into open space to escape a collision.
+   */
+  const ownRunMidpoints = (label: SceneLabel) => {
+    const edge = ownRun.get(label);
+    const seats: { x: number; y: number }[] = [];
+    if (!edge) return seats;
+    const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const a = edge.pts[index];
+      const b = edge.pts[index + 1];
+      seats.push({
+        x: (a.x + b.x) / 2 - label.width / 2,
+        y: (a.y + b.y) / 2 - lead,
+      });
+    }
+    return seats;
+  };
+
+  /**
+   * Seats along the label's own run, in both directions from wherever it sits.
+   *
+   * This is the escape that keeps invariant §4d: sliding *along* a run never
+   * takes the label off it, so a label crowded by a neighbour can move a long
+   * way and still be on its own line. Perpendicular steps — the ladder below —
+   * are what take it off, and are only reached once every slide has failed.
+   */
+  const alongOwnRun = (label: SceneLabel): { x: number; y: number }[] => {
+    const edge = ownRun.get(label);
+    if (!edge || edge.pts.length < 2) return [];
+    const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+    const seats: { x: number; y: number }[] = [];
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const a = edge.pts[index];
+      const b = edge.pts[index + 1];
+      const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+      const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+      const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
+      if (room === 0) continue;
+      for (const fraction of [-0.25, 0.25, -0.5, 0.5, -0.75, 0.75, -1, 1]) {
+        const shift = room * fraction;
+        seats.push(
+          vertical
+            ? { x: (a.x + b.x) / 2 - label.width / 2, y: (a.y + b.y) / 2 + shift - lead }
+            : { x: (a.x + b.x) / 2 + shift - label.width / 2, y: (a.y + b.y) / 2 - lead },
+        );
+      }
+    }
+    return seats;
+  };
+
   const settleLabelPositions = () => {
     for (const label of labels) {
       const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
@@ -159,21 +285,77 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       const collides = () =>
         labels.some((other) => other !== label && boxesOverlap(other as Box, label as Box)) ||
         nodeBoxes.some((node) => boxesOverlap(node, label as Box));
-      if (!collides()) continue;
+      /** Can the reader tell, from this position alone, which flow is speaking? */
+      const attributableHere = () => {
+        const own = offOwnRun(label);
+        return own <= ADRIFT_SQ && !stolen(label, own) && !pierced(label);
+      };
+      // A label is moved for either reason. Overlap alone was the old trigger,
+      // and it misses the whole `labelPierced` population: a label centred on
+      // its own run overlaps nothing at all while another flow is drawn through
+      // the middle of its text.
+      if (!collides() && attributableHere()) continue;
       const originY = label.y,
         originX = label.x;
+      const here = { x: originX, y: originY };
+      // Two rounds. The first refuses any escape that detaches the label from
+      // its flow or parks it nearer a different one, and will walk the label to
+      // another run of its own flow rather than accept one. The second drops
+      // that condition entirely.
+      //
+      // The order is not a preference. An overlapping label is unreadable, an
+      // ambiguous one is merely misleading — so zero overlaps, a hard invariant,
+      // outranks attribution every time. Attribution is a ratchet exactly
+      // because it has to yield here, and these are the cases where it does.
       let settled = false;
-      outer: for (const dx of [0, -24, 24, -48, 48]) {
-        for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
-          for (const dir of step === 0 ? [1] : [-1, 1]) {
-            label.y = originY + dir * step;
-            label.x = originX + dx;
-            if (!collides()) {
-              settled = true;
-              break outer;
+      // Round 0: stay on the line. Every seat here is *on* the run — its
+      // midpoints and points sliding along it — so §4d survives the escape.
+      // Only if the label cannot be placed anywhere along its own flow do the
+      // perpendicular rounds below get to take it off the line.
+      //
+      // Two sweeps over the same seats. The first also wants attribution; the
+      // second takes any seat that is merely overlap-free, pierced or not.
+      // That order encodes the ranking: overlapping is unreadable, off the line
+      // breaks §4d, pierced is a ratchet — so a pierced seat *on* the run beats
+      // a clean one beside it, and only a collision sends the label off.
+      const onLineSeats = [...ownRunMidpoints(label), ...alongOwnRun(label)];
+      for (const wantAttributable of [true, false]) {
+        for (const seat of onLineSeats) {
+          label.x = seat.x;
+          label.y = seat.y;
+          if (collides()) continue;
+          if (wantAttributable && !attributableHere()) continue;
+          settled = true;
+          break;
+        }
+        if (settled) break;
+      }
+      for (const attributable of settled ? [] : [true, false]) {
+        const origins = attributable ? [here, ...ownRunMidpoints(label)] : [here];
+        // The attributable round slides further sideways than the relaxed one:
+        // along its own run a label keeps `own` at 0 whatever the distance, so
+        // a long slide is how a label wider than the gap between two crossing
+        // runs dodges the one that pierces it without leaving its flow. The
+        // relaxed round keeps the short ladder — unguarded long throws are how
+        // a label ends up in a stranger's corridor.
+        const slides = attributable
+          ? [0, -24, 24, -48, 48, -72, 72, -96, 96]
+          : [0, -24, 24, -48, 48];
+        outer: for (const origin of origins) {
+          for (const dx of slides) {
+            for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
+              for (const dir of step === 0 ? [1] : [-1, 1]) {
+                label.y = origin.y + dir * step;
+                label.x = origin.x + dx;
+                if (collides()) continue;
+                if (attributable && !attributableHere()) continue;
+                settled = true;
+                break outer;
+              }
             }
           }
         }
+        if (settled) break;
       }
       if (!settled) {
         label.x = originX;
@@ -185,6 +367,14 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   const overlapsBefore = countLabelOverlaps();
   settleLabelPositions();
   const overlapsAfter = countLabelOverlaps();
+  // Settling can move a label off a band that nothing else pinned — an extreme
+  // label at the top of the drawing escaping downward strands dead height that
+  // the layout-stage compact already ran too early to see. Reclaiming again
+  // here closes that for every settle trigger. Safe on settled geometry: band
+  // removal is monotone, keeps ≥14px between pinned extents, and never reorders
+  // anything, so it cannot create an overlap, a pierce, or a new collision.
+  // No-op when settling stranded nothing, which is the common case.
+  compactVertical(scene);
 
   const verticalSegments: { x: number; y1: number; y2: number }[] = [];
   if (style.crossingHops) {
@@ -416,13 +606,13 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     let svg = lines
       .map(
         (line, index) =>
-          `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + index * (edgeFontSize + 3)}" font-size="${edgeFontSize}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>\n`,
+          `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + index * (edgeFontSize + 3)}" font-size="${edgeFontSize}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>\n`,
       )
       .join("");
     const flow = flowById.get(label.flowId);
     const tech = techText(flow?.tech);
     if (tech && flow?.label) {
-      svg += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>\n`;
+      svg += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>\n`;
     }
     const chips = (flow?.objects ?? []).map((objectRef) => objectName.get(objectRef.id) ?? objectRef.id);
     if (!chips.length) return svg;
@@ -438,17 +628,28 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     return svg;
   };
 
-  const renderEdge = (edge: SceneEdge): string => {
+  /**
+   * Flow lines and flow labels are emitted in two separate passes, not one per
+   * edge. Labels sit *on* their run (invariant §4d), and a label is only
+   * readable there because its halo masks the line behind it — which works only
+   * for lines already drawn. Interleaving them left every label at the mercy of
+   * every edge drawn after it: the halo hid its own flow and nothing else, so a
+   * crossing run struck straight through the words.
+   */
+  const renderEdgePath = (edge: SceneEdge): string => {
+    if (!edge.pts.length) return "";
     const flow = flowById.get(edge.id);
     const flowStyle = flow?.style;
     const color = flowColorOf(flow);
     const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
     const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
     const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
+    return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>\n`;
+  };
+
+  const renderEdgeLabels = (edge: SceneEdge): string => {
+    const flowStyle = flowById.get(edge.id)?.style;
     let svg = "";
-    if (edge.pts.length) {
-      svg += `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>\n`;
-    }
     for (const label of edge.labels) {
       svg += numbered ? renderNumberedBadge(label) : renderTextLabel(label, flowStyle);
     }
@@ -592,7 +793,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   let body = "";
   for (const node of scene.nodes) if (node.container) body += renderContainerNode(node);
   for (const node of scene.nodes) if (!node.container) body += renderLeafNode(node);
-  for (const edge of scene.edges) body += renderEdge(edge);
+  for (const edge of scene.edges) body += renderEdgePath(edge);
+  for (const edge of scene.edges) body += renderEdgeLabels(edge);
 
   if (numbered && model.flows.length) renderFlowsBand();
   if (model.businessObjects.length) renderObjectsBand();
