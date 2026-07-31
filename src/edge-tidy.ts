@@ -200,7 +200,18 @@ interface Attachment {
   along: number;
 }
 
-export function tidyEdges(scene: Scene, titleBoxes: TitleBox[] = []): void {
+export function tidyEdges(
+  scene: Scene,
+  titleBoxes: TitleBox[] = [],
+  /**
+   * Folded slide layouts (`slide-fold`) hand-route their connectors on a lane
+   * grid rather than letting elk plan them. Unweaving (§4g) re-sides a terminal
+   * on the assumption that the route is elk's to rearrange; on that grid it
+   * costs a lane and the neighbours reflow, which showed up as struck titles.
+   * Those layouts keep their weaves.
+   */
+  folded = false,
+): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
 
@@ -1343,4 +1354,328 @@ export function tidyEdges(scene: Scene, titleBoxes: TitleBox[] = []): void {
   }
 
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+
+  // Unweave (INVARIANTS §4g). Two nodes are always joinable by a straight run,
+  // an L or a Z, so a flow taking three turns or more left through a side that
+  // did not face where it was going — usually queueing on a busy side while
+  // another sits unused.
+  //
+  // **This runs last, and that is the whole design.** An earlier attempt sat up
+  // with the §4c reroute at the top of this pass, where it validated candidates
+  // that four later mutations — attachment separation, de-coincidence, title
+  // lifting, riser nesting — then reshaped. Routes proven crossing-free when
+  // chosen were not crossing-free when drawn, and the corpus paid 16 per-drawing
+  // regressions for it. Down here what is validated is what is rendered, which
+  // is why §4f works and why this now can.
+  //
+  // The rule, in order: no candidate may add a crossing; among those that turn
+  // less than the route they replace, the **shortest** wins. Readability first
+  // (turns, then no new tangles), size as the tie-break.
+  // Containers a run may not cross (INVARIANTS §4h). A flow may pass through a
+  // container that *holds one of its endpoints* — that is how anything leaves a
+  // data centre or a zone — but crossing one it has no business in reads as
+  // traffic transiting that component. `Kafka → Backup server` cut straight
+  // through `PostgreSQL standby`, a server that merely happens to hold a
+  // replica, and no existing check could see it: `throughBox` and every routing
+  // guard here test **leaf** nodes only, because container interiors are
+  // routable by design.
+  const boxed = scene.nodes.filter((node) => node.container);
+  const holdsOf = new Map<string, Set<string>>();
+  for (const box of boxed) {
+    const held = new Set<string>();
+    for (const node of scene.nodes)
+      if (
+        node !== box &&
+        node.x >= box.x - 1 &&
+        node.y >= box.y - 1 &&
+        node.x + node.width <= box.x + box.width + 1 &&
+        node.y + node.height <= box.y + box.height + 1
+      )
+        held.add(node.id);
+    holdsOf.set(box.id, held);
+  }
+  const foreignContainerHits = (pts: Point[], ownEnds: (SceneNode | undefined)[]) => {
+    let total = 0;
+    for (const box of boxed) {
+      const held = holdsOf.get(box.id)!;
+      if (ownEnds.some((node) => node && (node === box || held.has(node.id)))) continue;
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        if (
+          Math.min(a.x, b.x) < box.x + box.width - 1 &&
+          box.x + 1 < Math.max(a.x, b.x) &&
+          Math.min(a.y, b.y) < box.y + box.height - 1 &&
+          box.y + 1 < Math.max(a.y, b.y)
+        )
+          total++;
+      }
+    }
+    return total;
+  };
+
+  const UNWEAVE_TURNS = 3;
+  const BAND_MARGIN = 38;
+  const ALL_SIDES: Side[] = ["north", "south", "east", "west"];
+  const unweaveSeat = (node: SceneNode, side: Side, offset: number): Point => {
+    const alongX = Math.min(
+      Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
+      node.x + node.width - SIDE_INSET,
+    );
+    const alongY = Math.min(
+      Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
+      node.y + node.height - SIDE_INSET,
+    );
+    return side === "north"
+      ? { x: alongX, y: node.y }
+      : side === "south"
+        ? { x: alongX, y: node.y + node.height }
+        : side === "west"
+          ? { x: node.x, y: alongY }
+          : { x: node.x + node.width, y: alongY };
+  };
+  const outward = (side: Side): Point =>
+    side === "north"
+      ? { x: 0, y: -1 }
+      : side === "south"
+        ? { x: 0, y: 1 }
+        : side === "west"
+          ? { x: -1, y: 0 }
+          : { x: 1, y: 0 };
+  /** L when the two sides face across each other, Z when they oppose. */
+  const unweaveRoutes = (a: Point, aSide: Side, b: Point, bSide: Side): Point[][] => {
+    const na = outward(aSide);
+    const nb = outward(bSide);
+    const aHoriz = na.x !== 0;
+    const bHoriz = nb.x !== 0;
+    if (aHoriz !== bHoriz) return [[a, aHoriz ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
+    if (na.x !== -nb.x || na.y !== -nb.y) return []; // same outward side: a wrap, not a route
+    if (aHoriz)
+      return [(a.x + b.x) / 2, Math.min(a.x, b.x) + 12, Math.max(a.x, b.x) - 12].map((mid) => [
+        a,
+        { x: mid, y: a.y },
+        { x: mid, y: b.y },
+        b,
+      ]);
+    return [(a.y + b.y) / 2, Math.min(a.y, b.y) + 12, Math.max(a.y, b.y) - 12].map((mid) => [
+      a,
+      { x: a.x, y: mid },
+      { x: b.x, y: mid },
+      b,
+    ]);
+  };
+  const lengthOf = (pts: Point[]) => {
+    let total = 0;
+    for (let i = 0; i + 1 < pts.length; i++)
+      total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
+    return total;
+  };
+  /**
+   * *Which* flows a route crosses, not how many times.
+   *
+   * Counting was not enough. Unweaving `Hub de paiement → PostgreSQL primaire`
+   * traded two crossings with one flow for one with another: the drawing's total
+   * fell, the per-drawing gate saw an improvement, and a brand-new crossing
+   * appeared beside the node in an area that had been clean. A total cannot see
+   * that — only the *set* of partners can. So a candidate may drop crossings
+   * freely and may never gain a partner it did not already cross.
+   */
+  const crossingPartners = (pts: Point[], exceptId: string) => {
+    const partners = new Set<string>();
+    for (const other of scene.edges) {
+      if (other.id === exceptId || other.pts.length < 2) continue;
+      for (let i = 0; i + 1 < pts.length; i++)
+        for (let j = 0; j + 1 < other.pts.length; j++)
+          if (segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]))
+            partners.add(other.id);
+    }
+    return partners;
+  };
+
+  for (const edge of [...scene.edges].sort(
+    (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0),
+  )) {
+    if (folded || edge.pts.length < 2) continue;
+    const currentTurns = edge.pts.length - 2;
+    const srcSeat = sideOf(edge.pts[0], leaves);
+    const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
+    if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
+    const ownEnds = [srcSeat.node, dstSeat.node];
+    // Re-route for either reason: the flow weaves (§4g), or it cuts through a
+    // container that is none of its business (§4h). §4h is Tier 0 — it destroys
+    // the reading of a component — so it justifies a reroute that turns no less.
+    const foreignBefore = foreignContainerHits(edge.pts, ownEnds);
+    if (currentTurns < UNWEAVE_TURNS && foreignBefore === 0) continue;
+
+    const partnersNow = crossingPartners(edge.pts, edge.id);
+    const outside = runsExcept(edge.id);
+    // Seats already taken on each side, so a candidate never lands on top of a
+    // neighbour — `attachShared` is a must-be-zero invariant.
+    const takenOn = (node: SceneNode, side: Side) => {
+      const along: number[] = [];
+      for (const other of scene.edges) {
+        if (other.id === edge.id || other.pts.length < 2) continue;
+        for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
+          const seat = sideOf(p, leaves);
+          if (seat?.node !== node || seat.side !== side) continue;
+          along.push(side === "east" || side === "west" ? p.y : p.x);
+        }
+      }
+      return along;
+    };
+    const clearOfNeighbours = (point: Point, node: SceneNode, side: Side) => {
+      const vertical = side === "east" || side === "west";
+      const at = vertical ? point.y : point.x;
+      return takenOn(node, side).every((other) => Math.abs(other - at) >= MIN_ATTACH_GAP);
+    };
+    const cleanRoute = (pts: Point[]) => {
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        const deltaX = Math.abs(a.x - b.x);
+        const deltaY = Math.abs(a.y - b.y);
+        if (deltaX >= 0.5 && deltaY >= 0.5) return false;
+        const runVertical = deltaX < 0.5;
+        const at = runVertical ? a.x : a.y;
+        const from = runVertical ? a.y : a.x;
+        const to = runVertical ? b.y : b.x;
+        if (runHitsNode(runVertical, at, from, to)) return false;
+        if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+          return false;
+        // Titles, both orientations. `bandFor` only judges horizontals — a
+        // riser through a container's name strikes it just as thoroughly, and
+        // skipping that check is what put `titleStruck` up across `large-slide`.
+        // Judged exactly as the sweep judges `titleStruck` — a box overlap, not
+        // a strict interior test. The two disagreeing is how a run laid along a
+        // band's very edge passed here and was counted there.
+        for (const band of titleBoxes) {
+          const x1 = Math.min(a.x, b.x);
+          const x2 = Math.max(a.x, b.x);
+          const y1 = Math.min(a.y, b.y);
+          const y2 = Math.max(a.y, b.y);
+          // With margin: `compact` runs after this pass and shifts bands and
+          // runs by a per-row amount, so a route that merely grazes a title now
+          // can be pushed onto it later.
+          if (
+            x1 < band.x + band.width + BAND_MARGIN &&
+            band.x - BAND_MARGIN < x2 &&
+            y1 < band.y + band.height + BAND_MARGIN &&
+            band.y - BAND_MARGIN < y2
+          )
+            return false;
+        }
+        // Interior segments must clear the *staircase* threshold, not merely the
+        // micro-jog one: a Z whose crossing lane is 15px long reads as a step
+        // and is counted by `jog<=20`.
+        const length = deltaX + deltaY;
+        if (index > 0 && index + 2 < pts.length && length > 0 && length <= 20) return false;
+      }
+      return true;
+    };
+    /** Crossings with flows seated on the same node side, inside its fan (§4b). */
+    const fanTanglesOf = (pts: Point[]) => {
+      let total = 0;
+      for (const terminal of [pts[0], pts[pts.length - 1]]) {
+        const seat = sideOf(terminal, leaves);
+        if (!seat) continue;
+        for (const other of scene.edges) {
+          if (other.id === edge.id || other.pts.length < 2) continue;
+          const sibling = [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
+            const s = sideOf(p, leaves);
+            return s?.node === seat.node && s.side === seat.side;
+          });
+          if (!sibling) continue;
+          for (let i = 0; i + 1 < pts.length; i++)
+            for (let j = 0; j + 1 < other.pts.length; j++) {
+              const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
+              if (!hit) continue;
+              const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
+              const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
+              if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH) total++;
+            }
+        }
+      }
+      return total;
+    };
+    const fanTanglesNow = fanTanglesOf(edge.pts);
+    /**
+     * Can every label this flow carries still find a seat on the new route that
+     * clears both node boxes and container titles? `label-anchor` runs after
+     * this pass and will keep a label on its run even at the cost of covering a
+     * title (§4d outranks §4e), so a route that leaves its labels nowhere clean
+     * to sit pays for its straightness in struck titles — measured on
+     * `logical-archi`.
+     */
+    const labelsSeatable = (pts: Point[]) => {
+      for (const label of edge.labels) {
+        if (!label.width || !label.height) continue;
+        const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+        let seatable = false;
+        for (let index = 0; index + 1 < pts.length && !seatable; index++) {
+          const seat = {
+            x: (pts[index].x + pts[index + 1].x) / 2 - label.width / 2,
+            y: (pts[index].y + pts[index + 1].y) / 2 - lead,
+            width: label.width,
+            height: label.height,
+          };
+          const hits =
+            (margin: number) => (box: { x: number; y: number; width: number; height: number }) =>
+              seat.x < box.x + box.width + margin &&
+              box.x - margin < seat.x + seat.width &&
+              seat.y < box.y + box.height + margin &&
+              box.y - margin < seat.y + seat.height;
+          // Bands get the same margin the runs get: `compact` shifts label and
+          // band by different per-row amounts, so a seat that merely clears a
+          // title now can be sitting on it by the time it is drawn.
+          if (!leaves.some(hits(0)) && !titleBoxes.some(hits(BAND_MARGIN))) seatable = true;
+        }
+        if (!seatable) return false;
+      }
+      return true;
+    };
+
+    let best: Point[] | null = null;
+    let bestLength = Number.POSITIVE_INFINITY;
+    for (const srcSide of ALL_SIDES)
+      for (const dstSide of ALL_SIDES)
+        for (const srcOffset of [0, -18, 18, -36, 36])
+          for (const dstOffset of [0, -18, 18, -36, 36]) {
+            const a = unweaveSeat(srcSeat.node, srcSide, srcOffset);
+            const b = unweaveSeat(dstSeat.node, dstSide, dstOffset);
+            if (!clearOfNeighbours(a, srcSeat.node, srcSide)) continue;
+            if (!clearOfNeighbours(b, dstSeat.node, dstSide)) continue;
+            for (const raw of unweaveRoutes(a, srcSide, b, dstSide)) {
+              const pts = raw.filter(
+                (p, index) =>
+                  index === 0 ||
+                  Math.abs(p.x - raw[index - 1].x) >= 0.5 ||
+                  Math.abs(p.y - raw[index - 1].y) >= 0.5,
+              );
+              if (pts.length < 2) continue;
+              // Never cut through a stranger's container, and never buy turns
+              // with one: §4h outranks §4g.
+              const foreignAfter = foreignContainerHits(pts, ownEnds);
+              if (foreignAfter > foreignBefore) continue;
+              const clearsForeign = foreignAfter < foreignBefore;
+              // Clearing a container buys a *equal* turn count, never a worse
+              // one: §4h outranks §4g, but paying for it with a new weave just
+              // moves the reader's problem down a tier.
+              if (clearsForeign ? pts.length - 2 > currentTurns : pts.length - 2 >= currentTurns)
+                continue;
+              const length = lengthOf(pts);
+              if (length >= bestLength) continue;
+              if (!cleanRoute(pts)) continue;
+              const partners = crossingPartners(pts, edge.id);
+              if ([...partners].some((id) => !partnersNow.has(id))) continue;
+              if (fanTanglesOf(pts) > fanTanglesNow) continue;
+              if (!labelsSeatable(pts)) continue;
+              best = pts;
+              bestLength = length;
+            }
+          }
+    if (best) {
+      edge.pts = best;
+      enforceOrthogonal(edge);
+    }
+  }
 }

@@ -95846,7 +95846,7 @@ function sideOf(point, nodes) {
   }
   return null;
 }
-function tidyEdges(scene, titleBoxes = []) {
+function tidyEdges(scene, titleBoxes = [], folded = false) {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const runsExcept = (...edgeIds) => {
@@ -96660,6 +96660,219 @@ function tidyEdges(scene, titleBoxes = []) {
     });
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+  const boxed = scene.nodes.filter((node) => node.container);
+  const holdsOf = /* @__PURE__ */ new Map();
+  for (const box of boxed) {
+    const held = /* @__PURE__ */ new Set();
+    for (const node of scene.nodes)
+      if (node !== box && node.x >= box.x - 1 && node.y >= box.y - 1 && node.x + node.width <= box.x + box.width + 1 && node.y + node.height <= box.y + box.height + 1)
+        held.add(node.id);
+    holdsOf.set(box.id, held);
+  }
+  const foreignContainerHits = (pts, ownEnds) => {
+    let total = 0;
+    for (const box of boxed) {
+      const held = holdsOf.get(box.id);
+      if (ownEnds.some((node) => node && (node === box || held.has(node.id)))) continue;
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        if (Math.min(a.x, b.x) < box.x + box.width - 1 && box.x + 1 < Math.max(a.x, b.x) && Math.min(a.y, b.y) < box.y + box.height - 1 && box.y + 1 < Math.max(a.y, b.y))
+          total++;
+      }
+    }
+    return total;
+  };
+  const UNWEAVE_TURNS = 3;
+  const BAND_MARGIN = 38;
+  const ALL_SIDES = ["north", "south", "east", "west"];
+  const unweaveSeat = (node, side, offset) => {
+    const alongX = Math.min(
+      Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
+      node.x + node.width - SIDE_INSET
+    );
+    const alongY = Math.min(
+      Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
+      node.y + node.height - SIDE_INSET
+    );
+    return side === "north" ? { x: alongX, y: node.y } : side === "south" ? { x: alongX, y: node.y + node.height } : side === "west" ? { x: node.x, y: alongY } : { x: node.x + node.width, y: alongY };
+  };
+  const outward = (side) => side === "north" ? { x: 0, y: -1 } : side === "south" ? { x: 0, y: 1 } : side === "west" ? { x: -1, y: 0 } : { x: 1, y: 0 };
+  const unweaveRoutes = (a, aSide, b, bSide) => {
+    const na = outward(aSide);
+    const nb = outward(bSide);
+    const aHoriz = na.x !== 0;
+    const bHoriz = nb.x !== 0;
+    if (aHoriz !== bHoriz) return [[a, aHoriz ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
+    if (na.x !== -nb.x || na.y !== -nb.y) return [];
+    if (aHoriz)
+      return [(a.x + b.x) / 2, Math.min(a.x, b.x) + 12, Math.max(a.x, b.x) - 12].map((mid) => [
+        a,
+        { x: mid, y: a.y },
+        { x: mid, y: b.y },
+        b
+      ]);
+    return [(a.y + b.y) / 2, Math.min(a.y, b.y) + 12, Math.max(a.y, b.y) - 12].map((mid) => [
+      a,
+      { x: a.x, y: mid },
+      { x: b.x, y: mid },
+      b
+    ]);
+  };
+  const lengthOf = (pts) => {
+    let total = 0;
+    for (let i = 0; i + 1 < pts.length; i++)
+      total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
+    return total;
+  };
+  const crossingPartners = (pts, exceptId) => {
+    const partners = /* @__PURE__ */ new Set();
+    for (const other of scene.edges) {
+      if (other.id === exceptId || other.pts.length < 2) continue;
+      for (let i = 0; i + 1 < pts.length; i++)
+        for (let j = 0; j + 1 < other.pts.length; j++)
+          if (segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]))
+            partners.add(other.id);
+    }
+    return partners;
+  };
+  for (const edge of [...scene.edges].sort(
+    (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0)
+  )) {
+    if (folded || edge.pts.length < 2) continue;
+    const currentTurns = edge.pts.length - 2;
+    const srcSeat = sideOf(edge.pts[0], leaves);
+    const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
+    if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
+    const ownEnds = [srcSeat.node, dstSeat.node];
+    const foreignBefore = foreignContainerHits(edge.pts, ownEnds);
+    if (currentTurns < UNWEAVE_TURNS && foreignBefore === 0) continue;
+    const partnersNow = crossingPartners(edge.pts, edge.id);
+    const outside = runsExcept(edge.id);
+    const takenOn = (node, side) => {
+      const along = [];
+      for (const other of scene.edges) {
+        if (other.id === edge.id || other.pts.length < 2) continue;
+        for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
+          const seat = sideOf(p, leaves);
+          if (seat?.node !== node || seat.side !== side) continue;
+          along.push(side === "east" || side === "west" ? p.y : p.x);
+        }
+      }
+      return along;
+    };
+    const clearOfNeighbours = (point, node, side) => {
+      const vertical = side === "east" || side === "west";
+      const at = vertical ? point.y : point.x;
+      return takenOn(node, side).every((other) => Math.abs(other - at) >= MIN_ATTACH_GAP);
+    };
+    const cleanRoute = (pts) => {
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        const deltaX = Math.abs(a.x - b.x);
+        const deltaY = Math.abs(a.y - b.y);
+        if (deltaX >= 0.5 && deltaY >= 0.5) return false;
+        const runVertical = deltaX < 0.5;
+        const at = runVertical ? a.x : a.y;
+        const from = runVertical ? a.y : a.x;
+        const to = runVertical ? b.y : b.x;
+        if (runHitsNode(runVertical, at, from, to)) return false;
+        if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+          return false;
+        for (const band of titleBoxes) {
+          const x1 = Math.min(a.x, b.x);
+          const x2 = Math.max(a.x, b.x);
+          const y1 = Math.min(a.y, b.y);
+          const y2 = Math.max(a.y, b.y);
+          if (x1 < band.x + band.width + BAND_MARGIN && band.x - BAND_MARGIN < x2 && y1 < band.y + band.height + BAND_MARGIN && band.y - BAND_MARGIN < y2)
+            return false;
+        }
+        const length = deltaX + deltaY;
+        if (index > 0 && index + 2 < pts.length && length > 0 && length <= 20) return false;
+      }
+      return true;
+    };
+    const fanTanglesOf = (pts) => {
+      let total = 0;
+      for (const terminal of [pts[0], pts[pts.length - 1]]) {
+        const seat = sideOf(terminal, leaves);
+        if (!seat) continue;
+        for (const other of scene.edges) {
+          if (other.id === edge.id || other.pts.length < 2) continue;
+          const sibling = [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
+            const s = sideOf(p, leaves);
+            return s?.node === seat.node && s.side === seat.side;
+          });
+          if (!sibling) continue;
+          for (let i = 0; i + 1 < pts.length; i++)
+            for (let j = 0; j + 1 < other.pts.length; j++) {
+              const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
+              if (!hit) continue;
+              const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
+              const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
+              if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH) total++;
+            }
+        }
+      }
+      return total;
+    };
+    const fanTanglesNow = fanTanglesOf(edge.pts);
+    const labelsSeatable = (pts) => {
+      for (const label of edge.labels) {
+        if (!label.width || !label.height) continue;
+        const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+        let seatable = false;
+        for (let index = 0; index + 1 < pts.length && !seatable; index++) {
+          const seat = {
+            x: (pts[index].x + pts[index + 1].x) / 2 - label.width / 2,
+            y: (pts[index].y + pts[index + 1].y) / 2 - lead,
+            width: label.width,
+            height: label.height
+          };
+          const hits = (margin) => (box) => seat.x < box.x + box.width + margin && box.x - margin < seat.x + seat.width && seat.y < box.y + box.height + margin && box.y - margin < seat.y + seat.height;
+          if (!leaves.some(hits(0)) && !titleBoxes.some(hits(BAND_MARGIN))) seatable = true;
+        }
+        if (!seatable) return false;
+      }
+      return true;
+    };
+    let best = null;
+    let bestLength = Number.POSITIVE_INFINITY;
+    for (const srcSide of ALL_SIDES)
+      for (const dstSide of ALL_SIDES)
+        for (const srcOffset of [0, -18, 18, -36, 36])
+          for (const dstOffset of [0, -18, 18, -36, 36]) {
+            const a = unweaveSeat(srcSeat.node, srcSide, srcOffset);
+            const b = unweaveSeat(dstSeat.node, dstSide, dstOffset);
+            if (!clearOfNeighbours(a, srcSeat.node, srcSide)) continue;
+            if (!clearOfNeighbours(b, dstSeat.node, dstSide)) continue;
+            for (const raw of unweaveRoutes(a, srcSide, b, dstSide)) {
+              const pts = raw.filter(
+                (p, index) => index === 0 || Math.abs(p.x - raw[index - 1].x) >= 0.5 || Math.abs(p.y - raw[index - 1].y) >= 0.5
+              );
+              if (pts.length < 2) continue;
+              const foreignAfter = foreignContainerHits(pts, ownEnds);
+              if (foreignAfter > foreignBefore) continue;
+              const clearsForeign = foreignAfter < foreignBefore;
+              if (clearsForeign ? pts.length - 2 > currentTurns : pts.length - 2 >= currentTurns)
+                continue;
+              const length = lengthOf(pts);
+              if (length >= bestLength) continue;
+              if (!cleanRoute(pts)) continue;
+              const partners = crossingPartners(pts, edge.id);
+              if ([...partners].some((id) => !partnersNow.has(id))) continue;
+              if (fanTanglesOf(pts) > fanTanglesNow) continue;
+              if (!labelsSeatable(pts)) continue;
+              best = pts;
+              bestLength = length;
+            }
+          }
+    if (best) {
+      edge.pts = best;
+      enforceOrthogonal(edge);
+    }
+  }
 }
 
 // src/geometry.ts
@@ -97107,7 +97320,7 @@ async function layout(model, view) {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
-        tidyEdges(folded, titleBoxesOf(folded, model));
+        tidyEdges(folded, titleBoxesOf(folded, model), true);
         anchorFlowLabels(folded, titleBoxesOf(folded, model));
         compactVertical(folded);
         return folded;

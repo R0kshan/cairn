@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1178 588" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1178 586" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1178" height="588" fill="#ffffff"/>
+<rect width="1178" height="586" fill="#ffffff"/>
 <rect x="10" y="157" width="119" height="175" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="175" font-size="13" font-weight="bold" fill="#17202c">Managers</text>
 <rect x="670" y="290" width="149" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
@@ -55,7 +55,7 @@
 <rect x="1010" y="102" width="158" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1089" y="122.25" font-size="12.5" text-anchor="middle" fill="#17202c">Electronic-invoicing</text>
 <text x="1089" y="136.75" font-size="12.5" text-anchor="middle" fill="#17202c">portal (PPF)</text>
-<path d="M 120 290.5 L 144 290.5 L 144 455 L 655 455 L 655 408 L 690.5 408" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 120 317 L 132 317 L 132 407.5 L 690.5 407.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 810 340.5 L 966 340.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 690.5 390 L 580.4166666666666 390 L 580.4166666666666 269 L 470.3333333333333 269" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 262 279 L 362.3333333333333 278.66666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -78,21 +78,21 @@
 <text x="580.5" y="87.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="546" y="226.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="806" y="86.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(batch, CSV)</text>
-<line x1="20" y1="474" x2="1158" y2="474" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="496" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="486" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="497" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="486" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
-<text x="304" y="497" font-size="10" fill="#17202c">Application</text>
-<rect x="394" y="486" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="426" y="497" font-size="10" fill="#17202c">Application module</text>
-<rect x="552" y="486" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="584" y="497" font-size="10" fill="#17202c">Message queue / broker</text>
-<rect x="731" y="486" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="763" y="497" font-size="10" fill="#17202c">Datastore / registry</text>
-<rect x="899" y="486" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="931" y="497" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="538" x2="176" y2="538" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="542" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
-<text x="150" y="566" font-size="10" fill="#17202c" font-style="italic">Factur-X mandatory since the electronic-invoicing reform</text>
+<line x1="20" y1="472" x2="1158" y2="472" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="494" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="484" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="495" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="484" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="304" y="495" font-size="10" fill="#17202c">Application</text>
+<rect x="394" y="484" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="426" y="495" font-size="10" fill="#17202c">Application module</text>
+<rect x="552" y="484" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="584" y="495" font-size="10" fill="#17202c">Message queue / broker</text>
+<rect x="731" y="484" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="763" y="495" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="899" y="484" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="931" y="495" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="536" x2="176" y2="536" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="540" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+<text x="150" y="564" font-size="10" fill="#17202c" font-style="italic">Factur-X mandatory since the electronic-invoicing reform</text>
 </svg>

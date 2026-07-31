@@ -484,7 +484,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         folded.layoutMs = Date.now() - startTime;
         // The folded layout hand-routes its own connectors, so it keeps them —
         // but the endpoint invariants apply to it like everything else.
-        tidyEdges(folded, titleBoxesOf(folded, model));
+        tidyEdges(folded, titleBoxesOf(folded, model), true);
         anchorFlowLabels(folded, titleBoxesOf(folded, model));
         compactVertical(folded);
         return folded;

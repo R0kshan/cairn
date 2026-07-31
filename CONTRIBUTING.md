@@ -69,7 +69,7 @@ Invariants detailed in [`INVARIANTS.md`](./INVARIANTS.md). In short:
 
 It then chains **`npm run sweep`**, the readability gate: every `.cairn`
 fixture under `examples/` (top level plus `dispositions/` and `themes/`) ×
-every disposition (288 drawings), seven invariants that must be `0` and twelve
+every disposition (288 drawings), seven invariants that must be `0` and fourteen
 ratcheted ceilings — expressed as a rate per swept flow-instance so the gate
 stays stable as fixtures are added — that may only fall. Run it alone while
 iterating — `npm run sweep -- --detail` lists each defect with its edge id.

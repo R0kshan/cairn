@@ -50,7 +50,7 @@ const MUST_BE_ZERO = [
 const CEILING_RATE: Record<string, number> = {
   attachTight: 0.0009191,
   "jog<=6": 0.0234375,
-  "jog<=20": 0.1084558,
+  "jog<=20": 0.0962776,
   nearParallel: 0.0135569,
   // Raised 0.0436580 -> 0.0461855 (190 -> 201) when labels moved onto their
   // runs (§4d). A label pins the horizontal band it sits in, so seating them on
@@ -65,7 +65,7 @@ const CEILING_RATE: Record<string, number> = {
   // fixture copies) a longer route and two wrap-around attachments. A run
   // through a container's name is worse than a longer route, so the trade is
   // taken deliberately — see §4e.
-  longDetour: 0.0450367,
+  longDetour: 0.0441176,
   // Flows bundled tightly enough that no position exists which is both free of
   // overlaps and nearer its own run than its neighbours'. Lowering this means
   // giving the settler somewhere better to go, not relaxing the check.
@@ -74,12 +74,12 @@ const CEILING_RATE: Record<string, number> = {
   // without rerouting its body only moves the tangle further along the route.
   // Measured — a seat-permutation pass cut the inverted cases from 207 to 26
   // and pushed total crossings from 287 to 501.
-  fanTangle: 0.0151654,
+  fanTangle: 0.0149357,
   // Corridors so tight the label cannot clear every run in them: with flows
   // 12px apart, a two-line box with a business-object chip is taller than the
   // gap it would have to fit in. Lowering this means spreading the bundle, not
   // shrinking the check.
-  labelPierced: 0.0018382,
+  labelPierced: 0.0013787,
   // Labels the settler had to take off their run to keep overlaps at zero —
   // corridors where no seat along the flow clears both its neighbours and the
   // node boxes. Lowering this means finding them a seat *along* the run, or
@@ -90,18 +90,26 @@ const CEILING_RATE: Record<string, number> = {
   // `route-detour` has always avoided them when planning a channel; elk has not,
   // and the repair pass in edge-tidy can only move a run that has somewhere
   // clean to go.
-  titleStruck: 0.2061580,
+  titleStruck: 0.2028952,
   // Flows crossing anywhere in the drawing (INVARIANTS §4f). Most are inherent
   // to the topology; the ones that are not come from risers placed in the wrong
   // left-to-right order, which the nesting pass in edge-tidy repairs. Lowering
   // this means better lane ordering, never fewer flows.
-  crossings: 1.0250459,
+  crossings: 0.9859835,
+  // Flows that weave (INVARIANTS §4g): more than two turns, when a straight
+  // run, an L or a Z always suffices geometrically. What remains is flows whose
+  // straighter route would cross something the weave currently dodges — the
+  // reroute refuses to buy turns with tangles.
+  turnHeavy: 0.2093290,
+  // Runs crossing a container that holds neither endpoint (INVARIANTS §4h).
+  // Small enough to drive to zero eventually; the passes may never create one.
+  throughContainer: 0.0133272,
   // Wrap-around attachments (INVARIANTS §4c): a terminal departing away from
   // its counterpart, or arriving from beyond it. The reroute pass in edge-tidy
   // replaces the ones it can prove clean (~25% of the population elk + the
   // channel planner produced); the remainder needs elk port constraints or
   // channel-side planning, not another post-pass.
-  attachAway: 0.0666359,
+  attachAway: 0.0634191,
 };
 
 interface Run {
@@ -497,6 +505,55 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
         // which is the defect this has always been about.
         if (!onLine && nearestOther <= PIERCE_SLACK * PIERCE_SLACK)
           note("labelPierced", `${e.id} "${text}" run ${nearestId} crosses its box`);
+      }
+    }
+
+    // Invariant §4g: a flow takes at most two turns between its endpoints.
+    for (const e of scene.edges) {
+      if (e.pts.length < 2) continue;
+      const turns = e.pts.length - 2;
+      if (turns > 2) note("turnHeavy", `${e.id} ${turns} turns`);
+    }
+
+    // Invariant §4h: a run may only cross a container that holds one of its own
+    // endpoints. Passing through a data centre or a zone you start or end
+    // inside is how anything gets anywhere; cutting through one you have no
+    // business in reads as traffic transiting that component. Invisible to
+    // `throughBox`, which tests leaves only — `Kafka -> Backup server` ran the
+    // width of `PostgreSQL standby` and nothing saw it.
+    {
+      const holds = new Map<string, Set<string>>();
+      for (const box of scene.nodes.filter((n) => n.container)) {
+        const set = new Set<string>();
+        for (const n of scene.nodes)
+          if (
+            n !== box &&
+            n.x >= box.x - 1 &&
+            n.y >= box.y - 1 &&
+            n.x + n.width <= box.x + box.width + 1 &&
+            n.y + n.height <= box.y + box.height + 1
+          )
+            set.add(n.id);
+        holds.set(box.id, set);
+      }
+      for (const e of scene.edges) {
+        const flow = model.flows.find((f) => f.id === e.id);
+        if (!flow || e.pts.length < 2) continue;
+        for (const box of scene.nodes.filter((n) => n.container)) {
+          const set = holds.get(box.id)!;
+          if (set.has(flow.from) || set.has(flow.to)) continue;
+          for (let i = 0; i + 1 < e.pts.length; i++) {
+            const a = e.pts[i];
+            const b = e.pts[i + 1];
+            if (
+              Math.min(a.x, b.x) < box.x + box.width - 1 &&
+              box.x + 1 < Math.max(a.x, b.x) &&
+              Math.min(a.y, b.y) < box.y + box.height - 1 &&
+              box.y + 1 < Math.max(a.y, b.y)
+            )
+              note("throughContainer", `${e.id} ${flow.from}->${flow.to} through ${box.id}`);
+          }
+        }
       }
     }
 

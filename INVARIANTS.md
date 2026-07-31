@@ -19,7 +19,7 @@ Sweeps every `.cairn` fixture × every disposition. Seven invariants must stay a
 horizontal bands, coincident segments, shared attachment points, and labels
 adrift from their own flow (§4a). The rest (staircases, tight attachments,
 near-parallel runs, long detours, orphaned labels, pierced labels, fan tangles,
-wrap-around attachments §4c, labels off their line §4d, struck titles §4e, crossings §4f) are a **ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
+wrap-around attachments §4c, labels off their line §4d, struck titles §4e, crossings §4f, weaving flows §4g, foreign containers §4h) are a **ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
 adding fixtures doesn't spuriously fail the gate. Current rates are ceilings
 that may only fall. Lower a rate when a change earns it; never raise one to go
 green.
@@ -198,6 +198,85 @@ starts shuffling damage around. The riser taken is the one nearest the target:
 requiring exactly one riser per flow made the first version a no-op on the very
 case it was written for, because the flow at the centre of the tangle turned
 twice.
+
+### 4g. A flow does not weave
+
+No flow takes more than two turns between its endpoints (`turnHeavy`, ratchet).
+Two nodes are always joinable by a straight run, an L or a Z, so a third turn
+cannot be explained by geometry — it means the flow left through a side that did
+not face where it was going, usually queueing on a busy side while another sits
+unused. `Payment hub` in `infrastructure-large` puts both its outbound flows on
+its east side, one of them taking four turns to reach the database, with north
+and south free and one turn away.
+
+The corpus turn histogram is why the threshold is three and not two: 830 flows
+sit at 0–2 turns and the tail beyond is a different population entirely.
+
+**Deliberately measured on the outcome, not the opportunity.** The tempting rule
+— "a terminal on a crowded side when a free side faces the counterpart" — matches
+**676 of 2160 terminals (31%)** in `wide` alone. A rule that fires on a third of
+all attachments describes a configuration, not a defect, and a pass acting on it
+would rewrite every drawing. Turns are what the reader actually pays for.
+
+**The repair runs last, and that is the whole design.** Unweaving re-sides a
+flow through the face that actually points at its counterpart — often one
+standing empty while the flow queues on a busy side. A first attempt placed it
+beside the §4c reroute at the top of `edge-tidy`, where it validated candidates
+that four later mutations (attachment separation, de-coincidence, title lifting,
+riser nesting) then reshaped: routes proven crossing-free when chosen were not
+crossing-free when drawn, and the corpus paid 16 per-drawing regressions.
+Running it after every other mutation, so that what is validated is what is
+rendered, took the same idea to zero regressions. §4f works for the same reason.
+
+Acceptance order is the readability ranking: **a candidate may never gain a
+crossing partner it did not already cross, may not add a fan tangle, must leave
+every label a seat clear of nodes and titles, and must clear title bands by
+`BAND_MARGIN`; among those that turn less than the route they replace, the
+shortest wins.** Size is the tie-break, never the gate.
+
+*Partners, not counts* — and that distinction was paid for. Counting crossings
+let `Hub de paiement → PostgreSQL primaire` trade two crossings with one flow for
+one with another: the drawing's total fell 4→3, the per-drawing gate recorded an
+improvement, and a new crossing appeared beside the node in an area that had been
+clean. **A per-metric total cannot see a defect move.** Comparing the *set* of
+crossed flows can, and it is the only form of this check that is safe.
+
+`BAND_MARGIN` is 38 and calibrated, not chosen: `compact` runs after this pass
+and shifts bands and runs by different per-row amounts, so a route that merely
+grazes a title here can be sitting on one by the time it is drawn. Below ~30 that
+leaked struck titles; at 46 it started refusing good routes.
+
+Folded slide layouts (`slide-fold`) are exempt — they hand-route on a lane grid
+where re-siding a terminal costs a lane and the neighbours reflow.
+
+What remains is mostly flows whose straighter route would cross something the
+weave currently dodges. Lowering this rate means giving those flows somewhere to
+go, not relaxing the count.
+
+### 4h. A run only crosses containers it belongs to
+
+A run may pass through a container that **holds one of its endpoints** — that is
+how anything leaves a data centre or a zone — and through no other
+(`throughContainer`, ratchet). Cutting through a container you have no business
+in reads as traffic transiting that component.
+
+Nothing could see this before: `throughBox` and every routing guard in
+`edge-tidy` test **leaf** nodes only, because container interiors are routable by
+design. `Kafka → Backup server` ran the full width of `PostgreSQL standby` — a
+`server` that merely happens to hold a replica, and therefore a container —
+completely unguarded.
+
+Measured at 102; the reroute in `edge-tidy` now clears **44** of them and may
+never create one. This is a **Tier 0** concern (see the ladder below), so it
+outranks weaving (§4g): a candidate that clears a container is accepted even
+when it turns no *less* — but never when it turns *more*, since paying for it
+with a new weave only moves the reader's problem down a tier.
+
+What remains are flows with no acceptable alternative: for `Kafka → Backup`,
+every one of the candidate routes — including entering the backup server from
+the north, which is the right shape — is rejected by the merge-clearance guard,
+because the corridor above the DR zone already carries parallel runs. Lowering
+this rate means giving those corridors room, not weakening the guard.
 
 ## 5. Security
 
