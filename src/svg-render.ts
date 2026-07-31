@@ -15,6 +15,9 @@ import { esc, escAttr } from "./xml-escape.ts";
 import { type Box, boundsOf, boxesOverlap, boxGapSq, boxToPolylineSq } from "./geometry.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from "./scene-layout.ts";
 import { compactVertical } from "./compact.ts";
+import { labelsSeated } from "./edge-tidy.ts";
+import { anchorFlowLabels } from "./label-anchor.ts";
+import { titleBoxesOf } from "./route-detour.ts";
 import { chipW, techText, wrapText, fontSizes } from "./text-metrics.ts";
 
 const HOP_RADIUS = 5;
@@ -366,6 +369,38 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
 
   const overlapsBefore = countLabelOverlaps();
   settleLabelPositions();
+  // Undo any route repair that cost a label its run (INVARIANTS §4d). The
+  // repair pass in `edge-tidy` trades a lower-tier defect for a higher-tier
+  // fix, but it cannot see this particular cost: a moved route collides with a
+  // *neighbouring* label, and the settler resolves that by lifting whichever
+  // label it can — a decision that does not exist until settling has run. So
+  // the repair records what it replaced and the verdict is taken here, the
+  // first point where "is this label on its own run" has a real answer.
+  {
+    const repaired = scene.edges.filter((edge) => edge.repairedFrom);
+    if (repaired.length) {
+      const offRun = () => scene.edges.filter((edge) => !labelsSeated(edge)).length;
+      const titles = titleBoxesOf(scene, model);
+      const withRepair = offRun();
+      const repairedRoutes = repaired.map((edge) => edge.pts);
+      for (const edge of repaired) edge.pts = edge.repairedFrom!;
+      anchorFlowLabels(scene, titles);
+      settleLabelPositions();
+      // Keep the repair unless it cost the drawing a label. The comparison is
+      // whole-drawing on purpose: the label that gets lifted belongs to a
+      // *neighbour* of the moved flow, so asking "did this edge keep its own
+      // label" — which is what an earlier version did — always answered yes and
+      // reverted nothing.
+      if (offRun() >= withRepair) {
+        repaired.forEach((edge, index) => {
+          edge.pts = repairedRoutes[index];
+        });
+        anchorFlowLabels(scene, titles);
+        settleLabelPositions();
+      }
+      for (const edge of repaired) edge.repairedFrom = undefined;
+    }
+  }
   const overlapsAfter = countLabelOverlaps();
   // Settling can move a label off a band that nothing else pinned — an extreme
   // label at the top of the drawing escaping downward strands dead height that

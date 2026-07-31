@@ -55,7 +55,11 @@ Invariants detailed in [`INVARIANTS.md`](./INVARIANTS.md). In short:
 
 **Never regenerate to silence a diff you don't understand** — that turns the gate into noise.
 
-### Background
+#[`tests/README.md`](tests/README.md) is the full account of the test
+architecture — what each layer catches, and why the readability baseline accepts
+some regressions as trades.
+
+## Background
 
 `npm test` runs three layers against committed reference files:
 

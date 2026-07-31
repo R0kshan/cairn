@@ -32,6 +32,7 @@
  */
 
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
+import { inspect, ladderVerdict } from "./readability.ts";
 import type { TitleBox } from "./route-detour.ts";
 
 /** A segment this far off orthogonal is a rounding artefact, not a turn. */
@@ -192,6 +193,64 @@ function sideOf(point: Point, nodes: SceneNode[]): { node: SceneNode; side: Side
   return null;
 }
 
+/** Does an axis-aligned run at `at`, spanning `from`..`to`, cut through a leaf? */
+function runHitsNodeIn(
+  vertical: boolean,
+  at: number,
+  from: number,
+  to: number,
+  leaves: SceneNode[],
+): boolean {
+  const lo = Math.min(from, to);
+  const hi = Math.max(from, to);
+  return leaves.some((node) => {
+    const across = vertical
+      ? at > node.x + 1 && at < node.x + node.width - 1
+      : at > node.y + 1 && at < node.y + node.height - 1;
+    if (!across) return false;
+    return vertical
+      ? node.y < hi - 1 && node.y + node.height > lo + 1
+      : node.x < hi - 1 && node.x + node.width > lo + 1;
+  });
+}
+
+function enforceOrthogonalOn(edge: SceneEdge, leaves: SceneNode[]): void {
+  const pts = edge.pts;
+  const seats = [sideOf(pts[0], leaves), sideOf(pts[pts.length - 1], leaves)];
+  const borderAxis = (index: number): "x" | "y" | null => {
+    const seat = index === 0 ? seats[0] : index === pts.length - 1 ? seats[1] : null;
+    if (!seat) return null;
+    return seat.side === "north" || seat.side === "south" ? "y" : "x";
+  };
+  for (let guard = 0; guard < 20; guard++) {
+    let fixed = false;
+    for (let index = 0; index + 1 < pts.length; index++) {
+      const deltaX = pts[index + 1].x - pts[index].x;
+      const deltaY = pts[index + 1].y - pts[index].y;
+      if (Math.abs(deltaX) < 0.5 || Math.abs(deltaY) < 0.5) continue;
+      const axis: "x" | "y" = Math.abs(deltaX) >= Math.abs(deltaY) ? "y" : "x";
+      const movable = (candidate: number) =>
+        (candidate !== 0 && candidate !== pts.length - 1) || borderAxis(candidate) !== axis;
+      // Squaring a segment moves a point, and after a wide jog collapse that
+      // move can be large enough to drag the run across a node. Prefer the
+      // end that keeps it clear; if neither does, squareness still wins —
+      // a slanted flow is never acceptable.
+      const options = [index + 1, index].filter(movable);
+      if (!options.length) continue;
+      const clear = options.find((candidate) => {
+        const other = candidate === index + 1 ? index : index + 1;
+        const at = pts[other][axis];
+        const span = axis === "y" ? [pts[index].x, pts[index + 1].x] : [pts[index].y, pts[index + 1].y];
+        return !runHitsNodeIn(axis === "x", at, span[0], span[1], leaves);
+      });
+      const target = clear ?? options[0];
+      pts[target][axis] = pts[target === index + 1 ? index : index + 1][axis];
+      fixed = true;
+    }
+    if (!fixed) break;
+  }
+}
+
 interface Attachment {
   edge: SceneEdge;
   /** Index of the terminal point, and of the neighbour that follows it inward. */
@@ -240,19 +299,8 @@ export function tidyEdges(
   // alongside one for long enough to read as a single thick line.
   // A straightened or shifted run must not be dragged across a node either.
   // Widening the jog threshold without this put 26 flows through boxes.
-  const runHitsNode = (vertical: boolean, at: number, from: number, to: number) => {
-    const lo = Math.min(from, to);
-    const hi = Math.max(from, to);
-    return leaves.some((node) => {
-      const across = vertical
-        ? at > node.x + 1 && at < node.x + node.width - 1
-        : at > node.y + 1 && at < node.y + node.height - 1;
-      if (!across) return false;
-      return vertical
-        ? node.y < hi - 1 && node.y + node.height > lo + 1
-        : node.x < hi - 1 && node.x + node.width > lo + 1;
-    });
-  };
+  const runHitsNode = (vertical: boolean, at: number, from: number, to: number) =>
+    runHitsNodeIn(vertical, at, from, to, leaves);
   const runIsClear = (
     others: { lo: number; hi: number; at: number }[],
     at: number,
@@ -270,42 +318,7 @@ export function tidyEdges(
   // neighbour, and a jog left in place (because straightening it would merge
   // two flows) tilts when a separation move shifts one of its ends. A
   // terminal may slide along its side but never leave the border it sits on.
-  const enforceOrthogonal = (edge: SceneEdge) => {
-    const pts = edge.pts;
-    const seats = [sideOf(pts[0], leaves), sideOf(pts[pts.length - 1], leaves)];
-    const borderAxis = (index: number): "x" | "y" | null => {
-      const seat = index === 0 ? seats[0] : index === pts.length - 1 ? seats[1] : null;
-      if (!seat) return null;
-      return seat.side === "north" || seat.side === "south" ? "y" : "x";
-    };
-    for (let guard = 0; guard < 20; guard++) {
-      let fixed = false;
-      for (let index = 0; index + 1 < pts.length; index++) {
-        const deltaX = pts[index + 1].x - pts[index].x;
-        const deltaY = pts[index + 1].y - pts[index].y;
-        if (Math.abs(deltaX) < 0.5 || Math.abs(deltaY) < 0.5) continue;
-        const axis: "x" | "y" = Math.abs(deltaX) >= Math.abs(deltaY) ? "y" : "x";
-        const movable = (candidate: number) =>
-          (candidate !== 0 && candidate !== pts.length - 1) || borderAxis(candidate) !== axis;
-        // Squaring a segment moves a point, and after a wide jog collapse that
-        // move can be large enough to drag the run across a node. Prefer the
-        // end that keeps it clear; if neither does, squareness still wins —
-        // a slanted flow is never acceptable.
-        const options = [index + 1, index].filter(movable);
-        if (!options.length) continue;
-        const clear = options.find((candidate) => {
-          const other = candidate === index + 1 ? index : index + 1;
-          const at = pts[other][axis];
-          const span = axis === "y" ? [pts[index].x, pts[index + 1].x] : [pts[index].y, pts[index + 1].y];
-          return !runHitsNode(axis === "x", at, span[0], span[1]);
-        });
-        const target = clear ?? options[0];
-        pts[target][axis] = pts[target === index + 1 ? index : index + 1][axis];
-        fixed = true;
-      }
-      if (!fixed) break;
-    }
-  };
+  const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
 
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
@@ -1678,4 +1691,247 @@ export function tidyEdges(
       enforceOrthogonal(edge);
     }
   }
+}
+
+/**
+ * Is every label of this flow sitting on its own run (INVARIANTS §4d)? Same
+ * measurement the sweep's `labelOffLine` uses: the *text* centre against the
+ * polyline, not the box centre.
+ */
+export function labelsSeated(edge: SceneEdge): boolean {
+  const SLACK_SQ = 2 * 2;
+  return edge.labels.every((label) => {
+    const cx = label.x + label.width / 2;
+    const cy = label.y + (label.textH > 0 ? label.textH / 2 : label.height / 2);
+    let best = Number.POSITIVE_INFINITY;
+    for (let i = 0; i + 1 < edge.pts.length; i++) {
+      const p = edge.pts[i];
+      const q = edge.pts[i + 1];
+      const dx = q.x - p.x;
+      const dy = q.y - p.y;
+      const len = dx * dx + dy * dy;
+      const t = len === 0 ? 0 : Math.max(0, Math.min(1, ((cx - p.x) * dx + (cy - p.y) * dy) / len));
+      const ex = cx - (p.x + t * dx);
+      const ey = cy - (p.y + t * dy);
+      best = Math.min(best, ex * ex + ey * ey);
+    }
+    return best <= SLACK_SQ;
+  });
+}
+
+/**
+ * Stage 3c: ladder-driven route repair. Runs as its own pass, **after**
+ * `label-anchor` and `compact`, because those two reshape geometry: a route
+ * this optimiser validated while it still sat inside `tidyEdges` was not the
+ * route that got drawn, and the corpus said so — 36 per-drawing regressions on
+ * `infrastructure-large` alone, including crossings the ladder explicitly
+ * refuses to gain. Nothing may move edge geometry after this pass; the caller
+ * re-anchors labels onto the routes it settles on.
+ */
+export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded = false): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
+
+  // ===== Ladder-driven route repair (INVARIANTS §4) =====
+  //
+  // One optimiser, one acceptance rule. It replaces the private accept/reject
+  // tests that used to live in this pass — "strictly shorter", "fewer
+  // crossings", "clears a container" — which disagreed with each other and
+  // produced defects that moved rather than went. See `readability.ts`.
+  //
+  // Two properties matter, and both were learned by getting them wrong:
+  //
+  // - **It runs last.** Everything above still reshapes geometry, so a route
+  //   validated earlier is not the route that gets drawn. An earlier version of
+  //   this sat at the top of the pass and cost 16 per-drawing regressions.
+  // - **It moves flows in groups.** A corridor only frees up when several flows
+  //   move together: the crossing between two flows into the same database is
+  //   unfixable one flow at a time, because whichever moves first collides with
+  //   the one that has not.
+  if (!folded) {
+    const inspector = inspect(scene, titleBoxes);
+    // Three seats a side, not five. The optimiser evaluates every candidate
+    // against the whole scene, so the candidate count is the cost driver; 25
+    // seat pairs per side pair tripled build time for a handful of extra
+    // solutions the ±18 offsets already reach.
+    const SEAT_OFFSETS = [0, -18, 18];
+    const SIDES: Side[] = ["north", "south", "east", "west"];
+
+    const seatOn = (node: SceneNode, side: Side, offset: number): Point => {
+      const alongX = Math.min(
+        Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
+        node.x + node.width - SIDE_INSET,
+      );
+      const alongY = Math.min(
+        Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
+        node.y + node.height - SIDE_INSET,
+      );
+      return side === "north"
+        ? { x: alongX, y: node.y }
+        : side === "south"
+          ? { x: alongX, y: node.y + node.height }
+          : side === "west"
+            ? { x: node.x, y: alongY }
+            : { x: node.x + node.width, y: alongY };
+    };
+    const outward = (side: Side) =>
+      side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4;
+    const horizontalSide = (side: Side) => side === "east" || side === "west";
+
+    /** Every L or Z joining these two seats. Same-facing sides give a wrap, not a route. */
+    const shapesFor = (a: Point, aSide: Side, b: Point, bSide: Side): Point[][] => {
+      const aH = horizontalSide(aSide);
+      const bH = horizontalSide(bSide);
+      if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
+      if (outward(aSide) === outward(bSide)) return [];
+      if (aH)
+        return [(a.x + b.x) / 2, Math.min(a.x, b.x) + 24, Math.max(a.x, b.x) - 24].map((mid) => [
+          a,
+          { x: mid, y: a.y },
+          { x: mid, y: b.y },
+          b,
+        ]);
+      return [(a.y + b.y) / 2, Math.min(a.y, b.y) + 24, Math.max(a.y, b.y) - 24].map((mid) => [
+        a,
+        { x: a.x, y: mid },
+        { x: b.x, y: mid },
+        b,
+      ]);
+    };
+
+    /** Candidate routes for one edge, cheapest-looking first, de-duplicated. */
+    const routeCache = new Map<string, Point[][]>();
+    const routesFor = (edge: SceneEdge): Point[][] => {
+      // Keyed on the current route: candidates depend only on the two endpoint
+      // nodes, so this is stable until the edge itself moves.
+      const cacheKey = `${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
+      const cached = routeCache.get(cacheKey);
+      if (cached) return cached;
+      const ends = inspector.endsOf(edge.pts);
+      if (!ends[0] || !ends[1] || ends[0].node === ends[1].node) return [];
+      const out: Point[][] = [];
+      const seen = new Set<string>();
+      for (const aSide of SIDES)
+        for (const bSide of SIDES)
+          for (const aOff of SEAT_OFFSETS)
+            for (const bOff of SEAT_OFFSETS)
+              for (const raw of shapesFor(
+                seatOn(ends[0].node, aSide, aOff),
+                aSide,
+                seatOn(ends[1].node, bSide, bOff),
+                bSide,
+              )) {
+                const pts = raw.filter(
+                  (p, index) =>
+                    index === 0 ||
+                    Math.abs(p.x - raw[index - 1].x) >= 0.5 ||
+                    Math.abs(p.y - raw[index - 1].y) >= 0.5,
+                );
+                if (pts.length < 2) continue;
+                const key = pts.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+                if (seen.has(key)) continue;
+                seen.add(key);
+                out.push(pts);
+              }
+      const length = (pts: Point[]) => {
+        let total = 0;
+        for (let i = 0; i + 1 < pts.length; i++)
+          total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
+        return total;
+      };
+      // Fewest turns, then shortest — the maintainer's ranking, used only to
+      // decide which candidates to *try* first. Acceptance is the ladder's.
+      // Square every candidate *before* scoring it. Applying orthogonality after
+      // acceptance means the ladder judged one polyline and the drawing got a
+      // different one — the same "validated is not what ships" mistake this pass
+      // was moved to the end of the pipeline to avoid, in miniature.
+      const squared = out.map((pts) => {
+        const probe = { ...edge, pts: pts.map((p) => ({ ...p })) } as SceneEdge;
+        enforceOrthogonalOn(probe, leaves);
+        return probe.pts;
+      });
+      squared.sort((p, q) => p.length - q.length || length(p) - length(q));
+      routeCache.set(cacheKey, squared);
+      return squared;
+    };
+
+    const rank = (edge: SceneEdge) => Number.parseInt(edge.id.slice(1), 10) || 0;
+    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
+
+    /** Flows sharing a node with this one — the ones a joint move can help. */
+    const neighboursOf = (edge: SceneEdge): SceneEdge[] => {
+      const mine = inspector.endsOf(edge.pts).map((end) => end?.node);
+      return ordered.filter((other) => {
+        if (other === edge || other.pts.length < 2) return false;
+        return inspector.endsOf(other.pts).some((end) => end && mine.includes(end.node));
+      });
+    };
+
+    const tryMove = (group: SceneEdge[], overrides: Map<string, Point[]>) => {
+      const ids = new Set(group.map((edge) => edge.id));
+      const before = inspector.local(ids, new Map());
+      const after = inspector.local(ids, overrides);
+      if (ladderVerdict(before, after) < 0) return false;
+      for (const edge of group) {
+        const pts = overrides.get(edge.id);
+        if (pts) {
+          edge.pts = pts.map((p) => ({ ...p }));
+          inspector.forget(edge.id);
+        }
+      }
+      return true;
+    };
+
+    // Iterate to a fixpoint: a move can unblock another, and the ladder makes
+    // every accepted step a strict improvement, so this terminates.
+    for (let round = 0; round < 3; round++) {
+      let changed = false;
+      for (const edge of ordered) {
+        if (edge.pts.length < 2) continue;
+        const ids = new Set([edge.id]);
+        if (inspector.local(ids, new Map()).size === 0) continue;
+
+        // Single move first — cheapest, and most defects yield to it.
+        let moved = false;
+        for (const pts of routesFor(edge)) {
+          if (tryMove([edge], new Map([[edge.id, pts]]))) {
+            moved = true;
+            break;
+          }
+        }
+        if (moved) {
+          changed = true;
+          continue;
+        }
+
+        // Joint move: this flow plus one it shares a node with. Bounded to the
+        // best few routes each, since the pair space is quadratic.
+        // Joint moves are quadratic, so they are earned, not automatic: only a
+        // Tier 0 or Tier 2 defect (a run through something, a tangle) justifies
+        // the search. A weave costs the reader time, not meaning, and is not
+        // worth pairing the whole neighbourhood over.
+        const worst = Math.min(...[...inspector.local(ids, new Map()).values()]);
+        if (worst > 2) continue;
+        const mineTop = routesFor(edge).slice(0, 8);
+        outer: for (const partner of neighboursOf(edge).slice(0, 4)) {
+          const theirsTop = routesFor(partner).slice(0, 8);
+          for (const mine of mineTop)
+            for (const theirs of theirsTop) {
+              const overrides = new Map([
+                [edge.id, mine],
+                [partner.id, theirs],
+              ]);
+              if (tryMove([edge, partner], overrides)) {
+                changed = true;
+                moved = true;
+                break outer;
+              }
+            }
+        }
+      }
+      if (!changed) break;
+    }
+  }
+
+  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }

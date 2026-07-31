@@ -1,53 +1,53 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 859" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 866" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="192" height="859" fill="#ffffff"/>
-<rect x="10" y="140" width="172" height="517" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
-<text x="20" y="158" font-size="13" font-weight="bold" fill="#17202c">Cloud host</text>
-<rect x="38" y="172" width="126" height="83" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="48" y="190" font-size="13" font-weight="bold" fill="#17202c">Public zone</text>
-<rect x="19" y="350" width="154" height="298" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="29" y="368" font-size="13" font-weight="bold" fill="#17202c">Private zone</text>
-<rect x="38" y="382" width="126" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="48" y="400" font-size="13" font-weight="bold" fill="#17202c">Web VM</text>
-<rect x="38" y="551" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="48" y="569" font-size="13" font-weight="bold" fill="#17202c">Database</text>
-<text x="48" y="583" font-size="13" font-weight="bold" fill="#17202c">VM</text>
-<rect x="47" y="199" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="101" y="219.25" font-size="12.5" text-anchor="middle" fill="#17202c">Load</text>
-<text x="101" y="233.75" font-size="12.5" text-anchor="middle" fill="#17202c">balancer</text>
-<rect x="47" y="409" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
-<text x="101" y="432" font-size="12.5" text-anchor="middle" fill="#17202c">CMS</text>
-<rect x="47" y="592" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
-<text x="101" y="615" font-size="12.5" text-anchor="middle" fill="#17202c">MySQL</text>
+<rect width="192" height="866" fill="#ffffff"/>
+<rect x="10" y="147" width="172" height="517" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
+<text x="20" y="165" font-size="13" font-weight="bold" fill="#17202c">Cloud host</text>
+<rect x="38" y="179" width="126" height="83" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="48" y="197" font-size="13" font-weight="bold" fill="#17202c">Public zone</text>
+<rect x="19" y="357" width="154" height="298" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="29" y="375" font-size="13" font-weight="bold" fill="#17202c">Private zone</text>
+<rect x="38" y="389" width="126" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="48" y="407" font-size="13" font-weight="bold" fill="#17202c">Web VM</text>
+<rect x="38" y="558" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="48" y="576" font-size="13" font-weight="bold" fill="#17202c">Database</text>
+<text x="48" y="590" font-size="13" font-weight="bold" fill="#17202c">VM</text>
+<rect x="47" y="206" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="101" y="226.25" font-size="12.5" text-anchor="middle" fill="#17202c">Load</text>
+<text x="101" y="240.75" font-size="12.5" text-anchor="middle" fill="#17202c">balancer</text>
+<rect x="47" y="416" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="101" y="439" font-size="12.5" text-anchor="middle" fill="#17202c">CMS</text>
+<rect x="47" y="599" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="101" y="622" font-size="12.5" text-anchor="middle" fill="#17202c">MySQL</text>
 <circle cx="101" cy="32" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 90 54 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="101" y="66" font-size="11" text-anchor="middle" fill="#20364c">Internet</text>
 <text x="101" y="77" font-size="11" text-anchor="middle" fill="#20364c">visitors</text>
-<path d="M 101 87 L 101 199" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 101 246 L 101 409" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 101 447 L 101 592" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="101" y="114.625" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Site access</text>
-<text x="101" y="129.125" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
-<text x="101" y="294" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Balanced</text>
-<text x="101" y="308.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">traffic</text>
-<text x="101" y="323" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTP/8080)</text>
-<text x="101" y="515.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Read/write</text>
-<text x="101" y="530" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">content</text>
-<text x="101" y="544.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP/3306)</text>
-<line x1="20" y1="677" x2="172" y2="677" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="699" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="689" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
-<text x="182" y="700" font-size="10" fill="#17202c">Site / data center</text>
-<rect x="150" y="711" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
-<text x="182" y="722" font-size="10" fill="#17202c">Network zone</text>
-<rect x="150" y="733" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="182" y="744" font-size="10" fill="#17202c">Server / VM</text>
-<rect x="150" y="755" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
-<text x="182" y="766" font-size="10" fill="#17202c">Deployed application</text>
-<circle cx="163" cy="780" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<path d="M 158 790 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<text x="182" y="788" font-size="10" fill="#17202c">User / consumer</text>
-<line x1="150" y1="829" x2="176" y2="829" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="833" font-size="10" fill="#17202c">Technical flow (protocol, port)</text>
+<path d="M 119 87 L 119 142.5 L 119 206" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 119 253 L 119 334.5 L 119 416" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 119 454 L 119 526.5 L 119 599" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="119" y="114" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Site access</text>
+<text x="119" y="128.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<text x="119" y="289.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Balanced</text>
+<text x="119" y="304.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">traffic</text>
+<text x="119" y="318.75" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTP/8080)</text>
+<text x="119" y="486.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Read/write</text>
+<text x="119" y="500.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">content</text>
+<text x="119" y="515.25" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP/3306)</text>
+<line x1="20" y1="684" x2="172" y2="684" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="706" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="696" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
+<text x="182" y="707" font-size="10" fill="#17202c">Site / data center</text>
+<rect x="150" y="718" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<text x="182" y="729" font-size="10" fill="#17202c">Network zone</text>
+<rect x="150" y="740" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="182" y="751" font-size="10" fill="#17202c">Server / VM</text>
+<rect x="150" y="762" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="182" y="773" font-size="10" fill="#17202c">Deployed application</text>
+<circle cx="163" cy="787" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<path d="M 158 797 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<text x="182" y="795" font-size="10" fill="#17202c">User / consumer</text>
+<line x1="150" y1="836" x2="176" y2="836" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="840" font-size="10" fill="#17202c">Technical flow (protocol, port)</text>
 </svg>

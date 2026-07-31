@@ -15,7 +15,7 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
-import { tidyEdges } from "./edge-tidy.ts";
+import { labelsSeated, optimiseRoutes, tidyEdges } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
@@ -83,6 +83,12 @@ export interface SceneEdge {
    * rule (§4c) and its `attachAway` gate exempt them.
    */
   detour?: boolean;
+  /**
+   * The route this flow had before `optimiseRoutes` moved it. Kept so the
+   * renderer can undo a repair that cost some label its seat — that verdict is
+   * only reachable after label settling, which happens during rendering.
+   */
+  repairedFrom?: { x: number; y: number }[];
 }
 export interface Scene {
   width: number;
@@ -446,6 +452,28 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // disposition, since elk leaves spare corridors whether or not the reroute
     // above moved anything.
     compactVertical(scene);
+    // Route repair runs *after* compaction, not before it. `compact` shifts
+    // every y through a monotone map, which shrinks the gaps a route was judged
+    // on — so an optimiser placed above it validates geometry that compaction
+    // then narrows into near-parallel runs, tight attachments and micro-jogs.
+    // Nothing below this line may move edge geometry.
+    //
+    // A route change can cost a *different* flow's label its seat: the anchorer
+    // resolves the collisions a move creates by taking some label off its run,
+    // and which one it picks cannot be predicted from the moved edge alone. So
+    // the repair is allowed to try, and then audited — any flow whose label was
+    // on its run before and is not after has its route put back. That keeps the
+    // ladder's rule (a Tier 1 loss is only ever bought by a Tier 0 gain)
+    // without refusing every move that merely *might* cost a label.
+    const seatedBefore = new Set(scene.edges.filter(labelsSeated).map((edge) => edge.id));
+    const routesBefore = new Map(scene.edges.map((edge) => [edge.id, edge.pts]));
+    optimiseRoutes(scene, titleBoxes);
+    anchorFlowLabels(scene, titleBoxes);
+    for (const edge of scene.edges) {
+      const original = routesBefore.get(edge.id);
+      if (seatedBefore.has(edge.id) && original && original !== edge.pts)
+        edge.repairedFrom = original;
+    }
     return scene;
   };
 
@@ -487,6 +515,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         tidyEdges(folded, titleBoxesOf(folded, model), true);
         anchorFlowLabels(folded, titleBoxesOf(folded, model));
         compactVertical(folded);
+        // The folded layout hand-routes its connectors, so the optimiser is a
+        // no-op on it by design (`folded`), but the call keeps the two pipelines
+        // structurally identical.
+        optimiseRoutes(folded, titleBoxesOf(folded, model), true);
         return folded;
       }
     }

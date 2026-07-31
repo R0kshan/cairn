@@ -696,8 +696,47 @@ for (const entry of baseline.values()) for (const kind of entry.keys()) baseline
 const allKinds = [...MUST_BE_ZERO, ...Object.keys(CEILING_RATE)].filter(
   (kind) => baseline.size === 0 || baselineKinds.has(kind),
 );
+/**
+ * The readability ladder, as metrics (INVARIANTS §4). Same tiers `readability.ts`
+ * routes by, so the gate judges a change the way the router decided it.
+ *
+ * This matters because the two used to disagree. The gate demanded that no
+ * drawing get worse on *any* metric; the router is built to trade — spending a
+ * jog to remove a crossing is the whole point of a ladder. Under a flat gate
+ * every correct trade reads as a regression, so the router could only be made
+ * to pass by making it refuse the fixes it exists to perform.
+ *
+ * A regression at tier N is therefore accepted only when the same drawing
+ * improved at a tier that matters more. Tier 0 has nothing above it, so nothing
+ * ever buys a tier 0 regression — and every tier 0 metric is in MUST_BE_ZERO,
+ * which is checked separately and unconditionally.
+ */
+const TIER: Record<string, number> = {
+  diagonal: 0,
+  throughBox: 0,
+  throughContainer: 0,
+  coincident: 0,
+  attachShared: 0,
+  labelAdrift: 0,
+  labelPierced: 0,
+  titleStruck: 0,
+  deadBand: 0,
+  labelOrphan: 1,
+  labelOffLine: 1,
+  crossings: 2,
+  fanTangle: 2,
+  nearParallel: 2,
+  turnHeavy: 3,
+  "jog<=6": 3,
+  "jog<=20": 3,
+  attachAway: 3,
+  longDetour: 3,
+  attachTight: 4,
+};
+
 const regressions: string[] = [];
 const improvements: string[] = [];
+const trades: string[] = [];
 const unknown: string[] = [];
 for (const tag of examples) {
   const floor = baseline.get(tag);
@@ -706,17 +745,32 @@ for (const tag of examples) {
     if ([...mine.values()].some((count) => count > 0)) unknown.push(tag);
     continue;
   }
+  const worse: { kind: string; line: string; tier: number }[] = [];
+  let bestGain = Number.POSITIVE_INFINITY;
   for (const kind of allKinds) {
     const now = mine.get(kind) ?? 0;
     const was = floor.get(kind) ?? 0;
-    if (now > was) regressions.push(`${tag}: ${kind} ${was} -> ${now}`);
-    else if (now < was) improvements.push(`${tag}: ${kind} ${was} -> ${now}`);
+    const tier = TIER[kind] ?? 4;
+    if (now > was) worse.push({ kind, line: `${tag}: ${kind} ${was} -> ${now}`, tier });
+    else if (now < was) {
+      improvements.push(`${tag}: ${kind} ${was} -> ${now}`);
+      bestGain = Math.min(bestGain, tier);
+    }
+  }
+  for (const item of worse) {
+    if (bestGain < item.tier) trades.push(`${item.line} (paid for a tier ${bestGain} gain)`);
+    else regressions.push(item.line);
   }
 }
 if (regressions.length) {
   console.log(`\nper-drawing regressions vs baseline (${regressions.length}):`);
   for (const r of regressions) console.log(`  ✗ ${r}`);
   failed = true;
+}
+if (trades.length) {
+  console.log(`\n${trades.length} ladder trade(s) accepted — a lower-priority defect paid for a higher-priority fix:`);
+  for (const t of trades.slice(0, 12)) console.log(`  ~ ${t}`);
+  if (trades.length > 12) console.log(`  ... and ${trades.length - 12} more`);
 }
 if (improvements.length)
   console.log(

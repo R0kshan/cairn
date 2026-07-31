@@ -24,14 +24,27 @@ adding fixtures doesn't spuriously fail the gate. Current rates are ceilings
 that may only fall. Lower a rate when a change earns it; never raise one to go
 green.
 
-**No individual drawing may regress on any metric.** The corpus-wide rates have
-a blind spot this repo has been bitten by: a change can improve sixty drawings,
-quietly make one worse, and every total still falls.
+**No individual drawing may regress unless a more serious defect paid for it.**
+The corpus-wide rates have a blind spot this repo has been bitten by: a change
+can improve sixty drawings, quietly make one worse, and every total still falls.
 `tests/__snapshots__/readability.baseline` records the accepted defect count per
-drawing × metric; exceeding any recorded count fails the sweep. Improvements are
-locked in with `npm run sweep -- --update-baseline` — floors only fall, like the
-rates. Treat the baseline like a snapshot: never regenerate to silence a
-regression you don't understand.
+drawing × metric. Improvements are locked in with
+`npm run sweep -- --update-baseline` — floors only fall, like the rates. Treat
+the baseline like a snapshot: never regenerate to silence a regression you don't
+understand.
+
+The exception is not a loophole, it is the routing rule restated. Flow repair is
+built to trade — spending a turn to remove a crossing is the point of the ladder
+in §4 — so a gate that failed any drawing getting worse on any metric would fail
+every *correct* trade, and could only be passed by stopping the router doing its
+job. The baseline therefore applies the same five tiers: a drawing may get worse
+at tier N only if it improved at a tier that matters more, and the sweep reports
+those separately as accepted trades. Tier 0 has nothing above it, so nothing
+ever buys a tier 0 regression — and every tier 0 metric is in the must-be-zero
+list above, which is checked unconditionally.
+[`documentation/FLOW_ROUTING.md`](documentation/FLOW_ROUTING.md) explains the
+ladder; [`tests/README.md`](tests/README.md) explains how the gates fit
+together.
 
 `--only=<substring>` and `--shard=i/n` restrict the matrix for iteration and CI
 parallelism. Partial runs report the rates without gating them — a rate over

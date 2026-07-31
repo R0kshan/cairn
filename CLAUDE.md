@@ -50,6 +50,15 @@ Key passes an agent can't infer from names:
   pins the band it sits in). See [`INVARIANTS.md`](./INVARIANTS.md) §4a.
 - `compact.ts` — removes horizontal bands crossed only by vertical segments
   (dead space elk doesn't reclaim). Gated: dead bands must stay under 30px.
+- `readability.ts` + `optimiseRoutes` (in `edge-tidy.ts`) — one defect model and
+  one acceptance rule shared by every router: five tiers, reject any gain at a
+  tier, accept a loss and let lower tiers pay for it. Compares defect *identity
+  sets*, never counts — comparing totals cannot see a defect move, which shipped
+  twice. `optimiseRoutes` runs **after** `label-anchor` and `compact` and
+  nothing may move edge geometry after it.
+  [`documentation/FLOW_ROUTING.md`](./documentation/FLOW_ROUTING.md) is the
+  explanation; `npm run sweep` gates with the same ladder, so router and gate
+  agree on what "better" means.
 
 ## Non-negotiable invariants
 

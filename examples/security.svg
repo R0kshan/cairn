@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1133 419" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1133 380" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1133" height="419" fill="#ffffff"/>
+<rect width="1133" height="380" fill="#ffffff"/>
 <rect x="226" y="47" width="128" height="150" rx="6" fill="#fdeceb" stroke="#d0463f" stroke-width="1.4"/>
 <text x="236" y="65" font-size="13" font-weight="bold" fill="#17202c">DMZ</text>
 <text x="345" y="191" font-size="9.5" text-anchor="end" font-weight="bold" fill="#d0463f" letter-spacing="0.5">PUBLIC</text>
@@ -37,45 +37,45 @@
 <path d="M 118 165 L 235 165" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 345 156.66666666666669 L 515 156.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 345 172.33333333333334 L 491 172 L 491 224 L 515 224" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 623 164.33333333333334 L 660 164.33333333333334 A 5 5 0 0 1 670 164.33333333333334 L 763 164.33333333333334 L 777 164.33333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 623 223.5 L 647 223.5 L 647 179 L 660 179 A 5 5 0 0 1 670 179 L 777 179.33333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 623 139 L 753 139 L 753 171.5 L 777 171.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 587 200 L 587 189 L 777 189" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 885 171.5 L 983 171.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 623 156.5 L 665 156.5 L 665 266 L 4 266 L 4 97.5 L 236 97.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 515 139 L 308 139 L 308 121" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 344 97.5 L 369 97.5 L 369 46 L 657 46" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="176.5" y="168.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Web access</text>
 <text x="176.5" y="182.75" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<text x="430" y="121.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Filtered billing</text>
-<text x="430" y="136" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">traffic</text>
-<text x="430" y="150.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
-<text x="418" y="168.16666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Filtered CRM</text>
-<text x="418" y="182.66666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">traffic</text>
-<text x="418" y="197.16666666666669" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
-<text x="717" y="140.33333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Billing data</text>
-<text x="717" y="154.83333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">access</text>
-<text x="717" y="169.33333333333334" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<text x="726" y="194.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Customer data</text>
-<text x="726" y="209" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">access</text>
-<text x="726" y="223.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<text x="406" y="85.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Filtered billing</text>
+<text x="406" y="100" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">traffic</text>
+<text x="406" y="114.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
+<text x="439" y="187.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Filtered CRM</text>
+<text x="439" y="202" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">traffic</text>
+<text x="439" y="216.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(mTLS)</text>
+<text x="688" y="135" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Billing data</text>
+<text x="688" y="149.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">access</text>
+<text x="688" y="164" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<text x="682" y="185" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Customer data</text>
+<text x="682" y="199.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">access</text>
+<text x="682" y="214" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
 <text x="934" y="167.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Screened</text>
 <text x="934" y="182" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">queries</text>
 <text x="934" y="196.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<text x="334.5" y="262" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Drop invoices</text>
-<text x="334.5" y="276.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">to transmit</text>
-<text x="334.5" y="291" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<text x="411.5" y="135" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Drop invoices</text>
+<text x="411.5" y="149.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">to transmit</text>
+<text x="411.5" y="164" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
 <text x="513" y="42" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Partner</text>
 <text x="513" y="56.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">transfer</text>
 <text x="513" y="71" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4)</text>
-<line x1="20" y1="327" x2="1113" y2="327" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="349" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="339" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="182" y="350" font-size="10" fill="#17202c">Trust zone (sensitivity)</text>
-<rect x="339" y="339" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
-<text x="371" y="350" font-size="10" fill="#17202c">Filtering / security node</text>
-<rect x="533" y="339" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="565" y="350" font-size="10" fill="#17202c">Sensitive asset</text>
-<rect x="675" y="339" width="26" height="14" rx="3" fill="#fdecea" stroke="#cf4b3f" stroke-dasharray="5 3"/>
-<text x="707" y="350" font-size="10" fill="#17202c">Untrusted external</text>
-<line x1="150" y1="369" x2="176" y2="369" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="373" font-size="10" fill="#17202c">Security flow — cross-zone flows should be filtered and encrypted</text>
-<text x="150" y="397" font-size="10" fill="#17202c" font-style="italic">W0560 flags any flow entering a more-trusted zone without a security-node</text>
+<line x1="20" y1="288" x2="1113" y2="288" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="310" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="300" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="182" y="311" font-size="10" fill="#17202c">Trust zone (sensitivity)</text>
+<rect x="339" y="300" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
+<text x="371" y="311" font-size="10" fill="#17202c">Filtering / security node</text>
+<rect x="533" y="300" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="565" y="311" font-size="10" fill="#17202c">Sensitive asset</text>
+<rect x="675" y="300" width="26" height="14" rx="3" fill="#fdecea" stroke="#cf4b3f" stroke-dasharray="5 3"/>
+<text x="707" y="311" font-size="10" fill="#17202c">Untrusted external</text>
+<line x1="150" y1="330" x2="176" y2="330" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="334" font-size="10" fill="#17202c">Security flow — cross-zone flows should be filtered and encrypted</text>
+<text x="150" y="358" font-size="10" fill="#17202c" font-style="italic">W0560 flags any flow entering a more-trusted zone without a security-node</text>
 </svg>
