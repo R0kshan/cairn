@@ -43,7 +43,9 @@ those separately as accepted trades. Tier 0 has nothing above it, so nothing
 ever buys a tier 0 regression — and every tier 0 metric is in the must-be-zero
 list above, which is checked unconditionally.
 [`documentation/FLOW_ROUTING.md`](documentation/FLOW_ROUTING.md) explains the
-ladder; [`tests/README.md`](tests/README.md) explains how the gates fit
+ladder and [`documentation/LADDER.md`](documentation/LADDER.md) documents its
+implementation — what every metric measures, its tier, and which of the three
+gates holds it; [`tests/README.md`](tests/README.md) explains how the gates fit
 together.
 
 `--only=<substring>` and `--shard=i/n` restrict the matrix for iteration and CI
