@@ -15,7 +15,7 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
-import { labelsSeated, optimiseRoutes, tidyEdges } from "./edge-tidy.ts";
+import { optimiseRoutes, tidyEdges } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
@@ -458,6 +458,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // then narrows into near-parallel runs, tight attachments and micro-jogs.
     // Nothing below this line may move edge geometry.
     //
+    // Title boxes are re-derived here, not reused. The set captured above was
+    // measured before `compactVertical`, which shifts every y through a monotone
+    // map and therefore moves the containers whose names those boxes describe.
+    // Handing the stale set to a pass that runs *after* compaction makes it
+    // dodge the bands where they used to be and strike them where they now are —
+    // which is exactly what `titleStruck` reported on 17 drawings, all of them
+    // tier 0 regressions the router believed it was refusing.
+    //
     // A route change can cost a *different* flow's label its seat: the anchorer
     // resolves the collisions a move creates by taking some label off its run,
     // and which one it picks cannot be predicted from the moved edge alone. So
@@ -465,14 +473,32 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // on its run before and is not after has its route put back. That keeps the
     // ladder's rule (a Tier 1 loss is only ever bought by a Tier 0 gain)
     // without refusing every move that merely *might* cost a label.
-    const seatedBefore = new Set(scene.edges.filter(labelsSeated).map((edge) => edge.id));
-    const routesBefore = new Map(scene.edges.map((edge) => [edge.id, edge.pts]));
-    optimiseRoutes(scene, titleBoxes);
-    anchorFlowLabels(scene, titleBoxes);
+    // Deep copy: `optimiseRoutes` finishes by squaring every edge, which mutates
+    // Point objects in place, so a shallow snapshot is not a snapshot.
+    const routesBefore = new Map(
+      scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))]),
+    );
+    const settledTitles = titleBoxesOf(scene, model);
+    optimiseRoutes(scene, settledTitles);
+    anchorFlowLabels(scene, settledTitles);
+    // Record *every* edge the repair moved. Restricting this to edges whose
+    // label was seated beforehand made the rollback partial — the renderer put
+    // some flows back while leaving the rest where the optimiser had moved them,
+    // and a drawing that is half repaired is not a drawing either pass ever
+    // evaluated. That mixture is what produced `coincident` runs, a must-be-zero
+    // breach. Whether the repair was worth keeping is judged whole-drawing in
+    // the renderer; this only has to make the undo complete.
     for (const edge of scene.edges) {
       const original = routesBefore.get(edge.id);
-      if (seatedBefore.has(edge.id) && original && original !== edge.pts)
-        edge.repairedFrom = original;
+      if (!original) continue;
+      const moved =
+        original.length !== edge.pts.length ||
+        original.some(
+          (point, index) =>
+            Math.abs(point.x - edge.pts[index].x) > 0.01 ||
+            Math.abs(point.y - edge.pts[index].y) > 0.01,
+        );
+      if (moved) edge.repairedFrom = original;
     }
     return scene;
   };

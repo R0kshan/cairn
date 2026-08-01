@@ -379,9 +379,27 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   {
     const repaired = scene.edges.filter((edge) => edge.repairedFrom);
     if (repaired.length) {
-      const offRun = () => scene.edges.filter((edge) => !labelsSeated(edge)).length;
       const titles = titleBoxesOf(scene, model);
-      const withRepair = offRun();
+      // Every way a route change can damage a label, not just one of them. The
+      // first version of this audit counted only labels off their run, and the
+      // corpus answered: labelAdrift 3 (a must-be-zero invariant), labelOrphan
+      // 0 -> 17, labelPierced 7 -> 29. Moving more routes gives the settler more
+      // collisions to resolve, and it resolves them by pushing labels into every
+      // failure mode §4a and §4d name — so the audit has to weigh all of them or
+      // it silently licenses the ones it does not look at.
+      const labelHarm = () => {
+        let harm = 0;
+        for (const label of labels) {
+          const own = offOwnRun(label);
+          if (own > ADRIFT_SQ) harm++;
+          if (stolen(label, own)) harm++;
+          if (pierced(label)) harm++;
+          if (titles.some((title) => boxesOverlap(title as Box, label as Box))) harm++;
+        }
+        for (const edge of scene.edges) if (!labelsSeated(edge)) harm++;
+        return harm;
+      };
+      const withRepair = labelHarm();
       const repairedRoutes = repaired.map((edge) => edge.pts);
       for (const edge of repaired) edge.pts = edge.repairedFrom!;
       anchorFlowLabels(scene, titles);
@@ -391,7 +409,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       // *neighbour* of the moved flow, so asking "did this edge keep its own
       // label" — which is what an earlier version did — always answered yes and
       // reverted nothing.
-      if (offRun() >= withRepair) {
+      if (labelHarm() >= withRepair) {
         repaired.forEach((edge, index) => {
           edge.pts = repairedRoutes[index];
         });

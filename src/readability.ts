@@ -52,6 +52,24 @@ const JOG_LIMIT = 20;
 const MAX_TURNS = 2;
 /** Terminals offset by less than this on an axis are "aligned", not "away". */
 const AWAY_TOL = 24;
+/**
+ * Room a terminal segment needs for its arrowhead to read as an arrow
+ * (INVARIANTS §4i). The head is ~7px long, so a shorter run leaves nothing
+ * between the head and the corner feeding it and the direction stops being
+ * legible — worse when the corner also sits a few px off a parallel container
+ * border, which is what makes the two read as one line.
+ */
+const ARROW_ROOM = 14;
+/**
+ * How close a run may pass *alongside* a leaf box border before the two read as
+ * one line — the run stops looking like a flow and starts looking like part of
+ * the box outline. Deliberately leaf-only: the same rule applied to *container*
+ * borders pushes runs onto container names and fights §4e (see §4i).
+ */
+const HUG_CLEAR = 8;
+/** How much a run must travel alongside a border before hugging it is visible. */
+const HUG_RUN = 12;
+
 
 const orthOf = (a: Point, b: Point) => Math.abs(a.x - b.x) < 0.5;
 
@@ -284,6 +302,45 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
           if (!blocked) seatable = true;
         }
         if (!seatable) profile.set(`unlabelled:${edge.id}`, 1);
+      }
+
+      // A terminal with no room for its arrowhead (§4i). Tier 2: the flow is
+      // still attributable, but its *direction* — which is meaning, not polish —
+      // takes work to read, and a head jammed against the corner feeding it
+      // reads as a line, not an arrow.
+      //
+      // Deliberately scoped to the arrowhead, not to "runs near a container
+      // border". The wider rule was tried and pushed runs off borders straight
+      // onto container *names* — it fought §4e and gained a tier 0 defect on ten
+      // drawings to fix a tier 2 one. Both reported cases were short terminals.
+      for (const [from, to] of [
+        [0, 1],
+        [pts.length - 1, pts.length - 2],
+      ]) {
+        const span = Math.abs(pts[to].x - pts[from].x) + Math.abs(pts[to].y - pts[from].y);
+        if (span > 0 && span < ARROW_ROOM) profile.set(`cramped:${edge.id}:${from}`, 2);
+      }
+      // A run travelling alongside a leaf's border, close enough that the two
+      // read as one line (§4i). Skips the boxes this flow actually attaches to —
+      // a terminal necessarily touches its own node's border.
+      const mineNodes = [ends[0]?.node, ends[1]?.node];
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        const horizontal = Math.abs(a.y - b.y) < 0.5;
+        if (!horizontal && Math.abs(a.x - b.x) >= 0.5) continue;
+        const at = horizontal ? a.y : a.x;
+        const lo = Math.min(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
+        const hi = Math.max(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
+        for (const box of leaves) {
+          if (mineNodes.includes(box)) continue;
+          const along = horizontal ? [box.x, box.x + box.width] : [box.y, box.y + box.height];
+          if (Math.min(hi, along[1]) - Math.max(lo, along[0]) < HUG_RUN) continue;
+          const sides = horizontal ? [box.y, box.y + box.height] : [box.x, box.x + box.width];
+          for (const side of sides)
+            if (Math.abs(at - side) < HUG_CLEAR)
+              profile.set(`hug:${edge.id}:${index}@${box.id}`, 2);
+        }
       }
 
       // ---- Tier 3: eye travel -------------------------------------------

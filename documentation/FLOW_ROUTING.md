@@ -35,7 +35,7 @@ Every defect cairn can detect sits at one of five tiers. Lower number = worse.
 |---|---|---|
 | **0** | **Information is destroyed.** The reader cannot recover what the diagram meant. | A run through a box it doesn't belong to; two flows drawn on top of each other; a route across a container's name; a label pierced by a foreign flow |
 | **1** | **Attribution is broken.** You can see the lines, but not which label names which. | A label off its own run; a label nearer a neighbouring flow than its own |
-| **2** | **A line is hard to follow.** You can attribute it, but tracing it takes effort. | Crossings; tangled fans leaving a node side; two runs so close they read as one |
+| **2** | **A line is hard to follow.** You can attribute it, but tracing it takes effort. | Crossings; tangled fans leaving a node side; two runs so close they read as one; an arrowhead with no room to read as an arrow |
 | **3** | **Eye travel.** Perfectly clear, just further than necessary. | Extra turns; micro-jogs; a terminal setting off away from its target; long detours |
 | **4** | **Polish.** | Attachment points closer together than the node side comfortably allows |
 

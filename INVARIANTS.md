@@ -291,6 +291,33 @@ the north, which is the right shape — is rejected by the merge-clearance guard
 because the corridor above the DR zone already carries parallel runs. Lowering
 this rate means giving those corridors room, not weakening the guard.
 
+### 4i. An arrowhead has room to read as an arrow
+
+A flow's **terminal segment** — the one carrying the arrowhead — must be at
+least **14px** long. The head itself is ~7px, so a shorter run leaves nothing
+between the head and the corner feeding it, and the arrow reads as a line with a
+thickening at the end. Direction is meaning, not polish, so this sits at tier 2
+of the ladder (§3) rather than in the polish tier.
+
+Reported on `application-small`, where `MANAGER -> APPROVAL` arrived
+`(83,168) (368,168) (368,161)` — a **7px** riser — and `APPROVAL -> PAYROLL` left
+on a **5px** stub. Both ran a few pixels off the `HR portal` container's bottom
+border, which is what made them look like one line with a smudge on it. The
+repair pass now re-sides them: `MANAGER` enters `APPROVAL` from the west with a
+243px terminal, and `APPROVAL` leaves south with a 22px stub clear of the
+container.
+
+**Scoped to the arrowhead on purpose.** The wider rule — "no run may sit within
+8px of a parallel container border" — was implemented and measured first. It
+pushed runs off borders and straight onto container *names*, fighting §4e: ten
+drawings gained a `titleStruck` (tier 0) to lose a shadowed border (tier 2),
+which is the ladder upside down. A border a run merely runs near is a cosmetic
+complaint; a name drawn through is destroyed information.
+
+Not yet a swept metric — the router avoids it, but nothing gates it. Adding
+`arrowCramped` to `scripts/sweep.ts` needs a corpus-wide count to calibrate the
+ceiling from.
+
 ## 5. Security
 
 All user text is escaped before SVG emission (`esc()` / `escAttr()`). Reserved

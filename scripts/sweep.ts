@@ -287,6 +287,13 @@ try {
 const perDrawing = new Map<string, Map<string, number>>();
 
 for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encoding: "utf8" })
+  // `readdirSync` returns platform-native separators, so on Windows a nested
+  // fixture arrives as `dispositions\\foo.cairn` and its tag never matches the
+  // `dispositions/foo/page` written by CI. The drawing then reads as "not in the
+  // baseline" and is *skipped* rather than gated — which quietly reduced the
+  // per-drawing gate to top-level fixtures only on Windows (130 of 288 drawings
+  // unchecked). Tags are an on-disk contract; normalise before building one.
+  .map((f) => f.replace(/\\/g, "/"))
   .filter((f) => f.endsWith(".cairn") && !f.includes("broken"))
   .filter((f) => !only || f.includes(only))
   .sort()
