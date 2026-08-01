@@ -51,6 +51,31 @@ parallelism. Partial runs report the rates without gating them — a rate over
 part of the corpus cannot judge a corpus-wide ceiling — but the per-drawing
 baseline still gates, since each drawing is judged against its own line.
 
+### A guard must measure what the invariant measures
+
+Every defect above is checked in two places: a pass that avoids creating it, and
+`npm run sweep` that fails the build if it exists. When those two measure the
+same thing by different means, the pass believes it is safe while the gate
+disagrees — and the bug is invisible, because the code *looks* like it checks the
+right rule.
+
+This has cost four separate debugging sessions:
+
+- `label-anchor`'s revert guard uses `boxToPolylineSq` on the label **box**; §4d
+  and the sweep measure the **text centre**. For a two-line label with a chip
+  beneath, those read 8px and 44px. The guard passes; the gate reports
+  `labelAdrift`.
+- `optimiseRoutes` was handed `titleBoxes` captured before `compact` shifted
+  every y — it dodged title bands where they used to be and struck them where
+  they now are. 17 regressions.
+- A fan-clearance check and a `nearParallel` check each used a threshold that
+  did not match the sweep's.
+
+So: when adding a rule, take the predicate from `scripts/sweep.ts` rather than
+writing a second one that means the same thing. When adding a *metric*, give the
+router the same expression. If the two must differ, say why in a comment next to
+both.
+
 ## 4. Flow labels
 
 Flow labels are **required** on logical view (`E0203`), optional on

@@ -95754,6 +95754,9 @@ var FAN_REACH = 48;
 var JOG_LIMIT = 20;
 var MAX_TURNS = 2;
 var AWAY_TOL = 24;
+var ARROW_ROOM = 14;
+var HUG_CLEAR = 8;
+var HUG_RUN = 12;
 var orthOf = (a, b) => Math.abs(a.x - b.x) < 0.5;
 function crossAt(a1, a2, b1, b2) {
   const side = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
@@ -95905,6 +95908,32 @@ function inspect(scene, titleBoxes = []) {
           if (!blocked) seatable = true;
         }
         if (!seatable) profile.set(`unlabelled:${edge.id}`, 1);
+      }
+      for (const [from, to] of [
+        [0, 1],
+        [pts.length - 1, pts.length - 2]
+      ]) {
+        const span = Math.abs(pts[to].x - pts[from].x) + Math.abs(pts[to].y - pts[from].y);
+        if (span > 0 && span < ARROW_ROOM) profile.set(`cramped:${edge.id}:${from}`, 2);
+      }
+      const mineNodes = [ends[0]?.node, ends[1]?.node];
+      for (let index = 0; index + 1 < pts.length; index++) {
+        const a = pts[index];
+        const b = pts[index + 1];
+        const horizontal = Math.abs(a.y - b.y) < 0.5;
+        if (!horizontal && Math.abs(a.x - b.x) >= 0.5) continue;
+        const at = horizontal ? a.y : a.x;
+        const lo = Math.min(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
+        const hi = Math.max(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
+        for (const box of leaves) {
+          if (mineNodes.includes(box)) continue;
+          const along = horizontal ? [box.x, box.x + box.width] : [box.y, box.y + box.height];
+          if (Math.min(hi, along[1]) - Math.max(lo, along[0]) < HUG_RUN) continue;
+          const sides = horizontal ? [box.y, box.y + box.height] : [box.x, box.x + box.width];
+          for (const side of sides)
+            if (Math.abs(at - side) < HUG_CLEAR)
+              profile.set(`hug:${edge.id}:${index}@${box.id}`, 2);
+        }
       }
       if (pts.length - 2 > MAX_TURNS) profile.set(`weave:${edge.id}`, 3);
       for (let index = 1; index + 2 < pts.length; index++) {
@@ -97330,6 +97359,8 @@ var boxToPolylineSq = (box, points) => {
 // src/label-anchor.ts
 var ADRIFT = 20;
 var PIERCE = 1;
+var ATTACHED = 6;
+var ON_LINE = 2;
 function hostSegment(label, edge) {
   let host = -1;
   let hostScore = 0;
@@ -97373,6 +97404,16 @@ function anchorFlowLabels(scene, titleBoxes = []) {
   const overlaps = (box, other) => box.x < other.x + other.width && other.x < box.x + box.width && box.y < other.y + other.height && other.y < box.y + box.height;
   const coversNode = (box) => leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
   const seated = [];
+  const attributableAt = (label, at, edge) => {
+    const box = { x: at.x, y: at.y, width: label.width, height: label.height };
+    const own = boxToPolylineSq(box, edge.pts);
+    if (own > ADRIFT * ADRIFT) return false;
+    const other = nearestOtherSq(box, edge);
+    if (own > ATTACHED * ATTACHED && other < own) return false;
+    const centre = { x: at.x + label.width / 2, y: at.y + textLead(label), width: 0, height: 0 };
+    const onLine = boxToPolylineSq(centre, edge.pts) <= ON_LINE * ON_LINE;
+    return onLine || other > PIERCE * PIERCE;
+  };
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
     for (const label of edge.labels) {
@@ -97422,44 +97463,100 @@ function anchorFlowLabels(scene, titleBoxes = []) {
           if (!coversNode(candidate)) alternatives.push(candidate);
           else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
         }
+      const stretched = [];
+      for (const segment of segmentOrder) {
+        const a = edge.pts[segment];
+        const b = edge.pts[segment + 1];
+        const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+        const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+        const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
+        const outer = span / 2;
+        if (outer <= room) continue;
+        const middle = (room + outer) / 2;
+        for (const offset of [-middle, middle, -outer, outer]) {
+          const candidate = vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + offset) : seatAt(label, (a.x + b.x) / 2 + offset, (a.y + b.y) / 2);
+          if (coversNode(candidate)) continue;
+          stretched.push(candidate);
+        }
+      }
+      alternatives.push(...stretched);
+      const besideRun = () => {
+        const out = [];
+        for (const segment of segmentOrder) {
+          const a = edge.pts[segment];
+          const b = edge.pts[segment + 1];
+          const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+          const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+          const need = vertical ? label.height : label.width;
+          const outer = span / 2;
+          const midX = (a.x + b.x) / 2;
+          const midY = (a.y + b.y) / 2;
+          for (const along of [0, -outer / 2, outer / 2, -outer, outer, -outer - need / 2, outer + need / 2])
+            for (const away of [0, -14, 14, -28, 28, -44, 44]) {
+              const candidate = seatAt(
+                label,
+                midX + (vertical ? away : along),
+                midY + (vertical ? along : away)
+              );
+              if (coversNode(candidate)) continue;
+              if (!attributableAt(label, candidate, edge)) continue;
+              out.push(candidate);
+            }
+        }
+        return out;
+      };
       alternatives.push(...tolerated);
-      seated.push({ label, from: { x: label.x, y: label.y }, own, alternatives });
+      seated.push({ label, edge, from: { x: label.x, y: label.y }, own, alternatives, besideRun });
       label.x = seat.x;
       label.y = seat.y;
     }
   }
   const overlapping = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   const rank = (entry) => entry.label.width * entry.label.height;
+  const clearAt = (entry, at) => {
+    const trial = { ...entry.label, x: at.x, y: at.y };
+    return !seated.some((other) => other !== entry && overlapping(trial, other.label));
+  };
   for (let round = 0; round < 3; round++) {
-    let reverted = false;
+    let moved = false;
     for (let i = 0; i < seated.length; i++)
       for (let j = i + 1; j < seated.length; j++) {
         const a = seated[i];
         const b = seated[j];
         if (a.done || b.done) continue;
         if (!overlapping(a.label, b.label)) continue;
-        const candidates = [a, b].filter((entry) => entry.own <= ADRIFT * ADRIFT).sort(
+        const order = [a, b].sort(
           (x, y) => rank(y) - rank(x) || x.label.flowId.localeCompare(y.label.flowId)
         );
-        const yielding = candidates[0];
-        if (!yielding) continue;
-        const free = yielding.alternatives.find((candidate) => {
-          const trial = { ...yielding.label, x: candidate.x, y: candidate.y };
-          return !seated.some(
-            (other) => other !== yielding && overlapping(trial, other.label)
-          );
-        });
-        if (free) {
-          yielding.label.x = free.x;
-          yielding.label.y = free.y;
-        } else {
-          yielding.label.x = yielding.from.x;
-          yielding.label.y = yielding.from.y;
-          yielding.done = true;
+        let escaped = false;
+        for (const entry of order) {
+          const free = entry.alternatives.find((candidate) => clearAt(entry, candidate));
+          if (!free) continue;
+          entry.label.x = free.x;
+          entry.label.y = free.y;
+          escaped = true;
+          break;
         }
-        reverted = true;
+        for (const entry of escaped ? [] : order) {
+          const free = entry.besideRun().find((candidate) => clearAt(entry, candidate));
+          if (!free) continue;
+          entry.label.x = free.x;
+          entry.label.y = free.y;
+          escaped = true;
+          break;
+        }
+        if (escaped) {
+          moved = true;
+          continue;
+        }
+        const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
+        if (!giving) continue;
+        giving.label.x = giving.from.x;
+        giving.label.y = giving.from.y;
+        giving.done = true;
+        moved = true;
       }
-    if (!reverted) break;
+    if (!moved) break;
   }
 }
 
@@ -97710,14 +97807,19 @@ async function layout(model, view) {
     tidyEdges(scene, titleBoxes);
     anchorFlowLabels(scene, titleBoxes);
     compactVertical(scene);
-    const seatedBefore = new Set(scene.edges.filter(labelsSeated).map((edge) => edge.id));
-    const routesBefore = new Map(scene.edges.map((edge) => [edge.id, edge.pts]));
-    optimiseRoutes(scene, titleBoxes);
-    anchorFlowLabels(scene, titleBoxes);
+    const routesBefore = new Map(
+      scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
+    );
+    const settledTitles = titleBoxesOf(scene, model);
+    optimiseRoutes(scene, settledTitles);
+    anchorFlowLabels(scene, settledTitles);
     for (const edge of scene.edges) {
       const original = routesBefore.get(edge.id);
-      if (seatedBefore.has(edge.id) && original && original !== edge.pts)
-        edge.repairedFrom = original;
+      if (!original) continue;
+      const moved = original.length !== edge.pts.length || original.some(
+        (point, index) => Math.abs(point.x - edge.pts[index].x) > 0.01 || Math.abs(point.y - edge.pts[index].y) > 0.01
+      );
+      if (moved) edge.repairedFrom = original;
     }
     return scene;
   };
@@ -98015,14 +98117,25 @@ function render(model, view, scene) {
   {
     const repaired = scene.edges.filter((edge) => edge.repairedFrom);
     if (repaired.length) {
-      const offRun = () => scene.edges.filter((edge) => !labelsSeated(edge)).length;
       const titles = titleBoxesOf(scene, model);
-      const withRepair = offRun();
+      const labelHarm = () => {
+        let harm = 0;
+        for (const label of labels) {
+          const own = offOwnRun(label);
+          if (own > ADRIFT_SQ) harm++;
+          if (stolen(label, own)) harm++;
+          if (pierced(label)) harm++;
+          if (titles.some((title) => boxesOverlap(title, label))) harm++;
+        }
+        for (const edge of scene.edges) if (!labelsSeated(edge)) harm++;
+        return harm;
+      };
+      const withRepair = labelHarm();
       const repairedRoutes = repaired.map((edge) => edge.pts);
       for (const edge of repaired) edge.pts = edge.repairedFrom;
       anchorFlowLabels(scene, titles);
       settleLabelPositions();
-      if (offRun() >= withRepair) {
+      if (labelHarm() >= withRepair) {
         repaired.forEach((edge, index) => {
           edge.pts = repairedRoutes[index];
         });

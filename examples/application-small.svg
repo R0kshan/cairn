@@ -30,13 +30,13 @@
 <text x="757" y="162.25" font-size="12.5" text-anchor="middle" fill="#17202c">Payroll HRIS</text>
 <text x="757" y="176.75" font-size="12.5" text-anchor="middle" fill="#17202c">(outsourced)</text>
 <path d="M 83 85 L 107 85 L 107 130 L 131 130" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 239 129.5 L 350 129.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 83 132 L 107 132 L 107 154.83333333333331 L 350 154.83333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 239 147 L 263 147 L 263 119.83333333333333 L 350 119.83333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 83 168 L 326 168 L 326 137.33333333333331 L 350 137.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 458 137.58333333333331 L 579 137.58333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 458 125.58333333333333 L 482 126 L 482 82 L 579 82" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 83 67 L 579 67" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 422 160.83333333333331 L 422 183 L 703 183" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="294.5" y="132.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(internal)</text>
+<text x="306.5" y="123.08333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(internal)</text>
 <text x="518.5" y="140.83333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <text x="530.5" y="85.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="331" y="70.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>

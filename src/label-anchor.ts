@@ -48,6 +48,20 @@ const ADRIFT = 20;
 const PIERCE = 1;
 
 /**
+ * Inside this a label reads as sitting on its own run whatever else is nearby,
+ * so a neighbour grazing nearer is not an ambiguity. Matches the sweep's
+ * `LABEL_ATTACHED`, the floor under `labelOrphan`.
+ */
+const ATTACHED = 6;
+
+/**
+ * How far a label's *text centre* may sit from its own run and still count as
+ * on it. Matches the sweep's `ON_LINE_SLACK`, which is what exempts a seated
+ * label from `labelPierced`.
+ */
+const ON_LINE = 2;
+
+/**
  * The run to centre the label on.
  *
  * Preference is the nearest segment long enough to carry the label, so a label
@@ -137,11 +151,34 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
     leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
   const seated: {
     label: SceneLabel;
+    edge: SceneEdge;
     from: { x: number; y: number };
     own: number;
     alternatives: Box[];
+    besideRun: () => Box[];
     done?: boolean;
   }[] = [];
+  /**
+   * Can a reader tell, from this seat alone, which flow the label names?
+   *
+   * The three sweep predicates that answer that question, in the sweep's own
+   * terms — `labelAdrift`, `labelOrphan` and `labelPierced` are checked here
+   * exactly as `scripts/sweep.ts` checks them, on the box for the first two and
+   * on the text centre for the on-line exemption of the third (INVARIANTS §3,
+   * "a guard must measure what the invariant measures"). Anything less specific
+   * is how the revert below used to hand back a seat that cleared `ADRIFT` and
+   * broke the other two.
+   */
+  const attributableAt = (label: SceneLabel, at: { x: number; y: number }, edge: SceneEdge) => {
+    const box: Box = { x: at.x, y: at.y, width: label.width, height: label.height };
+    const own = boxToPolylineSq(box, edge.pts);
+    if (own > ADRIFT * ADRIFT) return false;
+    const other = nearestOtherSq(box, edge);
+    if (own > ATTACHED * ATTACHED && other < own) return false;
+    const centre = { x: at.x + label.width / 2, y: at.y + textLead(label), width: 0, height: 0 };
+    const onLine = boxToPolylineSq(centre, edge.pts) <= ON_LINE * ON_LINE;
+    return onLine || other > PIERCE * PIERCE;
+  };
 
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
@@ -221,8 +258,87 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
           if (!coversNode(candidate)) alternatives.push(candidate);
           else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
         }
+      // Slides that let the box overhang the end of its run. `seatsOf` stops
+      // where the *box* would, which is tidier but stricter than §4d, whose rule
+      // is about the **text centre** — and the difference is half a label wide.
+      // Capped so the text centre never leaves the segment, so these are on-line
+      // seats like the ones above: `own` is 0, and §4a exempts an on-line label
+      // from `labelOrphan` and `labelPierced` alike.
+      //
+      // Worth its own rung even though `besideRun` below regenerates the same
+      // positions at `away = 0`: reaching them there costs a title-band strike,
+      // because `besideRun` is only consulted once the plain slide has failed and
+      // by then the neighbour has taken the seat. Removing this cost
+      // `security-fr` a `titleStruck` in *page* and *tall* — invisible to
+      // `npm run snapshots:report`, which renders each example in its own
+      // disposition only. Only the sweep sees the other three.
+      const stretched: Box[] = [];
+      for (const segment of segmentOrder) {
+        const a = edge.pts[segment];
+        const b = edge.pts[segment + 1];
+        const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+        const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+        const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
+        const outer = span / 2;
+        if (outer <= room) continue;
+        const middle = (room + outer) / 2;
+        for (const offset of [-middle, middle, -outer, outer]) {
+          const candidate = vertical
+            ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + offset)
+            : seatAt(label, (a.x + b.x) / 2 + offset, (a.y + b.y) / 2);
+          if (coversNode(candidate)) continue;
+          stretched.push(candidate);
+        }
+      }
+      alternatives.push(...stretched);
+      // The rung between "slide along the run" and "give up": seats *beside* the
+      // run that still read as belonging to it. Where two runs are closer than a
+      // label is tall, no seat on the line can clear the neighbour's label — and
+      // the loop below used to jump straight from there to elk's placement, which
+      // is off the line *and* unattributable. `medium`'s F10/F12 sit 10px apart
+      // between two nodes 181px apart while their labels are 111px and 71px wide:
+      // 182px of label in 181px of corridor. F12 was handed a seat 9px off its
+      // run with F06 drawn through its words — `labelOrphan` + `labelPierced`
+      // across six drawings — while F10, which had thousands of clean positions,
+      // kept the seat it did not need. An exhaustive search over both labels
+      // confirms the pair is placeable; only this ladder was missing.
+      //
+      // Two dimensions, because one is not enough: the seat that solves F10 is
+      // both past the end of its run and 43px below it. Along-offsets run out to
+      // half a label beyond each end (the box may overhang, §4d constrains the
+      // *text centre*, and `attributableAt` enforces what actually matters);
+      // away-offsets step perpendicular.
+      //
+      // Built on demand. Every candidate costs a scan of every route, and pairs
+      // that cannot slide along their own run are rare — computing this list for
+      // every label eagerly made the sweep pay for it on all 4352 flow-instances.
+      const besideRun = (): Box[] => {
+        const out: Box[] = [];
+        for (const segment of segmentOrder) {
+          const a = edge.pts[segment];
+          const b = edge.pts[segment + 1];
+          const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+          const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+          const need = vertical ? label.height : label.width;
+          const outer = span / 2;
+          const midX = (a.x + b.x) / 2;
+          const midY = (a.y + b.y) / 2;
+          for (const along of [0, -outer / 2, outer / 2, -outer, outer, -outer - need / 2, outer + need / 2])
+            for (const away of [0, -14, 14, -28, 28, -44, 44]) {
+              const candidate = seatAt(
+                label,
+                midX + (vertical ? away : along),
+                midY + (vertical ? along : away),
+              );
+              if (coversNode(candidate)) continue;
+              if (!attributableAt(label, candidate, edge)) continue;
+              out.push(candidate);
+            }
+        }
+        return out;
+      };
       alternatives.push(...tolerated);
-      seated.push({ label, from: { x: label.x, y: label.y }, own, alternatives });
+      seated.push({ label, edge, from: { x: label.x, y: label.y }, own, alternatives, besideRun });
       label.x = seat.x;
       label.y = seat.y;
     }
@@ -235,52 +351,84 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
   // §4a for §1. Measured in `medium.cairn`, whose 12px corridor cannot seat a
   // 142px two-line label beside its neighbour at all.
   //
-  // So a colliding pair is resolved here instead, by giving one label back its
-  // original placement — elk's, which was chosen with the whole drawing in view.
-  // The one that yields is the one that can afford to: already near its run, and
-  // larger, since the bigger box is the one that cannot fit. Ties break on flow
-  // id, never on iteration order.
+  // So a colliding pair is resolved here instead. Three escapes, in the order
+  // §4d ranks them by what they cost the reader: slide along the run (never
+  // leaves the line), then a seat beside the run that keeps attribution, then
+  // elk's original placement, which keeps neither.
+  //
+  // Both labels are offered each escape, preferring the one that can afford it —
+  // already near its run, and larger, since the bigger box is the one that
+  // cannot fit. Ties break on flow id, never on iteration order.
   const overlapping = (a: SceneLabel, b: SceneLabel) =>
     a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   const rank = (entry: (typeof seated)[number]) =>
     entry.label.width * entry.label.height;
+  /** Does moving this label to `at` clear every other seated label? */
+  const clearAt = (entry: (typeof seated)[number], at: { x: number; y: number }) => {
+    const trial = { ...entry.label, x: at.x, y: at.y };
+    return !seated.some((other) => other !== entry && overlapping(trial, other.label));
+  };
   for (let round = 0; round < 3; round++) {
-    let reverted = false;
+    let moved = false;
     for (let i = 0; i < seated.length; i++)
       for (let j = i + 1; j < seated.length; j++) {
         const a = seated[i];
         const b = seated[j];
         if (a.done || b.done) continue;
         if (!overlapping(a.label, b.label)) continue;
-        // Only a label already close to its run may be given back — reverting
-        // one that was adrift would reintroduce the defect §4a forbids.
-        const candidates = [a, b]
-          .filter((entry) => entry.own <= ADRIFT * ADRIFT)
-          .sort(
-            (x, y) =>
-              rank(y) - rank(x) ||
-              x.label.flowId.localeCompare(y.label.flowId),
-          );
-        const yielding = candidates[0];
-        if (!yielding) continue;
+        const order = [a, b].sort(
+          (x, y) => rank(y) - rank(x) || x.label.flowId.localeCompare(y.label.flowId),
+        );
         // Slide along the run before leaving it: any other on-line seat that
-        // clears every label already placed keeps §4d intact for both flows.
-        const free = yielding.alternatives.find((candidate) => {
-          const trial = { ...yielding.label, x: candidate.x, y: candidate.y };
-          return !seated.some(
-            (other) => other !== yielding && overlapping(trial, other.label),
-          );
-        });
-        if (free) {
-          yielding.label.x = free.x;
-          yielding.label.y = free.y;
-        } else {
-          yielding.label.x = yielding.from.x;
-          yielding.label.y = yielding.from.y;
-          yielding.done = true;
+        // clears every label already placed keeps §4d intact for *both* flows.
+        //
+        // Asked of each label in turn, not only the preferred yielder. Where the
+        // larger label is boxed in and the smaller has room, offering the escape
+        // to one of them and then reverting was throwing away a seat that was
+        // free the whole time — `large-fr/wide` sent F04 to the settler with F07's
+        // thirteen alternatives untried, and the settler's only remaining escape
+        // was an 86px throw that landed 24px off F04's run (`labelAdrift`).
+        let escaped = false;
+        for (const entry of order) {
+          const free = entry.alternatives.find((candidate) => clearAt(entry, candidate));
+          if (!free) continue;
+          entry.label.x = free.x;
+          entry.label.y = free.y;
+          escaped = true;
+          break;
         }
-        reverted = true;
+        // Neither label can stay on its line. Step one of them off it, but only
+        // onto a seat `attributableAt` accepts — off the line is a `labelOffLine`
+        // ratchet, off the *flow* is §4a. Reached only here, so a corridor that
+        // the slide above could solve never pays for these candidates.
+        for (const entry of escaped ? [] : order) {
+          const free = entry.besideRun().find((candidate) => clearAt(entry, candidate));
+          if (!free) continue;
+          entry.label.x = free.x;
+          entry.label.y = free.y;
+          escaped = true;
+          break;
+        }
+        if (escaped) {
+          moved = true;
+          continue;
+        }
+        // Nothing on or beside either run. Elk's original placement is the last
+        // resort, unchanged: only a label already close to its run may be given
+        // back, since reverting one that was adrift would reintroduce §4a.
+        //
+        // Left as an unconditional move on purpose. Making it conditional — and
+        // leaving the pair for the renderer's settler when no attributable
+        // revert existed — was measured on `medium`: the settler cannot always
+        // clear what it is handed, and the slice gained 5 `overlaps` and 5
+        // `labelAdrift`, both must-be-zero. Something has to move here.
+        const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
+        if (!giving) continue;
+        giving.label.x = giving.from.x;
+        giving.label.y = giving.from.y;
+        giving.done = true;
+        moved = true;
       }
-    if (!reverted) break;
+    if (!moved) break;
   }
 }

@@ -42,7 +42,9 @@ Key passes an agent can't infer from names:
   is a deep-dive handover for this pass — read it before touching flow routing.
 - `edge-tidy.ts` — endpoint hygiene for every edge: collapses micro-jogs under 6px,
   spreads attachment points 12px apart on the same node side.
-- `label-anchor.ts` — elk places each edge label against the route elk planned;
+- `label-anchor.ts` — runs **twice** (before `compact`, and again after
+  `optimiseRoutes`), so on the second pass a label's "original" position is
+  wherever the first pass seated it, not elk's. elk places each edge label against the route elk planned;
   the two passes above then move that route and leave the label behind, sometimes
   nearer a *different* flow. This re-centres each label on its own run. Its
   position in the pipeline is load-bearing in both directions: after `edge-tidy`

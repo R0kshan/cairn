@@ -110,10 +110,10 @@
 <text x="435.5" y="382" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'expertise</text>
 <rect x="376.5" y="390" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="435.5" y="401" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
-<text x="948.5" y="223" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Conclusions</text>
-<text x="948.5" y="237.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'expertise</text>
-<rect x="889.5" y="245.5" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="948.5" y="256.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
+<text x="963.5" y="223.08333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Conclusions</text>
+<text x="963.5" y="237.58333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'expertise</text>
+<rect x="904.5" y="245.58333333333331" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="963.5" y="256.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
 <text x="430.5" y="282.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Instruction et</text>
 <text x="430.5" y="297" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">décisions de gestion</text>
 <text x="1428" y="257.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Éléments validés</text>
