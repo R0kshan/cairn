@@ -1,5 +1,13 @@
 # Disposition × size test matrix — results (2026-07-11)
 
+> **Note (2026-08-02):** the `*-wide` fixtures below no longer exist. `wide` is
+> the default disposition, so `style { disposition: wide }` was a no-op and each
+> `-wide` copy rendered byte-identically to its base example — the corpus digest
+> confirmed it. They were deleted; the base examples cover the same ground, and
+> `behavior.test.ts` exercises `disposition: wide` directly. The two
+> `infrastructure-*-wide` fixtures were kept: their content differs from their
+> base, so they are not copies. The tables are left as measured on the day.
+
 12 variants: {small, medium, large} × {wide, tall, slide, page}. All validate clean, all build with **0 label overlaps** (§1.1 requirement 1 holds everywhere). Flows always distinct arrows + distinct labels (invariant holds — enforced by construction).
 
 | File | Canvas | Ratio | Target | Layout | Overlaps |
