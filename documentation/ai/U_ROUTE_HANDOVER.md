@@ -20,9 +20,23 @@ The wanted route: up out of `CASE`, west along a free lane, down into
 
 **1. The router could not express a U.** `shapesFor` in `edge-tidy.ts` returned
 `[]` for same-facing side pairs ("same-facing sides give a wrap, not a route").
-Fixed by `channelU`: two lane candidates per side — just past the nearer seat,
-and just outside the drawing — giving a 2-turn route. The premise in the old
-comment was wrong: a U is not a weave.
+Fixed by `channelU`, giving a 2-turn route. The premise in the old comment was
+wrong: a U is not a weave.
+
+The lane is **derived, not guessed** (`laneBeyond`). This is INVARIANTS §4h
+turned from a score into a coordinate: collect the obstacles a run may never
+enter — every leaf box, every container title, and every container holding
+neither endpoint — restricted to those overlapping the span the run must cross,
+then push the lane out until it clears them all, iterating because clearing one
+can expose the next. So the turn happens exactly as late as the rule requires
+and no later. An earlier version used a fixed 24px offset and cleared the
+Reporting layer on `logical` by five pixels of luck.
+
+Deriving it measurably beat guessing, corpus-wide: `longDetour` 175 → 161 (back
+under its ceiling), `titleStruck` 213 → 207, `turnHeavy` 620 → 615, per-drawing
+improvements 281 → 292. It did **not** move the label collateral at all — same 7
+`labelPierced`, plus a new `labelAdrift` (see below). That is the tell: no
+routing rule can fix it, because the defect is not in the route.
 
 **2. Seat offsets could not reach past a container title.** `SEAT_OFFSETS` is
 `[0, -18, 18]`; the U's descent leg needed to clear the "Policyholders" group
@@ -70,21 +84,25 @@ This alone took shard-1/4 regressions from 12 to 4.
 
 ## Where it stands, measured on the full corpus (260 drawings, 3884 flows)
 
-All 7 must-be-zero invariants: **0**. 281 per-drawing improvements, 11
-regressions.
+**One must-be-zero invariant breached** (`labelAdrift` 1, on `logical-fr/slide`),
+so the patch cannot land as it stands. The other six hold. 292 per-drawing
+improvements against 12 regressions.
 
-| ratchet | before | after | |
-|---|---|---|---|
-| titleStruck | 714 | **213** | −70% |
-| throughContainer | 44 | **20** | −55% |
-| turnHeavy | 860 | 620 | |
-| jog<=20 | 277 | 161 | |
-| crossings | 4256 | 3803 | |
-| fanTangle | 69 | 110 | ceiling 59 ✗ |
-| nearParallel | 73 | 110 | ceiling 53 ✗ |
-| attachTight | 19 | 35 | ceiling 4 ✗ |
-| labelPierced | 0 | 7 | ceiling 6 ✗ **new** |
-| longDetour | 187 | 175 | ceiling 172 ✗ |
+| ratchet | main | patch | ceiling | |
+|---|---|---|---|---|
+| titleStruck | 714 | **207** | 789 | −71% |
+| throughContainer | 44 | **20** | 52 | −55% |
+| turnHeavy | 860 | 615 | 814 | |
+| jog<=20 | 277 | 162 | 374 | |
+| crossings | 4256 | 3805 | 3830 | |
+| attachAway | 272 | 228 | 247 | |
+| longDetour | 187 | 161 | 172 | |
+| fanTangle | 69 | 109 | 59 | ✗ |
+| nearParallel | 73 | 112 | 53 | ✗ |
+| attachTight | 19 | 35 | 4 | ✗ |
+| labelPierced | 0 | 7 | 6 | ✗ new |
+| labelOrphan | 0 | 1 | 0 | ✗ new |
+| labelAdrift | 0 | 1 | **must be 0** | ✗ new, blocking |
 
 Note `attachTight`, `fanTangle` and `nearParallel` were **already over ceiling on
 `main`** (19/4, 69/66, 73/59) — see the three open items below. `labelPierced` and
@@ -92,14 +110,24 @@ Note `attachTight`, `fanTangle` and `nearParallel` were **already over ceiling o
 
 ## What remains
 
-The 11 per-drawing regressions are the work queue:
+The 12 per-drawing regressions are the work queue, and **every one of them is
+label collateral or its knock-on, not a bad route**:
 
+- **1 × `labelAdrift 0 -> 1`** on `logical-fr/slide`. `labelAdrift` is
+  **must-be-zero** — this alone blocks the patch, whatever else it wins.
 - **7 × `labelPierced 0 -> 1`** (tier 0) on `logical/page`, `medium/page`,
   `security/{page,tall}`, `dispositions/medium-{slide,tall,page}/page`. A foreign
-  run through a floating label. More routes moving into corridors gives the
-  settler more collisions. This is the blocking one — nothing buys tier 0.
+  run through a floating label.
 - **4 × `application-compact/{page,tall}`**: `crossings 2 -> 4`,
   `fanTangle 0 -> 2` (tier 2, unpaid on that drawing).
+
+The shape of the problem is now unambiguous. A route can move to a place §4h
+says is legal and *still* displace a neighbouring flow's label, because the
+settler resolves the new collision by lifting whichever label it can. That
+decision does not exist until settling has run, so no rule applied to the route
+can prevent it. Deriving the lane from §4h — the obvious next idea, and a real
+improvement on every route metric — left these numbers untouched, which is the
+proof.
 
 ### The 7 pierces are `stateHarm`'s own fault — fix that first
 

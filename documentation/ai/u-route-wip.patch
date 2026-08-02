@@ -1,5 +1,346 @@
+diff --git a/documentation/ai/u-route-wip.patch b/documentation/ai/u-route-wip.patch
+index 9a5dd6b..e69de29 100644
+--- a/documentation/ai/u-route-wip.patch
++++ b/documentation/ai/u-route-wip.patch
+@@ -1,336 +0,0 @@
+-diff --git a/src/edge-tidy.ts b/src/edge-tidy.ts
+-index 7246b8f..bfd376c 100644
+---- a/src/edge-tidy.ts
+-+++ b/src/edge-tidy.ts
+-@@ -1756,6 +1756,8 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+-     // seat pairs per side pair tripled build time for a handful of extra
+-     // solutions the ±18 offsets already reach.
+-     const SEAT_OFFSETS = [0, -18, 18];
+-+    /** Seats for a same-side U, which needs to reach past a container's title (see `routesFor`). */
+-+    const U_SEAT_OFFSETS = [0, -18, 18, -40, 40];
+-     const SIDES: Side[] = ["north", "south", "east", "west"];
+- 
+-     const seatOn = (node: SceneNode, side: Side, offset: number): Point => {
+-@@ -1779,12 +1781,76 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+-       side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4;
+-     const horizontalSide = (side: Side) => side === "east" || side === "west";
+- 
+--    /** Every L or Z joining these two seats. Same-facing sides give a wrap, not a route. */
+-+    // Extent of the drawing, for the channel a same-facing U escapes into.
+-+    const contentTop = Math.min(...scene.nodes.map((node) => node.y));
+-+    const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
+-+    const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
+-+    const contentRight = Math.max(...scene.nodes.map((node) => node.x + node.width));
+-+    /** Clear of the outermost border without leaving the canvas. */
+-+    const CHANNEL_MARGIN = 10;
+-+    /** How far past the nearer seat a mid-drawing channel has to sit to be worth a turn. */
+-+    const CHANNEL_STEP = 24;
+-+
+-+    /**
+-+     * The U: leave both nodes by the *same* side and join up in a channel
+-+     * beyond them both.
+-+     *
+-+     * This used to return nothing, on the reasoning that two nodes are always
+-+     * joinable by a straight run, an L or a Z. They are — but not always
+-+     * *cleanly*. When every L and Z ploughs through a container the flow has no
+-+     * business in, the only route left is out and around, and the tier-3 turns
+-+     * it costs are fair payment for the tier-0 defect it clears (the ladder
+-+     * works this out on its own; it needed the shape, not a new priority).
+-+     *
+-+     * Two channels per side, nearest first: just past the nearer seat, which
+-+     * keeps eye travel short when the obstruction is local, and just outside
+-+     * the drawing, which always exists. Both are 2-turn routes, so they sort
+-+     * among the Ls rather than behind the Zs, and a clean L still wins — the
+-+     * ranking only decides what to *try*, never what is allowed.
+-+     */
+-+    const channelU = (a: Point, b: Point, side: Side): Point[][] => {
+-+      const vertical = !horizontalSide(side);
+-+      const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+-+      const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+-+      const before = side === "north" || side === "west";
+-+      const lanes = before
+-+        ? [near - CHANNEL_STEP, (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN]
+-+        : [far + CHANNEL_STEP, (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN];
+-+      const limit = vertical ? scene.height : scene.width;
+-+      return lanes
+-+        .filter((lane) =>
+-+          before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far,
+-+        )
+-+        .map((lane) =>
+-+          vertical
+-+            ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b]
+-+            : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b],
+-+        );
+-+    };
+-+
+-+    /**
+-+     * Is this the shape `channelU` builds? Four points whose two terminal legs
+-+     * are parallel and both set off to the *same* side of the lane that joins
+-+     * them. Recognised from geometry rather than tagged at construction so the
+-+     * squaring pass, which rebuilds the points, cannot lose the label.
+-+     */
+-+    const isChannelU = (pts: Point[]): boolean => {
+-+      if (pts.length !== 4) return false;
+-+      const firstVertical = Math.abs(pts[0].x - pts[1].x) < 0.5;
+-+      const lastVertical = Math.abs(pts[2].x - pts[3].x) < 0.5;
+-+      if (firstVertical !== lastVertical) return false;
+-+      const lane = firstVertical ? pts[1].y : pts[1].x;
+-+      const fromA = lane - (firstVertical ? pts[0].y : pts[0].x);
+-+      const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
+-+      return fromA * fromB > 0;
+-+    };
+-+
+-+    /** Every straight run, L, Z or same-side U joining these two seats. */
+-     const shapesFor = (a: Point, aSide: Side, b: Point, bSide: Side): Point[][] => {
+-       const aH = horizontalSide(aSide);
+-       const bH = horizontalSide(bSide);
+-       if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
+--      if (outward(aSide) === outward(bSide)) return [];
+-+      if (outward(aSide) === outward(bSide)) return channelU(a, b, aSide);
+-       if (aH)
+-         return [(a.x + b.x) / 2, Math.min(a.x, b.x) + 24, Math.max(a.x, b.x) - 24].map((mid) => [
+-           a,
+-@@ -1814,8 +1880,15 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+-       const seen = new Set<string>();
+-       for (const aSide of SIDES)
+-         for (const bSide of SIDES)
+--          for (const aOff of SEAT_OFFSETS)
+--            for (const bOff of SEAT_OFFSETS)
+-+          // A U's two legs run parallel and each has to clear whatever sits
+-+          // beside its own node — typically the enclosing group's title, which
+-+          // overhangs the node's side. ±18 does not reach past one, so the
+-+          // seats get to slide to the ends of the side; `seatOn` clamps, so the
+-+          // extra offsets cost nothing where the node is narrow. Only for
+-+          // same-facing sides: widening every side pair is what made 25 seat
+-+          // pairs triple the build time.
+-+          for (const aOff of aSide === bSide ? U_SEAT_OFFSETS : SEAT_OFFSETS)
+-+            for (const bOff of aSide === bSide ? U_SEAT_OFFSETS : SEAT_OFFSETS)
+-               for (const raw of shapesFor(
+-                 seatOn(ends[0].node, aSide, aOff),
+-                 aSide,
+-@@ -1906,12 +1979,56 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+-       return false;
+-     };
+- 
+-+    /**
+-+     * Defects a route would leave behind, counted per tier — the tie-break
+-+     * between two routes the ladder has *both* already accepted.
+-+     *
+-+     * This is a count, which §"sets, not counts" forbids — but forbids for a
+-+     * different question. That rule guards before-vs-after comparison, where a
+-+     * total cannot see a defect *move*. Here every candidate has already been
+-+     * through `ladderVerdict` against the same `before`, so none of them gains
+-+     * anything at the tier it pays at; what is left is "which of these
+-+     * acceptable drawings is least damaged", and for that a per-tier count is
+-+     * the honest measure.
+-+     */
+-+    const damage = (profile: Profile): number[] => {
+-+      const tiers = [0, 0, 0, 0, 0];
+-+      for (const tier of profile.values()) tiers[tier]++;
+-+      return tiers;
+-+    };
+-+    /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
+-+    const lessDamaged = (a: number[], b: number[]): boolean => {
+-+      for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+-+      return false;
+-+    };
+-+
+-+    /** The ladder's verdict on a move, and what the drawing would look like after it. */
+-+    const weigh = (group: SceneEdge[], overrides: Map<string, Point[]>) => {
+-+      const ids = new Set(group.map((edge) => edge.id));
+-+      if (selfWrecks(ids, overrides)) return null;
+-+      const after = inspector.local(ids, overrides);
+-+      if (ladderVerdict(profileNow(ids), after) < 0) return null;
+-+      return { after, damage: damage(after) };
+-+    };
+-+
+-     const tryMove = (group: SceneEdge[], overrides: Map<string, Point[]>) => {
+-       const ids = new Set(group.map((edge) => edge.id));
+-       if (selfWrecks(ids, overrides)) return false;
+-       const before = profileNow(ids);
+-       const after = inspector.local(ids, overrides);
+--      if (ladderVerdict(before, after) < 0) return false;
+-+      const verdict = ladderVerdict(before, after);
+-+      if (verdict < 0) return false;
+-+      // What the repair bought, for the renderer's label audit (§4d).
+-+      scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
+-+      for (const edge of group) {
+-+        const route = overrides.get(edge.id);
+-+        // A channel U leaves both nodes by the same side and meets in a lane
+-+        // beyond them, so both terminals necessarily set off away from their
+-+        // counterpart. That is the shape working, not a wrap-around to chase,
+-+        // and §11 already exempts flows routed through a channel for exactly
+-+        // this reason — `route-detour` marks its own the same way.
+-+        if (route && isChannelU(route)) edge.detour = true;
+-+      }
+-       for (const edge of group) {
+-         const pts = overrides.get(edge.id);
+-         if (pts) {
+-@@ -1935,12 +2052,33 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+-         if (profileNow(ids).size === 0) continue;
+- 
+-         // Single move first — cheapest, and most defects yield to it.
+-+        //
+-+        // The *best* accepted candidate wins, not the first. Taking the first
+-+        // meant the ranking (fewest turns, then shortest) silently decided
+-+        // outcomes the ladder was supposed to own: a 1-turn L that clears a
+-+        // struck title beat a 2-turn U that clears the title *and* the run
+-+        // through a container, purely because it was tried earlier. Both are
+-+        // allowed; only one leaves the drawing repaired. The order still
+-+        // decides what to try, and still breaks ties — `lessDamaged` is
+-+        // strict, so an earlier candidate keeps the win unless a later one is
+-+        // genuinely less damaged.
+-         let moved = false;
+-+        let bestRoute: Point[] | null = null;
+-+        let bestDamage: number[] | null = null;
+-         for (const pts of routesFor(edge)) {
+--          if (tryMove([edge], new Map([[edge.id, pts]]))) {
+--            moved = true;
+--            break;
+-+          const verdict = weigh([edge], new Map([[edge.id, pts]]));
+-+          if (!verdict) continue;
+-+          if (!bestDamage || verdict.damage[0] < bestDamage[0]) {
+-+            bestDamage = verdict.damage;
+-+            bestRoute = pts;
+-           }
+-+          // The first accepted route that destroys no information wins, exactly
+-+          // as before. Scanning on only happens while the best route so far
+-+          // still leaves a tier-0 defect standing.
+-+          if (bestDamage[0] === 0) break;
+-+        }
+-+        if (bestRoute && tryMove([edge], new Map([[edge.id, bestRoute]]))) {
+-+          moved = true;
+-         }
+-         if (moved) {
+-           changed = true;
+-diff --git a/src/scene-layout.ts b/src/scene-layout.ts
+-index 0c13cea..c6d69c3 100644
+---- a/src/scene-layout.ts
+-+++ b/src/scene-layout.ts
+-@@ -96,6 +96,15 @@ export interface Scene {
+-   nodes: SceneNode[];
+-   edges: SceneEdge[];
+-   layoutMs: number;
+-+  /**
+-+   * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept.
+-+   *
+-+   * The renderer audits those repairs for label collateral the router could not
+-+   * see, and the ladder's rule for that is "a loss at tier T is payable only by
+-+   * a gain at a tier strictly better than T" — so the audit has to know what
+-+   * the repair bought. Absent when nothing was repaired.
+-+   */
+-+  repairTier?: number;
+- }
+- 
+- interface WalkedElkNode {
+-diff --git a/src/svg-render.ts b/src/svg-render.ts
+-index a726e68..8de4612 100644
+---- a/src/svg-render.ts
+-+++ b/src/svg-render.ts
+-@@ -18,6 +18,7 @@ import { compactVertical } from "./compact.ts";
+- import { labelsSeated } from "./edge-tidy.ts";
+- import { anchorFlowLabels } from "./label-anchor.ts";
+- import { titleBoxesOf } from "./route-detour.ts";
+-+import { inspect } from "./readability.ts";
+- import { chipW, techText, wrapText, fontSizes } from "./text-metrics.ts";
+- 
+- const HOP_RADIUS = 5;
+-@@ -387,29 +388,84 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
+-       // collisions to resolve, and it resolves them by pushing labels into every
+-       // failure mode §4a and §4d name — so the audit has to weigh all of them or
+-       // it silently licenses the ones it does not look at.
+--      const labelHarm = () => {
+--        let harm = 0;
+-+      // Harm is ranked, not totalled. Every failure mode here has a tier in the
+-+      // ladder, and a flat count made them interchangeable: it let a tier-1
+-+      // label sliding off its run veto a repair that cleared a tier-0 run
+-+      // through a container — a strictly worse drawing kept because one number
+-+      // was one lower. Index 0 is "information destroyed" (adrift, pierced,
+-+      // struck through a title), index 1 is "attribution broken" (a label
+-+      // nearer a neighbour's run, or lifted off its own).
+-+      const labelHarm = (): [number, number] => {
+-+        const harm: [number, number] = [0, 0];
+-         for (const label of labels) {
+-           const own = offOwnRun(label);
+--          if (own > ADRIFT_SQ) harm++;
+--          if (stolen(label, own)) harm++;
+--          if (pierced(label)) harm++;
+--          if (titles.some((title) => boxesOverlap(title as Box, label as Box))) harm++;
+-+          if (own > ADRIFT_SQ) harm[0]++;
+-+          if (pierced(label)) harm[0]++;
+-+          if (titles.some((title) => boxesOverlap(title as Box, label as Box))) harm[0]++;
+-+          if (stolen(label, own)) harm[1]++;
+-         }
+--        for (const edge of scene.edges) if (!labelsSeated(edge)) harm++;
+-+        for (const edge of scene.edges) if (!labelsSeated(edge)) harm[1]++;
+-         return harm;
+-       };
+--      const withRepair = labelHarm();
+-+      /**
+-+       * What the *runs* cost in this state — through a leaf, through a container
+-+       * holding neither endpoint, across a title.
+-+       *
+-+       * Labels were the only thing this audit used to weigh, and that made it
+-+       * blind in the one direction that matters: reverting a repair restores an
+-+       * older route, and an older route has defects of its own. Judging the two
+-+       * states by label damage alone let the audit undo a flow that had stopped
+-+       * cutting through a layer, because putting it back cost one label less —
+-+       * trading two tier-0 defects for one. Both states are now measured the
+-+       * same way, on runs and labels together.
+-+       *
+-+       * `soloOnly`, so this stays affordable: every defect it needs is a route
+-+       * against a fixed obstacle, never a route against another route, and the
+-+       * pairwise phase is the expensive half. Crossings are the router's
+-+       * business and it has already weighed them.
+-+       */
+-+      const runHarm = (): number[] => {
+-+        const tiers = [0, 0, 0, 0, 0];
+-+        const profile = inspect(scene, titles).local(
+-+          new Set(scene.edges.map((edge) => edge.id)),
+-+          new Map(),
+-+          true,
+-+        );
+-+        for (const tier of profile.values()) tiers[tier]++;
+-+        return tiers;
+-+      };
+-+      /** Both halves of the damage, per tier. */
+-+      const stateHarm = (): number[] => {
+-+        const tiers = runHarm();
+-+        const [labels0, labels1] = labelHarm();
+-+        tiers[0] += labels0;
+-+        tiers[1] += labels1;
+-+        return tiers;
+-+      };
+-+      /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
+-+      const lessDamaged = (a: number[], b: number[]): boolean => {
+-+        for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+-+        return false;
+-+      };
+-+      const withRepair = stateHarm();
+-       const repairedRoutes = repaired.map((edge) => edge.pts);
+-       for (const edge of repaired) edge.pts = edge.repairedFrom!;
+-       anchorFlowLabels(scene, titles);
+-       settleLabelPositions();
+--      // Keep the repair unless it cost the drawing a label. The comparison is
+--      // whole-drawing on purpose: the label that gets lifted belongs to a
+--      // *neighbour* of the moved flow, so asking "did this edge keep its own
+--      // label" — which is what an earlier version did — always answered yes and
+--      // reverted nothing.
+--      if (labelHarm() >= withRepair) {
+-+      const withoutRepair = stateHarm();
+-+      // Two finished drawings, judged the same way; the less damaged one ships.
+-+      //
+-+      // This is the last point in the pipeline where geometry and labels have
+-+      // both settled, so it is the only place either state can be measured for
+-+      // real — which is exactly why the choice belongs here rather than in the
+-+      // router. Comparison stays whole-drawing: the label that gets lifted
+-+      // belongs to a *neighbour* of the moved flow, so asking "did this edge
+-+      // keep its own label" always answered yes and reverted nothing.
+-+      //
+-+      // Ties keep the repair. The router only proposes ladder-positive moves, so
+-+      // an equally-damaged repaired drawing is one whose gain simply is not
+-+      // visible to the metrics this audit can compute after settling.
+-+      if (!lessDamaged(withoutRepair, withRepair)) {
+-         repaired.forEach((edge, index) => {
+-           edge.pts = repairedRoutes[index];
+-         });
 diff --git a/src/edge-tidy.ts b/src/edge-tidy.ts
-index 7246b8f..bfd376c 100644
+index 7246b8f..639f6dd 100644
 --- a/src/edge-tidy.ts
 +++ b/src/edge-tidy.ts
 @@ -1756,6 +1756,8 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
@@ -11,11 +352,12 @@ index 7246b8f..bfd376c 100644
      const SIDES: Side[] = ["north", "south", "east", "west"];
  
      const seatOn = (node: SceneNode, side: Side, offset: number): Point => {
-@@ -1779,12 +1781,76 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+@@ -1779,12 +1781,163 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
        side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4;
      const horizontalSide = (side: Side) => side === "east" || side === "west";
  
 -    /** Every L or Z joining these two seats. Same-facing sides give a wrap, not a route. */
+-    const shapesFor = (a: Point, aSide: Side, b: Point, bSide: Side): Point[][] => {
 +    // Extent of the drawing, for the channel a same-facing U escapes into.
 +    const contentTop = Math.min(...scene.nodes.map((node) => node.y));
 +    const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
@@ -25,6 +367,69 @@ index 7246b8f..bfd376c 100644
 +    const CHANNEL_MARGIN = 10;
 +    /** How far past the nearer seat a mid-drawing channel has to sit to be worth a turn. */
 +    const CHANNEL_STEP = 24;
++
++    /** Room a lane keeps from whatever it clears — past `HUG_CLEAR`, so the two never read as one line. */
++    const CHANNEL_CLEAR = 10;
++
++    /**
++     * The lowest lane, beyond `start`, that the connecting run may legally
++     * occupy across `span`.
++     *
++     * This is INVARIANTS §4h turned from a score into a coordinate. The rule
++     * says a run may cross a container holding one of its endpoints and no
++     * other; here that rule *derives* how far the riser has to travel before it
++     * turns, instead of the turn being guessed from a fixed offset and checked
++     * afterwards. Obstacles are the ones a run may never enter — every leaf box,
++     * every container title, and every container holding neither endpoint —
++     * restricted to those actually overlapping the span the run has to cross.
++     *
++     * Iterative because clearing one obstacle can expose the next; bounded by
++     * the obstacle count, and monotone (each step moves the lane further out),
++     * so it terminates. `null` when the drawing leaves no room.
++     */
++    const laneBeyond = (
++      spanLo: number,
++      spanHi: number,
++      start: number,
++      vertical: boolean,
++      before: boolean,
++      ends: ReturnType<typeof inspector.endsOf>,
++    ): number | null => {
++      const own = new Set<string>();
++      for (const end of ends) if (end) own.add(end.node.id);
++      interface Block { alongLo: number; alongHi: number; acrossLo: number; acrossHi: number }
++      const blocks: Block[] = [];
++      const push = (x: number, y: number, w: number, h: number) =>
++        blocks.push(
++          vertical
++            ? { alongLo: x, alongHi: x + w, acrossLo: y, acrossHi: y + h }
++            : { alongLo: y, alongHi: y + h, acrossLo: x, acrossHi: x + w },
++        );
++      for (const leaf of inspector.leaves)
++        if (!own.has(leaf.id)) push(leaf.x, leaf.y, leaf.width, leaf.height);
++      for (const box of inspector.boxes) {
++        // §4h: a container holding one of this flow's endpoints is not an
++        // obstacle — passing through it is how the flow leaves at all.
++        const inside = inspector.holds.get(box.id)!;
++        if (own.has(box.id) || [...own].some((id) => inside.has(id))) continue;
++        push(box.x, box.y, box.width, box.height);
++      }
++      for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
++
++      let lane = start;
++      for (let guard = 0; guard <= blocks.length; guard++) {
++        const hit = blocks.find(
++          (block) =>
++            block.alongLo < spanHi &&
++            spanLo < block.alongHi &&
++            lane > block.acrossLo - CHANNEL_CLEAR &&
++            lane < block.acrossHi + CHANNEL_CLEAR,
++        );
++        if (!hit) return lane;
++        lane = before ? hit.acrossLo - CHANNEL_CLEAR : hit.acrossHi + CHANNEL_CLEAR;
++      }
++      return null;
++    };
 +
 +    /**
 +     * The U: leave both nodes by the *same* side and join up in a channel
@@ -37,25 +442,43 @@ index 7246b8f..bfd376c 100644
 +     * it costs are fair payment for the tier-0 defect it clears (the ladder
 +     * works this out on its own; it needed the shape, not a new priority).
 +     *
-+     * Two channels per side, nearest first: just past the nearer seat, which
-+     * keeps eye travel short when the obstruction is local, and just outside
-+     * the drawing, which always exists. Both are 2-turn routes, so they sort
-+     * among the Ls rather than behind the Zs, and a clean L still wins — the
-+     * ranking only decides what to *try*, never what is allowed.
++     * Two lanes, nearest first. The first is *derived* from the obstacles the
++     * run has to clear (`laneBeyond`), so the turn happens exactly as late as
++     * §4h requires and no later — an earlier version guessed a fixed 24px and
++     * only cleared the Reporting layer on `logical` by five pixels of luck. The
++     * second is outside the drawing entirely, which always exists and is the
++     * fallback when the derived lane runs out of canvas.
++     *
++     * Both are 2-turn routes, so they sort among the Ls rather than behind the
++     * Zs, and a clean L still wins — the ranking only decides what to *try*.
 +     */
-+    const channelU = (a: Point, b: Point, side: Side): Point[][] => {
++    const channelU = (
++      a: Point,
++      b: Point,
++      side: Side,
++      ends: ReturnType<typeof inspector.endsOf>,
++    ): Point[][] => {
 +      const vertical = !horizontalSide(side);
 +      const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
 +      const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
 +      const before = side === "north" || side === "west";
-+      const lanes = before
-+        ? [near - CHANNEL_STEP, (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN]
-+        : [far + CHANNEL_STEP, (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN];
++      const spanLo = vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y);
++      const spanHi = vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y);
++      const derived = laneBeyond(
++        spanLo,
++        spanHi,
++        before ? near - CHANNEL_STEP : far + CHANNEL_STEP,
++        vertical,
++        before,
++        ends,
++      );
++      const outside = before
++        ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN
++        : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
 +      const limit = vertical ? scene.height : scene.width;
++      const lanes = derived === null ? [outside] : [derived, outside];
 +      return lanes
-+        .filter((lane) =>
-+          before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far,
-+        )
++        .filter((lane) => (before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far))
 +        .map((lane) =>
 +          vertical
 +            ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b]
@@ -81,16 +504,22 @@ index 7246b8f..bfd376c 100644
 +    };
 +
 +    /** Every straight run, L, Z or same-side U joining these two seats. */
-     const shapesFor = (a: Point, aSide: Side, b: Point, bSide: Side): Point[][] => {
++    const shapesFor = (
++      a: Point,
++      aSide: Side,
++      b: Point,
++      bSide: Side,
++      ends: ReturnType<typeof inspector.endsOf>,
++    ): Point[][] => {
        const aH = horizontalSide(aSide);
        const bH = horizontalSide(bSide);
        if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
 -      if (outward(aSide) === outward(bSide)) return [];
-+      if (outward(aSide) === outward(bSide)) return channelU(a, b, aSide);
++      if (outward(aSide) === outward(bSide)) return channelU(a, b, aSide, ends);
        if (aH)
          return [(a.x + b.x) / 2, Math.min(a.x, b.x) + 24, Math.max(a.x, b.x) - 24].map((mid) => [
            a,
-@@ -1814,8 +1880,15 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+@@ -1814,13 +1967,21 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
        const seen = new Set<string>();
        for (const aSide of SIDES)
          for (const bSide of SIDES)
@@ -108,7 +537,13 @@ index 7246b8f..bfd376c 100644
                for (const raw of shapesFor(
                  seatOn(ends[0].node, aSide, aOff),
                  aSide,
-@@ -1906,12 +1979,56 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+                 seatOn(ends[1].node, bSide, bOff),
+                 bSide,
++                ends,
+               )) {
+                 const pts = raw.filter(
+                   (p, index) =>
+@@ -1906,12 +2067,56 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
        return false;
      };
  
@@ -166,7 +601,7 @@ index 7246b8f..bfd376c 100644
        for (const edge of group) {
          const pts = overrides.get(edge.id);
          if (pts) {
-@@ -1935,12 +2052,33 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
+@@ -1935,12 +2140,33 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
          if (profileNow(ids).size === 0) continue;
  
          // Single move first — cheapest, and most defects yield to it.
