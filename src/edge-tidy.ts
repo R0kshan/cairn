@@ -260,6 +260,195 @@ interface Attachment {
   along: number;
 }
 
+/**
+ * Spread the attachments that share a node side (§4b), so each terminal keeps
+ * `MIN_ATTACH_GAP` of its own — the ladder's tier-4 `tight` model, made into a
+ * pass.
+ *
+ * Runs twice. Once inside `tidyEdges`, before `compact`; and again after
+ * `optimiseRoutes`, which deliberately trades a lower-tier defect for a
+ * tier-4 `tight` when every seat it can reach sits close to a sibling. The
+ * ladder accepts that trade honestly — the sweep's *total* is the only thing
+ * that cares — so the repair pass that resolves the residue must run after
+ * the pass that creates it. A couple of passes settles it; a side already
+ * compliant is skipped, so this converges rather than churns.
+ */
+export function spreadAttachments(scene: Scene): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const runsExcept = (...edgeIds: string[]) => {
+    const horizontal: { lo: number; hi: number; at: number }[] = [];
+    const vertical: { lo: number; hi: number; at: number }[] = [];
+    for (const edge of scene.edges) {
+      if (edgeIds.includes(edge.id)) continue;
+      for (let index = 0; index + 1 < edge.pts.length; index++) {
+        const a = edge.pts[index];
+        const b = edge.pts[index + 1];
+        if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+          horizontal.push({ lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x), at: a.y });
+        else if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+          vertical.push({ lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y), at: a.x });
+      }
+    }
+    return { horizontal, vertical };
+  };
+  const runHitsNode = (vertical: boolean, at: number, from: number, to: number) =>
+    runHitsNodeIn(vertical, at, from, to, leaves);
+  const runIsClear = (
+    others: { lo: number; hi: number; at: number }[],
+    at: number,
+    from: number,
+    to: number,
+  ) =>
+    !others.some((other) => {
+      const gap = Math.abs(other.at - at);
+      const shared =
+        Math.min(other.hi, Math.max(from, to)) - Math.max(other.lo, Math.min(from, to));
+      return (gap < 4 && shared > 6) || (gap < 11 && shared > 36);
+    });
+  const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
+
+  // Group the endpoints landing on each node side.
+  const groups = new Map<string, { node: SceneNode; side: Side; members: Attachment[] }>();
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    for (const [terminal, neighbour] of [
+      [0, 1],
+      [edge.pts.length - 1, edge.pts.length - 2],
+    ] as const) {
+      const seat = sideOf(edge.pts[terminal], leaves);
+      if (!seat) continue;
+      const vertical = seat.side === "east" || seat.side === "west";
+      const key = `${seat.node.id}|${seat.side}`;
+      const group = groups.get(key) ?? { node: seat.node, side: seat.side, members: [] };
+      group.members.push({
+        edge,
+        terminal,
+        neighbour,
+        along: vertical ? edge.pts[terminal].y : edge.pts[terminal].x,
+      });
+      groups.set(key, group);
+    }
+  }
+
+  // Separating a two-point flow moves both of its ends, so a later side can
+  // undo the spacing an earlier one just set. A couple of passes settles it;
+  // a side already compliant is skipped, so this converges rather than churns.
+  const sortedKeys = [...groups.keys()].sort();
+  for (let round = 0; round < 3; round++)
+  for (const key of sortedKeys) {
+    const { node, side, members } = groups.get(key)!;
+    if (members.length < 2) continue;
+    const vertical = side === "east" || side === "west";
+    for (const member of members)
+      member.along = vertical
+        ? member.edge.pts[member.terminal].y
+        : member.edge.pts[member.terminal].x;
+    const start = vertical ? node.y : node.x;
+    const length = vertical ? node.height : node.width;
+    // A crowded side gives up its corner margin before it gives up the gap.
+    const needed = (members.length - 1) * MIN_ATTACH_GAP;
+    const inset =
+      length - 2 * SIDE_INSET >= needed
+        ? SIDE_INSET
+        : Math.max(MIN_SIDE_INSET, (length - needed) / 2);
+    const low = start + inset;
+    const high = start + length - inset;
+    members.sort(
+      (memberA, memberB) =>
+        memberA.along - memberB.along ||
+        parseInt(memberA.edge.id.slice(1), 10) - parseInt(memberB.edge.id.slice(1), 10),
+    );
+    if (members.every((member, index) => index === 0 || member.along - members[index - 1].along >= MIN_ATTACH_GAP))
+      continue;
+
+    // Least-movement spread: push forward, then back off against the far end.
+    const wanted = members.map((member) => member.along);
+    for (let index = 1; index < wanted.length; index++)
+      wanted[index] = Math.max(wanted[index], wanted[index - 1] + MIN_ATTACH_GAP);
+    wanted[wanted.length - 1] = Math.min(wanted[wanted.length - 1], high);
+    for (let index = wanted.length - 2; index >= 0; index--)
+      wanted[index] = Math.min(wanted[index], wanted[index + 1] - MIN_ATTACH_GAP);
+    // Still too short: spread over the whole side at the widest gap it holds,
+    // rather than giving up and leaving two flows on top of each other.
+    if (wanted[0] < low) {
+      const step = (high - low) / (members.length - 1);
+      for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
+    }
+
+    // Two passes. The first keeps every guard; the second runs only for flows
+    // still sharing a point afterwards, and drops the parallel-run guard for
+    // them — two flows drifting alongside each other is a blemish, two flows
+    // leaving a node at the same point is unreadable, so the blemish wins.
+    for (const relaxed of [false, true]) {
+      if (relaxed) {
+        const sorted = [...members].sort((a, b) => a.along - b.along);
+        const stillShared = sorted.some(
+          (member, index) => index > 0 && member.along - sorted[index - 1].along < 6,
+        );
+        if (!stillShared) break;
+      }
+      members.forEach((member, index) => {
+      const target = wanted[index];
+      if (Math.abs(target - member.along) < 0.01) return;
+      const { edge, terminal, neighbour } = member;
+      const terminalPoint = edge.pts[terminal];
+      const neighbourPoint = edge.pts[neighbour];
+      const straightRun =
+        vertical
+          ? Math.abs(neighbourPoint.y - terminalPoint.y) < 0.5
+          : Math.abs(neighbourPoint.x - terminalPoint.x) < 0.5;
+      // Move the whole terminal run so it stays straight.
+      if (!straightRun) return;
+      if (edge.pts.length === 2) {
+        // Nothing interior to absorb the shift, so the far end has to come
+        // along; it may only do so while staying on its own node's side.
+        const farSeat = sideOf(neighbourPoint, leaves);
+        if (!farSeat) return;
+        const farVertical = farSeat.side === "east" || farSeat.side === "west";
+        if (farVertical !== vertical) return;
+        const farStart = vertical ? farSeat.node.y : farSeat.node.x;
+        const farLength = vertical ? farSeat.node.height : farSeat.node.width;
+        if (target < farStart + MIN_SIDE_INSET || target > farStart + farLength - MIN_SIDE_INSET)
+          return;
+      }
+      // Siblings on this side are exempt: they are being spread apart on
+      // purpose, and MIN_ATTACH_GAP — not the parallel-run rule — governs how
+      // close they may end up. Without this the guard blocks the very
+      // separation it is meant to protect.
+      const others = runsExcept(...members.map((sibling) => sibling.edge.id));
+      const runFrom = vertical ? terminalPoint.x : terminalPoint.y;
+      const runTo = vertical ? neighbourPoint.x : neighbourPoint.y;
+      const list = vertical ? others.horizontal : others.vertical;
+      const clear =
+        !runHitsNode(!vertical, target, runFrom, runTo) &&
+        (relaxed
+          ? !list.some(
+              (other) =>
+                Math.abs(other.at - target) < 4 &&
+                Math.min(other.hi, Math.max(runFrom, runTo)) -
+                  Math.max(other.lo, Math.min(runFrom, runTo)) >
+                  6,
+            )
+          : runIsClear(list, target, runFrom, runTo));
+      // Leave the flow where elk put it rather than merge it into another.
+      if (!clear) return;
+      if (vertical) {
+        terminalPoint.y = target;
+        neighbourPoint.y = target;
+      } else {
+        terminalPoint.x = target;
+        neighbourPoint.x = target;
+      }
+      member.along = target;
+      });
+    }
+  }
+
+  // A separation move can tilt a jog that straightening had to leave in place.
+  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+}
+
 export function tidyEdges(
   scene: Scene,
   titleBoxes: TitleBox[] = [],
@@ -917,146 +1106,9 @@ export function tidyEdges(
     }
   }
 
-  // Group the endpoints landing on each node side.
-  const groups = new Map<string, { node: SceneNode; side: Side; members: Attachment[] }>();
-  for (const edge of scene.edges) {
-    if (edge.pts.length < 2) continue;
-    for (const [terminal, neighbour] of [
-      [0, 1],
-      [edge.pts.length - 1, edge.pts.length - 2],
-    ] as const) {
-      const seat = sideOf(edge.pts[terminal], leaves);
-      if (!seat) continue;
-      const vertical = seat.side === "east" || seat.side === "west";
-      const key = `${seat.node.id}|${seat.side}`;
-      const group = groups.get(key) ?? { node: seat.node, side: seat.side, members: [] };
-      group.members.push({
-        edge,
-        terminal,
-        neighbour,
-        along: vertical ? edge.pts[terminal].y : edge.pts[terminal].x,
-      });
-      groups.set(key, group);
-    }
-  }
-
-  // Separating a two-point flow moves both of its ends, so a later side can
-  // undo the spacing an earlier one just set. A couple of passes settles it;
-  // a side already compliant is skipped, so this converges rather than churns.
-  const sortedKeys = [...groups.keys()].sort();
-  for (let round = 0; round < 3; round++)
-  for (const key of sortedKeys) {
-    const { node, side, members } = groups.get(key)!;
-    if (members.length < 2) continue;
-    const vertical = side === "east" || side === "west";
-    for (const member of members)
-      member.along = vertical
-        ? member.edge.pts[member.terminal].y
-        : member.edge.pts[member.terminal].x;
-    const start = vertical ? node.y : node.x;
-    const length = vertical ? node.height : node.width;
-    // A crowded side gives up its corner margin before it gives up the gap.
-    const needed = (members.length - 1) * MIN_ATTACH_GAP;
-    const inset =
-      length - 2 * SIDE_INSET >= needed
-        ? SIDE_INSET
-        : Math.max(MIN_SIDE_INSET, (length - needed) / 2);
-    const low = start + inset;
-    const high = start + length - inset;
-    members.sort(
-      (memberA, memberB) =>
-        memberA.along - memberB.along ||
-        parseInt(memberA.edge.id.slice(1), 10) - parseInt(memberB.edge.id.slice(1), 10),
-    );
-    if (members.every((member, index) => index === 0 || member.along - members[index - 1].along >= MIN_ATTACH_GAP))
-      continue;
-
-    // Least-movement spread: push forward, then back off against the far end.
-    const wanted = members.map((member) => member.along);
-    for (let index = 1; index < wanted.length; index++)
-      wanted[index] = Math.max(wanted[index], wanted[index - 1] + MIN_ATTACH_GAP);
-    wanted[wanted.length - 1] = Math.min(wanted[wanted.length - 1], high);
-    for (let index = wanted.length - 2; index >= 0; index--)
-      wanted[index] = Math.min(wanted[index], wanted[index + 1] - MIN_ATTACH_GAP);
-    // Still too short: spread over the whole side at the widest gap it holds,
-    // rather than giving up and leaving two flows on top of each other.
-    if (wanted[0] < low) {
-      const step = (high - low) / (members.length - 1);
-      for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
-    }
-
-    // Two passes. The first keeps every guard; the second runs only for flows
-    // still sharing a point afterwards, and drops the parallel-run guard for
-    // them — two flows drifting alongside each other is a blemish, two flows
-    // leaving a node at the same point is unreadable, so the blemish wins.
-    for (const relaxed of [false, true]) {
-      if (relaxed) {
-        const sorted = [...members].sort((a, b) => a.along - b.along);
-        const stillShared = sorted.some(
-          (member, index) => index > 0 && member.along - sorted[index - 1].along < 6,
-        );
-        if (!stillShared) break;
-      }
-      members.forEach((member, index) => {
-      const target = wanted[index];
-      if (Math.abs(target - member.along) < 0.01) return;
-      const { edge, terminal, neighbour } = member;
-      const terminalPoint = edge.pts[terminal];
-      const neighbourPoint = edge.pts[neighbour];
-      const straightRun =
-        vertical
-          ? Math.abs(neighbourPoint.y - terminalPoint.y) < 0.5
-          : Math.abs(neighbourPoint.x - terminalPoint.x) < 0.5;
-      // Move the whole terminal run so it stays straight.
-      if (!straightRun) return;
-      if (edge.pts.length === 2) {
-        // Nothing interior to absorb the shift, so the far end has to come
-        // along; it may only do so while staying on its own node's side.
-        const farSeat = sideOf(neighbourPoint, leaves);
-        if (!farSeat) return;
-        const farVertical = farSeat.side === "east" || farSeat.side === "west";
-        if (farVertical !== vertical) return;
-        const farStart = vertical ? farSeat.node.y : farSeat.node.x;
-        const farLength = vertical ? farSeat.node.height : farSeat.node.width;
-        if (target < farStart + MIN_SIDE_INSET || target > farStart + farLength - MIN_SIDE_INSET)
-          return;
-      }
-      // Siblings on this side are exempt: they are being spread apart on
-      // purpose, and MIN_ATTACH_GAP — not the parallel-run rule — governs how
-      // close they may end up. Without this the guard blocks the very
-      // separation it is meant to protect.
-      const others = runsExcept(...members.map((sibling) => sibling.edge.id));
-      const runFrom = vertical ? terminalPoint.x : terminalPoint.y;
-      const runTo = vertical ? neighbourPoint.x : neighbourPoint.y;
-      const list = vertical ? others.horizontal : others.vertical;
-      const clear =
-        !runHitsNode(!vertical, target, runFrom, runTo) &&
-        (relaxed
-          ? !list.some(
-              (other) =>
-                Math.abs(other.at - target) < 4 &&
-                Math.min(other.hi, Math.max(runFrom, runTo)) -
-                  Math.max(other.lo, Math.min(runFrom, runTo)) >
-                  6,
-            )
-          : runIsClear(list, target, runFrom, runTo));
-      // Leave the flow where elk put it rather than merge it into another.
-      if (!clear) return;
-      if (vertical) {
-        terminalPoint.y = target;
-        neighbourPoint.y = target;
-      } else {
-        terminalPoint.x = target;
-        neighbourPoint.x = target;
-      }
-      member.along = target;
-      });
-    }
-  }
-
-  // A separation move can tilt a jog that straightening had to leave in place.
-  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
-
+  // Separate flows sharing a node side. Kept as its own function: the same
+  // pass runs again after `optimiseRoutes` (see `spreadAttachments`).
+  spreadAttachments(scene);
   // Post-pass: push apart parallel runs from different edges that are within 3px
   // with >8px shared overlap (coincident). For each pair, shift the corner point
   // of one run by 8px and add an intermediate segment to keep node attachments.
@@ -1205,9 +1257,9 @@ export function tidyEdges(
               break;
             }
           }
-        if (!ok) continue;
-        edge.pts = attempt;
-        break;
+      if (!ok) continue;
+      edge.pts = attempt;
+      break;
       }
     }
   }
@@ -2289,7 +2341,9 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         // of the `attachAway` count. Flows `route-detour` marked keep their flag
         // whatever this pass does — the channel they were sent through is not
         // this pass's to revoke.
-        if (!preRouted.has(edge.id)) edge.detour = isChannelU(route);
+        if (!preRouted.has(edge.id)) {
+          edge.detour = isChannelU(route);
+        }
       }
       for (const edge of group) {
         const pts = overrides.get(edge.id);

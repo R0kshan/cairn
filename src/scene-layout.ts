@@ -15,7 +15,7 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
-import { optimiseRoutes, tidyEdges } from "./edge-tidy.ts";
+import { optimiseRoutes, spreadAttachments, tidyEdges } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
@@ -450,13 +450,20 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     if (sideways) transpose(scene, titleBoxes);
     rerouteDetours(scene, model, numbered, titleBoxes);
     if (sideways) transpose(scene, titleBoxes);
+    // `rerouteDetours` shifts the whole scene when a top-channel lane sits
+    // above y=0 (its shift-down block at the end), so the boxes measured
+    // before it are stale by that amount. Handing them to `tidyEdges` makes
+    // its re-side pass accept runs that strike titles where they now are —
+    // measured on logical-fr/slide, where §4c sent F19's L through a band
+    // it could not see. Re-derive before any pass that reads them.
+    const routedTitles = titleBoxesOf(scene, model);
     // Straighten routing noise and separate flows sharing a node side, for
     // every edge — elk's as much as the rerouted ones.
-    tidyEdges(scene, titleBoxes);
+    tidyEdges(scene, routedTitles);
     // Every pass above moves routes without moving the labels that name them.
     // Put each label back on its own flow before anything measures where labels
     // are — `compact` below is the first thing that does.
-    anchorFlowLabels(scene, titleBoxes);
+    anchorFlowLabels(scene, routedTitles);
     // Reclaim the bands elk sized for routes that no longer run there — every
     // disposition, since elk leaves spare corridors whether or not the reroute
     // above moved anything.
@@ -465,7 +472,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // every y through a monotone map, which shrinks the gaps a route was judged
     // on — so an optimiser placed above it validates geometry that compaction
     // then narrows into near-parallel runs, tight attachments and micro-jogs.
-    // Nothing below this line may move edge geometry.
+    // The optimiser is the last pass that *re-routes*: the only pass below it
+    // that moves edge geometry is the attachment spread after the ladder, and
+    // that one only slides terminals along a side they already sit on.
     //
     // Title boxes are re-derived here, not reused. The set captured above was
     // measured before `compactVertical`, which shifts every y through a monotone
@@ -489,6 +498,12 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     );
     const settledTitles = titleBoxesOf(scene, model);
     optimiseRoutes(scene, settledTitles);
+    // The ladder trades a lower-tier win for a tier-4 `tight` when every seat
+    // it can reach sits within `MIN_ATTACH_GAP` of a sibling — honest, but it
+    // leaves the side crowded. The same spread that ran inside `tidyEdges`
+    // runs here again, after the pass that re-crowds. Nothing below it moves
+    // edge geometry.
+    spreadAttachments(scene);
     anchorFlowLabels(scene, settledTitles);
     // Record *every* edge the repair moved. Restricting this to edges whose
     // label was seated beforehand made the rollback partial — the renderer put
