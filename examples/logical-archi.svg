@@ -105,11 +105,11 @@
 <text x="528.5" y="210.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">anomalies and inconsistencies</text>
 <rect x="501.5" y="218.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="528.5" y="229.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
-<text x="406" y="252.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Write and broadcast</text>
-<text x="406" y="266.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages to central</text>
-<text x="406" y="281.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">control</text>
-<rect x="379" y="289.375" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="406" y="300.375" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="293" y="170.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Write and broadcast</text>
+<text x="293" y="185.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages to central</text>
+<text x="293" y="199.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">control</text>
+<rect x="266" y="207.75" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="293" y="218.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
 <text x="290" y="362.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consult</text>
 <text x="1321.25" y="337.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Real-time broadcast of</text>
 <text x="1321.25" y="351.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">disruption information</text>

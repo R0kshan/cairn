@@ -19,7 +19,7 @@ Sweeps every `.cairn` fixture × every disposition. Seven invariants must stay a
 horizontal bands, coincident segments, shared attachment points, and labels
 adrift from their own flow (§4a). The rest (staircases, tight attachments,
 near-parallel runs, long detours, orphaned labels, pierced labels, fan tangles,
-wrap-around attachments §4c, labels off their line §4d, struck titles §4e, crossings §4f, weaving flows §4g, foreign containers §4h) are a **ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
+wrap-around attachments §4c, labels off their line §4d, struck titles §4e, crossings §4f, weaving flows §4g, foreign containers §4h, straddled labels §4j) are a **ratchet** — expressed as a rate per swept flow-instance (not a raw count) so
 adding fixtures doesn't spuriously fail the gate. Current rates are ceilings
 that may only fall. Lower a rate when a change earns it; never raise one to go
 green.
@@ -104,6 +104,9 @@ swept, catching three different ways attribution fails:
   is masked behind the halo and position already settles attribution. Because a
   pierced label need not overlap anything, `settleLabelPositions` moves a label
   when it is *either* colliding or unattributable, not on collision alone.
+- **`labelStraddled` — ratchet.** The on-line exemption above holds only for a
+  run *crossing* the label. A run **parallel** to the one it sits on, inside its
+  box, leaves the reader nothing at all. §4j.
 
 All three fight invariant §1. An overlapping label is unreadable; an ambiguous
 one is only misleading, so **zero overlaps wins**. `settleLabelPositions` tries
@@ -344,6 +347,50 @@ complaint; a name drawn through is destroyed information.
 Not yet a swept metric — the router avoids it, but nothing gates it. Adding
 `arrowCramped` to `scripts/sweep.ts` needs a corpus-wide count to calibrate the
 ceiling from.
+
+### 4j. The run a label sits on is the only run under its words
+
+No **foreign** run may pass inside a flow label's box **parallel to the run the
+label sits on** (`labelStraddled`, ratchet, tier 1).
+
+§4a exempts an on-line label from `labelPierced`, and for a run *crossing* the
+label that exemption is right: the crossing is masked behind the halo and the
+label's position already says which line is speaking. It collapses when the
+intruder is **parallel**. Then both lines are masked the same way, both emerge
+above and below the words, and position says nothing — the label is sitting on
+two lines and naming one of them.
+
+`small/page` is the case that produced the rule. `PATIENT → PORTAL` took a west
+channel whose lane came out at x=91; `SCHEDULER → PATIENT` had a riser at x=96.
+Both labels are seated on their own risers and each has the other's flow through
+its box. Nothing in the pipeline objected: `labelPierced` exempts them for being
+on their line, `labelOrphan` cannot fire when `own` is 0, and `nearParallel`
+saw it — as a tier-2 complaint about a tier-1 loss.
+
+**Strictly inside the box, not within `PIERCE_SLACK`.** A run grazing the box
+edge is what the halo is for; it is the line between the first and last letter
+that costs the reader the attribution.
+
+Two things enforce it, and neither is the label:
+
+- **`laneBeyond` in `edge-tidy` derives channel lanes clear of parallel runs**,
+  by half the label the lane will carry rather than the fixed `CHANNEL_CLEAR`
+  that keeps the *lines* apart — 10px of separation is no help to a 90px label
+  centred on one of them. The clear lane is **added** to the candidates, never
+  substituted for the box-derived one: replacing it was measured and moved five
+  `slide` drawings onto container names, because a lane clear of every parallel
+  run can be a long way out and folded layouts reflow around whatever the
+  unfolded scene hands them. As a candidate it is longer, so it sorts after the
+  lane it would replace and the ladder reaches it only when the nearer one is
+  refused. Canvas growth stays what it always was — the last lane in the list.
+- **Moving the label is the fallback, not the fix.** Its escape is off its own
+  line, which trades one tier-1 defect (`labelStraddled`) for another
+  (`labelOffLine`) and leaves it beside two lines it still cannot distinguish.
+  Separating the runs is the only repair that removes the ambiguity.
+
+What remains at 329 is not one shape: channel lanes are only one way two runs
+end up parallel under a label. Elk's own routing and `route-detour`'s channels
+are others, and neither has been taught the rule.
 
 ## 5. Security
 

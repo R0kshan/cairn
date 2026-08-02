@@ -85,6 +85,16 @@ const CEILING_RATE: Record<string, number> = {
   // node boxes. Lowering this means finding them a seat *along* the run, or
   // spreading the bundle; never by relaxing what "on the line" means.
   labelOffLine: 0.0193014,
+  // A second run travelling parallel to the label's own, inside its box
+  // (INVARIANTS §4j). Calibrated *after* the lane fix that introduced the
+  // metric, not before it: at the time the predicate was written the corpus
+  // carried 347 of these, and locking that in would have budgeted debt the
+  // same commit was about to pay off. 329 over 3884 flow-instances.
+  //
+  // What remains is not one shape. Channel lanes are only one way two runs end
+  // up parallel under a label; elk's own routing and `route-detour`'s channels
+  // are others, and neither has been taught the rule yet.
+  labelStraddled: 0.0847066,
   // Runs and labels drawn across a container's name. Edges are emitted last and
   // a title carries no halo, so anything crossing one strikes through the words.
   // `route-detour` has always avoided them when planning a channel; elk has not,
@@ -165,6 +175,66 @@ const PIERCE_SLACK = 1;
  * "caption floating next to the flow" case it exists to forbid.
  */
 const ON_LINE_SLACK = 2;
+
+/**
+ * Which of a flow's own segments the label is seated on — the one its *text
+ * centre* lies on, which is what §4d makes the label's line. `null` when the
+ * centre is on no segment, i.e. the label is off its line and §4j does not
+ * apply to it.
+ *
+ * Returned as an axis rather than an index: everything downstream only needs
+ * to know which direction "parallel" means here.
+ */
+const hostRunOf = (l: Box & { textH: number }, pts: Point[]): boolean | null => {
+  const dot = {
+    x: l.x + l.width / 2,
+    y: l.y + (l.textH > 0 ? l.textH / 2 : l.height / 2),
+    width: 0,
+    height: 0,
+  };
+  let best = Number.POSITIVE_INFINITY;
+  let vertical: boolean | null = null;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const d = boxToSegmentSq(dot, pts[i], pts[i + 1]);
+    if (d >= best) continue;
+    best = d;
+    vertical = Math.abs(pts[i].x - pts[i + 1].x) < 0.5;
+  }
+  return best <= ON_LINE_SLACK * ON_LINE_SLACK ? vertical : null;
+};
+
+/**
+ * The first foreign run travelling **parallel to the label's own** and passing
+ * inside its box, or `""`.
+ *
+ * Strictly inside, not within `PIERCE_SLACK`: a run grazing the box edge is
+ * what the text halo exists for, and it does not read as a second line under
+ * the words. It is the line between the first and last letter that does.
+ */
+const straddledBy = (
+  l: Box,
+  vertical: boolean,
+  ownId: string,
+  edges: { id: string; pts: Point[] }[],
+): string => {
+  const lo = vertical ? l.x : l.y;
+  const hi = lo + (vertical ? l.width : l.height);
+  for (const o of edges) {
+    if (o.id === ownId || o.pts.length < 2) continue;
+    for (let i = 0; i + 1 < o.pts.length; i++) {
+      const a = o.pts[i];
+      const b = o.pts[i + 1];
+      const runVertical = Math.abs(a.x - b.x) < 0.5;
+      const runHorizontal = Math.abs(a.y - b.y) < 0.5;
+      if (runVertical === runHorizontal) continue; // zero-length or diagonal
+      if (runVertical !== vertical) continue;
+      if (boxToSegmentSq(l, a, b) > 0) continue;
+      const at = vertical ? a.x : a.y;
+      if (at > lo + 1 && at < hi - 1) return o.id;
+    }
+  }
+  return "";
+};
 
 /**
  * Squared distance from a label box to one segment. Every segment is
@@ -511,8 +581,32 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
         // before any label). It is the floating label — beside one flow, with a
         // second drawn through its words — that leaves the reader guessing,
         // which is the defect this has always been about.
+        //
+        // `src/svg-render.ts`'s `pierced()` counts a wider population than this
+        // rule and §4j together — see the note there for why that one guard is
+        // allowed to be stricter than the gate it serves.
         if (!onLine && nearestOther <= PIERCE_SLACK * PIERCE_SLACK)
           note("labelPierced", `${e.id} "${text}" run ${nearestId} crosses its box`);
+        // Invariant §4j: the run the label sits on is the only run under its
+        // words. The exemption above is sound for a run *crossing* the label —
+        // the halo masks it and the label's position still says which line is
+        // speaking. It collapses when the intruder runs **parallel** to the
+        // label's own run and passes inside the box: both lines are masked the
+        // same way, both emerge above and below the words, and nothing is left
+        // to tell them apart. `small/page` seats "Search a slot and book" on a
+        // riser at x=91 with a second riser at x=96 through the same box, and
+        // `nearParallel` is the only thing that fires — a tier-2 complaint
+        // about a tier-1 loss.
+        //
+        // Charged only for on-line labels because an off-line one is already
+        // `labelPierced` above; this is the population that rule skips.
+        if (onLine) {
+          const host = hostRunOf(l, e.pts);
+          const straddler =
+            host === null ? "" : straddledBy(l, host, e.id, scene.edges);
+          if (straddler)
+            note("labelStraddled", `${e.id} "${text}" run ${straddler} parallel under its words`);
+        }
       }
     }
 
@@ -838,6 +932,7 @@ const TIER: Record<string, number> = {
   deadBand: 0,
   labelOrphan: 1,
   labelOffLine: 1,
+  labelStraddled: 1,
   crossings: 2,
   fanTangle: 2,
   nearParallel: 2,

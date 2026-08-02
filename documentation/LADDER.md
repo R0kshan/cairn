@@ -202,9 +202,26 @@ The label's **text centre** more than 2px (`ON_LINE_SLACK`) from its own run.
 Measured on the text rows, which sit at the top of the box — a protocol line and
 business-object chips hang below, so the box centre is not the text centre.
 
+### `labelStraddled` · ratchet
+
+**What you see:** a label with two parallel lines running under it, one of them
+someone else's.
+A foreign run **parallel to the run the label sits on**, passing strictly inside
+its box. `labelPierced` cannot see this — it exempts labels that are on their
+line, and being on the line is what makes this ambiguous rather than merely
+untidy: both runs are masked behind the same halo, both emerge above and below
+the words, and the label's position no longer picks one. A run crossing the
+label *transversally* stays exempt, which is why the predicate tests the axis
+and not just the distance.
+
+Charged on-line only, so it and `labelPierced` partition the population rather
+than overlapping it.
+
 *The router models this tier only as "does this route leave each label somewhere
 to sit". Real attribution is decided after every geometry pass, by `label-anchor`
-and the renderer's settler.*
+and the renderer's settler. `labelStraddled` is the one tier-1 defect a pass
+avoids up front — not by scoring it, but by deriving channel lanes far enough
+from parallel runs that the label cannot land on both (§4j).*
 
 ---
 

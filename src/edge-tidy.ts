@@ -1861,6 +1861,80 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     /** Room a lane keeps from whatever it clears — past `HUG_CLEAR`, so the two never read as one line. */
     const CHANNEL_CLEAR = 10;
 
+    /** Bumped by every accepted move; invalidates every cache keyed on the scene's geometry. */
+    let generation = 0;
+
+    /**
+     * How far past a foreign run a lane has to sit for the label it carries to
+     * clear that run (§4j) — half the label, plus enough that the box edge does
+     * not graze the line.
+     *
+     * Derived from the edge's own labels rather than a constant, because that
+     * is what the defect is measured against: a 142px label needs 73px of room
+     * and a bare `(AMQP)` needs 26, and a single number would either strand the
+     * wide ones or shove the narrow ones across the drawing for nothing. An
+     * unlabelled flow reaches nothing extra — `CHANNEL_CLEAR` already keeps the
+     * lines apart, and §4j is a rule about words.
+     */
+    const STRADDLE_MARGIN = 2;
+    const runReach = (edge: SceneEdge, vertical: boolean): number => {
+      let reach = CHANNEL_CLEAR;
+      for (const label of edge.labels) {
+        if (!label.width || !label.height) continue;
+        const across = (vertical ? label.height : label.width) / 2 + STRADDLE_MARGIN;
+        if (across > reach) reach = across;
+      }
+      return reach;
+    };
+
+    /**
+     * Every run already parallel to a lane on this axis, as obstacles the lane
+     * must clear.
+     *
+     * Memoised per edge × axis: `laneBeyond` is called once per same-facing
+     * seat pair — up to a hundred times for one edge — and rebuilding this from
+     * every segment in the drawing each time is the difference between a cheap
+     * check and a visible build cost.
+     *
+     * Invalidated by `generation`, the same counter the unmoved-profile cache
+     * uses, since these are other flows' routes and an accepted move changes
+     * them.
+     */
+    interface LaneBlock { alongLo: number; alongHi: number; acrossLo: number; acrossHi: number }
+    const runBlockCache = new Map<string, { at: number; blocks: LaneBlock[] }>();
+    const parallelRunBlocks = (edge: SceneEdge, vertical: boolean): LaneBlock[] => {
+      const key = `${edge.id}|${vertical}`;
+      const hit = runBlockCache.get(key);
+      if (hit && hit.at === generation) return hit.blocks;
+      // The lane runs across the span, so it is vertical exactly when the span
+      // axis is not — and a foreign run is parallel to it on the same terms.
+      const laneVertical = !vertical;
+      const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
+      const blocks: LaneBlock[] = [];
+      for (const other of scene.edges) {
+        if (other.id === edge.id || other.pts.length < 2) continue;
+        for (let index = 0; index + 1 < other.pts.length; index++) {
+          const a = other.pts[index];
+          const b = other.pts[index + 1];
+          const runVertical = Math.abs(a.x - b.x) < 0.5;
+          const runHorizontal = Math.abs(a.y - b.y) < 0.5;
+          if (runVertical === runHorizontal) continue;
+          if (runVertical !== laneVertical) continue;
+          const at = laneVertical ? a.x : a.y;
+          const from = laneVertical ? a.y : a.x;
+          const to = laneVertical ? b.y : b.x;
+          blocks.push({
+            alongLo: Math.min(from, to),
+            alongHi: Math.max(from, to),
+            acrossLo: at - slack,
+            acrossHi: at + slack,
+          });
+        }
+      }
+      runBlockCache.set(key, { at: generation, blocks });
+      return blocks;
+    };
+
     /**
      * The lowest lane, beyond `start`, that the connecting run may legally
      * occupy across `span`.
@@ -1873,6 +1947,20 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
      * every container title, and every container holding neither endpoint —
      * restricted to those actually overlapping the span the run has to cross.
      *
+     * **And every run already travelling parallel to the lane** (§4j). The
+     * obstacle list used to be boxes only, so two lanes derived independently
+     * could land on top of each other: on `small/page` this one returned its
+     * default `near - CHANNEL_STEP` = 91 without iterating once, five pixels
+     * from a riser another flow had put at 96 (`BOOKING.x - CHANNEL_CLEAR`).
+     * Nothing downstream could undo it — the two labels seated on those risers
+     * each ended up with the other's flow under their words.
+     *
+     * A run is cleared by `runReach`, not `CHANNEL_CLEAR`: keeping the *lines*
+     * 10px apart is `nearParallel`'s business, and it is not enough. The label
+     * this lane will carry is centred on it and reaches half its width to
+     * either side, so anything nearer than that is inside the box whatever the
+     * lines do.
+     *
      * Iterative because clearing one obstacle can expose the next; bounded by
      * the obstacle count, and monotone (each step moves the lane further out),
      * so it terminates. `null` when the drawing leaves no room.
@@ -1884,6 +1972,8 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       vertical: boolean,
       before: boolean,
       ends: ReturnType<typeof inspector.endsOf>,
+      edge: SceneEdge,
+      clearRuns: boolean,
     ): number | null => {
       const own = new Set<string>();
       for (const end of ends) if (end) own.add(end.node.id);
@@ -1905,6 +1995,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         push(box.x, box.y, box.width, box.height);
       }
       for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
+      if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
 
       let lane = start;
       for (let guard = 0; guard <= blocks.length; guard++) {
@@ -1932,14 +2023,25 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
      * it costs are fair payment for the tier-0 defect it clears (the ladder
      * works this out on its own; it needed the shape, not a new priority).
      *
-     * Two lanes, nearest first. The first is *derived* from the obstacles the
+     * Three lanes, nearest first. The first is *derived* from the obstacles the
      * run has to clear (`laneBeyond`), so the turn happens exactly as late as
      * §4h requires and no later — an earlier version guessed a fixed 24px and
      * only cleared the Reporting layer on `logical` by five pixels of luck. The
-     * second is outside the drawing entirely, which always exists and is the
-     * fallback when the derived lane runs out of canvas.
+     * second clears the same obstacles **and** the runs already parallel to it,
+     * by enough that the label this lane carries cannot end up with a stranger's
+     * flow under its words (§4j). The third is outside the drawing entirely,
+     * which always exists and is the fallback when the derived lanes run out of
+     * canvas.
      *
-     * Both are 2-turn routes, so they sort among the Ls rather than behind the
+     * The run-clear lane is **added**, never substituted. Replacing the derived
+     * lane with it was measured first and moved five `slide` drawings onto
+     * container names: a lane that clears every parallel run can be a long way
+     * out, and folded layouts reflow around whatever the unfolded scene handed
+     * them. As a candidate it costs nothing — it is longer, so it sorts after
+     * the lane it would have replaced, and the ladder reaches it only when the
+     * nearer one is refused.
+     *
+     * All are 2-turn routes, so they sort among the Ls rather than behind the
      * Zs, and a clean L still wins — the ranking only decides what to *try*.
      */
     const channelU = (
@@ -1947,6 +2049,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       b: Point,
       side: Side,
       ends: ReturnType<typeof inspector.endsOf>,
+      edge: SceneEdge,
     ): Point[][] => {
       const vertical = !horizontalSide(side);
       const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
@@ -1954,19 +2057,16 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       const before = side === "north" || side === "west";
       const spanLo = vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y);
       const spanHi = vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y);
-      const derived = laneBeyond(
-        spanLo,
-        spanHi,
-        before ? near - CHANNEL_STEP : far + CHANNEL_STEP,
-        vertical,
-        before,
-        ends,
-      );
+      const start = before ? near - CHANNEL_STEP : far + CHANNEL_STEP;
+      const derived = laneBeyond(spanLo, spanHi, start, vertical, before, ends, edge, false);
+      const clear = laneBeyond(spanLo, spanHi, start, vertical, before, ends, edge, true);
       const outside = before
         ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN
         : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
       const limit = vertical ? scene.height : scene.width;
-      const lanes = derived === null ? [outside] : [derived, outside];
+      const lanes = [derived, clear, outside].filter(
+        (lane, index, all): lane is number => lane !== null && all.indexOf(lane) === index,
+      );
       return lanes
         .filter((lane) => (before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far))
         .map((lane) =>
@@ -2000,11 +2100,12 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       b: Point,
       bSide: Side,
       ends: ReturnType<typeof inspector.endsOf>,
+      edge: SceneEdge,
     ): Point[][] => {
       const aH = horizontalSide(aSide);
       const bH = horizontalSide(bSide);
       if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
-      if (outward(aSide) === outward(bSide)) return channelU(a, b, aSide, ends);
+      if (outward(aSide) === outward(bSide)) return channelU(a, b, aSide, ends, edge);
       if (aH)
         return [(a.x + b.x) / 2, Math.min(a.x, b.x) + 24, Math.max(a.x, b.x) - 24].map((mid) => [
           a,
@@ -2023,9 +2124,11 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     /** Candidate routes for one edge, cheapest-looking first, de-duplicated. */
     const routeCache = new Map<string, Point[][]>();
     const routesFor = (edge: SceneEdge): Point[][] => {
-      // Keyed on the current route: candidates depend only on the two endpoint
-      // nodes, so this is stable until the edge itself moves.
-      const cacheKey = `${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
+      // Keyed on the current route *and* the generation. The endpoints alone
+      // were enough while candidates depended only on the two nodes; a channel
+      // lane now clears the runs already in the drawing (§4j), so an accepted
+      // move elsewhere can change what this edge's candidates are.
+      const cacheKey = `${generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
       const cached = routeCache.get(cacheKey);
       if (cached) return cached;
       const ends = inspector.endsOf(edge.pts);
@@ -2042,6 +2145,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
                 seatOn(ends[1].node, bSide, bOff),
                 bSide,
                 ends,
+                edge,
               )) {
                 const pts = raw.filter(
                   (p, index) =>
@@ -2099,8 +2203,10 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
      * and ~20% of a corpus build. The generation counter is the invalidation:
      * any accepted move bumps it, because `before` depends on every edge in the
      * scene, not only the ones in `ids`.
+     *
+     * Declared above `parallelRunBlocks`, which invalidates on the same
+     * counter for the same reason.
      */
-    let generation = 0;
     const beforeCache = new Map<string, Profile>();
     const soloCache = new Map<string, Profile>();
     const cached = (store: Map<string, Profile>, ids: Set<string>, make: () => Profile): Profile => {

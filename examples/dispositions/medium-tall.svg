@@ -72,7 +72,7 @@
 <path d="M 234 129 L 113 129 L 113 258 L 148 258" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 154 299 L 154 1166 L 184 1166" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 325 299 L 325 597.5 L 447 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 555 293 L 628 293 A 5 5 0 0 1 638 293 L 679 293 A 5 5 0 0 1 689 293 L 758 293 A 5 5 0 0 1 768 293 L 772 293 A 5 5 0 0 1 782 293 L 852 293 L 852 597.5 L 782 597.5 A 5 5 0 0 0 772 597.5 L 768 597.5 A 5 5 0 0 0 758 597.5 L 638 597.5 A 5 5 0 0 0 628 597.5 L 602 597.5 A 5 5 0 0 0 592 597.5 L 555 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 555 293 L 628 293 A 5 5 0 0 1 638 293 L 679 293 A 5 5 0 0 1 689 293 L 758 293 A 5 5 0 0 1 768 293 L 915 293 L 915 597.5 L 768 597.5 A 5 5 0 0 0 758 597.5 L 638 597.5 A 5 5 0 0 0 628 597.5 L 602 597.5 A 5 5 0 0 0 592 597.5 L 555 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 501 638.5 L 501 675 L 389 675 L 389 711.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 389 758.5 L 389 782.5 L 367 782.5 L 367 1160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 349 1160 L 349 752.5 L 383 752.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -81,7 +81,7 @@
 <path d="M 465 473.5 L 453 473.5 L 453 591.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 633 114 L 633 632.5 L 555 632.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 519 638.5 L 519 758 L 519 877.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 573 901 L 777 901 L 777 114" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 573 901 L 975 901 L 975 99.5 L 833 99.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 763 114 L 763 883.5 L 573 883.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 465 901 L 423 901 L 423 1025.5 L 447 1025.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 501 1049 L 501 1160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -96,8 +96,8 @@
 <text x="325" y="451.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
 <rect x="293" y="459.5" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="325" y="470.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Case file</text>
-<text x="852" y="373.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
-<text x="852" y="387.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(phone channel)</text>
+<text x="854" y="289" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
+<text x="854" y="303.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(phone channel)</text>
 <text x="445" y="671" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Systematic check</text>
 <text x="445" y="685.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">at opening</text>
 <text x="378" y="778.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Query claims-history</text>
@@ -118,8 +118,8 @@
 <text x="633" y="362.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">management decisions</text>
 <text x="519" y="813.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approved items</text>
 <text x="519" y="828.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">for pricing</text>
-<text x="675" y="897" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval request</text>
-<text x="675" y="911.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">beyond delegation</text>
+<text x="975" y="475.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval request</text>
+<text x="975" y="489.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">beyond delegation</text>
 <text x="763" y="473.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval or</text>
 <text x="763" y="488.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">reasoned refusal</text>
 <text x="423" y="966.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Compensation order</text>

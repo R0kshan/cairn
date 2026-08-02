@@ -213,6 +213,21 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
    * Not measured at exactly 0: the renderer strokes a halo behind label text, so
    * a line grazing the box edge stays legible. It is the line through the middle
    * that has to go.
+   *
+   * **Deliberately wider than the gate, and this is the one place that is
+   * allowed** (INVARIANTS §3 asks for the reason next to both). The sweep splits
+   * this population in two: `labelPierced` charges only labels already off their
+   * line, and `labelStraddled` charges on-line labels whose intruder runs
+   * *parallel* to their own (§4j). Their union leaves out one case this counts —
+   * an on-line label with a foreign run crossing it transversally — and that is
+   * on purpose. The gate does not charge for it because the halo masks the
+   * crossing and the label's position still settles attribution; but this is a
+   * *preference*, consulted to decide whether a better seat is worth looking
+   * for, and a seat with nothing through it is worth preferring even when the
+   * gate would have tolerated one. Narrowing it to the gate's exact union would
+   * stop the settler looking. The relaxed round below is what keeps the extra
+   * strictness from costing anything: if no cleaner seat exists, this one is
+   * taken anyway.
    */
   const PIERCE_SQ = 1;
   const pierced = (label: SceneLabel) => {
@@ -279,6 +294,9 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     return seats;
   };
 
+  /** Container names, which carry no halo and so may not be sat on (§4e). */
+  const titleBands = titleBoxesOf(scene, model);
+
   const settleLabelPositions = () => {
     for (const label of labels) {
       const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
@@ -286,9 +304,27 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       else if (requested === "below") label.y += label.height / 2 + 5;
     }
     for (const label of labels) {
+      /**
+       * Somewhere this label may not sit at all.
+       *
+       * Container names are here with the node boxes, not among the soft
+       * preferences below, because §4e is **tier 0** and every preference the
+       * escape ladder trades away is tier 1: a name drawn through is destroyed
+       * information, a label beside its line is a label you can still read.
+       * `label-anchor` ranks these the other way round (`tolerated` takes a band
+       * seat rather than leave the run) — that comment predates the ladder and
+       * the ladder is the one that decides.
+       *
+       * Nothing saw this before, because nothing had to: the settler only moves
+       * a label that collides or cannot be attributed, and elk rarely parks one
+       * on a name. It surfaced the moment `laneBeyond` started clearing runs
+       * (§4j) — labels that had never needed to escape began escaping, and five
+       * `slide` drawings put one on a container name on the way out.
+       */
       const collides = () =>
         labels.some((other) => other !== label && boxesOverlap(other as Box, label as Box)) ||
-        nodeBoxes.some((node) => boxesOverlap(node, label as Box));
+        nodeBoxes.some((node) => boxesOverlap(node, label as Box)) ||
+        titleBands.some((band) => boxesOverlap(band as Box, label as Box));
       /** Can the reader tell, from this position alone, which flow is speaking? */
       const attributableHere = () => {
         const own = offOwnRun(label);
@@ -380,7 +416,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   {
     const repaired = scene.edges.filter((edge) => edge.repairedFrom);
     if (repaired.length) {
-      const titles = titleBoxesOf(scene, model);
+      const titles = titleBands;
       // Every way a route change can damage a label, not just one of them. The
       // first version of this audit counted only labels off their run, and the
       // corpus answered: labelAdrift 3 (a must-be-zero invariant), labelOrphan
