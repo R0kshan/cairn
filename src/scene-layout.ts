@@ -96,6 +96,15 @@ export interface Scene {
   nodes: SceneNode[];
   edges: SceneEdge[];
   layoutMs: number;
+  /**
+   * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept.
+   *
+   * The renderer audits those repairs for label collateral the router could not
+   * see, and the ladder's rule for that is "a loss at tier T is payable only by
+   * a gain at a tier strictly better than T" — so the audit has to know what
+   * the repair bought. Absent when nothing was repaired.
+   */
+  repairTier?: number;
 }
 
 interface WalkedElkNode {

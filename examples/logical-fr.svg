@@ -67,14 +67,14 @@
 <rect x="2298" y="91" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="2352" y="111.25" font-size="12.5" text-anchor="middle" fill="#17202c">GED</text>
 <text x="2352" y="125.75" font-size="12.5" text-anchor="middle" fill="#17202c">du groupe</text>
-<path d="M 126.66666666666666 115 L 163 115 L 163 178 L 406.5 178" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 126.66666666666666 124 L 150.66666666666666 124 L 150.66666666666666 160 L 406.5 160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 139 180 L 163 180 L 163 245 L 406.5 245" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 126.66666666666666 97 L 299 97 L 299 111 L 378 111" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 126.66666666666666 106 L 252.33333333333331 106 L 252.33333333333331 128 L 378 128" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 543 110.5 L 1123.5 110.5 A 5 5 0 0 1 1133.5 110.5 L 2298 110.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 514.5 177.5 L 1053 177.5 L 1053 240.33333333333331 L 1063 240.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 514.5 177.5 L 1110.5 177.5 L 1110.5 237.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 514.5 244.5 L 567 244.5 L 567 188.5 L 1043 188.5 L 1043 250.58333333333331 L 1063 250.58333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1194 249.08333333333331 L 1204 249.08333333333331 L 1204 213.83333333333331 L 1376 213.83333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1484 205.99999999999997 L 1508 205.99999999999997 L 1508 182.33333333333331 L 2284 182.33333333333331 L 2301.5 182.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1146.5 237.33333333333331 L 1146.5 205.99999999999997 L 1376 205.99999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1484 205.99999999999997 L 1508 205.99999999999997 L 1508 181.5 L 2301.5 181.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2301.5 164 L 1430 164 L 1430 182.49999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1063 281.3333333333333 L 864 281.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 139 371.5 L 732 371.5 L 732 268.66666666666663 L 756 268.66666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -84,26 +84,26 @@
 <path d="M 1716 292.16666666666663 L 1716 438.5 L 139 438.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 139 456.5 L 1734 456.5 L 1734 292.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1770 260.8333333333333 L 1952 260.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2069 260.8333333333333 L 2107 261 L 2107 249 L 2298 249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1128.5 237.33333333333331 L 1128.5 85 L 126.66666666666666 85" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="284.75" y="181.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer un sinistre</text>
-<rect x="255.25" y="189.25" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="284.75" y="200.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Sinistre</text>
+<path d="M 2069 243.33333333333331 L 2183.5 243.33333333333331 L 2183.5 266 L 2298 266" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1128.5 237.33333333333331 L 1128.5 12 L 120.66666666666666 12 L 120.66666666666666 79" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="278.5833333333333" y="163.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer un sinistre</text>
+<rect x="249.08333333333331" y="171.25" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="278.5833333333333" y="182.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Sinistre</text>
 <text x="284.75" y="248.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer son implication</text>
-<text x="299" y="100" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Téléverser photos</text>
-<text x="299" y="114.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et documents</text>
+<text x="189.5" y="102" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Téléverser photos</text>
+<text x="189.5" y="116.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et documents</text>
 <text x="1420.5" y="113.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archiver les documents</text>
-<text x="783.75" y="180.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
-<rect x="756.75" y="188.75" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="783.75" y="199.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
-<text x="932.875" y="184.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
-<text x="932.875" y="199" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(canal téléphonique)</text>
-<text x="1290" y="209.83333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Contrôle systématique</text>
-<text x="1290" y="224.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">à l'ouverture</text>
-<text x="2051.25" y="178.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Interroger les fichiers</text>
-<text x="2051.25" y="192.83333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'antécédents</text>
-<text x="1865.75" y="160" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Antécédents</text>
-<text x="1865.75" y="174.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de l'assuré</text>
+<text x="812.5" y="180.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
+<rect x="785.5" y="188.75" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="812.5" y="199.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="677.125" y="184.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
+<text x="677.125" y="199" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(canal téléphonique)</text>
+<text x="1261.25" y="201.99999999999997" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Contrôle systématique</text>
+<text x="1261.25" y="216.49999999999997" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">à l'ouverture</text>
+<text x="1904.75" y="177.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Interroger les fichiers</text>
+<text x="1904.75" y="192" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'antécédents</text>
+<text x="1468.5" y="160" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Antécédents</text>
+<text x="1468.5" y="174.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de l'assuré</text>
 <text x="963.5" y="277.3333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Mission d'expertise</text>
 <text x="963.5" y="291.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">si dommage &gt; seuil</text>
 <text x="435.5" y="367.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Remettre le rapport</text>
@@ -125,11 +125,11 @@
 <text x="1861" y="264.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ordre d'indemnisation</text>
 <rect x="1829" y="272.0833333333333" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="1861" y="283.0833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
-<text x="2202.5" y="252.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Virement SEPA</text>
-<rect x="2170.5" y="260.25" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="2202.5" y="271.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
-<text x="627.5833333333334" y="81" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notifier étapes</text>
-<text x="627.5833333333334" y="95.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et décision</text>
+<text x="2126.25" y="246.58333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Virement SEPA</text>
+<rect x="2094.25" y="254.58333333333331" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="2126.25" y="265.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
+<text x="850.7916666666667" y="8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notifier étapes</text>
+<text x="850.7916666666667" y="22.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et décision</text>
 <line x1="20" y1="530" x2="2442" y2="530" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="552" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
 <rect x="150" y="542" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>

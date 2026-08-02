@@ -70,8 +70,8 @@
 <path d="M 155.33333333333331 115 L 196 115 L 196 178 L 393.5 178" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 172 180 L 196 180 L 196 245 L 393.5 245" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 155.33333333333331 88 L 263.66666666666663 88 L 263.66666666666663 110.5 L 372 110.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 523 110.5 L 1092 110.5 A 5 5 0 0 1 1102 110.5 L 2161 110.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 501.5 177.5 L 1079 177.5 L 1079 237.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 523 110.5 L 1052 110.5 A 5 5 0 0 1 1062 110.5 L 2161 110.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 501.5 177.5 L 1052 177.5 A 5 5 0 0 1 1062 177.5 L 1079 177.5 L 1079 237.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 501.5 244.5 L 547 244.5 L 547 188.5 L 1023 188.5 L 1023 250.58333333333331 L 1043 250.58333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1115 237.33333333333331 L 1115 205.99999999999997 L 1301 205.99999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1409 205.99999999999997 L 1433 205.99999999999997 L 1433 181.5 L 2164.5 181.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -85,7 +85,7 @@
 <path d="M 147 456.5 L 1646 456.5 L 1646 292.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1682 260.8333333333333 L 1844 260.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1952 243.33333333333331 L 2056.5 243.33333333333331 L 2056.5 266 L 2161 266" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1097 237.33333333333331 L 1097 12 L 149.33333333333331 12 L 149.33333333333331 79" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1057 237.33333333333331 L 1057 12 L 149.33333333333331 12 L 149.33333333333331 79" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="294.75" y="181.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report a claim</text>
 <rect x="273.25" y="189.25" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="294.75" y="200.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
@@ -128,8 +128,8 @@
 <text x="2004.25" y="246.58333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">SEPA transfer</text>
 <rect x="1964.25" y="254.58333333333331" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="2004.25" y="265.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<text x="623.1666666666666" y="8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
-<text x="623.1666666666666" y="22.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and decision</text>
+<text x="603.1666666666666" y="8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
+<text x="603.1666666666666" y="22.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and decision</text>
 <line x1="20" y1="530" x2="2291" y2="530" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="552" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
 <rect x="150" y="542" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>

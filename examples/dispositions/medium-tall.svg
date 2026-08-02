@@ -1,21 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 981 1546" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 981 1486" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="981" height="1546" fill="#ffffff"/>
+<rect width="981" height="1486" fill="#ffffff"/>
 <rect x="225" y="57" width="264" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="235" y="75" font-size="13" font-weight="bold" fill="#17202c">Policyholders</text>
 <rect x="574" y="22" width="268" height="101" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="584" y="40" font-size="13" font-weight="bold" fill="#17202c">Case handlers</text>
-<rect x="119" y="235" width="592" height="879" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="129" y="253" font-size="13" font-weight="bold" fill="#17202c">Claims information system</text>
-<rect x="139" y="267" width="425" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="149" y="285" font-size="13" font-weight="bold" fill="#17202c">Reporting layer</text>
-<rect x="323" y="447.5" width="368" height="362" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="333" y="465.5" font-size="13" font-weight="bold" fill="#17202c">Investigation layer</text>
-<rect x="368" y="892.5" width="214" height="207.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="378" y="910.5" font-size="13" font-weight="bold" fill="#17202c">Settlement layer</text>
-<rect x="175" y="1193" width="393" height="83" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="185" y="1211" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
+<rect x="119" y="193" width="592" height="879" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="129" y="211" font-size="13" font-weight="bold" fill="#17202c">Claims information system</text>
+<rect x="139" y="225" width="425" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="149" y="243" font-size="13" font-weight="bold" fill="#17202c">Reporting layer</text>
+<rect x="323" y="405.5" width="368" height="362" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="333" y="423.5" font-size="13" font-weight="bold" fill="#17202c">Investigation layer</text>
+<rect x="368" y="850.5" width="214" height="207.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="378" y="868.5" font-size="13" font-weight="bold" fill="#17202c">Settlement layer</text>
+<rect x="175" y="1133" width="393" height="83" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="185" y="1151" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="278" cy="94" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 267 116 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="278" y="128" font-size="11" text-anchor="middle" fill="#20364c">Policyholder</text>
@@ -34,132 +34,132 @@
 <path d="M 784 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="795" y="93" font-size="11" text-anchor="middle" fill="#20364c">Settlement</text>
 <text x="795" y="104" font-size="11" text-anchor="middle" fill="#20364c">supervisor</text>
-<rect x="319" y="294" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="373" y="314.25" font-size="12.5" text-anchor="middle" fill="#17202c">Online</text>
-<text x="373" y="328.75" font-size="12.5" text-anchor="middle" fill="#17202c">reporting</text>
-<rect x="447" y="294" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="501" y="314.25" font-size="12.5" text-anchor="middle" fill="#17202c">Phone</text>
-<text x="501" y="328.75" font-size="12.5" text-anchor="middle" fill="#17202c">reporting</text>
-<rect x="148" y="294" width="151" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="223.5" y="314.25" font-size="12.5" text-anchor="middle" fill="#17202c">Supporting-document</text>
-<text x="223.5" y="328.75" font-size="12.5" text-anchor="middle" fill="#17202c">collection</text>
-<rect x="447" y="633.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="501" y="653.75" font-size="12.5" text-anchor="middle" fill="#17202c">Claim-file</text>
-<text x="501" y="668.25" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
-<rect x="465" y="474.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="519" y="494.75" font-size="12.5" text-anchor="middle" fill="#17202c">Assessment</text>
-<text x="519" y="509.25" font-size="12.5" text-anchor="middle" fill="#17202c">tracking</text>
-<rect x="383" y="753.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="437" y="773.75" font-size="12.5" text-anchor="middle" fill="#17202c">Fraud</text>
-<text x="437" y="788.25" font-size="12.5" text-anchor="middle" fill="#17202c">detection</text>
-<rect x="465" y="919.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="519" y="939.75" font-size="12.5" text-anchor="middle" fill="#17202c">Compensation</text>
-<text x="519" y="954.25" font-size="12.5" text-anchor="middle" fill="#17202c">calculation</text>
-<rect x="447" y="1044" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="501" y="1064.25" font-size="12.5" text-anchor="middle" fill="#17202c">Payment</text>
-<text x="501" y="1078.75" font-size="12.5" text-anchor="middle" fill="#17202c">scheduling</text>
-<rect x="442" y="1220" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="500.5" y="1240.25" font-size="12.5" text-anchor="middle" fill="#17202c">Banking system</text>
-<text x="500.5" y="1254.75" font-size="12.5" text-anchor="middle" fill="#17202c">(transfers)</text>
-<rect x="312" y="1220" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="367" y="1240.25" font-size="12.5" text-anchor="middle" fill="#17202c">Inter-insurer</text>
-<text x="367" y="1254.75" font-size="12.5" text-anchor="middle" fill="#17202c">files</text>
-<rect x="184" y="1220" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="238" y="1240.25" font-size="12.5" text-anchor="middle" fill="#17202c">Group</text>
-<text x="238" y="1254.75" font-size="12.5" text-anchor="middle" fill="#17202c">ECM</text>
-<path d="M 292.6666666666667 138 L 293 220 L 373 220 L 373 294" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 411 138 L 411 211 L 501 211 L 501 294" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 263.3333333333333 138 L 263 162 L 184 162 L 184 220 L 224 220 L 224 294" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 223.5 341 L 223.5 1178 L 238 1178 L 238 1220" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 373 341 L 373 623.5 L 465 623.5 L 465 633.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 501 341 L 501 365 L 384 365 L 384 613.5 L 483 613.5 L 483 633.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 474 680.5 L 474 690.5 L 455 690.5 L 455 753.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 437 800.5 L 437 824.5 L 357 824.5 L 357 1129 L 371 1129 L 371 1220" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 367 1267 L 367 1289 L 721 1289 L 721 777 L 506 777 A 5 5 0 0 0 496 777 L 491 777" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 537 633.5 L 537 521.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 673 114 L 673 480.5 L 573 480.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 501 521.5 L 501 531.5 L 519 531.5 L 519 633.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 615 114 L 615 138 L 574 138 L 574 422.5 L 395 422.5 L 395 603.5 L 501 603.5 L 501 633.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 501 680.5 L 501 919.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 573 943 L 716 943 A 5 5 0 0 1 726 943 L 852 943 L 852 81.5 L 833 81.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 763 114 L 763 925.5 L 726 925.5 A 5 5 0 0 0 716 925.5 L 573 925.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 501 966.5 L 501 1044" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 501 1091 L 501 1220" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 447 657 L 228.5 657 A 5 5 0 0 0 218.5 657 L 91 657 L 91 111 L 234 111" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="373" y="260.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report a claim</text>
-<rect x="351.5" y="268.25" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="373" y="279.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
-<text x="411" y="177.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report involvement</text>
-<text x="184" y="187" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Upload photos</text>
-<text x="184" y="201.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and documents</text>
-<text x="223.5" y="762.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archive documents</text>
-<text x="373" y="485.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
-<rect x="341" y="493.5" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="373" y="504.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Case file</text>
-<text x="442.5" y="361" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
-<text x="442.5" y="375.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(phone channel)</text>
-<text x="455" y="718" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Systematic check</text>
-<text x="455" y="732.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">at opening</text>
-<text x="357" y="972.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Query claims-history</text>
-<text x="357" y="987.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">files</text>
-<text x="606" y="773" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Policyholder</text>
-<text x="606" y="787.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">history</text>
-<text x="537" y="543.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment mission</text>
-<text x="537" y="558.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">if damage &gt; threshold</text>
-<text x="673" y="293.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Submit assessment</text>
-<text x="673" y="307.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">report</text>
-<rect x="619.5" y="315.75" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="673" y="326.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
-<text x="519" y="578.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment</text>
-<text x="519" y="593" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">conclusions</text>
-<rect x="465.5" y="601" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="519" y="612" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
-<text x="574" y="213.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Investigation and</text>
-<text x="574" y="227.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">management decisions</text>
-<text x="501" y="847.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approved items</text>
-<text x="501" y="862" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">for pricing</text>
-<text x="852" y="404.6875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval request</text>
-<text x="852" y="419.1875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">beyond delegation</text>
-<text x="763" y="515.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval or</text>
-<text x="763" y="530.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">reasoned refusal</text>
-<text x="501" y="1008.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Compensation order</text>
-<rect x="461" y="1016.5" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="501" y="1027.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<text x="501" y="1158.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">SEPA transfer</text>
-<rect x="461" y="1166.75" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="501" y="1177.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<text x="91" y="380" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
-<text x="91" y="394.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and decision</text>
-<line x1="20" y1="1308" x2="961" y2="1308" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1330" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
-<rect x="150" y="1320" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="171.5" y="1331" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
-<text x="203" y="1331" font-size="10" fill="#79828f">— damaging event reported by a policyholder</text>
-<rect x="150" y="1344" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="182" y="1355" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Case file</text>
-<text x="224" y="1355" font-size="10" fill="#79828f">— file opened to investigate a claim</text>
-<rect x="150" y="1368" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="203.5" y="1379" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
-<text x="267" y="1379" font-size="10" fill="#79828f">— quantified conclusions of the appointed expert</text>
-<rect x="150" y="1392" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="190" y="1403" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
-<text x="240" y="1403" font-size="10" fill="#79828f">— amount approved and paid to the policyholder</text>
-<rect x="150" y="1416" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="198" y="1427" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="256" y="1427" font-size="10" fill="#79828f">carried by the flow</text>
-<line x1="20" y1="1454" x2="961" y2="1454" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1476" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="1466" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="1477" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="1466" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="304" y="1477" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="1466" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="400" y="1477" font-size="10" fill="#17202c">Layer</text>
-<rect x="458" y="1466" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="490" y="1477" font-size="10" fill="#17202c">Functional block</text>
-<rect x="606" y="1466" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="638" y="1477" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="1496" x2="176" y2="1496" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="1500" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
-<text x="150" y="1524" font-size="10" fill="#17202c" font-style="italic">Claim files are retained for 10 years (legal obligation)</text>
+<rect x="319" y="252" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="373" y="272.25" font-size="12.5" text-anchor="middle" fill="#17202c">Online</text>
+<text x="373" y="286.75" font-size="12.5" text-anchor="middle" fill="#17202c">reporting</text>
+<rect x="447" y="252" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="501" y="272.25" font-size="12.5" text-anchor="middle" fill="#17202c">Phone</text>
+<text x="501" y="286.75" font-size="12.5" text-anchor="middle" fill="#17202c">reporting</text>
+<rect x="148" y="252" width="151" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="223.5" y="272.25" font-size="12.5" text-anchor="middle" fill="#17202c">Supporting-document</text>
+<text x="223.5" y="286.75" font-size="12.5" text-anchor="middle" fill="#17202c">collection</text>
+<rect x="447" y="591.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="501" y="611.75" font-size="12.5" text-anchor="middle" fill="#17202c">Claim-file</text>
+<text x="501" y="626.25" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="465" y="432.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="519" y="452.75" font-size="12.5" text-anchor="middle" fill="#17202c">Assessment</text>
+<text x="519" y="467.25" font-size="12.5" text-anchor="middle" fill="#17202c">tracking</text>
+<rect x="383" y="711.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="437" y="731.75" font-size="12.5" text-anchor="middle" fill="#17202c">Fraud</text>
+<text x="437" y="746.25" font-size="12.5" text-anchor="middle" fill="#17202c">detection</text>
+<rect x="465" y="877.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="519" y="897.75" font-size="12.5" text-anchor="middle" fill="#17202c">Compensation</text>
+<text x="519" y="912.25" font-size="12.5" text-anchor="middle" fill="#17202c">calculation</text>
+<rect x="447" y="1002" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="501" y="1022.25" font-size="12.5" text-anchor="middle" fill="#17202c">Payment</text>
+<text x="501" y="1036.75" font-size="12.5" text-anchor="middle" fill="#17202c">scheduling</text>
+<rect x="442" y="1160" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="500.5" y="1180.25" font-size="12.5" text-anchor="middle" fill="#17202c">Banking system</text>
+<text x="500.5" y="1194.75" font-size="12.5" text-anchor="middle" fill="#17202c">(transfers)</text>
+<rect x="312" y="1160" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="367" y="1180.25" font-size="12.5" text-anchor="middle" fill="#17202c">Inter-insurer</text>
+<text x="367" y="1194.75" font-size="12.5" text-anchor="middle" fill="#17202c">files</text>
+<rect x="184" y="1160" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="238" y="1180.25" font-size="12.5" text-anchor="middle" fill="#17202c">Group</text>
+<text x="238" y="1194.75" font-size="12.5" text-anchor="middle" fill="#17202c">ECM</text>
+<path d="M 316 138 L 316 162 L 373 162 L 373 252" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 429 138 L 429 258 L 447 258" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 234 129 L 113 129 L 113 258 L 148 258" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 154 299 L 154 1166 L 184 1166" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 325 299 L 325 597.5 L 447 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 555 293 L 584 293 A 5 5 0 0 1 594 293 L 679 293 A 5 5 0 0 1 689 293 L 758 293 A 5 5 0 0 1 768 293 L 772 293 A 5 5 0 0 1 782 293 L 852 293 L 852 597.5 L 782 597.5 A 5 5 0 0 0 772 597.5 L 768 597.5 A 5 5 0 0 0 758 597.5 L 602 597.5 A 5 5 0 0 0 592 597.5 L 555 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 501 638.5 L 501 675 L 389 675 L 389 711.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 383 752.5 L 367 752.5 L 367 1160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 349 1160 L 349 735 L 383 735" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 453 591.5 L 453 438.5 L 465 438.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 684 114 L 684 438.5 L 594 438.5 A 5 5 0 0 0 584 438.5 L 573 438.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 573 473.5 L 584 473.5 A 5 5 0 0 1 594 473.5 L 597 473.5 L 597 615 L 555 615" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 589 114 L 589 567.5 L 521 567.5 L 521 591.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 519 638.5 L 519 758 L 519 877.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 573 901 L 777 901 L 777 114" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 763 114 L 763 883.5 L 573 883.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 465 901 L 423 901 L 423 1025.5 L 447 1025.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 501 1049 L 501 1160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 447 615 L 159 615 A 5 5 0 0 0 149 615 L 91 615 L 91 111 L 234 111" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="373" y="189.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report a claim</text>
+<rect x="351.5" y="197.25" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="373" y="208.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
+<text x="429" y="150.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report involvement</text>
+<text x="173.5" y="125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Upload photos</text>
+<text x="173.5" y="139.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and documents</text>
+<text x="154" y="744.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archive documents</text>
+<text x="325" y="451.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
+<rect x="293" y="459.5" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="325" y="470.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Case file</text>
+<text x="852" y="373.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the case file</text>
+<text x="852" y="387.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(phone channel)</text>
+<text x="445" y="671" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Systematic check</text>
+<text x="445" y="685.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">at opening</text>
+<text x="367" y="1010.3125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Query claims-history</text>
+<text x="367" y="1024.8125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">files</text>
+<text x="349" y="901.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Policyholder</text>
+<text x="349" y="915.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">history</text>
+<text x="453" y="511" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment mission</text>
+<text x="453" y="525.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">if damage &gt; threshold</text>
+<text x="684" y="251.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Submit assessment</text>
+<text x="684" y="265.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">report</text>
+<rect x="630.5" y="273.75" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="684" y="284.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
+<text x="597" y="540.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment</text>
+<text x="597" y="554.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">conclusions</text>
+<rect x="543.5" y="562.75" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="597" y="573.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
+<text x="589" y="315.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Investigation and</text>
+<text x="589" y="330.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">management decisions</text>
+<text x="519" y="813.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approved items</text>
+<text x="519" y="828.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">for pricing</text>
+<text x="675" y="897" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval request</text>
+<text x="675" y="911.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">beyond delegation</text>
+<text x="763" y="473.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval or</text>
+<text x="763" y="488.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">reasoned refusal</text>
+<text x="423" y="966.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Compensation order</text>
+<rect x="383" y="974.5" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="423" y="985.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
+<text x="501" y="1098.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">SEPA transfer</text>
+<rect x="461" y="1106.75" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="501" y="1117.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
+<text x="91" y="338" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
+<text x="91" y="352.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and decision</text>
+<line x1="20" y1="1248" x2="961" y2="1248" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1270" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
+<rect x="150" y="1260" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="171.5" y="1271" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
+<text x="203" y="1271" font-size="10" fill="#79828f">— damaging event reported by a policyholder</text>
+<rect x="150" y="1284" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="182" y="1295" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Case file</text>
+<text x="224" y="1295" font-size="10" fill="#79828f">— file opened to investigate a claim</text>
+<rect x="150" y="1308" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="203.5" y="1319" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
+<text x="267" y="1319" font-size="10" fill="#79828f">— quantified conclusions of the appointed expert</text>
+<rect x="150" y="1332" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="190" y="1343" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
+<text x="240" y="1343" font-size="10" fill="#79828f">— amount approved and paid to the policyholder</text>
+<rect x="150" y="1356" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="198" y="1367" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="256" y="1367" font-size="10" fill="#79828f">carried by the flow</text>
+<line x1="20" y1="1394" x2="961" y2="1394" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1416" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="1406" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="1417" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="1406" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="1417" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="1406" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="400" y="1417" font-size="10" fill="#17202c">Layer</text>
+<rect x="458" y="1406" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="490" y="1417" font-size="10" fill="#17202c">Functional block</text>
+<rect x="606" y="1406" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="638" y="1417" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="1436" x2="176" y2="1436" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="1440" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
+<text x="150" y="1464" font-size="10" fill="#17202c" font-style="italic">Claim files are retained for 10 years (legal obligation)</text>
 </svg>

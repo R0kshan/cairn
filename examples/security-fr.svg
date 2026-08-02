@@ -39,7 +39,7 @@
 <path d="M 338 156.66666666666669 L 520 156.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 338 172.33333333333334 L 496 172 L 496 224 L 524.5 224" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 637 139 L 767 139 L 767 171.5 L 791 171.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 632.5 223.5 L 828 223.5 L 828 195" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 632.5 223.5 L 797 223.5 L 797 195" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 901 171.5 L 1012 171.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 520 139 L 428.5 139 L 428.5 115 L 337 115" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 337 97.5 L 362 97.5 L 362 46 L 671 46" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -54,9 +54,9 @@
 <text x="702" y="135" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Accès données</text>
 <text x="702" y="149.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">facturation</text>
 <text x="702" y="164" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
-<text x="730.25" y="219.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Accès données</text>
-<text x="730.25" y="234" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">clients</text>
-<text x="730.25" y="248.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
+<text x="714.75" y="219.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Accès données</text>
+<text x="714.75" y="234" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">clients</text>
+<text x="714.75" y="248.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>
 <text x="956.5" y="167.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Requêtes</text>
 <text x="956.5" y="182" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">contrôlées</text>
 <text x="956.5" y="196.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TLS1.3)</text>

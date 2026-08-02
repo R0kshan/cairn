@@ -18,6 +18,7 @@ import { compactVertical } from "./compact.ts";
 import { labelsSeated } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
+import { inspect } from "./readability.ts";
 import { chipW, techText, wrapText, fontSizes } from "./text-metrics.ts";
 
 const HOP_RADIUS = 5;
@@ -387,29 +388,84 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       // collisions to resolve, and it resolves them by pushing labels into every
       // failure mode §4a and §4d name — so the audit has to weigh all of them or
       // it silently licenses the ones it does not look at.
-      const labelHarm = () => {
-        let harm = 0;
+      // Harm is ranked, not totalled. Every failure mode here has a tier in the
+      // ladder, and a flat count made them interchangeable: it let a tier-1
+      // label sliding off its run veto a repair that cleared a tier-0 run
+      // through a container — a strictly worse drawing kept because one number
+      // was one lower. Index 0 is "information destroyed" (adrift, pierced,
+      // struck through a title), index 1 is "attribution broken" (a label
+      // nearer a neighbour's run, or lifted off its own).
+      const labelHarm = (): [number, number] => {
+        const harm: [number, number] = [0, 0];
         for (const label of labels) {
           const own = offOwnRun(label);
-          if (own > ADRIFT_SQ) harm++;
-          if (stolen(label, own)) harm++;
-          if (pierced(label)) harm++;
-          if (titles.some((title) => boxesOverlap(title as Box, label as Box))) harm++;
+          if (own > ADRIFT_SQ) harm[0]++;
+          if (pierced(label)) harm[0]++;
+          if (titles.some((title) => boxesOverlap(title as Box, label as Box))) harm[0]++;
+          if (stolen(label, own)) harm[1]++;
         }
-        for (const edge of scene.edges) if (!labelsSeated(edge)) harm++;
+        for (const edge of scene.edges) if (!labelsSeated(edge)) harm[1]++;
         return harm;
       };
-      const withRepair = labelHarm();
+      /**
+       * What the *runs* cost in this state — through a leaf, through a container
+       * holding neither endpoint, across a title.
+       *
+       * Labels were the only thing this audit used to weigh, and that made it
+       * blind in the one direction that matters: reverting a repair restores an
+       * older route, and an older route has defects of its own. Judging the two
+       * states by label damage alone let the audit undo a flow that had stopped
+       * cutting through a layer, because putting it back cost one label less —
+       * trading two tier-0 defects for one. Both states are now measured the
+       * same way, on runs and labels together.
+       *
+       * `soloOnly`, so this stays affordable: every defect it needs is a route
+       * against a fixed obstacle, never a route against another route, and the
+       * pairwise phase is the expensive half. Crossings are the router's
+       * business and it has already weighed them.
+       */
+      const runHarm = (): number[] => {
+        const tiers = [0, 0, 0, 0, 0];
+        const profile = inspect(scene, titles).local(
+          new Set(scene.edges.map((edge) => edge.id)),
+          new Map(),
+          true,
+        );
+        for (const tier of profile.values()) tiers[tier]++;
+        return tiers;
+      };
+      /** Both halves of the damage, per tier. */
+      const stateHarm = (): number[] => {
+        const tiers = runHarm();
+        const [labels0, labels1] = labelHarm();
+        tiers[0] += labels0;
+        tiers[1] += labels1;
+        return tiers;
+      };
+      /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
+      const lessDamaged = (a: number[], b: number[]): boolean => {
+        for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+        return false;
+      };
+      const withRepair = stateHarm();
       const repairedRoutes = repaired.map((edge) => edge.pts);
       for (const edge of repaired) edge.pts = edge.repairedFrom!;
       anchorFlowLabels(scene, titles);
       settleLabelPositions();
-      // Keep the repair unless it cost the drawing a label. The comparison is
-      // whole-drawing on purpose: the label that gets lifted belongs to a
-      // *neighbour* of the moved flow, so asking "did this edge keep its own
-      // label" — which is what an earlier version did — always answered yes and
-      // reverted nothing.
-      if (labelHarm() >= withRepair) {
+      const withoutRepair = stateHarm();
+      // Two finished drawings, judged the same way; the less damaged one ships.
+      //
+      // This is the last point in the pipeline where geometry and labels have
+      // both settled, so it is the only place either state can be measured for
+      // real — which is exactly why the choice belongs here rather than in the
+      // router. Comparison stays whole-drawing: the label that gets lifted
+      // belongs to a *neighbour* of the moved flow, so asking "did this edge
+      // keep its own label" always answered yes and reverted nothing.
+      //
+      // Ties keep the repair. The router only proposes ladder-positive moves, so
+      // an equally-damaged repaired drawing is one whose gain simply is not
+      // visible to the metrics this audit can compute after settling.
+      if (!lessDamaged(withoutRepair, withRepair)) {
         repaired.forEach((edge, index) => {
           edge.pts = repairedRoutes[index];
         });
