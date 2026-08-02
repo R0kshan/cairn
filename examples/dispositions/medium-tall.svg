@@ -72,14 +72,14 @@
 <path d="M 234 129 L 113 129 L 113 258 L 148 258" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 154 299 L 154 1166 L 184 1166" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 325 299 L 325 597.5 L 447 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 555 293 L 584 293 A 5 5 0 0 1 594 293 L 679 293 A 5 5 0 0 1 689 293 L 758 293 A 5 5 0 0 1 768 293 L 772 293 A 5 5 0 0 1 782 293 L 852 293 L 852 597.5 L 782 597.5 A 5 5 0 0 0 772 597.5 L 768 597.5 A 5 5 0 0 0 758 597.5 L 602 597.5 A 5 5 0 0 0 592 597.5 L 555 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 555 293 L 628 293 A 5 5 0 0 1 638 293 L 679 293 A 5 5 0 0 1 689 293 L 758 293 A 5 5 0 0 1 768 293 L 772 293 A 5 5 0 0 1 782 293 L 852 293 L 852 597.5 L 782 597.5 A 5 5 0 0 0 772 597.5 L 768 597.5 A 5 5 0 0 0 758 597.5 L 638 597.5 A 5 5 0 0 0 628 597.5 L 602 597.5 A 5 5 0 0 0 592 597.5 L 555 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 501 638.5 L 501 675 L 389 675 L 389 711.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 383 752.5 L 367 752.5 L 367 1160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 349 1160 L 349 735 L 383 735" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 453 591.5 L 453 438.5 L 465 438.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 684 114 L 684 438.5 L 594 438.5 A 5 5 0 0 0 584 438.5 L 573 438.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 573 473.5 L 584 473.5 A 5 5 0 0 1 594 473.5 L 597 473.5 L 597 615 L 555 615" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 589 114 L 589 567.5 L 521 567.5 L 521 591.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 389 758.5 L 389 782.5 L 367 782.5 L 367 1160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 349 1160 L 349 752.5 L 383 752.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 555 615 L 597 615 L 597 456 L 573 456" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 684 114 L 684 438.5 L 638 438.5 A 5 5 0 0 0 628 438.5 L 573 438.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 465 473.5 L 453 473.5 L 453 591.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 633 114 L 633 632.5 L 555 632.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 519 638.5 L 519 758 L 519 877.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 573 901 L 777 901 L 777 114" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 763 114 L 763 883.5 L 573 883.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -100,22 +100,22 @@
 <text x="852" y="387.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(phone channel)</text>
 <text x="445" y="671" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Systematic check</text>
 <text x="445" y="685.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">at opening</text>
-<text x="367" y="1010.3125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Query claims-history</text>
-<text x="367" y="1024.8125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">files</text>
-<text x="349" y="901.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Policyholder</text>
-<text x="349" y="915.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">history</text>
-<text x="453" y="511" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment mission</text>
-<text x="453" y="525.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">if damage &gt; threshold</text>
+<text x="378" y="778.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Query claims-history</text>
+<text x="378" y="793" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">files</text>
+<text x="349" y="912.1875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Policyholder</text>
+<text x="349" y="926.6875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">history</text>
+<text x="597" y="531.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment mission</text>
+<text x="597" y="546" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">if damage &gt; threshold</text>
 <text x="684" y="251.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Submit assessment</text>
 <text x="684" y="265.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">report</text>
 <rect x="630.5" y="273.75" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="684" y="284.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
-<text x="597" y="540.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment</text>
-<text x="597" y="554.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">conclusions</text>
-<rect x="543.5" y="562.75" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="597" y="573.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
-<text x="589" y="315.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Investigation and</text>
-<text x="589" y="330.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">management decisions</text>
+<text x="453" y="528.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Assessment</text>
+<text x="453" y="543" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">conclusions</text>
+<rect x="399.5" y="551" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="453" y="562" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Assessment report</text>
+<text x="633" y="348.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Investigation and</text>
+<text x="633" y="362.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">management decisions</text>
 <text x="519" y="813.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approved items</text>
 <text x="519" y="828.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">for pricing</text>
 <text x="675" y="897" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Approval request</text>

@@ -60,8 +60,8 @@
 <path d="M 192 401 L 192 350.5 L 231 350.5 A 5 5 0 0 1 241 350.5 L 388 350.5 L 388 300" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 442 195 L 442 253" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 442 300 L 442 334.5 L 417 334.5 L 417 369" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 560 300 L 560 375 L 489 375" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 542 300 L 542 324 L 555 324 L 555 412" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 560 300 L 560 375 L 547 375 A 5 5 0 0 0 537 375 L 489 375" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 542 300 L 542 388 L 573 388 L 573 412" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 572.4 300 L 572 342 L 583 342 L 583 402 L 717 402 L 717 574" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 597.2 300 L 597 324 L 821 324 L 821 405" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 242 276.5 L 236 276.5 L 236 401" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -72,8 +72,8 @@
 <text x="290" y="353.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="442" y="222.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <text x="442" y="320.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="560" y="340.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="542" y="315.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
+<text x="524.5" y="378.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="542" y="347.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
 <text x="650" y="405.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
 <text x="709" y="327.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="236" y="315.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>

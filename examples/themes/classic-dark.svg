@@ -24,14 +24,14 @@
 <text x="613.5" y="128.5" font-size="12.5" text-anchor="middle" fill="#e6edf3">Primary database</text>
 <rect x="695" y="140" width="131" height="38" rx="4" fill="#2a2833" stroke="#7d72a0" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="760.5" y="163" font-size="12.5" text-anchor="middle" fill="#e6edf3">Payment provider</text>
-<path d="M 89 132 L 113 132 L 113 158 L 331 158" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 89 150 L 210 150 L 210 171 L 331 171" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 439 148.5 L 483 148.5 L 483 127 L 548 127" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 337 139 L 337 119 L 240 119" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 240 106 L 331 106.33333333333333" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 439 160.5 L 473 160.5 L 695 160.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 89 58 L 307 58 L 307 87 L 331 87" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 439 87 L 595.5 87 L 595.5 102" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="222" y="161.25" font-size="11.5" text-anchor="middle" fill="#d6dde4" font-style="italic" stroke="#1e2227" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS, JSON)</text>
+<text x="149.5" y="153.25" font-size="11.5" text-anchor="middle" fill="#d6dde4" font-style="italic" stroke="#1e2227" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS, JSON)</text>
 <text x="515.5" y="130.25" font-size="11.5" text-anchor="middle" fill="#d6dde4" font-style="italic" stroke="#1e2227" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SQL)</text>
 <text x="337" y="132.25" font-size="11.5" text-anchor="middle" fill="#d6dde4" font-style="italic" stroke="#1e2227" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
 <text x="285.5" y="109.41666666666666" font-size="11.5" text-anchor="middle" fill="#d6dde4" font-style="italic" stroke="#1e2227" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>

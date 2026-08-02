@@ -442,17 +442,54 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
         tiers[1] += labels1;
         return tiers;
       };
+      /**
+       * The breaches this audit may never trade for, by identity.
+       *
+       * Tier 0 is not one thing. Most of it is *ratchet* debt — a struck title,
+       * a run through a foreign container — and trading some of that for less of
+       * it elsewhere is the whole point of the ladder. But `MUST_BE_ZERO` is a
+       * different kind of statement: a promise, not a budget, and one occurrence
+       * fails the build. A count comparison cannot tell them apart, so it let a
+       * repair that cleared two struck titles ship a label 39px adrift from its
+       * own flow — two ratchet defects bought an invariant, which is not a trade
+       * that exists.
+       *
+       * Only the invariants this audit can actually observe after settling:
+       * a label adrift from its run, a run through a leaf box, a slanted
+       * segment. `coincident` needs the pairwise phase `runHarm` skips, and
+       * `overlaps` is counted by the settler itself.
+       *
+       * Identity, not count, and *only* for these: applying identity to the
+       * whole of tier 0 was measured and is much worse (19 tier-0 regressions
+       * on a quarter corpus), because the revert is all-or-nothing and one
+       * gained key then discards every other fix in the batch.
+       */
+      const breaches = (): Set<string> => {
+        const found = new Set<string>();
+        labels.forEach((label, index) => {
+          if (offOwnRun(label) > ADRIFT_SQ) found.add(`adrift:${index}`);
+        });
+        for (const [key, tier] of inspect(scene, titles).local(
+          new Set(scene.edges.map((edge) => edge.id)),
+          new Map(),
+          true,
+        ))
+          if (tier === 0 && (key.startsWith("leaf:") || key.startsWith("diag:"))) found.add(key);
+        return found;
+      };
       /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
       const lessDamaged = (a: number[], b: number[]): boolean => {
         for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
         return false;
       };
       const withRepair = stateHarm();
+      const breachesWith = breaches();
       const repairedRoutes = repaired.map((edge) => edge.pts);
       for (const edge of repaired) edge.pts = edge.repairedFrom!;
       anchorFlowLabels(scene, titles);
       settleLabelPositions();
       const withoutRepair = stateHarm();
+      const breachesWithout = breaches();
       // Two finished drawings, judged the same way; the less damaged one ships.
       //
       // This is the last point in the pipeline where geometry and labels have
@@ -465,7 +502,10 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       // Ties keep the repair. The router only proposes ladder-positive moves, so
       // an equally-damaged repaired drawing is one whose gain simply is not
       // visible to the metrics this audit can compute after settling.
-      if (!lessDamaged(withoutRepair, withRepair)) {
+      // An invariant the repair breaks and the revert does not is not payable,
+      // whatever else the repair cleared. Everything below that is a trade.
+      const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
+      if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
         repaired.forEach((edge, index) => {
           edge.pts = repairedRoutes[index];
         });

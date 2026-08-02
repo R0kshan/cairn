@@ -1751,6 +1751,8 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
   //   the one that has not.
   if (!folded) {
     const inspector = inspect(scene, titleBoxes);
+    /** Flows `route-detour` already sent through a channel — their flag is not ours to touch. */
+    const preRouted = new Set(scene.edges.filter((edge) => edge.detour).map((edge) => edge.id));
     // Three seats a side, not five. The optimiser evaluates every candidate
     // against the whole scene, so the candidate count is the cost driver; 25
     // seat pairs per side pair tripled build time for a handful of extra
@@ -2168,12 +2170,20 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
       for (const edge of group) {
         const route = overrides.get(edge.id);
+        if (!route) continue;
         // A channel U leaves both nodes by the same side and meets in a lane
         // beyond them, so both terminals necessarily set off away from their
         // counterpart. That is the shape working, not a wrap-around to chase,
         // and §11 already exempts flows routed through a channel for exactly
         // this reason — `route-detour` marks its own the same way.
-        if (route && isChannelU(route)) edge.detour = true;
+        //
+        // Re-decided on every commit, never merely set: a flow routed as a U in
+        // one round and re-routed to something else in the next would otherwise
+        // keep an exemption its final shape has not earned, and quietly drop out
+        // of the `attachAway` count. Flows `route-detour` marked keep their flag
+        // whatever this pass does — the channel they were sent through is not
+        // this pass's to revoke.
+        if (!preRouted.has(edge.id)) edge.detour = isChannelU(route);
       }
       for (const edge of group) {
         const pts = overrides.get(edge.id);
@@ -2214,14 +2224,17 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         for (const pts of routesFor(edge)) {
           const verdict = weigh([edge], new Map([[edge.id, pts]]));
           if (!verdict) continue;
-          if (!bestDamage || verdict.damage[0] < bestDamage[0]) {
+          if (!bestDamage || lessDamaged(verdict.damage, bestDamage)) {
             bestDamage = verdict.damage;
             bestRoute = pts;
           }
-          // The first accepted route that destroys no information wins, exactly
-          // as before. Scanning on only happens while the best route so far
-          // still leaves a tier-0 defect standing.
-          if (bestDamage[0] === 0) break;
+          // A route with nothing left to repair cannot be beaten, so stop there.
+          // Short of that, keep looking: stopping at the first route that merely
+          // destroys no *information* left avoidable damage below tier 0 on the
+          // table, and the corpus paid for it — a flow would take the first
+          // clean shape it was offered and carry a wrap-around departure or a
+          // cramped terminal that the next candidate along did not have.
+          if (bestDamage.every((count) => count === 0)) break;
         }
         if (bestRoute && tryMove([edge], new Map([[edge.id, bestRoute]]))) {
           moved = true;

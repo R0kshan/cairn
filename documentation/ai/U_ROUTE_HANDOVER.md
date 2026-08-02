@@ -1,11 +1,34 @@
 # Handover — same-side U routes, derived seats, and the post-settle audit
 
-Status: **works, does not yet pass the gate.** The change lives in
-`documentation/ai/u-route-wip.patch`, applied on top of `612b46e`.
-`git apply documentation/ai/u-route-wip.patch` to resume.
+Status: **all 7 invariants clean, 3 per-drawing regressions, 363 improvements.**
+Four ratchets remain over ceiling, so `npm run sweep` still exits 1. The change
+lives in `documentation/ai/u-route-wip.patch` on top of the branch commit.
 
-One must-be-zero invariant is breached (`labelAdrift` 1), so `npm run sweep`
-exits 1. Everything else about the change is a large net improvement.
+Full corpus, 260 drawings / 3884 flow-instances, against the committed baseline:
+
+| metric | main | now | ceiling | |
+|---|---|---|---|---|
+| titleStruck | 640 | **97** | 789 | −543 |
+| turnHeavy | 748 | 558 | 814 | −190 |
+| jog<=20 | 232 | 138 | 374 | −94 |
+| throughContainer | 38 | 19 | 52 | −19 |
+| crossings | 3638 | 3627 | 3830 | −11 |
+| labelAdrift / labelPierced / labelOrphan | 0 | **0** | 0 | |
+| attachAway | 241 | 322 | 247 | ✗ +81 |
+| fanTangle | 59 | 92 | 59 | ✗ +33 |
+| nearParallel | 62 | 74 | 53 | ✗ +12 (over on main too) |
+| attachTight | 17 | 23 | 4 | ✗ +6 (over on main too) |
+
+The three per-drawing regressions: `application-compact/{page,tall}`
+`attachAway 2 -> 3`, and `logical-fr/slide` `titleStruck 0 -> 1` — the last is
+the deliberate price of not breaking `labelAdrift` on that drawing.
+
+**Remaining work is `attachAway` (+81) and `fanTangle` (+33).** Both come from
+attachment placement, not shape choice: derived seats sit at side extremes,
+which makes terminals set off away from their counterpart and can invert the
+order of flows sharing a side. Likely next moves: have the derived seat prefer
+the escape facing its counterpart when both clear the name, and teach the
+seat-ordering/unweave pass about derived seats.
 
 ## What it does
 
@@ -33,7 +56,7 @@ before:  M 119 242  L 119 323.5 L 119 405     (through "Web VM")
 after:   M 149 220  L 149 301.5 L 149 383     (straight down)
 ```
 
-## The four pieces
+## The pieces
 
 **1. `channelU` — the U shape.** `shapesFor` returned `[]` for same-facing side
 pairs ("same-facing sides give a wrap, not a route"). That premise was wrong: a U
@@ -82,42 +105,35 @@ back cost one label less. `harmOf()` now measures both states the same way, runs
 `soloOnly`, so the expensive pairwise phase is skipped; every tier-0 route defect
 is a route against a fixed obstacle.
 
-**6. `isChannelU` → `edge.detour = true`.** A channel U necessarily departs away
-from its counterpart at both ends; §11 already exempts channel-routed flows and
+**6. `isChannelU` → `edge.detour`.** A channel U necessarily departs away from
+its counterpart at both ends; §11 already exempts channel-routed flows and
 `route-detour` marks its own the same way. Recognised geometrically (4 points,
 parallel terminal legs, both on the same side of the joining lane) rather than
 tagged at construction, because the squaring pass rebuilds the points.
 
-## Measured, full corpus (260 drawings, 3884 flow-instances)
+Re-decided on **every** commit, not merely set: a flow routed as a U in one round
+and re-routed in the next would otherwise keep an exemption its final shape has
+not earned and drop out of the `attachAway` count. `preRouted` holds the flows
+`route-detour` marked, whose flag is not this pass's to revoke. Fixing this made
+`attachAway` *worse* on paper (304 → 322) because it withdrew exemptions that
+were never earned — the number is now honest.
 
-**337 per-drawing improvements against 15 regressions.** 14 of the 15 are tier 3.
+**7. The audit may not trade away an invariant.** Tier 0 is not one thing: most
+of it is ratchet debt, and trading some for less of it elsewhere is the point of
+the ladder. `MUST_BE_ZERO` is a promise, not a budget. A count comparison cannot
+tell them apart, so the audit shipped a label 39px adrift from its own flow
+because the same repair had cleared two struck titles. `breaches()` now compares
+the observable invariants — adrift labels, runs through a leaf, slanted segments
+— by **identity**, and a repair that gains one is reverted whatever else it
+cleared. Deliberately narrow: applying identity to the whole of tier 0 was
+measured and is far worse (see the dead ends below).
 
-| ratchet | now | ceiling | |
-|---|---|---|---|
-| titleStruck | **96** | 789 | was ~714 pre-change |
-| throughContainer | **18** | 52 | |
-| turnHeavy | 555 | 814 | |
-| crossings | 3685 | 3830 | |
-| longDetour | 154 | 172 | |
-| jog<=20 | 152 | 374 | |
-| labelPierced | **0** | 6 | was 7 before the seat work |
-| attachAway | 305 | 247 | ✗ newly over |
-| labelOrphan | 1 | 0 | ✗ |
-| fanTangle | 108 | 59 | ✗ also over on main |
-| nearParallel | 81 | 53 | ✗ also over on main |
-| attachTight | 23 | 4 | ✗ also over on main |
-
-## What blocks it
-
-1. **`labelAdrift` 1 — must-be-zero.** `logical-fr/slide`, F10
-   `"Mission d'expertise si dommage > seuil"`, 39px off its own run (limit 20).
-   The same label is also the single `labelOrphan` (F13's run is 32px away). One
-   label, one drawing, two breaches. Fix this and `labelOrphan` goes with it.
-2. **`attachAway` 305 vs 247.** Derived seats produce more wrap-around
-   departures. Worth checking whether the derived seat should prefer the side
-   that faces the counterpart when both clear the name.
-3. Twelve tier-3 `attachAway`/`jog<=20` per-drawing regressions, concentrated in
-   `application-compact` and `application-medium`.
+**8. Best accepted route wins, not first.** The scan used to stop at the first
+candidate that destroyed no information (`damage[0] === 0`), which left avoidable
+damage below tier 0 on the table — a flow would take the first clean shape
+offered and carry a wrap-around departure or a cramped terminal the next
+candidate did not have. It now keeps looking until a candidate has *nothing*
+left to repair. Worth 12 per-drawing regressions on its own (15 → 3).
 
 ## Two dead ends — do not repeat
 

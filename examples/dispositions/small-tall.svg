@@ -34,7 +34,7 @@
 <path d="M 166 282 L 142 282 L 142 417.5 L 184 417.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 292 417.5 L 335 417.5 L 335 568 L 311 568" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 201 555 L 177 555 L 177 672 L 202 672" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 352.5 103 L 352.5 435 L 340 435 A 5 5 0 0 0 330 435 L 292 435" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 352.5 103 L 352.5 482.5 L 340 482.5 A 5 5 0 0 0 330 482.5 L 286 482.5 L 286 458.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 184 435 L 96 435 L 96 76 L 115 76" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="91" y="138" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Search a slot</text>
 <text x="91" y="152.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and book</text>
@@ -43,14 +43,14 @@
 <text x="142" y="353" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Booking request</text>
 <rect x="104.5" y="361" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="142" y="372" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<text x="335" y="496" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment confirmed</text>
-<rect x="297.5" y="504" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="335" y="515" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<text x="335" y="510.125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment confirmed</text>
+<rect x="297.5" y="518.125" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="335" y="529.125" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
 <text x="177" y="619.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
-<text x="352.5" y="254.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open / block</text>
-<text x="352.5" y="269" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">slots</text>
-<rect x="333.5" y="277" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="352.5" y="288" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
+<text x="352.5" y="278.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open / block</text>
+<text x="352.5" y="292.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">slots</text>
+<rect x="333.5" y="300.75" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="352.5" y="311.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
 <text x="96" y="282" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment</text>
 <text x="96" y="296.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">confirmation</text>
 <rect x="58.5" y="304.5" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
