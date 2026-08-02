@@ -116,11 +116,33 @@ The ladder forbids exactly this, twice over:
 - LADDER.md "sets, not counts": a total cannot see a defect *move*. This is that
   bug, re-introduced in a new place.
 
-So the audit should compare tier-0 by **identity**, like `ladderVerdict` does:
-reject the repaired state if it gains any tier-0 defect key, whatever it clears.
-Counts are fine from tier 1 down, where trading is legal. Expect this to remove
-all 7 pierces at the cost of some titleStruck/throughContainer wins on those
-same drawings — the honest price of the rule.
+The obvious repair is to compare tier-0 by **identity**, like `ladderVerdict`
+does: reject the repaired state if it gains any tier-0 defect key, whatever it
+clears; counts from tier 1 down, where trading is legal.
+
+**That was tried and it is worse. Do not repeat it.** Measured on shard 1/4:
+
+| audit rule | regressions | of which tier 0 |
+|---|---|---|
+| per-tier counts, lexicographic (the patch) | 4 | 0 |
+| tier 0 by identity, all-or-nothing revert | 29 | **19** (18 titleStruck, 1 throughContainer) |
+
+The strict rule makes tier 0 *worse* because of the audit's **granularity**, not
+its comparison. The revert is all-or-nothing over the whole repair set, so one
+edge gaining a tier-0 key throws away every other edge's tier-0 fix in the same
+batch. Tightening the rule just triggers that more often.
+
+So the real next step is a **guided partial revert**: when the kept state gains a
+fatal key, drop only the repair implicated in it, re-settle, re-measure, repeat
+until no fatal is gained. `LADDER.md` warns that per-edge reverts produced
+`coincident` runs (a must-be-zero breach) — but `coincident` is itself a tier-0
+key in the `fatal` set, so a guided loop that re-measures after every drop
+catches exactly what killed the naive per-edge version.
+
+The awkward part: label-side fatal keys (`pierce:`, `adrift:`, `ltitle:`) name
+the *victim* label, not the run that caused it, so "the repair implicated in it"
+needs resolving — probably the repaired edge whose route is nearest the label
+box. Route-side keys already carry the edge id.
 
 Only if pierces survive that is a router-side term worth adding: `readability`
 models labels solely as "is there somewhere to sit" (`unlabelled`, tier 1) and
