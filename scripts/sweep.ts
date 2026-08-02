@@ -286,6 +286,7 @@ try {
 }
 const perDrawing = new Map<string, Map<string, number>>();
 
+async function sweepShard(shardIndex: number, shardCount: number): Promise<void> {
 for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encoding: "utf8" })
   // `readdirSync` returns platform-native separators, so on Windows a nested
   // fixture arrives as `dispositions\\foo.cairn` and its tag never matches the
@@ -671,6 +672,113 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
         note("longDetour", `${e.id} ${flow!.from}->${flow!.to} r=${(len / direct).toFixed(1)}`);
     }
   }
+}
+}
+
+/**
+ * Sweeping is embarrassingly parallel — every drawing is measured independently
+ * and the gate only ever sees the merged totals — but it is also the slowest
+ * thing in `npm test` by a wide margin (~99% of it is `layout`). `--jobs=N`
+ * forks N shards and merges their results *before* any gate runs, so the
+ * ratchets are still judged over the whole corpus. Serial (`--jobs=1`) stays
+ * the default and the reference: `--jobs=N` must print byte-identical output,
+ * which is why the merge re-sorts everything into the order a serial run would
+ * have produced rather than concatenating shards as they finish.
+ */
+const jobsArg = process.argv.find((arg) => arg.startsWith("--jobs="))?.slice("--jobs=".length) ?? "1";
+/**
+ * `auto` = one shard per core, capped at 8.
+ *
+ * Floored at 4 cores because forking is not free: each child re-JITs elk and
+ * the layout passes over half as many drawings, which measured ~45% more total
+ * CPU. On a 2-core machine that overhead outweighs the second core and `--jobs=2`
+ * came out *slower* than serial; from 4 cores up it wins comfortably.
+ */
+const jobs =
+  jobsArg === "auto"
+    ? (await import("node:os")).availableParallelism?.() >= 4
+      ? Math.min(8, (await import("node:os")).availableParallelism())
+      : 1
+    : Math.max(1, Number.parseInt(jobsArg, 10) || 1);
+if (jobs > 1 && shardArg) {
+  console.error("--jobs shards the corpus itself; combining it with --shard is not supported");
+  process.exit(2);
+}
+/** Child mode: measure this shard, print the raw counts, gate nothing. */
+const emitJson = process.argv.includes("--emit-json");
+
+/** The order a serial run visits drawings in: fixture path, then disposition. */
+const tagOrder = (a: string, b: string): number => {
+  const cut = (tag: string) => {
+    const at = tag.lastIndexOf("/");
+    return [`${tag.slice(0, at)}.cairn`, tag.slice(at + 1)] as const;
+  };
+  const [fileA, dispA] = cut(a);
+  const [fileB, dispB] = cut(b);
+  if (fileA !== fileB) return fileA < fileB ? -1 : 1;
+  return DISPOSITIONS.indexOf(dispA as (typeof DISPOSITIONS)[number]) -
+    DISPOSITIONS.indexOf(dispB as (typeof DISPOSITIONS)[number]);
+};
+/** `kind<pad> tag<pad> message` — the tag is the second whitespace-delimited field. */
+const tagOfHit = (line: string): string => line.trim().split(/\s+/)[1] ?? "";
+
+if (jobs > 1 && !emitJson) {
+  const { execFile } = await import("node:child_process");
+  // The parent owns the baseline file: a child writing it would race the others
+  // and record only its own slice.
+  const passthrough = process.argv
+    .slice(2)
+    .filter((arg) => !arg.startsWith("--jobs=") && !arg.startsWith("--shard=") && arg !== "--update-baseline");
+  const shards = await Promise.all(
+    Array.from({ length: jobs }, (_, index) =>
+      new Promise<string>((resolve, reject) => {
+        execFile(
+          process.execPath,
+          [...process.execArgv, fileURLToPath(import.meta.url), ...passthrough, `--shard=${index + 1}/${jobs}`, "--emit-json"],
+          { maxBuffer: 256 * 1024 * 1024 },
+          (error, stdout, stderr) => (error ? reject(new Error(`${error.message}\n${stderr}`)) : resolve(stdout)),
+        );
+      }),
+    ),
+  );
+  for (const raw of shards) {
+    const part = JSON.parse(raw) as {
+      examples: string[];
+      totalFlows: number;
+      totals: [string, number][];
+      perDrawing: [string, [string, number][]][];
+      hits: string[];
+      failures: string[];
+    };
+    examples.push(...part.examples);
+    totalFlows += part.totalFlows;
+    for (const [kind, count] of part.totals) totals[kind] = (totals[kind] ?? 0) + count;
+    for (const [tag, kinds] of part.perDrawing) perDrawing.set(tag, new Map(kinds));
+    hits.push(...part.hits);
+    failures.push(...part.failures);
+  }
+  // Shards are disjoint slices of one sorted list, so restoring that order
+  // reproduces the serial run exactly. `sort` is stable, so hits keep their
+  // within-drawing emission order.
+  examples.sort(tagOrder);
+  hits.sort((a, b) => tagOrder(tagOfHit(a), tagOfHit(b)));
+  failures.sort();
+} else {
+  await sweepShard(shardIndex, shardCount);
+}
+
+if (emitJson) {
+  process.stdout.write(
+    JSON.stringify({
+      examples,
+      totalFlows,
+      totals: Object.entries(totals),
+      perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
+      hits,
+      failures,
+    }),
+  );
+  process.exit(0);
 }
 
 console.log(
