@@ -33,6 +33,7 @@
 
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import { inspect, ladderVerdict } from "./readability.ts";
+import type { Profile } from "./readability.ts";
 import type { TitleBox } from "./route-detour.ts";
 
 /** A segment this far off orthogonal is a rounding artefact, not a turn. */
@@ -1867,9 +1868,48 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       });
     };
 
+    /**
+     * The unmoved profile of a group, memoised until some edge actually moves.
+     *
+     * `local(ids, new Map())` is a pure function of the scene's current
+     * geometry, and the scene only changes when a candidate is *accepted* — so
+     * recomputing it once per rejected candidate (up to 144 per edge per round,
+     * plus twice more in the driver loop) was over half of all `local` calls
+     * and ~20% of a corpus build. The generation counter is the invalidation:
+     * any accepted move bumps it, because `before` depends on every edge in the
+     * scene, not only the ones in `ids`.
+     */
+    let generation = 0;
+    const beforeCache = new Map<string, Profile>();
+    const soloCache = new Map<string, Profile>();
+    const cached = (store: Map<string, Profile>, ids: Set<string>, make: () => Profile): Profile => {
+      const key = `${generation}|${[...ids].sort().join(",")}`;
+      const hit = store.get(key);
+      if (hit) return hit;
+      const made = make();
+      store.set(key, made);
+      return made;
+    };
+    const profileNow = (ids: Set<string>): Profile =>
+      cached(beforeCache, ids, () => inspector.local(ids, new Map()));
+
+    /**
+     * Does this candidate gain a tier-0 defect *on its own* — a run put through
+     * a box, a container or a title? `ladderVerdict` rejects any tier-0 gain
+     * outright, so answering yes here settles the candidate without the
+     * pairwise phase, which costs every edge in the drawing.
+     */
+    const selfWrecks = (ids: Set<string>, overrides: Map<string, Point[]>): boolean => {
+      const was = cached(soloCache, ids, () => inspector.local(ids, new Map(), true));
+      for (const [key, tier] of inspector.local(ids, overrides, true))
+        if (tier === 0 && !was.has(key)) return true;
+      return false;
+    };
+
     const tryMove = (group: SceneEdge[], overrides: Map<string, Point[]>) => {
       const ids = new Set(group.map((edge) => edge.id));
-      const before = inspector.local(ids, new Map());
+      if (selfWrecks(ids, overrides)) return false;
+      const before = profileNow(ids);
       const after = inspector.local(ids, overrides);
       if (ladderVerdict(before, after) < 0) return false;
       for (const edge of group) {
@@ -1879,6 +1919,9 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
           inspector.forget(edge.id);
         }
       }
+      generation++;
+      beforeCache.clear();
+      soloCache.clear();
       return true;
     };
 
@@ -1889,7 +1932,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       for (const edge of ordered) {
         if (edge.pts.length < 2) continue;
         const ids = new Set([edge.id]);
-        if (inspector.local(ids, new Map()).size === 0) continue;
+        if (profileNow(ids).size === 0) continue;
 
         // Single move first — cheapest, and most defects yield to it.
         let moved = false;
@@ -1910,7 +1953,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         // Tier 0 or Tier 2 defect (a run through something, a tangle) justifies
         // the search. A weave costs the reader time, not meaning, and is not
         // worth pairing the whole neighbourhood over.
-        const worst = Math.min(...[...inspector.local(ids, new Map()).values()]);
+        const worst = Math.min(...[...profileNow(ids).values()]);
         if (worst > 2) continue;
         const mineTop = routesFor(edge).slice(0, 8);
         outer: for (const partner of neighboursOf(edge).slice(0, 4)) {

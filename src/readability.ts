@@ -211,8 +211,23 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
    * Every defect that involves at least one of `ids`, with `overrides` standing
    * in for those edges' routes. Defects not touching `ids` cannot change, so
    * they are not computed — that is what makes this affordable per candidate.
+   *
+   * `soloOnly` stops before the pairwise phase, returning just the defects a
+   * route has on its own — through a box, a container, a title, a weave. It
+   * exists for one caller: an optimiser rejecting a candidate that gains a
+   * tier-0 defect *by itself* never needs the pairwise phase, and the pairwise
+   * phase is the expensive one (every edge in the drawing, every segment pair).
+   * Sound because the two phases emit disjoint key namespaces, so a solo tier-0
+   * key that appears here appears in the full profile too — a cheap reject can
+   * never differ from the verdict the full profile would have given. It is the
+   * same code either way; a second predicate that meant *almost* this is exactly
+   * the mistake INVARIANTS §3 records.
    */
-  const local = (ids: Set<string>, overrides: Map<string, Point[]>): Profile => {
+  const local = (
+    ids: Set<string>,
+    overrides: Map<string, Point[]>,
+    soloOnly = false,
+  ): Profile => {
     const profile: Profile = new Map();
     const ptsOf = (edge: SceneEdge) => overrides.get(edge.id) ?? edge.pts;
     const subject = scene.edges.filter((edge) => ids.has(edge.id));
@@ -372,6 +387,7 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
       }
 
       // ---- pairwise: Tier 0 merges, Tier 2 tangles -----------------------
+      if (soloOnly) continue;
       const mine = runsFor(edge, pts, overrides.has(edge.id));
       const myBounds = boundsFor(edge, pts, overrides.has(edge.id));
       for (const other of scene.edges) {
