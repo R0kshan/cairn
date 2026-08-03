@@ -15,7 +15,8 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
-import { optimiseRoutes, spreadAttachments, tidyEdges } from "./edge-tidy.ts";
+import { optimiseRoutes, clearSideHugs, spreadAttachments, tidyEdges } from "./edge-tidy.ts";
+import { inspect, type Profile } from "./readability.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
@@ -294,6 +295,226 @@ function transpose(scene: Scene, titleBoxes: TitleBox[]): void {
   [scene.width, scene.height] = [scene.height, scene.width];
 }
 
+/**
+ * The flows whose terminal segment departs *away* from their counterpart or
+ * arrives from beyond it — the sweep's `attachAway` predicate, on the final
+ * scene (channel reroutes are exempt, they wrap by design). Drives the
+ * port-constraint second pass below: the population that pass exists to
+ * prevent is exactly the one this counts.
+ */
+function attachAwayOf(scene: Scene, model: Model): Set<string> {
+  const ATTACH_AWAY_TOL = 24;
+  const byId = new Map(scene.nodes.map((node) => [node.id, node]));
+  const flagged = new Set<string>();
+  for (const e of scene.edges) {
+    if (e.pts.length < 2 || e.detour) continue;
+    const flow = model.flows.find((f) => f.id === e.id);
+    const from = byId.get(flow?.from ?? "");
+    const to = byId.get(flow?.to ?? "");
+    if (!from || !to) continue;
+    const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+    const away = (seg: { x: number; y: number }, target: { x: number; y: number }): boolean =>
+      (Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > ATTACH_AWAY_TOL && seg.x * target.x < 0) ||
+      (Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > ATTACH_AWAY_TOL && seg.y * target.y < 0);
+    const p0 = e.pts[0];
+    const p1 = e.pts[1];
+    const pn = e.pts[e.pts.length - 1];
+    const pm = e.pts[e.pts.length - 2];
+    const toCenter = centerOf(to);
+    const fromCenter = centerOf(from);
+    if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
+      flagged.add(e.id);
+    if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
+      flagged.add(e.id);
+  }
+  return flagged;
+}
+
+/**
+ * Defects the sweep gates on that the house ladder deliberately does not
+ * model, keyed for the same set-based verdict so `ladderAccepts` can judge a
+ * wholesale relayout the way the gate will. Two blind spots, both deliberate
+ * router design (readability.ts): the ladder's `hug:` is the §4i arrowhead
+ * rule — leaf-only, 8px/12px — while the sweep's `sideHug` covers containers
+ * at 3px/24px; and its `title:` checks runs only, never labels, while the
+ * sweep's `titleStruck` covers both. A router choosing per-edge candidates can
+ * afford those omissions; a verdict choosing between two whole layouts cannot
+ * — the constrained pass was buying attachAway fixes with container-side hugs
+ * and labels parked on title bands it could not see.
+ */
+function selectionExtras(scene: Scene, model: Model): Profile {
+  const extra: Profile = new Map();
+  const edgeEnds = new Map(model.flows.map((flow) => [flow.id, new Set([flow.from, flow.to])]));
+  const bands = titleBoxesOf(scene, model);
+  for (const e of scene.edges) {
+    for (let i = 0; i + 1 < e.pts.length; i++) {
+      const a = e.pts[i];
+      const b = e.pts[i + 1];
+      const vert = Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5;
+      const horiz = Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5;
+      if (!vert && !horiz) continue;
+      for (const n of scene.nodes) {
+        if (edgeEnds.get(e.id)?.has(n.id)) continue;
+        const shared = vert
+          ? Math.min(Math.max(a.y, b.y), n.y + n.height) - Math.max(Math.min(a.y, b.y), n.y)
+          : Math.min(Math.max(a.x, b.x), n.x + n.width) - Math.max(Math.min(a.x, b.x), n.x);
+        if (shared <= 24) continue;
+        const gap = vert
+          ? Math.min(Math.abs(a.x - n.x), Math.abs(a.x - (n.x + n.width)))
+          : Math.min(Math.abs(a.y - n.y), Math.abs(a.y - (n.y + n.height)));
+        if (gap < 3) extra.set(`sidehug:${e.id}:${i}@${n.id}`, 2);
+      }
+    }
+    for (const l of e.labels) {
+      if (!l.width || !l.height) continue;
+      for (const band of bands)
+        if (
+          l.x < band.x + band.width &&
+          band.x < l.x + l.width &&
+          l.y < band.y + band.height &&
+          band.y < l.y + l.height
+        )
+          extra.set(`titlelabel:${e.id}@${band.x},${band.y}`, 0);
+    }
+  }
+  return extra;
+}
+
+/**
+ * The ladder's verdict, adapted to a whole-layout choice. `ladderVerdict`
+ * keys defects by identity *and position* — right for a router moving one
+ * edge, where a moved crossing is a new one; wrong for choosing between two
+ * complete layouts, where every coordinate shifts a few px and the same
+ * crossing between the same pair reads as gained at one address and lost at
+ * another, which refuses every relayout outright. Identity here is the defect
+ * kind and its participants — positions and segment indices dropped — with
+ * multiplicity kept as a count, so a pair gaining a *second* crossing is
+ * still a gain. The rule is unchanged: walk tiers, refuse on any gain,
+ * accept at the first tier that only lost.
+ */
+function relayoutVerdict(before: Profile, after: Profile): number {
+  const normalize = (key: string) => key.replace(/@[-\d.,]+$/, "").replace(/:\d+(?=@|$)/, "");
+  const tally = (profile: Profile) => {
+    const out = new Map<string, { tier: number; count: number }>();
+    for (const [key, tier] of profile) {
+      const id = normalize(key);
+      const entry = out.get(id) ?? { tier, count: 0 };
+      entry.count++;
+      out.set(id, entry);
+    }
+    return out;
+  };
+  const was = tally(before);
+  const now = tally(after);
+  for (let tier = 0; tier < 5; tier++) {
+    let gained = false;
+    let lost = false;
+    for (const key of new Set([...was.keys(), ...now.keys()])) {
+      const w = was.get(key);
+      const n = now.get(key);
+      // Judge a key at its own tier only — a tier-1 loss paid for a tier-0
+      // win is the ladder working, not a gain.
+      if ((w ?? n)!.tier !== tier) continue;
+      if ((n?.count ?? 0) > (w?.count ?? 0)) gained = true;
+      if ((n?.count ?? 0) < (w?.count ?? 0)) lost = true;
+    }
+    if (gained) return -1;
+    if (lost) return tier;
+  }
+  return -1;
+}
+
+/**
+ * Rebuild `graph` with explicit ports on the nodes `flagged` flows touch, so
+ * elk routes them out the side *facing* the counterpart instead of wrapping
+ * around the drawing's far margin. elk's default for a backward flow in a
+ * layered layout is to follow the main direction and loop around the outside,
+ * which is how a route comes to depart away from its target and arrive from
+ * beyond it (`attachAway`) — the population `route-detour` only claims once
+ * it is wasteful enough, leaving the merely-bad to the wrap.
+ *
+ * `elk.port.side` is honored only at `FIXED_SIDE` or stricter, which
+ * constrains every edge of the node — so every incident flow gets a port:
+ * flagged ones face their counterpart (measured on the first-pass scene),
+ * unflagged ones keep the side elk itself chose in the first pass, so a good
+ * route is not disturbed to fix a bad one.
+ */
+function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, model: Model): void {
+  type Side = "NORTH" | "SOUTH" | "EAST" | "WEST";
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const elkById = new Map<string, ElkNode>();
+  const register = (node: ElkNode) => {
+    elkById.set(node.id, node);
+    for (const child of node.children ?? []) register(child);
+  };
+  register(graph);
+  const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+  const sideToward = (from: SceneNode, to: SceneNode): Side => {
+    const dx = centerOf(to).x - centerOf(from).x;
+    const dy = centerOf(to).y - centerOf(from).y;
+    return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? "WEST" : "EAST") : dy < 0 ? "NORTH" : "SOUTH";
+  };
+  const sideOn = (p: { x: number; y: number }, n: SceneNode): Side | null => {
+    if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
+      if (Math.abs(p.y - n.y) < 2) return "NORTH";
+      if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
+    }
+    if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
+      if (Math.abs(p.x - n.x) < 2) return "WEST";
+      if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
+    }
+    return null;
+  };
+  // Only the flagged flows' nodes are pinned. Pinning *every* flow to its
+  // first-pass side was measured worse (attachAway 303 -> 304, nearParallel
+  // 63 -> 66, the application-compact regressions back): with no freedom left
+  // on the other edges, elk cannot reorganise corridors around the new ports.
+  const flaggedNodes = new Set<string>();
+  for (const flow of model.flows)
+    if (flagged.has(flow.id)) {
+      flaggedNodes.add(flow.from);
+      flaggedNodes.add(flow.to);
+    }
+  for (const nodeId of flaggedNodes) {
+    const elkNode = elkById.get(nodeId);
+    const sceneNode = nodeById.get(nodeId);
+    if (!elkNode || !sceneNode) continue;
+    const ports: NonNullable<ElkNode["ports"]> = [];
+    for (const flow of model.flows) {
+      if (flow.from !== nodeId && flow.to !== nodeId) continue;
+      const role = flow.from === nodeId ? "src" : "dst";
+      const other = nodeById.get(role === "src" ? flow.to : flow.from);
+      if (!other) continue;
+      let side = sideToward(sceneNode, other);
+      if (!flagged.has(flow.id)) {
+        const edge = scene.edges.find((e) => e.id === flow.id);
+        const terminal =
+          edge && edge.pts.length >= 2
+            ? role === "src"
+              ? edge.pts[0]
+              : edge.pts[edge.pts.length - 1]
+            : null;
+        const actual = terminal ? sideOn(terminal, sceneNode) : null;
+        if (actual) side = actual;
+      }
+      const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      // 1x1, not 0x0: a zero-size port breaks the scanline constraint's
+      // hitbox math inside elk ("Invalid hitboxes for scanline constraint
+      // calculation") on hierarchical graphs — measured on every themes/*
+      // model, where the constrained pass crashed and fell back to the wrap.
+      ports.push({ id: portId, width: 1, height: 1, layoutOptions: { "elk.port.side": side } });
+      const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
+      if (elkEdge) {
+        if (role === "src") elkEdge.sources = [portId];
+        else elkEdge.targets = [portId];
+      }
+    }
+    if (!ports.length) continue;
+    elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
+    elkNode.ports = [...(elkNode.ports ?? []), ...ports];
+  }
+}
+
 export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -501,9 +722,13 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // The ladder trades a lower-tier win for a tier-4 `tight` when every seat
     // it can reach sits within `MIN_ATTACH_GAP` of a sibling — honest, but it
     // leaves the side crowded. The same spread that ran inside `tidyEdges`
-    // runs here again, after the pass that re-crowds. Nothing below it moves
-    // edge geometry.
+    // runs here again, after the pass that re-crowds.
     spreadAttachments(scene);
+    // `compactVertical` shrank the gaps the side-clearance pass judged, so a
+    // run that cleared its sides before compaction can hug one after it. Run
+    // the clearance again once the geometry is final — labels are re-anchored
+    // below, after the last move.
+    clearSideHugs(scene);
     anchorFlowLabels(scene, settledTitles);
     // Record *every* edge the repair moved. Restricting this to edges whose
     // label was seated beforehand made the rollback partial — the renderer put
@@ -529,33 +754,45 @@ export async function layout(model: Model, view: View): Promise<Scene> {
 
   const startTime = Date.now();
   let result: LaidOutNode;
+  let winnerDirection: "RIGHT" | "DOWN";
+  let winnerOptions: { labelWrap?: number; tight?: boolean; minLayers?: boolean } | undefined;
   if (aspectTarget) {
-    const layoutConfigs: ElkNode[] =
+    const graphSpecs: {
+      direction: "RIGHT" | "DOWN";
+      options?: { labelWrap?: number; tight?: boolean; minLayers?: boolean };
+    }[] =
       disposition === "slide"
         ? [
-            makeGraph("RIGHT"),
-            makeGraph("RIGHT", { labelWrap: 16 }),
-            makeGraph("RIGHT", { labelWrap: 14, tight: true }),
-            makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true }),
+            { direction: "RIGHT" },
+            { direction: "RIGHT", options: { labelWrap: 16 } },
+            { direction: "RIGHT", options: { labelWrap: 14, tight: true } },
+            { direction: "RIGHT", options: { labelWrap: 14, tight: true, minLayers: true } },
           ]
-        : [makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
+        : [{ direction: "DOWN" }, { direction: "DOWN", options: { labelWrap: 16 } }];
     const candidates = (await Promise.all(
-      layoutConfigs.map((graph) => elk.layout(graph)),
+      graphSpecs.map((spec) => elk.layout(makeGraph(spec.direction, spec.options))),
     )) as unknown as LaidOutNode[];
     const preferWide = disposition === "slide";
-    const orientedLayouts = candidates.filter((layoutResult) =>
-      preferWide
-        ? layoutResult.width >= layoutResult.height
-        : layoutResult.height >= layoutResult.width,
-    );
-    const viableLayouts = orientedLayouts.length ? orientedLayouts : candidates;
+    const orientedLayouts = candidates
+      .map((layoutResult, index) => ({ layoutResult, index }))
+      .filter(({ layoutResult }) =>
+        preferWide
+          ? layoutResult.width >= layoutResult.height
+          : layoutResult.height >= layoutResult.width,
+      );
+    const viableLayouts = orientedLayouts.length
+      ? orientedLayouts
+      : candidates.map((layoutResult, index) => ({ layoutResult, index }));
     const frameSize =
       disposition === "slide" ? { width: 1280, height: 720 } : { width: 700, height: 1000 };
     const fitScore = (layoutResult: { width: number; height: number }) =>
       -Math.min(frameSize.width / layoutResult.width, frameSize.height / layoutResult.height);
-    result = viableLayouts.reduce((candidateA, candidateB) =>
-      fitScore(candidateA) <= fitScore(candidateB) ? candidateA : candidateB,
+    const winner = viableLayouts.reduce((candidateA, candidateB) =>
+      fitScore(candidateA.layoutResult) <= fitScore(candidateB.layoutResult) ? candidateA : candidateB,
     );
+    result = winner.layoutResult;
+    winnerDirection = graphSpecs[winner.index].direction;
+    winnerOptions = graphSpecs[winner.index].options;
     if (disposition === "slide") {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
@@ -573,10 +810,65 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       }
     }
   } else {
-    result = (await elk.layout(
-      makeGraph(disposition === "tall" ? "DOWN" : "RIGHT"),
-    )) as unknown as LaidOutNode;
+    winnerDirection = disposition === "tall" ? "DOWN" : "RIGHT";
+    winnerOptions = undefined;
+    result = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
   }
   const layoutMs = Date.now() - startTime;
-  return sceneFromResult(result, layoutMs);
+  const scene = sceneFromResult(result, layoutMs);
+  const away = attachAwayOf(scene, model);
+  if (!away.size || process.env.CAIRN_NO_PORT_PASS) return scene;
+  // elk's default for a backward flow is to follow the main direction and
+  // wrap around the drawing's far margin; `route-detour` only claims the
+  // routes wasteful enough to deserve a channel, leaving the merely-bad to
+  // the wrap. Re-run the winning config with those flows pinned to ports
+  // facing their counterpart. The trade is judged by the house ladder, not by
+  // the metric being fixed: a wholesale relayout that clears wrong-side
+  // departures but strikes a title or merges a run is refused, the way
+  // `optimiseRoutes` refuses its own bad trades. Strictly opportunistic:
+  // port constraints hit an elk-internal scanline bug on some models, so a
+  // crash here just keeps the first pass.
+  try {
+    const constrained = makeGraph(winnerDirection, winnerOptions);
+    constrainPorts(constrained, scene, away, model);
+    if (process.env.CAIRN_DEBUG_PORTS) {
+      const { writeFileSync } = await import("node:fs");
+      writeFileSync(".tmp/constrained-graph.json", JSON.stringify(constrained));
+    }
+    const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
+    const rescene = sceneFromResult(reresult, Date.now() - startTime);
+    const allEdges = (s: Scene) => new Set(s.edges.map((edge) => edge.id));
+    const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), new Map());
+    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(allEdges(rescene), new Map());
+    for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
+    for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
+    const verdict = relayoutVerdict(before, after);
+    if (process.env.CAIRN_DEBUG_PORTS) {
+      const normalize = (key: string) => key.replace(/@[-\d.,]+$/, "").replace(/:\d+(?=@|$)/, "");
+      const tally = (profile: Profile) => {
+        const out = new Map<string, { tier: number; count: number }>();
+        for (const [key, tier] of profile) {
+          const id = normalize(key);
+          const entry = out.get(id) ?? { tier, count: 0 };
+          entry.count++;
+          out.set(id, entry);
+        }
+        return out;
+      };
+      const was = tally(before);
+      const now = tally(after);
+      const diffs: string[] = [];
+      for (const key of new Set([...was.keys(), ...now.keys()])) {
+        const a = was.get(key)?.count ?? 0;
+        const b = now.get(key)?.count ?? 0;
+        if (a !== b) diffs.push(`${key}@${(now.get(key) ?? was.get(key))!.tier}:${a}->${b}`);
+      }
+      console.log(`[ports] verdict=${verdict} diffs=${diffs.join(" ")}`);
+    }
+    return verdict >= 0 ? rescene : scene;
+  } catch (error) {
+    if (process.env.CAIRN_DEBUG_PORTS)
+      console.log(`[ports] constrained pass failed: ${String(error).slice(0, 300)}`);
+    return scene;
+  }
 }

@@ -1,165 +1,165 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2462 768" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2462 796" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2462" height="768" fill="#ffffff"/>
-<rect x="29" y="52" width="119" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="39" y="70" font-size="13" font-weight="bold" fill="#17202c">Assurés</text>
-<rect x="35" y="227" width="113" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="45" y="245" font-size="13" font-weight="bold" fill="#17202c">Gestionnaires</text>
-<rect x="355" y="22" width="1737" height="320.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="365" y="40" font-size="13" font-weight="bold" fill="#17202c">Système d'information sinistres</text>
-<rect x="369" y="60" width="183" height="217" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="379" y="78" font-size="13" font-weight="bold" fill="#17202c">Couche déclaration</text>
-<rect x="747" y="139.5" width="746" height="183" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="757" y="157.5" font-size="13" font-weight="bold" fill="#17202c">Couche instruction</text>
-<rect x="1653" y="193.33333333333331" width="425" height="111" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1663" y="211.33333333333331" font-size="13" font-weight="bold" fill="#17202c">Couche indemnisation</text>
-<rect x="2289" y="64" width="149" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="2299" y="82" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
-<circle cx="94.66666666666666" cy="89" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 83.66666666666666 111 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="94.66666666666666" y="123" font-size="11" text-anchor="middle" fill="#20364c">Assuré</text>
-<circle cx="88.5" cy="163" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 77.5 185 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="88.5" y="197" font-size="11" text-anchor="middle" fill="#20364c">Tiers impliqué</text>
-<circle cx="95" cy="264" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 84 286 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="95" y="298" font-size="11" text-anchor="middle" fill="#20364c">Gestionnaire</text>
-<text x="95" y="309" font-size="11" text-anchor="middle" fill="#20364c">de sinistres</text>
-<circle cx="107" cy="349" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 96 371 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="107" y="383" font-size="11" text-anchor="middle" fill="#20364c">Expert</text>
-<text x="107" y="394" font-size="11" text-anchor="middle" fill="#20364c">mandaté</text>
-<circle cx="91.5" cy="434" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 80.5 456 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="91.5" y="468" font-size="11" text-anchor="middle" fill="#20364c">Responsable</text>
-<text x="91.5" y="479" font-size="11" text-anchor="middle" fill="#20364c">indemnisation</text>
-<rect x="406.5" y="154" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="460.5" y="174.25" font-size="12.5" text-anchor="middle" fill="#17202c">Déclaration</text>
-<text x="460.5" y="188.75" font-size="12.5" text-anchor="middle" fill="#17202c">en ligne</text>
-<rect x="406.5" y="221" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="460.5" y="241.25" font-size="12.5" text-anchor="middle" fill="#17202c">Déclaration</text>
-<text x="460.5" y="255.75" font-size="12.5" text-anchor="middle" fill="#17202c">téléphonique</text>
-<rect x="378" y="87" width="165" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="460.5" y="107.25" font-size="12.5" text-anchor="middle" fill="#17202c">Collecte des</text>
-<text x="460.5" y="121.75" font-size="12.5" text-anchor="middle" fill="#17202c">pièces justificatives</text>
-<rect x="1063" y="237.33333333333331" width="131" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1128.5" y="257.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du</text>
-<text x="1128.5" y="272.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">dossier sinistre</text>
-<rect x="756" y="245.16666666666663" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="810" y="265.41666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">Suivi</text>
-<text x="810" y="279.91666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">d'expertise</text>
-<rect x="1376" y="182.49999999999997" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1430" y="202.74999999999997" font-size="12.5" text-anchor="middle" fill="#17202c">Détection</text>
-<text x="1430" y="217.24999999999997" font-size="12.5" text-anchor="middle" fill="#17202c">de fraude</text>
-<rect x="1662" y="245.16666666666663" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1716" y="265.41666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">Calcul de</text>
-<text x="1716" y="279.91666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">l'indemnité</text>
-<rect x="1952" y="237.33333333333331" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2010.5" y="257.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Ordonnancement</text>
-<text x="2010.5" y="272.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">des paiements</text>
-<rect x="2298" y="225" width="131" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2363.5" y="245.25" font-size="12.5" text-anchor="middle" fill="#17202c">Système bancaire</text>
-<text x="2363.5" y="259.75" font-size="12.5" text-anchor="middle" fill="#17202c">(virements)</text>
-<rect x="2301.5" y="158" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2363.5" y="178.25" font-size="12.5" text-anchor="middle" fill="#17202c">Fichiers</text>
-<text x="2363.5" y="192.75" font-size="12.5" text-anchor="middle" fill="#17202c">inter-assureurs</text>
-<rect x="2298" y="91" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2352" y="111.25" font-size="12.5" text-anchor="middle" fill="#17202c">GED</text>
-<text x="2352" y="125.75" font-size="12.5" text-anchor="middle" fill="#17202c">du groupe</text>
-<path d="M 126.66666666666666 124 L 150.66666666666666 124 L 150.66666666666666 160 L 406.5 160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 139 180 L 163 180 L 163 245 L 406.5 245" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 126.66666666666666 106 L 252.33333333333331 106 L 252.33333333333331 128 L 378 128" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 543 110.5 L 1123.5 110.5 A 5 5 0 0 1 1133.5 110.5 L 2298 110.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 514.5 177.5 L 1110.5 177.5 L 1110.5 237.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 514.5 244.5 L 567 244.5 L 567 188.5 L 1043 188.5 L 1043 250.58333333333331 L 1063 250.58333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1146.5 237.33333333333331 L 1146.5 205.99999999999997 L 1376 205.99999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1484 205.99999999999997 L 1508 205.99999999999997 L 1508 181.5 L 2301.5 181.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2301.5 164 L 1430 164 L 1430 182.49999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1063 281.3333333333333 L 864 281.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 139 371.5 L 732 371.5 L 732 268.66666666666663 L 756 268.66666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 864 271.0833333333333 L 1063 271.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 139 286.5 L 722 286.5 L 722 199.5 L 1033 199.5 L 1033 260.8333333333333 L 1063 260.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1194 261.0833333333333 L 1662 261.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1716 292.16666666666663 L 1716 438.5 L 139 438.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 139 456.5 L 1734 456.5 L 1734 292.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1770 260.8333333333333 L 1952 260.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2069 243.33333333333331 L 2183.5 243.33333333333331 L 2183.5 266 L 2298 266" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1128.5 237.33333333333331 L 1128.5 12 L 120.66666666666666 12 L 120.66666666666666 79" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="278.5833333333333" y="163.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer un sinistre</text>
-<rect x="249.08333333333331" y="171.25" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="278.5833333333333" y="182.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Sinistre</text>
-<text x="284.75" y="248.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer son implication</text>
-<text x="189.5" y="102" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Téléverser photos</text>
-<text x="189.5" y="116.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et documents</text>
-<text x="1420.5" y="113.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archiver les documents</text>
-<text x="812.5" y="180.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
-<rect x="785.5" y="188.75" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="812.5" y="199.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
-<text x="677.125" y="184.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
-<text x="677.125" y="199" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(canal téléphonique)</text>
-<text x="1261.25" y="201.99999999999997" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Contrôle systématique</text>
-<text x="1261.25" y="216.49999999999997" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">à l'ouverture</text>
-<text x="1904.75" y="177.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Interroger les fichiers</text>
-<text x="1904.75" y="192" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'antécédents</text>
-<text x="1468.5" y="160" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Antécédents</text>
-<text x="1468.5" y="174.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de l'assuré</text>
-<text x="963.5" y="277.3333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Mission d'expertise</text>
-<text x="963.5" y="291.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">si dommage &gt; seuil</text>
-<text x="435.5" y="367.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Remettre le rapport</text>
-<text x="435.5" y="382" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'expertise</text>
-<rect x="376.5" y="390" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="435.5" y="401" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
-<text x="963.5" y="223.08333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Conclusions</text>
-<text x="963.5" y="237.58333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'expertise</text>
-<rect x="904.5" y="245.58333333333331" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="963.5" y="256.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
-<text x="430.5" y="282.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Instruction et</text>
-<text x="430.5" y="297" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">décisions de gestion</text>
-<text x="1428" y="257.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Éléments validés</text>
-<text x="1428" y="271.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">pour chiffrage</text>
-<text x="560.75" y="434.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande d'accord</text>
-<text x="560.75" y="449" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">hors délégation</text>
-<text x="936.5" y="452.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Accord ou</text>
-<text x="936.5" y="467" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">refus motivé</text>
-<text x="1861" y="264.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ordre d'indemnisation</text>
-<rect x="1829" y="272.0833333333333" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1861" y="283.0833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
-<text x="2126.25" y="246.58333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Virement SEPA</text>
-<rect x="2094.25" y="254.58333333333331" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="2126.25" y="265.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
-<text x="850.7916666666667" y="8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notifier étapes</text>
-<text x="850.7916666666667" y="22.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et décision</text>
-<line x1="20" y1="530" x2="2442" y2="530" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="552" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
-<rect x="150" y="542" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="179.5" y="553" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Sinistre</text>
-<text x="219" y="553" font-size="10" fill="#79828f">— événement dommageable déclaré par un assuré</text>
-<rect x="150" y="566" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="177" y="577" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
-<text x="214" y="577" font-size="10" fill="#79828f">— dossier ouvert pour instruire un sinistre</text>
-<rect x="150" y="590" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="209" y="601" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
-<text x="278" y="601" font-size="10" fill="#79828f">— conclusions chiffrées de l'expert mandaté</text>
-<rect x="150" y="614" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="182" y="625" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
-<text x="224" y="625" font-size="10" fill="#79828f">— montant validé et versé à l'assuré</text>
-<rect x="150" y="638" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="190" y="649" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
-<text x="240" y="649" font-size="10" fill="#79828f">porté par le flux</text>
-<line x1="20" y1="676" x2="2442" y2="676" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="698" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="688" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="699" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="688" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="330" y="699" font-size="10" fill="#17202c">Système</text>
-<rect x="399" y="688" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="431" y="699" font-size="10" fill="#17202c">Couche</text>
-<rect x="495" y="688" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="527" y="699" font-size="10" fill="#17202c">Bloc fonctionnel</text>
-<rect x="643" y="688" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="675" y="699" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="718" x2="176" y2="718" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="722" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
-<text x="150" y="746" font-size="10" fill="#17202c" font-style="italic">Les dossiers sinistres sont conservés 10 ans (obligation légale)</text>
+<rect width="2462" height="796" fill="#ffffff"/>
+<rect x="29" y="80" width="119" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="39" y="98" font-size="13" font-weight="bold" fill="#17202c">Assurés</text>
+<rect x="35" y="255" width="113" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="45" y="273" font-size="13" font-weight="bold" fill="#17202c">Gestionnaires</text>
+<rect x="355" y="50" width="1737" height="320.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="365" y="68" font-size="13" font-weight="bold" fill="#17202c">Système d'information sinistres</text>
+<rect x="369" y="88" width="183" height="217" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="379" y="106" font-size="13" font-weight="bold" fill="#17202c">Couche déclaration</text>
+<rect x="747" y="167.5" width="746" height="183" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="757" y="185.5" font-size="13" font-weight="bold" fill="#17202c">Couche instruction</text>
+<rect x="1653" y="221.33333333333331" width="425" height="111" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1663" y="239.33333333333331" font-size="13" font-weight="bold" fill="#17202c">Couche indemnisation</text>
+<rect x="2289" y="92" width="149" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="2299" y="110" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
+<circle cx="94.66666666666666" cy="117" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 83.66666666666666 139 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="94.66666666666666" y="151" font-size="11" text-anchor="middle" fill="#20364c">Assuré</text>
+<circle cx="88.5" cy="191" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 77.5 213 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="88.5" y="225" font-size="11" text-anchor="middle" fill="#20364c">Tiers impliqué</text>
+<circle cx="95" cy="292" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 84 314 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="95" y="326" font-size="11" text-anchor="middle" fill="#20364c">Gestionnaire</text>
+<text x="95" y="337" font-size="11" text-anchor="middle" fill="#20364c">de sinistres</text>
+<circle cx="107" cy="377" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 96 399 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="107" y="411" font-size="11" text-anchor="middle" fill="#20364c">Expert</text>
+<text x="107" y="422" font-size="11" text-anchor="middle" fill="#20364c">mandaté</text>
+<circle cx="91.5" cy="462" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 80.5 484 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="91.5" y="496" font-size="11" text-anchor="middle" fill="#20364c">Responsable</text>
+<text x="91.5" y="507" font-size="11" text-anchor="middle" fill="#20364c">indemnisation</text>
+<rect x="406.5" y="182" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="460.5" y="202.25" font-size="12.5" text-anchor="middle" fill="#17202c">Déclaration</text>
+<text x="460.5" y="216.75" font-size="12.5" text-anchor="middle" fill="#17202c">en ligne</text>
+<rect x="406.5" y="249" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="460.5" y="269.25" font-size="12.5" text-anchor="middle" fill="#17202c">Déclaration</text>
+<text x="460.5" y="283.75" font-size="12.5" text-anchor="middle" fill="#17202c">téléphonique</text>
+<rect x="378" y="115" width="165" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="460.5" y="135.25" font-size="12.5" text-anchor="middle" fill="#17202c">Collecte des</text>
+<text x="460.5" y="149.75" font-size="12.5" text-anchor="middle" fill="#17202c">pièces justificatives</text>
+<rect x="1063" y="265.3333333333333" width="131" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1128.5" y="285.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du</text>
+<text x="1128.5" y="300.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">dossier sinistre</text>
+<rect x="756" y="273.16666666666663" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="810" y="293.41666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">Suivi</text>
+<text x="810" y="307.91666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">d'expertise</text>
+<rect x="1376" y="210.49999999999997" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1430" y="230.74999999999997" font-size="12.5" text-anchor="middle" fill="#17202c">Détection</text>
+<text x="1430" y="245.24999999999997" font-size="12.5" text-anchor="middle" fill="#17202c">de fraude</text>
+<rect x="1662" y="273.16666666666663" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1716" y="293.41666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">Calcul de</text>
+<text x="1716" y="307.91666666666663" font-size="12.5" text-anchor="middle" fill="#17202c">l'indemnité</text>
+<rect x="1952" y="265.3333333333333" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2010.5" y="285.5833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Ordonnancement</text>
+<text x="2010.5" y="300.0833333333333" font-size="12.5" text-anchor="middle" fill="#17202c">des paiements</text>
+<rect x="2298" y="253" width="131" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2363.5" y="273.25" font-size="12.5" text-anchor="middle" fill="#17202c">Système bancaire</text>
+<text x="2363.5" y="287.75" font-size="12.5" text-anchor="middle" fill="#17202c">(virements)</text>
+<rect x="2301.5" y="186" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2363.5" y="206.25" font-size="12.5" text-anchor="middle" fill="#17202c">Fichiers</text>
+<text x="2363.5" y="220.75" font-size="12.5" text-anchor="middle" fill="#17202c">inter-assureurs</text>
+<rect x="2298" y="119" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2352" y="139.25" font-size="12.5" text-anchor="middle" fill="#17202c">GED</text>
+<text x="2352" y="153.75" font-size="12.5" text-anchor="middle" fill="#17202c">du groupe</text>
+<path d="M 126.66666666666666 143 L 163 143 L 163 206 L 406.5 206" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 139 208 L 163 208 L 163 273 L 406.5 273" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 126.66666666666666 125 L 299 125 L 299 139 L 378 139" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 543 138.5 L 1123.5 138.5 A 5 5 0 0 1 1133.5 138.5 L 2298 138.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 514.5 205.5 L 1053 205.5 L 1053 268.3333333333333 L 1063 268.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 514.5 272.5 L 567 272.5 L 567 216.5 L 1043 216.5 L 1043 278.5833333333333 L 1063 278.5833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1194 277.0833333333333 L 1204 277.0833333333333 L 1204 241.83333333333331 L 1376 241.83333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1484 233.99999999999997 L 1508 233.99999999999997 L 1508 210.33333333333331 L 2284 210.33333333333331 L 2301.5 210.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2301.5 192 L 1430 192 L 1430 210.49999999999997" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1063 309.3333333333333 L 864 309.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 139 399.5 L 732 399.5 L 732 296.66666666666663 L 756 296.66666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 864 299.0833333333333 L 1063 299.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 139 314.5 L 722 314.5 L 722 227.5 L 1033 227.5 L 1033 288.8333333333333 L 1063 288.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1194 289.0833333333333 L 1662 289.0833333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1716 320.16666666666663 L 1716 466.5 L 139 466.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 139 484.5 L 1734 484.5 L 1734 320.16666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1770 288.8333333333333 L 1952 288.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2069 288.8333333333333 L 2107 289 L 2107 277 L 2298 277" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1128.5 265.3333333333333 L 1128.5 40 L 110.66666666666666 40 L 110.66666666666666 107" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="284.75" y="209.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer un sinistre</text>
+<rect x="255.25" y="217.25" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="284.75" y="228.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Sinistre</text>
+<text x="284.75" y="276.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer son implication</text>
+<text x="212.83333333333331" y="121" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Téléverser photos</text>
+<text x="212.83333333333331" y="135.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et documents</text>
+<text x="1420.5" y="141.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archiver les documents</text>
+<text x="1053" y="240.16666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
+<rect x="1026" y="248.16666666666663" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1053" y="259.16666666666663" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="805" y="212.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ouvrir le dossier</text>
+<text x="805" y="227" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(canal téléphonique)</text>
+<text x="1290" y="237.83333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Contrôle systématique</text>
+<text x="1290" y="252.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">à l'ouverture</text>
+<text x="2051.25" y="206.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Interroger les fichiers</text>
+<text x="2051.25" y="220.83333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'antécédents</text>
+<text x="1865.75" y="188" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Antécédents</text>
+<text x="1865.75" y="202.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de l'assuré</text>
+<text x="1127.5" y="333.3333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Mission d'expertise</text>
+<text x="1127.5" y="347.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">si dommage &gt; seuil</text>
+<text x="435.5" y="395.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Remettre le rapport</text>
+<text x="435.5" y="410" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'expertise</text>
+<rect x="376.5" y="418" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="435.5" y="429" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
+<text x="963.5" y="295.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Conclusions</text>
+<text x="963.5" y="309.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'expertise</text>
+<rect x="904.5" y="317.5833333333333" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="963.5" y="328.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
+<text x="430.5" y="310.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Instruction et</text>
+<text x="430.5" y="325" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">décisions de gestion</text>
+<text x="1428" y="285.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Éléments validés</text>
+<text x="1428" y="299.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">pour chiffrage</text>
+<text x="560.75" y="462.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande d'accord</text>
+<text x="560.75" y="477" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">hors délégation</text>
+<text x="936.5" y="480.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Accord ou</text>
+<text x="936.5" y="495" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">refus motivé</text>
+<text x="1861" y="292.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ordre d'indemnisation</text>
+<rect x="1829" y="300.0833333333333" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1861" y="311.0833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
+<text x="2202.5" y="280.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Virement SEPA</text>
+<rect x="2170.5" y="288.25" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="2202.5" y="299.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
+<text x="848.2916666666667" y="36" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notifier étapes</text>
+<text x="848.2916666666667" y="50.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et décision</text>
+<line x1="20" y1="558" x2="2442" y2="558" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="580" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
+<rect x="150" y="570" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="179.5" y="581" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Sinistre</text>
+<text x="219" y="581" font-size="10" fill="#79828f">— événement dommageable déclaré par un assuré</text>
+<rect x="150" y="594" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="177" y="605" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="214" y="605" font-size="10" fill="#79828f">— dossier ouvert pour instruire un sinistre</text>
+<rect x="150" y="618" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="209" y="629" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Rapport d'expertise</text>
+<text x="278" y="629" font-size="10" fill="#79828f">— conclusions chiffrées de l'expert mandaté</text>
+<rect x="150" y="642" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="182" y="653" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
+<text x="224" y="653" font-size="10" fill="#79828f">— montant validé et versé à l'assuré</text>
+<rect x="150" y="666" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="190" y="677" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
+<text x="240" y="677" font-size="10" fill="#79828f">porté par le flux</text>
+<line x1="20" y1="704" x2="2442" y2="704" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="726" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="716" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="727" font-size="10" fill="#17202c">Groupe d'acteurs</text>
+<rect x="298" y="716" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="330" y="727" font-size="10" fill="#17202c">Système</text>
+<rect x="399" y="716" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="431" y="727" font-size="10" fill="#17202c">Couche</text>
+<rect x="495" y="716" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="527" y="727" font-size="10" fill="#17202c">Bloc fonctionnel</text>
+<rect x="643" y="716" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="675" y="727" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="746" x2="176" y2="746" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="750" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
+<text x="150" y="774" font-size="10" fill="#17202c" font-style="italic">Les dossiers sinistres sont conservés 10 ans (obligation légale)</text>
 </svg>

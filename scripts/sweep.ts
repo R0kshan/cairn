@@ -120,6 +120,15 @@ const CEILING_RATE: Record<string, number> = {
   // channel planner produced); the remainder needs elk port constraints or
   // channel-side planning, not another post-pass.
   attachAway: 0.0634191,
+  // A run riding a node or container side it does not attach to, close enough
+  // that flow and frame read as one line. Calibrated *after* the clearance
+  // pass that halved it: 49 over 3884 flow-instances. What remains is debt the
+  // translation cannot prove clean — a terminal clamped inside stub range
+  // (logical-archi's F02, whose only corridor crosses SUIV_FLUX's west-side
+  // stubs), or a move that would buy the clearance with a crossing or a
+  // `nearParallel` the ladder prices at the same tier. Lowering this means a
+  // reroute that owns the corridor, never a tolerated merge.
+  sideHug: 0.0127,
 };
 
 interface Run {
@@ -438,6 +447,36 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
           if (gap < 3 && shared > 8) note("coincident", `${a.id}~${b.id} gap=${gap.toFixed(1)}`);
           else if (gap < 10 && shared > 40)
             note("nearParallel", `${a.id}~${b.id} gap=${gap.toFixed(1)} run=${shared.toFixed(0)}`);
+        }
+
+    // A run hugging a node or container side it does not attach to reads as
+    // part of the border: the eye cannot tell the flow from the frame it
+    // rides (the run at x=1027 along SUIV_FLUX's left side x=1026 in
+    // logical-archi; F08 along the Settlement layer's left side for 207px in
+    // medium-tall). An endpoint exempts its own node — a flow may leave its
+    // node along the side it starts on. `shared` is measured against the
+    // side's own span, so perpendicular crossings and approach stubs that end
+    // at the border never reach the threshold.
+    const edgeEnds = new Map(model.flows.map((f) => [f.id, new Set([f.from, f.to])]));
+    for (const [list, vertical] of [
+      [V, true],
+      [H, false],
+    ] as const)
+      for (const s of list)
+        for (const n of scene.nodes) {
+          if (edgeEnds.get(s.id)?.has(n.id)) continue;
+          const shared = vertical
+            ? Math.min(s.hi, n.y + n.height) - Math.max(s.lo, n.y)
+            : Math.min(s.hi, n.x + n.width) - Math.max(s.lo, n.x);
+          if (shared <= 24) continue;
+          const gap = vertical
+            ? Math.min(Math.abs(s.at - n.x), Math.abs(s.at - (n.x + n.width)))
+            : Math.min(Math.abs(s.at - n.y), Math.abs(s.at - (n.y + n.height)));
+          if (gap < 3)
+            note(
+              "sideHug",
+              `${s.id} ${gap.toFixed(1)}px off ${n.id} ${vertical ? "v" : "h"}-side shared=${shared.toFixed(0)}`,
+            );
         }
 
     // A run crossing a *leaf* box is a bug; container interiors are routable.
@@ -936,6 +975,7 @@ const TIER: Record<string, number> = {
   crossings: 2,
   fanTangle: 2,
   nearParallel: 2,
+  sideHug: 2,
   turnHeavy: 3,
   "jog<=6": 3,
   "jog<=20": 3,

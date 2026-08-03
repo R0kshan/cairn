@@ -149,6 +149,34 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
   // the label off its run.
   const coversNode = (box: Box) =>
     leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
+  /**
+   * Is a foreign run travelling **parallel** to this seat's own run and
+   * passing strictly inside its box (INVARIANTS §4j)? A crossing run is masked
+   * behind the label's halo and the seat still says which line is speaking; a
+   * parallel one is masked the same way and emerges on both sides of the
+   * words, so nothing is left to tell the two lines apart. Mirrors
+   * `straddledBy` in `scripts/sweep.ts` — the guard must measure what the
+   * invariant measures (§3).
+   */
+  const straddledSeat = (box: Box, vertical: boolean, own: SceneEdge): boolean => {
+    const lo = vertical ? box.x : box.y;
+    const hi = lo + (vertical ? box.width : box.height);
+    for (const other of routes) {
+      if (other === own) continue;
+      for (let i = 0; i + 1 < other.pts.length; i++) {
+        const a = other.pts[i];
+        const b = other.pts[i + 1];
+        const runVertical = Math.abs(a.x - b.x) < 0.5;
+        const runHorizontal = Math.abs(a.y - b.y) < 0.5;
+        if (runVertical === runHorizontal) continue;
+        if (runVertical !== vertical) continue;
+        if (boxToSegmentSq(box, a, b) > 0) continue;
+        const at = vertical ? a.x : a.y;
+        if (at > lo + 1 && at < hi - 1) return true;
+      }
+    }
+    return false;
+  };
   const seated: {
     label: SceneLabel;
     edge: SceneEdge;
@@ -208,7 +236,11 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
       // clear of node boxes and unpierced; the second settles for clear of
       // boxes. A pierced seat still reads correctly — the run is masked behind
       // the label's halo — while a seat over a node box forces the settler to
-      // move the label off its run, so boxes are the harder constraint.
+      // move the label off its run, so boxes are the harder constraint. A
+      // *straddled* seat is refused in both sweeps: the halo masks a parallel
+      // intruder the same way it masks the label's own run, and nothing is
+      // left to tell the reader which line is speaking (§4j). Sliding along
+      // the run to a straddle-free seat is always the cheaper fix.
       let seat: Box | null = null;
       const seatsOf = (segment: number): Box[] => {
         const a = edge.pts[segment];
@@ -226,10 +258,16 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
             : seatAt(label, (a.x + b.x) / 2 + room * fraction, (a.y + b.y) / 2),
         );
       };
+      const segVertical = (segment: number): boolean => {
+        const a = edge.pts[segment];
+        const b = edge.pts[segment + 1];
+        return Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+      };
       for (const wantUnpierced of [true, false]) {
         for (const segment of segmentOrder) {
           for (const candidate of seatsOf(segment)) {
             if (coversNode(candidate)) continue;
+            if (straddledSeat(candidate, segVertical(segment), edge)) continue;
             if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
             seat = candidate;
             break;
@@ -255,6 +293,7 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
       const tolerated: Box[] = [];
       for (const segment of segmentOrder)
         for (const candidate of seatsOf(segment)) {
+          if (straddledSeat(candidate, segVertical(segment), edge)) continue;
           if (!coversNode(candidate)) alternatives.push(candidate);
           else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
         }
@@ -287,6 +326,7 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
             ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + offset)
             : seatAt(label, (a.x + b.x) / 2 + offset, (a.y + b.y) / 2);
           if (coversNode(candidate)) continue;
+          if (straddledSeat(candidate, vertical, edge)) continue;
           stretched.push(candidate);
         }
       }
@@ -331,6 +371,7 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
                 midY + (vertical ? along : away),
               );
               if (coversNode(candidate)) continue;
+              if (away === 0 && straddledSeat(candidate, vertical, edge)) continue;
               if (!attributableAt(label, candidate, edge)) continue;
               out.push(candidate);
             }

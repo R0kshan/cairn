@@ -151,7 +151,7 @@
 <path d="M 620 826 L 529 826 L 529 2108 L 517 2108" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 455 2149 L 455 2171 L 586 2171 A 5 5 0 0 1 596 2171 L 598 2171 A 5 5 0 0 1 608 2171 L 722 2171 A 5 5 0 0 1 732 2171 L 2097 2171 L 2097 808.5 L 2004 808.5 A 5 5 0 0 0 1994 808.5 L 1763 808.5 A 5 5 0 0 0 1753 808.5 L 1717 808.5 A 5 5 0 0 0 1707 808.5 L 1599.5 808.5 A 5 5 0 0 0 1589.5 808.5 L 1494 808.5 A 5 5 0 0 0 1484 808.5 L 1299 808.5 A 5 5 0 0 0 1289 808.5 L 1170 808.5 A 5 5 0 0 0 1160 808.5 L 1059 808.5 A 5 5 0 0 0 1049 808.5 L 1041 808.5 A 5 5 0 0 0 1031 808.5 L 1034 808.5 A 5 5 0 0 0 1024 808.5 L 756 808.5 A 5 5 0 0 0 746 808.5 L 730 808.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 805 652 L 805 348" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 787 348 L 787 492 L 646 492 L 646 468" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 789.5 348 L 789.5 492 L 646 492 L 646 468" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 720 114 L 720 267.5 L 694 267.5 L 694 421" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 777.5 348 L 777.5 358 L 699 358 A 5 5 0 0 0 689 358 L 617 358 A 5 5 0 0 0 607 358 L 454 358 A 5 5 0 0 0 444 358 L 319 358 L 319 2102" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 319 2149 L 319 2173 L 204 2173 L 204 191 L 444 191 A 5 5 0 0 1 454 191 L 683 191 A 5 5 0 0 1 693 191 L 715 191 A 5 5 0 0 1 725 191 L 787 191 L 786.6666666666667 301" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -165,7 +165,7 @@
 <path d="M 1165 408 L 1165 938 L 1216 938 L 1216 1359" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 603 2149 L 603 2199 L 722 2199 A 5 5 0 0 1 732 2199 L 2312 2199 L 2312 384.5 L 2193 384.5 A 5 5 0 0 0 2183 384.5 L 1717 384.5 A 5 5 0 0 0 1707 384.5 L 1599.5 384.5 A 5 5 0 0 0 1589.5 384.5 L 1494 384.5 A 5 5 0 0 0 1484 384.5 L 1348 384.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1593 1140 L 1593 1658 L 1227.3333333333333 1658 A 5 5 0 0 0 1217.3333333333333 1658 L 878 1658" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1036 408 L 1036 1013.5 L 965 1013.5 A 5 5 0 0 0 955 1013.5 L 735 1013.5 L 735 1652" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1036 408 L 1036 1010.5 L 965 1010.5 A 5 5 0 0 0 955 1010.5 L 735 1010.5 L 735 1652" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 872 1699 L 872 1824 L 855.5 1824" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 700.5 1699 L 700.5 1824 L 747.5 1824" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 801.5 1865 L 801.5 1938" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -213,12 +213,12 @@
 <text x="529" y="1322.125" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Payment</text>
 <text x="2097" y="1469.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transaction</text>
 <text x="2097" y="1483.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">status</text>
-<text x="805" y="496" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Fulfilment</text>
-<text x="805" y="510.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">order</text>
-<rect x="783.5" y="518.5" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="805" y="529.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Order</text>
-<text x="710.25" y="488" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Warehouse picking</text>
-<text x="710.25" y="502.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">waves</text>
+<text x="805" y="527.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Fulfilment</text>
+<text x="805" y="542" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">order</text>
+<rect x="783.5" y="550" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="805" y="561" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Order</text>
+<text x="717.75" y="488" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Warehouse picking</text>
+<text x="717.75" y="502.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">waves</text>
 <text x="694" y="400.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Pick and ship</text>
 <text x="694" y="415" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">parcels</text>
 <text x="319" y="1209.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Pickup requests</text>
@@ -251,8 +251,8 @@
 <text x="2312" y="1285.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">costs</text>
 <text x="1071.25" y="1654" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Browsing</text>
 <text x="1071.25" y="1668.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">events</text>
-<text x="834.5" y="1009.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Reference-data</text>
-<text x="834.5" y="1024" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">changes</text>
+<text x="834.5" y="1006.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Reference-data</text>
+<text x="834.5" y="1021" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">changes</text>
 <text x="872" y="1757.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Feed the data</text>
 <text x="872" y="1772" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">foundation</text>
 <text x="700.5" y="1757.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Reference-data</text>

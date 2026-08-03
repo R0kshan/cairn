@@ -449,6 +449,293 @@ export function spreadAttachments(scene: Scene): void {
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }
 
+/**
+ * Push runs off the node and container sides they do not attach to (sweep
+ * `sideHug`). Within 3px of a side for more than 24px of shared span, flow
+ * and frame draw as one line — logical-archi had a riser at x=1027 riding
+ * SUIV_FLUX's left side x=1026, medium-tall one along the Settlement layer
+ * for 207px. The move is a translation to a clearance; terminals may slide
+ * along the border they sit on, which clamps how far the run can travel. A
+ * leaf side clears outward only — inward is the box's interior; a container
+ * side clears toward whichever half the run already sits in. Anything that
+ * cannot be proven clean (sibling seats, jog collapse, leaf hit, re-hug,
+ * merged run, bought crossing) is left in place as ladder debt.
+ *
+ * Called from `tidyEdges` and again from the layout driver after
+ * `compactVertical` — compaction shrinks the gaps this pass judges, so a run
+ * that cleared its sides before it can be found hugging one after.
+ */
+export function clearSideHugs(scene: Scene): void {
+  const SIDE_CLEAR = 8;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const sideRunsOf = (edge: SceneEdge) => {
+    const out: { vert: boolean; at: number; lo: number; hi: number; i: number }[] = [];
+    for (let i = 0; i + 1 < edge.pts.length; i++) {
+      const a = edge.pts[i];
+      const b = edge.pts[i + 1];
+      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+        out.push({ vert: true, at: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y), i });
+      else if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+        out.push({ vert: false, at: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x), i });
+    }
+    return out;
+  };
+  const hugTargetOf = (
+    run: { vert: boolean; at: number; lo: number; hi: number },
+    node: SceneNode,
+  ): number | null => {
+    const spanLo = run.vert ? node.y : node.x;
+    const spanHi = run.vert ? node.y + node.height : node.x + node.width;
+    const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
+    if (shared <= 24) return null;
+    const nearLo = run.vert ? node.x : node.y;
+    const nearHi = run.vert ? node.x + node.width : node.y + node.height;
+    if (Math.abs(run.at - nearLo) < 3)
+      return node.container
+        ? run.at < nearLo
+          ? nearLo - SIDE_CLEAR
+          : nearLo + SIDE_CLEAR
+        : nearLo - SIDE_CLEAR;
+    if (Math.abs(run.at - nearHi) < 3)
+      return node.container
+        ? run.at > nearHi
+          ? nearHi + SIDE_CLEAR
+          : nearHi - SIDE_CLEAR
+        : nearHi + SIDE_CLEAR;
+    return null;
+  };
+  /**
+   * The positions that clear a hugged side, most clearance first: 8px, then
+   * 3.5px — just past the 3px the predicate flags at. The tight fallback is
+   * what a corridor narrower than the full clearance offers: F06's approach
+   * stub in medium-tall/tall sits in a 7px gap between POLICYHOLDERS and
+   * THIRD_PARTY, where 8px off one side is 1px off the other and 3.5px is
+   * the only honest seat.
+   */
+  const hugTargetsOf = (
+    run: { vert: boolean; at: number; lo: number; hi: number },
+    node: SceneNode,
+  ): number[] => {
+    const spanLo = run.vert ? node.y : node.x;
+    const spanHi = run.vert ? node.y + node.height : node.x + node.width;
+    const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
+    if (shared <= 24) return [];
+    const nearLo = run.vert ? node.x : node.y;
+    const nearHi = run.vert ? node.x + node.width : node.y + node.height;
+    let sign = 0;
+    let side = 0;
+    if (Math.abs(run.at - nearLo) < 3) {
+      side = nearLo;
+      sign = node.container ? (run.at < nearLo ? -1 : 1) : -1;
+    } else if (Math.abs(run.at - nearHi) < 3) {
+      side = nearHi;
+      sign = node.container ? (run.at > nearHi ? 1 : -1) : 1;
+    } else return [];
+    return [side + sign * SIDE_CLEAR, side + sign * 3.5];
+  };
+  const runHitsNode = (vertical: boolean, at: number, from: number, to: number) =>
+    runHitsNodeIn(vertical, at, from, to, leaves);
+  const otherSideRuns = new Map<string, ReturnType<typeof sideRunsOf>>();
+  for (const edge of scene.edges) otherSideRuns.set(edge.id, sideRunsOf(edge));
+  const sideDbg = (edge: SceneEdge, why: string) => {
+    if (process.env.CAIRN_DEBUG_SIDE === edge.id) console.log(`[sideHug ${edge.id}] ${why}`);
+  };
+
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const own = new Set<SceneNode>();
+    for (const p of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+      const seat = sideOf(p, leaves);
+      if (seat) own.add(seat.node);
+    }
+    for (let guard = 0; guard < 8; guard++) {
+      const runsHere = sideRunsOf(edge);
+      let applied = false;
+      for (const run of runsHere) {
+        const targets: number[] = [];
+        for (const node of scene.nodes) {
+          if (own.has(node)) continue;
+          for (const t of hugTargetsOf(run, node)) if (!targets.includes(t)) targets.push(t);
+        }
+        if (!targets.length) continue;
+        const axis: "x" | "y" = run.vert ? "x" : "y";
+        // The slide must keep the terminal inside its side's span. A clamped
+        // target is accepted as long as it still clears the hug — the
+        // re-check below rejects anything inside 3px.
+        let clampLo = -Infinity;
+        let clampHi = Infinity;
+        for (const [idx, isFirst] of [
+          [run.i, true],
+          [run.i + 1, false],
+        ] as const) {
+          const isTerminal = isFirst ? run.i === 0 : run.i + 1 === edge.pts.length - 1;
+          if (!isTerminal) continue;
+          const seat = sideOf(edge.pts[idx], leaves);
+          if (!seat) continue;
+          const slides = run.vert
+            ? seat.side === "north" || seat.side === "south"
+            : seat.side === "west" || seat.side === "east";
+          if (!slides) {
+            clampLo = Infinity;
+            clampHi = -Infinity;
+            break;
+          }
+          clampLo = Math.max(clampLo, run.vert ? seat.node.x : seat.node.y);
+          clampHi = Math.min(
+            clampHi,
+            run.vert ? seat.node.x + seat.node.width : seat.node.y + seat.node.height,
+          );
+        }
+        if (clampLo > clampHi) {
+          sideDbg(edge, `clamp run=${run.at}`);
+          continue;
+        }
+        // Every border the run rides offers a way off it; the first that
+        // validates wins. Trying only the first hugged node used to skip runs
+        // whose wall is shared — medium-tall/tall's F06 rides three borders
+        // and only the third one's target is clean.
+        const attempt = (target: number): boolean => {
+          const delta = target - run.at;
+          if (Math.abs(delta) < 0.5) {
+            sideDbg(edge, `delta0 run=${run.at} target=${target} clamp=${clampLo}..${clampHi}`);
+            return false;
+          }
+          const pts = edge.pts.map((p) => ({ ...p }));
+          pts[run.i][axis] += delta;
+          pts[run.i + 1][axis] += delta;
+          let ok = true;
+          // The slid terminals must not land on sibling attachments — shared
+          // seats are a must-be-zero invariant.
+          for (const [idx, isFirst] of [
+            [run.i, true],
+            [run.i + 1, false],
+          ] as const) {
+            const isTerminal = isFirst ? run.i === 0 : run.i + 1 === pts.length - 1;
+            if (!isTerminal) continue;
+            const seat = sideOf(edge.pts[idx], leaves);
+            if (!seat) continue;
+            for (const other of scene.edges) {
+              if (other.id === edge.id || other.pts.length < 2) continue;
+              for (const q of [other.pts[0], other.pts[other.pts.length - 1]]) {
+                const qSeat = sideOf(q, leaves);
+                if (qSeat && qSeat.node === seat.node && qSeat.side === seat.side) {
+                  const along = run.vert ? q.x : q.y;
+                  if (Math.abs(along - pts[idx][axis]) < 6) ok = false;
+                }
+              }
+            }
+            if (!ok) break;
+          }
+          if (!ok) {
+            sideDbg(edge, `sibling run=${run.at} target=${target}`);
+            return false;
+          }
+          // Neighbour segments stretch or shrink; they must not reverse or
+          // collapse to a jog.
+          for (const k of [run.i - 1, run.i + 1]) {
+            if (k < 0 || k + 1 >= pts.length) continue;
+            const before = edge.pts[k + 1][axis] - edge.pts[k][axis];
+            const after = pts[k + 1][axis] - pts[k][axis];
+            if (Math.abs(after) < 0.5 || before * after < 0) {
+              ok = false;
+              break;
+            }
+          }
+          if (!ok) {
+            sideDbg(edge, `neighbour run=${run.at} target=${target}`);
+            return false;
+          }
+          // The moved run and its stretched neighbours must stay clear of leaf
+          // boxes.
+          if (runHitsNode(run.vert, target, run.lo, run.hi)) {
+            sideDbg(edge, `leafhit run=${run.at} target=${target}`);
+            return false;
+          }
+          for (const k of [run.i - 1, run.i + 1]) {
+            if (k < 0 || k + 1 >= pts.length) continue;
+            const a = pts[k];
+            const b = pts[k + 1];
+            const v = Math.abs(a.x - b.x) < 0.5;
+            const at = v ? a.x : a.y;
+            const lo = v ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+            const hi = v ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+            if (Math.abs(hi - lo) >= 0.5 && runHitsNode(v, at, lo, hi)) {
+              ok = false;
+              break;
+            }
+          }
+          if (!ok) {
+            sideDbg(edge, `neighbourleaf run=${run.at} target=${target}`);
+            return false;
+          }
+          // Must not land on another side, merge with another run, or buy its
+          // clearance with a new crossing.
+          for (const node of scene.nodes) {
+            if (own.has(node)) continue;
+            if (hugTargetOf({ ...run, at: target }, node) !== null) {
+              ok = false;
+              break;
+            }
+          }
+          if (!ok) {
+            sideDbg(edge, `rehug run=${run.at} target=${target}`);
+            return false;
+          }
+          const movedA = pts[run.i];
+          const movedB = pts[run.i + 1];
+          for (const other of scene.edges) {
+            if (other.id === edge.id) continue;
+            for (const o of otherSideRuns.get(other.id) ?? []) {
+              if (o.vert === run.vert) {
+                const shared = Math.min(run.hi, o.hi) - Math.max(run.lo, o.lo);
+                const gapBefore = Math.abs(o.at - run.at);
+                const gapAfter = Math.abs(o.at - target);
+                // Merging is a must-be-zero breach. Parking parallel within
+                // 10px is `nearParallel` — the same tier as the hug being
+                // cleared, and the ladder does not accept same-tier purchases:
+                // refuse the move only when it *creates* the proximity.
+                if (
+                  (gapAfter < 3 && shared > 8) ||
+                  (gapBefore >= 10 && gapAfter < 10 && shared > 40)
+                ) {
+                  ok = false;
+                  break;
+                }
+              } else {
+                const oA = o.vert ? { x: o.at, y: o.lo } : { x: o.lo, y: o.at };
+                const oB = o.vert ? { x: o.at, y: o.hi } : { x: o.hi, y: o.at };
+                const crossedBefore = segmentsCross(edge.pts[run.i], edge.pts[run.i + 1], oA, oB);
+                const crossedAfter = segmentsCross(movedA, movedB, oA, oB);
+                if (!crossedBefore && crossedAfter) {
+                  ok = false;
+                  break;
+                }
+              }
+            }
+            if (!ok) break;
+          }
+          if (!ok) {
+            sideDbg(edge, `cross run=${run.at} target=${target}`);
+            return false;
+          }
+          edge.pts = pts;
+          otherSideRuns.set(edge.id, sideRunsOf(edge));
+          return true;
+        };
+        for (const rawTarget of targets) {
+          const target = Math.min(Math.max(rawTarget, clampLo), clampHi);
+          if (attempt(target)) {
+            applied = true;
+            break;
+          }
+        }
+        if (applied) break;
+      }
+      if (!applied) break;
+    }
+  }
+}
+
 export function tidyEdges(
   scene: Scene,
   titleBoxes: TitleBox[] = [],
@@ -1189,6 +1476,11 @@ export function tidyEdges(
 
   // Fix any orthogonality broken by the de-coincidence shifts
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+
+  // Push runs off the node and container sides they do not attach to. Kept as
+  // its own function: like `spreadAttachments`, it must run again after
+  // `compactVertical` — compaction shrinks the gaps this pass judges.
+  clearSideHugs(scene);
 
   // Lift runs off container title bands (INVARIANTS §4e). Edges are drawn last
   // and a title carries no halo, so a run crossing one strikes through the
