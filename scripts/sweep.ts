@@ -975,7 +975,13 @@ const TIER: Record<string, number> = {
   crossings: 2,
   fanTangle: 2,
   nearParallel: 2,
-  sideHug: 2,
+  // A run riding a node or container side it does not attach to destroys the
+  // reading of the frame — the flow merges with the border and the eye cannot
+  // tell them apart, which is an attribution failure, not eye travel. Rated
+  // one tier above crossings by explicit design decision: a hug fix may be
+  // paid for with a crossing (verified geometrically forced on logical-archi's
+  // F02, where every re-side crosses F11's riser), never the reverse.
+  sideHug: 1,
   turnHeavy: 3,
   "jog<=6": 3,
   "jog<=20": 3,

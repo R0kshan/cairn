@@ -57,14 +57,14 @@
 <text x="728" y="609.75" font-size="12.5" text-anchor="middle" fill="#17202c">portal (PPF)</text>
 <path d="M 204.5 114 L 204.5 138 L 156 138 L 156 402.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 277.5 450 L 277.5 482.5 L 390 482.5 L 390 515" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 192 402.5 L 192 351.25 L 225 351.25 A 5 5 0 0 1 235 351.25 L 392 351.25 L 392 300" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 192 402.5 L 192 351.25 L 228.5 351.25 A 5 5 0 0 1 238.5 351.25 L 392 351.25 L 392 300" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 446 195 L 446 253" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 428 300 L 428 335 L 428 370" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 546 300 L 546 376 L 500 376" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 564 300 L 564 389 L 584 389 L 584 413" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 576.4 300 L 576 343 L 594 343 L 594 403 L 728 403 L 728 575" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 601.2 300 L 601 325 L 832 325 L 832 406" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 246 276.5 L 230 276.5 L 230 403" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 246 276.5 L 233.5 276.5 L 233.5 403" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 784 453 L 784 482.25 L 869.5 482.25 L 869.5 511.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 345 114 L 345 126 L 894 126 L 894 511.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 295 114 L 295 188.5 L 318 188.5 L 318 253" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -76,7 +76,7 @@
 <text x="574" y="392.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
 <text x="728" y="530.625" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
 <text x="716.5" y="328.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="230" y="316" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="233.5" y="316" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="826.75" y="485.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(batch, CSV)</text>
 <line x1="20" y1="642" x2="909" y2="642" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="664" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>

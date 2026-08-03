@@ -537,8 +537,27 @@ export function clearSideHugs(scene: Scene): void {
     runHitsNodeIn(vertical, at, from, to, leaves);
   const otherSideRuns = new Map<string, ReturnType<typeof sideRunsOf>>();
   for (const edge of scene.edges) otherSideRuns.set(edge.id, sideRunsOf(edge));
-  const sideDbg = (edge: SceneEdge, why: string) => {
-    if (process.env.CAIRN_DEBUG_SIDE === edge.id) console.log(`[sideHug ${edge.id}] ${why}`);
+  // The innermost container that geometrically holds a node, if any. A
+  // re-sided riser must turn in open space *before* the layer's border — a
+  // riser inside the layer's left band clutters the band the layer's own
+  // entries use (logical-archi's F02/F11 both turned inside the Central
+  // control layer, crowding the approaches into CFG_SYS). Innermost, not
+  // outermost: every node sits inside the whole system too, and the system's
+  // border is not the one the riser must clear.
+  const containerOf = (node: SceneNode): SceneNode | null => {
+    let best: SceneNode | null = null;
+    for (const c of scene.nodes) {
+      if (!c.container) continue;
+      if (
+        node.x >= c.x - 1 &&
+        node.y >= c.y - 1 &&
+        node.x + node.width <= c.x + c.width + 1 &&
+        node.y + node.height <= c.y + c.height + 1
+      ) {
+        if (!best || c.width * c.height < best.width * best.height) best = c;
+      }
+    }
+    return best;
   };
 
   for (const edge of scene.edges) {
@@ -587,17 +606,20 @@ export function clearSideHugs(scene: Scene): void {
           );
         }
         if (clampLo > clampHi) {
-          sideDbg(edge, `clamp run=${run.at}`);
           continue;
         }
         // Every border the run rides offers a way off it; the first that
         // validates wins. Trying only the first hugged node used to skip runs
         // whose wall is shared — medium-tall/tall's F06 rides three borders
         // and only the third one's target is clean.
+        //
+        // A hug fix may be paid for with up to one new crossing (`sideHug` is
+        // rated one tier above `crossings` by design — a run merged with a
+        // frame destroys attribution). The budget is enforced here; the
+        // per-drawing gate then judges the trade.
         const attempt = (target: number): boolean => {
           const delta = target - run.at;
           if (Math.abs(delta) < 0.5) {
-            sideDbg(edge, `delta0 run=${run.at} target=${target} clamp=${clampLo}..${clampHi}`);
             return false;
           }
           const pts = edge.pts.map((p) => ({ ...p }));
@@ -605,7 +627,8 @@ export function clearSideHugs(scene: Scene): void {
           pts[run.i + 1][axis] += delta;
           let ok = true;
           // The slid terminals must not land on sibling attachments — shared
-          // seats are a must-be-zero invariant.
+          // seats are a must-be-zero invariant — nor on a corner, where the
+          // arrowhead reads as belonging to either side.
           for (const [idx, isFirst] of [
             [run.i, true],
             [run.i + 1, false],
@@ -614,6 +637,18 @@ export function clearSideHugs(scene: Scene): void {
             if (!isTerminal) continue;
             const seat = sideOf(edge.pts[idx], leaves);
             if (!seat) continue;
+            const moved = pts[idx];
+            const vertSide = seat.side === "east" || seat.side === "west";
+            const spanLo = vertSide ? seat.node.y : seat.node.x;
+            const spanHi = vertSide ? seat.node.y + seat.node.height : seat.node.x + seat.node.width;
+            if (Math.abs(moved[vertSide ? "y" : "x"] - spanLo) < 2.5) {
+              ok = false;
+              break;
+            }
+            if (Math.abs(moved[vertSide ? "y" : "x"] - spanHi) < 2.5) {
+              ok = false;
+              break;
+            }
             for (const other of scene.edges) {
               if (other.id === edge.id || other.pts.length < 2) continue;
               for (const q of [other.pts[0], other.pts[other.pts.length - 1]]) {
@@ -627,7 +662,6 @@ export function clearSideHugs(scene: Scene): void {
             if (!ok) break;
           }
           if (!ok) {
-            sideDbg(edge, `sibling run=${run.at} target=${target}`);
             return false;
           }
           // Neighbour segments stretch or shrink; they must not reverse or
@@ -642,13 +676,11 @@ export function clearSideHugs(scene: Scene): void {
             }
           }
           if (!ok) {
-            sideDbg(edge, `neighbour run=${run.at} target=${target}`);
             return false;
           }
           // The moved run and its stretched neighbours must stay clear of leaf
           // boxes.
           if (runHitsNode(run.vert, target, run.lo, run.hi)) {
-            sideDbg(edge, `leafhit run=${run.at} target=${target}`);
             return false;
           }
           for (const k of [run.i - 1, run.i + 1]) {
@@ -665,7 +697,6 @@ export function clearSideHugs(scene: Scene): void {
             }
           }
           if (!ok) {
-            sideDbg(edge, `neighbourleaf run=${run.at} target=${target}`);
             return false;
           }
           // Must not land on another side, merge with another run, or buy its
@@ -678,11 +709,11 @@ export function clearSideHugs(scene: Scene): void {
             }
           }
           if (!ok) {
-            sideDbg(edge, `rehug run=${run.at} target=${target}`);
             return false;
           }
           const movedA = pts[run.i];
           const movedB = pts[run.i + 1];
+          let newCrossings = 0;
           for (const other of scene.edges) {
             if (other.id === edge.id) continue;
             for (const o of otherSideRuns.get(other.id) ?? []) {
@@ -691,9 +722,10 @@ export function clearSideHugs(scene: Scene): void {
                 const gapBefore = Math.abs(o.at - run.at);
                 const gapAfter = Math.abs(o.at - target);
                 // Merging is a must-be-zero breach. Parking parallel within
-                // 10px is `nearParallel` — the same tier as the hug being
-                // cleared, and the ladder does not accept same-tier purchases:
-                // refuse the move only when it *creates* the proximity.
+                // 10px is `nearParallel` — not a payable trade for a hug
+                // cleared: it recreates the same visual confusion in the same
+                // corridor. Refuse the move only when it *creates* the
+                // proximity.
                 if (
                   (gapAfter < 3 && shared > 8) ||
                   (gapBefore >= 10 && gapAfter < 10 && shared > 40)
@@ -706,27 +738,331 @@ export function clearSideHugs(scene: Scene): void {
                 const oB = o.vert ? { x: o.at, y: o.hi } : { x: o.hi, y: o.at };
                 const crossedBefore = segmentsCross(edge.pts[run.i], edge.pts[run.i + 1], oA, oB);
                 const crossedAfter = segmentsCross(movedA, movedB, oA, oB);
-                if (!crossedBefore && crossedAfter) {
-                  ok = false;
-                  break;
-                }
+                if (!crossedBefore && crossedAfter) newCrossings++;
               }
             }
             if (!ok) break;
           }
           if (!ok) {
-            sideDbg(edge, `cross run=${run.at} target=${target}`);
+            return false;
+          }
+          if (newCrossings > 1) {
             return false;
           }
           edge.pts = pts;
           otherSideRuns.set(edge.id, sideRunsOf(edge));
           return true;
         };
+        // Re-side fallback: when every translation is blocked, try moving the
+        // terminal to an adjacent perpendicular side of the same node and
+        // routing a fresh riser to it. logical-archi's F02 rides SUIV_FLUX's
+        // left side at x=1027; every translation lands on CFG_SYS's corner or
+        // is blocked by F11's riser at x=1011 (which spans CFG_SYS's whole
+        // west side). Re-siding the terminal to CFG_SYS's west side below the
+        // other entries works — with one unavoidable crossing against F11,
+        // paid per the design rule that a hug fix outranks a crossing. When
+        // the only new crossing is against one foreign flow, that flow's riser
+        // is relocated so the crossing lands low and clear instead of in the
+        // approach band.
+        const relocateRiser = (foreign: SceneEdge, ePts: Point[]): boolean => {
+          // Find foreign's riser (a vertical segment with horizontals on both
+          // sides) and rebuild with it moved west.
+          let r = -1;
+          for (let i = 1; i + 2 < foreign.pts.length; i++) {
+            const a = foreign.pts[i];
+            const b = foreign.pts[i + 1];
+            if (Math.abs(a.x - b.x) >= 0.5 || Math.abs(a.y - b.y) < 0.5) continue;
+            if (Math.abs(foreign.pts[i - 1].y - a.y) >= 0.5) continue;
+            if (Math.abs(foreign.pts[i + 2].y - b.y) >= 0.5) continue;
+            r = i;
+            break;
+          }
+          if (r < 0) return false;
+          const oldX = foreign.pts[r].x;
+          const loY = Math.min(foreign.pts[r].y, foreign.pts[r + 1].y);
+          const hiY = Math.max(foreign.pts[r].y, foreign.pts[r + 1].y);
+          for (let step = 8; step <= 400; step += 8) {
+            const newX = oldX - step;
+            if (newX < 4) break;
+            // Must sit clear of E's riser to avoid a new near-parallel bundle.
+            // E's riser is the second segment of its candidate route.
+            if (ePts.length >= 4) {
+              const eRiserX = ePts[1].x === ePts[2].x ? ePts[1].x : -1;
+              if (eRiserX >= 0 && Math.abs(newX - eRiserX) < 10) continue;
+            }
+            // Must not sit inside the target node's layer — the riser
+            // approaches the layer's side, so it turns in open space west of
+            // the border, keeping the layer's left band clear.
+            const fTarget = sideOf(foreign.pts[foreign.pts.length - 1], leaves);
+            const fContainer = fTarget ? containerOf(fTarget.node) : null;
+            if (fContainer && newX > fContainer.x - 8) continue;
+            const pts = foreign.pts.map((p) => ({ ...p }));
+            pts[r].x = newX;
+            pts[r + 1].x = newX;
+            let ok = true;
+            // Neighbours must not reverse.
+            for (const k of [r - 1, r + 1]) {
+              if (k < 0 || k + 1 >= pts.length) continue;
+              const before = foreign.pts[k + 1].x - foreign.pts[k].x;
+              const after = pts[k + 1].x - pts[k].x;
+              if (Math.abs(after) < 0.5 || before * after < 0) {
+                ok = false;
+                break;
+              }
+            }
+            if (!ok) continue;
+            // No leaf hits, no hugs on the moved riser.
+            if (runHitsNode(true, newX, loY, hiY)) continue;
+            const riserRun = { vert: true, at: newX, lo: loY, hi: hiY };
+            let hug = false;
+            for (const node of scene.nodes) {
+              const fSeat = sideOf(foreign.pts[0], leaves);
+              const fSeat2 = sideOf(foreign.pts[foreign.pts.length - 1], leaves);
+              if ((fSeat?.node === node || fSeat2?.node === node) && !node.container) continue;
+              if (hugTargetOf(riserRun, node) !== null) {
+                hug = true;
+                break;
+              }
+            }
+            if (hug) continue;
+            // The re-sided flow's candidate is fixed; count the crossings
+            // against it (must stay exactly 1 — the intended trade) and
+            // against every other edge (at most 1 more — the user's rule that
+            // a hug fix outranks crossings, applied to the decluttering
+            // relocation: F11's descent cannot leave the layer's left band
+            // without crossing F01's approach into it).
+            let trade = 0;
+            let otherNew = 0;
+            for (const other of scene.edges) {
+              if (other.id === foreign.id) continue;
+              const otherPts = other.id === edge.id ? ePts : other.pts;
+              for (let oi = 0; oi + 1 < otherPts.length; oi++) {
+                for (let fi = 0; fi + 1 < pts.length; fi++) {
+                  const after = segmentsCross(pts[fi], pts[fi + 1], otherPts[oi], otherPts[oi + 1]);
+                  if (other.id === edge.id) {
+                    if (after) trade++;
+                  } else {
+                    const before = segmentsCross(
+                      foreign.pts[fi],
+                      foreign.pts[fi + 1],
+                      other.pts[oi],
+                      other.pts[oi + 1],
+                    );
+                    if (!before && after) otherNew++;
+                  }
+                }
+              }
+            }
+            if (trade !== 1 || otherNew > 1) {
+              continue;
+            }
+            foreign.pts = pts;
+            otherSideRuns.set(foreign.id, sideRunsOf(foreign));
+            return true;
+          }
+          return false;
+        };
+        const resideAttempt = (terminalNode: SceneNode): boolean => {
+          const isStart = run.i === 0;
+          const terminalIdx = isStart ? 0 : edge.pts.length - 1;
+          const neighbourIdx = isStart ? 1 : edge.pts.length - 2;
+          if (neighbourIdx < 0 || neighbourIdx >= edge.pts.length) return false;
+          const seat = sideOf(edge.pts[terminalIdx], leaves);
+          if (!seat || seat.node !== terminalNode) return false;
+          const vertSeat = seat.side === "north" || seat.side === "south";
+          const newSides = vertSeat
+            ? (["west", "east"] as const)
+            : (["north", "south"] as const);
+          for (const newSide of newSides) {
+            const newTerminalValue =
+              newSide === "west"
+                ? terminalNode.x
+                : newSide === "east"
+                  ? terminalNode.x + terminalNode.width
+                  : newSide === "north"
+                    ? terminalNode.y
+                    : terminalNode.y + terminalNode.height;
+            const spanLo = newSide === "west" || newSide === "east" ? terminalNode.y : terminalNode.x;
+            const spanHi =
+              newSide === "west" || newSide === "east"
+                ? terminalNode.y + terminalNode.height
+                : terminalNode.x + terminalNode.width;
+            // Candidate seats along the new side, from the midpoint outward.
+            // Each must clear the behaviour test's spacing rule — the same
+            // `tight` rule the sweep gates — and the side's corners.
+            const sideLength = spanHi - spanLo;
+            const siblings = scene.edges
+              .filter((e) => e.id !== edge.id && e.pts.length >= 2)
+              .flatMap((e) => [e.pts[0], e.pts[e.pts.length - 1]])
+              .map((p) => {
+                const s = sideOf(p, leaves);
+                if (!s || s.node !== terminalNode || s.side !== newSide) return null;
+                return (s.side === "east" || s.side === "west") ? p.y : p.x;
+              })
+              .filter((v): v is number => v !== null);
+            const required =
+              Math.min(12, (sideLength - 6) / (siblings.length + 1)) * 0.8;
+            const alongs: number[] = [];
+            const mid = (spanLo + spanHi) / 2;
+            for (let k = 0; k * 8 + 8 <= sideLength / 2 + 8; k++) {
+              for (const candidate of [mid + k * 8, mid - k * 8]) {
+                if (candidate < spanLo || candidate > spanHi) continue;
+                if (Math.abs(candidate - spanLo) < 2.5 || Math.abs(candidate - spanHi) < 2.5)
+                  continue;
+                if (siblings.some((s) => Math.abs(s - candidate) < Math.max(6, required)))
+                  continue;
+                if (!alongs.includes(candidate)) alongs.push(candidate);
+              }
+            }
+            const neighbour = edge.pts[neighbourIdx];
+            const stepDir = run.at > (run.vert ? neighbour.y : neighbour.x) ? -1 : 1;
+            const nodeContainer = containerOf(terminalNode);
+            for (const newTerminalAlong of alongs) {
+              for (let step = 8; step <= 400; step += 8) {
+                const riserAt = run.at + stepDir * step;
+                if (riserAt < 4) break;
+              // The turn-up must happen in open space before the terminal
+                // node's layer border — never inside the layer's left band.
+                if (nodeContainer) {
+                if (newSide === "west" && riserAt > nodeContainer.x - 8) continue;
+                if (newSide === "east" && riserAt < nodeContainer.x + nodeContainer.width + 8)
+                  continue;
+              }
+              const pts = edge.pts.slice(0, neighbourIdx + 1).map((p) => ({ ...p }));
+              if (run.vert) pts[pts.length - 1].x = riserAt;
+              else pts[pts.length - 1].y = riserAt;
+              if (run.vert) {
+                pts.push({ x: riserAt, y: newTerminalAlong });
+                pts.push({ x: newTerminalValue, y: newTerminalAlong });
+              } else {
+                pts.push({ x: newTerminalAlong, y: riserAt });
+                pts.push({ x: newTerminalAlong, y: newTerminalValue });
+              }
+              let ok = true;
+              // No leaf hits on the new segments.
+              for (let i = neighbourIdx; i + 1 < pts.length; i++) {
+                const a = pts[i];
+                const b = pts[i + 1];
+                const v = Math.abs(a.x - b.x) < 0.5;
+                if (Math.abs(a[v ? "y" : "x"] - b[v ? "y" : "x"]) < 0.5) continue;
+                const at = v ? a.x : a.y;
+                const lo = v ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+                const hi = v ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+                if (runHitsNode(v, at, lo, hi)) {
+                  ok = false;
+                  break;
+                }
+              }
+              if (!ok) continue;
+              // Neighbour segment must not reverse or collapse.
+              if (neighbourIdx > 0) {
+                const before =
+                  (run.vert ? edge.pts[neighbourIdx].x : edge.pts[neighbourIdx].y) -
+                  (run.vert ? edge.pts[neighbourIdx - 1].x : edge.pts[neighbourIdx - 1].y);
+                const after =
+                  (run.vert ? pts[neighbourIdx].x : pts[neighbourIdx].y) -
+                  (run.vert ? pts[neighbourIdx - 1].x : pts[neighbourIdx - 1].y);
+                if (Math.abs(after) < 0.5 || before * after < 0) continue;
+              }
+              // No hugs on the new segments (own nodes exempt).
+              let hug = false;
+              for (let i = neighbourIdx; i + 1 < pts.length && !hug; i++) {
+                const a = pts[i];
+                const b = pts[i + 1];
+                const segVert = Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5;
+                const segHoriz = Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5;
+                if (!segVert && !segHoriz) continue;
+                const segRun = {
+                  vert: segVert,
+                  at: segVert ? a.x : a.y,
+                  lo: segVert ? Math.min(a.y, b.y) : Math.min(a.x, b.x),
+                  hi: segVert ? Math.max(a.y, b.y) : Math.max(a.x, b.x),
+                };
+                for (const node of scene.nodes) {
+                  if (own.has(node)) continue;
+                  if (hugTargetOf(segRun, node) !== null) {
+                    hug = true;
+                    break;
+                  }
+                }
+              }
+            if (hug) continue;
+              // New crossings: 0 → accept; exactly 1 vs one foreign flow whose
+              // riser can relocate → relocate and accept; else reject.
+              const crossedBeforePairs = new Set<string>();
+              const crossedAfterPairs = new Set<string>();
+              for (const other of scene.edges) {
+                if (other.id === edge.id) continue;
+                for (let oi = 0; oi + 1 < other.pts.length; oi++) {
+                  for (let ni = neighbourIdx; ni + 1 < pts.length; ni++) {
+                    const beforeMoves = ni < edge.pts.length - 1;
+                    const before = beforeMoves
+                      ? segmentsCross(edge.pts[ni], edge.pts[ni + 1], other.pts[oi], other.pts[oi + 1])
+                      : false;
+                    const after = segmentsCross(pts[ni], pts[ni + 1], other.pts[oi], other.pts[oi + 1]);
+                    if (!before && after) crossedAfterPairs.add(other.id);
+                    if (before && !after) crossedBeforePairs.add(other.id);
+                  }
+                }
+              }
+              const gained = [...crossedAfterPairs].filter((id) => !crossedBeforePairs.has(id));
+              if (gained.length === 0) {
+                // Shared-seat check on the new terminal.
+                const newTerminal = pts[pts.length - 1];
+                const newSeat = sideOf(newTerminal, leaves);
+                if (!newSeat) continue;
+                let seatOk = true;
+                for (const other of scene.edges) {
+                  if (other.id === edge.id || other.pts.length < 2) continue;
+                  for (const q of [other.pts[0], other.pts[other.pts.length - 1]]) {
+                    const qSeat = sideOf(q, leaves);
+                    if (qSeat && qSeat.node === newSeat.node && qSeat.side === newSeat.side) {
+                      const along =
+                        newSeat.side === "east" || newSeat.side === "west" ? q.y : q.x;
+                      const myAlong =
+                        newSeat.side === "east" || newSeat.side === "west"
+                          ? newTerminal.y
+                          : newTerminal.x;
+                      if (Math.abs(along - myAlong) < 6) seatOk = false;
+                    }
+                  }
+                  if (!seatOk) break;
+                }
+                if (!seatOk) continue;
+                edge.pts = pts;
+                otherSideRuns.set(edge.id, sideRunsOf(edge));
+                return true;
+              }
+              if (gained.length === 1) {
+                const foreign = scene.edges.find((e) => e.id === gained[0]);
+                if (foreign && relocateRiser(foreign, pts)) {
+                  edge.pts = pts;
+                  otherSideRuns.set(edge.id, sideRunsOf(edge));
+                  return true;
+                }
+              }
+            }
+            }
+          }
+          return false;
+        };
         for (const rawTarget of targets) {
           const target = Math.min(Math.max(rawTarget, clampLo), clampHi);
           if (attempt(target)) {
             applied = true;
             break;
+          }
+        }
+        // Translation blocked (corner landings, crossings, stub walls): re-side
+        // the terminal on its own node to an adjacent perpendicular side.
+        if (!applied) {
+          const isTerminal = run.i === 0 || run.i + 1 === edge.pts.length - 1;
+          if (isTerminal) {
+            const terminalIdx = run.i === 0 ? 0 : edge.pts.length - 1;
+            const terminalSeat = sideOf(edge.pts[terminalIdx], leaves);
+            if (terminalSeat && resideAttempt(terminalSeat.node)) {
+              applied = true;
+            }
           }
         }
         if (applied) break;

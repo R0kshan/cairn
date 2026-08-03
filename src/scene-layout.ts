@@ -841,10 +841,6 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   try {
     const constrained = makeGraph(winnerDirection, winnerOptions);
     constrainPorts(constrained, scene, away, model);
-    if (process.env.CAIRN_DEBUG_PORTS) {
-      const { writeFileSync } = await import("node:fs");
-      writeFileSync(".tmp/constrained-graph.json", JSON.stringify(constrained));
-    }
     const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
     const rescene = sceneFromResult(reresult, Date.now() - startTime);
     const allEdges = (s: Scene) => new Set(s.edges.map((edge) => edge.id));
@@ -853,32 +849,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
     for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
     const verdict = relayoutVerdict(before, after);
-    if (process.env.CAIRN_DEBUG_PORTS) {
-      const normalize = (key: string) => key.replace(/@[-\d.,]+$/, "").replace(/:\d+(?=@|$)/, "");
-      const tally = (profile: Profile) => {
-        const out = new Map<string, { tier: number; count: number }>();
-        for (const [key, tier] of profile) {
-          const id = normalize(key);
-          const entry = out.get(id) ?? { tier, count: 0 };
-          entry.count++;
-          out.set(id, entry);
-        }
-        return out;
-      };
-      const was = tally(before);
-      const now = tally(after);
-      const diffs: string[] = [];
-      for (const key of new Set([...was.keys(), ...now.keys()])) {
-        const a = was.get(key)?.count ?? 0;
-        const b = now.get(key)?.count ?? 0;
-        if (a !== b) diffs.push(`${key}@${(now.get(key) ?? was.get(key))!.tier}:${a}->${b}`);
-      }
-      console.log(`[ports] verdict=${verdict} diffs=${diffs.join(" ")}`);
-    }
     return verdict >= 0 ? rescene : scene;
-  } catch (error) {
-    if (process.env.CAIRN_DEBUG_PORTS)
-      console.log(`[ports] constrained pass failed: ${String(error).slice(0, 300)}`);
+  } catch {
     return scene;
   }
 }
