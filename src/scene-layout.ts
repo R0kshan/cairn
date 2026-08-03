@@ -751,7 +751,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // hug fix at y=445 was batch-reverted to y=451 because another edge's label
     // harm outweighed it. Moved here, the fix is permanent; it is present in
     // both audit states, so the renderer's batch comparison is unaffected.
-    clearSideHugs(scene);
+    clearSideHugs(scene, settledTitles);
     anchorFlowLabels(scene, settledTitles);
     // Adjacent-edge crossings between two flows seated on the same leaf side,
     // further out than the §4b fan can see, are swapped here for the same
