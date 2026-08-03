@@ -15,7 +15,7 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
-import { optimiseRoutes, clearSideHugs, spreadAttachments, tidyEdges } from "./edge-tidy.ts";
+import { optimiseRoutes, clearSideHugs, spreadAttachments, swapCrossingSiblingSeats, tidyEdges } from "./edge-tidy.ts";
 import { inspect, type Profile } from "./readability.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
@@ -724,12 +724,6 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // leaves the side crowded. The same spread that ran inside `tidyEdges`
     // runs here again, after the pass that re-crowds.
     spreadAttachments(scene);
-    // `compactVertical` shrank the gaps the side-clearance pass judged, so a
-    // run that cleared its sides before compaction can hug one after it. Run
-    // the clearance again once the geometry is final — labels are re-anchored
-    // below, after the last move.
-    clearSideHugs(scene);
-    anchorFlowLabels(scene, settledTitles);
     // Record *every* edge the repair moved. Restricting this to edges whose
     // label was seated beforehand made the rollback partial — the renderer put
     // some flows back while leaving the rest where the optimiser had moved them,
@@ -749,6 +743,22 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         );
       if (moved) edge.repairedFrom = original;
     }
+    // `compactVertical` shrank the gaps the side-clearance pass judged, so a
+    // run that cleared its sides before compaction can hug one after it. Run
+    // the clearance *after* the repair recording so the hug fix is not swept
+    // into the renderer's batch audit and reverted as collateral of an
+    // unrelated optimiser trade — measured on application-large-fr/wide, F19's
+    // hug fix at y=445 was batch-reverted to y=451 because another edge's label
+    // harm outweighed it. Moved here, the fix is permanent; it is present in
+    // both audit states, so the renderer's batch comparison is unaffected.
+    clearSideHugs(scene);
+    anchorFlowLabels(scene, settledTitles);
+    // Adjacent-edge crossings between two flows seated on the same leaf side,
+    // further out than the §4b fan can see, are swapped here for the same
+    // reason clearSideHugs runs here: outside the renderer's batch audit so an
+    // unrelated optimiser trade cannot revert the swap. Strict gate — only
+    // swaps that strictly remove a crossing without shuffling it elsewhere.
+    swapCrossingSiblingSeats(scene);
     return scene;
   };
 

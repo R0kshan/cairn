@@ -736,6 +736,172 @@ export function clearSideHugs(scene: Scene): void {
   }
 }
 
+/**
+ * Swap the seats of two flows that share a leaf side when their routes cross
+ * and a seat swap clears the crossing. The §4b fan-tangle rule only catches
+ * crossings within `FAN_REACH` (48px) of the shared side; logical-archi's F05
+ * (into OPE's east side) and F06 (out of OPE's east side) cross 226px
+ * down-river — outside the fan, unseen by the router, but unmistakable to the
+ * eye. The fix is the seat order: inbound above outbound when the outbound
+ * descends, so the outbound's vertical no longer climbs through the inbound's
+ * horizontal.
+ *
+ * Strictly opportunistic. A swap is taken only when the two routes stop
+ * crossing each other, neither acquires a new crossing against any other
+ * edge, neither hugs a side it didn't hug before, and neither's new seat
+ * collides with a third edge's attachment. Anything less strict is the
+ * "shuffle the tangle" pattern the maintainers measured as worse globally
+ * (crossings 287→501) — the strict gate is what makes it safe.
+ *
+ * Called from the layout driver after the repair-recording loop, like
+ * `clearSideHugs`, so the renderer's batch audit cannot revert the swap as
+ * collateral of an unrelated optimiser trade.
+ */
+export function swapCrossingSiblingSeats(scene: Scene): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  type Seat = { node: SceneNode; side: Side; along: number };
+  const seatOf = (p: Point): Seat | null => {
+    const s = sideOf(p, leaves);
+    if (!s) return null;
+    return {
+      node: s.node,
+      side: s.side,
+      along: s.side === "east" || s.side === "west" ? p.y : p.x,
+    };
+  };
+  const buildSwap = (edge: SceneEdge, terminalIdx: number, newAlong: number): Point[] | null => {
+    // terminalIdx is 0 (start) or last (end). The neighbour at the bend shares
+    // the terminal's along, so both move together to keep the immediate
+    // segment orthogonal.
+    const pts = edge.pts.map((p) => ({ ...p }));
+    const last = pts.length - 1;
+    const ti = terminalIdx === 0 ? 0 : last;
+    const ni = terminalIdx === 0 ? 1 : last - 1;
+    if (ni < 0 || ni > last) return null;
+    const s = seatOf(edge.pts[ti]);
+    if (!s) return null;
+    const v = s.side === "east" || s.side === "west";
+    const oldAlong = v ? pts[ti].y : pts[ti].x;
+    const delta = newAlong - oldAlong;
+    if (Math.abs(delta) < 0.5) return null;
+    if (v) {
+      pts[ti].y += delta;
+      pts[ni].y += delta;
+    } else {
+      pts[ti].x += delta;
+      pts[ni].x += delta;
+    }
+    return pts;
+  };
+  const crossingsOf = (a: Point[], b: Point[]): number => {
+    let count = 0;
+    for (let i = 0; i + 1 < a.length; i++)
+      for (let j = 0; j + 1 < b.length; j++)
+        if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) count++;
+    return count;
+  };
+  const wouldHug = (pts: Point[]): boolean => {
+    const own = new Set<SceneNode>();
+    for (const p of [pts[0], pts[pts.length - 1]]) {
+      const s = sideOf(p, leaves);
+      if (s) own.add(s.node);
+    }
+    for (let i = 0; i + 1 < pts.length; i++) {
+      const a = pts[i];
+      const b = pts[i + 1];
+      const vert = Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5;
+      const horiz = Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5;
+      if (!vert && !horiz) continue;
+      for (const node of leaves) {
+        if (own.has(node)) continue;
+        const shared = vert
+          ? Math.min(Math.max(a.y, b.y), node.y + node.height) - Math.max(Math.min(a.y, b.y), node.y)
+          : Math.min(Math.max(a.x, b.x), node.x + node.width) - Math.max(Math.min(a.x, b.x), node.x);
+        if (shared <= 24) continue;
+        const gap = vert
+          ? Math.min(Math.abs(a.x - node.x), Math.abs(a.x - (node.x + node.width)))
+          : Math.min(Math.abs(a.y - node.y), Math.abs(a.y - (node.y + node.height)));
+        if (gap < 3) return true;
+      }
+    }
+    return false;
+  };
+
+  for (let i = 0; i < scene.edges.length; i++) {
+    const A = scene.edges[i];
+    if (A.pts.length < 2) continue;
+    const aStart = seatOf(A.pts[0]);
+    const aEnd = seatOf(A.pts[A.pts.length - 1]);
+    if (!aStart && !aEnd) continue;
+    for (let j = i + 1; j < scene.edges.length; j++) {
+      const B = scene.edges[j];
+      if (B.pts.length < 2) continue;
+      const bStart = seatOf(B.pts[0]);
+      const bEnd = seatOf(B.pts[B.pts.length - 1]);
+      if (!bStart && !bEnd) continue;
+      // Find a matching shared side (one of A's terminals pairs with one of B's).
+      const match =
+        aStart && bStart && aStart.node === bStart.node && aStart.side === bStart.side
+          ? { aIdx: 0, bIdx: 0, seat: aStart }
+          : aStart && bEnd && aStart.node === bEnd.node && aStart.side === bEnd.side
+            ? { aIdx: 0, bIdx: 1, seat: aStart }
+            : aEnd && bStart && aEnd.node === bStart.node && aEnd.side === bStart.side
+              ? { aIdx: 1, bIdx: 0, seat: aEnd }
+              : aEnd && bEnd && aEnd.node === bEnd.node && aEnd.side === bEnd.side
+                ? { aIdx: 1, bIdx: 1, seat: aEnd }
+                : null;
+      if (!match) continue;
+      const aAlong = match.aIdx === 0 ? aStart!.along : aEnd!.along;
+      const bAlong = match.bIdx === 0 ? bStart!.along : bEnd!.along;
+      if (Math.abs(aAlong - bAlong) < 0.5) continue;
+      // Only proceed if A and B actually cross right now.
+      if (crossingsOf(A.pts, B.pts) === 0) continue;
+      const aCandidate = buildSwap(A, match.aIdx, bAlong);
+      const bCandidate = buildSwap(B, match.bIdx, aAlong);
+      if (!aCandidate || !bCandidate) continue;
+      // The mutual crossing must go away.
+      if (crossingsOf(aCandidate, bCandidate) > 0) continue;
+      // No new crossings with any third edge.
+      let ok = true;
+      for (const other of scene.edges) {
+        if (other.id === A.id || other.id === B.id) continue;
+        const before = crossingsOf(A.pts, other.pts) + crossingsOf(B.pts, other.pts);
+        const after = crossingsOf(aCandidate, other.pts) + crossingsOf(bCandidate, other.pts);
+        if (after > before) {
+          ok = false;
+          break;
+        }
+      }
+      if (!ok) continue;
+      // No new hugs on either route.
+      if (wouldHug(aCandidate) || wouldHug(bCandidate)) continue;
+      // No shared-seat collision: neither new terminal may collide with a
+      // third edge's attachment on the same side.
+      const aNewSeat = seatOf(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1]);
+      const bNewSeat = seatOf(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1]);
+      if (!aNewSeat || !bNewSeat) continue;
+      for (const other of scene.edges) {
+        if (other.id === A.id || other.id === B.id) continue;
+        for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
+          const s = seatOf(p);
+          if (!s) continue;
+          for (const ns of [aNewSeat, bNewSeat]) {
+            if (s.node === ns.node && s.side === ns.side && Math.abs(s.along - ns.along) < 6) {
+              ok = false;
+              break;
+            }
+          }
+          if (!ok) break;
+        }
+        if (!ok) break;
+      }
+      if (!ok) continue;
+      A.pts = aCandidate;
+      B.pts = bCandidate;
+    }
+  }
+}
+
 export function tidyEdges(
   scene: Scene,
   titleBoxes: TitleBox[] = [],

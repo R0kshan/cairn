@@ -82,8 +82,8 @@
 <path d="M 172 706 L 559 706 A 5 5 0 0 1 569 706 L 1027 706 L 1027 426.8333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1167.5 312.8333333333333 L 1167.5 92.5 L 642 92.5 A 5 5 0 0 0 632 92.5 L 5.5 92.5 L 5.5 554 L 55.5 554" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 172 639 L 224 639 L 224 586.5 L 366 586.5 L 366 565.5 L 446.5 565.5 A 5 5 0 0 1 456.5 565.5 L 559 565.5 A 5 5 0 0 1 569 565.5 L 927 565.1666666666667 L 927 395.5 L 1006 395.5 A 5 5 0 0 1 1016 395.5 L 1021 395.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 625 287.1666666666667 L 625 200 L 411 200 A 5 5 0 0 0 401 200 L 180 200" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 180 182 L 406 182 L 406 377.5 L 446.5 377.5 A 5 5 0 0 1 456.5 377.5 L 474 377.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 625 287.1666666666667 L 625 182 L 180 182" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 180 200 L 406 200 L 406 377.5 L 446.5 377.5 A 5 5 0 0 1 456.5 377.5 L 474 377.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 251 359.5 L 329 359.5 L 329 444.5 L 446.5 444.5 A 5 5 0 0 1 456.5 444.5 L 474 444.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1186 348.3333333333333 L 1456.5 348.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1186 470.3333333333333 L 1408 470.5 L 1408 545.5 L 1453 545.5 A 5 5 0 0 1 1463 545.5 L 1471.5 545.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -101,15 +101,15 @@
 <text x="339.5" y="103" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">feeds from various sources</text>
 <text x="295" y="582.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Enable/disable</text>
 <text x="295" y="597" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">a display terminal</text>
-<text x="576.75" y="196" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report of</text>
-<text x="576.75" y="210.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">anomalies and inconsistencies</text>
-<rect x="549.75" y="218.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="576.75" y="229.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
-<text x="293" y="170.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Write and broadcast</text>
-<text x="293" y="185.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages to central</text>
-<text x="293" y="199.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">control</text>
-<rect x="266" y="207.75" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="293" y="218.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="625" y="217.29166666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Report of</text>
+<text x="625" y="231.79166666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">anomalies and inconsistencies</text>
+<rect x="598" y="239.79166666666669" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="625" y="250.79166666666669" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anomaly</text>
+<text x="293" y="188.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Write and broadcast</text>
+<text x="293" y="203.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages to central</text>
+<text x="293" y="217.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">control</text>
+<rect x="266" y="225.75" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="293" y="236.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
 <text x="290" y="362.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consult</text>
 <text x="1321.25" y="337.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Real-time broadcast of</text>
 <text x="1321.25" y="351.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">disruption information</text>

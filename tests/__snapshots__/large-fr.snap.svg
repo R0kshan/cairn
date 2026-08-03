@@ -135,13 +135,13 @@
 <text x="3793" y="597.3" font-size="12.5" text-anchor="middle" fill="#17202c">Plateforme d'avis</text>
 <text x="3793" y="611.8" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
 <path d="M 338 235 L 362 235 L 362 207 L 1681 207 L 1681 531.7 L 1809 531.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 338 179 L 1696 179 A 5 5 0 0 1 1706 179 L 1963 179 L 1963 610.7 L 1917 610.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 338 179 L 1696 179 A 5 5 0 0 1 1706 179 L 1963 179 L 1963 575.7 L 1917 575.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 338 81.5 L 1701 81.5 L 1701 459 L 1809 459.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1917 538.4 L 1958 538.4 A 5 5 0 0 1 1968 538.4 L 1977 538.4 L 1977 507 L 2139 507 L 2139 532 L 2213 532 L 2213 580.5 L 2254.1 580.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 590.8 L 1958 590.8 A 5 5 0 0 1 1968 590.8 L 2254.1 590.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 590.8 L 2080 590.8 A 5 5 0 0 1 2090 590.8 L 2254.1 590.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1917 441.7 L 1936 441.7 A 5 5 0 0 1 1946 441.7 L 1958 441.7 A 5 5 0 0 1 1968 441.7 L 2387 441.7 L 2387 583.5 L 2385 583.5 A 5 5 0 0 0 2375 583.5 L 2362.1 583.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1917 526.4 L 1967 526.4 L 1967 474.5 L 2149 474.5 L 2149 522 L 2253 522" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 575.7 L 1958 575.7 A 5 5 0 0 1 1968 575.7 L 2085 575.7 L 2085 547.3 L 2208 547.3 A 5 5 0 0 1 2218 547.3 L 2253 547.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 610.7 L 2085 610.7 L 2085 547.3 L 2208 547.3 A 5 5 0 0 1 2218 547.3 L 2253 547.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2370 529.8 L 2380 529.8 L 2380 1215 L 2331 1215 A 5 5 0 0 0 2321 1215 L 1409 1215 A 5 5 0 0 0 1399 1215 L 1252 1215 A 5 5 0 0 0 1242 1215 L 1159 1215 L 1159 1001" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2362.1 601 L 2375 601 A 5 5 0 0 1 2385 601 L 2387 601 A 5 5 0 0 1 2397 601 L 2463 601 L 2463 574 L 2487 574" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2529 580 L 2529 947.5 L 2397 947.5 A 5 5 0 0 0 2387 947.5 L 2385 947.5 A 5 5 0 0 0 2375 947.5 L 2331 947.5 A 5 5 0 0 0 2321 947.5 L 1751 947.5 L 1751 543.7 L 1809 543.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -189,8 +189,8 @@
 <text x="2152" y="437.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Parcourir l'offre</text>
 <text x="2152" y="452.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">magasin</text>
 <text x="2058" y="477.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Constituer le panier</text>
-<text x="2085" y="550.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Panier mobile</text>
-<text x="2085" y="564.9" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">synchronisé</text>
+<text x="1962" y="606.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Panier mobile</text>
+<text x="1962" y="621.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">synchronisé</text>
 <text x="1769.5" y="1211" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appliquer les offres</text>
 <text x="1769.5" y="1225.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">en cours</text>
 <text x="2412.6" y="597" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Contexte de</text>

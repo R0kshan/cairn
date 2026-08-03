@@ -526,6 +526,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       settleLabelPositions();
       const withoutRepair = stateHarm();
       const breachesWithout = breaches();
+      const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
       // Two finished drawings, judged the same way; the less damaged one ships.
       //
       // This is the last point in the pipeline where geometry and labels have
@@ -540,7 +541,6 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       // visible to the metrics this audit can compute after settling.
       // An invariant the repair breaks and the revert does not is not payable,
       // whatever else the repair cleared. Everything below that is a trade.
-      const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
       if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
         repaired.forEach((edge, index) => {
           edge.pts = repairedRoutes[index];

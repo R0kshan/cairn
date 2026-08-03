@@ -145,7 +145,7 @@
 <path d="M 1942 579.5 L 1952 579.5 L 1952 762 L 1893 762 A 5 5 0 0 0 1883 762 L 1511 762 A 5 5 0 0 0 1501 762 L 1037 762 A 5 5 0 0 0 1027 762 L 1025 762 A 5 5 0 0 0 1015 762 L 956 762 L 956 335.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1942 653 L 1947 653 A 5 5 0 0 1 1957 653 L 1959 653 A 5 5 0 0 1 1969 653 L 1971 653 A 5 5 0 0 1 1981 653 L 1987 653 A 5 5 0 0 1 1997 653 L 2008 653" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2050 668.7 L 2050 778 L 1997 778 A 5 5 0 0 0 1987 778 L 1981 778 A 5 5 0 0 0 1971 778 L 1969 778 A 5 5 0 0 0 1959 778 L 1893 778 A 5 5 0 0 0 1883 778 L 1506 778 L 1506 664" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1942 512.5 L 1964 512.5 L 1964 829 L 1893 829 A 5 5 0 0 0 1883 829 L 1032 829 L 1032 166.4 L 1010 166.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1942 524.5 L 1964 524.5 L 1964 829 L 1893 829 A 5 5 0 0 0 1883 829 L 1032 829 L 1032 166.4 L 1010 166.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1942 591.5 L 1947 591.5 A 5 5 0 0 1 1957 591.5 L 1959 591.5 A 5 5 0 0 1 1969 591.5 L 1976 591.5 L 1976 860 L 1893 860 A 5 5 0 0 0 1883 860 L 1020 860 L 1020 263.4 L 1010 263.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1010 227.4 L 1020 227.4 L 1020 188.9 L 1027 188.9 A 5 5 0 0 1 1037 188.9 L 1076 188.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1149 176.4 L 1149 158.5 L 3061 158.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -171,7 +171,7 @@
 <path d="M 2691 281.3 L 2757 281.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2793 304.8 L 2793 645.2 L 2225 645.2 A 5 5 0 0 0 2215 645.2 L 2132 645.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2865 273.5 L 2993 273.5 L 2993 360 L 3069 360" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3123 383 L 3123 829 L 1992 829 L 1992 524.5 L 1969 524.5 A 5 5 0 0 0 1959 524.5 L 1942 524.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3123 383 L 3123 829 L 1992 829 L 1992 512.5 L 1942 512.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 144 122 L 371 122 A 5 5 0 0 1 381 122 L 593 122 A 5 5 0 0 1 603 122 L 858 122 L 858 210.9 L 1015 210.9 A 5 5 0 0 1 1025 210.9 L 1027 210.9 A 5 5 0 0 1 1037 210.9 L 1076 210.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 144 371.5 L 406 371.5 L 406 408 L 557 407.6" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1010 239.4 L 1027 239.4 A 5 5 0 0 1 1037 239.4 L 1284 239.4 L 1284 177 L 3003 177 L 3003 293 L 3061 293" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -250,8 +250,8 @@
 <text x="2462.5" y="648" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">36</text>
 <text x="3031" y="362.9" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">37</text>
 <text x="3031" y="362.9" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">37</text>
-<text x="1992" y="679.6" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">38</text>
-<text x="1992" y="679.6" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">38</text>
+<text x="1992" y="673.6" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">38</text>
+<text x="1992" y="673.6" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">38</text>
 <text x="967" y="213.8" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">39</text>
 <text x="967" y="213.8" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">39</text>
 <text x="481.5" y="410.6" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">40</text>
