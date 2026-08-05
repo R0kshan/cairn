@@ -223,6 +223,15 @@ and the renderer's settler. `labelStraddled` is the one tier-1 defect a pass
 avoids up front — not by scoring it, but by deriving channel lanes far enough
 from parallel runs that the label cannot land on both (§4j).*
 
+### `sideHug` · ratchet
+**What you see:** a flow line merging with a node or container border so they
+read as one line.
+A run travelling within 3px of a side it does not attach to, crossing more than
+24px of that side. The eye cannot tell the flow from the frame it rides. Rated
+tier 1 because it destroys attribution — a hug fix may be paid for with a
+crossing (verified on logical-archi's F02, where every re-side crosses F11's
+riser), never the reverse.
+
 ---
 
 ## Tier 2 — the line is hard to follow
