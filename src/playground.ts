@@ -40,10 +40,9 @@ export async function compile(
   const { model, diags } = parse(source);
   if (options?.theme) model.style.theme = options.theme;
   diags.push(...validate(model));
-  const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
-  if (errors.length || !model.type || !views[model.type]) {
-    return { svg: null, diagnostics: diags, metrics: null };
-  }
+  const errors = diags.filter((d) => d.severity === "error");
+  if (errors.length) return { svg: null, diagnostics: diags, metrics: null };
+  if (!model.type || !views[model.type]) return { svg: null, diagnostics: diags, metrics: null };
   const view = views[model.type];
   const scene = await layout(model, view);
   const { svg, overlapsAfter } = render(model, view, scene);

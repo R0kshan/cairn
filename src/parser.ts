@@ -357,7 +357,7 @@ function applyStyleEntry(
   inline: StyleProps | null,
   diagnostics: Diagnostic[],
 ) {
-  const extractStroke = (tokens: Token[], _span: Span): NonNullable<StyleProps["stroke"]> => {
+  const extractStroke = (tokens: Token[]): NonNullable<StyleProps["stroke"]> => {
     const strokeProps: NonNullable<StyleProps["stroke"]> = {};
     for (const token of tokens) {
       if (token.kind === "color") {
@@ -395,7 +395,7 @@ function applyStyleEntry(
   const keyText = key.text;
   if (inline) {
     if (keyText === "fill" && firstValue()?.kind === "color") inline.fill = firstValue().text;
-    else if (keyText === "stroke") inline.stroke = extractStroke(values, key.span);
+    else if (keyText === "stroke") inline.stroke = extractStroke(values);
     else if (keyText === "text" && firstValue()?.kind === "color") inline.text = firstValue().text;
     else if (
       keyText === "label" &&
@@ -480,7 +480,7 @@ function applyStyleEntry(
       break;
     }
     case "flow-stroke": {
-      const stroke = extractStroke(values, key.span);
+      const stroke = extractStroke(values);
       target.flowStroke = { ...target.flowStroke, ...stroke };
       if (stroke.color) target.flowStrokeColorSet = true;
       break;
@@ -527,7 +527,7 @@ function applyStyleEntry(
       if (styleTargetKind)
         target.kind[styleTargetKind] = {
           ...target.kind[styleTargetKind],
-          stroke: extractStroke(values, key.span),
+          stroke: extractStroke(values),
         };
       else reportBadValue(firstValue() ?? key, "`stroke <kind>: #hex solid|dashed|dotted <width>`");
       break;

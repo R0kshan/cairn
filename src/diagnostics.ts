@@ -57,8 +57,8 @@ export function renderHuman(
     report.push("");
   }
 
-  const errorCount = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
-  const warningCount = diagnostics.filter((diagnostic) => diagnostic.severity === "warning").length;
+  const errorCount = diagnostics.filter((d) => d.severity === "error").length;
+  const warningCount = diagnostics.filter((d) => d.severity === "warning").length;
   if (errorCount + warningCount > 0) {
     const parts = [];
     if (errorCount)
@@ -76,23 +76,23 @@ export function renderJson(file: string, diagnostics: Diagnostic[]): string {
   return JSON.stringify(
     {
       file,
-      diagnostics: diagnostics.map((diagnostic) => ({
-        code: diagnostic.code,
-        severity: diagnostic.severity,
+      diagnostics: diagnostics.map((d) => ({
+        code: d.code,
+        severity: d.severity,
         span: {
           file,
-          line: diagnostic.span.line,
-          col: diagnostic.span.col,
-          len: diagnostic.span.len,
+          line: d.span.line,
+          col: d.span.col,
+          len: d.span.len,
         },
-        message: diagnostic.message,
-        note: diagnostic.note ?? null,
-        help: diagnostic.help ?? null,
-        fix: diagnostic.fix ?? null,
+        message: d.message,
+        note: d.note ?? null,
+        help: d.help ?? null,
+        fix: d.fix ?? null,
       })),
       summary: {
-        errors: diagnostics.filter((diagnostic) => diagnostic.severity === "error").length,
-        warnings: diagnostics.filter((diagnostic) => diagnostic.severity === "warning").length,
+        errors: diagnostics.filter((d) => d.severity === "error").length,
+        warnings: diagnostics.filter((d) => d.severity === "warning").length,
       },
     },
     null,

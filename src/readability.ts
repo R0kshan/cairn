@@ -48,6 +48,12 @@ export type Profile = Map<string, number>;
 
 /** Crossings nearer than this to a shared node side are fan tangles (§4b). */
 const FAN_REACH = 48;
+/** Squared distance from `hit` to the nearest point on `box`'s interior or edge. */
+const boxToSegmentSq = (box: { x: number; y: number; width: number; height: number }, hit: { x: number; y: number }) => {
+  const dx = Math.max(0, box.x - hit.x, hit.x - (box.x + box.width));
+  const dy = Math.max(0, box.y - hit.y, hit.y - (box.y + box.height));
+  return dx * dx + dy * dy;
+};
 /** Interior segments this short read as a staircase step. */
 const JOG_LIMIT = 20;
 /** A flow needs at most two turns; a third means a side was chosen badly (§4g). */
@@ -304,19 +310,9 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
           const sy = (p.y + q.y) / 2 - lead;
           const sx2 = sx + label.width;
           const sy2 = sy + label.height;
-          let blocked = false;
-          for (const box of leaves)
-            if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
-              blocked = true;
-              break;
-            }
-          if (!blocked)
-            for (const box of titleBoxes)
-              if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
-                blocked = true;
-                break;
-              }
-          if (!blocked) seatable = true;
+          const hits = (b: { x: number; y: number; width: number; height: number }) =>
+            sx < b.x + b.width && b.x < sx2 && sy < b.y + b.height && b.y < sy2;
+          if (!leaves.some(hits) && !titleBoxes.some(hits)) seatable = true;
         }
         if (!seatable) profile.set(`unlabelled:${edge.id}`, 1);
       }
@@ -409,9 +405,7 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
             // Inside a fan the two flows share, it is worse (§4b).
             for (const end of fanEnds) {
               if (!end) continue;
-              const dx = Math.max(0, end.node.x - hit.x, hit.x - (end.node.x + end.node.width));
-              const dy = Math.max(0, end.node.y - hit.y, hit.y - (end.node.y + end.node.height));
-              if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH)
+              if (boxToSegmentSq(end.node, hit) <= FAN_REACH * FAN_REACH)
                 profile.set(`fan:${pair(edge.id, other.id)}@${end.node.id}`, 2);
             }
           }
