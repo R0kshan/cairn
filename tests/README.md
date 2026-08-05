@@ -71,7 +71,7 @@ So the baseline applies the same five-tier ladder the router does. A drawing may
 get worse at tier N **only if it improved at a tier that matters more**. Those
 show in the output as:
 
-```
+```text
 26 ladder trade(s) accepted — a lower-priority defect paid for a higher-priority fix:
   ~ application-large/wide: jog<=6 0 -> 1 (paid for a tier 2 gain)
 ```

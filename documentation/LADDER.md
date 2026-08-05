@@ -4,7 +4,7 @@ Every defect cairn can see, what it looks like on the page, how much it matters,
 and how it is enforced.
 
 [`FLOW_ROUTING.md`](FLOW_ROUTING.md) explains why the ladder exists.
-[`INVARIANTS.md`](../INVARIANTS.md) states the rules normatively. **This file is
+[`INVARIANTS.md`](INVARIANTS.md) states the rules normatively. **This file is
 the one to read when a sweep line puzzles you**, or before touching anything that
 scores or gates a drawing.
 
@@ -32,7 +32,7 @@ tier-4 defect could in principle be forbidden outright.
 
 > *Invariant:* "this SVG must have zero label overlaps."
 > Absolute, about the finished drawing, never traded away.
-
+>
 > *Ladder:* "moving this flow removes a crossing but adds two corners — is that
 > better?" A preference ordering among imperfect outcomes.
 

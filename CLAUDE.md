@@ -30,7 +30,7 @@ typed validation, deterministic output.
 
 ## Pipeline (`src/`)
 
-```
+```text
 .cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → label-anchor.ts → compact.ts → svg-render.ts → SVG
 ```
 
