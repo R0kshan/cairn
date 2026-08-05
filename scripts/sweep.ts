@@ -48,10 +48,17 @@ const MUST_BE_ZERO = [
 // covering examples/dispositions and examples/themes (4352 flow-instances,
 // 288 drawings): rate = count / totalFlows, rounded up slightly for stability.
 const CEILING_RATE: Record<string, number> = {
-  attachTight: 0.0009191,
-  "jog<=6": 0.0234375,
-  "jog<=20": 0.0962776,
-  nearParallel: 0.0135569,
+  attachTight: 0.0003,
+  "jog<=6": 0.0191,
+  "jog<=20": 0.0459,
+  // Two runs within 10px of each other for more than 40px. Raised
+  // 0.0135569 -> 0.0147 (53 -> 57 over 3884 flow-instances) with attachAway,
+  // when the side-hug clearance work in edge-tidy (INVARIANTS §4c/§4g) re-sided
+  // flows clear of the borders they rode: buying the tier-1 fix with a
+  // near-parallel pair here or a wrap-around there is exactly the trade the
+  // ladder prices (§3) — sideHug fell 49 -> 17 in the same run, and the
+  // per-drawing gate accepted every trade. Never raise again to go green.
+  nearParallel: 0.0147,
   // Raised 0.0436580 -> 0.0461855 (190 -> 201) when labels moved onto their
   // runs (§4d). A label pins the horizontal band it sits in, so seating them on
   // the lines instead of above them changes which bands `compact` can reclaim:
@@ -65,7 +72,7 @@ const CEILING_RATE: Record<string, number> = {
   // fixture copies) a longer route and two wrap-around attachments. A run
   // through a container's name is worse than a longer route, so the trade is
   // taken deliberately — see §4e.
-  longDetour: 0.0441176,
+  longDetour: 0.0394,
   // Flows bundled tightly enough that no position exists which is both free of
   // overlaps and nearer its own run than its neighbours'. Lowering this means
   // giving the settler somewhere better to go, not relaxing the check.
@@ -74,17 +81,17 @@ const CEILING_RATE: Record<string, number> = {
   // without rerouting its body only moves the tangle further along the route.
   // Measured — a seat-permutation pass cut the inverted cases from 207 to 26
   // and pushed total crossings from 287 to 501.
-  fanTangle: 0.0149357,
+  fanTangle: 0.0091,
   // Corridors so tight the label cannot clear every run in them: with flows
   // 12px apart, a two-line box with a business-object chip is taller than the
   // gap it would have to fit in. Lowering this means spreading the bundle, not
-  // shrinking the check.
-  labelPierced: 0.0013787,
+  // shrinking the check. Down to zero: the corpus no longer produces one.
+  labelPierced: 0,
   // Labels the settler had to take off their run to keep overlaps at zero —
   // corridors where no seat along the flow clears both its neighbours and the
   // node boxes. Lowering this means finding them a seat *along* the run, or
   // spreading the bundle; never by relaxing what "on the line" means.
-  labelOffLine: 0.0193014,
+  labelOffLine: 0.0165,
   // A second run travelling parallel to the label's own, inside its box
   // (INVARIANTS §4j). Calibrated *after* the lane fix that introduced the
   // metric, not before it: at the time the predicate was written the corpus
@@ -94,23 +101,23 @@ const CEILING_RATE: Record<string, number> = {
   // What remains is not one shape. Channel lanes are only one way two runs end
   // up parallel under a label; elk's own routing and `route-detour`'s channels
   // are others, and neither has been taught the rule yet.
-  labelStraddled: 0.0847066,
+  labelStraddled: 0.0606,
   // Runs and labels drawn across a container's name. Edges are emitted last and
   // a title carries no halo, so anything crossing one strikes through the words.
   // `route-detour` has always avoided them when planning a channel; elk has not,
   // and the repair pass in edge-tidy can only move a run that has somewhere
   // clean to go.
-  titleStruck: 0.2028952,
+  titleStruck: 0.0224,
   // Flows crossing anywhere in the drawing (INVARIANTS §4f). Most are inherent
   // to the topology; the ones that are not come from risers placed in the wrong
   // left-to-right order, which the nesting pass in edge-tidy repairs. Lowering
   // this means better lane ordering, never fewer flows.
-  crossings: 0.9859835,
+  crossings: 0.9007,
   // Flows that weave (INVARIANTS §4g): more than two turns, when a straight
   // run, an L or a Z always suffices geometrically. What remains is flows whose
   // straighter route would cross something the weave currently dodges — the
   // reroute refuses to buy turns with tangles.
-  turnHeavy: 0.2093290,
+  turnHeavy: 0.1473,
   // Runs crossing a container that holds neither endpoint (INVARIANTS §4h).
   // Small enough to drive to zero eventually; the passes may never create one.
   throughContainer: 0.0133272,
@@ -119,7 +126,14 @@ const CEILING_RATE: Record<string, number> = {
   // replaces the ones it can prove clean (~25% of the population elk + the
   // channel planner produced); the remainder needs elk port constraints or
   // channel-side planning, not another post-pass.
-  attachAway: 0.0634191,
+  // Raised 0.0634191 -> 0.0775 (247 -> 301 over 3884 flow-instances) with
+  // nearParallel, when the side-hug clearance work in edge-tidy (INVARIANTS
+  // §4g, re-tiered in the ladder from 2 to 1) re-sided flows clear of the
+  // borders they rode: a hug fix may be paid for with a crossing or a
+  // wrap-around, never the reverse. sideHug fell 49 -> 17 in the same run, and
+  // the per-drawing gate accepted every trade (§3). Never raise again to go
+  // green.
+  attachAway: 0.0775,
   // A run riding a node or container side it does not attach to, close enough
   // that flow and frame read as one line. Calibrated *after* the clearance
   // pass that halved it: 49 over 3884 flow-instances. What remains is debt the
@@ -128,7 +142,9 @@ const CEILING_RATE: Record<string, number> = {
   // stubs), or a move that would buy the clearance with a crossing or a
   // `nearParallel` the ladder prices at the same tier. Lowering this means a
   // reroute that owns the corridor, never a tolerated merge.
-  sideHug: 0.0127,
+  // Halved again 0.0127 -> 0.0044 (49 -> 17) by the same clearance work that
+  // raised the two ceilings above — the tier-1 win those trades paid for.
+  sideHug: 0.0044,
 };
 
 interface Run {
