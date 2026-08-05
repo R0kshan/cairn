@@ -28,9 +28,11 @@
  * | 3 | only time | weaving routes, wrong-side departures, staircases |
  * | 4 | nothing much | tight attachments |
  *
- * Tier 1 is deliberately absent from the profile: label placement happens after
- * every geometry pass, so a router cannot evaluate it. `label-anchor` and
- * `settleLabelPositions` own that tier and have their own ordering (§4a, §4d).
+  * Tier 1 is only partially modelled here: label placement happens after every
+  * geometry pass, so a router cannot evaluate final label positions. The profile
+  * carries one Tier 1 key — `unlabelled:<edge>`, meaning the proposed route
+  * leaves its own label no seat clear of boxes and titles. Everything else at
+  * that tier belongs to `label-anchor` and `settleLabelPositions` (§4a, §4d).
  */
 
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
@@ -260,7 +262,7 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
         // Through a container holding neither endpoint (§4h).
         for (const box of boxes) {
           const inside = holds.get(box.id)!;
-          if (ends.some((end) => end && (end.node === box || inside.has(end.node.id)))) continue;
+          if (ends.some((end) => end && inside.has(end.node.id))) continue;
           if (
             x1 < box.x + box.width - 1 &&
             box.x + 1 < x2 &&

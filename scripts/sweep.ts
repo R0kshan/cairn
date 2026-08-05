@@ -972,8 +972,9 @@ const allKinds = [...MUST_BE_ZERO, ...Object.keys(CEILING_RATE)].filter(
  *
  * A regression at tier N is therefore accepted only when the same drawing
  * improved at a tier that matters more. Tier 0 has nothing above it, so nothing
- * ever buys a tier 0 regression — and every tier 0 metric is in MUST_BE_ZERO,
- * which is checked separately and unconditionally.
+ * ever buys a tier 0 regression — metrics in MUST_BE_ZERO are checked
+ * separately and unconditionally; those with ceiling rates (throughContainer,
+ * labelPierced, titleStruck) are also tier 0 but gated by their ceilings.
  */
 const TIER: Record<string, number> = {
   diagonal: 0,

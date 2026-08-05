@@ -833,6 +833,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   };
 
   const renderEdgeLabels = (edge: SceneEdge): string => {
+    if (!edge.pts.length) return "";
     const flowStyle = flowById.get(edge.id)?.style;
     let svg = "";
     for (const label of edge.labels) {

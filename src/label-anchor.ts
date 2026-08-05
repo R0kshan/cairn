@@ -397,9 +397,9 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
   // leaves the line), then a seat beside the run that keeps attribution, then
   // elk's original placement, which keeps neither.
   //
-  // Both labels are offered each escape, preferring the one that can afford it —
-  // already near its run, and larger, since the bigger box is the one that
-  // cannot fit. Ties break on flow id, never on iteration order.
+  // Both labels are offered each escape, preferring the larger one, since the
+  // bigger box is the one that cannot fit. Ties break on flow id, never on
+  // iteration order.
   const overlapping = (a: SceneLabel, b: SceneLabel) =>
     a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   const rank = (entry: (typeof seated)[number]) =>

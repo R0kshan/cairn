@@ -2711,7 +2711,9 @@ export function labelsSeated(edge: SceneEdge): boolean {
  * this optimiser validated while it still sat inside `tidyEdges` was not the
  * route that got drawn, and the corpus said so — 36 per-drawing regressions on
  * `infrastructure-large` alone, including crossings the ladder explicitly
- * refuses to gain. Nothing may move edge geometry after this pass; the caller
+ * refuses to gain. No pass after this may re-route edges; later passes may only
+ * slide terminals along an existing side (spreadAttachments), clear a side hug
+ * (clearSideHugs), or swap sibling seats (swapCrossingSiblingSeats). The caller
  * re-anchors labels onto the routes it settles on.
  */
 export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded = false): void {
@@ -3340,11 +3342,10 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         // Joint move: this flow plus one it shares a node with. Bounded to the
         // best few routes each, since the pair space is quadratic.
         // Joint moves are quadratic, so they are earned, not automatic: only a
-        // Tier 0 or Tier 2 defect (a run through something, a tangle) justifies
-        // the search. A weave costs the reader time, not meaning, and is not
-        // worth pairing the whole neighbourhood over.
-        const worst = Math.min(...[...profileNow(ids).values()]);
-        if (worst > 2) continue;
+        // Tier 0, 1 or 2 defect justifies the search. A weave costs the reader
+        // time, not meaning, and is not worth pairing the whole neighbourhood over.
+        const severest = Math.min(...[...profileNow(ids).values()]);
+        if (severest > 2) continue;
         const mineTop = routesFor(edge).slice(0, 8);
         outer: for (const partner of neighboursOf(edge).slice(0, 4)) {
           const theirsTop = routesFor(partner).slice(0, 8);
