@@ -98958,7 +98958,8 @@ async function layout(model, view) {
   const layoutMs = Date.now() - startTime;
   const scene = sceneFromResult(result, layoutMs);
   const away = attachAwayOf(scene, model);
-  if (!away.size || process.env.CAIRN_NO_PORT_PASS) return scene;
+  const skipPortPass = !!globalThis.process?.env?.CAIRN_NO_PORT_PASS;
+  if (!away.size || skipPortPass) return scene;
   try {
     const constrained = makeGraph(winnerDirection, winnerOptions);
     constrainPorts(constrained, scene, away, model);

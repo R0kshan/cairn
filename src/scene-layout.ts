@@ -827,7 +827,12 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const layoutMs = Date.now() - startTime;
   const scene = sceneFromResult(result, layoutMs);
   const away = attachAwayOf(scene, model);
-  if (!away.size || process.env.CAIRN_NO_PORT_PASS) return scene;
+  // The playground bundles this module for the browser, where `process` does
+  // not exist; reach it through `globalThis` so the switch is simply absent
+  // there instead of a ReferenceError. CLI-only debug aid — see CONTRIBUTING.md.
+  const skipPortPass = !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env?.CAIRN_NO_PORT_PASS;
+  if (!away.size || skipPortPass) return scene;
   // elk's default for a backward flow is to follow the main direction and
   // wrap around the drawing's far margin; `route-detour` only claims the
   // routes wasteful enough to deserve a channel, leaving the merely-bad to

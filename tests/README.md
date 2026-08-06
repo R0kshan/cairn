@@ -119,3 +119,9 @@ appears as `drawing(s) not in the baseline` until you run `--update-baseline`.
 `npm run test:binary` smoke-tests the Bun-compiled release binary; run it if you
 touch bundling or the elkjs worker. Playground bundles are rebuilt separately —
 see [`PLAYGROUND_BUILD.md`](../documentation/PLAYGROUND_BUILD.md).
+
+`playground.test.ts` is a narrow exception: it loads the committed browser
+bundle and compiles a large fixture with `process` deleted from `globalThis`,
+catching the one failure mode that's browser-specific — a Node global
+(`process`, `Buffer`, `require`, …) leaking into engine code and throwing where
+no real browser provides it. It doesn't otherwise exercise the playground UI.

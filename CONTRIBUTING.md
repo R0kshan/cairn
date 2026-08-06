@@ -93,6 +93,13 @@ only the drawings actually swept.
 
 CI also builds the Bun binary + playground bundle. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
 
+`CAIRN_NO_PORT_PASS=1` is the one debug env var in the pipeline: it skips the
+port-constraint re-layout pass in `scene-layout.ts` that re-routes flows
+attaching on the wrong side of their target. CLI-only — the playground bundles
+run in a browser, where the switch reads as absent rather than throwing (see
+[PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#no-node-globals-in-engine-code)).
+Nothing in the repo sets it, so it must never change committed output.
+
 ## Opening a PR
 
 - Keep it focused — one concern per PR.
