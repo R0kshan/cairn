@@ -8,7 +8,8 @@
  *   that fails to validate, lay out or render is reported and fails the run;
  *   skipping it quietly would let the gate pass over drawings it never drew.
  * - `MUST_BE_ZERO` — invariants. A flow slanted off orthogonal, dragged across
- *   a node box, or leaving a band of dead height is a bug, full stop.
+ *   a node box, leaving a band of dead height, or carrying a label that has
+ *   floated off it is a bug, full stop.
  * - `CEILING_RATE` — a ratchet over debt that cannot be zero yet, expressed as
  *   defects per swept flow-instance (edge × disposition) rather than a raw
  *   count. These defects scale with how many flows the corpus contains, so a
@@ -21,7 +22,7 @@
  * example × disposition matrix reveals, which is why this exists.
  */
 
-import { readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "../src/parser.ts";
@@ -29,20 +30,121 @@ import { validate } from "../src/validator.ts";
 import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
 import { views } from "../src/views.ts";
+import { titleBoxesOf } from "../src/route-detour.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DISPOSITIONS = ["wide", "slide", "page", "tall"] as const;
 
-const MUST_BE_ZERO = ["overlaps", "diagonal", "throughBox", "deadBand", "coincident", "attachShared"] as const;
+const MUST_BE_ZERO = [
+  "overlaps",
+  "diagonal",
+  "throughBox",
+  "deadBand",
+  "coincident",
+  "attachShared",
+  "labelAdrift",
+] as const;
 // Calibrated against the corpus at the time recursive discovery started
 // covering examples/dispositions and examples/themes (4352 flow-instances,
 // 288 drawings): rate = count / totalFlows, rounded up slightly for stability.
 const CEILING_RATE: Record<string, number> = {
-  attachTight: 0.0018382,
-  "jog<=6": 0.0294117,
-  "jog<=20": 0.1360294,
-  nearParallel: 0.0167738,
-  longDetour: 0.0500919,
+  attachTight: 0.0003,
+  "jog<=6": 0.0191,
+  "jog<=20": 0.0459,
+  // Two runs within 10px of each other for more than 40px. Raised
+  // 0.0135569 -> 0.0147 (53 -> 57 over 3884 flow-instances) with attachAway,
+  // when the side-hug clearance work in edge-tidy (INVARIANTS §4c/§4g) re-sided
+  // flows clear of the borders they rode: buying the tier-1 fix with a
+  // near-parallel pair here or a wrap-around there is exactly the trade the
+  // ladder prices (§3) — sideHug fell 49 -> 17 in the same run, and the
+  // per-drawing gate accepted every trade. Never raise again to go green.
+  nearParallel: 0.0147,
+  // Raised 0.0436580 -> 0.0461855 (190 -> 201) when labels moved onto their
+  // runs (§4d). A label pins the horizontal band it sits in, so seating them on
+  // the lines instead of above them changes which bands `compact` can reclaim:
+  // some drawings tighten (large-fr lost 29px of height), a few loosen, and 11
+  // flows crossed the len > 2.2x-direct threshold either way. The routes did not
+  // get worse — the distances they are measured against moved.
+  // Raised 0.0438878 -> 0.0450367 (191 -> 196), with attachAway, when folded
+  // slide layouts finally got the container title bands passed to `tidyEdges`.
+  // They had been routing without them, so the reroute there was free to cross a
+  // container's name; protecting the titles costs one drawing (in its four
+  // fixture copies) a longer route and two wrap-around attachments. A run
+  // through a container's name is worse than a longer route, so the trade is
+  // taken deliberately — see §4e.
+  longDetour: 0.0394,
+  // Flows bundled tightly enough that no position exists which is both free of
+  // overlaps and nearer its own run than its neighbours'. Lowering this means
+  // giving the settler somewhere better to go, not relaxing the check.
+  labelOrphan: 0,
+  // Needs elk to order the ports, not a pass after the fact: reseating a flow
+  // without rerouting its body only moves the tangle further along the route.
+  // Measured — a seat-permutation pass cut the inverted cases from 207 to 26
+  // and pushed total crossings from 287 to 501.
+  fanTangle: 0.0091,
+  // Corridors so tight the label cannot clear every run in them: with flows
+  // 12px apart, a two-line box with a business-object chip is taller than the
+  // gap it would have to fit in. Lowering this means spreading the bundle, not
+  // shrinking the check. Down to zero: the corpus no longer produces one.
+  labelPierced: 0,
+  // Labels the settler had to take off their run to keep overlaps at zero —
+  // corridors where no seat along the flow clears both its neighbours and the
+  // node boxes. Lowering this means finding them a seat *along* the run, or
+  // spreading the bundle; never by relaxing what "on the line" means.
+  labelOffLine: 0.0165,
+  // A second run travelling parallel to the label's own, inside its box
+  // (INVARIANTS §4j). Calibrated *after* the lane fix that introduced the
+  // metric, not before it: at the time the predicate was written the corpus
+  // carried 347 of these, and locking that in would have budgeted debt the
+  // same commit was about to pay off. 329 over 3884 flow-instances.
+  //
+  // What remains is not one shape. Channel lanes are only one way two runs end
+  // up parallel under a label; elk's own routing and `route-detour`'s channels
+  // are others, and neither has been taught the rule yet.
+  labelStraddled: 0.0606,
+  // Runs and labels drawn across a container's name. Edges are emitted last and
+  // a title carries no halo, so anything crossing one strikes through the words.
+  // `route-detour` has always avoided them when planning a channel; elk has not,
+  // and the repair pass in edge-tidy can only move a run that has somewhere
+  // clean to go.
+  titleStruck: 0.0224,
+  // Flows crossing anywhere in the drawing (INVARIANTS §4f). Most are inherent
+  // to the topology; the ones that are not come from risers placed in the wrong
+  // left-to-right order, which the nesting pass in edge-tidy repairs. Lowering
+  // this means better lane ordering, never fewer flows.
+  crossings: 0.9007,
+  // Flows that weave (INVARIANTS §4g): more than two turns, when a straight
+  // run, an L or a Z always suffices geometrically. What remains is flows whose
+  // straighter route would cross something the weave currently dodges — the
+  // reroute refuses to buy turns with tangles.
+  turnHeavy: 0.1473,
+  // Runs crossing a container that holds neither endpoint (INVARIANTS §4h).
+  // Small enough to drive to zero eventually; the passes may never create one.
+  throughContainer: 0.0133272,
+  // Wrap-around attachments (INVARIANTS §4c): a terminal departing away from
+  // its counterpart, or arriving from beyond it. The reroute pass in edge-tidy
+  // replaces the ones it can prove clean (~25% of the population elk + the
+  // channel planner produced); the remainder needs elk port constraints or
+  // channel-side planning, not another post-pass.
+  // Raised 0.0634191 -> 0.0775 (247 -> 301 over 3884 flow-instances) with
+  // nearParallel, when the side-hug clearance work in edge-tidy (INVARIANTS
+  // §4g, re-tiered in the ladder from 2 to 1) re-sided flows clear of the
+  // borders they rode: a hug fix may be paid for with a crossing or a
+  // wrap-around, never the reverse. sideHug fell 49 -> 17 in the same run, and
+  // the per-drawing gate accepted every trade (§3). Never raise again to go
+  // green.
+  attachAway: 0.0775,
+  // A run riding a node or container side it does not attach to, close enough
+  // that flow and frame read as one line. Calibrated *after* the clearance
+  // pass that halved it: 49 over 3884 flow-instances. What remains is debt the
+  // translation cannot prove clean — a terminal clamped inside stub range
+  // (logical-archi's F02, whose only corridor crosses SUIV_FLUX's west-side
+  // stubs), or a move that would buy the clearance with a crossing or a
+  // `nearParallel` the ladder prices at the same tier. Lowering this means a
+  // reroute that owns the corridor, never a tolerated merge.
+  // Halved again 0.0127 -> 0.0044 (49 -> 17) by the same clearance work that
+  // raised the two ceilings above — the tier-1 win those trades paid for.
+  sideHug: 0.0044,
 };
 
 interface Run {
@@ -52,16 +154,246 @@ interface Run {
   id: string;
 }
 
+interface Point {
+  x: number;
+  y: number;
+}
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * A flow label this far from its own run has stopped reading as belonging to
+ * it. Sized against the two ways a label legitimately leaves the line: the
+ * `above`/`below` style offsets it by half its height + 5, and the overlap
+ * settler's first two escape steps are 8px and 14px. Past 20px the label is
+ * further from its flow than `MIN_ATTACH_GAP` puts the neighbouring flow, so
+ * the reader has no way left to tell which run it annotates.
+ */
+const LABEL_ADRIFT = 20;
+
+/**
+ * Within this of its own run a label reads as attached to it whatever else is
+ * nearby, so a closer neighbouring run is not an ambiguity — it is two flows
+ * running close together, which `nearParallel` already charges for. Without
+ * this floor, 147 labels sitting *on* their own line score as orphaned because
+ * some other line grazes them 1px nearer.
+ */
+const LABEL_ATTACHED = 6;
+
+/**
+ * A foreign run this close to a label box is drawn through the text. Not 0: the
+ * renderer strokes a halo behind label text, so a line grazing the very edge of
+ * the box is still legible — it is the line crossing the words that isn't.
+ */
+const PIERCE_SLACK = 1;
+
+/**
+ * How far a label's text centre may sit from its own run and still count as
+ * *on* it (invariant §4d). Not 0: seats are computed from segment midpoints in
+ * floating point and a terminal run can shift by a fraction after seating, so a
+ * sub-pixel gap is arithmetic, not placement. 2 is well under the ~3px offset
+ * elk uses when it parks a label beside a line, so this still catches the
+ * "caption floating next to the flow" case it exists to forbid.
+ */
+const ON_LINE_SLACK = 2;
+
+/**
+ * Which of a flow's own segments the label is seated on — the one its *text
+ * centre* lies on, which is what §4d makes the label's line. `null` when the
+ * centre is on no segment, i.e. the label is off its line and §4j does not
+ * apply to it.
+ *
+ * Returned as an axis rather than an index: everything downstream only needs
+ * to know which direction "parallel" means here.
+ */
+const hostRunOf = (l: Box & { textH: number }, pts: Point[]): boolean | null => {
+  const dot = {
+    x: l.x + l.width / 2,
+    y: l.y + (l.textH > 0 ? l.textH / 2 : l.height / 2),
+    width: 0,
+    height: 0,
+  };
+  let best = Number.POSITIVE_INFINITY;
+  let vertical: boolean | null = null;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const d = boxToSegmentSq(dot, pts[i], pts[i + 1]);
+    if (d >= best) continue;
+    best = d;
+    vertical = Math.abs(pts[i].x - pts[i + 1].x) < 0.5;
+  }
+  return best <= ON_LINE_SLACK * ON_LINE_SLACK ? vertical : null;
+};
+
+/**
+ * The first foreign run travelling **parallel to the label's own** and passing
+ * inside its box, or `""`.
+ *
+ * Strictly inside, not within `PIERCE_SLACK`: a run grazing the box edge is
+ * what the text halo exists for, and it does not read as a second line under
+ * the words. It is the line between the first and last letter that does.
+ */
+const straddledBy = (
+  l: Box,
+  vertical: boolean,
+  ownId: string,
+  edges: { id: string; pts: Point[] }[],
+): string => {
+  const lo = vertical ? l.x : l.y;
+  const hi = lo + (vertical ? l.width : l.height);
+  for (const o of edges) {
+    if (o.id === ownId || o.pts.length < 2) continue;
+    for (let i = 0; i + 1 < o.pts.length; i++) {
+      const a = o.pts[i];
+      const b = o.pts[i + 1];
+      const runVertical = Math.abs(a.x - b.x) < 0.5;
+      const runHorizontal = Math.abs(a.y - b.y) < 0.5;
+      if (runVertical === runHorizontal) continue; // zero-length or diagonal
+      if (runVertical !== vertical) continue;
+      if (boxToSegmentSq(l, a, b) > 0) continue;
+      const at = vertical ? a.x : a.y;
+      if (at > lo + 1 && at < hi - 1) return o.id;
+    }
+  }
+  return "";
+};
+
+/**
+ * Squared distance from a label box to one segment. Every segment is
+ * orthogonal by the time this runs (`diagonal` is a must-be-zero invariant),
+ * so the per-axis gaps are independent and this is exact — no sampling, which
+ * is what keeps a labels × edges scan affordable over the whole corpus. On a
+ * diagonal it degrades to the distance to the segment's bounding box, an
+ * underestimate: it can miss a defect, never invent one.
+ */
+const boxToSegmentSq = (box: Box, a: Point, b: Point): number => {
+  const dx = Math.max(0, box.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (box.x + box.width));
+  const dy = Math.max(0, box.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (box.y + box.height));
+  return dx * dx + dy * dy;
+};
+
+const boxToPolylineSq = (box: Box, pts: Point[]): number => {
+  let best = Number.POSITIVE_INFINITY;
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const d = boxToSegmentSq(box, pts[i], pts[i + 1]);
+    if (d < best) best = d;
+  }
+  return best;
+};
+
+/**
+ * How far from a node a crossing still counts as part of its fan. Inside this
+ * band the reader is working out which line leaves which attachment point, so a
+ * crossing there defeats the whole purpose of spreading the seats. Beyond it a
+ * crossing is just two routes meeting in open space — normal in an orthogonal
+ * drawing, and not something attachment order can fix.
+ */
+const FAN_REACH = 48;
+
+/**
+ * Where two segments properly cross, or null. Strict comparisons throughout, so
+ * two flows merely touching at a shared point are not a crossing — that case is
+ * `attachShared`/`coincident`, and counting it twice would double-charge one
+ * defect. Every segment is orthogonal here, so a proper crossing is always one
+ * horizontal against one vertical and the point is exact.
+ */
+const segmentsCross = (a1: Point, a2: Point, b1: Point, b2: Point): Point | null => {
+  const side = (p: Point, q: Point, r: Point) =>
+    (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
+  const d1 = side(b1, b2, a1) > 0;
+  const d2 = side(b1, b2, a2) > 0;
+  const d3 = side(a1, a2, b1) > 0;
+  const d4 = side(a1, a2, b2) > 0;
+  if (d1 === d2 || d3 === d4) return null;
+  const aVertical = Math.abs(a1.x - a2.x) < 0.5;
+  return aVertical ? { x: a1.x, y: b1.y } : { x: b1.x, y: a1.y };
+};
+
+/** Gap between a point and a node's box, 0 when the point is inside it. */
+const pointToBoxSq = (p: Point, box: Box): number => {
+  const dx = Math.max(0, box.x - p.x, p.x - (box.x + box.width));
+  const dy = Math.max(0, box.y - p.y, p.y - (box.y + box.height));
+  return dx * dx + dy * dy;
+};
+
 const totals: Record<string, number> = {};
 const examples: string[] = [];
 const detail = process.argv.includes("--detail");
+/**
+ * Restricts the matrix to fixtures whose path contains this substring, for
+ * iterating on one drawing without paying for all 288. The ratchets are rates
+ * over the *whole* corpus, so a filtered run cannot judge them — it reports the
+ * counts and exits 0 regardless. Only an unfiltered run gates.
+ */
+const only = process.argv.find((arg) => arg.startsWith("--only="))?.slice("--only=".length);
+/**
+ * `--shard=i/n` sweeps every n-th fixture starting at i (1-based), so the matrix
+ * can be split across parallel CI jobs. Like `--only`, a shard is a fraction of
+ * the corpus and cannot judge a corpus-wide rate: it reports and exits 0. Sum
+ * the counts across all n shards to compare against a ceiling.
+ */
+const shardArg = process.argv.find((arg) => arg.startsWith("--shard="))?.slice("--shard=".length);
+const [shardIndex, shardCount] = shardArg
+  ? shardArg.split("/").map((part) => Number.parseInt(part, 10))
+  : [1, 1];
+if (shardArg && (!(shardIndex >= 1) || !(shardCount >= 1) || shardIndex > shardCount)) {
+  console.error(`--shard expects i/n with 1 <= i <= n, got "${shardArg}"`);
+  process.exit(2);
+}
 const hits: string[] = [];
 const failures: string[] = [];
 let totalFlows = 0;
 
+/**
+ * Per-drawing floor, on top of the corpus-wide rates.
+ *
+ * The rates alone have a blind spot this repo has been bitten by: a change can
+ * improve sixty drawings and quietly make one worse, and every total still
+ * falls. `tests/__snapshots__/readability.baseline` records, per drawing ×
+ * metric, the defect count last accepted — and **no drawing may exceed its
+ * recorded count on any metric**. Improvements don't auto-lower the floor
+ * (a partial run must never rewrite a gate); run with `--update-baseline` to
+ * accept them, which merges only the drawings actually swept, so `--only` and
+ * `--shard` runs update their slice and leave the rest untouched.
+ *
+ * Unlike the rates, this gate works on partial runs — each drawing is judged
+ * against its own line — so `--only`/`--shard` runs do gate per-drawing even
+ * though they cannot judge a corpus rate.
+ *
+ * A drawing absent from the baseline (a new fixture) is reported, not failed:
+ * its debt is governed by the rates until `--update-baseline` records it.
+ */
+const BASELINE_PATH = join(ROOT, "tests", "__snapshots__", "readability.baseline");
+const updateBaseline = process.argv.includes("--update-baseline");
+const baseline = new Map<string, Map<string, number>>();
+try {
+  for (const line of readFileSync(BASELINE_PATH, "utf8").split("\n")) {
+    if (!line.trim() || line.startsWith("#")) continue;
+    const [tag, kind, count] = line.split("\t");
+    if (!baseline.has(tag)) baseline.set(tag, new Map());
+    baseline.get(tag)!.set(kind, Number.parseInt(count, 10));
+  }
+} catch {
+  /* no baseline yet — every drawing is "new" until --update-baseline records it */
+}
+const perDrawing = new Map<string, Map<string, number>>();
+
+async function sweepShard(shardIndex: number, shardCount: number): Promise<void> {
 for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encoding: "utf8" })
+  // `readdirSync` returns platform-native separators, so on Windows a nested
+  // fixture arrives as `dispositions\\foo.cairn` and its tag never matches the
+  // `dispositions/foo/page` written by CI. The drawing then reads as "not in the
+  // baseline" and is *skipped* rather than gated — which quietly reduced the
+  // per-drawing gate to top-level fixtures only on Windows (130 of 288 drawings
+  // unchecked). Tags are an on-disk contract; normalise before building one.
+  .map((f) => f.replace(/\\/g, "/"))
   .filter((f) => f.endsWith(".cairn") && !f.includes("broken"))
-  .sort()) {
+  .filter((f) => !only || f.includes(only))
+  .sort()
+  .filter((_, index) => index % shardCount === shardIndex - 1)) {
   const base = readFileSync(join(ROOT, "examples", file), "utf8").replace(/\r\n/g, "\n");
   for (const disp of DISPOSITIONS) {
     const tag = `${file.replace(".cairn", "")}/${disp}`;
@@ -91,6 +423,9 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
     const leaves = scene.nodes.filter((n) => !n.container);
     const note = (kind: string, msg: string) => {
       totals[kind] = (totals[kind] ?? 0) + 1;
+      const mine = perDrawing.get(tag) ?? new Map<string, number>();
+      mine.set(kind, (mine.get(kind) ?? 0) + 1);
+      perDrawing.set(tag, mine);
       hits.push(`${kind.padEnd(13)} ${tag.padEnd(32)} ${msg}`);
     };
 
@@ -130,6 +465,36 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
             note("nearParallel", `${a.id}~${b.id} gap=${gap.toFixed(1)} run=${shared.toFixed(0)}`);
         }
 
+    // A run hugging a node or container side it does not attach to reads as
+    // part of the border: the eye cannot tell the flow from the frame it
+    // rides (the run at x=1027 along SUIV_FLUX's left side x=1026 in
+    // logical-archi; F08 along the Settlement layer's left side for 207px in
+    // medium-tall). An endpoint exempts its own node — a flow may leave its
+    // node along the side it starts on. `shared` is measured against the
+    // side's own span, so perpendicular crossings and approach stubs that end
+    // at the border never reach the threshold.
+    const edgeEnds = new Map(model.flows.map((f) => [f.id, new Set([f.from, f.to])]));
+    for (const [list, vertical] of [
+      [V, true],
+      [H, false],
+    ] as const)
+      for (const s of list)
+        for (const n of scene.nodes) {
+          if (edgeEnds.get(s.id)?.has(n.id)) continue;
+          const shared = vertical
+            ? Math.min(s.hi, n.y + n.height) - Math.max(s.lo, n.y)
+            : Math.min(s.hi, n.x + n.width) - Math.max(s.lo, n.x);
+          if (shared <= 24) continue;
+          const gap = vertical
+            ? Math.min(Math.abs(s.at - n.x), Math.abs(s.at - (n.x + n.width)))
+            : Math.min(Math.abs(s.at - n.y), Math.abs(s.at - (n.y + n.height)));
+          if (gap < 3)
+            note(
+              "sideHug",
+              `${s.id} ${gap.toFixed(1)}px off ${n.id} ${vertical ? "v" : "h"}-side shared=${shared.toFixed(0)}`,
+            );
+        }
+
     // A run crossing a *leaf* box is a bug; container interiors are routable.
     for (const s of H)
       for (const n of leaves)
@@ -140,10 +505,16 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
         if (s.at > n.x + 1 && s.at < n.x + n.width - 1 && s.lo < n.y + n.height - 1 && s.hi > n.y + 1)
           note("throughBox", `${s.id} through ${n.id}`);
 
-    const seats = new Map<string, { at: number; id: string }[]>();
+    // `far` is the same attachment's opposite endpoint, projected on the axis
+    // the side runs along: it says where the flow is *heading*, which is what
+    // decides whether two attachments are seated in the wrong order.
+    const seats = new Map<string, { at: number; far: number; id: string }[]>();
     for (const e of scene.edges) {
       if (!e.pts.length) continue;
-      for (const p of [e.pts[0], e.pts[e.pts.length - 1]]) {
+      for (const [p, q] of [
+        [e.pts[0], e.pts[e.pts.length - 1]],
+        [e.pts[e.pts.length - 1], e.pts[0]],
+      ] as const) {
         for (const n of leaves) {
           const wx = p.x > n.x - 2 && p.x < n.x + n.width + 2;
           const wy = p.y > n.y - 2 && p.y < n.y + n.height + 2;
@@ -155,7 +526,10 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
           if (!side) continue;
           const vert = side === "east" || side === "west";
           const key = `${n.id}|${side}|${vert ? n.height : n.width}`;
-          seats.set(key, [...(seats.get(key) ?? []), { at: vert ? p.y : p.x, id: e.id }]);
+          seats.set(key, [
+            ...(seats.get(key) ?? []),
+            { at: vert ? p.y : p.x, far: vert ? q.y : q.x, id: e.id },
+          ]);
           break;
         }
       }
@@ -169,6 +543,213 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
         const gap = sorted[i].at - sorted[i - 1].at;
         if (gap < 6) note("attachShared", `${key} ${sorted[i - 1].id}~${sorted[i].id} ${gap.toFixed(1)}px`);
         else if (gap < need * 0.8) note("attachTight", `${key} ${gap.toFixed(1)}px need ${need.toFixed(1)}`);
+      }
+    }
+
+    // Two flows leaving the same side of a node and tangling inside its fan —
+    // the reader cannot tell which line owns which attachment point. Only the
+    // fan counts: further out, two routes crossing is ordinary and not
+    // something attachment order can fix. `inverted` marks the pairs seated in
+    // the inverse order of their destinations, which are the ones reseating can
+    // resolve outright.
+    const edgeById = new Map(scene.edges.map((e) => [e.id, e]));
+    const nodeById = new Map(leaves.map((n) => [n.id, n]));
+    for (const [key, members] of seats) {
+      if (members.length < 2) continue;
+      const host = nodeById.get(key.slice(0, key.indexOf("|")));
+      if (!host) continue;
+      for (let i = 0; i < members.length; i++)
+        for (let j = i + 1; j < members.length; j++) {
+          const a = members[i];
+          const b = members[j];
+          if (a.id === b.id) continue;
+          const ea = edgeById.get(a.id)!;
+          const eb = edgeById.get(b.id)!;
+          let at: Point | null = null;
+          for (let m = 0; m + 1 < ea.pts.length && !at; m++)
+            for (let n = 0; n + 1 < eb.pts.length && !at; n++) {
+              const hit = segmentsCross(ea.pts[m], ea.pts[m + 1], eb.pts[n], eb.pts[n + 1]);
+              if (hit && pointToBoxSq(hit, host) <= FAN_REACH * FAN_REACH) at = hit;
+            }
+          if (!at) continue;
+          const inverted = (a.at - b.at) * (a.far - b.far) < 0;
+          note(
+            "fanTangle",
+            `${key} ${a.id}~${b.id} at ${Math.sqrt(pointToBoxSq(at, host)).toFixed(0)}px${inverted ? " inverted" : ""}`,
+          );
+        }
+    }
+
+    // A flow label has to be attributable to its own flow. Two ways it stops
+    // being: it drifts off its own run, or another run gets closer to it than
+    // its own does. Measured after `render`, because that is what settles label
+    // positions — and because every geometry pass before it moves the line out
+    // from under the box elk chose.
+    for (const e of scene.edges) {
+      if (e.pts.length < 2) continue;
+      for (const l of e.labels) {
+        if (!l.width || !l.height) continue;
+        const own = boxToPolylineSq(l, e.pts);
+        let nearestOther = Number.POSITIVE_INFINITY;
+        let nearestId = "";
+        for (const o of scene.edges) {
+          if (o.id === e.id || o.pts.length < 2) continue;
+          const d = boxToPolylineSq(l, o.pts);
+          if (d < nearestOther) {
+            nearestOther = d;
+            nearestId = o.id;
+          }
+        }
+        const text = l.text.replace(/\n/g, " ") || "(annotation)";
+        if (own > LABEL_ADRIFT * LABEL_ADRIFT)
+          note("labelAdrift", `${e.id} "${text}" ${Math.sqrt(own).toFixed(0)}px off its own run`);
+        if (own > LABEL_ATTACHED * LABEL_ATTACHED && nearestOther < own)
+          note(
+            "labelOrphan",
+            `${e.id} "${text}" own=${Math.sqrt(own).toFixed(0)}px ${nearestId}=${Math.sqrt(nearestOther).toFixed(0)}px`,
+          );
+        // A foreign run drawn *through* the box touches the text itself. Neither
+        // rule above sees it: a label sitting on its own run has `own` of 0, so
+        // it is inside `LABEL_ATTACHED` and nothing can be "closer" than its own
+        // flow. Yet this is the worst case of all — two flows are touching the
+        // words, and the reader has no cue at all which one is speaking.
+        // Invariant §4d: the label's *text* sits on the run, not beside it.
+        // Measured on the text rows, which occupy the top of the box — the box
+        // centre is not the text centre whenever a protocol line or a chip
+        // hangs below, and centring the box is what used to leave the run
+        // running under the words instead of through them.
+        const textCentre = {
+          x: l.x + l.width / 2,
+          y: l.y + (l.textH > 0 ? l.textH / 2 : l.height / 2),
+        };
+        const onRun = boxToPolylineSq(
+          { x: textCentre.x, y: textCentre.y, width: 0, height: 0 },
+          e.pts,
+        );
+        const onLine = onRun <= ON_LINE_SLACK * ON_LINE_SLACK;
+        if (!onLine)
+          note("labelOffLine", `${e.id} "${text}" text centre ${Math.sqrt(onRun).toFixed(0)}px off its run`);
+        // A foreign run drawn *through* the box, for a label that is **not**
+        // sitting on its own run. Charged only in that case, and deliberately:
+        // once a label is on its flow, attribution is settled by position and
+        // the crossing run is masked behind its halo (flow lines are all drawn
+        // before any label). It is the floating label — beside one flow, with a
+        // second drawn through its words — that leaves the reader guessing,
+        // which is the defect this has always been about.
+        //
+        // `src/svg-render.ts`'s `pierced()` counts a wider population than this
+        // rule and §4j together — see the note there for why that one guard is
+        // allowed to be stricter than the gate it serves.
+        if (!onLine && nearestOther <= PIERCE_SLACK * PIERCE_SLACK)
+          note("labelPierced", `${e.id} "${text}" run ${nearestId} crosses its box`);
+        // Invariant §4j: the run the label sits on is the only run under its
+        // words. The exemption above is sound for a run *crossing* the label —
+        // the halo masks it and the label's position still says which line is
+        // speaking. It collapses when the intruder runs **parallel** to the
+        // label's own run and passes inside the box: both lines are masked the
+        // same way, both emerge above and below the words, and nothing is left
+        // to tell them apart. `small/page` seats "Search a slot and book" on a
+        // riser at x=91 with a second riser at x=96 through the same box, and
+        // `nearParallel` is the only thing that fires — a tier-2 complaint
+        // about a tier-1 loss.
+        //
+        // Charged only for on-line labels because an off-line one is already
+        // `labelPierced` above; this is the population that rule skips.
+        if (onLine) {
+          const host = hostRunOf(l, e.pts);
+          const straddler =
+            host === null ? "" : straddledBy(l, host, e.id, scene.edges);
+          if (straddler)
+            note("labelStraddled", `${e.id} "${text}" run ${straddler} parallel under its words`);
+        }
+      }
+    }
+
+    // Invariant §4g: a flow takes at most two turns between its endpoints.
+    for (const e of scene.edges) {
+      if (e.pts.length < 2) continue;
+      const turns = e.pts.length - 2;
+      if (turns > 2) note("turnHeavy", `${e.id} ${turns} turns`);
+    }
+
+    // Invariant §4h: a run may only cross a container that holds one of its own
+    // endpoints. Passing through a data centre or a zone you start or end
+    // inside is how anything gets anywhere; cutting through one you have no
+    // business in reads as traffic transiting that component. Invisible to
+    // `throughBox`, which tests leaves only — `Kafka -> Backup server` ran the
+    // width of `PostgreSQL standby` and nothing saw it.
+    {
+      const holds = new Map<string, Set<string>>();
+      for (const box of scene.nodes.filter((n) => n.container)) {
+        const set = new Set<string>();
+        for (const n of scene.nodes)
+          if (
+            n !== box &&
+            n.x >= box.x - 1 &&
+            n.y >= box.y - 1 &&
+            n.x + n.width <= box.x + box.width + 1 &&
+            n.y + n.height <= box.y + box.height + 1
+          )
+            set.add(n.id);
+        holds.set(box.id, set);
+      }
+      for (const e of scene.edges) {
+        const flow = model.flows.find((f) => f.id === e.id);
+        if (!flow || e.pts.length < 2) continue;
+        for (const box of scene.nodes.filter((n) => n.container)) {
+          const set = holds.get(box.id)!;
+          if (set.has(flow.from) || set.has(flow.to)) continue;
+          for (let i = 0; i + 1 < e.pts.length; i++) {
+            const a = e.pts[i];
+            const b = e.pts[i + 1];
+            if (
+              Math.min(a.x, b.x) < box.x + box.width - 1 &&
+              box.x + 1 < Math.max(a.x, b.x) &&
+              Math.min(a.y, b.y) < box.y + box.height - 1 &&
+              box.y + 1 < Math.max(a.y, b.y)
+            )
+              note("throughContainer", `${e.id} ${flow.from}->${flow.to} through ${box.id}`);
+          }
+        }
+      }
+    }
+
+    // Invariant §4f: flows that cross. Counted over the whole drawing, unlike
+    // `fanTangle`, which only sees crossings inside a node's fan — the corridor
+    // weave this exists to catch happens in open space between containers.
+    for (let i = 0; i < scene.edges.length; i++)
+      for (let j = i + 1; j < scene.edges.length; j++) {
+        const A = scene.edges[i];
+        const B = scene.edges[j];
+        for (let m = 0; m + 1 < A.pts.length; m++)
+          for (let n = 0; n + 1 < B.pts.length; n++)
+            if (segmentsCross(A.pts[m], A.pts[m + 1], B.pts[n], B.pts[n + 1]))
+              note("crossings", `${A.id}x${B.id}`);
+      }
+
+    // Invariant §4e: nothing is drawn across a container's title.
+    for (const band of titleBoxesOf(scene, model)) {
+      for (const e of scene.edges) {
+        for (let i = 0; i + 1 < e.pts.length; i++) {
+          const a = e.pts[i];
+          const b = e.pts[i + 1];
+          const x1 = Math.min(a.x, b.x);
+          const x2 = Math.max(a.x, b.x);
+          const y1 = Math.min(a.y, b.y);
+          const y2 = Math.max(a.y, b.y);
+          if (x1 < band.x + band.width && band.x < x2 && y1 < band.y + band.height && band.y < y2)
+            note("titleStruck", `${e.id} run across title at (${band.x.toFixed(0)},${band.y.toFixed(0)})`);
+        }
+        for (const l of e.labels) {
+          if (!l.width || !l.height) continue;
+          if (
+            l.x < band.x + band.width &&
+            band.x < l.x + l.width &&
+            l.y < band.y + band.height &&
+            band.y < l.y + l.height
+          )
+            note("titleStruck", `${e.id} label across title at (${band.x.toFixed(0)},${band.y.toFixed(0)})`);
+        }
       }
     }
 
@@ -186,7 +767,45 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
     const remain = sceneBot - reach;
     if (remain >= 30) note("deadBand", `${Math.round(remain)}px trailing at y=${Math.round(reach)}`);
 
+    // A terminal segment that sets off *away* from the flow's counterpart is a
+    // wrap-around the reader has to chase: the eye leaves the node expecting to
+    // approach the other end and is carried in the opposite direction first
+    // (RETURNS→PAY_ORCH in application-large-tall departed 347px east for a
+    // target up-and-left). Judged per axis with a tolerance: when the two nodes
+    // roughly align on an axis (within `ATTACH_AWAY_TOL`), moving either way on
+    // it is positioning, not wandering. Edges rerouted through detour channels
+    // wrap by design (invariant §11) and are exempt.
+    const ATTACH_AWAY_TOL = 24;
     const byId = new Map(scene.nodes.map((n) => [n.id, n]));
+    for (const e of scene.edges) {
+      if (e.pts.length < 2 || e.detour) continue;
+      const flow = model.flows.find((f) => f.id === e.id);
+      const from = byId.get(flow?.from ?? "");
+      const to = byId.get(flow?.to ?? "");
+      if (!from || !to) continue;
+      const centerOf = (n: typeof from) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+      const away = (seg: Point, target: Point): boolean =>
+        (Math.abs(seg.x) >= 0.5 &&
+          Math.abs(target.x) > ATTACH_AWAY_TOL &&
+          seg.x * target.x < 0) ||
+        (Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > ATTACH_AWAY_TOL && seg.y * target.y < 0);
+      const p0 = e.pts[0];
+      const p1 = e.pts[1];
+      const pn = e.pts[e.pts.length - 1];
+      const pm = e.pts[e.pts.length - 2];
+      const toCenter = centerOf(to);
+      const fromCenter = centerOf(from);
+      if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
+        note("attachAway", `${e.id} ${flow!.from}->${flow!.to} departs away`);
+      if (
+        away(
+          { x: pn.x - pm.x, y: pn.y - pm.y },
+          { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y },
+        )
+      )
+        note("attachAway", `${e.id} ${flow!.from}->${flow!.to} arrives from beyond`);
+    }
+
     for (const e of scene.edges) {
       const flow = model.flows.find((f) => f.id === e.id);
       const a = byId.get(flow?.from ?? "");
@@ -202,6 +821,113 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
         note("longDetour", `${e.id} ${flow!.from}->${flow!.to} r=${(len / direct).toFixed(1)}`);
     }
   }
+}
+}
+
+/**
+ * Sweeping is embarrassingly parallel — every drawing is measured independently
+ * and the gate only ever sees the merged totals — but it is also the slowest
+ * thing in `npm test` by a wide margin (~99% of it is `layout`). `--jobs=N`
+ * forks N shards and merges their results *before* any gate runs, so the
+ * ratchets are still judged over the whole corpus. Serial (`--jobs=1`) stays
+ * the default and the reference: `--jobs=N` must print byte-identical output,
+ * which is why the merge re-sorts everything into the order a serial run would
+ * have produced rather than concatenating shards as they finish.
+ */
+const jobsArg = process.argv.find((arg) => arg.startsWith("--jobs="))?.slice("--jobs=".length) ?? "1";
+/**
+ * `auto` = one shard per core, capped at 8.
+ *
+ * Floored at 4 cores because forking is not free: each child re-JITs elk and
+ * the layout passes over half as many drawings, which measured ~45% more total
+ * CPU. On a 2-core machine that overhead outweighs the second core and `--jobs=2`
+ * came out *slower* than serial; from 4 cores up it wins comfortably.
+ */
+const jobs =
+  jobsArg === "auto"
+    ? (await import("node:os")).availableParallelism?.() >= 4
+      ? Math.min(8, (await import("node:os")).availableParallelism())
+      : 1
+    : Math.max(1, Number.parseInt(jobsArg, 10) || 1);
+if (jobs > 1 && shardArg) {
+  console.error("--jobs shards the corpus itself; combining it with --shard is not supported");
+  process.exit(2);
+}
+/** Child mode: measure this shard, print the raw counts, gate nothing. */
+const emitJson = process.argv.includes("--emit-json");
+
+/** The order a serial run visits drawings in: fixture path, then disposition. */
+const tagOrder = (a: string, b: string): number => {
+  const cut = (tag: string) => {
+    const at = tag.lastIndexOf("/");
+    return [`${tag.slice(0, at)}.cairn`, tag.slice(at + 1)] as const;
+  };
+  const [fileA, dispA] = cut(a);
+  const [fileB, dispB] = cut(b);
+  if (fileA !== fileB) return fileA < fileB ? -1 : 1;
+  return DISPOSITIONS.indexOf(dispA as (typeof DISPOSITIONS)[number]) -
+    DISPOSITIONS.indexOf(dispB as (typeof DISPOSITIONS)[number]);
+};
+/** `kind<pad> tag<pad> message` — the tag is the second whitespace-delimited field. */
+const tagOfHit = (line: string): string => line.trim().split(/\s+/)[1] ?? "";
+
+if (jobs > 1 && !emitJson) {
+  const { execFile } = await import("node:child_process");
+  // The parent owns the baseline file: a child writing it would race the others
+  // and record only its own slice.
+  const passthrough = process.argv
+    .slice(2)
+    .filter((arg) => !arg.startsWith("--jobs=") && !arg.startsWith("--shard=") && arg !== "--update-baseline");
+  const shards = await Promise.all(
+    Array.from({ length: jobs }, (_, index) =>
+      new Promise<string>((resolve, reject) => {
+        execFile(
+          process.execPath,
+          [...process.execArgv, fileURLToPath(import.meta.url), ...passthrough, `--shard=${index + 1}/${jobs}`, "--emit-json"],
+          { maxBuffer: 256 * 1024 * 1024 },
+          (error, stdout, stderr) => (error ? reject(new Error(`${error.message}\n${stderr}`)) : resolve(stdout)),
+        );
+      }),
+    ),
+  );
+  for (const raw of shards) {
+    const part = JSON.parse(raw) as {
+      examples: string[];
+      totalFlows: number;
+      totals: [string, number][];
+      perDrawing: [string, [string, number][]][];
+      hits: string[];
+      failures: string[];
+    };
+    examples.push(...part.examples);
+    totalFlows += part.totalFlows;
+    for (const [kind, count] of part.totals) totals[kind] = (totals[kind] ?? 0) + count;
+    for (const [tag, kinds] of part.perDrawing) perDrawing.set(tag, new Map(kinds));
+    hits.push(...part.hits);
+    failures.push(...part.failures);
+  }
+  // Shards are disjoint slices of one sorted list, so restoring that order
+  // reproduces the serial run exactly. `sort` is stable, so hits keep their
+  // within-drawing emission order.
+  examples.sort(tagOrder);
+  hits.sort((a, b) => tagOrder(tagOfHit(a), tagOfHit(b)));
+  failures.sort();
+} else {
+  await sweepShard(shardIndex, shardCount);
+}
+
+if (emitJson) {
+  process.stdout.write(
+    JSON.stringify({
+      examples,
+      totalFlows,
+      totals: Object.entries(totals),
+      perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
+      hits,
+      failures,
+    }),
+  );
+  process.exit(0);
 }
 
 console.log(
@@ -224,13 +950,141 @@ for (const kind of Object.keys(CEILING_RATE).sort()) {
   );
   if (!ok) failed = true;
 }
+// Per-drawing floor: judged for every swept drawing, partial run or not.
+// A metric absent from the entire baseline file is newer than the file: its
+// counts have no accepted floor yet, so it is reported through the rates only
+// until `--update-baseline` records it — otherwise every drawing with any
+// pre-existing debt on a brand-new metric would read as a regression.
+const baselineKinds = new Set<string>();
+for (const entry of baseline.values()) for (const kind of entry.keys()) baselineKinds.add(kind);
+const allKinds = [...MUST_BE_ZERO, ...Object.keys(CEILING_RATE)].filter(
+  (kind) => baseline.size === 0 || baselineKinds.has(kind),
+);
+/**
+ * The readability ladder, as metrics (INVARIANTS §4). Same tiers `readability.ts`
+ * routes by, so the gate judges a change the way the router decided it.
+ *
+ * This matters because the two used to disagree. The gate demanded that no
+ * drawing get worse on *any* metric; the router is built to trade — spending a
+ * jog to remove a crossing is the whole point of a ladder. Under a flat gate
+ * every correct trade reads as a regression, so the router could only be made
+ * to pass by making it refuse the fixes it exists to perform.
+ *
+ * A regression at tier N is therefore accepted only when the same drawing
+ * improved at a tier that matters more. Tier 0 has nothing above it, so nothing
+ * ever buys a tier 0 regression — metrics in MUST_BE_ZERO are checked
+ * separately and unconditionally; those with ceiling rates (throughContainer,
+ * labelPierced, titleStruck) are also tier 0 but gated by their ceilings.
+ */
+const TIER: Record<string, number> = {
+  diagonal: 0,
+  throughBox: 0,
+  throughContainer: 0,
+  coincident: 0,
+  attachShared: 0,
+  labelAdrift: 0,
+  labelPierced: 0,
+  titleStruck: 0,
+  deadBand: 0,
+  labelOrphan: 1,
+  labelOffLine: 1,
+  labelStraddled: 1,
+  crossings: 2,
+  fanTangle: 2,
+  nearParallel: 2,
+  // A run riding a node or container side it does not attach to destroys the
+  // reading of the frame — the flow merges with the border and the eye cannot
+  // tell them apart, which is an attribution failure, not eye travel. Rated
+  // one tier above crossings by explicit design decision: a hug fix may be
+  // paid for with a crossing (verified geometrically forced on logical-archi's
+  // F02, where every re-side crosses F11's riser), never the reverse.
+  sideHug: 1,
+  turnHeavy: 3,
+  "jog<=6": 3,
+  "jog<=20": 3,
+  attachAway: 3,
+  longDetour: 3,
+  attachTight: 4,
+};
+
+const regressions: string[] = [];
+const improvements: string[] = [];
+const trades: string[] = [];
+const unknown: string[] = [];
+for (const tag of examples) {
+  const floor = baseline.get(tag);
+  const mine = perDrawing.get(tag) ?? new Map<string, number>();
+  if (!floor) {
+    if ([...mine.values()].some((count) => count > 0)) unknown.push(tag);
+    continue;
+  }
+  const worse: { kind: string; line: string; tier: number }[] = [];
+  let bestGain = Number.POSITIVE_INFINITY;
+  for (const kind of allKinds) {
+    const now = mine.get(kind) ?? 0;
+    const was = floor.get(kind) ?? 0;
+    const tier = TIER[kind] ?? 4;
+    if (now > was) worse.push({ kind, line: `${tag}: ${kind} ${was} -> ${now}`, tier });
+    else if (now < was) {
+      improvements.push(`${tag}: ${kind} ${was} -> ${now}`);
+      bestGain = Math.min(bestGain, tier);
+    }
+  }
+  for (const item of worse) {
+    if (bestGain < item.tier) trades.push(`${item.line} (paid for a tier ${bestGain} gain)`);
+    else regressions.push(item.line);
+  }
+}
+if (regressions.length) {
+  console.log(`\nper-drawing regressions vs baseline (${regressions.length}):`);
+  for (const r of regressions) console.log(`  ✗ ${r}`);
+  failed = true;
+}
+if (trades.length) {
+  console.log(`\n${trades.length} ladder trade(s) accepted — a lower-priority defect paid for a higher-priority fix:`);
+  for (const t of trades.slice(0, 12)) console.log(`  ~ ${t}`);
+  if (trades.length > 12) console.log(`  ... and ${trades.length - 12} more`);
+}
+if (improvements.length)
+  console.log(
+    `\n${improvements.length} per-drawing improvement(s) — run with --update-baseline to lock them in`,
+  );
+if (unknown.length)
+  console.log(
+    `\n${unknown.length} drawing(s) not in the baseline — run with --update-baseline to record them`,
+  );
+if (updateBaseline) {
+  // Merge only what was swept: a partial run must never touch the floors of
+  // drawings it did not draw.
+  for (const tag of examples) {
+    const mine = perDrawing.get(tag) ?? new Map<string, number>();
+    const entry = new Map<string, number>();
+    for (const [kind, count] of mine) if (count > 0) entry.set(kind, count);
+    if (entry.size) baseline.set(tag, entry);
+    else baseline.delete(tag);
+  }
+  const lines = ["# per-drawing defect floors — regenerate with: npm run sweep -- --update-baseline"];
+  for (const tag of [...baseline.keys()].sort())
+    for (const kind of [...baseline.get(tag)!.keys()].sort())
+      lines.push(`${tag}\t${kind}\t${baseline.get(tag)!.get(kind)}`);
+  writeFileSync(BASELINE_PATH, `${lines.join("\n")}\n`);
+  console.log(`\nbaseline updated for ${examples.length} swept drawing(s) → ${BASELINE_PATH}`);
+}
+
 if (detail) for (const h of hits) console.log(h);
 if (failures.length) {
   console.log(`\nfailures (${failures.length}):`);
   for (const f of failures) console.log(`  ${f}`);
   failed = true;
 }
-if (failed) {
+const partial = only || shardArg;
+if (partial) {
+  console.log(`\npartial run (${only ? `--only=${only}` : ""}${only && shardArg ? " " : ""}${shardArg ? `--shard=${shardArg}` : ""}): rates above are informational — the per-drawing baseline still gates`);
+  if (regressions.length) {
+    console.error("\nsweep failed (per-drawing baseline)");
+    process.exit(1);
+  }
+} else if (failed) {
   console.error("\nsweep failed");
   process.exit(1);
 }

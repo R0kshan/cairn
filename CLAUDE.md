@@ -1,162 +1,75 @@
-# CLAUDE.md — working in cairn
+# Entry point for AI Agent
 
 Facts an agent needs that it **cannot infer from the code or from generic
 competence**. Everything here is repo-specific; general good practice is assumed,
 not restated. If a section ever reads like advice you'd give on any project,
 delete it.
 
+**Required reading (in order):** [`INVARIANTS.md`](./INVARIANTS.md) (what you
+can't break) → [`CONTRIBUTING.md`](./CONTRIBUTING.md) (workflow, commands,
+snapshots) → [`documentation/ai/WORKING_METHOD.md`](./documentation/ai/WORKING_METHOD.md).
+
 ## What cairn is
 
-A diagram-as-code CLI for enterprise-architecture views — `logical`,
-`application`, `infrastructure`, `security` — rendered to SVG, plus an
-infrastructure *matrice des flux techniques* export. It sells **dense diagrams
-that stay readable**: overlap-free labels, typed views, deterministic output.
-Not a general diagramming tool.
+A diagram-as-code CLI for four typed enterprise-architecture views (`logical`,
+`application`, `infrastructure`, `security`) rendered to SVG, with an
+infrastructure *matrice des flux techniques* matrix export. Overlap-free labels,
+typed validation, deterministic output.
 
-## Runtime model — surprising, read first
+## Runtime model — read first
 
 - **No build step.** `.ts` runs directly via `node --experimental-strip-types`
   (Node ≥ 22.6). Don't add a transpile/bundle step, emit `dist/`, or rewrite
   imports to `.js` — the explicit `.ts` import extensions are intentional.
-  This flag erases type annotations at runtime without compiling them. It
-  matters in **development only** (the shipped binary uses Bun's compiler
-  and runs without Node). In dev it eliminates the compile step — change
-  source and re-run, no `tsc --watch` or `dist/` overhead. The project uses
-  none of the unsupported TS features (`enum` initializers, `const enum`,
-  `namespace`, legacy decorators). The tradeoff: it's experimental
-  ([node#53725](https://github.com/nodejs/node/issues/53725)). If it changes,
-  the fallback is a one-liner `tsc` compile step.
 - **Type checking exists ONLY in `npm run typecheck`** — the runtime strips
-  types without checking them. (TS 7.x native compiler; needs its per-platform
-  binary installed.)
+  types without checking them.
 - **elkjs runs in-process** (sync fake worker). **Bun compiles release binaries
   only** — never a dev/test dependency; no Bun/Deno APIs in `src/`.
-- **`elkjs` is the only runtime dep.** Keep it that way. Dev deps are exactly
+- **`elkjs` is the only runtime dep.** Dev deps are exactly
   biome + typescript + @types/node.
 
-## Pipeline & file map (`src/`)
+## Pipeline (`src/`)
 
+```text
+.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → label-anchor.ts → compact.ts → svg-render.ts → SVG
 ```
-.cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → compact.ts → svg-render.ts → SVG
-```
 
-- `edge-tidy.ts` — endpoint hygiene for **every** edge, elk's included: collapses
-  deviations under 6px (elk emits 1px staircases and the odd non-orthogonal
-  segment) and keeps two flows on the same node side 12px apart, so an inbound
-  and an outbound flow never share a point. Both moves are refused when they
-  would park a flow on top of another — a merged line is worse than the jog or
-  the shared endpoint it would fix. Straightness couples the two sides a flow
-  connects, so the achieved gap is bounded by the tighter side.
-
-- `route-detour.ts` — deterministic post-layout pass (issue #26): reroutes
+Key passes an agent can't infer from names:
+- `route-detour.ts` — deterministic post-layout pass (issue #26) rerouting
   elk's wrap-around backward hierarchical edges through top/bottom channels.
-  Runs for **every** disposition: a DOWN layout (`page`/`tall`) wraps its
-  backward flows around the sides instead, so `scene-layout.ts` mirrors the
-  scene across the diagonal around this pass and it comes out with left/right
-  channels. Container titles don't rotate — their bands are computed before
-  transposing (`titleBoxesOf`) and passed in.
-  elk options **cannot** fix these (tested; see
+  Works for **every** disposition (DOWN layouts transpose the scene).
   [`documentation/ai/ROUTE_DETOUR_HANDOVER.md`](./documentation/ai/ROUTE_DETOUR_HANDOVER.md)
-  — read it before touching flow routing). Its extra invariants: no coincident
-  segments, attach points spread per node side, no line collinear with a
-  container border, risers never strike container titles, channel spans nest
-  rather than interleave (slot order + lane order together).
-
-- `compact.ts` — removes horizontal bands crossed by nothing but vertical
-  segments, for **every** disposition. A node, label or horizontal segment anywhere
-  across the width pins its band, which is what keeps containers undistorted
-  and a zero-overlap drawing zero-overlap. Gated by a behaviour test — dead
-  bands must stay under 30px.
-
-- `model.ts` — the heart: types, the `views` registry (kinds, nesting rules,
-  per-view diagnostics), themes (`themes`/`mkTheme`/`themeFor`), i18n (`UI`),
-  diagnostic `explanations`. Most feature work starts here.
-- `flow-matrix.ts` flow-matrix exporters · `slide-fold.ts` slide/page folding ·
-  `text-metrics.ts` **pure-arithmetic** metrics (`len × fontSize × 0.56`, no system
-  fonts — this is why output is platform-independent) · `diagnostics.ts` diagnostic
-  rendering · `cli.ts` dispatch · `watch.ts` · `elk-*.ts` elkjs wiring ·
-  `playground.ts` browser bundle entry.
-
-## Commands
-
-```sh
-npm test                  # sweep + unit + the non-regression gates (Node-only)
-npm run typecheck         # tsc --noEmit — the only type check
-npm run lint              # biome (lint-only; leave formatting alone)
-npm run snapshots         # accept intended render changes (regenerate reference output)
-npm run snapshots:report  # preview a render change, grouped by KIND
-npm run sweep             # readability gate only (already included in npm test)
-npm run test:binary       # compile the host bun binary + smoke-run it (needs Bun)
-npm run cairn -- <cmd> <file>
-```
-
-CLI verbs: `validate` (`--format json`, `--strict`) · `build` (`-o`) · `matrix`
-(`--format csv|md|svg`) · `watch` · `new` (`-L|-A|-I|-S`) · `explain <code>` ·
-`version`/`--version`/`-v` (prints `package.json`'s version under plain Node;
-release binaries instead print the exact tag they were built from — see
-`CAIRN_BUILD_VERSION` in `cli.ts` and `scripts/build-binaries.sh`).
-
-`npm test` is Node-only — it can't prove the **bun-compiled binary** or the
-**esbuild playground bundle** work; CI does both, and the release job smoke-runs
-the linux binary before publishing. The compiled binary bundles its own module
-graph (incl. elkjs's worker), so a loader change can pass every Node test yet
-break the binary — hence `test:binary`.
+  is a deep-dive handover for this pass — read it before touching flow routing.
+- `edge-tidy.ts` — endpoint hygiene for every edge: collapses micro-jogs under 6px,
+  spreads attachment points 12px apart on the same node side.
+- `label-anchor.ts` — runs **twice** (before `compact`, and again after
+  `optimiseRoutes`), so on the second pass a label's "original" position is
+  wherever the first pass seated it, not elk's. elk places each edge label against the route elk planned;
+  the two passes above then move that route and leave the label behind, sometimes
+  nearer a *different* flow. This re-centres each label on its own run. Its
+  position in the pipeline is load-bearing in both directions: after `edge-tidy`
+  (anchoring to a run that then moves is worthless) and before `compact` (a label
+  pins the band it sits in). See [`INVARIANTS.md`](./INVARIANTS.md) §4a.
+- `compact.ts` — removes horizontal bands crossed only by vertical segments
+  (dead space elk doesn't reclaim). Gated: dead bands must stay under 30px.
+- `readability.ts` + `optimiseRoutes` (in `edge-tidy.ts`) — one defect model and
+  one acceptance rule shared by every router: five tiers, reject any gain at a
+  tier, accept a loss and let lower tiers pay for it. Compares defect *identity
+  sets*, never counts — comparing totals cannot see a defect move, which shipped
+  twice. `optimiseRoutes` runs **after** `label-anchor` and `compact` and
+  nothing may move edge geometry after it.
+  [`documentation/FLOW_ROUTING.md`](./documentation/FLOW_ROUTING.md) is the
+  explanation; `npm run sweep` gates with the same ladder, so router and gate
+  agree on what "better" means.
 
 ## Non-negotiable invariants
 
-1. **Zero label overlaps.** Every example builds with `label overlaps: 0`
-   (CI-gated).
-2. **Byte-deterministic output.** Same input → identical SVG across runs and
-   platforms. Only `+ - * /`, `round`, `ceil`, and one normalized `Math.hypot`
-   (numbered-flow labels) are allowed in the output path. Never introduce
-   `Date.now()` / randomness / locale-formatted numbers.
-3. **The non-regression gates encode *intent*.** CI can't tell an intended
-   render change from a regression — you express intent by committing
-    regenerated reference output (`npm run snapshots`) in the SAME change. Three layers in
-   `npm test`: structural digest (`corpus.digest`, geom/color/text per example),
-    example-SVG fidelity (committed `examples/*.svg` can't rot), detailed snapshots.
-   When a gate fires, run **`npm run snapshots:report` first** — geometry moving
-   is the risky kind; colour-only is usually an intended theme edit. A change
-   outside your edit's blast radius is a regression. **Never regenerate to
-   silence a diff you don't understand** — that's the one instinct to override.
-4. **Readability is gated by `npm run sweep`**, which recursively sweeps every
-   `.cairn` fixture under `examples/` (top level plus `dispositions/` and
-   `themes/`) × every disposition. Six invariants must stay at **0**: label
-   overlaps, segments off orthogonal, runs crossing a leaf box, dead
-   horizontal bands, coincident segments, shared attachment points. The rest
-   (staircases, tight attachments, near-parallel runs, long detours) are a
-   **ratchet**, expressed as a rate per swept flow-instance (not a raw count)
-   so adding fixtures doesn't spuriously fail the gate: current rates are
-   ceilings and may only fall. Lower a rate when a change earns it; never
-   raise one to go green.
-5. **Flow labels are required on the logical & security views** (`E0203`),
-   optional on application & infrastructure. Infrastructure flows must still
-   carry `protocol/port` (`(HTTPS/443)` — `E0240`) even when unlabelled.
-
-## Repo-specific conventions
-
-- **Diagnostics are coded, never thrown.** Errors `E0xxx`, warnings `W0xxx`,
-  each with a `span` + `help`; rationale in `explanations` (via `cairn explain`).
-  A user error is a `Diagnostic`, not an exception. ~29 codes — reuse the scheme; only rendered chrome localizes via `style { lang: fr }`.
-- **Business objects are logical-view only** (`E0222` elsewhere). Element kinds
-  are per-view (`views` registry) — e.g. `queue` (horizontal-cylinder) lives in
-  application + infrastructure, not logical.
-- SVG output is untrusted-string territory: **`esc()` for text content,
-  `escAttr()` (escapes `"`) for attribute values.** Reserved keys
-  (`__proto__`/`constructor`/`prototype`) are rejected at parse time. Every
-  security fix ships with its exploit as a regression test.
+All changes must respect the invariants in [`INVARIANTS.md`](./INVARIANTS.md).
+Key ones for quick reference: zero label overlaps, byte-deterministic output,
+flow label rules, readability ratcheted by `npm run sweep`.
 
 ## Before finishing a change
 
-Read [`CONTRIBUTING.md`](./CONTRIBUTING.md#opening-a-pr) for the pre-commit
-checklist and snapshot regeneration procedure.
-
 **Fast iteration loop:** edit → `node --experimental-strip-types src/cli.ts build examples/<file>.cairn -o /tmp/test.svg` → open SVG.
 
-## Extending the tool
-
-Adding a **view / diagnostic / theme / style property** all start in `model.ts`
-(the `views` registry / `themes` / `DiagramStyle`), then flow through
-`parser.ts` → `validator.ts` → `svg-render.ts` as needed. After any such change run the
-full gate **and** `npm run snapshots` to re-baseline. For generic work use the
-`engineering` plugin skills and the `security-review` / `review` commands.
+Follow the pre-commit checklist in [`CONTRIBUTING.md`](./CONTRIBUTING.md#opening-a-pr).

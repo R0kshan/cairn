@@ -20,11 +20,11 @@
 <rect x="713" y="76" width="110" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="768" y="99" font-size="12.5" text-anchor="middle" fill="#333333">Message queue</text>
 <path d="M 83 95 L 209 95" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="139" y="110.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Request</text>
 <path d="M 317 95 L 441 95" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="379" y="110.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Dispatch job</text>
 <path d="M 549 95 L 713 95" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="638" y="110.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="2.5" paint-order="stroke" stroke-linejoin="round">Publish event</text>
+<text x="146" y="98.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Request</text>
+<text x="379" y="98.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Dispatch job</text>
+<text x="631" y="98.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Publish event</text>
 <line x1="20" y1="156" x2="822" y2="156" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="178" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="168" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>

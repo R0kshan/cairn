@@ -15,7 +15,9 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf, type TitleBox } from "./route-detour.ts";
 import { compactVertical } from "./compact.ts";
-import { tidyEdges } from "./edge-tidy.ts";
+import { optimiseRoutes, clearSideHugs, spreadAttachments, swapCrossingSiblingSeats, tidyEdges } from "./edge-tidy.ts";
+import { inspect, type Profile } from "./readability.ts";
+import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
@@ -63,11 +65,31 @@ export interface SceneLabel {
   y: number;
   width: number;
   height: number;
+  /**
+   * Height of the *text* rows inside the box, which sit at its top; a
+   * protocol line and business-object chips fill the rest below them. Seating a
+   * label on its run means centring this, not the box — centre the box and the
+   * run lands between the text and the chip, which is neither on the line nor
+   * under it. 0 when the label is chips only.
+   */
+  textH: number;
 }
 export interface SceneEdge {
   id: string;
   pts: { x: number; y: number }[];
   labels: SceneLabel[];
+  /**
+   * Set by `route-detour` on edges it sent through a top/bottom channel.
+   * Those wrap around by design (invariant §11), so the attachment-direction
+   * rule (§4c) and its `attachAway` gate exempt them.
+   */
+  detour?: boolean;
+  /**
+   * The route this flow had before `optimiseRoutes` moved it. Kept so the
+   * renderer can undo a repair that cost some label its seat — that verdict is
+   * only reachable after label settling, which happens during rendering.
+   */
+  repairedFrom?: { x: number; y: number }[];
 }
 export interface Scene {
   width: number;
@@ -75,6 +97,15 @@ export interface Scene {
   nodes: SceneNode[];
   edges: SceneEdge[];
   layoutMs: number;
+  /**
+   * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept.
+   *
+   * The renderer audits those repairs for label collateral the router could not
+   * see, and the ladder's rule for that is "a loss at tier T is payable only by
+   * a gain at a tier strictly better than T" — so the audit has to know what
+   * the repair bought. Absent when nothing was repaired.
+   */
+  repairTier?: number;
 }
 
 interface WalkedElkNode {
@@ -181,6 +212,7 @@ function collectSceneEdges(
   elkNode: LaidOutNode,
   origins: Record<string, { x: number; y: number }>,
   numbered: boolean,
+  edgeFontSize: number,
 ): SceneEdge[] {
   const ownEdges = (elkNode.edges ?? []).map((edge) => {
     const origin = (edge.container && origins[edge.container]) || { x: 0, y: 0 };
@@ -220,12 +252,14 @@ function collectSceneEdges(
         y: labelY,
         width: label.width,
         height: label.height,
+        // Mirrors `measure()` in text-metrics, which is what sized the box.
+        textH: label.text ? label.text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
       };
     });
     return { id: edge.id, pts: points, labels };
   });
   const childEdges = (elkNode.children ?? []).flatMap((child) =>
-    collectSceneEdges(child, origins, numbered),
+    collectSceneEdges(child, origins, numbered, edgeFontSize),
   );
   return [...ownEdges, ...childEdges];
 }
@@ -259,6 +293,226 @@ function transpose(scene: Scene, titleBoxes: TitleBox[]): void {
     [box.width, box.height] = [box.height, box.width];
   }
   [scene.width, scene.height] = [scene.height, scene.width];
+}
+
+/**
+ * The flows whose terminal segment departs *away* from their counterpart or
+ * arrives from beyond it — the sweep's `attachAway` predicate, on the final
+ * scene (channel reroutes are exempt, they wrap by design). Drives the
+ * port-constraint second pass below: the population that pass exists to
+ * prevent is exactly the one this counts.
+ */
+function attachAwayOf(scene: Scene, model: Model): Set<string> {
+  const ATTACH_AWAY_TOL = 24;
+  const byId = new Map(scene.nodes.map((node) => [node.id, node]));
+  const flagged = new Set<string>();
+  for (const e of scene.edges) {
+    if (e.pts.length < 2 || e.detour) continue;
+    const flow = model.flows.find((f) => f.id === e.id);
+    const from = byId.get(flow?.from ?? "");
+    const to = byId.get(flow?.to ?? "");
+    if (!from || !to) continue;
+    const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+    const away = (seg: { x: number; y: number }, target: { x: number; y: number }): boolean =>
+      (Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > ATTACH_AWAY_TOL && seg.x * target.x < 0) ||
+      (Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > ATTACH_AWAY_TOL && seg.y * target.y < 0);
+    const p0 = e.pts[0];
+    const p1 = e.pts[1];
+    const pn = e.pts[e.pts.length - 1];
+    const pm = e.pts[e.pts.length - 2];
+    const toCenter = centerOf(to);
+    const fromCenter = centerOf(from);
+    if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
+      flagged.add(e.id);
+    if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
+      flagged.add(e.id);
+  }
+  return flagged;
+}
+
+/**
+ * Defects the sweep gates on that the house ladder deliberately does not
+ * model, keyed for the same set-based verdict so `ladderAccepts` can judge a
+ * wholesale relayout the way the gate will. Two blind spots, both deliberate
+ * router design (readability.ts): the ladder's `hug:` is the §4i arrowhead
+ * rule — leaf-only, 8px/12px — while the sweep's `sideHug` covers containers
+ * at 3px/24px; and its `title:` checks runs only, never labels, while the
+ * sweep's `titleStruck` covers both. A router choosing per-edge candidates can
+ * afford those omissions; a verdict choosing between two whole layouts cannot
+ * — the constrained pass was buying attachAway fixes with container-side hugs
+ * and labels parked on title bands it could not see.
+ */
+function selectionExtras(scene: Scene, model: Model): Profile {
+  const extra: Profile = new Map();
+  const edgeEnds = new Map(model.flows.map((flow) => [flow.id, new Set([flow.from, flow.to])]));
+  const bands = titleBoxesOf(scene, model);
+  for (const e of scene.edges) {
+    for (let i = 0; i + 1 < e.pts.length; i++) {
+      const a = e.pts[i];
+      const b = e.pts[i + 1];
+      const vert = Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5;
+      const horiz = Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5;
+      if (!vert && !horiz) continue;
+      for (const n of scene.nodes) {
+        if (edgeEnds.get(e.id)?.has(n.id)) continue;
+        const shared = vert
+          ? Math.min(Math.max(a.y, b.y), n.y + n.height) - Math.max(Math.min(a.y, b.y), n.y)
+          : Math.min(Math.max(a.x, b.x), n.x + n.width) - Math.max(Math.min(a.x, b.x), n.x);
+        if (shared <= 24) continue;
+        const gap = vert
+          ? Math.min(Math.abs(a.x - n.x), Math.abs(a.x - (n.x + n.width)))
+          : Math.min(Math.abs(a.y - n.y), Math.abs(a.y - (n.y + n.height)));
+        if (gap < 3) extra.set(`sidehug:${e.id}:${i}@${n.id}`, 2);
+      }
+    }
+    for (const l of e.labels) {
+      if (!l.width || !l.height) continue;
+      for (const band of bands)
+        if (
+          l.x < band.x + band.width &&
+          band.x < l.x + l.width &&
+          l.y < band.y + band.height &&
+          band.y < l.y + l.height
+        )
+          extra.set(`titlelabel:${e.id}@${band.x},${band.y}`, 0);
+    }
+  }
+  return extra;
+}
+
+/**
+ * The ladder's verdict, adapted to a whole-layout choice. `ladderVerdict`
+ * keys defects by identity *and position* — right for a router moving one
+ * edge, where a moved crossing is a new one; wrong for choosing between two
+ * complete layouts, where every coordinate shifts a few px and the same
+ * crossing between the same pair reads as gained at one address and lost at
+ * another, which refuses every relayout outright. Identity here is the defect
+ * kind and its participants — positions and segment indices dropped — with
+ * multiplicity kept as a count, so a pair gaining a *second* crossing is
+ * still a gain. The rule is unchanged: walk tiers, refuse on any gain,
+ * accept at the first tier that only lost.
+ */
+function relayoutVerdict(before: Profile, after: Profile): number {
+  const normalize = (key: string) => key.replace(/@[-\d.,]+$/, "").replace(/:\d+(?=@|$)/, "");
+  const tally = (profile: Profile) => {
+    const out = new Map<string, { tier: number; count: number }>();
+    for (const [key, tier] of profile) {
+      const id = normalize(key);
+      const entry = out.get(id) ?? { tier, count: 0 };
+      entry.count++;
+      out.set(id, entry);
+    }
+    return out;
+  };
+  const was = tally(before);
+  const now = tally(after);
+  for (let tier = 0; tier < 5; tier++) {
+    let gained = false;
+    let lost = false;
+    for (const key of new Set([...was.keys(), ...now.keys()])) {
+      const w = was.get(key);
+      const n = now.get(key);
+      // Judge a key at its own tier only — a tier-1 loss paid for a tier-0
+      // win is the ladder working, not a gain.
+      if ((w ?? n)!.tier !== tier) continue;
+      if ((n?.count ?? 0) > (w?.count ?? 0)) gained = true;
+      if ((n?.count ?? 0) < (w?.count ?? 0)) lost = true;
+    }
+    if (gained) return -1;
+    if (lost) return tier;
+  }
+  return -1;
+}
+
+/**
+ * Rebuild `graph` with explicit ports on the nodes `flagged` flows touch, so
+ * elk routes them out the side *facing* the counterpart instead of wrapping
+ * around the drawing's far margin. elk's default for a backward flow in a
+ * layered layout is to follow the main direction and loop around the outside,
+ * which is how a route comes to depart away from its target and arrive from
+ * beyond it (`attachAway`) — the population `route-detour` only claims once
+ * it is wasteful enough, leaving the merely-bad to the wrap.
+ *
+ * `elk.port.side` is honored only at `FIXED_SIDE` or stricter, which
+ * constrains every edge of the node — so every incident flow gets a port:
+ * flagged ones face their counterpart (measured on the first-pass scene),
+ * unflagged ones keep the side elk itself chose in the first pass, so a good
+ * route is not disturbed to fix a bad one.
+ */
+function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, model: Model): void {
+  type Side = "NORTH" | "SOUTH" | "EAST" | "WEST";
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const elkById = new Map<string, ElkNode>();
+  const register = (node: ElkNode) => {
+    elkById.set(node.id, node);
+    for (const child of node.children ?? []) register(child);
+  };
+  register(graph);
+  const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+  const sideToward = (from: SceneNode, to: SceneNode): Side => {
+    const dx = centerOf(to).x - centerOf(from).x;
+    const dy = centerOf(to).y - centerOf(from).y;
+    return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? "WEST" : "EAST") : dy < 0 ? "NORTH" : "SOUTH";
+  };
+  const sideOn = (p: { x: number; y: number }, n: SceneNode): Side | null => {
+    if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
+      if (Math.abs(p.y - n.y) < 2) return "NORTH";
+      if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
+    }
+    if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
+      if (Math.abs(p.x - n.x) < 2) return "WEST";
+      if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
+    }
+    return null;
+  };
+  // Only the flagged flows' nodes are pinned. Pinning *every* flow to its
+  // first-pass side was measured worse (attachAway 303 -> 304, nearParallel
+  // 63 -> 66, the application-compact regressions back): with no freedom left
+  // on the other edges, elk cannot reorganise corridors around the new ports.
+  const flaggedNodes = new Set<string>();
+  for (const flow of model.flows)
+    if (flagged.has(flow.id)) {
+      flaggedNodes.add(flow.from);
+      flaggedNodes.add(flow.to);
+    }
+  for (const nodeId of flaggedNodes) {
+    const elkNode = elkById.get(nodeId);
+    const sceneNode = nodeById.get(nodeId);
+    if (!elkNode || !sceneNode) continue;
+    const ports: NonNullable<ElkNode["ports"]> = [];
+    for (const flow of model.flows) {
+      if (flow.from !== nodeId && flow.to !== nodeId) continue;
+      const role = flow.from === nodeId ? "src" : "dst";
+      const other = nodeById.get(role === "src" ? flow.to : flow.from);
+      if (!other) continue;
+      let side = sideToward(sceneNode, other);
+      if (!flagged.has(flow.id)) {
+        const edge = scene.edges.find((e) => e.id === flow.id);
+        const terminal =
+          edge && edge.pts.length >= 2
+            ? role === "src"
+              ? edge.pts[0]
+              : edge.pts[edge.pts.length - 1]
+            : null;
+        const actual = terminal ? sideOn(terminal, sceneNode) : null;
+        if (actual) side = actual;
+      }
+      const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      // 1x1, not 0x0: a zero-size port breaks the scanline constraint's
+      // hitbox math inside elk ("Invalid hitboxes for scanline constraint
+      // calculation") on hierarchical graphs — measured on every themes/*
+      // model, where the constrained pass crashed and fell back to the wrap.
+      ports.push({ id: portId, width: 1, height: 1, layoutOptions: { "elk.port.side": side } });
+      const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
+      if (elkEdge) {
+        if (role === "src") elkEdge.sources = [portId];
+        else elkEdge.targets = [portId];
+      }
+    }
+    if (!ports.length) continue;
+    elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
+    elkNode.ports = [...(elkNode.ports ?? []), ...ports];
+  }
 }
 
 export async function layout(model: Model, view: View): Promise<Scene> {
@@ -400,7 +654,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const nodes = walkedNodes.map((walked) => walked.node);
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
 
-    const edges = collectSceneEdges(result, origins, numbered);
+    const edges = collectSceneEdges(result, origins, numbered, edgeFontSize);
 
     const scene: Scene = {
       width: Math.ceil(result.width),
@@ -417,61 +671,191 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     if (sideways) transpose(scene, titleBoxes);
     rerouteDetours(scene, model, numbered, titleBoxes);
     if (sideways) transpose(scene, titleBoxes);
+    // `rerouteDetours` shifts the whole scene when a top-channel lane sits
+    // above y=0 (its shift-down block at the end), so the boxes measured
+    // before it are stale by that amount. Handing them to `tidyEdges` makes
+    // its re-side pass accept runs that strike titles where they now are —
+    // measured on logical-fr/slide, where §4c sent F19's L through a band
+    // it could not see. Re-derive before any pass that reads them.
+    const routedTitles = titleBoxesOf(scene, model);
     // Straighten routing noise and separate flows sharing a node side, for
     // every edge — elk's as much as the rerouted ones.
-    tidyEdges(scene);
+    tidyEdges(scene, routedTitles);
+    // Every pass above moves routes without moving the labels that name them.
+    // Put each label back on its own flow before anything measures where labels
+    // are — `compact` below is the first thing that does.
+    anchorFlowLabels(scene, routedTitles);
     // Reclaim the bands elk sized for routes that no longer run there — every
     // disposition, since elk leaves spare corridors whether or not the reroute
     // above moved anything.
     compactVertical(scene);
+    // Route repair runs *after* compaction, not before it. `compact` shifts
+    // every y through a monotone map, which shrinks the gaps a route was judged
+    // on — so an optimiser placed above it validates geometry that compaction
+    // then narrows into near-parallel runs, tight attachments and micro-jogs.
+    // The optimiser is the last pass that *re-routes*: the only pass below it
+    // that moves edge geometry is the attachment spread after the ladder, and
+    // that one only slides terminals along a side they already sit on.
+    //
+    // Title boxes are re-derived here, not reused. The set captured above was
+    // measured before `compactVertical`, which shifts every y through a monotone
+    // map and therefore moves the containers whose names those boxes describe.
+    // Handing the stale set to a pass that runs *after* compaction makes it
+    // dodge the bands where they used to be and strike them where they now are —
+    // which is exactly what `titleStruck` reported on 17 drawings, all of them
+    // tier 0 regressions the router believed it was refusing.
+    //
+    // A route change can cost a *different* flow's label its seat: the anchorer
+    // resolves the collisions a move creates by taking some label off its run,
+    // and which one it picks cannot be predicted from the moved edge alone. So
+    // the repair is allowed to try, and then audited — any flow whose label was
+    // on its run before and is not after has its route put back. That keeps the
+    // ladder's rule (a Tier 1 loss is only ever bought by a Tier 0 gain)
+    // without refusing every move that merely *might* cost a label.
+    // Deep copy: `optimiseRoutes` finishes by squaring every edge, which mutates
+    // Point objects in place, so a shallow snapshot is not a snapshot.
+    const routesBefore = new Map(
+      scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))]),
+    );
+    const settledTitles = titleBoxesOf(scene, model);
+    optimiseRoutes(scene, settledTitles);
+    // The ladder trades a lower-tier win for a tier-4 `tight` when every seat
+    // it can reach sits within `MIN_ATTACH_GAP` of a sibling — honest, but it
+    // leaves the side crowded. The same spread that ran inside `tidyEdges`
+    // runs here again, after the pass that re-crowds.
+    spreadAttachments(scene);
+    // Record *every* edge the repair moved. Restricting this to edges whose
+    // label was seated beforehand made the rollback partial — the renderer put
+    // some flows back while leaving the rest where the optimiser had moved them,
+    // and a drawing that is half repaired is not a drawing either pass ever
+    // evaluated. That mixture is what produced `coincident` runs, a must-be-zero
+    // breach. Whether the repair was worth keeping is judged whole-drawing in
+    // the renderer; this only has to make the undo complete.
+    for (const edge of scene.edges) {
+      const original = routesBefore.get(edge.id);
+      if (!original) continue;
+      const moved =
+        original.length !== edge.pts.length ||
+        original.some(
+          (point, index) =>
+            Math.abs(point.x - edge.pts[index].x) > 0.01 ||
+            Math.abs(point.y - edge.pts[index].y) > 0.01,
+        );
+      if (moved) edge.repairedFrom = original;
+    }
+    // `compactVertical` shrank the gaps the side-clearance pass judged, so a
+    // run that cleared its sides before compaction can hug one after it. Run
+    // the clearance *after* the repair recording so the hug fix is not swept
+    // into the renderer's batch audit and reverted as collateral of an
+    // unrelated optimiser trade — measured on application-large-fr/wide, F19's
+    // hug fix at y=445 was batch-reverted to y=451 because another edge's label
+    // harm outweighed it. Moved here, the fix is permanent; it is present in
+    // both audit states, so the renderer's batch comparison is unaffected.
+    clearSideHugs(scene, settledTitles);
+    anchorFlowLabels(scene, settledTitles);
+    // Adjacent-edge crossings between two flows seated on the same leaf side,
+    // further out than the §4b fan can see, are swapped here for the same
+    // reason clearSideHugs runs here: outside the renderer's batch audit so an
+    // unrelated optimiser trade cannot revert the swap. Strict gate — only
+    // swaps that strictly remove a crossing without shuffling it elsewhere.
+    swapCrossingSiblingSeats(scene);
     return scene;
   };
 
   const startTime = Date.now();
   let result: LaidOutNode;
+  let winnerDirection: "RIGHT" | "DOWN";
+  let winnerOptions: { labelWrap?: number; tight?: boolean; minLayers?: boolean } | undefined;
   if (aspectTarget) {
-    const layoutConfigs: ElkNode[] =
+    const graphSpecs: {
+      direction: "RIGHT" | "DOWN";
+      options?: { labelWrap?: number; tight?: boolean; minLayers?: boolean };
+    }[] =
       disposition === "slide"
         ? [
-            makeGraph("RIGHT"),
-            makeGraph("RIGHT", { labelWrap: 16 }),
-            makeGraph("RIGHT", { labelWrap: 14, tight: true }),
-            makeGraph("RIGHT", { labelWrap: 14, tight: true, minLayers: true }),
+            { direction: "RIGHT" },
+            { direction: "RIGHT", options: { labelWrap: 16 } },
+            { direction: "RIGHT", options: { labelWrap: 14, tight: true } },
+            { direction: "RIGHT", options: { labelWrap: 14, tight: true, minLayers: true } },
           ]
-        : [makeGraph("DOWN"), makeGraph("DOWN", { labelWrap: 16 })];
+        : [{ direction: "DOWN" }, { direction: "DOWN", options: { labelWrap: 16 } }];
     const candidates = (await Promise.all(
-      layoutConfigs.map((graph) => elk.layout(graph)),
+      graphSpecs.map((spec) => elk.layout(makeGraph(spec.direction, spec.options))),
     )) as unknown as LaidOutNode[];
     const preferWide = disposition === "slide";
-    const orientedLayouts = candidates.filter((layoutResult) =>
-      preferWide
-        ? layoutResult.width >= layoutResult.height
-        : layoutResult.height >= layoutResult.width,
-    );
-    const viableLayouts = orientedLayouts.length ? orientedLayouts : candidates;
+    const orientedLayouts = candidates
+      .map((layoutResult, index) => ({ layoutResult, index }))
+      .filter(({ layoutResult }) =>
+        preferWide
+          ? layoutResult.width >= layoutResult.height
+          : layoutResult.height >= layoutResult.width,
+      );
+    const viableLayouts = orientedLayouts.length
+      ? orientedLayouts
+      : candidates.map((layoutResult, index) => ({ layoutResult, index }));
     const frameSize =
       disposition === "slide" ? { width: 1280, height: 720 } : { width: 700, height: 1000 };
     const fitScore = (layoutResult: { width: number; height: number }) =>
       -Math.min(frameSize.width / layoutResult.width, frameSize.height / layoutResult.height);
-    result = viableLayouts.reduce((candidateA, candidateB) =>
-      fitScore(candidateA) <= fitScore(candidateB) ? candidateA : candidateB,
+    const winner = viableLayouts.reduce((candidateA, candidateB) =>
+      fitScore(candidateA.layoutResult) <= fitScore(candidateB.layoutResult) ? candidateA : candidateB,
     );
+    result = winner.layoutResult;
+    winnerDirection = graphSpecs[winner.index].direction;
+    winnerOptions = graphSpecs[winner.index].options;
     if (disposition === "slide") {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
         // The folded layout hand-routes its own connectors, so it keeps them —
         // but the endpoint invariants apply to it like everything else.
-        tidyEdges(folded);
+        tidyEdges(folded, titleBoxesOf(folded, model), true);
+        anchorFlowLabels(folded, titleBoxesOf(folded, model));
         compactVertical(folded);
+        // The folded layout hand-routes its connectors, so the optimiser is a
+        // no-op on it by design (`folded`), but the call keeps the two pipelines
+        // structurally identical.
+        optimiseRoutes(folded, titleBoxesOf(folded, model), true);
         return folded;
       }
     }
   } else {
-    result = (await elk.layout(
-      makeGraph(disposition === "tall" ? "DOWN" : "RIGHT"),
-    )) as unknown as LaidOutNode;
+    winnerDirection = disposition === "tall" ? "DOWN" : "RIGHT";
+    winnerOptions = undefined;
+    result = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
   }
   const layoutMs = Date.now() - startTime;
-  return sceneFromResult(result, layoutMs);
+  const scene = sceneFromResult(result, layoutMs);
+  const away = attachAwayOf(scene, model);
+  // The playground bundles this module for the browser, where `process` does
+  // not exist; reach it through `globalThis` so the switch is simply absent
+  // there instead of a ReferenceError. CLI-only debug aid — see CONTRIBUTING.md.
+  const skipPortPass = !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env?.CAIRN_NO_PORT_PASS;
+  if (!away.size || skipPortPass) return scene;
+  // elk's default for a backward flow is to follow the main direction and
+  // wrap around the drawing's far margin; `route-detour` only claims the
+  // routes wasteful enough to deserve a channel, leaving the merely-bad to
+  // the wrap. Re-run the winning config with those flows pinned to ports
+  // facing their counterpart. The trade is judged by the house ladder, not by
+  // the metric being fixed: a wholesale relayout that clears wrong-side
+  // departures but strikes a title or merges a run is refused, the way
+  // `optimiseRoutes` refuses its own bad trades. Strictly opportunistic:
+  // port constraints hit an elk-internal scanline bug on some models, so a
+  // crash here just keeps the first pass.
+  try {
+    const constrained = makeGraph(winnerDirection, winnerOptions);
+    constrainPorts(constrained, scene, away, model);
+    const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
+    const rescene = sceneFromResult(reresult, Date.now() - startTime);
+    const allEdges = (s: Scene) => new Set(s.edges.map((edge) => edge.id));
+    const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), new Map());
+    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(allEdges(rescene), new Map());
+    for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
+    for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
+    const verdict = relayoutVerdict(before, after);
+    return verdict >= 0 ? rescene : scene;
+  } catch {
+    return scene;
+  }
 }

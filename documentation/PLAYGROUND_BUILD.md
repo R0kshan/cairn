@@ -37,6 +37,22 @@ all CLI tests pass (the test suite doesn't exercise these bundles).
 **Don't read or edit the bundles by hand.** Read `src/playground.ts`
 (exports `compile`, `version`, `themeNames`) and the modules it imports instead.
 
+## No Node globals in engine code
+
+`--platform=browser` does not shim Node globals — `process`, `Buffer`,
+`require`, `__dirname` — so if any module reachable from `src/playground.ts`
+references one, esbuild bundles the bare identifier and it throws
+`ReferenceError` the moment a real browser hits that code path (a Node-only
+test suite never sees the gap, since Node provides the global). If you need
+one, reach it through `globalThis` with optional chaining so it degrades to
+`undefined` in the browser instead of throwing — see
+`src/scene-layout.ts`'s `CAIRN_NO_PORT_PASS` switch for the pattern.
+
+Two guards catch a regression here: the `playground` CI job greps the built
+bundle for a bare Node-global reference, and
+`tests/playground.test.ts` compiles a large example through the committed
+bundle with `process` deleted from `globalThis`.
+
 ## Local preview
 
 ```sh

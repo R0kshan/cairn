@@ -25,7 +25,7 @@ The tradeoff: it's experimental (track [node#53725](https://github.com/nodejs/no
 
 ## What you can't break
 
-Invariants detailed in `CLAUDE.md`. In short:
+Invariants detailed in [`INVARIANTS.md`](./INVARIANTS.md). In short:
 - **Zero label overlaps. Byte-deterministic output.**
 - **Every flow is a distinct arrow with a distinct label** — flows are never visually merged.
 - **Labels are mandatory in logical view (E0203)** — optional in application, infrastructure and security.
@@ -55,7 +55,11 @@ Invariants detailed in `CLAUDE.md`. In short:
 
 **Never regenerate to silence a diff you don't understand** — that turns the gate into noise.
 
-### Background
+[`tests/README.md`](tests/README.md) is the full account of the test
+architecture — what each layer catches, and why the readability baseline accepts
+some regressions as trades.
+
+## Background
 
 `npm test` runs three layers against committed reference files:
 
@@ -69,12 +73,32 @@ Invariants detailed in `CLAUDE.md`. In short:
 
 It then chains **`npm run sweep`**, the readability gate: every `.cairn`
 fixture under `examples/` (top level plus `dispositions/` and `themes/`) ×
-every disposition (288 drawings), six invariants that must be `0` and five
+every disposition (288 drawings), seven invariants that must be `0` and fourteen
 ratcheted ceilings — expressed as a rate per swept flow-instance so the gate
 stays stable as fixtures are added — that may only fall. Run it alone while
 iterating — `npm run sweep -- --detail` lists each defect with its edge id.
 
+On top of the rates, a **per-drawing baseline**
+(`tests/__snapshots__/readability.baseline`) pins the accepted defect count for
+every drawing × metric: no single drawing may get worse on any metric, even if
+the corpus totals improve. When your change improves drawings, run
+`npm run sweep -- --update-baseline` and commit the file — floors only fall.
+
+Two flags narrow the matrix while iterating: `--only=<substring>` keeps just the
+fixtures whose path contains it, and `--shard=i/n` takes every n-th fixture (for
+splitting across CI jobs). Partial runs don't gate the corpus-wide rates — a
+rate over part of the corpus can't judge a corpus-wide ceiling — but they do
+gate the per-drawing baseline, and `--update-baseline` on a partial run updates
+only the drawings actually swept.
+
 CI also builds the Bun binary + playground bundle. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
+
+`CAIRN_NO_PORT_PASS=1` is the one debug env var in the pipeline: it skips the
+port-constraint re-layout pass in `scene-layout.ts` that re-routes flows
+attaching on the wrong side of their target. CLI-only — the playground bundles
+run in a browser, where the switch reads as absent rather than throwing (see
+[PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#no-node-globals-in-engine-code)).
+Nothing in the repo sets it, so it must never change committed output.
 
 ## Opening a PR
 
