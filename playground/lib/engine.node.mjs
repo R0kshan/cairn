@@ -92139,7 +92139,7 @@ var import_elk_bundled = __toESM(require_elk_bundled(), 1);
 // package.json
 var package_default = {
   name: "cairn",
-  version: "1.0.0-RC09",
+  version: "1.0.0-RC10",
   description: "Architecture diagrams as code \u2014 typed views, semantic layout, overlap-free labels",
   type: "module",
   bin: {
