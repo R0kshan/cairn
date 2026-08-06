@@ -29,11 +29,11 @@ export function subtreeElements(element: Element): Element[] {
 }
 
 export function indexElementsById(elements: Element[]): [string, Element][] {
-  const indexMap: [string, Element][] = [];
+  const result: [string, Element][] = [];
   for (const element of elements) {
     for (const desc of subtreeElements(element)) {
-      indexMap.push([desc.id, desc]);
+      result.push([desc.id, desc]);
     }
   }
-  return indexMap;
+  return result;
 }

@@ -21,14 +21,6 @@ const LANE_STEP = 10;
 const LANE_V = 11;
 const LABEL_WRAP = 16;
 
-/** Build a 4-point L-shaped polyline from `from` to `to` through `midX`. */
-const lRoute = (from: Point, to: Point, midX: number): Point[] => [
-  from,
-  { x: midX, y: from.y },
-  { x: midX, y: to.y },
-  to,
-];
-
 class LaneAllocator {
   lanes: { rangeStart: number; rangeEnd: number }[][] = [];
   alloc(intervalStart: number, intervalEnd: number): number {
@@ -421,15 +413,15 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   const rows: {
     element: Element;
     box: Box;
-    laidOutResult: LaidOutNode | null;
+    result: LaidOutNode | null;
   }[] = [];
   let yCursor = 16 + gutterHeight(0);
   middles.forEach((element, index) => {
-    const laidOutResult = middleResults.get(element.id) ?? null;
-    const size = laidOutResult
+    const result = middleResults.get(element.id) ?? null;
+    const size = result
       ? {
-          width: laidOutResult.children![0].width,
-          height: laidOutResult.children![0].height,
+          width: result.children![0].width,
+          height: result.children![0].height,
         }
       : (() => {
           const node = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
@@ -443,7 +435,7 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
         width: size.width,
         height: size.height,
       },
-      laidOutResult,
+      result,
     });
     yCursor += size.height + Math.max(40, gutterHeight(index + 1));
   });
@@ -502,8 +494,8 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
 
   const absolutePorts = new Map<string, Point>();
   const origins = new Map<string, Point>();
-  for (const { element, box, laidOutResult: laidOut } of rows) {
-    if (!laidOut) {
+  for (const { element, box, result } of rows) {
+    if (!result) {
       nodes.push({
         id: element.id,
         kind: element.kind,
@@ -518,11 +510,11 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
       continue;
     }
     const rootOffset = {
-      x: box.x - laidOut.children![0].x,
-      y: box.y - laidOut.children![0].y,
+      x: box.x - result.children![0].x,
+      y: box.y - result.children![0].y,
     };
-    origins.set(laidOut.id, rootOffset);
-    for (const walked of walkFoldedNodes(laidOut, rootOffset.x, rootOffset.y, elementById, syntheticIds)) {
+    origins.set(result.id, rootOffset);
+    for (const walked of walkFoldedNodes(result, rootOffset.x, rootOffset.y, elementById, syntheticIds)) {
       origins.set(walked.id, walked.origin);
       if (walked.isPort) {
         absolutePorts.set(walked.id, walked.origin);
@@ -535,13 +527,13 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
 
   const edges: SceneEdge[] = [];
   const edgePoints = new Map<string, Point[]>();
-  for (const { box, laidOutResult } of rows) {
-    if (!laidOutResult) continue;
+  for (const { box, result } of rows) {
+    if (!result) continue;
     const rootOffset = {
-      x: box.x - laidOutResult.children![0].x,
-      y: box.y - laidOutResult.children![0].y,
+      x: box.x - result.children![0].x,
+      y: box.y - result.children![0].y,
     };
-    const collected = collectFoldedEdges(laidOutResult, origins, rootOffset, syntheticIds, edgeFontSize);
+    const collected = collectFoldedEdges(result, origins, rootOffset, syntheticIds, edgeFontSize);
     edges.push(...collected.edges);
     for (const [edgeId, points] of collected.edgePoints) edgePoints.set(edgeId, points);
   }
@@ -585,20 +577,32 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
     let gutterY = 0;
     let gutterLabelY = 0;
 
-    if (cls === "A" || cls === "F") {
+    if (cls === "A") {
       const leftX = laneLeftX(sourcePoint.y, destPoint.y);
-      points.push(...lRoute(sourcePoint, destPoint, leftX));
+      points.push(
+        sourcePoint,
+        { x: leftX, y: sourcePoint.y },
+        { x: leftX, y: destPoint.y },
+        destPoint,
+      );
     } else if (cls === "B") {
       const rightX = laneRightX(sourcePoint.y, destPoint.y);
-      points.push(...lRoute(sourcePoint, destPoint, rightX));
-    } else if (["C", "D", "E"].includes(cls)) {
+      points.push(
+        sourcePoint,
+        { x: rightX, y: sourcePoint.y },
+        { x: rightX, y: destPoint.y },
+        destPoint,
+      );
+    } else if (cls === "C" || cls === "D" || cls === "E") {
       const gutterIndex = gutter!;
       const start: Point =
         cls === "D"
           ? sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id)!, "left")
           : sourcePoint;
-      ({ y: gutterY, laneIndex: flowLaneIndex, labelY: gutterLabelY } =
-        gutterInfo(gutterIndex, xLeftGutter, cls === "D" ? xSink : xRightGutter + 120));
+      const info = gutterInfo(gutterIndex, xLeftGutter, cls === "D" ? xSink : xRightGutter + 120);
+      gutterY = info.y;
+      flowLaneIndex = info.laneIndex;
+      gutterLabelY = info.labelY;
       const rightX = laneRightX(start.y, gutterY);
       const leftX = laneLeftX(gutterY, destPoint.y);
       points.push(
@@ -606,6 +610,14 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
         { x: rightX, y: start.y },
         { x: rightX, y: gutterY },
         { x: leftX, y: gutterY },
+        { x: leftX, y: destPoint.y },
+        destPoint,
+      );
+    } else {
+      const leftX = laneLeftX(sourcePoint.y, destPoint.y);
+      points.push(
+        sourcePoint,
+        { x: leftX, y: sourcePoint.y },
         { x: leftX, y: destPoint.y },
         destPoint,
       );

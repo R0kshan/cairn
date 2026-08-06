@@ -763,7 +763,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   };
 
   const startTime = Date.now();
-  let winnerLayout: LaidOutNode;
+  let result: LaidOutNode;
   let winnerDirection: "RIGHT" | "DOWN";
   let winnerOptions: { labelWrap?: number; tight?: boolean; minLayers?: boolean } | undefined;
   if (aspectTarget) {
@@ -800,12 +800,12 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const winner = viableLayouts.reduce((candidateA, candidateB) =>
       fitScore(candidateA.layoutResult) <= fitScore(candidateB.layoutResult) ? candidateA : candidateB,
     );
-    winnerLayout = winner.layoutResult;
+    result = winner.layoutResult;
     winnerDirection = graphSpecs[winner.index].direction;
     winnerOptions = graphSpecs[winner.index].options;
     if (disposition === "slide") {
       const folded = await foldedLayout(model, view, elk);
-      if (folded && fitScore(winnerLayout) >= fitScore(folded) * 1.1) {
+      if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
         folded.layoutMs = Date.now() - startTime;
         // The folded layout hand-routes its own connectors, so it keeps them —
         // but the endpoint invariants apply to it like everything else.
@@ -822,10 +822,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   } else {
     winnerDirection = disposition === "tall" ? "DOWN" : "RIGHT";
     winnerOptions = undefined;
-    winnerLayout = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
+    result = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
   }
   const layoutMs = Date.now() - startTime;
-  const scene = sceneFromResult(winnerLayout, layoutMs);
+  const scene = sceneFromResult(result, layoutMs);
   const away = attachAwayOf(scene, model);
   if (!away.size || process.env.CAIRN_NO_PORT_PASS) return scene;
   // elk's default for a backward flow is to follow the main direction and

@@ -85,13 +85,6 @@ type Side = "north" | "south" | "east" | "west";
 
 const segmentLength = (a: Point, b: Point) => Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
 
-/** Squared distance from `hit` to the nearest point on `box`'s interior or edge. */
-const boxToSegmentSq = (box: { x: number; y: number; width: number; height: number }, hit: Point) => {
-  const dx = Math.max(0, box.x - hit.x, hit.x - (box.x + box.width));
-  const dy = Math.max(0, box.y - hit.y, hit.y - (box.y + box.height));
-  return dx * dx + dy * dy;
-};
-
 /**
  * Collapses every deviation smaller than `SNAP` so the polyline runs straight
  * between real turns. Endpoints keep the border they sit on and may only slide
@@ -121,6 +114,7 @@ function straighten(
   for (let guard = 0; guard < 60; guard++) {
     let changed = false;
 
+    // Drop a point that no longer turns anything.
     for (let index = 1; index + 1 < pts.length; index++) {
       const straightX =
         Math.abs(pts[index].x - pts[index - 1].x) <= 0.5 &&
@@ -136,6 +130,9 @@ function straighten(
     }
     if (changed) continue;
 
+    // Remove a jog: a short segment whose neighbours run the other way. The
+    // longer neighbour keeps its position, so the line settles where most of
+    // it already was.
     for (let index = 0; index + 1 < pts.length; index++) {
       const length = segmentLength(pts[index], pts[index + 1]);
       if (length === 0) {
@@ -235,6 +232,10 @@ function enforceOrthogonalOn(edge: SceneEdge, leaves: SceneNode[]): void {
       const axis: "x" | "y" = Math.abs(deltaX) >= Math.abs(deltaY) ? "y" : "x";
       const movable = (candidate: number) =>
         (candidate !== 0 && candidate !== pts.length - 1) || borderAxis(candidate) !== axis;
+      // Squaring a segment moves a point, and after a wide jog collapse that
+      // move can be large enough to drag the run across a node. Prefer the
+      // end that keeps it clear; if neither does, squareness still wins —
+      // a slanted flow is never acceptable.
       const options = [index + 1, index].filter(movable);
       if (!options.length) continue;
       const clear = options.find((candidate) => {
@@ -307,6 +308,7 @@ export function spreadAttachments(scene: Scene): void {
     });
   const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
 
+  // Group the endpoints landing on each node side.
   const groups = new Map<string, { node: SceneNode; side: Side; members: Attachment[] }>();
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
@@ -374,6 +376,10 @@ export function spreadAttachments(scene: Scene): void {
       for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
     }
 
+    // Two passes. The first keeps every guard; the second runs only for flows
+    // still sharing a point afterwards, and drops the parallel-run guard for
+    // them — two flows drifting alongside each other is a blemish, two flows
+    // leaving a node at the same point is unreadable, so the blemish wins.
     for (const relaxed of [false, true]) {
       if (relaxed) {
         const sorted = [...members].sort((a, b) => a.along - b.along);
@@ -406,6 +412,10 @@ export function spreadAttachments(scene: Scene): void {
         if (target < farStart + MIN_SIDE_INSET || target > farStart + farLength - MIN_SIDE_INSET)
           return;
       }
+      // Siblings on this side are exempt: they are being spread apart on
+      // purpose, and MIN_ATTACH_GAP — not the parallel-run rule — governs how
+      // close they may end up. Without this the guard blocks the very
+      // separation it is meant to protect.
       const others = runsExcept(...members.map((sibling) => sibling.edge.id));
       const runFrom = vertical ? terminalPoint.x : terminalPoint.y;
       const runTo = vertical ? neighbourPoint.x : neighbourPoint.y;
@@ -458,6 +468,15 @@ export function spreadAttachments(scene: Scene): void {
 export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
   const SIDE_CLEAR = 8;
   const leaves = scene.nodes.filter((node) => !node.container);
+  /**
+   * Tier-0 gate for the moves this pass makes: the changed segments (from
+   * `fromIdx` on) may not strike a container's name, nor cross a container
+   * that holds neither endpoint. The re-side machinery was measured
+   * introducing exactly these on large-numbered/wide's F28 — a rerouted
+   * riser crossing a foreign layer and a title band — and a tier-0 defect
+   * is never purchasable, so the candidate is refused instead. `owns` is the
+   * edge's endpoint nodes; their containers are the only ones it may cross.
+   */
   const tier0Blocked = (pts: Point[], fromIdx: number, owns: Set<SceneNode>): boolean => {
     const owned = new Set<SceneNode>();
     for (const n of owns) {
@@ -538,6 +557,14 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
         : nearHi + SIDE_CLEAR;
     return null;
   };
+  /**
+   * The positions that clear a hugged side, most clearance first: 8px, then
+   * 3.5px — just past the 3px the predicate flags at. The tight fallback is
+   * what a corridor narrower than the full clearance offers: F06's approach
+   * stub in medium-tall/tall sits in a 7px gap between POLICYHOLDERS and
+   * THIRD_PARTY, where 8px off one side is 1px off the other and 3.5px is
+   * the only honest seat.
+   */
   const hugTargetsOf = (
     run: { vert: boolean; at: number; lo: number; hi: number },
     node: SceneNode,
@@ -563,6 +590,13 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
     runHitsNodeIn(vertical, at, from, to, leaves);
   const otherSideRuns = new Map<string, ReturnType<typeof sideRunsOf>>();
   for (const edge of scene.edges) otherSideRuns.set(edge.id, sideRunsOf(edge));
+  // The innermost container that geometrically holds a node, if any. A
+  // re-sided riser must turn in open space *before* the layer's border — a
+  // riser inside the layer's left band clutters the band the layer's own
+  // entries use (logical-archi's F02/F11 both turned inside the Central
+  // control layer, crowding the approaches into CFG_SYS). Innermost, not
+  // outermost: every node sits inside the whole system too, and the system's
+  // border is not the one the riser must clear.
   const containerOf = (node: SceneNode): SceneNode | null => {
     let best: SceneNode | null = null;
     for (const c of scene.nodes) {
@@ -597,6 +631,9 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
         }
         if (!targets.length) continue;
         const axis: "x" | "y" = run.vert ? "x" : "y";
+        // The slide must keep the terminal inside its side's span. A clamped
+        // target is accepted as long as it still clears the hug — the
+        // re-check below rejects anything inside 3px.
         let clampLo = -Infinity;
         let clampHi = Infinity;
         for (const [idx, isFirst] of [
@@ -624,6 +661,15 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
         if (clampLo > clampHi) {
           continue;
         }
+        // Every border the run rides offers a way off it; the first that
+        // validates wins. Trying only the first hugged node used to skip runs
+        // whose wall is shared — medium-tall/tall's F06 rides three borders
+        // and only the third one's target is clean.
+        //
+        // A hug fix may be paid for with up to one new crossing (`sideHug` is
+        // rated one tier above `crossings` by design — a run merged with a
+        // frame destroys attribution). The budget is enforced here; the
+        // per-drawing gate then judges the trade.
         const attempt = (target: number): boolean => {
           const delta = target - run.at;
           if (Math.abs(delta) < 0.5) {
@@ -633,6 +679,9 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
           pts[run.i][axis] += delta;
           pts[run.i + 1][axis] += delta;
           let ok = true;
+          // The slid terminals must not land on sibling attachments — shared
+          // seats are a must-be-zero invariant — nor on a corner, where the
+          // arrowhead reads as belonging to either side.
           for (const [idx, isFirst] of [
             [run.i, true],
             [run.i + 1, false],
@@ -726,6 +775,11 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
                 const shared = Math.min(run.hi, o.hi) - Math.max(run.lo, o.lo);
                 const gapBefore = Math.abs(o.at - run.at);
                 const gapAfter = Math.abs(o.at - target);
+                // Merging is a must-be-zero breach. Parking parallel within
+                // 10px is `nearParallel` — not a payable trade for a hug
+                // cleared: it recreates the same visual confusion in the same
+                // corridor. Refuse the move only when it *creates* the
+                // proximity.
                 if (
                   (gapAfter < 3 && shared > 8) ||
                   (gapBefore >= 10 && gapAfter < 10 && shared > 40)
@@ -753,7 +807,29 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
           otherSideRuns.set(edge.id, sideRunsOf(edge));
           return true;
         };
+        // Re-side fallback: when every translation is blocked, try moving the
+        // terminal to an adjacent perpendicular side of the same node and
+        // routing a fresh riser to it. logical-archi's F02 rides SUIV_FLUX's
+        // left side at x=1027; every translation lands on CFG_SYS's corner or
+        // is blocked by F11's riser at x=1011 (which spans CFG_SYS's whole
+        // west side). Re-siding the terminal to CFG_SYS's west side below the
+        // other entries works — with one unavoidable crossing against F11,
+        // paid per the design rule that a hug fix outranks a crossing. When
+        // the only new crossing is against one foreign flow, that flow's riser
+        // is relocated so the crossing lands low and clear instead of in the
+        // approach band.
+        // Relocate a foreign flow's *vertical interior* riser westward so E's
+        // re-sided route can pass. Deliberately bounded to that shape: a
+        // blocker that is a terminal riser, a horizontal run, or needs an
+        // eastward move is not relocated — the re-side candidate is then
+        // rejected whole (fail-safe: the hug stays as debt rather than
+        // forcing a dubious route). `eRiserAt` is E's fresh riser position,
+        // passed in rather than guessed from the candidate's point indices —
+        // a re-sided END terminal puts the riser at the route's tail, not at
+        // segment 1-2.
         const relocateRiser = (foreign: SceneEdge, ePts: Point[], eRiserAt: number): boolean => {
+          // Find foreign's riser (a vertical segment with horizontals on both
+          // sides) and rebuild with it moved west.
           let r = -1;
           for (let i = 1; i + 2 < foreign.pts.length; i++) {
             const a = foreign.pts[i];
@@ -773,6 +849,8 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
             if (newX < 4) break;
             // Must sit clear of E's riser to avoid a new near-parallel bundle.
             if (Math.abs(newX - eRiserAt) < 10) continue;
+            // Must not sit inside either endpoint's innermost layer — the
+            // riser turns in open space, keeping both layers' bands clear.
             const fSource = sideOf(foreign.pts[0], leaves);
             const fTarget = sideOf(foreign.pts[foreign.pts.length - 1], leaves);
             const cSource = fSource ? containerOf(fSource.node) : null;
@@ -784,6 +862,7 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
             pts[r].x = newX;
             pts[r + 1].x = newX;
             let ok = true;
+            // Neighbours must not reverse.
             for (const k of [r - 1, r + 1]) {
               if (k < 0 || k + 1 >= pts.length) continue;
               const before = foreign.pts[k + 1].x - foreign.pts[k].x;
@@ -817,6 +896,12 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
               }
             }
             if (hug) continue;
+            // The re-sided flow's candidate is fixed; count the crossings
+            // against it (must stay exactly 1 — the intended trade) and
+            // against every other edge (at most 1 more — the user's rule that
+            // a hug fix outranks crossings, applied to the decluttering
+            // relocation: F11's descent cannot leave the layer's left band
+            // without crossing F01's approach into it).
             let trade = 0;
             let otherNew = 0;
             for (const other of scene.edges) {
@@ -874,6 +959,9 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
               newSide === "west" || newSide === "east"
                 ? terminalNode.y + terminalNode.height
                 : terminalNode.x + terminalNode.width;
+            // Candidate seats along the new side, from the midpoint outward.
+            // Each must clear the behaviour test's spacing rule — the same
+            // `tight` rule the sweep gates — and the side's corners.
             const sideLength = spanHi - spanLo;
             const siblings = scene.edges
               .filter((e) => e.id !== edge.id && e.pts.length >= 2)
@@ -899,6 +987,9 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
               }
             }
             const nodeContainer = containerOf(terminalNode);
+            // The riser must turn in open space before the terminal node's
+            // layer border — never inside the layer's left band (or top/bottom
+            // band for a north/south re-side).
             const clearsLayer = (riserAt: number): boolean => {
               if (!nodeContainer) return true;
               if (newSide === "west" && riserAt > nodeContainer.x - 8) return false;
@@ -909,6 +1000,10 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
                 return false;
               return true;
             };
+            // Map each candidate segment to the old segment it replaces (for
+            // the crossing diff). Re-siding the START terminal prepends
+            // [new departure, approach, riser, rejoin]; re-siding the END
+            // terminal appends [riser, approach] after the neighbour.
             const replaceMapOf = (pts: Point[]): number[] => {
               const map: number[] = [];
               for (let k = 0; k + 1 < pts.length; k++) {
@@ -918,6 +1013,8 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
               return map;
             };
             for (const newTerminalAlong of alongs) {
+              // Scan both directions from the hugging run's position; the
+              // validations decide which side actually has room.
               for (const dir of [-1, 1]) {
                 for (let step = 8; step <= 400; step += 8) {
                   const riserAt = run.at + dir * step;
@@ -959,6 +1056,7 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
                   }
                   const replaceMap = replaceMapOf(pts);
                   let ok = true;
+                  // No leaf hits on the new or moved segments.
                   for (let i = fromIdx; i + 1 < pts.length; i++) {
                     const a = pts[i];
                     const b = pts[i + 1];
@@ -973,7 +1071,9 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
                     }
                   }
                   if (!ok) continue;
+                  // Tier-0: no title strike, no foreign-container crossing.
                   if (tier0Blocked(pts, fromIdx, own)) continue;
+                  // The rejoin segment must not reverse or collapse.
                   if (isStart) {
                     const rest = edge.pts.slice(neighbourIdx);
                     if (rest.length >= 2) {
@@ -1011,6 +1111,9 @@ export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
                     }
                   }
                   if (hug) continue;
+                  // New crossings: 0 → accept; exactly 1 vs one foreign flow
+                  // whose riser can relocate → relocate and accept; else
+                  // reject.
                   const crossedBeforePairs = new Set<string>();
                   const crossedAfterPairs = new Set<string>();
                   for (const other of scene.edges) {
@@ -1142,6 +1245,9 @@ export function swapCrossingSiblingSeats(scene: Scene): void {
     };
   };
   const buildSwap = (edge: SceneEdge, terminalIdx: number, newAlong: number): Point[] | null => {
+    // terminalIdx is 0 (start) or last (end). The neighbour at the bend shares
+    // the terminal's along, so both move together to keep the immediate
+    // segment orthogonal.
     const pts = edge.pts.map((p) => ({ ...p }));
     const last = pts.length - 1;
     const ti = terminalIdx === 0 ? 0 : last;
@@ -1223,11 +1329,14 @@ export function swapCrossingSiblingSeats(scene: Scene): void {
       const aAlong = match.aIdx === 0 ? aStart!.along : aEnd!.along;
       const bAlong = match.bIdx === 0 ? bStart!.along : bEnd!.along;
       if (Math.abs(aAlong - bAlong) < 0.5) continue;
+      // Only proceed if A and B actually cross right now.
       if (crossingsOf(A.pts, B.pts) === 0) continue;
       const aCandidate = buildSwap(A, match.aIdx, bAlong);
       const bCandidate = buildSwap(B, match.bIdx, aAlong);
       if (!aCandidate || !bCandidate) continue;
+      // The mutual crossing must go away.
       if (crossingsOf(aCandidate, bCandidate) > 0) continue;
+      // No new crossings with any third edge.
       let ok = true;
       for (const other of scene.edges) {
         if (other.id === A.id || other.id === B.id) continue;
@@ -1239,7 +1348,10 @@ export function swapCrossingSiblingSeats(scene: Scene): void {
         }
       }
       if (!ok) continue;
+      // No new hugs on either route.
       if (wouldHug(aCandidate) || wouldHug(bCandidate)) continue;
+      // No shared-seat collision: neither new terminal may collide with a
+      // third edge's attachment on the same side.
       const aNewSeat = seatOf(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1]);
       const bNewSeat = seatOf(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1]);
       if (!aNewSeat || !bNewSeat) continue;
@@ -1280,6 +1392,10 @@ export function tidyEdges(
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
 
+  // Runs belonging to every *other* flow, so a move can be checked before it
+  // is applied: neither straightening nor separation may park a flow on top of
+  // another one — a merged line is worse than the jog or the shared endpoint
+  // it was meant to fix.
   const runsExcept = (...edgeIds: string[]) => {
     const horizontal: { lo: number; hi: number; at: number }[] = [];
     const vertical: { lo: number; hi: number; at: number }[] = [];
@@ -1296,6 +1412,11 @@ export function tidyEdges(
     }
     return { horizontal, vertical };
   };
+  // Mirrors the two readability metrics exactly: a run must not become
+  // collinear with another (touching at all over a shared stretch), nor drift
+  // alongside one for long enough to read as a single thick line.
+  // A straightened or shifted run must not be dragged across a node either.
+  // Widening the jog threshold without this put 26 flows through boxes.
   const runHitsNode = (vertical: boolean, at: number, from: number, to: number) =>
     runHitsNodeIn(vertical, at, from, to, leaves);
   const runIsClear = (
@@ -1311,6 +1432,10 @@ export function tidyEdges(
       return (gap < 4 && shared > 6) || (gap < 11 && shared > 36);
     });
 
+  // Orthogonality, to a fixpoint: aligning one segment can tilt its
+  // neighbour, and a jog left in place (because straightening it would merge
+  // two flows) tilts when a separation move shifts one of its ends. A
+  // terminal may slide along its side but never leave the border it sits on.
   const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
 
   for (const edge of scene.edges) {
@@ -1350,9 +1475,26 @@ export function tidyEdges(
     edge.pts = after;
     enforceOrthogonal(edge);
 
-    // Collapse S-curves.
+    // Collapse S-curves: two runs the same way with one short step between them
+    // (right, down, right) where a single turn would serve. `straighten` only
+    // removes steps up to JOG_SNAP because it moves a run by the step's width;
+    // this instead moves the *turn*, so the width of the step costs nothing and
+    // a wide staircase collapses as readily as a narrow one.
+    //
+    // Interior turns only — never the segments touching an endpoint. Collapsing
+    // those changes which node side the flow enters, which is the separation
+    // pass's business further down, and reversing its decisions from here is how
+    // the earlier attempt at this ended up merging flows.
     const beforeSimplify = edge.pts.map((point) => ({ ...point }));
 
+    // The fan condition a collapse must not worsen, measured exactly as the
+    // sweep's `fanTangle` gate measures it: crossings between this edge and a
+    // sibling seated on the same node side, within `FAN_REACH` of that node. A
+    // distance guard around the merged corner was tried twice and was wrong in
+    // both directions — it blocked harmless collapses whose run merely *passed*
+    // a stranger's box (the SALES_ADMIN→CRM_CONTRACTS staircase), and it missed
+    // harmful ones whose corner sat far away while the run swept through its
+    // own fan. Counting the actual crossings does neither.
     const fans: { node: SceneNode; siblings: SceneEdge[] }[] = [];
     for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
       const seat = sideOf(terminal, leaves);
@@ -1376,12 +1518,20 @@ export function tidyEdges(
             for (let j = 0; j + 1 < sibling.pts.length; j++) {
               const hit = segmentsCross(pts[i], pts[i + 1], sibling.pts[j], sibling.pts[j + 1]);
               if (!hit) continue;
-              if (boxToSegmentSq(node, hit) <= FAN_REACH * FAN_REACH) count++;
+              const dx = Math.max(0, node.x - hit.x, hit.x - (node.x + node.width));
+              const dy = Math.max(0, node.y - hit.y, hit.y - (node.y + node.height));
+              if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH) count++;
             }
       return count;
     };
     const fanBefore = fans.length ? fanCrossings(beforeSimplify) : 0;
 
+    // Foreign labels currently seated on their own run. Those are the label
+    // positions the later passes will *keep* — `label-anchor` and the settler
+    // both leave a seated, attributable label alone — so a run collapsed
+    // through one creates a pierce that placement may not be able to undo
+    // (measured: F13 in medium/tall has no clean seat anywhere on its route).
+    // Floating labels are not collected: they are about to move anyway.
     const seatedForeignLabels: { x: number; y: number; width: number; height: number }[] = [];
     const segGapSq = (
       box: { x: number; y: number; width: number; height: number },
@@ -1403,6 +1553,10 @@ export function tidyEdges(
       }
     }
 
+    // Full-polyline validation: orthogonal, clear of leaves, not merged into
+    // another flow, no new fan tangle, no seated foreign label pierced. Used
+    // after every individual collapse step, because each step must be
+    // reversible on its own — one bad collapse must not cost the good ones.
     const outside = runsExcept(edge.id);
     const polylineOk = (pts: Point[]): boolean => {
       if (pts.length < 2) return false;
@@ -1425,6 +1579,12 @@ export function tidyEdges(
       return true;
     };
 
+    // Each S-curve has two collapsed shapes: extend the first run and turn at
+    // the far corner, or turn at the near corner and extend the last. They
+    // sweep opposite regions, so when one is blocked — a seated label, a fan,
+    // another flow — the other often isn't. F02 in medium/tall is the measured
+    // case: the far corner drives its run through a seated label that has no
+    // escape seat, the near corner passes under it untouched.
     for (let guard = 0; guard < 20; guard++) {
       let changed = false;
       for (let index = 2; index + 2 < edge.pts.length - 1 && !changed; index++) {
@@ -1451,7 +1611,17 @@ export function tidyEdges(
               { x: d.x, y: a.y },
             ];
         for (const merged of corners) {
+          // Interior turns only. Extending this to terminal-adjacent S-curves
+          // (with the direction-preserving corner) was tried: it removed the
+          // seat-side jogs it aimed at and broke `labelAdrift` — the extended
+          // runs slid out from under labels that then had nowhere attributable
+          // to go. The seat-side jog is the separation pass's cost to fix, not
+          // this one's.
           const attempt = [...edge.pts.slice(0, index), merged, ...edge.pts.slice(index + 2)];
+          // A collapse can leave three collinear points — including a
+          // doubled-back stub when the merged corner overshoots the next turn.
+          // Drop the middles: the drawn line becomes the direct span, which is
+          // the whole point of collapsing.
           for (let k = 1; k + 1 < attempt.length; ) {
             const p = attempt[k - 1];
             const q = attempt[k];
@@ -1472,6 +1642,18 @@ export function tidyEdges(
     enforceOrthogonal(edge);
   }
 
+  // Re-aim wrap-around terminals (INVARIANTS §4c). A flow sometimes sets off
+  // *away* from its counterpart first — out the far side, around the block,
+  // back in from beyond. Two producers of that shape: elk, when its layer
+  // assignment wins over geometry; and `route-detour`, whose channels never
+  // even consider a direct route — a backward candidate goes straight to a
+  // channel however close its target is. For each such edge, try replacing the
+  // whole route with the direct L or Z between sides that face each other, and
+  // keep it only if the replacement is clean by every rule this pass enforces
+  // *plus* route-detour's own obstacle model (container title bands, container
+  // vertical borders), strictly shorter, and actually wrap-free. Channels stay
+  // the §11 fallback for everything this pass cannot prove clean.
+  // All-or-nothing per edge: there is no half-reroute.
   const AWAY_TOL = 24;
   const containers = scene.nodes.filter((node) => node.container);
   const seatedLabelBoxes = (except: SceneEdge) => {
@@ -1527,15 +1709,33 @@ export function tidyEdges(
     if (edge.pts.length < 2) continue;
     const srcSeat = sideOf(edge.pts[0], leaves);
     const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
-if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
+    if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
+    // Two reasons to re-side a flow. A wrap-around (§4c) sends the eye the wrong
+    // way; and a flow that *crosses a sibling* — another flow sharing one of its
+    // endpoints — tangles with traffic it is guaranteed to run alongside.
+    //
+    // The second is what the round trip between two distant nodes needs. In
+    // `logical` the pair COMPENSATION↔SUPERVISOR crossed because the return leg
+    // rose to the container's west side at x=1550 while the outbound leg ran
+    // left at y=439 all the way from x=1628 — and *every* riser position between
+    // the two nodes crosses it, so no interior lane can fix it (§4f leaves it
+    // alone for exactly that reason). Only entering from the other side does,
+    // which is a terminal-side decision and therefore this pass's.
     const siblingCrossings = (pts: Point[]) => {
       let total = 0;
       for (const other of scene.edges) {
         if (other === edge || other.pts.length < 2) continue;
-const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
-        (p) => sideOf(p, leaves)?.node,
-      );
-      const isReturnLeg =
+        // Only the *return leg*: a flow joining the same two nodes the other
+        // way. A round trip is the one case where a crossing is never
+        // necessary — the two legs can always nest — so it is safe to spend a
+        // little length untangling. Widening this to any flow merely *sharing*
+        // an endpoint was measured and rejected: it disturbed three `large-slide`
+        // drawings (longDetour and attachAway up) for tangles that were not
+        // structurally avoidable.
+        const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
+          (p) => sideOf(p, leaves)?.node,
+        );
+        const isReturnLeg =
           ends.includes(srcSeat.node) && ends.includes(dstSeat.node) && ends[0] !== ends[1];
         if (!isReturnLeg) continue;
         for (let i = 0; i + 1 < pts.length; i++)
@@ -1553,6 +1753,13 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
     const srcC = { x: src.x + src.width / 2, y: src.y + src.height / 2 };
     const dstC = { x: dst.x + dst.width / 2, y: dst.y + dst.height / 2 };
 
+    // Candidate seats on the sides that face the counterpart, on each axis
+    // where the counterpart is genuinely offset. Several seats per side and
+    // several crossing lines per Z, in a fixed order, because the direct
+    // corridor between two nodes is often partly occupied — a rigid
+    // centre-and-midline candidate reads "blocked" where a seat slid 18px
+    // finds the free lane a human would use. The separation pass spreads
+    // siblings afterwards, so seats need not anticipate their neighbours.
     const SEAT_OFFSETS = [0, -18, 18, -36, 36];
     const seatOn = (node: SceneNode, side: Side, offset: number): Point => {
       const alongX = Math.min(
@@ -1635,6 +1842,13 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
       if (wrapAround(pts, src, dst)) {
         continue;
       }
+      // What "better" means depends on why the flow is being re-sided. A
+      // wrap-around is a detour, so the replacement has to be shorter. A tangle
+      // is not about length at all: untangling a round trip means entering from
+      // the other side, which is usually a little *longer* than cutting across
+      // its partner. So a tangle-driven candidate must remove crossings and may
+      // spend at most a node's width (64px) doing it — beyond that the
+      // cure reads worse than the tangle.
       const untangles = tangledBefore > 0 && siblingCrossings(pts) < tangledBefore;
       if (untangles) {
         if (pathLength(pts) > currentLength + 64) continue;
@@ -1666,6 +1880,12 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
                 break;
               }
             }
+            // route-detour's obstacle model, honoured by anything that claims
+            // to beat a channel: no run through a container's title band —
+            // edges draw last and titles carry no halo, so a run through one
+            // strikes through the words — and no vertical run riding along a
+            // container's dashed vertical border (7px minimum, matching the
+            // channel planner's own clearance).
             if (ok)
               for (const band of titleBoxes) {
                 const gapX = Math.max(0, band.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (band.x + band.width));
@@ -1689,6 +1909,10 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
         }
       }
       if (!ok) continue;
+      // A Z's crossing lane is an interior segment the jog metric counts, and
+      // the separation pass may later shift either seat by up to 12px along
+      // its side, shortening the lane with it. Demand enough length that it
+      // can never read as a staircase step.
       if (pts.length >= 4) {
         let shortInterior = false;
         for (let index = 1; index + 2 < pts.length; index++) {
@@ -1700,6 +1924,9 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
           continue;
         }
       }
+      // The new seats must not tangle with their siblings — the same fan
+      // condition the collapse validates and the sweep gates. A wrap traded
+      // for a tangle at the node is the reseat mistake all over again.
       let tangled = false;
       for (const terminal of [pts[0], pts[pts.length - 1]]) {
         const seat = sideOf(terminal, leaves);
@@ -1715,13 +1942,21 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
             for (let j = 0; j + 1 < other.pts.length && !tangled; j++) {
               const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
               if (!hit) continue;
-              if (boxToSegmentSq(seat.node, hit) <= FAN_REACH * FAN_REACH) tangled = true;
+              const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
+              const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
+              if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH) tangled = true;
             }
         }
       }
       if (tangled) {
         continue;
       }
+      // The new seats must not disturb the sides they join: every existing
+      // seat there must already be MIN_ATTACH_GAP away, so the separation pass
+      // has nothing to move. Rerouting one flow at the price of jogging three
+      // neighbours' runs (measured in application-large: +2 staircases from
+      // one adopted seat) is a bad trade the drawing shouldn't make — the
+      // offset grid usually finds a seat in a real gap instead.
       let disturbs = false;
       for (const terminal of [pts[0], pts[pts.length - 1]]) {
         const seat = sideOf(terminal, leaves);
@@ -1743,6 +1978,12 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
       if (disturbs) {
         continue;
       }
+      // The reroute must bring this edge's own labels along: each needs at
+      // least one seat on the new route that no foreign run crosses and no
+      // node covers. A route that strands its label beyond ADRIFT trades a
+      // wrap (ratchet) for an unattributable label (hard invariant) — measured
+      // on logical-archi, where a 290px label had no clean seat on the direct
+      // route and broke `labelAdrift` through every downstream pass.
       let labelsSeatable = true;
       for (const label of edge.labels) {
         if (!label.width || !label.height || !labelsSeatable) continue;
@@ -1793,8 +2034,12 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
     }
   }
 
-  // Separate flows sharing a node side, and push apart coincident parallel runs (within 3px with >8px shared overlap).
+  // Separate flows sharing a node side. Kept as its own function: the same
+  // pass runs again after `optimiseRoutes` (see `spreadAttachments`).
   spreadAttachments(scene);
+  // Post-pass: push apart parallel runs from different edges that are within 3px
+  // with >8px shared overlap (coincident). For each pair, shift the corner point
+  // of one run by 8px and add an intermediate segment to keep node attachments.
   const runs: { edge: SceneEdge; vert: boolean; at: number; lo: number; hi: number }[] = [];
   for (const edge of scene.edges) {
     for (let i = 0; i + 1 < edge.pts.length; i++) {
@@ -1822,6 +2067,7 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
     const newAt = b.at + delta;
     const pts = b.edge.pts;
     if (b.vert) {
+      // Identify the vertical segment(s) at x==b.at and shift them
       const segments: [number, number][] = [];
       for (let i = 0; i + 1 < pts.length; i++) {
         if (Math.abs(pts[i].x - b.at) < 0.5 && Math.abs(pts[i + 1].x - b.at) < 0.5 && Math.abs(pts[i].y - pts[i + 1].y) >= 0.5)
@@ -1839,6 +2085,7 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
       if (!loFree && !hiFree) continue;
       // Don't shift if it would push the run off the drawing
       if (newAt < 4) continue;
+      // Shift all points in the vertical segment range
       for (const [si, ei] of segments) {
         pts[si].x = newAt;
         pts[ei].x = newAt;
@@ -1861,6 +2108,7 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
         }
       }
     } else {
+      // Horizontal run: shift y by delta, adjust vertical neighbours
       for (let i = 0; i < pts.length; i++) {
         if (Math.abs(pts[i].y - b.at) < 0.5) pts[i].y = newAt;
       }
@@ -1875,7 +2123,16 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
   // `compactVertical` — compaction shrinks the gaps this pass judges.
   clearSideHugs(scene, titleBoxes);
 
-  // Lift runs off container title bands (INVARIANTS §4e).
+  // Lift runs off container title bands (INVARIANTS §4e). Edges are drawn last
+  // and a title carries no halo, so a run crossing one strikes through the
+  // container's name — in `infrastructure-large` a flow ran the length of the
+  // "K8s cluster business" title with its own label parked on top of it.
+  //
+  // `route-detour` has always treated title bands as obstacles when planning a
+  // channel; elk never learned to, so the runs it plans itself go straight
+  // through. This repairs those: slide the offending *interior* run clear of
+  // the band, nearest edge first, and keep the move only if the finished
+  // polyline is still clean by every rule this pass enforces.
   const bandFor = (a: Point, b: Point) => {
     if (Math.abs(a.y - b.y) >= 0.5) return null; // vertical runs are handled by the caller
     const lo = Math.min(a.x, b.x);
@@ -1895,6 +2152,9 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
       const band = bandFor(a, b);
       if (!band) continue;
       const outside = runsExcept(edge.id);
+      // Below the band first: a container's body is routable, its name is not,
+      // and dropping into the body keeps the flow inside the box it was
+      // crossing anyway. Above only if the band sits at the very top.
       for (const target of [band.y + band.height + 6, band.y - 6]) {
         const attempt = edge.pts.map((p) => ({ ...p }));
         attempt[index].y = target;
@@ -1917,6 +2177,10 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
             else if (!runVertical && bandFor(p, q)) ok = false;
           }
         }
+        // Shifting a run lengthens one neighbour and shortens the other, and a
+        // neighbour shortened past `JOG_SNAP` is a staircase step — trading a
+        // struck title for a visible wobble. Measured: without this, 9 drawings
+        // gained a sub-6px jog.
         if (ok)
           for (let k = 1; k + 2 <= attempt.length - 1; k++) {
             const length =
@@ -1934,6 +2198,28 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 
+  // Nest corridor risers (INVARIANTS §4f).
+  //
+  // Flows crossing the same corridor usually keep their relative order end to
+  // end — and flows that never change order never *need* to cross. When they do
+  // it is because their vertical risers were placed in the wrong left-to-right
+  // order. `infrastructure-large` had three flows in strict top-to-bottom order
+  // at both ends crossing four times, purely because the one descending deepest
+  // turned last instead of first.
+  //
+  // The rule is the one `route-detour` already applies to its channels ("travel
+  // direction first, then reach descending, so spans nest instead of
+  // interleave"), here for ordinary traffic. Two things make it safe where two
+  // earlier attempts at rearranging routes were not:
+  //
+  // - **The lanes are a fixed set, only their owners change.** Every x a group
+  //   uses was already legal for *some* flow, so no new corridor is invented.
+  // - **Permutations are scored, never reasoned about.** Hand-derived orderings
+  //   were wrong twice: a pairwise swap of the three flows above fixes its own
+  //   pair (2 crossings → 0) and costs 2 elsewhere, because the correct answer
+  //   is a 3-cycle no swap can express. So every permutation is applied,
+  //   validated, and counted against the whole drawing; the best wins only if it
+  //   is strictly better overall.
   const riserIndexOf = (edge: SceneEdge): number => {
     let found = -1;
     for (let index = 1; index + 2 < edge.pts.length; index++) {
@@ -1942,6 +2228,12 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
       if (Math.abs(a.x - b.x) >= 0.5 || Math.abs(a.y - b.y) < 0.5) continue;
       if (Math.abs(edge.pts[index - 1].y - a.y) >= 0.5) continue;
       if (Math.abs(edge.pts[index + 2].y - b.y) >= 0.5) continue;
+      // Keep the *last* riser — the one nearest the target, which is the lane
+      // the flow approaches on and therefore the one that orders it against its
+      // neighbours. Requiring exactly one riser instead was what made the first
+      // version of this pass a no-op on the case it was written for: the flow at
+      // the centre of the tangle turned twice, so it was excluded, leaving a
+      // pair whose only fix is a 3-cycle it could not express.
       found = index;
     }
     return found;
@@ -1960,6 +2252,9 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
     .filter((entry) => entry.riser >= 0)
     .sort((a, b) => flowRank(a.edge) - flowRank(b.edge));
 
+  // Groups are the connected components of "these two flows actually cross".
+  // Grouping by geometry instead would need a corridor width to guess at; this
+  // needs nothing, and by construction only touches flows that have a defect.
   const parent = risers.map((_, index) => index);
   const find = (index: number): number => {
     let root = index;
@@ -1995,6 +2290,9 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
     const members: { edge: SceneEdge; riser: number }[] = riserGroups.get(key)!.map(
       (index) => risers[index],
     );
+    // 2..4 keeps the permutation count at 24 and the scoring exhaustive. Larger
+    // tangles are not a lane-ordering problem — they need elk to lay them out
+    // differently — and guessing at them is how a pass starts shuffling damage.
     if (members.length < 2 || members.length > 4) continue;
     const ids = members.map((member) => member.edge.id);
     const outsiders = scene.edges.filter((edge) => !ids.includes(edge.id));
@@ -2056,6 +2354,30 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
 
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 
+  // Unweave (INVARIANTS §4g). Two nodes are always joinable by a straight run,
+  // an L or a Z, so a flow taking three turns or more left through a side that
+  // did not face where it was going — usually queueing on a busy side while
+  // another sits unused.
+  //
+  // **This runs last, and that is the whole design.** An earlier attempt sat up
+  // with the §4c reroute at the top of this pass, where it validated candidates
+  // that four later mutations — attachment separation, de-coincidence, title
+  // lifting, riser nesting — then reshaped. Routes proven crossing-free when
+  // chosen were not crossing-free when drawn, and the corpus paid 16 per-drawing
+  // regressions for it. Down here what is validated is what is rendered, which
+  // is why §4f works and why this now can.
+  //
+  // The rule, in order: no candidate may add a crossing; among those that turn
+  // less than the route they replace, the **shortest** wins. Readability first
+  // (turns, then no new tangles), size as the tie-break.
+  // Containers a run may not cross (INVARIANTS §4h). A flow may pass through a
+  // container that *holds one of its endpoints* — that is how anything leaves a
+  // data centre or a zone — but crossing one it has no business in reads as
+  // traffic transiting that component. `Kafka → Backup server` cut straight
+  // through `PostgreSQL standby`, a server that merely happens to hold a
+  // replica, and no existing check could see it: `throughBox` and every routing
+  // guard here test **leaf** nodes only, because container interiors are
+  // routable by design.
   const boxed = scene.nodes.filter((node) => node.container);
   const holdsOf = new Map<string, Set<string>>();
   for (const box of boxed) {
@@ -2147,6 +2469,16 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
       total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
     return total;
   };
+  /**
+   * *Which* flows a route crosses, not how many times.
+   *
+   * Counting was not enough. Unweaving `Hub de paiement → PostgreSQL primaire`
+   * traded two crossings with one flow for one with another: the drawing's total
+   * fell, the per-drawing gate saw an improvement, and a brand-new crossing
+   * appeared beside the node in an area that had been clean. A total cannot see
+   * that — only the *set* of partners can. So a candidate may drop crossings
+   * freely and may never gain a partner it did not already cross.
+   */
   const crossingPartners = (pts: Point[], exceptId: string) => {
     const partners = new Set<string>();
     for (const other of scene.edges) {
@@ -2168,11 +2500,16 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
     const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
     if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
     const ownEnds = [srcSeat.node, dstSeat.node];
+    // Re-route for either reason: the flow weaves (§4g), or it cuts through a
+    // container that is none of its business (§4h). §4h is Tier 0 — it destroys
+    // the reading of a component — so it justifies a reroute that turns no less.
     const foreignBefore = foreignContainerHits(edge.pts, ownEnds);
     if (currentTurns < UNWEAVE_TURNS && foreignBefore === 0) continue;
 
     const partnersNow = crossingPartners(edge.pts, edge.id);
     const outside = runsExcept(edge.id);
+    // Seats already taken on each side, so a candidate never lands on top of a
+    // neighbour — `attachShared` is a must-be-zero invariant.
     const takenOn = (node: SceneNode, side: Side) => {
       const along: number[] = [];
       for (const other of scene.edges) {
@@ -2204,11 +2541,20 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
         if (runHitsNode(runVertical, at, from, to)) return false;
         if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
           return false;
+        // Titles, both orientations. `bandFor` only judges horizontals — a
+        // riser through a container's name strikes it just as thoroughly, and
+        // skipping that check is what put `titleStruck` up across `large-slide`.
+        // Judged exactly as the sweep judges `titleStruck` — a box overlap, not
+        // a strict interior test. The two disagreeing is how a run laid along a
+        // band's very edge passed here and was counted there.
         for (const band of titleBoxes) {
           const x1 = Math.min(a.x, b.x);
           const x2 = Math.max(a.x, b.x);
           const y1 = Math.min(a.y, b.y);
           const y2 = Math.max(a.y, b.y);
+          // With margin: `compact` runs after this pass and shifts bands and
+          // runs by a per-row amount, so a route that merely grazes a title now
+          // can be pushed onto it later.
           if (
             x1 < band.x + band.width + BAND_MARGIN &&
             band.x - BAND_MARGIN < x2 &&
@@ -2217,6 +2563,9 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
           )
             return false;
         }
+        // Interior segments must clear the *staircase* threshold, not merely the
+        // micro-jog one: a Z whose crossing lane is 15px long reads as a step
+        // and is counted by `jog<=20`.
         const length = deltaX + deltaY;
         if (index > 0 && index + 2 < pts.length && length > 0 && length <= 20) return false;
       }
@@ -2239,13 +2588,23 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
             for (let j = 0; j + 1 < other.pts.length; j++) {
               const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
               if (!hit) continue;
-              if (boxToSegmentSq(seat.node, hit) <= FAN_REACH * FAN_REACH) total++;
+              const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
+              const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
+              if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH) total++;
             }
         }
       }
       return total;
     };
     const fanTanglesNow = fanTanglesOf(edge.pts);
+    /**
+     * Can every label this flow carries still find a seat on the new route that
+     * clears both node boxes and container titles? `label-anchor` runs after
+     * this pass and will keep a label on its run even at the cost of covering a
+     * title (§4d outranks §4e), so a route that leaves its labels nowhere clean
+     * to sit pays for its straightness in struck titles — measured on
+     * `logical-archi`.
+     */
     const labelsSeatable = (pts: Point[]) => {
       for (const label of edge.labels) {
         if (!label.width || !label.height) continue;
@@ -2264,6 +2623,9 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
               box.x - margin < seat.x + seat.width &&
               seat.y < box.y + box.height + margin &&
               box.y - margin < seat.y + seat.height;
+          // Bands get the same margin the runs get: `compact` shifts label and
+          // band by different per-row amounts, so a seat that merely clears a
+          // title now can be sitting on it by the time it is drawn.
           if (!leaves.some(hits(0)) && !titleBoxes.some(hits(BAND_MARGIN))) seatable = true;
         }
         if (!seatable) return false;
@@ -2289,9 +2651,14 @@ const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
                   Math.abs(p.y - raw[index - 1].y) >= 0.5,
               );
               if (pts.length < 2) continue;
+              // Never cut through a stranger's container, and never buy turns
+              // with one: §4h outranks §4g.
               const foreignAfter = foreignContainerHits(pts, ownEnds);
               if (foreignAfter > foreignBefore) continue;
               const clearsForeign = foreignAfter < foreignBefore;
+              // Clearing a container buys a *equal* turn count, never a worse
+              // one: §4h outranks §4g, but paying for it with a new weave just
+              // moves the reader's problem down a tier.
               if (clearsForeign ? pts.length - 2 > currentTurns : pts.length - 2 >= currentTurns)
                 continue;
               const length = lengthOf(pts);
@@ -2353,10 +2720,30 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
 
+  // ===== Ladder-driven route repair (INVARIANTS §4) =====
+  //
+  // One optimiser, one acceptance rule. It replaces the private accept/reject
+  // tests that used to live in this pass — "strictly shorter", "fewer
+  // crossings", "clears a container" — which disagreed with each other and
+  // produced defects that moved rather than went. See `readability.ts`.
+  //
+  // Two properties matter, and both were learned by getting them wrong:
+  //
+  // - **It runs last.** Everything above still reshapes geometry, so a route
+  //   validated earlier is not the route that gets drawn. An earlier version of
+  //   this sat at the top of the pass and cost 16 per-drawing regressions.
+  // - **It moves flows in groups.** A corridor only frees up when several flows
+  //   move together: the crossing between two flows into the same database is
+  //   unfixable one flow at a time, because whichever moves first collides with
+  //   the one that has not.
   if (!folded) {
     const inspector = inspect(scene, titleBoxes);
     /** Flows `route-detour` already sent through a channel — their flag is not ours to touch. */
     const preRouted = new Set(scene.edges.filter((edge) => edge.detour).map((edge) => edge.id));
+    // Three seats a side, not five. The optimiser evaluates every candidate
+    // against the whole scene, so the candidate count is the cost driver; 25
+    // seat pairs per side pair tripled build time for a handful of extra
+    // solutions the ±18 offsets already reach.
     const SEAT_OFFSETS = [0, -18, 18];
     /**
      * How far a derived seat steps past the name it is escaping.
@@ -2371,6 +2758,14 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     const SEAT_CLEAR = 14;
     const SIDES: Side[] = ["north", "south", "east", "west"];
 
+    /**
+     * Container names lying across a node side, merged into the one interval a
+     * seat has to escape — or `null` when the side is clear.
+     *
+     * Judged at the side's centre, which is where the default seat sits: a name
+     * that does not cover the centre is not what is pushing the flow off, and
+     * widening the search for it only costs candidates.
+     */
     const blockedSpan = (node: SceneNode, side: Side): [number, number] | null => {
       const alongX = side === "north" || side === "south";
       const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
@@ -2386,6 +2781,24 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       return lo <= hi ? [lo, hi] : null;
     };
 
+    /**
+     * Where a flow may attach to a side: three fixed seats, plus — only when a
+     * container's name lies across that side — the two that step just clear of
+     * it.
+     *
+     * Derived rather than added to the fixed list, for the reason `laneBeyond`
+     * exists: a wider fixed list is guesswork that costs candidates everywhere
+     * to help in a few places, and 25 seat pairs per side pair tripled build
+     * time when it was tried. These appear only on the sides that need them.
+     *
+     * The asymmetry this replaces caused a real regression. An earlier version
+     * gave the extra reach to same-facing sides only, so on
+     * `infrastructure-small-tall` no L or Z could get out from under the
+     * "Public zone" name and a U won by being the only shape that could — a
+     * flow that should have stepped 44px sideways bulged out of its column
+     * instead. Every side pair now gets the same reach, and the existing
+     * fewest-turns-then-shortest order picks the cheap escape on its own.
+     */
     const seatOffsetCache = new Map<string, number[]>();
     const seatOffsetsFor = (node: SceneNode, side: Side): number[] => {
       const key = `${node.id}|${side}`;
@@ -2461,12 +2874,27 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       return reach;
     };
 
+    /**
+     * Every run already parallel to a lane on this axis, as obstacles the lane
+     * must clear.
+     *
+     * Memoised per edge × axis: `laneBeyond` is called once per same-facing
+     * seat pair — up to a hundred times for one edge — and rebuilding this from
+     * every segment in the drawing each time is the difference between a cheap
+     * check and a visible build cost.
+     *
+     * Invalidated by `generation`, the same counter the unmoved-profile cache
+     * uses, since these are other flows' routes and an accepted move changes
+     * them.
+     */
     interface LaneBlock { alongLo: number; alongHi: number; acrossLo: number; acrossHi: number }
     const runBlockCache = new Map<string, { at: number; blocks: LaneBlock[] }>();
     const parallelRunBlocks = (edge: SceneEdge, vertical: boolean): LaneBlock[] => {
       const key = `${edge.id}|${vertical}`;
       const hit = runBlockCache.get(key);
       if (hit && hit.at === generation) return hit.blocks;
+      // The lane runs across the span, so it is vertical exactly when the span
+      // axis is not — and a foreign run is parallel to it on the same terms.
       const laneVertical = !vertical;
       const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
       const blocks: LaneBlock[] = [];
@@ -2494,6 +2922,36 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       return blocks;
     };
 
+    /**
+     * The lowest lane, beyond `start`, that the connecting run may legally
+     * occupy across `span`.
+     *
+     * This is INVARIANTS §4h turned from a score into a coordinate. The rule
+     * says a run may cross a container holding one of its endpoints and no
+     * other; here that rule *derives* how far the riser has to travel before it
+     * turns, instead of the turn being guessed from a fixed offset and checked
+     * afterwards. Obstacles are the ones a run may never enter — every leaf box,
+     * every container title, and every container holding neither endpoint —
+     * restricted to those actually overlapping the span the run has to cross.
+     *
+     * **And every run already travelling parallel to the lane** (§4j). The
+     * obstacle list used to be boxes only, so two lanes derived independently
+     * could land on top of each other: on `small/page` this one returned its
+     * default `near - CHANNEL_STEP` = 91 without iterating once, five pixels
+     * from a riser another flow had put at 96 (`BOOKING.x - CHANNEL_CLEAR`).
+     * Nothing downstream could undo it — the two labels seated on those risers
+     * each ended up with the other's flow under their words.
+     *
+     * A run is cleared by `runReach`, not `CHANNEL_CLEAR`: keeping the *lines*
+     * 10px apart is `nearParallel`'s business, and it is not enough. The label
+     * this lane will carry is centred on it and reaches half its width to
+     * either side, so anything nearer than that is inside the box whatever the
+     * lines do.
+     *
+     * Iterative because clearing one obstacle can expose the next; bounded by
+     * the obstacle count, and monotone (each step moves the lane further out),
+     * so it terminates. `null` when the drawing leaves no room.
+     */
     const laneBeyond = (
       spanLo: number,
       spanHi: number,
@@ -2541,6 +2999,38 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       return null;
     };
 
+    /**
+     * The U: leave both nodes by the *same* side and join up in a channel
+     * beyond them both.
+     *
+     * This used to return nothing, on the reasoning that two nodes are always
+     * joinable by a straight run, an L or a Z. They are — but not always
+     * *cleanly*. When every L and Z ploughs through a container the flow has no
+     * business in, the only route left is out and around, and the tier-3 turns
+     * it costs are fair payment for the tier-0 defect it clears (the ladder
+     * works this out on its own; it needed the shape, not a new priority).
+     *
+     * Three lanes, nearest first. The first is *derived* from the obstacles the
+     * run has to clear (`laneBeyond`), so the turn happens exactly as late as
+     * §4h requires and no later — an earlier version guessed a fixed 24px and
+     * only cleared the Reporting layer on `logical` by five pixels of luck. The
+     * second clears the same obstacles **and** the runs already parallel to it,
+     * by enough that the label this lane carries cannot end up with a stranger's
+     * flow under its words (§4j). The third is outside the drawing entirely,
+     * which always exists and is the fallback when the derived lanes run out of
+     * canvas.
+     *
+     * The run-clear lane is **added**, never substituted. Replacing the derived
+     * lane with it was measured first and moved five `slide` drawings onto
+     * container names: a lane that clears every parallel run can be a long way
+     * out, and folded layouts reflow around whatever the unfolded scene handed
+     * them. As a candidate it costs nothing — it is longer, so it sorts after
+     * the lane it would have replaced, and the ladder reaches it only when the
+     * nearer one is refused.
+     *
+     * All are 2-turn routes, so they sort among the Ls rather than behind the
+     * Zs, and a clean L still wins — the ranking only decides what to *try*.
+     */
     const channelU = (
       a: Point,
       b: Point,
@@ -2573,6 +3063,12 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         );
     };
 
+    /**
+     * Is this the shape `channelU` builds? Four points whose two terminal legs
+     * are parallel and both set off to the *same* side of the lane that joins
+     * them. Recognised from geometry rather than tagged at construction so the
+     * squaring pass, which rebuilds the points, cannot lose the label.
+     */
     const isChannelU = (pts: Point[]): boolean => {
       if (pts.length !== 4) return false;
       const firstVertical = Math.abs(pts[0].x - pts[1].x) < 0.5;
@@ -2615,6 +3111,10 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     /** Candidate routes for one edge, cheapest-looking first, de-duplicated. */
     const routeCache = new Map<string, Point[][]>();
     const routesFor = (edge: SceneEdge): Point[][] => {
+      // Keyed on the current route *and* the generation. The endpoints alone
+      // were enough while candidates depended only on the two nodes; a channel
+      // lane now clears the runs already in the drawing (§4j), so an accepted
+      // move elsewhere can change what this edge's candidates are.
       const cacheKey = `${generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
       const cached = routeCache.get(cacheKey);
       if (cached) return cached;
@@ -2652,8 +3152,12 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
           total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
         return total;
       };
-// Fewest turns, then shortest — the maintainer's ranking, used only to
+      // Fewest turns, then shortest — the maintainer's ranking, used only to
       // decide which candidates to *try* first. Acceptance is the ladder's.
+      // Square every candidate *before* scoring it. Applying orthogonality after
+      // acceptance means the ladder judged one polyline and the drawing got a
+      // different one — the same "validated is not what ships" mistake this pass
+      // was moved to the end of the pipeline to avoid, in miniature.
       const squared = out.map((pts) => {
         const probe = { ...edge, pts: pts.map((p) => ({ ...p })) } as SceneEdge;
         enforceOrthogonalOn(probe, leaves);
@@ -2676,6 +3180,20 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       });
     };
 
+    /**
+     * The unmoved profile of a group, memoised until some edge actually moves.
+     *
+     * `local(ids, new Map())` is a pure function of the scene's current
+     * geometry, and the scene only changes when a candidate is *accepted* — so
+     * recomputing it once per rejected candidate (up to 144 per edge per round,
+     * plus twice more in the driver loop) was over half of all `local` calls
+     * and ~20% of a corpus build. The generation counter is the invalidation:
+     * any accepted move bumps it, because `before` depends on every edge in the
+     * scene, not only the ones in `ids`.
+     *
+     * Declared above `parallelRunBlocks`, which invalidates on the same
+     * counter for the same reason.
+     */
     const beforeCache = new Map<string, Profile>();
     const soloCache = new Map<string, Profile>();
     const cached = (store: Map<string, Profile>, ids: Set<string>, make: () => Profile): Profile => {
@@ -2689,6 +3207,12 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     const profileNow = (ids: Set<string>): Profile =>
       cached(beforeCache, ids, () => inspector.local(ids, new Map()));
 
+    /**
+     * Does this candidate gain a tier-0 defect *on its own* — a run put through
+     * a box, a container or a title? `ladderVerdict` rejects any tier-0 gain
+     * outright, so answering yes here settles the candidate without the
+     * pairwise phase, which costs every edge in the drawing.
+     */
     const selfWrecks = (ids: Set<string>, overrides: Map<string, Point[]>): boolean => {
       const was = cached(soloCache, ids, () => inspector.local(ids, new Map(), true));
       for (const [key, tier] of inspector.local(ids, overrides, true))
@@ -2696,6 +3220,18 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       return false;
     };
 
+    /**
+     * Defects a route would leave behind, counted per tier — the tie-break
+     * between two routes the ladder has *both* already accepted.
+     *
+     * This is a count, which §"sets, not counts" forbids — but forbids for a
+     * different question. That rule guards before-vs-after comparison, where a
+     * total cannot see a defect *move*. Here every candidate has already been
+     * through `ladderVerdict` against the same `before`, so none of them gains
+     * anything at the tier it pays at; what is left is "which of these
+     * acceptable drawings is least damaged", and for that a per-tier count is
+     * the honest measure.
+     */
     const damage = (profile: Profile): number[] => {
       const tiers = [0, 0, 0, 0, 0];
       for (const tier of profile.values()) tiers[tier]++;
@@ -2733,6 +3269,13 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         // counterpart. That is the shape working, not a wrap-around to chase,
         // and §11 already exempts flows routed through a channel for exactly
         // this reason — `route-detour` marks its own the same way.
+        //
+        // Re-decided on every commit, never merely set: a flow routed as a U in
+        // one round and re-routed to something else in the next would otherwise
+        // keep an exemption its final shape has not earned, and quietly drop out
+        // of the `attachAway` count. Flows `route-detour` marked keep their flag
+        // whatever this pass does — the channel they were sent through is not
+        // this pass's to revoke.
         if (!preRouted.has(edge.id)) {
           edge.detour = isChannelU(route);
         }
@@ -2760,6 +3303,16 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         if (profileNow(ids).size === 0) continue;
 
         // Single move first — cheapest, and most defects yield to it.
+        //
+        // The *best* accepted candidate wins, not the first. Taking the first
+        // meant the ranking (fewest turns, then shortest) silently decided
+        // outcomes the ladder was supposed to own: a 1-turn L that clears a
+        // struck title beat a 2-turn U that clears the title *and* the run
+        // through a container, purely because it was tried earlier. Both are
+        // allowed; only one leaves the drawing repaired. The order still
+        // decides what to try, and still breaks ties — `lessDamaged` is
+        // strict, so an earlier candidate keeps the win unless a later one is
+        // genuinely less damaged.
         let moved = false;
         let bestRoute: Point[] | null = null;
         let bestDamage: number[] | null = null;
@@ -2770,6 +3323,12 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
             bestDamage = verdict.damage;
             bestRoute = pts;
           }
+          // A route with nothing left to repair cannot be beaten, so stop there.
+          // Short of that, keep looking: stopping at the first route that merely
+          // destroys no *information* left avoidable damage below tier 0 on the
+          // table, and the corpus paid for it — a flow would take the first
+          // clean shape it was offered and carry a wrap-around departure or a
+          // cramped terminal that the next candidate along did not have.
           if (bestDamage.every((count) => count === 0)) break;
         }
         if (bestRoute && tryMove([edge], new Map([[edge.id, bestRoute]]))) {
@@ -2782,6 +3341,9 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
 
         // Joint move: this flow plus one it shares a node with. Bounded to the
         // best few routes each, since the pair space is quadratic.
+        // Joint moves are quadratic, so they are earned, not automatic: only a
+        // Tier 0, 1 or 2 defect justifies the search. A weave costs the reader
+        // time, not meaning, and is not worth pairing the whole neighbourhood over.
         const severest = Math.min(...[...profileNow(ids).values()]);
         if (severest > 2) continue;
         const mineTop = routesFor(edge).slice(0, 8);

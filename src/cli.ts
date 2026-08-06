@@ -299,13 +299,13 @@ function densityReport(
 }
 
 function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): void {
-  if (diagnostics.some((d) => d.severity === "error")) {
+  if (diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
     console.error(renderHuman(file, src, diagnostics, process.stderr.isTTY ?? false));
     process.exit(1);
   }
 }
 
-if (["version", "--version", "-v"].includes(command)) {
+if (command === "version" || command === "--version" || command === "-v") {
   console.log(`cairn v${version}`);
 } else if (command === "validate") {
   const file = positionalFile();
@@ -317,8 +317,8 @@ if (["version", "--version", "-v"].includes(command)) {
   else if (diagnostics.length)
     console.log(renderHuman(file, src, diagnostics, process.stdout.isTTY ?? false));
   else console.log(`\u2713 ${file}: no issues found`);
-  const errors = diagnostics.filter((d) => d.severity === "error").length;
-  const warnings = diagnostics.filter((d) => d.severity === "warning").length;
+  const errors = diagnostics.filter((diagnostic) => diagnostic.severity === "error").length;
+  const warnings = diagnostics.filter((diagnostic) => diagnostic.severity === "warning").length;
   process.exit(errors > 0 || (strict && warnings > 0) ? 1 : 0);
 } else if (command === "build") {
   const file = positionalFile();

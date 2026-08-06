@@ -125,16 +125,16 @@ function checkFlows(model: Model, view: View): Diagnostic[] {
     return kind === "actor" || kind === "actor-group";
   };
   for (const flow of model.flows) {
-    for (const [idRef, span] of [
+    for (const [reference, span] of [
       [flow.from, flow.fromSpan],
       [flow.to, flow.toSpan],
     ] as const) {
-      if (!model.index.has(idRef)) {
-        const suggestion = nearest(idRef, [...model.index.keys()]);
+      if (!model.index.has(reference)) {
+        const suggestion = nearest(reference, [...model.index.keys()]);
         diagnostics.push({
           code: "E0220",
           severity: "error",
-          message: `unknown reference \`${idRef}\``,
+          message: `unknown reference \`${reference}\``,
           span,
           help: suggestion
             ? `did you mean \`${suggestion}\`?`
@@ -184,28 +184,28 @@ function checkFlows(model: Model, view: View): Diagnostic[] {
 }
 
 function checkElementAttributes(elements: Element[], view: View): Diagnostic[] {
-  const attrSpec = view.attrSpec;
-  if (!attrSpec) return [];
+  const spec = view.attrSpec;
+  if (!spec) return [];
   const diagnostics: Diagnostic[] = [];
   for (const element of elements) {
-    if (element.kind !== attrSpec.kind) continue;
+    if (element.kind !== spec.kind) continue;
     if (!element.attr) {
       diagnostics.push({
-        code: attrSpec.code,
+        code: spec.code,
         severity: "error",
-        message: attrSpec.message + ` (\`${element.id}\`)`,
+        message: spec.message + ` (\`${element.id}\`)`,
         span: element.idSpan,
-        help: attrSpec.help,
+        help: spec.help,
       });
-    } else if (!attrSpec.values.includes(element.attr.value)) {
-      const suggestion = nearest(element.attr.value, attrSpec.values);
+    } else if (!spec.values.includes(element.attr.value)) {
+      const suggestion = nearest(element.attr.value, spec.values);
       diagnostics.push({
-        code: attrSpec.code,
+        code: spec.code,
         severity: "error",
-        message: `invalid ${attrSpec.kind} value \`${element.attr.value}\` (\`${element.id}\`)`,
+        message: `invalid ${spec.kind} value \`${element.attr.value}\` (\`${element.id}\`)`,
         span: element.attr.span,
-        note: `allowed: ${attrSpec.values.join(", ")}`,
-        help: suggestion ? `did you mean \`${suggestion}\`?` : attrSpec.help,
+        note: `allowed: ${spec.values.join(", ")}`,
+        help: suggestion ? `did you mean \`${suggestion}\`?` : spec.help,
       });
     }
   }
@@ -225,25 +225,25 @@ function checkTrustBoundaries(model: Model, view: View): Diagnostic[] {
     const level = zoneOf(id)?.attr?.value;
     return level && view.trustOrder?.[level] !== undefined ? view.trustOrder[level] : -1;
   };
-  const boundaryLint = view.boundaryLint;
-  const isSecurityNode = (id: string) => boundaryLint !== undefined && model.index.get(id)?.kind === boundaryLint.nodeKind;
+  const lint = view.boundaryLint;
+  const isSecurityNode = (id: string) => lint !== undefined && model.index.get(id)?.kind === lint.nodeKind;
 
   for (const flow of model.flows) {
     if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;
     const crossesZone = zoneOf(flow.from) !== zoneOf(flow.to);
     const boundaryViolation =
-      boundaryLint !== undefined &&
+      lint !== undefined &&
       trustLevelOf(flow.to) > trustLevelOf(flow.from) &&
       !isSecurityNode(flow.from) &&
       !isSecurityNode(flow.to);
     if (boundaryViolation) {
       diagnostics.push({
-        code: boundaryLint!.code,
+        code: lint!.code,
         severity: "warning",
-        message: boundaryLint!.message,
+        message: lint!.message,
         span: flow.span,
-        note: `flow enters a more-trusted zone without passing a \`${boundaryLint!.nodeKind}\``,
-        help: boundaryLint!.help,
+        note: `flow enters a more-trusted zone without passing a \`${lint!.nodeKind}\``,
+        help: lint!.help,
       });
     }
     if (view.crossZoneTechRecommended && crossesZone && !flow.tech?.protocol) {

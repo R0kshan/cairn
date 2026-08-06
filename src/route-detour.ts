@@ -87,7 +87,6 @@ export function rerouteDetours(
   const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
   const centerX = (node: SceneNode) => node.x + node.width / 2;
   const centerY = (node: SceneNode) => node.y + node.height / 2;
-  const isTopEntry = (kind: string) => kind === "north" || kind === "westTop" || kind === "eastTop";
 
   const candidates: { edge: SceneEdge; source: SceneNode; target: SceneNode }[] = [];
   for (const edge of scene.edges) {
@@ -512,7 +511,9 @@ export function rerouteDetours(
       attachGroups.set(key, group);
     };
     for (const plan of plans) {
-      const topPlan = isTopEntry(plan.entry.kind);
+      const topPlan = plan.entry.kind === "north" ||
+    plan.entry.kind === "westTop" ||
+    plan.entry.kind === "eastTop";
       addAttachment(plan, "exit", plan.source, topPlan ? "north" : "south");
       if (plan.entry.kind === "south") addAttachment(plan, "entry", plan.target, "south");
       if (plan.entry.kind === "north") addAttachment(plan, "entry", plan.target, "north");
@@ -835,7 +836,7 @@ export function rerouteDetours(
   for (const plan of plans) {
     const { edge, source, target, exitX, entry } = plan;
 
-    if (isTopEntry(entry.kind)) {
+    if (entry.kind === "north" || entry.kind === "westTop" || entry.kind === "eastTop") {
       const laneY = topLaneY[laneIndexOf.get(edge.id)!];
       edge.pts =
         entry.kind === "north"
