@@ -1,5 +1,14 @@
 # ADR-0003: CLI-first, playground deferred to post-launch
 
+Status: **Amended** · Date: 2026-07-11 · Amended 2026-08-06
+
+> **Amendment.** The "playground deferred to post-launch" framing is now
+> historical: `playground/` ships with committed browser/node bundles and a
+> Vercel serverless function (`/api/svg`), linked live from the README. The
+> CLI-first *sequencing* decision below was fulfilled as written — phases 1–4
+> shipped before phase 5 — this amendment records that phase 5 is no longer
+> future work.
+
 ## Context
 
 Cairn targets two user-facing interfaces:
@@ -36,7 +45,7 @@ The playground reuses the same engine (parser, views, layout, diagnostics) bundl
 
 ### What this means for watch mode
 
-The DESIGN_BRIEF suggested two additions for `watch` (they are implemented, not deferred):
+Two additions were planned early for `watch` (they are implemented, not deferred):
 
 1. **Errors rendered into SVG** — on failure, emit an SVG error panel with
  codes and source excerpts instead of leaving a stale diagram. This is implemented in `watch.ts` and already shipping.
@@ -61,7 +70,5 @@ The DESIGN_BRIEF suggested two additions for `watch` (they are implemented, not 
 
 ## Links
 
-- [Design brief §3.1](/documentation/DESIGN_BRIEF.md#31-consumers--cli-first-playground-is-secondary-)
-- [Design brief §4 (phased plan)](/documentation/ROADMAP.md#phased-plan)
-- [Playground README](/playground/README.md) — current state (deployable but secondary)
+- [Playground README](/playground/README.md) — current state (now shipping, see Status above)
 - [`src/watch.ts`](/src/watch.ts) — error-panel SVG implementation

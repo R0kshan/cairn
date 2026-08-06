@@ -5,7 +5,7 @@ This directory documents the research that informed cairn's architecture decisio
 ## Questions asked
 
 1. **Which diagram-as-code tools exist, and what scope do they cover?** —
- Surveyed Mermaid, D2, PlantUML, Graphviz, and C4-based tools to understand how their scope differs from cairn's focus on typed architecture views — establishing the product rationale (see [`DESIGN_BRIEF.md`](/documentation/DESIGN_BRIEF.md)).
+ Surveyed Mermaid, D2, PlantUML, Graphviz, and C4-based tools to understand how their scope differs from cairn's focus on typed architecture views — establishing the product rationale (see [README's "Why cairn?"](/README.md#why-cairn)).
 
 2. **Which layout engine can produce architecture diagrams with zero label
  overlaps, semantic positioning, and compact output?** — Evaluated five candidates (ELK, dagre, Graphviz, TALA, custom). Result: ELK, with custom post-passes. See [`ELK-EVALUATION.md`](elk-test/ELK-EVALUATION.md) and [`ALTERNATIVES.md`](ALTERNATIVES.md).
@@ -49,4 +49,4 @@ The spike uncovered two areas needing post-pass work (edge-routing for feedback 
 | ELK best fits the layout requirements | Layout engine = ELK + post-passes | [ADR-0001](/documentation/decisions/ADR-0001-LAYOUT-ENGINE.md) |
 | TypeScript avoids JS-bridge overhead, fits layout hot-path | Stack = TypeScript + Bun-compiled binaries | [ADR-0002](/documentation/decisions/ADR-0002-TYPESCRIPT-STACK.md) |
 | CLI proves the concept fastest; playground is secondary | CLI-first, playground post-launch | [ADR-0003](/documentation/decisions/ADR-0003-CLI-FIRST.md) |
-| Domain conventions differ per view → typed views | Ship built-in views (logical, application, infrastructure, security) | [ADR-0004](/documentation/decisions/ADR-0004-BUILTIN-PROFILES.md) |
+| Domain conventions differ per view → typed views | Ship built-in views (logical, application, infrastructure, security) | [ADR-0004](/documentation/decisions/ADR-0004-BUILTIN-VIEWS.md) |

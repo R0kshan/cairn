@@ -1,5 +1,7 @@
 # ADR-0004: Ship typed diagram views as built-in compiled views
 
+Status: **Accepted** · Date: 2026-07-11
+
 ## Context
 
 Cairn's core differentiator is that it knows what kind of diagram it is rendering. General-purpose diagram tools work with generic shapes and edges; cairn's views instead define:
@@ -46,7 +48,7 @@ The four built-in views are:
 
 ### What is deferred
 
-The view mini-DSL sketched in the DESIGN_BRIEF (§3.2) — a selector-based rule language that allows extending built-in views with custom rules:
+The view mini-DSL sketched below — a selector-based rule language that allows extending built-in views with custom rules:
 
 ```
 view acme-application extends application
@@ -79,7 +81,6 @@ This is deferred because:
 
 ## Links
 
-- [Design brief §3.2](/documentation/DESIGN_BRIEF.md#32-diagram-views-the-guidance-system) — view concept and mini-DSL sketch
-- [src/model.ts](/src/model.ts) — View interface and built-in view definitions
-- [src/validate.ts](/src/validate.ts) — generic validation engine driven by View objects
+- [src/views.ts](/src/views.ts) — View interface and built-in view definitions
+- [src/validator.ts](/src/validator.ts) — generic validation engine driven by View objects
 - [DSL_SPEC.md §1](/documentation/DSL_SPEC.md#1-structure) — element kinds per view

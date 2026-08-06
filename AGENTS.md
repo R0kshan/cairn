@@ -3,12 +3,24 @@
 Read this file first.
 
 ## Specialized Roles
-When tasked with specific phases of software delivery, consult the corresponding role guidelines:
-- **System Planning:** See `.agents/roles/architect.md` for output formats and failure mode templates.
-- **Code Generation:** See `.agents/roles/code-writer.md` for house style and docstring standards.
-- **Code Review:** See `.agents/roles/reviewer.md` for PR checklists and security rubrics.
 
-The selected profile augments (not replaces) these instructions.
+Skim [`.agents/ENGINEERING_PRINCIPLES.md`](./.agents/ENGINEERING_PRINCIPLES.md)
+before any non-trivial change — it defines the core workflow (reproduce →
+diagnose → experiment → decide → implement → verify) that every role builds
+on; its one hard rule (git ownership) is already stated below. Then consult
+the role for the phase you're in:
+- **System Planning:** [`.agents/roles/architect.md`](./.agents/roles/architect.md)
+- **Code Generation:** [`.agents/roles/coder.md`](./.agents/roles/coder.md)
+- **Code Review:** [`.agents/roles/reviewer.md`](./.agents/roles/reviewer.md)
+
+The selected role augments (not replaces) these instructions. One rule from
+`ENGINEERING_PRINCIPLES.md` is load-bearing enough to repeat here: **never run
+`git add`/`commit`/`push`/`reset`/`checkout`/`stash`** — the repository belongs
+to the maintainer; propose a commit message and let them run it. Read-only git
+commands are always fine.
+
+For the system architecture (pipeline stages, data model, where each invariant
+below is enforced), see [`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 ## What cairn is
 
@@ -45,42 +57,29 @@ Not a general diagramming tool.
 .cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → compact.ts → svg-render.ts → SVG
 ```
 
-- `edge-tidy.ts` — endpoint hygiene for **every** edge, elk's included: collapses
-  deviations under 6px (elk emits 1px staircases and the odd non-orthogonal
-  segment) and keeps two flows on the same node side 12px apart, so an inbound
-  and an outbound flow never share a point. Both moves are refused when they
-  would park a flow on top of another — a merged line is worse than the jog or
-  the shared endpoint it would fix. Straightness couples the two sides a flow
-  connects, so the achieved gap is bounded by the tighter side.
-
-- `route-detour.ts` — deterministic post-layout pass (issue #26): reroutes
-  elk's wrap-around backward hierarchical edges through top/bottom channels.
-  Runs for **every** disposition: a DOWN layout (`page`/`tall`) wraps its
-  backward flows around the sides instead, so `scene-layout.ts` mirrors the
-  scene across the diagonal around this pass and it comes out with left/right
-  channels. Container titles don't rotate — their bands are computed before
-  transposing (`titleBoxesOf`) and passed in.
-  elk options **cannot** fix these (tested; see
-  [`documentation/ai/ROUTE_DETOUR_HANDOVER.md`](./documentation/ai/ROUTE_DETOUR_HANDOVER.md)
-  — read it before touching flow routing). Its extra invariants: no coincident
-  segments, attach points spread per node side, no line collinear with a
-  container border, risers never strike container titles, channel spans nest
-  rather than interleave (slot order + lane order together).
-
-- `compact.ts` — removes horizontal bands crossed by nothing but vertical
-  segments, for **every** disposition. A node, label or horizontal segment anywhere
-  across the width pins its band, which is what keeps containers undistorted
-  and a zero-overlap drawing zero-overlap. Gated by a behaviour test — dead
-  bands must stay under 30px.
-
-- `model.ts` — the heart: types, the `views` registry (kinds, nesting rules,
-  per-view diagnostics), themes (`themes`/`mkTheme`/`themeFor`), i18n (`UI`),
-  diagnostic `explanations`. Most feature work starts here.
+- `views.ts` — **the heart**: the `views` registry (kinds, nesting rules,
+  per-view diagnostics, layout partitions, visual defaults). Imported by
+  `parser.ts`, `validator.ts`, `svg-render.ts` and 6 other modules. **Most
+  feature work starts here.**
+- `models/ast.ts` — the AST types (`Model`/`Element`/`Flow`/`BusinessObject`/
+  `DiagramStyle`), `defaultDiagramStyle`, diagnostic `explanations` ·
+  `models/diagnostic.ts` — `Severity`/`Diagnostic` · `themes.ts` — `themes`/
+  `mkTheme`/`themeFor` · `localization.ts` — i18n strings (`UI`) ·
+  `geometry.ts` / `element-tree.ts` / `xml-escape.ts` — geometry helpers,
+  element-tree traversal, `esc()`/`escAttr()`.
+  `model.ts` is a **deprecated, unused re-export barrel** kept for external
+  consumers that may still import `cairn/src/model.ts` directly — nothing in
+  this repo imports it; don't add to it, don't import from it.
 - `flow-matrix.ts` flow-matrix exporters · `slide-fold.ts` slide/page folding ·
   `text-metrics.ts` **pure-arithmetic** metrics (`len × fontSize × 0.56`, no system
   fonts — this is why output is platform-independent) · `diagnostics.ts` diagnostic
   rendering · `cli.ts` dispatch · `watch.ts` · `elk-*.ts` elkjs wiring ·
   `playground.ts` browser bundle entry.
+
+`edge-tidy.ts`, `route-detour.ts`, and `compact.ts` are the three post-layout
+passes between `scene-layout.ts` and `svg-render.ts`; what each guarantees,
+the flow-routing mechanism specifically, and the full invariant-to-gate
+mapping are in [`ARCHITECTURE.md`](./ARCHITECTURE.md) — not repeated here.
 
 ## Commands
 
@@ -92,6 +91,7 @@ npm run snapshots         # accept intended render changes (regenerate reference
 npm run snapshots:report  # preview a render change, grouped by KIND
 npm run sweep             # readability gate only (already included in npm test)
 npm run test:binary       # compile the host bun binary + smoke-run it (needs Bun)
+npm run examples          # refresh examples/*.svg only (subset of snapshots)
 npm run cairn -- <cmd> <file>
 ```
 
@@ -133,16 +133,26 @@ break the binary — hence `test:binary`.
    **ratchet**, expressed as a rate per swept flow-instance (not a raw count)
    so adding fixtures doesn't spuriously fail the gate: current rates are
    ceilings and may only fall. Lower a rate when a change earns it; never
-   raise one to go green.
+   raise one to go green. What each defect looks like on the page and why
+   it's bucketed the way it is: [`documentation/READABILITY.md`](./documentation/READABILITY.md).
 5. **Flow labels are required on the logical & security views** (`E0203`),
    optional on application & infrastructure. Infrastructure flows must still
    carry `protocol/port` (`(HTTPS/443)` — `E0240`) even when unlabelled.
+6. **Flow routing, tidying, compaction, and readability scoring are
+   DSL-agnostic.** `route-detour.ts`, `edge-tidy.ts`, `compact.ts`, and
+   `scripts/sweep.ts`'s metrics operate purely on the post-layout `Scene` /
+   `SceneNode` / `SceneEdge` geometry (plus generic `Model.style` /
+   `Model.flows`) — never on an element's `kind` or which view produced it.
+   A `server` and an `actor` look identical to these passes. Adding a view
+   or element kind must never require touching them.
 
 ## Repo-specific conventions
 
 - **Diagnostics are coded, never thrown.** Errors `E0xxx`, warnings `W0xxx`,
   each with a `span` + `help`; rationale in `explanations` (via `cairn explain`).
-  A user error is a `Diagnostic`, not an exception. ~29 codes — reuse the scheme; only rendered chrome localizes via `style { lang: fr }`.
+  A user error is a `Diagnostic`, not an exception. 31 codes (see
+  [`documentation/DIAGNOSTICS.md`](./documentation/DIAGNOSTICS.md)) — reuse
+  the scheme; only rendered chrome localizes via `style { lang: fr }`.
 - **Business objects are logical-view only** (`E0222` elsewhere). Element kinds
   are per-view (`views` registry) — e.g. `queue` (horizontal-cylinder) lives in
   application + infrastructure, not logical.
@@ -160,8 +170,10 @@ checklist and snapshot regeneration procedure.
 
 ## Extending the tool
 
-Adding a **view / diagnostic / theme / style property** all start in `model.ts`
-(the `views` registry / `themes` / `DiagramStyle`), then flow through
-`parser.ts` → `validator.ts` → `svg-render.ts` as needed. After any such change run the
-full gate **and** `npm run snapshots` to re-baseline. For generic work use the
-`engineering` plugin skills and the `security-review` / `review` commands.
+Adding a **view / diagnostic / theme / style property** all start in `views.ts`
+(the `views` registry) or `themes.ts` (`themes`/`mkTheme`) or `models/ast.ts`
+(`DiagramStyle`), then flow through `parser.ts` → `validator.ts` →
+`svg-render.ts` as needed — see [`ARCHITECTURE.md`](./ARCHITECTURE.md#4-the-views-registry-as-the-extension-point)
+for how one `views.ts` entry drives all three. After any such change run the
+full gate **and** `npm run snapshots` to re-baseline. For code review use the
+`code-review` / `security-review` skills.

@@ -22,7 +22,9 @@ jobs:
       # canary renders are diffed against committed snapshots. An intended change is
       # acknowledged with `npm run snapshots` + commit; otherwise this step fails.
       # It then chains `npm run sweep` — the readability gate over every top-level
-      # example × every disposition (invariants at 0, ceilings that may only fall).
+      # example × every disposition (invariants at 0, ceilings that may only fall) —
+      # and `npm run check:docs` — link integrity, diagnostic-code parity, file-map
+      # parity and command parity across AGENTS.md/ARCHITECTURE.md/documentation/.
       - run: npm test
       # Still needed after the sweep: it reads only top-level examples/*.cairn, so
       # examples/dispositions/*.cairn are covered here and nowhere else.

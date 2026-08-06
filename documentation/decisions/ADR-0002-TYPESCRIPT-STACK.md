@@ -1,5 +1,6 @@
 # ADR-0002: Use TypeScript with Bun-compiled binaries
 
+Status: **Accepted** · Date: 2026-07-11
 
 ## Context
 
@@ -68,4 +69,3 @@ The npm launcher (`bin/cairn.js`) re-executes Node with `--experimental-strip-ty
 
 - [RESULTS.md](/documentation/research/elk-test/RESULTS.md) — layout time comparison (Node vs Go+goja estimate)
 - [Bun `--compile` documentation](https://bun.com/docs/bundler/executables)
-- [Design brief §2.3](/documentation/DESIGN_BRIEF.md) — original stack evaluation

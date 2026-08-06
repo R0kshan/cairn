@@ -1,5 +1,7 @@
 # ADR-0001: Use ELK (elkjs) with custom post-passes as the layout engine
 
+Status: **Accepted** · Date: 2026-07-11
+
 ## Context
 
 Cairn needs a layout engine that can produce architecture diagrams with:
@@ -106,4 +108,3 @@ See [RESULTS.md](/documentation/research/elk-test/RESULTS.md) for full numbers.
 - [ELK: Constraining the model](https://eclipse.dev/elk/blog/posts/2023/23-01-09-constraining-the-model.html)
 - [ELK-EVALUATION.md](/documentation/research/elk-test/ELK-EVALUATION.md) — detailed ELK capability mapping
 - [ALTERNATIVES.md](/documentation/research/ALTERNATIVES.md) — why other engines were not chosen
-- [Design brief §1.1](/documentation/DESIGN_BRIEF.md#11-non-negotiables) — the non-negotiables this decision serves

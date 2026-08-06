@@ -32,6 +32,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 
 | Code | Severity | Meaning |
 |---|---|---|
+| E0000 | error | Internal `watch` error (build threw outside normal validation) — rendered as an SVG error panel rather than left as a stale diagram |
 | E0101–E0104 | error | Syntax / style-value errors |
 | E0200 / E0201 | error | Unknown diagram type / element kind (with did-you-mean) |
 | E0202 | error | Duplicate identifier (flat ID namespace, shared with business objects) |
