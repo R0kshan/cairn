@@ -12,7 +12,7 @@ npm run cairn -- new -L my.cairn     # scaffold a diagram
 npm run cairn -- build my.cairn      # render it to SVG
 ```
 
-The only runtime dependency is `elkjs`; the dev toolchain is just biome + typescript. Keep both lists that short.
+The only runtime dependency is `elkjs`; the dev toolchain is just biome + typescript + esbuild (which builds the playground and npm bundles). Keep both lists that short.
 
 ### Why no build step works for cairn
 
@@ -91,7 +91,9 @@ rate over part of the corpus can't judge a corpus-wide ceiling — but they do
 gate the per-drawing baseline, and `--update-baseline` on a partial run updates
 only the drawings actually swept.
 
-CI also builds the Bun binary + playground bundle. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
+CI also builds the Bun binary + playground bundle + npm package. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
+
+If you touched `src/api.ts` — the surface published as `@r0kshan/cairn` — also run `npm run build:package && npm run test:package`. Those aren't in `npm test` because `lib/` isn't committed; the `package` CI job covers them on every PR.
 
 `CAIRN_NO_PORT_PASS=1` is the one debug env var in the pipeline: it skips the
 port-constraint re-layout pass in `scene-layout.ts` that re-routes flows

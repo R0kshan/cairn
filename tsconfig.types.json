@@ -1,0 +1,27 @@
+// Declaration emit for the npm package — the ONLY config in this repo that
+// emits anything. `tsconfig.json` stays `noEmit` because the runtime strips
+// types without checking them; this one exists solely so consumers of
+// `@r0kshan/cairn` get types for `src/api.ts`.
+//
+// - `emitDeclarationOnly` is what makes `allowImportingTsExtensions` legal
+//   alongside emit (inherited from the base config).
+// - `rootDir` is pinned to the repo root because `src/api.ts` and `src/cli.ts`
+//   import `../package.json`, which widens the inferred common root anyway.
+//   Hence the emitted entry is `lib/types/src/api.d.ts`, which is what
+//   `package.json`'s `exports.types` points at.
+// - The emitted declarations keep this repo's intentional `.ts` import
+//   specifiers, which consumers cannot resolve. `scripts/build-package.sh`
+//   rewrites them to `.js` afterwards (TypeScript's own
+//   `rewriteRelativeImportExtensions` does not apply to declaration emit).
+// - `scripts/` and `tests/` are excluded: they are not shipped.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rootDir": ".",
+    "outDir": "lib/types"
+  },
+  "include": ["src/**/*.ts"]
+}

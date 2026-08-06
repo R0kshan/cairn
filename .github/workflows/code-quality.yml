@@ -45,6 +45,33 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: npm run test:binary
 
+  # Proves the npm package a consumer would install actually works. `lib/` is
+  # not committed (it's built by `prepack` on publish), so nothing in the
+  # default `npm test` can exercise it — this job builds it and runs the tests
+  # that resolve `@r0kshan/cairn` through the real `exports` map.
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run build:package
+      - run: npm run test:package
+      - run: |
+          test -s lib/index.browser.js       || { echo "browser bundle missing/empty"; exit 1; }
+          test -s lib/index.node.mjs         || { echo "node bundle missing/empty"; exit 1; }
+          test -s lib/types/src/api.d.ts     || { echo "declarations missing/empty"; exit 1; }
+          # Same guard as the playground job: --platform=browser shims nothing,
+          # so a bare Node global here throws in a real browser only.
+          ! grep -qE '(^|[^.\w$])(process\.[A-Za-z_]|require\(|Buffer\.[A-Za-z_]|__dirname|__filename)' lib/index.browser.js \
+            || { echo "browser bundle references a Node global — guard it via globalThis"; exit 1; }
+          # A .ts specifier left in the declarations is unresolvable for a
+          # consumer — see scripts/rewrite-dts-extensions.mjs.
+          ! grep -rqE 'from "\.\.?/[^"]*\.ts"' lib/types \
+            || { echo "declarations still contain .ts import specifiers"; exit 1; }
+
   # Proves the browser/node playground bundles still build (esbuild fails on a
   # broken import — e.g. in src/playground.ts).
   playground:

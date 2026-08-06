@@ -26,7 +26,17 @@ typed validation, deterministic output.
 - **elkjs runs in-process** (sync fake worker). **Bun compiles release binaries
   only** — never a dev/test dependency; no Bun/Deno APIs in `src/`.
 - **`elkjs` is the only runtime dep.** Dev deps are exactly
-  biome + typescript + @types/node.
+  biome + typescript + @types/node + esbuild. esbuild is pinned exactly (not a
+  range) and is a real dependency rather than an `npx` fetch because it builds
+  the **published** npm bundles: in package-lock.json its integrity hash is
+  verified and `npm audit` covers it.
+- **`src/api.ts` is the published API surface** (`exports` in package.json).
+  Anything exported there is a contract with consumers of `@r0kshan/cairn`;
+  `tests/package/api-contract.ts` fails `npm run typecheck` if it changes.
+- **typescript 7 is the native port and does NOT expose the classic compiler
+  API** — `import ts from "typescript"` yields only `{ version }`. The
+  programmatic API lives behind `typescript/unstable/*`; don't build tooling on
+  it.
 
 ## Pipeline (`src/`)
 

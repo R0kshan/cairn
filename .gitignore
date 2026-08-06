@@ -1,7 +1,9 @@
 node_modules/
 dist/
-package.json
-package-lock.json
+# npm package bundles — built by `npm run build:package` / `prepack`, never
+# committed. Root-anchored: playground/lib/ IS committed (Vercel has no build
+# step), so a bare `lib/` would swallow it.
+/lib/
 
 *.log
 *.bun-build

@@ -16,6 +16,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Usage](#usage)
 - [Preview](#preview)
 - [Installation](#installation)
+- [Use it in your app](#use-it-in-your-app)
 - [Commands](#commands)
 - [More](#more)
 
@@ -176,6 +177,12 @@ scoop bucket add cairn https://github.com/R0kshan/scoop-bucket
 scoop install cairn
 ```
 
+From npm (requires Node ≥ 22.6):
+
+```sh
+npm i -g @r0kshan/cairn@unstable
+```
+
 From source (no release needed — requires Node ≥ 22.6):
 
 ```sh
@@ -183,6 +190,53 @@ git clone https://github.com/R0kshan/cairn && cd cairn
 npm install
 npm run cairn -- --help          # or: node bin/cairn.js --help
 ```
+
+## Use it in your app
+
+The same engine the CLI and the [playground](https://github.com/R0kshan/cairn#preview) run on is published as a library, so you can render diagrams
+in the browser with no server round-trip:
+
+```sh
+npm i @r0kshan/cairn@unstable
+```
+
+> cairn is pre-1.0 and the `.cairn` grammar is still moving, so releases publish
+> to the **`unstable`** dist-tag — the tag is required until the first stable
+> release. The API below (`compile`) is what's committed to; the DSL it parses
+> is what may still change.
+
+```ts
+import { compile } from "@r0kshan/cairn";
+
+const { svg, diagnostics, metrics } = await compile(source, { theme: "classic-dark" });
+
+if (svg) {
+  container.innerHTML = svg;           // metrics: { width, height, layoutMs, overlaps }
+} else {
+  // Invalid input is data, never an exception — see DIAGNOSTICS.md for the codes.
+  for (const { code, severity, message, span } of diagnostics) {
+    console.error(`${severity} ${code} at ${span.line}:${span.col} — ${message}`);
+  }
+}
+```
+
+`compile()` never throws on bad input: a diagram that fails to parse or validate
+comes back as `{ svg: null, metrics: null }` with the reasons in `diagnostics`.
+Warnings are returned alongside a successful render.
+
+The package ships two builds and picks between them automatically — bundlers
+(Vite, webpack, esbuild) resolve the `browser` build; Node resolves the `node`
+one. Both inline `elkjs`, so there is nothing to install at runtime, and both
+are unminified: your bundler minifies better than we can guess (the layout
+engine is the bulk of it — expect roughly **480 KB gzipped** once minified).
+TypeScript declarations are included.
+
+Also exported: `themeNames` (every built-in theme, for a theme picker) and
+`version`.
+
+> The [flow-matrix export](#export-the-flow-matrix) is CLI-only today — `compile()` returns SVG.
+> Exposing it through the library is planned; say so in
+> [an issue](https://github.com/R0kshan/cairn/issues) if you need it.
 
 ## Commands
 

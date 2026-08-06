@@ -4,6 +4,11 @@ The playground (`playground/`) ships two bundles compiled from `src/` via
 [`scripts/build-playground.sh`](../scripts/build-playground.sh) (esbuild). Both
 **inline `elkjs`** so they have zero runtime dependencies to install.
 
+> **The npm package builds its own bundles.** `scripts/build-package.sh` emits
+> `lib/` from the same engine entry, and the two are independent: rebuilding one
+> does not rebuild the other. See [The npm bundles](#the-npm-bundles) below for
+> why only one of the two is committed.
+
 | File | Format | Minified | Runs in |
 |---|---|---|---|
 | `playground/cairn-engine.js` | ESM | yes (1.5 MB — elkjs is ~1.3 MB) | Browser (`index.html` via `<script type="module">`) |
@@ -34,8 +39,28 @@ committed artifacts are what ships. Nothing rebuilds them automatically, so a
 source change without a rebuild leaves the playground on stale code even though
 all CLI tests pass (the test suite doesn't exercise these bundles).
 
-**Don't read or edit the bundles by hand.** Read `src/playground.ts`
-(exports `compile`, `version`, `themeNames`) and the modules it imports instead.
+**Don't read or edit the bundles by hand.** Read
+[`src/api.ts`](../src/api.ts) — which exports `compile`, `version`, `themeNames`,
+and which `src/playground.ts` re-exports — and the modules it imports instead.
+
+## The npm bundles
+
+`npm run build:package` emits `lib/` (browser ESM, node ESM, and `.d.ts`
+declarations) from the same `src/api.ts`. Two differences from the above matter:
+
+- **`lib/` is not committed, `playground/` is.** The playground is deployed by
+  Vercel with no build step, so its artifacts have to be in git. npm has
+  `prepack`, so the published bundles are built from the commit being released
+  and can never be stale. Consequently `lib/` is gitignored and the `package` CI
+  job builds it on every PR.
+- **Neither is minified in `lib/`.** Consumers minify; a readable bundle is
+  auditable.
+
+`src/api.ts` is the **published surface**, so anything exported from it becomes
+API the moment someone installs the package.
+[`tests/package/api-contract.ts`](../tests/package/api-contract.ts) states that
+surface explicitly and `npm run typecheck` fails if it moves — deliberately, so
+the change lands as a reviewable diff rather than a silent break for consumers.
 
 ## No Node globals in engine code
 
@@ -48,10 +73,10 @@ one, reach it through `globalThis` with optional chaining so it degrades to
 `undefined` in the browser instead of throwing — see
 `src/scene-layout.ts`'s `CAIRN_NO_PORT_PASS` switch for the pattern.
 
-Two guards catch a regression here: the `playground` CI job greps the built
-bundle for a bare Node-global reference, and
-`tests/playground.test.ts` compiles a large example through the committed
-bundle with `process` deleted from `globalThis`.
+Four guards catch a regression here: the `playground` and `package` CI jobs grep
+their built browser bundles for a bare Node-global reference, and
+`tests/playground.test.ts` / `tests/package/package-api.test.ts` compile a large
+example through those bundles with `process` deleted from `globalThis`.
 
 ## Local preview
 
