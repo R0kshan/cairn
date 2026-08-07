@@ -45,6 +45,21 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
       - run: npm run test:binary
 
+  # Proves the package npm would publish actually installs and runs. No other
+  # job can: `test` runs from the repo and `binary-smoke` tests the Bun binary,
+  # but the npm channel ships a bundle and Node won't strip types under
+  # node_modules — so a CLI that works from a checkout can still be dead on
+  # install. See scripts/smoke-npm.sh.
+  npm-package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: 22 }
+      - run: npm ci
+      - run: npm run test:npm
+
   # Proves the browser/node playground bundles still build (esbuild fails on a
   # broken import — e.g. in src/playground.ts).
   playground:

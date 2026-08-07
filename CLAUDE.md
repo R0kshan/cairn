@@ -18,21 +18,46 @@ typed validation, deterministic output.
 
 ## Runtime model — read first
 
-- **No build step.** `.ts` runs directly via `node --experimental-strip-types`
-  (Node ≥ 22.6). Don't add a transpile/bundle step, emit `dist/`, or rewrite
-  imports to `.js` — the explicit `.ts` import extensions are intentional.
+- **No build step for dev or test.** `.ts` runs directly via
+  `node --experimental-strip-types` (Node ≥ 22.6). Don't add a transpile step,
+  emit `dist/`, or rewrite imports to `.js` — the explicit `.ts` import
+  extensions are intentional.
+- **Shipped artifacts are all pre-built**, because Node refuses to strip types
+  under `node_modules`: Bun compiles the release binaries, esbuild bundles the
+  npm CLI (`scripts/build-cli.sh` → `bin/cairn.mjs`, run by `prepack`) and the
+  playground. This is not a dev build step and must not become one.
 - **Type checking exists ONLY in `npm run typecheck`** — the runtime strips
   types without checking them.
 - **elkjs runs in-process** (sync fake worker). **Bun compiles release binaries
   only** — never a dev/test dependency; no Bun/Deno APIs in `src/`.
-- **`elkjs` is the only runtime dep.** Dev deps are exactly
-  biome + typescript + @types/node.
+- **`elkjs` is the only third-party module `src/` imports** — but it is a
+  *devDependency*, not a runtime one, because every shipped artifact inlines it
+  (Bun for the binaries, esbuild for the CLI and playground bundles). The
+  published package therefore installs **zero dependencies**. Don't "fix" this
+  by moving elkjs back to `dependencies`: nothing in the tarball resolves it,
+  and a declared-but-unloaded dep resolves to a different version than the one
+  actually inlined. Package deps are exactly biome + typescript + @types/node +
+  elkjs + esbuild (esbuild is the publish path, so it's pinned exactly rather
+  than fetched by `npx`).
 
 ## Pipeline (`src/`)
 
 ```text
 .cairn → lexer.ts → parser.ts → validator.ts → scene-layout.ts (elkjs) → route-detour.ts → edge-tidy.ts → label-anchor.ts → compact.ts → svg-render.ts → SVG
 ```
+
+**Entry points.** One environment-neutral core, thin entries that inject ELK:
+
+| Module | Role | ELK factory |
+|---|---|---|
+| `api.ts` | public surface — **re-exports only**. A diff here means the public contract changed | none |
+| `compile.ts` | `parse → validate → layout → render` in one call, for embedders | none |
+| `playground.ts` | browser entry, built into `playground/*` | browser `new ELK()` |
+| `cli-npm.ts` | entry for the published CLI bundle | `nodeElkFactory` |
+
+`api.ts` and `compile.ts` must stay neutral: injecting a factory there would
+override every consumer's, including the CLI's. See issue #38 — the `exports`
+map and `.d.ts` that make `api.ts` importable are not in this repo yet.
 
 Key passes an agent can't infer from names:
 - `route-detour.ts` — deterministic post-layout pass (issue #26) rerouting

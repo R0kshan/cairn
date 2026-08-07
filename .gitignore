@@ -1,7 +1,11 @@
 node_modules/
 dist/
-package.json
-package-lock.json
+
+# npm CLI bundle — build artifact of `npm run build:cli`, rebuilt by prepack.
+bin/cairn.mjs
+# `npm pack` output (scripts/smoke-npm.sh packs to a temp dir, but a manual
+# `npm pack` lands here).
+*.tgz
 
 *.log
 *.bun-build

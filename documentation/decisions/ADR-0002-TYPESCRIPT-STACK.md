@@ -42,6 +42,15 @@ Additional constraints:
 
 The npm launcher (`bin/cairn.js`) re-executes Node with `--experimental-strip-types` for Node 22.6–23.5. Node ≥ 23.6 strips types by default. The npm package should declare `"engines": { "node": ">=22.6" }` in `package.json`.
 
+> **Correction (npm packaging, issue #38).** The launcher paragraph above was
+> wrong about the npm channel. Node refuses to strip types for any file under
+> `node_modules` (`ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING`) regardless of
+> version or flags, so `bin/cairn.js` can only ever work from a checkout. The
+> published package ships a pre-built esbuild bundle instead
+> (`scripts/build-cli.sh` → `bin/cairn.mjs`, run by `prepack`); `bin/cairn.js`
+> is no longer published. The `engines` requirement still stands, and so does
+> the decision itself — only the delivery mechanism changed.
+
 ## Consequences
 
 ### Positive

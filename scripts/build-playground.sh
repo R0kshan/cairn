@@ -5,12 +5,17 @@
 #   playground/cairn-engine.js      browser ESM, minified  (client-side render)
 #   playground/lib/engine.node.mjs  node ESM               (serverless /api/svg)
 #
-# Uses esbuild (via npx) so no bun is required. elkjs is inlined into both
-# bundles, so the Vercel function has zero runtime dependencies.
+# Uses esbuild so no bun is required. elkjs is inlined into both bundles, so the
+# Vercel function has zero runtime dependencies.
+#
+# esbuild is a pinned devDependency (it's also the publish path — see
+# scripts/build-cli.sh), so run the installed copy rather than fetching a
+# floating version: one version builds every bundle, `package-lock.json` locks
+# its integrity hash, and `npm audit` covers it.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-ESBUILD="npx --yes esbuild@0.23"
+ESBUILD="npx --no-install esbuild"
 
 echo "• building browser bundle → playground/cairn-engine.js"
 $ESBUILD src/playground.ts \

@@ -12,11 +12,11 @@ npm run cairn -- new -L my.cairn     # scaffold a diagram
 npm run cairn -- build my.cairn      # render it to SVG
 ```
 
-The only runtime dependency is `elkjs`; the dev toolchain is just biome + typescript. Keep both lists that short.
+The whole dependency list is biome + typescript + @types/node + elkjs + esbuild, and they are **all devDependencies** — the published package installs nothing. `elkjs` is the only third-party module `src/` imports, but every shipped artifact inlines it (Bun for the binaries, esbuild for the CLI and playground bundles), so consumers never resolve it. Keep the list that short. esbuild earns its place by being the publish path — it builds the playground bundles and the npm CLI bundle (`scripts/build-cli.sh`), so it's pinned exactly and locked by `package-lock.json` rather than fetched at build time.
 
 ### Why no build step works for cairn
 
-`--experimental-strip-types` tells Node to erase the type annotations and run the resulting JavaScript — no compilation, no `dist/`, no sourcemap chasing. This matters in **development only** — the shipped binary is compiled by Bun and runs without Node. In dev the flag eliminates the entire compile step:
+`--experimental-strip-types` tells Node to erase the type annotations and run the resulting JavaScript — no compilation, no `dist/`, no sourcemap chasing. This matters in **development only** — every shipped artifact is pre-built: the release binaries by Bun, the npm CLI by esbuild. Node refuses to strip types under `node_modules`, so nothing installed can rely on the flag. In dev it eliminates the entire compile step:
 
 - **Instant edit-run cycle.** Change source, re-run the test or CLI command right away — no `tsc --watch`, no `dist/`
 - **No unsupported TS features needed.** The flag doesn't support `enum` with initializers, `const enum`, `namespace`, or legacy decorators. cairn uses none of these.

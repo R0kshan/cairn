@@ -1,10 +1,7 @@
 # Release automation
 # on tag v* -> test -> compile binaries for 5 platforms -> attest provenance
-# -> GitHub Release -> bump brew formula & scoop manifest in their repos.
-# (No npm publish: the bare name "cairn" is taken on the registry; the curl /
-#  Homebrew / Scoop channels ship the GitHub Release binaries and don't need it.
-#  To add npm later, publish under a scoped name — e.g. "@<user>/cairn" — with an
-#  NPM_TOKEN secret and a job mirroring `binaries`.)
+# -> GitHub Release -> bump brew formula & scoop manifest in their repos,
+# and in parallel -> publish @r0kshan/cairn to npm.
 #
 # Security posture:
 #  - all actions are pinned to a commit SHA (comment shows the human tag),
@@ -80,6 +77,56 @@ jobs:
         with:
           name: dist
           path: dist/
+
+  # npm channel — ships the CLI (`bin`). Runs in parallel with `binaries`;
+  # neither needs the other.
+  #
+  # Auth is OIDC trusted publishing: no NPM_TOKEN secret exists in this repo,
+  # and none should be added. npm also attaches provenance automatically,
+  # matching the attestation the binaries carry. The trusted publisher must be
+  # configured once on npmjs.com before this job can authenticate — see
+  # RELEASING.md.
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write      # OIDC token for trusted publishing + provenance
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { persist-credentials: false }
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: 22, package-manager-cache: false }
+
+      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1.
+      - run: npm install -g npm@latest
+
+      - run: npm ci
+
+      # npm publishes package.json's `version` — unlike the binaries, the tag is
+      # NOT the source of truth here (build-binaries.sh gets that via
+      # CAIRN_BUILD_VERSION). Without this, every release would republish
+      # whatever version was last committed. --allow-same-version makes it a
+      # no-op when package.json was already bumped.
+      - run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
+
+      # Don't ship a CLI that can't run — the npm mirror of the binaries job's
+      # smoke step. Packs the tarball, installs it into a scratch consumer, and
+      # drives the installed command through the full pipeline. Runs AFTER the
+      # version bump so it also asserts the published CLI reports this exact tag.
+      - run: bash scripts/smoke-npm.sh "${GITHUB_REF_NAME#v}"
+
+      # A prerelease must not land on `latest`, or `npm i @r0kshan/cairn` hands
+      # people a release candidate.
+      - name: Publish to npm
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          case "$VERSION" in
+            *-*) DIST_TAG=unstable ;;
+            *)   DIST_TAG=latest ;;
+          esac
+          echo "publishing $VERSION to dist-tag $DIST_TAG"
+          npm publish --tag "$DIST_TAG"
 
   taps:
     needs: binaries
