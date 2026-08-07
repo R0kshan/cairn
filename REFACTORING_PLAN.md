@@ -258,7 +258,9 @@ Also: `titleBoxesOf(folded, model)` recomputed three times at `:812, :813, :818`
 | `interface Point` | `geometry.ts:18`, `edge-tidy.ts:79`, `readability.ts:41`, `route-detour.ts:40` |
 | Manhattan path length | `edge-tidy.ts:1686` (`pathLength`), `edge-tidy.ts:2466` (`lengthOf`), `route-detour.ts:45` (`pathLength`) — two in the *same file* |
 | `MIN_ATTACH_GAP` / `MIN_SLOT_GAP` = 12 | `edge-tidy.ts:51`, `route-detour.ts:35` — identical value, **identical doc comment** |
-| `Side` | `edge-tidy.ts:84` (`"north"`), `scene-layout.ts:443` (`"NORTH"`) |
+| `Side` | `edge-tidy.ts:84` (`"north"`), `scene-layout.ts:443` (`"NORTH"`) — **not unified in Phase 1**, see note below |
+
+> **Correction, found during implementation:** this pair looked like the same drift as `pathLength`/`MIN_ATTACH_GAP` — pick one casing, rename the other. It isn't. `scene-layout.ts`'s uppercase `Side` is written directly into `elk.port.side` (`scene-layout.ts:498`), an elkjs layout-option key that requires exactly `"NORTH"|"SOUTH"|"EAST"|"WEST"` — an external contract, not an internal convention. `edge-tidy.ts`'s lowercase `Side` is purely internal and never crosses the module boundary as a shared type. Forcing one casing onto the other either breaks the elk contract or buys nothing; left as-is.
 
 ### 6.6 `TitleBox` is in the wrong module
 Declared in `route-detour.ts:57`, consumed by five modules. Structurally identical to `Box` in `geometry.ts`.
