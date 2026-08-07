@@ -155,8 +155,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     let count = 0;
     for (let index = 0; index < labels.length; index++) {
       for (let otherIndex = index + 1; otherIndex < labels.length; otherIndex++)
-        if (boxesOverlap(labels[index] as Box, labels[otherIndex] as Box)) count++;
-      for (const node of nodeBoxes) if (boxesOverlap(labels[index] as Box, node)) count++;
+        if (boxesOverlap(labels[index], labels[otherIndex])) count++;
+      for (const node of nodeBoxes) if (boxesOverlap(labels[index], node)) count++;
     }
     return count;
   };
@@ -179,7 +179,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
 
   const offOwnRun = (label: SceneLabel) => {
     const edge = ownRun.get(label);
-    return edge && edge.pts.length >= 2 ? boxToPolylineSq(label as Box, edge.pts) : 0;
+    return edge && edge.pts.length >= 2 ? boxToPolylineSq(label, edge.pts) : 0;
   };
   /**
    * Is some other flow's run closer to this label than its own run is? If so the
@@ -197,8 +197,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     return routes.some(
       (route) =>
         route.edge !== mine &&
-        boxGapSq(label as Box, route.bounds) < own &&
-        boxToPolylineSq(label as Box, route.edge.pts) < own,
+        boxGapSq(label, route.bounds) < own &&
+        boxToPolylineSq(label, route.edge.pts) < own,
     );
   };
 
@@ -235,8 +235,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     return routes.some(
       (route) =>
         route.edge !== mine &&
-        boxGapSq(label as Box, route.bounds) <= PIERCE_SQ &&
-        boxToPolylineSq(label as Box, route.edge.pts) <= PIERCE_SQ,
+        boxGapSq(label, route.bounds) <= PIERCE_SQ &&
+        boxToPolylineSq(label, route.edge.pts) <= PIERCE_SQ,
     );
   };
 
@@ -322,9 +322,9 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
        * `slide` drawings put one on a container name on the way out.
        */
       const collides = () =>
-        labels.some((other) => other !== label && boxesOverlap(other as Box, label as Box)) ||
-        nodeBoxes.some((node) => boxesOverlap(node, label as Box)) ||
-        titleBands.some((band) => boxesOverlap(band as Box, label as Box));
+        labels.some((other) => other !== label && boxesOverlap(other, label)) ||
+        nodeBoxes.some((node) => boxesOverlap(node, label)) ||
+        titleBands.some((band) => boxesOverlap(band, label));
       /** Can the reader tell, from this position alone, which flow is speaking? */
       const attributableHere = () => {
         const own = offOwnRun(label);
@@ -437,7 +437,7 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
           const own = offOwnRun(label);
           if (own > ADRIFT_SQ) harm[0]++;
           if (pierced(label)) harm[0]++;
-          if (titles.some((title) => boxesOverlap(title as Box, label as Box))) harm[0]++;
+          if (titles.some((title) => boxesOverlap(title, label))) harm[0]++;
           if (stolen(label, own)) harm[1]++;
         }
         for (const edge of scene.edges) if (!labelsSeated(edge)) harm[1]++;

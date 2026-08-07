@@ -84,7 +84,7 @@ function hostSegment(label: SceneLabel, edge: SceneEdge): number {
     const fits = span >= (vertical ? label.height : label.width);
     // Nearest among the segments that fit; longest among those that don't.
     // Negated distance so that "bigger score wins" reads the same either way.
-    const score = fits ? -boxToSegmentSq(label as Box, a, b) : span;
+    const score = fits ? -boxToSegmentSq(label, a, b) : span;
     if (host < 0 || (fits && !hostFits) || (fits === hostFits && score > hostScore)) {
       host = index;
       hostScore = score;
@@ -211,7 +211,7 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
     if (edge.pts.length < 2) continue;
     for (const label of edge.labels) {
       if (!label.width || !label.height) continue;
-      const own = boxToPolylineSq(label as Box, edge.pts);
+      const own = boxToPolylineSq(label, edge.pts);
       // *Every* label is seated on its run — there is no "close enough".
       // Skipping labels already within a few px (the old `ATTACHED` floor) is
       // precisely what left them where elk parks them, ~3px clear of the line,

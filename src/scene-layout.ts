@@ -14,7 +14,7 @@ import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-met
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
-import type { TitleBox } from "./geometry.ts";
+import type { Box, TitleBox } from "./geometry.ts";
 import { compactVertical } from "./compact.ts";
 import { optimiseRoutes, clearSideHugs, spreadAttachments, swapCrossingSiblingSeats, tidyEdges } from "./edge-tidy.ts";
 import { inspect, type Profile } from "./readability.ts";
@@ -49,23 +49,15 @@ export interface LaidOutEdge {
   labels?: LaidOutLabel[];
 }
 
-export interface SceneNode {
+export interface SceneNode extends Box {
   id: string;
   kind: string;
   label: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
   container: boolean;
 }
-export interface SceneLabel {
+export interface SceneLabel extends Box {
   flowId: string;
   text: string;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
   /**
    * Height of the *text* rows inside the box, which sit at its top; a
    * protocol line and business-object chips fill the rest below them. Seating a
