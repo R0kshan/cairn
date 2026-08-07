@@ -17,7 +17,7 @@
 import type { Model } from "./models/ast.ts";
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import { fontSizes, measure } from "./text-metrics.ts";
-import { type Point, type TitleBox, pathLength, MIN_ATTACH_GAP } from "./geometry.ts";
+import { type TitleBox, pathLength, MIN_ATTACH_GAP } from "./geometry.ts";
 
 const RATIO_THRESHOLD = 1.4;
 const MIN_WASTE = 300;

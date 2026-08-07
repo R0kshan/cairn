@@ -35,14 +35,14 @@ export interface LaidOutNode {
   children?: LaidOutNode[];
   edges?: LaidOutEdge[];
 }
-export interface LaidOutLabel {
+interface LaidOutLabel {
   text: string;
   x: number;
   y: number;
   width: number;
   height: number;
 }
-export interface LaidOutEdge {
+interface LaidOutEdge {
   id: string;
   container?: string;
   sections?: ElkEdgeSection[];

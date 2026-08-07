@@ -4,7 +4,7 @@
  * output localizes — the DSL keywords stay English.
  */
 
-export interface UIStrings {
+interface UIStrings {
   flows: string;
   objects: string;
   legend: string;

@@ -12,7 +12,7 @@ import { palettes, lightPalette } from "./themes.ts";
 import { esc, escAttr } from "./xml-escape.ts";
 import { measure, CHAR_WIDTH } from "./text-metrics.ts";
 
-export interface MatrixRow {
+interface MatrixRow {
   num: number;
   source: string;
   dest: string;
@@ -46,7 +46,7 @@ function splitProto(protocol?: string): { proto: string; port: string } {
   return { proto: protocol, port: "" };
 }
 
-export function buildMatrixRows(model: Model): MatrixRow[] {
+function buildMatrixRows(model: Model): MatrixRow[] {
   return model.flows.map((flow) => {
     const { proto, port } = splitProto(flow.tech?.protocol);
     return {

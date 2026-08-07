@@ -52,7 +52,7 @@ interface ElementStyleEntry {
   attrValue: string | undefined;
 }
 
-export interface RenderResult {
+interface RenderResult {
   svg: string;
   overlapsBefore: number;
   overlapsAfter: number;

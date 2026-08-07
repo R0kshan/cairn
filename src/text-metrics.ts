@@ -6,10 +6,8 @@
  * real font metrics here; determinism depends on it (see CLAUDE.md).
  */
 
-export const DEFAULT_FONT_SIZE_EDGE = 11.5,
-  DEFAULT_FONT_SIZE_NODE = 12.5,
-  DEFAULT_FONT_SIZE_CONTAINER = 13;
-export const FONT_SIZE_BASE = 12.5;
+const DEFAULT_FONT_SIZE_NODE = 12.5;
+const FONT_SIZE_BASE = 12.5;
 export const CHAR_WIDTH = 0.56;
 
 export const fontSizes = (base: number) => {
@@ -51,7 +49,7 @@ export function wrapText(text: string, maxChars: number): string {
   return lines.join("\n");
 }
 
-export const CHIP_HEIGHT = 19;
+const CHIP_HEIGHT = 19;
 export const chipW = (name: string, scale = 1) =>
   Math.ceil(name.length * 9.5 * scale * CHAR_WIDTH) + Math.round(16 * scale);
 export const techText = (tech?: { protocol?: string; format?: string }) =>

@@ -8,7 +8,7 @@
 
 import type { StyleProps } from "./models/ast.ts";
 
-export interface NestingRule {
+interface NestingRule {
   code: string;
   child: string;
   parents: string[];
@@ -81,7 +81,7 @@ export interface View {
   levelDefaultsDark?: Record<string, StyleProps>;
 }
 
-export const logicalView: View = {
+const logicalView: View = {
   name: "logical",
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
   containerKinds: ["actor-group", "system", "layer", "external"],
@@ -201,7 +201,7 @@ export const logicalView: View = {
   },
 };
 
-export const applicationView: View = {
+const applicationView: View = {
   name: "application",
   kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
   containerKinds: ["actor-group", "application", "external"],
@@ -322,7 +322,7 @@ export const applicationView: View = {
   },
 };
 
-export const infrastructureView: View = {
+const infrastructureView: View = {
   name: "infrastructure",
   kinds: [
     "actor",
@@ -489,7 +489,7 @@ export const infrastructureView: View = {
 
 const SEC_LEVELS = ["public", "internal", "restricted", "secret"];
 
-export const securityView: View = {
+const securityView: View = {
   name: "security",
   kinds: ["trust-zone", "security-node", "asset", "actor-group", "actor", "external"],
   containerKinds: ["trust-zone", "actor-group"],
