@@ -17,7 +17,7 @@
 import type { Model } from "./models/ast.ts";
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import { fontSizes, measure } from "./text-metrics.ts";
-import { type Point, pathLength, MIN_ATTACH_GAP } from "./geometry.ts";
+import { type Point, type TitleBox, pathLength, MIN_ATTACH_GAP } from "./geometry.ts";
 
 const RATIO_THRESHOLD = 1.4;
 const MIN_WASTE = 300;
@@ -37,18 +37,13 @@ const TITLE_CLEARANCE = 8;
 const MIN_DEPTH_GAIN = 24;
 
 /**
- * A container's title band in scene coordinates. Passed in rather than derived
- * here because for a DOWN layout the scene is transposed around this pass,
- * while the title text is not — it stays horizontal on the page.
+ * Title bands as drawn: top-left of each container, text running across.
+ * Callers must call this fresh at each point they need it rather than reuse
+ * an earlier result — the scene is transposed around a DOWN-disposition pass
+ * while the title text itself stays horizontal on the page, and any other
+ * pass that moves node positions (compaction, layout) invalidates a captured
+ * set the same way.
  */
-export interface TitleBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/** Title bands as drawn: top-left of each container, text running across. */
 export function titleBoxesOf(scene: Scene, model: Model): TitleBox[] {
   const { cont: containerFontSize } = fontSizes(model.style.font.size);
   const compact = model.style.compact;

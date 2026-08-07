@@ -34,8 +34,7 @@
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import { inspect, ladderVerdict } from "./readability.ts";
 import type { Profile } from "./readability.ts";
-import type { TitleBox } from "./route-detour.ts";
-import { type Point, MIN_ATTACH_GAP, pathLength as sharedPathLength } from "./geometry.ts";
+import { type Point, type TitleBox, MIN_ATTACH_GAP, pathLength as sharedPathLength } from "./geometry.ts";
 
 /** A segment this far off orthogonal is a rounding artefact, not a turn. */
 const SNAP = 6;

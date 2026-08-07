@@ -18,6 +18,13 @@ export interface Box {
   height: number;
 }
 
+/**
+ * A container's title band in scene coordinates. Structurally a `Box`; kept
+ * as its own name because passes that take one are reading a label the
+ * scene doesn't otherwise carry, not an arbitrary rectangle.
+ */
+export type TitleBox = Box;
+
 export interface Point {
   x: number;
   y: number;

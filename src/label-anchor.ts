@@ -24,9 +24,8 @@
  * new position is a midpoint — two additions and a division.
  */
 
-import { type Box, boxToPolylineSq, boxToSegmentSq } from "./geometry.ts";
+import { type Box, type TitleBox, boxToPolylineSq, boxToSegmentSq } from "./geometry.ts";
 import type { Scene, SceneEdge, SceneLabel } from "./scene-layout.ts";
-import type { TitleBox } from "./route-detour.ts";
 
 /**
  * Beyond this a label has visibly left its flow, whatever else is near it.
