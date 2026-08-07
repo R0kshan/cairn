@@ -8,6 +8,9 @@
  * true length: every use is a comparison, and squaring preserves order.
  */
 
+/** Least distance between two flows attached to the same side of a node. */
+export const MIN_ATTACH_GAP = 12;
+
 export interface Box {
   x: number;
   y: number;
@@ -65,6 +68,14 @@ export const boundsOf = (points: Point[]): Box => {
     if (point.y > maxY) maxY = point.y;
   }
   return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+};
+
+/** Manhattan length of a polyline: the sum of |Δx| + |Δy| over consecutive points. */
+export const pathLength = (points: Point[]) => {
+  let length = 0;
+  for (let index = 0; index + 1 < points.length; index++)
+    length += Math.abs(points[index + 1].x - points[index].x) + Math.abs(points[index + 1].y - points[index].y);
+  return length;
 };
 
 export const boxToPolylineSq = (box: Box, points: Point[]) => {

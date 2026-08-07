@@ -37,11 +37,7 @@
 
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import type { TitleBox } from "./route-detour.ts";
-
-export interface Point {
-  x: number;
-  y: number;
-}
+import type { Point } from "./geometry.ts";
 
 /** Defect identity → tier. Identity, so a defect that *moves* is visible. */
 export type Profile = Map<string, number>;

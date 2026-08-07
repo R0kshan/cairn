@@ -17,6 +17,7 @@
 import type { Model } from "./models/ast.ts";
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import { fontSizes, measure } from "./text-metrics.ts";
+import { type Point, pathLength, MIN_ATTACH_GAP } from "./geometry.ts";
 
 const RATIO_THRESHOLD = 1.4;
 const MIN_WASTE = 300;
@@ -32,23 +33,8 @@ const EAST_DESCENT_DELTAS = [
 ];
 /** Container titles are drawn under the flows with no halo — never graze them. */
 const TITLE_CLEARANCE = 8;
-/** Least distance between two flows attached to the same side of a node. */
-const MIN_SLOT_GAP = 12;
 /** How much higher a lane must sit to justify turning up mid-drawing. */
 const MIN_DEPTH_GAIN = 24;
-
-interface Point {
-  x: number;
-  y: number;
-}
-
-function pathLength(pts: Point[]): number {
-  let length = 0;
-  for (let index = 1; index < pts.length; index++)
-    length +=
-      Math.abs(pts[index].x - pts[index - 1].x) + Math.abs(pts[index].y - pts[index - 1].y);
-  return length;
-}
 
 /**
  * A container's title band in scene coordinates. Passed in rather than derived
@@ -555,7 +541,7 @@ export function rerouteDetours(
       // greedy positions chosen during planning already clear each other, so
       // keep those and let the crowded-out flow take a side approach instead.
       const usable = freePositions[freePositions.length - 1] - freePositions[0];
-      if (usable / (members.length + 1) < MIN_SLOT_GAP) continue;
+      if (usable / (members.length + 1) < MIN_ATTACH_GAP) continue;
       // Slot order = travel direction, then reach descending. Flows heading
       // left take the left slots and flows heading right the right ones, so
       // opposite-direction flows diverge immediately. Among flows heading the

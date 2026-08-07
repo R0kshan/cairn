@@ -35,6 +35,7 @@ import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import { inspect, ladderVerdict } from "./readability.ts";
 import type { Profile } from "./readability.ts";
 import type { TitleBox } from "./route-detour.ts";
+import { type Point, MIN_ATTACH_GAP, pathLength as sharedPathLength } from "./geometry.ts";
 
 /** A segment this far off orthogonal is a rounding artefact, not a turn. */
 const SNAP = 6;
@@ -47,8 +48,6 @@ const SNAP = 6;
  * guarded and iterated to a fixpoint, not a bigger number.
  */
 const JOG_SNAP = 6;
-/** Least distance between two flows attached to the same side of a node. */
-const MIN_ATTACH_GAP = 12;
 /** Keep attachments off the corners — squeezed toward `MIN_SIDE_INSET` when a
  *  side has to seat more flows than it comfortably holds. */
 const SIDE_INSET = 6;
@@ -75,11 +74,6 @@ const segmentsCross = (a1: Point, a2: Point, b1: Point, b2: Point): Point | null
   const aVertical = Math.abs(a1.x - a2.x) < 0.5;
   return aVertical ? { x: a1.x, y: b1.y } : { x: b1.x, y: a1.y };
 };
-
-interface Point {
-  x: number;
-  y: number;
-}
 
 type Side = "north" | "south" | "east" | "west";
 
@@ -1683,12 +1677,7 @@ export function tidyEdges(
     }
     return boxes;
   };
-  const pathLength = (pts: Point[]) => {
-    let length = 0;
-    for (let index = 0; index + 1 < pts.length; index++)
-      length += Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y);
-    return length;
-  };
+  const pathLength = sharedPathLength;
   const isAway = (seg: Point, target: Point) =>
     (Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > AWAY_TOL && seg.x * target.x < 0) ||
     (Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > AWAY_TOL && seg.y * target.y < 0);
@@ -2463,12 +2452,7 @@ export function tidyEdges(
       b,
     ]);
   };
-  const lengthOf = (pts: Point[]) => {
-    let total = 0;
-    for (let i = 0; i + 1 < pts.length; i++)
-      total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
-    return total;
-  };
+  const lengthOf = sharedPathLength;
   /**
    * *Which* flows a route crosses, not how many times.
    *
