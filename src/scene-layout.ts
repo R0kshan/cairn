@@ -14,7 +14,7 @@ import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-met
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
-import type { Box, TitleBox } from "./geometry.ts";
+import type { Box, Point, TitleBox } from "./geometry.ts";
 import { compactVertical } from "./compact.ts";
 import { optimiseRoutes, clearSideHugs, spreadAttachments, swapCrossingSiblingSeats, tidyEdges } from "./edge-tidy.ts";
 import { inspect, type Profile } from "./readability.ts";
@@ -69,7 +69,7 @@ export interface SceneLabel extends Box {
 }
 export interface SceneEdge {
   id: string;
-  pts: { x: number; y: number }[];
+  pts: Point[];
   labels: SceneLabel[];
   /**
    * Set by `route-detour` on edges it sent through a top/bottom channel.
@@ -82,7 +82,7 @@ export interface SceneEdge {
    * renderer can undo a repair that cost some label its seat — that verdict is
    * only reachable after label settling, which happens during rendering.
    */
-  repairedFrom?: { x: number; y: number }[];
+  repairedFrom?: Point[];
 }
 export interface Scene {
   width: number;
