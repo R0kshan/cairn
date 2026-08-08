@@ -260,4 +260,4 @@ Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) p
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
-- [`documentation/`](documentation/) — design brief, ADRs, and internals docs.
+- [`documentation/`](documentation/) — architecture, invariants, DSL and internals.

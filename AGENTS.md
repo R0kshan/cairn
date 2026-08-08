@@ -1,4 +1,4 @@
-# AGENTS.md
+# Entry point for AI Agents
 
 Read this file first.
 
