@@ -12,9 +12,9 @@ document is the detail behind that one line.
 flow-instances at last count — and classifies each defect it finds into one
 of two buckets:
 
-- **Zero-gated.** Six kinds must never occur, anywhere, at any count. One
+- **Zero-gated.** Seven kinds must never occur, anywhere, at any count. One
   occurrence fails the build.
-- **Ceiling (ratchet).** Five kinds are tolerated debt, expressed as a
+- **Ceiling (ratchet).** The rest are tolerated debt, expressed as a
   *rate per swept flow-instance* rather than a raw count — so the ceiling
   doesn't spuriously tighten just because the corpus grows. A rate may only
   fall; raising one to make a run pass is the one thing this gate forbids
@@ -54,7 +54,16 @@ can't tell how many flows connect there.
 **What you see:** a wide empty stripe across the drawing — a horizontal
 band 30px tall or more crossed by no node, label, or horizontal run.
 
+### `labelAdrift`
+**What you see:** a flow label that has floated more than 20px from its own
+run — far enough that the reader can no longer tell which flow it
+annotates.
+
 ## Ceilings (tolerated debt, may only fall)
+
+`scripts/sweep.ts`'s `CEILING_RATE` is the source of truth for this list —
+check there for the exact, currently-calibrated rate per kind; the
+descriptions below are what each one looks like on the page.
 
 ### `attachTight`
 **What you see:** attachment points crowded together on a node side —
@@ -77,6 +86,60 @@ length.
 direct distance between its endpoints *and* more than 400px longer in
 absolute terms (both conditions, so short flows aren't penalized for
 rounding).
+
+### `crossings`
+**What you see:** two flows crossing anywhere in the drawing. Most crossings
+are inherent to the topology; only ones caused by risers seated in the wrong
+left-to-right order are fixable by re-seating.
+
+### `fanTangle`
+**What you see:** two flows leaving the same side of a node whose routes
+tangle within its fan (within `FAN_REACH` = 48px), so the reader can't tell
+which line owns which attachment point.
+
+### `turnHeavy`
+**What you see:** a flow that weaves — more than two turns between its
+endpoints, when a straight run, an L, or a Z would always suffice
+geometrically.
+
+### `throughContainer`
+**What you see:** a run crossing a container that holds neither of its
+endpoints — reads as traffic transiting a component it has no business in.
+Invisible to `throughBox`, which only tests leaf nodes.
+
+### `attachAway`
+**What you see:** a wrap-around attachment — a terminal segment departing
+away from its counterpart, or arriving from beyond it, so the eye is carried
+in the wrong direction before doubling back.
+
+### `sideHug`
+**What you see:** a run riding a node or container side it doesn't attach
+to, close enough (within 3px, over more than 24px of shared span) that the
+flow reads as part of the frame.
+
+### `titleStruck`
+**What you see:** a run or label drawn across a container's title — the
+line strikes through the words since titles carry no halo.
+
+### `labelOrphan`
+**What you see:** a label sitting more than `LABEL_ATTACHED` (6px) from its
+own run, with some other run's line closer to it than its own — the reader
+would guess the wrong flow.
+
+### `labelOffLine`
+**What you see:** a label whose text centre doesn't sit on its own run (more
+than the `ON_LINE_SLACK` of 2px off it) — the caption reads as floating
+beside the flow rather than on it.
+
+### `labelPierced`
+**What you see:** a foreign run drawn directly through a label's text, for a
+label that isn't already seated on its own run — the worst case, since two
+flows are touching the same words.
+
+### `labelStraddled`
+**What you see:** a second run traveling parallel to the label's own run and
+passing inside its box — both lines get masked by the same text halo, so
+nothing tells them apart.
 
 ## Priority: what wins when fixing one defect risks creating another
 
