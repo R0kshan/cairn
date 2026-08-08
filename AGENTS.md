@@ -4,14 +4,14 @@ Read this file first.
 
 ## Specialized Roles
 
-Skim [`.agents/ENGINEERING_PRINCIPLES.md`](./.agents/ENGINEERING_PRINCIPLES.md)
+Skim [`.agents/reference/WORKING_METHODOLOGY.md`](./.agents/reference/WORKING_METHODOLOGY.md)
 before any non-trivial change — it defines the core workflow (reproduce →
 diagnose → experiment → decide → implement → verify) that every role builds
 on; its one hard rule (git ownership) is already stated below. Then consult
 the role for the phase you're in:
-- **System Planning:** [`.agents/roles/architect-agent.md`](./.agents/roles/architect.md)
-- **Code Generation:** [`.agents/roles/coder-agent.md`](./.agents/roles/coder.md)
-- **Code Review:** [`.agents/roles/reviewer-agent.md`](./.agents/roles/reviewer.md)
+- **System Planning:** [`.agents/architect-agent.md`](./.agents/architect-agent.md)
+- **Code Generation:** [`.agents/coder-agent.md`](./.agents/coder-agent.md)
+- **Code Review:** [`.agents/reviewer-agent.md`](./.agents/reviewer-agent.md)
 
 ## What cairn is
 
