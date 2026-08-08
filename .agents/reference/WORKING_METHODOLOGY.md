@@ -1,12 +1,12 @@
-# ENGINEERING PRINCIPLES
+# WORKING METHODOLOGY
 
-These principles describe **how to reason and solve problems** on this project. They complement `AGENTS.md`, which defines repository-specific rules.
+These principles describe **how to reason and solve problems** on this project.
 
 ## Core workflow
 
 Always follow this sequence:
 
-> Read `AGENTS.md` → Reproduce → Diagnose → Try the cheapest experiment → Decide (with the user when appropriate) → Implement → Verify using multiple signals → Run all required gates.
+> Reproduce → Diagnose → Try the cheapest experiment → Decide (with the user when appropriate) → Implement → Verify using multiple signals → Run all required gates.
 
 Never propose a fix before reproducing the problem, and prefer configuration or data-driven experiments before changing code.
 
@@ -17,7 +17,6 @@ Never propose a fix before reproducing the problem, and prefer configuration or 
 * Every behavioral claim must be backed by a measurement.
 * Verify surprising results using an independent method.
 * Compare the correct abstraction:
-
   * `cmp` for expected no-op changes.
   * Geometry digests, rendered output, or semantic diffs for expected changes.
 * Print actual runtime data before forming hypotheses.
@@ -77,7 +76,7 @@ Never run:
 
 Read-only Git commands are always acceptable.
 
-When appropriate, finish by proposing a complete commit message explaining:
+When appropriate, finish by proposing a complete by concise commit message explaining:
 
 * why the change was made
 * measurable impact (when applicable)

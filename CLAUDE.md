@@ -1,1 +1,3 @@
-AGENTS.md
+# CLAUDE.md
+
+Read [AGENTS.md](./AGENTS.md) first.
