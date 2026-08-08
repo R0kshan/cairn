@@ -4,7 +4,7 @@
  * own shape function, routes edges with crossing "hops", settles flow-label
  * positions to keep overlaps at zero, and appends the flows/objects/legend bands.
  * All text goes through `esc`/`escAttr`; output must stay byte-identical across
- * runs, so only the arithmetic allowed by CLAUDE.md is used here.
+ * runs, so only the arithmetic allowed by AGENTS.md#non-negotiable-invariants is used here.
  */
 
 import type { Model, StyleProps, Flow } from "./models/ast.ts";
@@ -33,7 +33,7 @@ const LABEL_HALO = 4;
  * Character-width factor for positioning text inside the rendered bands (flow
  * list, legend). Deliberately narrower than text-metrics' CHAR_WIDTH (0.56):
  * the bands pack labels tighter, and this 0.52 keeps chip/wrap placement snug.
- * Changing it shifts band geometry — see the determinism note in CLAUDE.md.
+ * Changing it shifts band geometry — see the determinism note in AGENTS.md#non-negotiable-invariants.
  */
 const RENDER_CHAR_WIDTH = 0.52;
 const SEC_LEVEL_FR: Record<string, string> = {

@@ -18,4 +18,6 @@ bun.lock
 !.claude/skills
 .vercel
 .env*
-.tmp/
+
+# Added by code-review-graph
+.code-review-graph/

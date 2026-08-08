@@ -14,6 +14,12 @@ npm run cairn -- build my.cairn      # render it to SVG
 
 The whole dependency list is biome + typescript + @types/node + elkjs + esbuild, and they are **all devDependencies** — the published package installs nothing. `elkjs` is the only third-party module `src/` imports, but every shipped artifact inlines it (Bun for the binaries, esbuild for the CLI and playground bundles), so consumers never resolve it. Keep the list that short. esbuild earns its place by being the publish path — it builds the playground bundles and the npm CLI bundle (`scripts/build-cli.sh`), so it's pinned exactly and locked by `package-lock.json` rather than fetched at build time.
 
+`CLAUDE.md` is a symlink to `AGENTS.md` (so Claude Code auto-loads the real
+content, not a pointer) — if `git config core.symlinks` was off on checkout
+(mainly a Windows/older-git concern), it may check out as a plain file
+containing the literal text `AGENTS.md` instead; enable `core.symlinks` and
+re-checkout if so.
+
 ### Why no build step works for cairn
 
 `--experimental-strip-types` tells Node to erase the type annotations and run the resulting JavaScript — no compilation, no `dist/`, no sourcemap chasing. This matters in **development only** — every shipped artifact is pre-built: the release binaries by Bun, the npm CLI by esbuild. Node refuses to strip types under `node_modules`, so nothing installed can rely on the flag. In dev it eliminates the entire compile step:
@@ -25,7 +31,7 @@ The tradeoff: it's experimental (track [node#53725](https://github.com/nodejs/no
 
 ## What you can't break
 
-Invariants detailed in [`INVARIANTS.md`](./INVARIANTS.md). In short:
+Invariants detailed in [`AGENTS.md`](./AGENTS.md#non-negotiable-invariants). In short:
 - **Zero label overlaps. Byte-deterministic output.**
 - **Every flow is a distinct arrow with a distinct label** — flows are never visually merged.
 - **Labels are mandatory in logical view (E0203)** — optional in application, infrastructure and security.

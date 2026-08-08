@@ -25,7 +25,9 @@ ELK was designed for directed graph layout with strong constraint support, which
 
 ## Pain-point mapping
 
-How ELK addresses (or does not address) cairn's three non-negotiables (see [DESIGN_BRIEF.md §1.1](/documentation/DESIGN_BRIEF.md)):
+How ELK addresses (or does not address) cairn's three non-negotiables from the
+phase-0 spike (no label overlap, compact space management, semantic
+positioning):
 
 | Non-negotiable | ELK native | Post-pass layer adds | Spike-validated |
 |---|---|---|---|
@@ -48,7 +50,7 @@ Tested against **elkjs 0.11.1**. Key behaviors:
 ## Known limitations
 
 1. **Cross-hierarchy routing** is a known ELK weak spot. Edges crossing
- container boundaries (`INCLUDE_CHILDREN`) produce longer paths than same-level edges. Mitigated by the fold composited layout ([`fold.ts`](/src/fold.ts)) for slide mode and by edge-crossing hops for the standard layout.
+ container boundaries (`INCLUDE_CHILDREN`) produce longer paths than same-level edges. Mitigated by the fold composited layout ([`slide-fold.ts`](/src/slide-fold.ts)) for slide mode and by the [flow-routing post-pass](/documentation/decisions/ADR-0005-FLOW-ROUTING.md) for the standard layout.
 2. **ELK is heavy** — the elkjs bundle is ~1.5 MB. Acceptable for CLI
  (embedded in the binary) and playground (loaded once).
 3. **No incremental layout** — every build runs the full layout from scratch.
