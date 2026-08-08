@@ -1,6 +1,10 @@
-# DSL Spec — v0.1
+# DSL Spec
 
-Design goals: D2-like terseness, typed elements (the view knows what an `actor` is), diagnostics-friendly (every token carries a source span), Git-friendly (meaningful diffs), styling fully overridable.
+Tracks `main` — this describes the current grammar, not a frozen release; it
+has no version number independent of the codebase itself. Design goals:
+D2-like terseness, typed elements (the view knows what an `actor` is),
+diagnostics-friendly (every token carries a source span), Git-friendly
+(meaningful diffs), styling fully overridable.
 
 ### DSL design decisions (D1–D4)
 

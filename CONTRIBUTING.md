@@ -14,6 +14,12 @@ npm run cairn -- build my.cairn      # render it to SVG
 
 The only runtime dependency is `elkjs`; the dev toolchain is just biome + typescript. Keep both lists that short.
 
+`CLAUDE.md` is a symlink to `AGENTS.md` (so Claude Code auto-loads the real
+content, not a pointer) — if `git config core.symlinks` was off on checkout
+(mainly a Windows/older-git concern), it may check out as a plain file
+containing the literal text `AGENTS.md` instead; enable `core.symlinks` and
+re-checkout if so.
+
 ### Why no build step works for cairn
 
 `--experimental-strip-types` tells Node to erase the type annotations and run the resulting JavaScript — no compilation, no `dist/`, no sourcemap chasing. This matters in **development only** — the shipped binary is compiled by Bun and runs without Node. In dev the flag eliminates the entire compile step:
@@ -25,7 +31,7 @@ The tradeoff: it's experimental (track [node#53725](https://github.com/nodejs/no
 
 ## What you can't break
 
-Invariants detailed in [`INVARIANTS.md`](./INVARIANTS.md). In short:
+Invariants detailed in [`AGENTS.md`](./AGENTS.md#non-negotiable-invariants). In short:
 - **Zero label overlaps. Byte-deterministic output.**
 - **Every flow is a distinct arrow with a distinct label** — flows are never visually merged.
 - **Labels are mandatory in logical view (E0203)** — optional in application, infrastructure and security.
