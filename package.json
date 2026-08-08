@@ -24,8 +24,7 @@
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
     "sweep": "node --experimental-strip-types scripts/sweep.ts --jobs=auto",
     "test:binary": "bash scripts/smoke-binary.sh",
-    "examples": "node --experimental-strip-types scripts/render-examples.mjs",
-    "check:docs": "node --experimental-strip-types scripts/check-docs.ts"
+    "examples": "node --experimental-strip-types scripts/render-examples.mjs"
   },
   "dependencies": {
     "elkjs": "^0.12.0"

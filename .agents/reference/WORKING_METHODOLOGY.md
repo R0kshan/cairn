@@ -76,8 +76,7 @@ Never run:
 
 Read-only Git commands are always acceptable.
 
-When appropriate, finish by proposing a complete by concise commit message explaining:
-
+When appropriate, finish by proposing a concise commit message explaining:
 * why the change was made
 * measurable impact (when applicable)
 * any re-baselined artifacts

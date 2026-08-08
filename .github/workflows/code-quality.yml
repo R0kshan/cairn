@@ -16,19 +16,9 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: 22 }
       - run: npm ci
-      - run: npm run typecheck        # tsc --noEmit (the only type check; runtime strips types)
-      - run: npm run lint             # biome
-      # `npm test` includes the non-regression snapshot gate (tests/snapshot.test.ts):
-      # canary renders are diffed against committed snapshots. An intended change is
-      # acknowledged with `npm run snapshots` + commit; otherwise this step fails.
-      # It then chains `npm run sweep` — the readability gate over every top-level
-      # example × every disposition (invariants at 0, ceilings that may only fall) —
-      # and `npm run check:docs` — link integrity, diagnostic-code parity, file-map
-      # parity and command parity across AGENTS.md/ARCHITECTURE.md/documentation/.
+      - run: npm run typecheck
+      - run: npm run lint
       - run: npm test
-      # Still needed after the sweep: it reads only top-level examples/*.cairn, so
-      # examples/dispositions/*.cairn are covered here and nowhere else.
-      # regression gate: every example must build with zero label overlaps
       - run: |
           for f in examples/*.cairn examples/dispositions/*.cairn; do
             case "$f" in *broken*) continue;; esac
@@ -36,9 +26,8 @@ jobs:
             echo "$out" | grep -q "label overlaps: 0" || { echo "OVERLAP REGRESSION: $f -> $out"; exit 1; }
           done
 
-  # Proves the bun-COMPILED binary actually runs (Node tests can't — see
-  # scripts/smoke-binary.sh). Builds only the host target for speed; the release
-  # workflow builds all five platforms.
+  # Proves the bun-COMPILED binary actually runs (Node tests can't — see scripts/smoke-binary.sh). 
+  # Builds only the host target for speed; the release workflow builds all five platforms.
   binary-smoke:
     runs-on: ubuntu-latest
     steps:
