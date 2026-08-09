@@ -22,8 +22,17 @@ OUT=bin/cairn.mjs
 # src/cli-npm.ts). It is dead code here — cli-npm.ts injects the factory before
 # anything can reach that branch — and smoke-npm.sh proves it by rendering a
 # real diagram through the installed CLI.
+# Bake the version in, exactly as build-binaries.sh does for the Bun binaries.
+# Two reasons: the release job runs `npm version` from the tag before packing, so
+# this captures the version actually being published; and it keeps package.json
+# out of the bundle — esbuild can't tree-shake a JSON import down to one field,
+# so without the define the whole manifest rides along. The define's value is a
+# JS expression, hence the embedded quotes.
+VERSION="$(node -p "require('./package.json').version")"
+
 npx --no-install esbuild src/cli-npm.ts \
   --bundle --format=esm --platform=node \
+  --define:CAIRN_BUILD_VERSION="\"$VERSION\"" \
   --banner:js='#!/usr/bin/env node' \
   --log-level=warning \
   --outfile="$OUT"

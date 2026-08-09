@@ -46,9 +46,34 @@ Release with 5 binaries + a checksums file, fresh commits in
 ## The npm channel
 
 Published under a scope because the bare name `cairn` is taken on the registry.
-Today the package ships the **CLI** only; the importable engine surface is
-tracked in [#38](https://github.com/R0kshan/cairn/issues/38), so
-`import … from "@r0kshan/cairn"` does not resolve yet — by design, not oversight.
+The package has **two surfaces and no others**:
+
+| Surface | Built by | Entry |
+| --- | --- | --- |
+| `cairn` command | `scripts/build-cli.sh` | `bin/cairn.mjs` |
+| `import … from "@r0kshan/cairn"` | `scripts/build-api.sh` | `dist/cairn.mjs` |
+
+Both are built by `prepack`, so `npm publish` / `npm pack` always ship fresh
+bundles, and both are git-ignored — build artifacts, not source.
+
+The engine bundle is built from `src/playground.ts`, not `src/api.ts`, because
+`api.ts` injects no ELK factory: imported directly in a browser it would fall
+through to `elk-worker.ts`, Node-shaped code with no business in a Vite build.
+It is not minified — consumers run their own minifier over it, and an
+unminified dependency is easier to debug through.
+
+The `exports` map is what makes "two surfaces and no others" true rather than
+merely intended. Without an `exports` field every file in the tarball is
+deep-importable, and `bin/cairn.mjs` dispatches at module scope — so
+`import "@r0kshan/cairn/bin/cairn.mjs"` would be a real entry point that prints
+the help text as a side effect, and an undeclared one people could come to
+depend on. `scripts/smoke-npm.sh` asserts both halves: the entry imports and
+compiles a real diagram, and everything else stays shut.
+
+Still missing, tracked in [#38](https://github.com/R0kshan/cairn/issues/38):
+generated `.d.ts` declarations (`tsconfig.json` is `noEmit`, so this needs its
+own build config) and a browser-usage section in the README. TypeScript
+consumers get the engine but no types until then.
 
 **The CLI ships pre-bundled.** `prepack` runs `scripts/build-cli.sh`, which
 esbuilds `src/cli-npm.ts` into `bin/cairn.mjs` with elkjs inlined. It cannot ship
@@ -87,9 +112,15 @@ npm publish --tag unstable        # --access public comes from publishConfig
 ```
 
 Then on npmjs.com → the package → **Settings → Trusted Publisher**, add GitHub
-Actions with repo `R0kshan/cairn` and workflow `release.yml`. From then on every
-tag publishes over OIDC with **no NPM_TOKEN in this repo**, and npm attaches
-build provenance automatically.
+Actions with repo `R0kshan/cairn` and workflow `release.yml`, and under **allowed
+actions tick `npm publish`**. That tick is not a default: configurations created
+after 2026-05-20 must select at least one action explicitly, and a stage-only
+config rejects the `npm publish` the release job runs. (`npm stage publish` is
+the stricter alternative — it queues the release for manual 2FA approval instead
+of going live, and would need `release.yml` changed to match.)
+
+From then on every tag publishes over OIDC with **no NPM_TOKEN in this repo**,
+and npm attaches build provenance automatically.
 
 If the `publish` job fails with an auth error, it is almost always that config
 missing or naming the wrong workflow file.

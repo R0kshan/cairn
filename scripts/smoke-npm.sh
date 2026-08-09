@@ -84,4 +84,62 @@ esac
 # compiled binaries.
 bash scripts/smoke-binary.sh "$BIN" "$EXPECTED_VERSION"
 
-echo "✓ npm package smoke passed — the published CLI installs and runs"
+# The package has two surfaces — the `cairn` command and the `.` import — and
+# nothing else. Both halves are asserted here because both fail silently: a
+# `files`/`exports` mismatch publishes cleanly and only breaks at a consumer's
+# `import`, and dropping the exports map re-opens every shipped file without
+# breaking anything visible. `bin/cairn.mjs` dispatches at module scope, so an
+# unguarded deep import of it would print the help text as a side effect.
+echo "• checking the package's import surface…"
+# Absolute, because the check runs from the scratch consumer.
+FIXTURE="$PWD/examples/application-medium.cairn"
+(
+  cd "$TMP/consumer"
+  node --input-type=module -e '
+    const { readFileSync } = await import("node:fs");
+
+    const [fixture, expectedVersion] = process.argv.slice(1);
+
+    // The entry a consumer actually writes: `import { compile } from "@r0kshan/cairn"`.
+    const engine = await import("@r0kshan/cairn");
+    for (const name of ["compile", "themeNames", "version"]) {
+      if (!(name in engine)) throw new Error(`"${name}" missing from the package entry`);
+    }
+
+    // The CLI half asserts its version against the tag; hold the import half to
+    // the same bar. The two bundles read package.json independently at build
+    // time, so nothing else would catch one of them drifting.
+    if (expectedVersion && engine.version !== expectedVersion) {
+      throw new Error(`entry reports version ${engine.version}, expected ${expectedVersion}`);
+    }
+
+    // Resolving is not the same as working — drive a real diagram through it.
+    // A bundle can import cleanly and still carry an unresolved dependency that
+    // only throws once the pipeline reaches it.
+    const result = await engine.compile(readFileSync(fixture, "utf8"));
+    const errors = result.diagnostics.filter((d) => d.severity === "error");
+    if (errors.length) throw new Error(`compile() reported errors: ${JSON.stringify(errors)}`);
+    if (!result.svg?.startsWith("<svg")) throw new Error("compile() returned no svg");
+
+    // Everything else stays shut, or it becomes surface we did not choose to
+    // support and cannot withdraw once published.
+    const resolves = async (specifier) => {
+      try {
+        await import(specifier);
+        return true;
+      } catch (error) {
+        if (error.code === "ERR_PACKAGE_PATH_NOT_EXPORTED") return false;
+        throw error;
+      }
+    };
+    if (await resolves("@r0kshan/cairn/bin/cairn.mjs")) {
+      throw new Error("bin/cairn.mjs is importable — the exports map is too permissive");
+    }
+
+    // ...except the manifest, or tooling that inspects installed packages breaks.
+    const { default: manifest } = await import("@r0kshan/cairn/package.json", { with: { type: "json" } });
+    if (!manifest.version) throw new Error("@r0kshan/cairn/package.json is not reachable");
+  ' "$FIXTURE" "$EXPECTED_VERSION"
+) || { echo "✗ import surface check failed"; exit 1; }
+
+echo "✓ npm package smoke passed — the published CLI runs and the package entry imports and compiles"

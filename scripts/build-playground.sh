@@ -17,15 +17,24 @@ cd "$(dirname "$0")/.."
 
 ESBUILD="npx --no-install esbuild"
 
+# Bake the version in rather than letting api.ts read package.json at runtime.
+# esbuild can't tree-shake a JSON import down to the one field used, so without
+# this the whole manifest — devDependencies, scripts, keywords — ends up in the
+# browser bundle. With it the ternary in api.ts folds and the import is dropped.
+# Same mechanism as scripts/build-binaries.sh, which passes it to `bun build`.
+# The define's value is a JS expression, hence the embedded quotes.
+VERSION="$(node -p "require('./package.json').version")"
+DEFINE_VERSION="--define:CAIRN_BUILD_VERSION=\"$VERSION\""
+
 echo "• building browser bundle → playground/cairn-engine.js"
 $ESBUILD src/playground.ts \
-  --bundle --format=esm --platform=browser --minify \
+  --bundle --format=esm --platform=browser --minify "$DEFINE_VERSION" \
   --outfile=playground/cairn-engine.js --log-level=warning
 
 echo "• building node bundle    → playground/lib/engine.node.mjs"
 mkdir -p playground/lib
 $ESBUILD src/playground.ts \
-  --bundle --format=esm --platform=node \
+  --bundle --format=esm --platform=node "$DEFINE_VERSION" \
   --outfile=playground/lib/engine.node.mjs --log-level=warning
 
 echo "✓ browser: $(du -h playground/cairn-engine.js | cut -f1)  node: $(du -h playground/lib/engine.node.mjs | cut -f1)"

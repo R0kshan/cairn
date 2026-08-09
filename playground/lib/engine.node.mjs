@@ -92161,73 +92161,6 @@ async function getElk() {
   return instance;
 }
 
-// package.json
-var package_default = {
-  name: "@r0kshan/cairn",
-  version: "1.0.0-RC10",
-  description: "Architecture diagrams as code \u2014 typed views, semantic layout, overlap-free labels",
-  license: "Apache-2.0",
-  homepage: "https://github.com/R0kshan/cairn#readme",
-  repository: {
-    type: "git",
-    url: "git+https://github.com/R0kshan/cairn.git"
-  },
-  bugs: {
-    url: "https://github.com/R0kshan/cairn/issues"
-  },
-  keywords: [
-    "diagram",
-    "diagram-as-code",
-    "architecture",
-    "enterprise-architecture",
-    "svg",
-    "elkjs",
-    "cli"
-  ],
-  type: "module",
-  engines: {
-    node: ">=22.6"
-  },
-  bin: {
-    cairn: "bin/cairn.mjs"
-  },
-  publishConfig: {
-    access: "public"
-  },
-  files: [
-    "bin/cairn.mjs",
-    "README.md",
-    "documentation/",
-    "!documentation/research"
-  ],
-  scripts: {
-    cairn: "node --experimental-strip-types src/cli.ts",
-    test: 'node --experimental-strip-types scripts/sweep.ts --jobs=auto && node --experimental-strip-types --test "tests/*.test.ts"',
-    snapshots: "node --experimental-strip-types scripts/update-snapshots.mjs",
-    "build:binaries": "bash scripts/build-binaries.sh",
-    "build:cli": "bash scripts/build-cli.sh",
-    "build:playground": "bash scripts/build-playground.sh",
-    prepack: "npm run build:cli",
-    lint: "biome lint src tests",
-    format: "biome format --write src tests",
-    typecheck: "tsc --noEmit",
-    "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
-    sweep: "node --experimental-strip-types scripts/sweep.ts --jobs=auto",
-    "test:binary": "bash scripts/smoke-binary.sh",
-    "test:npm": "bash scripts/smoke-npm.sh",
-    examples: "node --experimental-strip-types scripts/render-examples.mjs"
-  },
-  dependencies: {
-    elkjs: "^0.12.0"
-  },
-  devDependencies: {
-    "@biomejs/biome": "^2.5.4",
-    "@types/node": "^26.1.1",
-    esbuild: "0.28.1",
-    typescript: "^7.0.2"
-  }
-};
-
 // src/lexer.ts
 var HEX_PATTERN = /^[0-9a-fA-F]{3,8}$/;
 var isIdChar = (char) => /[A-Za-z0-9_\-/.]/.test(char);
@@ -99718,7 +99651,7 @@ async function compile(source, options) {
 }
 
 // src/api.ts
-var version = package_default.version;
+var version = true ? "1.0.0-RC10" : pkg.version;
 
 // src/playground.ts
 var ElkClass = import_elk_bundled.default;

@@ -179,8 +179,9 @@ scoop install cairn
 npm i -g @r0kshan/cairn@unstable
 ```
 
-> The `@unstable` tag is required until the first stable release — cairn is
-> pre-1.0, so tagged versions publish to that dist-tag rather than `latest`.
+> `@unstable` is not optional: cairn is pre-stable, so tagged versions publish to
+> that dist-tag and there is no `latest` yet — a bare `npm i -g @r0kshan/cairn`
+> fails with `No matching version found` until the first stable release.
 
 From source (no release needed — requires Node ≥ 22.6):
 
