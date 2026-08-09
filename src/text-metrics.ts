@@ -3,7 +3,7 @@
  * arithmetically (`length × fontSize × CHAR_WIDTH`) instead of querying system
  * fonts — this is what keeps rendered output byte-identical across OSes. Also
  * provides `wrapText`, node sizing, and flow-label box math. Do not introduce
- * real font metrics here; determinism depends on it (see CLAUDE.md).
+ * real font metrics here; determinism depends on it (see AGENTS.md#non-negotiable-invariants).
  */
 
 const DEFAULT_FONT_SIZE_NODE = 12.5;

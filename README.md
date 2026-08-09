@@ -258,5 +258,6 @@ Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) p
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
-- [`FLOW_ROUTING.md`](documentation/FLOW_ROUTING.md) — how cairn decides where a flow goes, and what it trades away to get there.
-- [`tests/README.md`](tests/README.md) — how cairn is tested, and why a renderer needs more than unit tests.
+- [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
+- [`documentation/`](documentation/) — architecture, invariants, DSL and internals.

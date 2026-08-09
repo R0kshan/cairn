@@ -1,5 +1,5 @@
 /**
- * Post-layout pass fixing elk's wrap-around routing of backward hierarchical
+ * Stage 4a: post-layout pass fixing elk's wrap-around routing of backward hierarchical
  * edges (issue #26). With `INCLUDE_CHILDREN`, elk routes any right-to-left
  * flow that crosses container boundaries by exiting east of the outermost
  * container and looping around the whole drawing — no layered option changes
@@ -12,6 +12,11 @@
  * title bands are obstacles for northbound risers. Deterministic: plain
  * arithmetic only, lanes ordered by numeric flow id, and a no-op
  * (byte-identical scene) when nothing qualifies.
+ *
+ * See documentation/decisions/ADR-0005-FLOW-ROUTING.md for why this pass
+ * exists (elk options tested and rejected) and documentation/internals/
+ * ROUTING_IMPLEMENTATION.md for the full mechanism — read both before
+ * changing this file.
  */
 
 import type { Model } from "./models/ast.ts";
