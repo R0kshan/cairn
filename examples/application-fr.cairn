@@ -1,5 +1,8 @@
 diagram application "Gestion de la facturation — vue applicative"
-style { lang: fr }
+style {
+  lang: fr
+  stroke external: #b33 dashed 1.5
+}
 
 actor-group RESPONSABLES "Responsables" {
   actor COMPTABLE "Comptable"

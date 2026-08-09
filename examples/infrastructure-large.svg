@@ -4,12 +4,12 @@
 <rect width="2141" height="652" fill="#ffffff"/>
 <rect x="194" y="22" width="1305" height="504.5" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="204" y="40" font-size="13" font-weight="bold" fill="#17202c">Main data center</text>
-<rect x="1077" y="59" width="388" height="186.5" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="1077" y="59" width="388" height="186.5" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1087" y="77" font-size="13" font-weight="bold" fill="#17202c">DMZ</text>
 <rect x="1325" y="86" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="1335" y="104" font-size="13" font-weight="bold" fill="#17202c">Reverse proxies</text>
 <text x="1335" y="118" font-size="13" font-weight="bold" fill="#17202c">(HA)</text>
-<rect x="228" y="157" width="682" height="267" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="228" y="157" width="682" height="267" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="238" y="175" font-size="13" font-weight="bold" fill="#17202c">Application zone</text>
 <rect x="474" y="264.5" width="142" height="146" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="484" y="282.5" font-size="13" font-weight="bold" fill="#17202c">K8s cluster</text>
@@ -17,7 +17,7 @@
 <rect x="750" y="251" width="126" height="164" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="760" y="269" font-size="13" font-weight="bold" fill="#17202c">K8s cluster</text>
 <text x="760" y="283" font-size="13" font-weight="bold" fill="#17202c">business</text>
-<rect x="1155" y="265.5" width="154" height="241" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="1155" y="265.5" width="154" height="241" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1165" y="283.5" font-size="13" font-weight="bold" fill="#17202c">Data zone</text>
 <rect x="1169" y="400.5" width="126" height="97" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="1179" y="418.5" font-size="13" font-weight="bold" fill="#17202c">PostgreSQL</text>
@@ -27,7 +27,7 @@
 <text x="1179" y="324.5" font-size="13" font-weight="bold" fill="#17202c">cluster</text>
 <rect x="1616" y="327" width="391" height="180" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="1626" y="345" font-size="13" font-weight="bold" fill="#17202c">Disaster-recovery site</text>
-<rect x="1630" y="354" width="368" height="144" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="1630" y="354" width="368" height="144" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1640" y="372" font-size="13" font-weight="bold" fill="#17202c">DR data zone</text>
 <rect x="1644" y="392" width="126" height="97" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="1654" y="410" font-size="13" font-weight="bold" fill="#17202c">PostgreSQL</text>
@@ -123,7 +123,7 @@
 <text x="20" y="582" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="572" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
 <text x="182" y="583" font-size="10" fill="#17202c">Site / data center</text>
-<rect x="308" y="572" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<rect x="308" y="572" width="26" height="14" rx="3" fill="#eef6ff" stroke="#1a8f66" stroke-dasharray="5 3"/>
 <text x="340" y="583" font-size="10" fill="#17202c">Network zone</text>
 <rect x="435" y="572" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="467" y="583" font-size="10" fill="#17202c">Server / VM</text>

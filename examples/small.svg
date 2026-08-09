@@ -8,9 +8,9 @@
 <text x="20" y="141" font-size="13" font-weight="bold" fill="#17202c">Staff</text>
 <rect x="283" y="22" width="732" height="152.66666666666669" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="293" y="40" font-size="13" font-weight="bold" fill="#17202c">Appointment booking system</text>
-<rect x="297" y="49" width="126" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="297" y="49" width="126" height="83" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="307" y="67" font-size="13" font-weight="bold" fill="#17202c">Presentation layer</text>
-<rect x="583" y="56.83333333333333" width="418" height="108.83333333333334" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="583" y="56.83333333333333" width="418" height="108.83333333333334" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="593" y="74.83333333333333" font-size="13" font-weight="bold" fill="#17202c">Business layer</text>
 <rect x="1173" y="69" width="126" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1183" y="87" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
@@ -72,7 +72,7 @@
 <text x="182" y="392" font-size="10" fill="#17202c">Actor group</text>
 <rect x="272" y="381" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
 <text x="304" y="392" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="381" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<rect x="368" y="381" width="26" height="14" rx="3" fill="#f6f4fb" stroke="#cf9f2f"/>
 <text x="400" y="392" font-size="10" fill="#17202c">Layer</text>
 <rect x="458" y="381" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="490" y="392" font-size="10" fill="#17202c">Functional block</text>

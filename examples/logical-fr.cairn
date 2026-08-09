@@ -1,5 +1,8 @@
 diagram logical "Gestion des sinistres — vue logique"
-style { lang: fr }
+style {
+  lang: fr
+  fill layer: #f6f4fb
+}
 
 actor-group ASSURES "Assurés" {
   actor ASSURE "Assuré"

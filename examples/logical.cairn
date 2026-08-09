@@ -1,4 +1,7 @@
 diagram logical "Claims management — logical view"
+style {
+  fill layer: #f6f4fb
+}
 
 actor-group POLICYHOLDERS "Policyholders" {
   actor POLICYHOLDER "Policyholder"

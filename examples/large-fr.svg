@@ -8,23 +8,23 @@
 <text x="20" y="580" font-size="13" font-weight="bold" fill="#17202c">Équipes internes</text>
 <rect x="1736" y="311" width="918" height="398.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="1746" y="329" font-size="13" font-weight="bold" fill="#17202c">Front commerce</text>
-<rect x="1770" y="408.66666666666663" width="156" height="217" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="1770" y="408.66666666666663" width="156" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="1780" y="426.66666666666663" font-size="13" font-weight="bold" fill="#17202c">Couche de présentation</text>
-<rect x="2194" y="465" width="426" height="235.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="2194" y="465" width="426" height="235.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="2204" y="483" font-size="13" font-weight="bold" fill="#17202c">Couche parcours client</text>
 <rect x="397" y="371" width="1119" height="814" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="407" y="389" font-size="13" font-weight="bold" fill="#17202c">Cœur commerce</text>
-<rect x="1075" y="726" width="407" height="284" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="1075" y="726" width="407" height="284" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="1085" y="744" font-size="13" font-weight="bold" fill="#17202c">Couche vente</text>
-<rect x="596" y="429" width="147" height="218" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="596" y="429" width="147" height="218" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="606" y="447" font-size="13" font-weight="bold" fill="#17202c">Couche offre</text>
-<rect x="441" y="879.5" width="457" height="197.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="441" y="879.5" width="457" height="197.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="451" y="897.5" font-size="13" font-weight="bold" fill="#17202c">Couche exécution</text>
 <rect x="2786" y="376" width="756" height="186" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="2796" y="394" font-size="13" font-weight="bold" fill="#17202c">Plateforme data</text>
-<rect x="2800" y="403" width="198" height="150" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="2800" y="403" width="198" height="150" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="2810" y="421" font-size="13" font-weight="bold" fill="#17202c">Couche collecte</text>
-<rect x="3170" y="410.8333333333333" width="358" height="96.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="3170" y="410.8333333333333" width="358" height="96.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="3180" y="428.8333333333333" font-size="13" font-weight="bold" fill="#17202c">Couche analytique</text>
 <rect x="3695" y="349" width="176" height="361" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="3705" y="367" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
@@ -296,7 +296,7 @@
 <text x="182" y="1651" font-size="10" fill="#17202c">Groupe d'acteurs</text>
 <rect x="298" y="1640" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
 <text x="330" y="1651" font-size="10" fill="#17202c">Système</text>
-<rect x="399" y="1640" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<rect x="399" y="1640" width="26" height="14" rx="3" fill="#f6f4fb" stroke="#cf9f2f"/>
 <text x="431" y="1651" font-size="10" fill="#17202c">Couche</text>
 <rect x="495" y="1640" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="527" y="1651" font-size="10" fill="#17202c">Bloc fonctionnel</text>

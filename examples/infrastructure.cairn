@@ -1,4 +1,7 @@
 diagram infrastructure "Billing platform — infrastructure view"
+style {
+  fill network-zone: #eef6ff
+}
 
 # Zones are banded left-to-right in declaration order: Internet-facing first.
 
@@ -45,7 +48,7 @@ BILL_I -> KAFKA : (TCP/9092)
 KAFKA -> CRM_I : (TCP/9092)
 BILL_I -> SFTP_GW : (SFTP/22)
 SFTP_GW -> EDI : (AS4/443)
-DB_SRV -> BACKUP : (TCP/9092)
+DB_SRV -> BACKUP : (TCP/5432)
 
 legend {
   note "Inter-zone flows filtered by firewall (flow matrix attached to the architecture dossier)"
