@@ -7,6 +7,10 @@ bin/cairn.mjs
 # `npm pack` lands here).
 *.tgz
 
+# Scratch space for experiments — probe scripts, before/after SVGs, sweep dumps.
+# Never source; a `git add -A` swept 39 of these into a merge commit once.
+.tmp/
+
 *.log
 *.bun-build
 bun.lock
