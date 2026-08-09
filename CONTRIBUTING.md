@@ -14,6 +14,8 @@ npm run cairn -- build my.cairn      # render it to SVG
 
 The whole dependency list is biome + typescript + @types/node + elkjs + esbuild, and they are **all devDependencies** — the published package installs nothing. `elkjs` is the only third-party module `src/` imports, but every shipped artifact inlines it (Bun for the binaries, esbuild for the CLI and playground bundles), so consumers never resolve it. Keep the list that short. esbuild earns its place by being the publish path — it builds the playground bundles and the npm CLI bundle (`scripts/build-cli.sh`), so it's pinned exactly and locked by `package-lock.json` rather than fetched at build time.
 
+Inlining elkjs means cairn *distributes* it, so [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) carries its EPL-2.0 notice and points at the corresponding source. It ships in the npm tarball and lives in the repo for every other channel. If you add, remove, or bump anything that ends up inside a shipped artifact, update that file in the same commit.
+
 `CLAUDE.md` is a symlink to `AGENTS.md` (so Claude Code auto-loads the real
 content, not a pointer) — if `git config core.symlinks` was off on checkout
 (mainly a Windows/older-git concern), it may check out as a plain file

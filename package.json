@@ -33,8 +33,10 @@
   "files": [
     "bin/cairn.mjs",
     "README.md",
+    "THIRD-PARTY-NOTICES.md",
     "documentation/",
-    "!documentation/research"
+    "!documentation/research",
+    "!documentation/PLAYGROUND_BUILD.md"
   ],
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",

@@ -20,16 +20,35 @@ EXPECTED_VERSION="${1:-}"
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 
 echo "• packing…"
-# `--silent` doesn't gag the `prepack` script, whose output lands on the same
-# stdout — take the last line, which is the tarball name.
-TARBALL="$(npm pack --silent --pack-destination "$TMP" | tail -n 1)"
+# Never `--silent` here: it gags npm's own error output too, so a failing
+# `prepack` (a missing devDependency, a broken bundle) aborted this script with
+# no diagnostic at all — the one thing a CI gate must not do. Capture the
+# streams instead and dump both on failure.
+#
+# `--json` gives the tarball name as data rather than "whatever the last line
+# was", which `prepack`'s own stdout can shift. That output is prepended to the
+# JSON, hence the slice to the first line that is exactly `[`.
+if ! npm pack --json --pack-destination "$TMP" >"$TMP/pack.out" 2>"$TMP/pack.err"; then
+  echo "✗ npm pack failed — prepack (scripts/build-cli.sh) is the usual culprit:" >&2
+  cat "$TMP/pack.err" "$TMP/pack.out" >&2
+  exit 1
+fi
+TARBALL="$(node -e '
+  const fs = require("node:fs");
+  const out = fs.readFileSync(process.argv[1], "utf8");
+  const start = out.search(/^\[$/m);
+  if (start < 0) throw new Error("npm pack --json produced no JSON:\n" + out);
+  process.stdout.write(JSON.parse(out.slice(start))[0].filename);
+' "$TMP/pack.out")"
 
 echo "• installing $TARBALL into a scratch consumer…"
 mkdir -p "$TMP/consumer"
 (
   cd "$TMP/consumer"
   npm init -y >/dev/null
-  npm install --no-audit --no-fund --silent "$TMP/$TARBALL"
+  # Also un-silenced, for the same reason — `--loglevel=error` keeps it to one
+  # line on success while leaving failures readable.
+  npm install --no-audit --no-fund --loglevel=error "$TMP/$TARBALL"
 )
 
 PKG_DIR="$TMP/consumer/node_modules/@r0kshan/cairn"

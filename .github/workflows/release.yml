@@ -1,7 +1,7 @@
 # Release automation
 # on tag v* -> test -> compile binaries for 5 platforms -> attest provenance
-# -> GitHub Release -> bump brew formula & scoop manifest in their repos,
-# and in parallel -> publish @r0kshan/cairn to npm.
+# -> GitHub Release -> then in parallel: bump brew formula & scoop manifest in
+# their repos, and publish @r0kshan/cairn to npm.
 #
 # Security posture:
 #  - all actions are pinned to a commit SHA (comment shows the human tag),
@@ -78,8 +78,14 @@ jobs:
           name: dist
           path: dist/
 
-  # npm channel — ships the CLI (`bin`). Runs in parallel with `binaries`;
-  # neither needs the other.
+  # npm channel — ships the CLI (`bin`).
+  #
+  # Gated on `binaries` even though it needs nothing from it, because the two
+  # channels fail asymmetrically: a deleted GitHub Release costs one click,
+  # while an npm version is immutable after 72h and can never be reused. Running
+  # them in parallel means a `binaries` failure still leaves a published version
+  # pointing at a release that does not exist. Publishing last picks the
+  # recoverable failure mode.
   #
   # Auth is OIDC trusted publishing: no NPM_TOKEN secret exists in this repo,
   # and none should be added. npm also attaches provenance automatically,
@@ -87,7 +93,7 @@ jobs:
   # configured once on npmjs.com before this job can authenticate — see
   # RELEASING.md.
   publish:
-    needs: test
+    needs: binaries
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -98,8 +104,11 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: 22, package-manager-cache: false }
 
-      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1.
-      - run: npm install -g npm@latest
+      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1. Pinned to a
+      # major rather than `@latest` — every action in this workflow is pinned,
+      # and an unpinned global install of the tool that holds the publish
+      # credential is the last place to make an exception.
+      - run: npm install -g npm@^11.5.1
 
       - run: npm ci
 
