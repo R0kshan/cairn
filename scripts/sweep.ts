@@ -890,8 +890,8 @@ if (jobs > 1 && !emitJson) {
       }),
     ),
   );
-  for (const raw of shards) {
-    const part = JSON.parse(raw) as {
+  for (const [index, raw] of shards.entries()) {
+    type Shard = {
       examples: string[];
       totalFlows: number;
       totals: [string, number][];
@@ -899,6 +899,18 @@ if (jobs > 1 && !emitJson) {
       hits: string[];
       failures: string[];
     };
+    let part: Shard;
+    try {
+      part = JSON.parse(raw) as Shard;
+    } catch (error) {
+      // Say which shard and how much arrived rather than letting the raw
+      // SyntaxError print the whole payload — the last time this fired it
+      // dumped 64 KB of hit lines and buried the one useful fact.
+      throw new Error(
+        `shard ${index + 1}/${jobs} returned ${raw.length} bytes that are not valid JSON ` +
+          `(${(error as Error).message}). Re-run with --jobs=1 to see the shard's own error.`,
+      );
+    }
     examples.push(...part.examples);
     totalFlows += part.totalFlows;
     for (const [kind, count] of part.totals) totals[kind] = (totals[kind] ?? 0) + count;
@@ -917,16 +929,26 @@ if (jobs > 1 && !emitJson) {
 }
 
 if (emitJson) {
-  process.stdout.write(
-    JSON.stringify({
-      examples,
-      totalFlows,
-      totals: Object.entries(totals),
-      perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
-      hits,
-      failures,
-    }),
-  );
+  // Await the flush before exiting. `process.stdout` is asynchronous when it is
+  // a pipe (which it always is here — the parent spawns this via execFile), and
+  // `process.exit` drops whatever has not reached the OS yet. The payload is
+  // hundreds of KB on the full corpus, so it was being cut at the 64 KiB pipe
+  // buffer and the parent died on `JSON.parse` with "Unterminated string in JSON
+  // at position 65528". Nothing below this block may run in child mode, hence
+  // the exit rather than a plain `return`.
+  await new Promise<void>((resolve, reject) => {
+    process.stdout.write(
+      JSON.stringify({
+        examples,
+        totalFlows,
+        totals: Object.entries(totals),
+        perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
+        hits,
+        failures,
+      }),
+      (error) => (error ? reject(error) : resolve()),
+    );
+  });
   process.exit(0);
 }
 
