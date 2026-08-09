@@ -1,5 +1,8 @@
 diagram logical "Plateforme e-commerce omnicanale — vue logique"
-style { lang: fr }
+style {
+  lang: fr
+  fill layer: #f6f4fb
+}
 
 actor-group CUSTOMERS "Clients" {
   actor WEB_CUSTOMER "Client web"

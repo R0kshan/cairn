@@ -1,4 +1,7 @@
 diagram logical "Display system — logical view"
+style {
+  fill layer: #f6f4fb
+}
 
 actor-group ZONE_CTRL "Role group - Central zone" {
   actor OBS  "Control agent\nMain zone"

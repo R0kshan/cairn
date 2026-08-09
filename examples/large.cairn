@@ -1,4 +1,7 @@
 diagram logical "Omnichannel e-commerce platform — logical view"
+style {
+  fill layer: #f6f4fb
+}
 
 actor-group CUSTOMERS "Customers" {
   actor WEB_CUSTOMER "Web customer"

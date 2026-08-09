@@ -1,4 +1,7 @@
 diagram application "Billing management — application view"
+style {
+  stroke external: #b33 dashed 1.5
+}
 
 actor-group MANAGERS "Managers" {
   actor ACCOUNTANT "Accountant"

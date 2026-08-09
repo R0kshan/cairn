@@ -1,4 +1,7 @@
 diagram logical "Online appointment booking — logical view"
+style {
+  fill layer: #f6f4fb
+}
 
 actor-group USERS "Users" {
   actor PATIENT "Patient"

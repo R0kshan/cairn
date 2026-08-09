@@ -1,5 +1,8 @@
 diagram infrastructure "Plateforme de facturation — vue infrastructure"
-style { lang: fr }
+style {
+  lang: fr
+  fill network-zone: #eef6ff
+}
 
 # Les zones sont ordonnées de gauche à droite selon l'ordre de déclaration :
 # la zone exposée à Internet en premier.
@@ -47,7 +50,7 @@ FACT_I -> KAFKA : (TCP/9092)
 KAFKA -> CRM_I : (TCP/9092)
 FACT_I -> SFTP_GW : (SFTP/22)
 SFTP_GW -> EDI : (AS4/443)
-DB_SRV -> SAUVEGARDE : (TCP/9092)
+DB_SRV -> SAUVEGARDE : (TCP/5432)
 
 legend {
   note "Flux inter-zones filtrés par pare-feu (matrice des flux jointe au dossier d'architecture)"

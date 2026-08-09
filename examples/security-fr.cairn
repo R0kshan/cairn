@@ -5,6 +5,10 @@ style { lang: fr }
 # la plus protégée). Niveaux de sensibilité : public | internal | restricted |
 # secret. Tout flux inter-zones doit passer un nœud de sécurité et être chiffré.
 
+style {
+  fill security-node: #fff3cd
+}
+
 trust-zone DMZ "DMZ" (public) {
   security-node WAF "WAF /\nproxy inverse"
   security-node SFTP_GW "Passerelle\nSFTP"

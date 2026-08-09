@@ -1,4 +1,7 @@
 diagram application "Leave portal — application view"
+style {
+  stroke external: #b33 dashed 1.5
+}
 
 actor-group HR "HR actors" {
   actor EMPLOYEE "Employee"
@@ -18,7 +21,7 @@ external PAYROLL "Payroll HRIS\n(outsourced)"
 
 
 EMPLOYEE -> LEAVE
-LEAVE -> APPROVAL (internal)
+LEAVE -> APPROVAL (API_REST, JSON)
 MANAGER -> APPROVAL
 APPROVAL -> HR_REF (JDBC)
 APPROVAL -> NOTIFY (MQ, JSON)
