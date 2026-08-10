@@ -38,10 +38,10 @@ git tag vX.Y.Z            # lowercase v; pre-releases fine, e.g. v1.0.0-rc01
 git push origin vX.Y.Z
 ```
 
-Then watch **repo → Actions → the `release` run**. Jobs run `test → binaries →
-taps`, with `publish` in parallel after `test`. On success you get a GitHub
-Release with 5 binaries + a checksums file, fresh commits in
-`R0kshan/homebrew-tap` and `R0kshan/scoop-bucket`, and `@r0kshan/cairn` on npm.
+Then watch **repo → Actions → the `release` run**. Jobs run `test → binaries →`
+then `publish` and `taps` in parallel. On success you get a GitHub Release with
+5 binaries + a checksums file, fresh commits in `R0kshan/homebrew-tap` and
+`R0kshan/scoop-bucket`, and `@r0kshan/cairn` on npm.
 
 ## The npm channel
 
@@ -91,40 +91,27 @@ provenance instead: the OIDC publish attests the tarball to the commit and
 `package-lock.json` that produced it, so the inlined elkjs version is
 recoverable from the attestation rather than guessed from a dependency range.
 
-**Dist-tag is derived from the tag.** A version containing `-` (e.g.
-`v1.0.0-rc11`) publishes to `unstable`; anything else to `latest`. That keeps
-`npm i @r0kshan/cairn` from handing people a release candidate.
+**Dist-tag is derived from the tag.** A version containing `-` publishes to
+`unstable`, anything else to `latest`. A prerelease therefore only moves the
+`unstable` pointer.
 
-**Until the first stable release there is no `latest`.** npm resolves a bare
-install to the `latest` dist-tag, and publishing only to `unstable` never
-creates one — so `npm i @r0kshan/cairn` fails with `No matching version found`
-until you tag a version without a `-`. That is the intended trade, but it means
-the README and any integration instructions must say `@unstable` explicitly.
-Revisit both when you cut the first stable tag.
+**`latest` points at `1.0.0-RC11`.** npm force-creates `latest` on a package's
+first publish whatever `--tag` says, so the manual bootstrap pinned it there:
 
-### One-time bootstrap (before the first tagged release)
+| Command | Resolves to |
+| --- | --- |
+| `npm i @r0kshan/cairn@unstable` | newest prerelease |
+| `npm i @r0kshan/cairn` | **`1.0.0-RC11`**, and stays there |
 
-npm's trusted publishing is configured *on an existing package*, so the first
-publish is manual and the workflow takes over afterwards:
+RC12, RC13 … ship to `unstable` and never move it, so a bare install gets more
+stale with each prerelease. 
 
-```sh
-npm login
-npm publish --tag unstable        # --access public comes from publishConfig
+- `npm dist-tag rm @r0kshan/cairn latest` — CI never recreates it, so bare
+  installs fail with `No matching version found` until the first stable tag, as
+  originally intended. Untested; npm may refuse to remove `latest`.
+- Leave it, and say `@unstable` explicitly in the README and integration docs.
+
 ```
-
-Then on npmjs.com → the package → **Settings → Trusted Publisher**, add GitHub
-Actions with repo `R0kshan/cairn` and workflow `release.yml`, and under **allowed
-actions tick `npm publish`**. That tick is not a default: configurations created
-after 2026-05-20 must select at least one action explicitly, and a stage-only
-config rejects the `npm publish` the release job runs. (`npm stage publish` is
-the stricter alternative — it queues the release for manual 2FA approval instead
-of going live, and would need `release.yml` changed to match.)
-
-From then on every tag publishes over OIDC with **no NPM_TOKEN in this repo**,
-and npm attaches build provenance automatically.
-
-If the `publish` job fails with an auth error, it is almost always that config
-missing or naming the wrong workflow file.
 
 ## Verify the channels
 
