@@ -1,4 +1,7 @@
-diagram logical "Insurance claims management — logical view"
+diagram logical "Insurance claims management — logical view (extended, with recourse)"
+style {
+  fill layer: #f6f4fb
+}
 
 actor-group POLICYHOLDERS "Policyholders" {
   actor POLICYHOLDER "Policyholder"
@@ -25,6 +28,7 @@ system CLAIMS "Claims information system" {
   layer SETTLEMENT "Settlement layer" {
     block COMPENSATION "Compensation\ncalculation"
     block PAYMENT "Payment\nscheduling"
+    block RECOURSE "Subrogation\nand recourse"
   }
 }
 
@@ -39,6 +43,7 @@ business-object BO_CLAIM "Claim" "damaging event reported by a policyholder"
 business-object BO_CASE "Case file" "file opened to investigate a claim"
 business-object BO_ASSESS "Assessment report" "quantified conclusions of the appointed expert"
 business-object BO_COMP "Compensation" "amount approved and paid to the policyholder"
+business-object BO_RECOURSE "Recourse claim" "amount reclaimed from the liable third party's insurer"
 
 POLICYHOLDER -> REPORT_WEB : "Report a claim" [BO_CLAIM]
 THIRD_PARTY -> REPORT_PHONE : "Report involvement"
@@ -58,6 +63,7 @@ COMPENSATION -> SUPERVISOR : "Approval request\nbeyond delegation"
 SUPERVISOR -> COMPENSATION : "Approval or\nreasoned refusal"
 COMPENSATION -> PAYMENT : "Compensation order" [BO_COMP]
 PAYMENT -> BANK : "SEPA transfer" [BO_COMP]
+CASE -> RECOURSE : "Liability established" [BO_RECOURSE]
 CASE -> POLICYHOLDER : "Notify steps\nand decision"
 
 legend {

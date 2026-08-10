@@ -1,5 +1,8 @@
 diagram application "Plateforme e-commerce — vue applicative"
-style { lang: fr }
+style {
+  lang: fr
+  stroke external: #b33 dashed 1.5
+}
 
 actor-group TEAMS "Équipes internes" {
   actor MERCH "Responsable\nmerchandising"
@@ -55,15 +58,15 @@ MEDIA -> SITE (CDN, HTTPS)
 RULES -> SITE (API_REST, JSON)
 RULES -> CHECKOUT (API_REST, JSON)
 ERP -> RULES (SFTP, CSV)
-SITE -> CHECKOUT (internal)
+SITE -> CHECKOUT (REST)
 APP_MOBILE -> CHECKOUT (API_REST, JSON)
 CHECKOUT -> ORDERS (MQ, JSON)
 CHECKOUT -> PAY_ORCH (API_REST, JSON)
-PAY_ORCH -> FRAUD (internal)
+PAY_ORCH -> FRAUD (REST)
 PAY_ORCH -> PSP (API_REST, JSON)
 PSP -> PAY_ORCH (webhook, JSON)
 PAY_ORCH -> ORDERS (MQ, JSON)
-ORDERS -> SHIPPING (internal)
+ORDERS -> SHIPPING (REST)
 SHIPPING -> CARRIERS (API_REST, JSON)
 CARRIERS -> SHIPPING (webhook, JSON)
 SHIPPING -> EVENTS (MQ, JSON)

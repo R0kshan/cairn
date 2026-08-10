@@ -4,6 +4,10 @@ diagram security "Billing platform — security view"
 # protected). Each carries a sensitivity level: public | internal | restricted
 # | secret. Cross-zone traffic must pass a security-node and state encryption.
 
+style {
+  fill security-node: #fff3cd
+}
+
 trust-zone DMZ "DMZ" (public) {
   security-node WAF "WAF /\nreverse proxy"
   security-node SFTP_GW "SFTP\ngateway"

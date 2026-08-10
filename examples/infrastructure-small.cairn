@@ -1,4 +1,7 @@
 diagram infrastructure "Showcase website — infrastructure view"
+style {
+  fill network-zone: #eef6ff
+}
 
 site CLOUD "Cloud host" {
   network-zone PUBLIC "Public zone" {

@@ -49,7 +49,7 @@ BILL_I -> KAFKA : (TCP/9092)
 KAFKA -> CRM_I : (TCP/9092)
 BILL_I -> SFTP_GW : (SFTP/22)
 SFTP_GW -> EDI : (AS4/443)
-DB_SRV -> BACKUP : (TCP/9092)
+DB_SRV -> BACKUP : (TCP/5432)
 
 legend {
   note "Inter-zone flows filtered by firewall (flow matrix attached to the architecture dossier)"

@@ -1,4 +1,7 @@
-diagram application "Billing management — application view"
+diagram application "Billing management — application view (extended, with tax calculation)"
+style {
+  stroke external: #b33 dashed 1.5
+}
 
 actor-group MANAGERS "Managers" {
   actor ACCOUNTANT "Accountant"
@@ -14,6 +17,7 @@ application BILLING "Billing" {
   module BILL_ENGINE "Billing\nengine"
   module BILL_ISSUE "Invoice issuing\nand sending"
   module BILL_DUNNING "Dunning and\ncollection"
+  module TAX "Tax\ncalculation"
 }
 
 application ACCOUNTING "Accounting" {
@@ -35,6 +39,8 @@ SALES_ADMIN -> CRM_CONTRACTS
 CRM_ACCOUNTS -> REF_CUSTOMERS (API_REST, JSON)
 CRM_CONTRACTS -> BILL_ENGINE (MQ, JSON)
 REF_OFFERS -> BILL_ENGINE (JDBC)
+BILL_ENGINE -> TAX (REST, JSON)
+TAX -> BILL_ISSUE (REST, JSON)
 BILL_ENGINE -> EVENTS (MQ, JSON)
 BILL_ISSUE -> EVENTS (MQ, JSON)
 BILL_ISSUE -> EDI (AS4, UBL)

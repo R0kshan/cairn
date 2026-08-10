@@ -11,4 +11,4 @@ N°,Source,Destination,Protocole,Port,Nature du flux
 10,Broker de messages (Zone applicative),CRM (Zone applicative),TCP,9092,
 11,Facturation (Zone applicative),Passerelle de transfert (DMZ),SFTP,22,
 12,Passerelle de transfert (DMZ),Plateforme EDI partenaire,AS4,443,
-13,Serveur de base de données (Zone de données),Serveur de sauvegarde (Zone de données),TCP,9092,
+13,Serveur de base de données (Zone de données),Serveur de sauvegarde (Zone de données),TCP,5432,
