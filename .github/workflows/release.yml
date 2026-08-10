@@ -94,7 +94,7 @@ jobs:
       # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1. Pinned like
       # every action here — least of all should the tool holding the publish
       # credential float.
-      - run: npm install -g npm@^11.5.1
+      - run: npm install -g npm@11.5.1
 
       - run: npm ci
 

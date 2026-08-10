@@ -65,6 +65,17 @@ BIN_REL="$(cd "$PKG_DIR" && node -p "require('./package.json').bin.cairn")"
 BIN_TARGET="$PKG_DIR/$BIN_REL"
 [ -f "$BIN_TARGET" ] || { echo "✗ bin target missing from the tarball: $BIN_REL"; exit 1; }
 
+# The bundles inline elkjs (EPL-2.0), which obliges us to distribute its license
+# with them — and elkjs is a devDependency, so a consumer's node_modules has no
+# copy to fall back on. A `files` typo publishes cleanly and only shows up as a
+# licensing gap, so assert the paperwork actually shipped. See
+# THIRD-PARTY-NOTICES.md.
+for LICENSE_FILE in LICENSE THIRD-PARTY-NOTICES.md licenses/elkjs-EPL-2.0.md; do
+  [ -f "$PKG_DIR/$LICENSE_FILE" ] || {
+    echo "✗ $LICENSE_FILE missing from the tarball — check \`files\` in package.json"; exit 1;
+  }
+done
+
 BIN="$TMP/consumer/node_modules/.bin/cairn"
 case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*)
@@ -114,7 +125,9 @@ FIXTURE="$PWD/examples/application-medium.cairn"
     // with api.ts untouched. Asserting the whole set is what makes that claim
     // true; a presence-only check would let the surface grow silently, and a
     // published export cannot be withdrawn.
-    const actual = Object.keys(engine).filter((name) => name !== "default").sort();
+    // Unfiltered on purpose: a stray `default` is exactly the kind of export
+    // that appears by accident and cannot be withdrawn once published.
+    const actual = Object.keys(engine).sort();
     const expected = ["compile", "themeNames", "version"];
     if (actual.join() !== expected.join()) {
       throw new Error(`published surface is [${actual}], expected [${expected}]`);

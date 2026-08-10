@@ -12,8 +12,13 @@ theirs is distributed.
 Version 0.12.0, inlined unmodified. Upstream: https://github.com/kieler/elkjs
 
 Declared license: `EPL-2.0 OR GPL-3.0-or-later`. cairn elects **EPL-2.0** — full
-text at https://www.eclipse.org/legal/epl-2.0/ and in `LICENSE.md` inside the
-elkjs package.
+text in [`licenses/elkjs-EPL-2.0.md`](./licenses/elkjs-EPL-2.0.md), a verbatim
+copy of elkjs' own `LICENSE.md`, upstream at https://www.eclipse.org/legal/epl-2.0/.
+
+That copy is vendored rather than referenced because elkjs is a *devDependency*:
+the published package installs zero dependencies, so `node_modules/elkjs/` never
+reaches a consumer while the inlined code does. EPL-2.0 §3.1(b) requires the
+license to travel with the distributed form, so `files` ships it in the tarball.
 
 Per EPL-2.0 §3.1(a): the source code for elkjs is available under the EPL-2.0,
 and can be obtained from https://github.com/kieler/elkjs or from the published
@@ -26,6 +31,7 @@ covers cairn's own code only.
 
 ---
 
-If the set of inlined dependencies changes, update this file in the same commit.
-`files` in `package.json` ships it with the npm package; it lives in the repo for
-every other channel.
+If the set of inlined dependencies changes, update this file **and** `licenses/`
+in the same commit — a notice that names a license text the tarball doesn't carry
+is the failure mode this section exists to prevent. `files` in `package.json`
+ships both with the npm package.

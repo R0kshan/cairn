@@ -38,7 +38,8 @@
     "bin/cairn.mjs",
     "dist/cairn.mjs",
     "LICENSE",
-    "THIRD-PARTY-NOTICES.md"
+    "THIRD-PARTY-NOTICES.md",
+    "licenses/"
   ],
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",

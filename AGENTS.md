@@ -50,14 +50,13 @@ Environment-neutral core; thin entries inject ELK.
 
 | Module | Role | ELK factory |
 |---|---|---|
-| `api.ts` | public surface, re-exports only — a diff here changes the public contract | none |
+| `api.ts` | public surface | none |
 | `compile.ts` | whole pipeline in one call, for embedders | none |
 | `playground.ts` | browser entry → `playground/*` **and** the package's `.` export (`dist/cairn.mjs`) | browser `new ELK()` |
 | `cli-npm.ts` | published CLI bundle → `bin/cairn.mjs` | `nodeElkFactory` |
 
 Never inject a factory in `api.ts` or `compile.ts` — it would override every
-consumer's, including the CLI's. Generated `.d.ts` declarations are still
-missing, so the published engine is untyped (issue #38).
+consumer's, including the CLI's.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
