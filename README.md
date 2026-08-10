@@ -174,14 +174,7 @@ brew install R0kshan/tap/cairn
 # Windows — Scoop
 scoop bucket add cairn https://github.com/R0kshan/scoop-bucket
 scoop install cairn
-
-# npm (requires Node ≥ 22.6)
-npm i -g @r0kshan/cairn@unstable
 ```
-
-> `@unstable` is not optional: cairn is pre-stable, so tagged versions publish to
-> that dist-tag and there is no `latest` yet — a bare `npm i -g @r0kshan/cairn`
-> fails with `No matching version found` until the first stable release.
 
 From source (no release needed — requires Node ≥ 22.6):
 
