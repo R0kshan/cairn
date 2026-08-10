@@ -3,11 +3,9 @@
 # -> GitHub Release -> then in parallel: bump brew formula & scoop manifest in
 # their repos, and publish @r0kshan/cairn to npm.
 #
-# Security posture:
-#  - all actions are pinned to a commit SHA (comment shows the human tag),
-#  - least privilege: the default GITHUB_TOKEN is read-only; only the `binaries`
-#    job is granted the writes it needs,
-#  - checkouts don't persist credentials.
+# Security posture: actions pinned to a commit SHA (comment shows the tag),
+# GITHUB_TOKEN read-only by default with each job opting into what it needs,
+# checkouts don't persist credentials.
 name: release
 on:
   push:
@@ -41,26 +39,16 @@ jobs:
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
         with: { no-cache: true }
       - run: bun install
-      # Tag is the single source of truth for the release version — see
-      # scripts/build-binaries.sh. Keeps binaries, checksums, and the
-      # `taps` job's `dist/cairn-${VERSION}-checksums.txt` lookup in sync
-      # even if package.json wasn't bumped before tagging.
+      # The tag is the version, not package.json — keeps binaries, checksums and
+      # the taps job's checksums lookup in sync even if package.json wasn't bumped.
       - run: VERSION="${GITHUB_REF_NAME#v}" bash scripts/build-binaries.sh
 
-      # Don't ship a binary that can't run: smoke the just-built linux binary
-      # (the runner can execute it) through the full pipeline before publishing.
-      # The second arg makes the smoke test assert `cairn version` reports this
-      # exact tag — the whole point of CAIRN_BUILD_VERSION over package.json.
+      # Don't ship a binary that can't run. The second arg asserts `cairn version`
+      # reports this exact tag — the point of CAIRN_BUILD_VERSION over package.json.
       - run: bash scripts/smoke-binary.sh "dist/cairn-${GITHUB_REF_NAME#v}-linux-x64" "${GITHUB_REF_NAME#v}"
 
-      # Cryptographic provenance: proves each binary was built by this workflow.
-      # Verifiable with: gh attestation verify <binary> --repo R0kshan/cairn
-      # NOTE: attest-build-provenance is pinned to its major tag below because its
-      # commit SHA couldn't be resolved at authoring time. It's a first-party
-      # (actions/*) action, the lowest-risk case; to fully pin it run:
-      #   gh api repos/actions/attest-build-provenance/commits/v2 --jq .sha
-      # and replace `@v2` with `@<sha> # v2`.
-      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 #v4.1.1
+      # Verify with: gh attestation verify <binary> --repo R0kshan/cairn
+      - uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4.1.1
         with:
           subject-path: |
             dist/cairn-*
@@ -78,23 +66,22 @@ jobs:
           name: dist
           path: dist/
 
-  # npm channel — ships the CLI (`bin`).
+  # npm channel. Gated on `binaries` though it needs nothing from it: a GitHub
+  # Release deletes in one click, an npm version is immutable — so publish last
+  # and the recoverable channel is the one that fails first.
   #
-  # Gated on `binaries` even though it needs nothing from it, because the two
-  # channels fail asymmetrically: a deleted GitHub Release costs one click,
-  # while an npm version is immutable after 72h and can never be reused. Running
-  # them in parallel means a `binaries` failure still leaves a published version
-  # pointing at a release that does not exist. Publishing last picks the
-  # recoverable failure mode.
-  #
-  # Auth is OIDC trusted publishing: no NPM_TOKEN secret exists in this repo,
-  # and none should be added. npm also attaches provenance automatically,
-  # matching the attestation the binaries carry. The trusted publisher must be
-  # configured once on npmjs.com before this job can authenticate — see
-  # RELEASING.md.
+  # Auth is OIDC trusted publishing (configure it once on npmjs.com — see
+  # RELEASING.md). No NPM_TOKEN exists in this repo and none should be added.
   publish:
     needs: binaries
     runs-on: ubuntu-latest
+    # npm's trusted publisher matches on repository + workflow *filename*, so
+    # naming release.yml alone would also let `binaries` publish — it holds
+    # `id-token: write` for its attestations. The environment narrows the OIDC
+    # claim to this job. It must exist under Settings → Environments and match
+    # the npm config exactly, or publishing fails to authenticate. Add required
+    # reviewers there to gate releases behind manual approval.
+    environment: npm-publish
     permissions:
       contents: read
       id-token: write      # OIDC token for trusted publishing + provenance
@@ -104,45 +91,36 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with: { node-version: 22, package-manager-cache: false }
 
-      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1. Pinned to a
-      # major rather than `@latest` — every action in this workflow is pinned,
-      # and an unpinned global install of the tool that holds the publish
-      # credential is the last place to make an exception.
+      # Node 22 ships npm 10.x; trusted publishing needs >= 11.5.1. Pinned like
+      # every action here — least of all should the tool holding the publish
+      # credential float.
       - run: npm install -g npm@^11.5.1
 
       - run: npm ci
 
-      # npm publishes package.json's `version` — unlike the binaries, the tag is
-      # NOT the source of truth here (build-binaries.sh gets that via
-      # CAIRN_BUILD_VERSION). Without this, every release would republish
-      # whatever version was last committed. --allow-same-version makes it a
-      # no-op when package.json was already bumped.
+      # npm publishes package.json's `version`, not the tag, so sync it or every
+      # release republishes whatever was last committed. --allow-same-version
+      # makes it a no-op when package.json was already bumped.
       - run: npm version "${GITHUB_REF_NAME#v}" --no-git-tag-version --allow-same-version
 
-      # Don't ship a CLI that can't run — the npm mirror of the binaries job's
-      # smoke step. Packs the tarball, installs it into a scratch consumer, and
-      # drives the installed command through the full pipeline. Runs AFTER the
-      # version bump so it also asserts the published CLI reports this exact tag.
+      # Don't ship a package that can't install. After the bump, so it also
+      # asserts both published surfaces report this exact tag.
       - run: bash scripts/smoke-npm.sh "${GITHUB_REF_NAME#v}"
 
-      # A prerelease must not land on `latest`, or `npm i @r0kshan/cairn` hands
-      # people a release candidate.
       - name: Publish to npm
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
 
-          # Skip rather than fail when the version is already on the registry.
-          # npm versions are immutable, so republishing is a hard 403 that would
-          # fail the whole release run. Two ways to hit it: the bootstrap publish
-          # is manual (see RELEASING.md), so the first automated tag can collide
-          # with it; and re-running a release for any other reason would too.
-          # `npm view` prints nothing and errors when the version is absent, so
-          # empty output is the reliable signal.
+          # Republishing is a hard 403, so skip instead of failing the run — hit
+          # by re-running a release, or by the first tag after the manual
+          # bootstrap publish. `npm view` prints nothing when the version is
+          # absent, so empty output is the signal.
           if [ -n "$(npm view "@r0kshan/cairn@$VERSION" version 2>/dev/null)" ]; then
             echo "$VERSION is already on the registry — skipping publish"
             exit 0
           fi
 
+          # A prerelease must never land on `latest`.
           case "$VERSION" in
             *-*) DIST_TAG=unstable ;;
             *)   DIST_TAG=latest ;;
