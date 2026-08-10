@@ -130,6 +130,19 @@ jobs:
       - name: Publish to npm
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
+
+          # Skip rather than fail when the version is already on the registry.
+          # npm versions are immutable, so republishing is a hard 403 that would
+          # fail the whole release run. Two ways to hit it: the bootstrap publish
+          # is manual (see RELEASING.md), so the first automated tag can collide
+          # with it; and re-running a release for any other reason would too.
+          # `npm view` prints nothing and errors when the version is absent, so
+          # empty output is the reliable signal.
+          if [ -n "$(npm view "@r0kshan/cairn@$VERSION" version 2>/dev/null)" ]; then
+            echo "$VERSION is already on the registry — skipping publish"
+            exit 0
+          fi
+
           case "$VERSION" in
             *-*) DIST_TAG=unstable ;;
             *)   DIST_TAG=latest ;;

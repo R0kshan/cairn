@@ -75,12 +75,13 @@ generated `.d.ts` declarations (`tsconfig.json` is `noEmit`, so this needs its
 own build config) and a browser-usage section in the README. TypeScript
 consumers get the engine but no types until then.
 
-**The CLI ships pre-bundled.** `prepack` runs `scripts/build-cli.sh`, which
-esbuilds `src/cli-npm.ts` into `bin/cairn.mjs` with elkjs inlined. It cannot ship
+**Both surfaces ship pre-bundled.** `prepack` runs `scripts/build-cli.sh` and
+`scripts/build-api.sh`, esbuilding `src/cli-npm.ts` → `bin/cairn.mjs` and
+`src/playground.ts` → `dist/cairn.mjs`, elkjs inlined in each. Neither can ship
 as TypeScript: Node refuses to strip types for files under `node_modules`, so
 the `bin/cairn.js` launcher that works from a checkout is dead on install. The
-`publish` job proves the tarball actually runs (`scripts/smoke-npm.sh`) before
-`npm publish`.
+`publish` job proves the tarball actually runs and imports
+(`scripts/smoke-npm.sh`) before `npm publish`.
 
 **The package installs zero dependencies.** `elkjs` is inlined into the bundle,
 so it is a devDependency here and consumers never resolve it — declaring it

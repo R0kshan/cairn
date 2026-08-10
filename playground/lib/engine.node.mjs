@@ -99651,7 +99651,7 @@ async function compile(source, options) {
 }
 
 // src/api.ts
-var version = true ? "1.0.0-RC10" : pkg.version;
+var version = true ? "1.0.0-RC11" : pkg.version;
 
 // src/playground.ts
 var ElkClass = import_elk_bundled.default;

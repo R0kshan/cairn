@@ -1,15 +1,18 @@
 /**
- * The engine's public surface — what `playground.ts` re-exports today, and the
- * shape a published entry point will point at when one exists. **Re-exports
- * only.** If a diff touches this file the surface changed; if it touches
- * anything else under `src/` it did not. That is the whole point: modules below
- * may be renamed, split, or moved freely.
+ * The engine's public surface. **Re-exports only** — modules below may be
+ * renamed, split or moved freely, and nothing here should change unless the
+ * contract does.
  *
- * Published as the package's `.` export via `scripts/build-api.sh`, which
- * bundles `playground.ts` — the browser entry that injects ELK around these
- * re-exports. Generated `.d.ts` declarations are still missing, so TypeScript
- * consumers get the engine untyped; tracked in
- * https://github.com/R0kshan/cairn/issues/38.
+ * The published chain is `api.ts` → `playground.ts` → `dist/cairn.mjs`:
+ * `scripts/build-api.sh` bundles `playground.ts`, the browser entry that injects
+ * ELK and re-exports these names unchanged. So this file is not the *only* place
+ * the contract can move — an `export` added to `playground.ts` would widen it
+ * too. `scripts/smoke-npm.sh` asserts the installed package's export set matches
+ * exactly, which is what keeps the two in step; a published export cannot be
+ * withdrawn afterwards.
+ *
+ * Generated `.d.ts` declarations are still missing, so TypeScript consumers get
+ * the engine untyped; tracked in https://github.com/R0kshan/cairn/issues/38.
  *
  * (Unrelated to `playground/api/` — that directory is the Vercel HTTP endpoint.)
  *

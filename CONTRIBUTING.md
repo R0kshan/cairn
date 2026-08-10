@@ -12,7 +12,7 @@ npm run cairn -- new -L my.cairn     # scaffold a diagram
 npm run cairn -- build my.cairn      # render it to SVG
 ```
 
-The whole dependency list is biome + typescript + @types/node + elkjs + esbuild, and they are **all devDependencies** — the published package installs nothing. `elkjs` is the only third-party module `src/` imports, but every shipped artifact inlines it (Bun for the binaries, esbuild for the CLI and playground bundles), so consumers never resolve it. Keep the list that short. esbuild earns its place by being the publish path — it builds the playground bundles and the npm CLI bundle (`scripts/build-cli.sh`), so it's pinned exactly and locked by `package-lock.json` rather than fetched at build time.
+The whole dependency list is biome + typescript + @types/node + elkjs + esbuild, and they are **all devDependencies** — the published package installs nothing. `elkjs` is the only third-party module `src/` imports, but every shipped artifact inlines it (Bun for the binaries, esbuild for the CLI and playground bundles), so consumers never resolve it. Keep the list that short. esbuild earns its place by being the publish path — it builds the playground bundles, the npm CLI (`scripts/build-cli.sh`) and the importable engine bundle (`scripts/build-api.sh`), so it's pinned exactly and locked by `package-lock.json` rather than fetched at build time.
 
 Inlining elkjs means cairn *distributes* it, so [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) carries its EPL-2.0 notice and points at the corresponding source. It ships in the npm tarball and lives in the repo for every other channel. If you add, remove, or bump anything that ends up inside a shipped artifact, update that file in the same commit.
 
@@ -54,52 +54,35 @@ Invariants detailed in [`AGENTS.md`](./AGENTS.md#non-negotiable-invariants). In 
 | You changed a `.cairn` source file (bug fix / feature) | ✅ must pass | ✅ must pass | ✅ run if output changed | ✅ run if output changed |
 | You changed the render/layout pipeline | ✅ must pass | ✅ must pass | ✅ run | ✅ run |
 
-### Step by step when a snapshot gate fails
+The table above covers the render pipeline. Three things it doesn't:
 
-1. **Preview** — `npm run snapshots:report` (groups changes by kind: geometry / colour / text)
-2. **Decide** — is the change related to your edit? If yes → intended. If not → regression (find the bug).
-3. **If intended** — `npm run snapshots` then commit the updated references.
-4. **Verify** — open a few changed SVGs in your browser to confirm they look right.
+| You changed… | Also run |
+|---|---|
+| `package.json`'s `files` / `exports` / `bin` / `prepack`, or a publish-path build script (`scripts/build-cli.sh`, `scripts/build-api.sh`) | `npm run test:npm` |
+| bundling or the elkjs worker | `npm run test:binary` |
+| anything under `src/` | rebuild the playground bundles — [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src) |
+
+**`npm test` cannot see packaging** — it runs from the repo, not the tarball.
+`npm run test:npm` packs, installs into a throwaway consumer and exercises both
+published surfaces from there: the installed `cairn` command and
+`import { compile } from "@r0kshan/cairn"`. It is the only gate that catches a
+`files`/`exports` mismatch, which publishes cleanly and breaks only at a
+consumer's `import` — and an npm version can never be republished. CI runs all
+three on every PR.
+
+### When a gate fails
+
+1. **Preview** — `npm run snapshots:report` (groups changes by geometry / colour / text), or `npm run sweep -- --detail` (each defect with its edge id).
+2. **Decide** — related to your edit? Then intended. If not, it's a regression: find the bug.
+3. **If intended** — `npm run snapshots`, or `npm run sweep -- --update-baseline` for the readability floor, then commit the updated references.
+4. **Verify** — open a few changed SVGs in your browser.
 
 **Never regenerate to silence a diff you don't understand** — that turns the gate into noise.
 
-[`tests/README.md`](tests/README.md) is the full account of the test
-architecture — what each layer catches, and why the readability baseline accepts
-some regressions as trades.
-
-## Background
-
-`npm test` runs three layers against committed reference files:
-
-| Layer | Guards |
-|---|---|
-| **Structural digest** (`tests/corpus.test.ts`) | Every `.cairn` example → one digest line per diagram, split by geom/color/text |
-| **Example-SVG fidelity** (`tests/corpus.test.ts`) | Committed `examples/*.svg` stay in sync with the code |
-| **Detailed snapshots** (`tests/snapshot.test.ts`) | A chosen set: one per view (EN+FR), every theme, matrix exports |
-
-`npm run snapshots` regenerates all three at once. `npm run examples` only refreshes the `examples/*.svg` files (subset of snapshots).
-
-It then chains **`npm run sweep`**, the readability gate: every `.cairn`
-fixture under `examples/` (top level plus `dispositions/` and `themes/`) ×
-every disposition (288 drawings), seven invariants that must be `0` and fourteen
-ratcheted ceilings — expressed as a rate per swept flow-instance so the gate
-stays stable as fixtures are added — that may only fall. Run it alone while
-iterating — `npm run sweep -- --detail` lists each defect with its edge id.
-
-On top of the rates, a **per-drawing baseline**
-(`tests/__snapshots__/readability.baseline`) pins the accepted defect count for
-every drawing × metric: no single drawing may get worse on any metric, even if
-the corpus totals improve. When your change improves drawings, run
-`npm run sweep -- --update-baseline` and commit the file — floors only fall.
-
-Two flags narrow the matrix while iterating: `--only=<substring>` keeps just the
-fixtures whose path contains it, and `--shard=i/n` takes every n-th fixture (for
-splitting across CI jobs). Partial runs don't gate the corpus-wide rates — a
-rate over part of the corpus can't judge a corpus-wide ceiling — but they do
-gate the per-drawing baseline, and `--update-baseline` on a partial run updates
-only the drawings actually swept.
-
-CI also builds the Bun binary + playground bundle. Run `npm run test:binary` locally if you touch bundling or the elkjs worker. After modifying `src/`, rebuild the playground bundles per [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src).
+[`tests/README.md`](tests/README.md) is the full account, and the only one worth
+keeping current: what each of the four layers catches, how the readability
+baseline accepts trades rather than demanding monotone improvement, and the
+sweep's `--only` / `--shard` / `--detail` / `--update-baseline` flags.
 
 `CAIRN_NO_PORT_PASS=1` is the one debug env var in the pipeline: it skips the
 port-constraint re-layout pass in `scene-layout.ts` that re-routes flows

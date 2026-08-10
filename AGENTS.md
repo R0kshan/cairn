@@ -30,9 +30,10 @@ Not a general diagramming tool.
   `namespace`, legacy decorators) are unused; keep it that way. Rationale and
   fallback plan: `CONTRIBUTING.md`.
 - **Shipped artifacts are all pre-built** — Node won't strip types under
-  `node_modules`. Bun compiles the binaries; esbuild bundles the npm CLI
-  (`scripts/build-cli.sh` → `bin/cairn.mjs`, via `prepack`) and the playground.
-  A publish step, not a dev one; don't let it become one.
+  `node_modules`. Bun compiles the binaries; esbuild bundles the playground and,
+  via `prepack`, both npm surfaces — `build-cli.sh` → `bin/cairn.mjs` and
+  `build-api.sh` → `dist/cairn.mjs`. A publish step, not a dev one; don't let it
+  become one.
 - **Types are checked ONLY by `npm run typecheck`** — the runtime strips them
   without checking.
 - **elkjs runs in-process** (sync fake worker); no Bun/Deno APIs in `src/`.

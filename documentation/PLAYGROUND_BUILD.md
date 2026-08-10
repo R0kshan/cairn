@@ -23,13 +23,17 @@ npm run build:playground
 This regenerates both bundles. It uses the pinned `esbuild` devDependency —
 **Bun is not needed** (Bun is only used for CLI release binaries).
 
-## Why these bundles are committed and `bin/cairn.mjs` is not
+## Why these bundles are committed and the npm ones are not
 
-Both are esbuild output from `src/`, but they ship differently. Vercel deploys
-the playground with **no build step**, so `playground/*` has to be in the repo.
-The npm CLI bundle (`bin/cairn.mjs`, `scripts/build-cli.sh`) is built by
-`prepack` on the publish path, so committing it would only create a second copy
-to go stale — it is git-ignored.
+All of them are esbuild output from `src/`, but they ship differently. Vercel
+deploys the playground with **no build step**, so `playground/*` has to be in the
+repo. The npm bundles — `bin/cairn.mjs` (`scripts/build-cli.sh`) and
+`dist/cairn.mjs` (`scripts/build-api.sh`) — are built by `prepack` on the publish
+path, so committing them would only create a second copy to go stale; both are
+git-ignored.
+
+`dist/cairn.mjs` is built from `src/playground.ts` too, so this page's entry
+point is also the package's `.` export. It differs only in being unminified.
 
 ## Update playground after modifying `src/`
 

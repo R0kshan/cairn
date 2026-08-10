@@ -3,16 +3,21 @@
 #
 # Every other gate runs from the repo: `npm test` executes src/*.ts through
 # --experimental-strip-types, and smoke-binary.sh tests the Bun binary. Neither
-# can see the failure mode that matters here — Node refuses to strip types under
+# can see the failure modes that matter here. Node refuses to strip types under
 # node_modules, so a package that works perfectly from a checkout can still ship
-# a CLI that won't start. This packs, installs into a throwaway consumer, and
-# runs the *installed* command, which exercises prepack, `files`, the `bin`
-# mapping and the bundle together.
+# a CLI that won't start; and a `files`/`exports` mismatch publishes cleanly and
+# only breaks at a consumer's `import`.
+#
+# This packs, installs into a throwaway consumer, and exercises both published
+# surfaces from there — the *installed* `cairn` command and the `.` import —
+# which covers prepack, `files`, the `bin` mapping, the `exports` map and both
+# bundles together.
 #
 # Usage:
 #   scripts/smoke-npm.sh              # pack, install, smoke
-#   scripts/smoke-npm.sh <version>    # also assert `cairn version` reports exactly this
-#                                     # (the release job passes the tag here — see release.yml)
+#   scripts/smoke-npm.sh <version>    # also assert both surfaces report exactly
+#                                     # this version (the release job passes the
+#                                     # tag here — see release.yml)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -29,7 +34,7 @@ echo "• packing…"
 # was", which `prepack`'s own stdout can shift. That output is prepended to the
 # JSON, hence the slice to the first line that is exactly `[`.
 if ! npm pack --json --pack-destination "$TMP" >"$TMP/pack.out" 2>"$TMP/pack.err"; then
-  echo "✗ npm pack failed — prepack (scripts/build-cli.sh) is the usual culprit:" >&2
+  echo "✗ npm pack failed — prepack (build-cli.sh / build-api.sh) is the usual culprit:" >&2
   cat "$TMP/pack.err" "$TMP/pack.out" >&2
   exit 1
 fi
@@ -102,8 +107,17 @@ FIXTURE="$PWD/examples/application-medium.cairn"
 
     // The entry a consumer actually writes: `import { compile } from "@r0kshan/cairn"`.
     const engine = await import("@r0kshan/cairn");
-    for (const name of ["compile", "themeNames", "version"]) {
-      if (!(name in engine)) throw new Error(`"${name}" missing from the package entry`);
+
+    // Exact set, not a subset. src/api.ts claims to be the only place the public
+    // contract can change, but the published bundle is built from playground.ts,
+    // which re-exports it — so an `export` added there would widen the surface
+    // with api.ts untouched. Asserting the whole set is what makes that claim
+    // true; a presence-only check would let the surface grow silently, and a
+    // published export cannot be withdrawn.
+    const actual = Object.keys(engine).filter((name) => name !== "default").sort();
+    const expected = ["compile", "themeNames", "version"];
+    if (actual.join() !== expected.join()) {
+      throw new Error(`published surface is [${actual}], expected [${expected}]`);
     }
 
     // The CLI half asserts its version against the tag; hold the import half to
