@@ -95,23 +95,27 @@ recoverable from the attestation rather than guessed from a dependency range.
 `unstable`, anything else to `latest`. A prerelease therefore only moves the
 `unstable` pointer.
 
-**`latest` points at `1.0.0-RC11`.** npm force-creates `latest` on a package's
-first publish whatever `--tag` says, so the manual bootstrap pinned it there:
+**`latest` is stuck on the bootstrap version.** npm force-creates `latest` on a
+package's first publish whatever `--tag` says, so the manual bootstrap pinned it
+to whatever it published. Read the current value rather than trusting this doc —
+it is the one number here that moves without a commit:
+
+```sh
+npm view @r0kshan/cairn dist-tags
+```
 
 | Command | Resolves to |
 | --- | --- |
 | `npm i @r0kshan/cairn@unstable` | newest prerelease |
-| `npm i @r0kshan/cairn` | **`1.0.0-RC11`**, and stays there |
+| `npm i @r0kshan/cairn` | the bootstrap version, and stays there |
 
-RC12, RC13 … ship to `unstable` and never move it, so a bare install gets more
-stale with each prerelease. 
+RC12, RC13 … ship to `unstable` and never move `latest`, so a bare install gets
+more stale with each prerelease. Two ways out:
 
 - `npm dist-tag rm @r0kshan/cairn latest` — CI never recreates it, so bare
   installs fail with `No matching version found` until the first stable tag, as
   originally intended. Untested; npm may refuse to remove `latest`.
 - Leave it, and say `@unstable` explicitly in the README and integration docs.
-
-```
 
 ## Verify the channels
 
