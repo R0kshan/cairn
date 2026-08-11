@@ -1,7 +1,14 @@
 #!/usr/bin/env node
-// npm-channel launcher: re-executes node with --experimental-strip-types so
-// `npm i -g cairn` works on Node >= 22.6 without users passing flags.
-// (Compiled binaries from `npm run build:binaries` don't go through this file.)
+// Dev launcher for running cairn FROM A CHECKOUT (`npm run cairn`, or
+// `node bin/cairn.js …`): re-executes node with --experimental-strip-types so
+// src/cli.ts runs without users passing flags.
+//
+// This file is NOT published — it cannot work from an install. Node refuses to
+// strip types for any file under node_modules
+// (ERR_UNSUPPORTED_NODE_MODULES_TYPE_STRIPPING), regardless of Node version or
+// flags. The npm channel ships a pre-bundled bin/cairn.mjs instead; see
+// scripts/build-cli.sh. Compiled binaries (`npm run build:binaries`) don't go
+// through this file either.
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { join, dirname } from 'node:path';

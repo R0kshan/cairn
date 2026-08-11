@@ -11,7 +11,11 @@ var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require
   throw Error('Dynamic require of "' + x + '" is not supported');
 });
 var __commonJS = (cb, mod) => function __require2() {
-  return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  try {
+    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
+  } catch (e) {
+    throw mod = 0, e;
+  }
 };
 var __copyProps = (to, from, except, desc) => {
   if (from && typeof from === "object" || typeof from === "function") {
@@ -53,7 +57,7 @@ var require_elk_bundled = __commonJS({
       }
     })(function() {
       var define2, module2, exports2;
-      return (/* @__PURE__ */ function() {
+      return (/* @__PURE__ */ (function() {
         function r(e, n, t) {
           function o(i2, f) {
             if (!n[i2]) {
@@ -76,7 +80,7 @@ var require_elk_bundled = __commonJS({
           return o;
         }
         return r;
-      }())({ 1: [function(require2, module3, exports3) {
+      })())({ 1: [function(require2, module3, exports3) {
         "use strict";
         Object.defineProperty(exports3, "__esModule", {
           value: true
@@ -116,7 +120,7 @@ var require_elk_bundled = __commonJS({
           }
           return ("string" === r ? String : Number)(t);
         }
-        var ELK = exports3["default"] = /* @__PURE__ */ function() {
+        var ELK = exports3["default"] = /* @__PURE__ */ (function() {
           function ELK2() {
             var _this = this;
             var _ref = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {}, _ref$defaultLayoutOpt = _ref.defaultLayoutOptions, defaultLayoutOptions = _ref$defaultLayoutOpt === void 0 ? {} : _ref$defaultLayoutOpt, _ref$algorithms = _ref.algorithms, algorithms = _ref$algorithms === void 0 ? ["layered", "stress", "mrtree", "radial", "force", "disco", "sporeOverlap", "sporeCompaction", "rectpacking"] : _ref$algorithms, workerFactory = _ref.workerFactory, workerUrl = _ref.workerUrl;
@@ -188,8 +192,8 @@ var require_elk_bundled = __commonJS({
               if (this.worker) this.worker.terminate();
             }
           }]);
-        }();
-        var PromisedWorker = /* @__PURE__ */ function() {
+        })();
+        var PromisedWorker = /* @__PURE__ */ (function() {
           function PromisedWorker2(worker) {
             var _this2 = this;
             _classCallCheck(this, PromisedWorker2);
@@ -260,7 +264,7 @@ var require_elk_bundled = __commonJS({
               }
             }
           }]);
-        }();
+        })();
       }, {}], 2: [function(require2, module3, exports3) {
         (function(global2) {
           (function() {
@@ -92087,7 +92091,7 @@ var require_elk_bundled = __commonJS({
           }, _setPrototypeOf(t, e);
         }
         var ELK = require2("./elk-api.js")["default"];
-        var ELKNode = /* @__PURE__ */ function(_ELK) {
+        var ELKNode = /* @__PURE__ */ (function(_ELK) {
           function ELKNode2() {
             var options = arguments.length > 0 && arguments[0] !== void 0 ? arguments[0] : {};
             _classCallCheck(this, ELKNode2);
@@ -92118,7 +92122,7 @@ var require_elk_bundled = __commonJS({
           }
           _inherits(ELKNode2, _ELK);
           return _createClass(ELKNode2);
-        }(ELK);
+        })(ELK);
         Object.defineProperty(module3.exports, "__esModule", {
           value: true
         });
@@ -92135,45 +92139,6 @@ var require_elk_bundled = __commonJS({
 
 // src/playground.ts
 var import_elk_bundled = __toESM(require_elk_bundled(), 1);
-
-// package.json
-var package_default = {
-  name: "cairn",
-  version: "1.0.0-RC10",
-  description: "Architecture diagrams as code \u2014 typed views, semantic layout, overlap-free labels",
-  type: "module",
-  bin: {
-    cairn: "bin/cairn.js"
-  },
-  files: [
-    "bin/",
-    "src/",
-    "README.md",
-    "documentation/"
-  ],
-  scripts: {
-    cairn: "node --experimental-strip-types src/cli.ts",
-    test: 'node --experimental-strip-types scripts/sweep.ts --jobs=auto && node --experimental-strip-types --test "tests/*.test.ts"',
-    snapshots: "node --experimental-strip-types scripts/update-snapshots.mjs",
-    "build:binaries": "bash scripts/build-binaries.sh",
-    "build:playground": "bash scripts/build-playground.sh",
-    lint: "biome lint src tests",
-    format: "biome format --write src tests",
-    typecheck: "tsc --noEmit",
-    "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
-    sweep: "node --experimental-strip-types scripts/sweep.ts --jobs=auto",
-    "test:binary": "bash scripts/smoke-binary.sh",
-    examples: "node --experimental-strip-types scripts/render-examples.mjs"
-  },
-  dependencies: {
-    elkjs: "^0.12.0"
-  },
-  devDependencies: {
-    "@biomejs/biome": "^2.5.4",
-    "@types/node": "^26.1.1",
-    typescript: "^7.0.2"
-  }
-};
 
 // src/elk-engine.ts
 var factory = null;
@@ -99661,9 +99626,7 @@ function render(model, view, scene) {
   return { svg, overlapsBefore, overlapsAfter };
 }
 
-// src/playground.ts
-var ElkClass = import_elk_bundled.default;
-setElkFactory(() => new ElkClass());
+// src/compile.ts
 async function compile(source, options) {
   const { model, diags } = parse(source);
   if (options?.theme) model.style.theme = options.theme;
@@ -99686,7 +99649,13 @@ async function compile(source, options) {
     }
   };
 }
-var version = package_default.version;
+
+// src/api.ts
+var version = true ? "1.0.0-RC11" : pkg.version;
+
+// src/playground.ts
+var ElkClass = import_elk_bundled.default;
+setElkFactory(() => new ElkClass());
 export {
   compile,
   themeNames,

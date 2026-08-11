@@ -23,24 +23,40 @@ Not a general diagramming tool.
 
 ## Runtime model
 
-- **No build step.** `.ts` runs directly via `node --experimental-strip-types`
-  (Node ≥ 22.6). Don't add a transpile/bundle step, emit `dist/`, or rewrite
-  imports to `.js` — the explicit `.ts` import extensions are intentional.
-  This flag erases type annotations at runtime without compiling them. It
-  matters in **development only** (the shipped binary uses Bun's compiler
-  and runs without Node). In dev it eliminates the compile step — change
-  source and re-run, no `tsc --watch` or `dist/` overhead. The project uses
-  none of the unsupported TS features (`enum` initializers, `const enum`,
-  `namespace`, legacy decorators). The tradeoff: it's experimental
-  ([node#53725](https://github.com/nodejs/node/issues/53725)). If it changes,
-  the fallback is a one-liner `tsc` compile step.
-- **Type checking exists ONLY in `npm run typecheck`** — the runtime strips
-  types without checking them. (TS 7.x native compiler; needs its per-platform
-  binary installed.)
-- **elkjs runs in-process** (sync fake worker). **Bun compiles release binaries
-  only** — never a dev/test dependency; no Bun/Deno APIs in `src/`.
-- **`elkjs` is the only runtime dep.** Keep it that way. Dev deps are exactly
-  biome + typescript + @types/node.
+- **No build step for dev or test.** `.ts` runs directly via
+  `node --experimental-strip-types` (Node ≥ 22.6). Don't add a transpile step,
+  emit `dist/`, or rewrite imports to `.js` — the explicit `.ts` extensions are
+  intentional. Unsupported TS features (`enum` initializers, `const enum`,
+  `namespace`, legacy decorators) are unused; keep it that way. Rationale and
+  fallback plan: `CONTRIBUTING.md`.
+- **Shipped artifacts are all pre-built** — Node won't strip types under
+  `node_modules`. Bun compiles the binaries; esbuild bundles the playground and,
+  via `prepack`, both npm surfaces — `build-cli.sh` → `bin/cairn.mjs` and
+  `build-api.sh` → `dist/cairn.mjs`. A publish step, not a dev one; don't let it
+  become one.
+- **Types are checked ONLY by `npm run typecheck`** — the runtime strips them
+  without checking.
+- **elkjs runs in-process** (sync fake worker); no Bun/Deno APIs in `src/`.
+- **elkjs is a devDependency, not a runtime one** — every artifact inlines it,
+  so the published package installs **zero dependencies**. Don't move it back to
+  `dependencies`: nothing in the tarball resolves it, and a declared-but-unloaded
+  dep can drift from the version actually inlined. Full dep list: biome,
+  typescript, @types/node, elkjs, esbuild. Inlining means cairn *distributes*
+  elkjs — keep [`THIRD-PARTY-NOTICES.md`](./THIRD-PARTY-NOTICES.md) accurate.
+
+## Entry points
+
+Environment-neutral core; thin entries inject ELK.
+
+| Module | Role | ELK factory |
+|---|---|---|
+| `api.ts` | public surface | none |
+| `compile.ts` | whole pipeline in one call, for embedders | none |
+| `playground.ts` | browser entry → `playground/*` **and** the package's `.` export (`dist/cairn.mjs`) | browser `new ELK()` |
+| `cli-npm.ts` | published CLI bundle → `bin/cairn.mjs` | `nodeElkFactory` |
+
+Never inject a factory in `api.ts` or `compile.ts` — it would override every
+consumer's, including the CLI's.
 
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
