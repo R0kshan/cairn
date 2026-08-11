@@ -16,7 +16,13 @@ import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
 import type { Box, Point, TitleBox } from "./geometry.ts";
 import { compactVertical } from "./compact.ts";
-import { optimiseRoutes, clearSideHugs, spreadAttachments, swapCrossingSiblingSeats, tidyEdges } from "./edge-tidy.ts";
+import {
+  optimiseRoutes,
+  clearSideHugs,
+  spreadAttachments,
+  swapCrossingSiblingSeats,
+  tidyEdges,
+} from "./edge-tidy.ts";
 import { inspect, type Profile } from "./readability.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
@@ -312,7 +318,9 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
     const fromCenter = centerOf(from);
     if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
       flagged.add(e.id);
-    if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
+    if (
+      away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y })
+    )
       flagged.add(e.id);
   }
   return flagged;
@@ -608,19 +616,18 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       const tech = techText(flow.tech);
       const text = raw || (tech ? tech : "");
       const subTitle = raw ? tech : undefined;
+      const labelBox = flowLabelBox({
+        text,
+        chipNames: chips,
+        fontSize: edgeFontSize,
+        tech: subTitle,
+        scale: fontScale,
+      });
       return {
         id: flow.id,
         sources: [flow.from],
         targets: [flow.to],
-        labels:
-          text || chips.length
-            ? [
-                {
-                  text,
-                  ...flowLabelBox(text, chips, edgeFontSize, subTitle, fontScale),
-                },
-              ]
-            : [],
+        labels: text || chips.length ? [{ text, ...labelBox }] : [],
       };
     }),
   });
@@ -762,7 +769,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const fitScore = (layoutResult: { width: number; height: number }) =>
       -Math.min(frameSize.width / layoutResult.width, frameSize.height / layoutResult.height);
     const winner = viableLayouts.reduce((candidateA, candidateB) =>
-      fitScore(candidateA.layoutResult) <= fitScore(candidateB.layoutResult) ? candidateA : candidateB,
+      fitScore(candidateA.layoutResult) <= fitScore(candidateB.layoutResult)
+        ? candidateA
+        : candidateB,
     );
     result = winner.layoutResult;
     winnerDirection = graphSpecs[winner.index].direction;
@@ -811,7 +820,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const rescene = sceneFromResult(reresult, Date.now() - startTime);
     const allEdges = (s: Scene) => new Set(s.edges.map((edge) => edge.id));
     const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), new Map());
-    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(allEdges(rescene), new Map());
+    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(
+      allEdges(rescene),
+      new Map(),
+    );
     for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
     for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
     const verdict = relayoutVerdict(before, after);

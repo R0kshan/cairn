@@ -55,13 +55,14 @@ export const chipW = (name: string, scale = 1) =>
 export const techText = (tech?: { protocol?: string; format?: string }) =>
   tech?.protocol ? `(${tech.protocol}${tech.format ? ", " + tech.format : ""})` : "";
 
-export const flowLabelBox = (
-  text: string,
-  chipNames: string[],
-  fontSize: number,
-  tech?: string,
-  scale = 1,
-) => {
+export const flowLabelBox = (opts: {
+  text: string;
+  chipNames: string[];
+  fontSize: number;
+  tech?: string;
+  scale?: number;
+}) => {
+  const { text, chipNames, fontSize, tech, scale = 1 } = opts;
   const measured = text ? measure(text, fontSize) : { width: 0, height: 0 };
   const chips = chipNames.reduce((sum, name) => sum + chipW(name, scale) + 4, -4);
   const techW = tech ? Math.ceil(tech.length * 9 * scale * CHAR_WIDTH) + 6 : 0;

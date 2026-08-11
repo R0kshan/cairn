@@ -108,7 +108,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
         if (values.length && matchToken("id") && lookAhead(1).kind === "colon") break;
         values.push(advance());
       }
-      applyStyleEntry(keyToken, styleTargetKind, values, target, inline, diagnostics);
+      applyStyleEntry({ key: keyToken, styleTargetKind, values, target, inline, diagnostics });
       skipNewlines();
     }
     if (matchToken("rbrace")) advance();
@@ -492,14 +492,15 @@ const UNIFORM_STYLE_ENTRIES: Record<string, UniformStyleEntry> = {
   },
 };
 
-function applyStyleEntry(
-  key: Token,
-  styleTargetKind: string | undefined,
-  values: Token[],
-  target: DiagramStyle | null,
-  inline: StyleProps | null,
-  diagnostics: Diagnostic[],
-) {
+function applyStyleEntry(entry: {
+  key: Token;
+  styleTargetKind: string | undefined;
+  values: Token[];
+  target: DiagramStyle | null;
+  inline: StyleProps | null;
+  diagnostics: Diagnostic[];
+}) {
+  const { key, styleTargetKind, values, target, inline, diagnostics } = entry;
   const extractStroke = (tokens: Token[], _span: Span): NonNullable<StyleProps["stroke"]> => {
     const strokeProps: NonNullable<StyleProps["stroke"]> = {};
     for (const token of tokens) {

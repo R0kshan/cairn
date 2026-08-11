@@ -284,13 +284,13 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
                   ? [
                       {
                         text,
-                        ...flowLabelBox(
+                        ...flowLabelBox({
                           text,
-                          chips,
-                          edgeFontSize,
-                          flow.label ? techText(flow.tech) : undefined,
-                          fontScale,
-                        ),
+                          chipNames: chips,
+                          fontSize: edgeFontSize,
+                          tech: flow.label ? techText(flow.tech) : undefined,
+                          scale: fontScale,
+                        }),
                       },
                     ]
                   : [],
@@ -301,9 +301,9 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
           .map((flow) => {
             syntheticIds.add(`${flow.id}_oe`);
             return {
-            id: `${flow.id}_oe`,
-            sources: [flow.from],
-            targets: [`${flow.id}_out`],
+              id: `${flow.id}_oe`,
+              sources: [flow.from],
+              targets: [`${flow.id}_out`],
             };
           }),
         ...interFlows
@@ -311,9 +311,9 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
           .map((flow) => {
             syntheticIds.add(`${flow.id}_ie`);
             return {
-            id: `${flow.id}_ie`,
-            sources: [`${flow.id}_in`],
-            targets: [flow.to],
+              id: `${flow.id}_ie`,
+              sources: [`${flow.id}_in`],
+              targets: [flow.to],
             };
           }),
       ],
@@ -514,7 +514,13 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
       y: box.y - result.children![0].y,
     };
     origins.set(result.id, rootOffset);
-    for (const walked of walkFoldedNodes(result, rootOffset.x, rootOffset.y, elementById, syntheticIds)) {
+    for (const walked of walkFoldedNodes(
+      result,
+      rootOffset.x,
+      rootOffset.y,
+      elementById,
+      syntheticIds,
+    )) {
       origins.set(walked.id, walked.origin);
       if (walked.isPort) {
         absolutePorts.set(walked.id, walked.origin);
@@ -634,13 +640,13 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
     if (text !== undefined) {
       const measured = numbered
         ? { width: Math.round(26 * fontScale), height: Math.round(17 * fontScale) }
-        : flowLabelBox(
+        : flowLabelBox({
             text,
-            chips,
-            edgeFontSize,
-            flow.label ? techText(flow.tech) : undefined,
-            fontScale,
-          );
+            chipNames: chips,
+            fontSize: edgeFontSize,
+            tech: flow.label ? techText(flow.tech) : undefined,
+            scale: fontScale,
+          });
       if (points.length >= 6) {
         const segmentLeft = Math.min(points[2].x, points[3].x);
         const segmentRight = Math.max(points[2].x, points[3].x);
