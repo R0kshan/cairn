@@ -50,14 +50,15 @@
     "build:cli": "bash scripts/build-cli.sh",
     "build:playground": "bash scripts/build-playground.sh",
     "prepack": "npm run build:cli && npm run build:api",
-    "lint": "biome lint src tests",
+    "lint": "biome lint src tests && npm run nesting",
     "format": "biome format --write src tests",
     "typecheck": "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
     "sweep": "node --experimental-strip-types scripts/sweep.ts --jobs=auto",
     "test:binary": "bash scripts/smoke-binary.sh",
     "test:npm": "bash scripts/smoke-npm.sh",
-    "examples": "node --experimental-strip-types scripts/render-examples.mjs"
+    "examples": "node --experimental-strip-types scripts/render-examples.mjs",
+    "nesting": "node --experimental-strip-types scripts/nesting-depth.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",

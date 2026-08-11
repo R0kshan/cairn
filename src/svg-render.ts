@@ -182,14 +182,12 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     return edge && edge.pts.length >= 2 ? boxToPolylineSq(label, edge.pts) : 0;
   };
   /**
-   * Is some other flow's run closer to this label than its own run is? If so the
-   * reader will attribute the label to the wrong flow, which is the whole defect
-   * this guards against.
+   * Is another flow's run closer to this label than its own? Then the reader
+   * attributes it to the wrong flow.
    *
-   * A label within `ATTACHED_SQ` of its own run is exempt: it is visibly sitting
-   * on that run, and a neighbour grazing 1px nearer changes nothing a reader
-   * would notice. That case is two flows running close together, which
-   * `nearParallel` already accounts for.
+   * A label within `ATTACHED_SQ` of its own run is exempt — it is visibly on
+   * that run, and a neighbour grazing 1px nearer is two flows running close
+   * together, which `nearParallel` already counts.
    */
   const stolen = (label: SceneLabel, own: number) => {
     if (own <= ATTACHED_SQ) return false;
@@ -203,31 +201,17 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   };
 
   /**
-   * Is another flow's run drawn straight *through* the label box?
+   * Is another flow's run drawn through the label box? Neither rule above sees
+   * this: a label on its own run has `own` of 0, so it passes both while a second
+   * flow crosses the words.
    *
-   * This is the worst ambiguity and the one neither rule above can see. A label
-   * centred on its own run has `own` of 0 — inside `ATTACHED_SQ`, and nothing
-   * can be nearer than its own flow — so it passes both checks while a second
-   * flow crosses the words themselves. The reader gets no cue at all.
+   * Not measured at 0 — the halo keeps a line grazing the box edge legible.
    *
-   * Not measured at exactly 0: the renderer strokes a halo behind label text, so
-   * a line grazing the box edge stays legible. It is the line through the middle
-   * that has to go.
-   *
-   * **Deliberately wider than the gate, and this is the one place that is
-   * allowed** (INVARIANTS §3 asks for the reason next to both). The sweep splits
-   * this population in two: `labelPierced` charges only labels already off their
-   * line, and `labelStraddled` charges on-line labels whose intruder runs
-   * *parallel* to their own (§4j). Their union leaves out one case this counts —
-   * an on-line label with a foreign run crossing it transversally — and that is
-   * on purpose. The gate does not charge for it because the halo masks the
-   * crossing and the label's position still settles attribution; but this is a
-   * *preference*, consulted to decide whether a better seat is worth looking
-   * for, and a seat with nothing through it is worth preferring even when the
-   * gate would have tolerated one. Narrowing it to the gate's exact union would
-   * stop the settler looking. The relaxed round below is what keeps the extra
-   * strictness from costing anything: if no cleaner seat exists, this one is
-   * taken anyway.
+   * Deliberately wider than the gate; INVARIANTS §3 requires that stated next to
+   * both. `labelPierced` + `labelStraddled` omit one case this counts: an on-line
+   * label crossed transversally. This is a *preference* deciding whether to look
+   * for a better seat, not a charge — narrowing it to the gate's union would stop
+   * the settler looking, and the relaxed round below makes the strictness free.
    */
   const PIERCE_SQ = 1;
   const pierced = (label: SceneLabel) => {
@@ -242,9 +226,9 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
 
   /**
    * Where the label would sit centred on each run of its own flow, in segment
-   * order. A label crowded off its preferred run can often still sit — clearly
-   * attached, on the right flow — somewhere else along the same route, which
-   * beats being flung into open space to escape a collision.
+   * order. A label crowded off its preferred run can usually sit elsewhere on
+   * the same route — still clearly attached — which beats being flung into open
+   * space to escape a collision.
    */
   const ownRunMidpoints = (label: SceneLabel) => {
     const edge = ownRun.get(label);
@@ -263,12 +247,10 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   };
 
   /**
-   * Seats along the label's own run, in both directions from wherever it sits.
-   *
-   * This is the escape that keeps invariant §4d: sliding *along* a run never
-   * takes the label off it, so a label crowded by a neighbour can move a long
-   * way and still be on its own line. Perpendicular steps — the ladder below —
-   * are what take it off, and are only reached once every slide has failed.
+   * Seats along the label's own run, both directions from where it sits. The
+   * escape that keeps §4d: sliding *along* a run never leaves it, so a crowded
+   * label can travel a long way and stay on its own line. The perpendicular
+   * ladder below is what takes it off, and only once every slide has failed.
    */
   const alongOwnRun = (label: SceneLabel): { x: number; y: number }[] => {
     const edge = ownRun.get(label);
@@ -307,19 +289,15 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       /**
        * Somewhere this label may not sit at all.
        *
-       * Container names are here with the node boxes, not among the soft
-       * preferences below, because §4e is **tier 0** and every preference the
-       * escape ladder trades away is tier 1: a name drawn through is destroyed
-       * information, a label beside its line is a label you can still read.
-       * `label-anchor` ranks these the other way round (`tolerated` takes a band
-       * seat rather than leave the run) — that comment predates the ladder and
-       * the ladder is the one that decides.
+       * Container names sit with the node boxes, not the soft preferences below,
+       * because §4e is tier 0 while every preference the escape ladder trades is
+       * tier 1: a name drawn through is destroyed information, a label beside its
+       * line is still readable. `label-anchor` ranks these the other way — that
+       * predates the ladder, which now decides.
        *
-       * Nothing saw this before, because nothing had to: the settler only moves
-       * a label that collides or cannot be attributed, and elk rarely parks one
-       * on a name. It surfaced the moment `laneBeyond` started clearing runs
-       * (§4j) — labels that had never needed to escape began escaping, and five
-       * `slide` drawings put one on a container name on the way out.
+       * Surfaced once `laneBeyond` started clearing runs (§4j): labels that never
+       * needed to escape began escaping, and five `slide` drawings put one on a
+       * container name on the way out.
        */
       const collides = () =>
         labels.some((other) => other !== label && boxesOverlap(other, label)) ||
@@ -339,25 +317,21 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
         originX = label.x;
       const here = { x: originX, y: originY };
       // Two rounds. The first refuses any escape that detaches the label from
-      // its flow or parks it nearer a different one, and will walk the label to
-      // another run of its own flow rather than accept one. The second drops
-      // that condition entirely.
+      // its flow or parks it nearer another, walking it to a different run of
+      // its own flow instead; the second drops that condition.
       //
-      // The order is not a preference. An overlapping label is unreadable, an
-      // ambiguous one is merely misleading — so zero overlaps, a hard invariant,
-      // outranks attribution every time. Attribution is a ratchet exactly
-      // because it has to yield here, and these are the cases where it does.
+      // Not a preference: an overlapping label is unreadable, an ambiguous one
+      // merely misleading, so zero overlaps outranks attribution. Attribution is
+      // a ratchet exactly because it has to yield here.
       let settled = false;
-      // Round 0: stay on the line. Every seat here is *on* the run — its
-      // midpoints and points sliding along it — so §4d survives the escape.
-      // Only if the label cannot be placed anywhere along its own flow do the
-      // perpendicular rounds below get to take it off the line.
+      // Round 0: stay on the line. Every seat here is *on* the run — midpoints
+      // and slides along it — so §4d survives the escape. Only a label with
+      // nowhere to go along its own flow reaches the perpendicular rounds.
       //
-      // Two sweeps over the same seats. The first also wants attribution; the
-      // second takes any seat that is merely overlap-free, pierced or not.
-      // That order encodes the ranking: overlapping is unreadable, off the line
-      // breaks §4d, pierced is a ratchet — so a pierced seat *on* the run beats
-      // a clean one beside it, and only a collision sends the label off.
+      // Two sweeps over the same seats: the first also wants attribution, the
+      // second takes any overlap-free seat, pierced or not. Overlapping is
+      // unreadable, off-the-line breaks §4d, pierced is a ratchet — so a pierced
+      // seat *on* the run beats a clean one beside it.
       const onLineSeats = [...ownRunMidpoints(label), ...alongOwnRun(label)];
       for (const wantAttributable of [true, false]) {
         for (const seat of onLineSeats) {
@@ -372,12 +346,12 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       }
       for (const attributable of settled ? [] : [true, false]) {
         const origins = attributable ? [here, ...ownRunMidpoints(label)] : [here];
-        // The attributable round slides further sideways than the relaxed one:
-        // along its own run a label keeps `own` at 0 whatever the distance, so
-        // a long slide is how a label wider than the gap between two crossing
-        // runs dodges the one that pierces it without leaving its flow. The
-        // relaxed round keeps the short ladder — unguarded long throws are how
-        // a label ends up in a stranger's corridor.
+        // The attributable round slides further than the relaxed one: along its
+        // own run a label keeps `own` at 0 whatever the distance, so a long
+        // slide is how a label wider than the gap between two crossing runs
+        // dodges the piercing one without leaving its flow. The relaxed round
+        // keeps the short ladder — unguarded long throws land in a stranger's
+        // corridor.
         const slides = attributable
           ? [0, -24, 24, -48, 48, -72, 72, -96, 96]
           : [0, -24, 24, -48, 48];
@@ -406,31 +380,25 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
 
   const overlapsBefore = countLabelOverlaps();
   settleLabelPositions();
-  // Undo any route repair that cost a label its run (INVARIANTS §4d). The
-  // repair pass in `edge-tidy` trades a lower-tier defect for a higher-tier
-  // fix, but it cannot see this particular cost: a moved route collides with a
-  // *neighbouring* label, and the settler resolves that by lifting whichever
-  // label it can — a decision that does not exist until settling has run. So
-  // the repair records what it replaced and the verdict is taken here, the
-  // first point where "is this label on its own run" has a real answer.
+  // Undo any route repair that cost a label its run (§4d). `edge-tidy`'s repair
+  // trades a lower-tier defect for a higher-tier fix but cannot see this cost: a
+  // moved route collides with a *neighbouring* label, and the settler resolves
+  // that by lifting whichever label it can — a decision that does not exist
+  // until settling runs. So the repair records what it replaced, and the verdict
+  // is taken here, where "is this label on its own run" first has an answer.
   {
     const repaired = scene.edges.filter((edge) => edge.repairedFrom);
     if (repaired.length) {
       const titles = titleBands;
-      // Every way a route change can damage a label, not just one of them. The
-      // first version of this audit counted only labels off their run, and the
-      // corpus answered: labelAdrift 3 (a must-be-zero invariant), labelOrphan
-      // 0 -> 17, labelPierced 7 -> 29. Moving more routes gives the settler more
-      // collisions to resolve, and it resolves them by pushing labels into every
-      // failure mode §4a and §4d name — so the audit has to weigh all of them or
-      // it silently licenses the ones it does not look at.
-      // Harm is ranked, not totalled. Every failure mode here has a tier in the
-      // ladder, and a flat count made them interchangeable: it let a tier-1
-      // label sliding off its run veto a repair that cleared a tier-0 run
-      // through a container — a strictly worse drawing kept because one number
-      // was one lower. Index 0 is "information destroyed" (adrift, pierced,
-      // struck through a title), index 1 is "attribution broken" (a label
-      // nearer a neighbour's run, or lifted off its own).
+      // Every way a route change can damage a label, not one: counting only
+      // labels off their run found labelAdrift 3 (must-be-zero), labelOrphan
+      // 0→17, labelPierced 7→29 — more moved routes means more collisions,
+      // resolved by pushing labels into every failure mode §4a/§4d names.
+      //
+      // Ranked, not totalled: a flat count once let a tier-1 label sliding off
+      // its run veto a repair that cleared a tier-0 run through a container.
+      // Index 0 is information destroyed (adrift, pierced, struck title); index
+      // 1 is attribution broken (nearer a neighbour's run, or lifted off its own).
       const labelHarm = (): [number, number] => {
         const harm: [number, number] = [0, 0];
         for (const label of labels) {
@@ -447,18 +415,15 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
        * What the *runs* cost in this state — through a leaf, through a container
        * holding neither endpoint, across a title.
        *
-       * Labels were the only thing this audit used to weigh, and that made it
-       * blind in the one direction that matters: reverting a repair restores an
-       * older route, and an older route has defects of its own. Judging the two
-       * states by label damage alone let the audit undo a flow that had stopped
-       * cutting through a layer, because putting it back cost one label less —
-       * trading two tier-0 defects for one. Both states are now measured the
-       * same way, on runs and labels together.
+       * Weighing labels alone made the audit blind to the direction that
+       * matters: the older route reverting restores has defects of its own, and
+       * label damage alone once undid a flow that had stopped cutting through a
+       * layer, trading two tier-0 defects for one. Both states are now measured
+       * on runs and labels together.
        *
-       * `soloOnly`, so this stays affordable: every defect it needs is a route
-       * against a fixed obstacle, never a route against another route, and the
-       * pairwise phase is the expensive half. Crossings are the router's
-       * business and it has already weighed them.
+       * `soloOnly` keeps it affordable: every defect here is a route against a
+       * fixed obstacle. The pairwise phase is the expensive half, and crossings
+       * are the router's business, already weighed.
        */
       const runHarm = (): number[] => {
         const tiers = [0, 0, 0, 0, 0];
@@ -481,24 +446,18 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       /**
        * The breaches this audit may never trade for, by identity.
        *
-       * Tier 0 is not one thing. Most of it is *ratchet* debt — a struck title,
-       * a run through a foreign container — and trading some of that for less of
-       * it elsewhere is the whole point of the ladder. But `MUST_BE_ZERO` is a
-       * different kind of statement: a promise, not a budget, and one occurrence
-       * fails the build. A count comparison cannot tell them apart, so it let a
-       * repair that cleared two struck titles ship a label 39px adrift from its
-       * own flow — two ratchet defects bought an invariant, which is not a trade
-       * that exists.
+       * `MUST_BE_ZERO` is a promise, not a budget — unlike the rest of tier 0,
+       * which is ratchet debt the ladder trades. A count comparison cannot tell
+       * them apart: it once let a repair clearing two struck titles ship a label
+       * 39px adrift from its own flow.
        *
-       * Only the invariants this audit can actually observe after settling:
-       * a label adrift from its run, a run through a leaf box, a slanted
-       * segment. `coincident` needs the pairwise phase `runHarm` skips, and
-       * `overlaps` is counted by the settler itself.
+       * Only the invariants observable after settling: a label adrift, a run
+       * through a leaf box, a slanted segment. `coincident` needs the pairwise
+       * phase `runHarm` skips; `overlaps` is the settler's own count.
        *
-       * Identity, not count, and *only* for these: applying identity to the
-       * whole of tier 0 was measured and is much worse (19 tier-0 regressions
-       * on a quarter corpus), because the revert is all-or-nothing and one
-       * gained key then discards every other fix in the batch.
+       * Identity only for these — applying it to all of tier 0 measured worse
+       * (19 regressions on a quarter corpus), since an all-or-nothing revert
+       * then discards every other fix for one gained key.
        */
       const breaches = (): Set<string> => {
         const found = new Set<string>();
@@ -528,19 +487,15 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
       const breachesWithout = breaches();
       const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
       // Two finished drawings, judged the same way; the less damaged one ships.
+      // Last point where geometry and labels have both settled, so the only
+      // place either state can be measured for real. Whole-drawing on purpose:
+      // the lifted label belongs to a *neighbour* of the moved flow, so "did
+      // this edge keep its own label" always answered yes and reverted nothing.
       //
-      // This is the last point in the pipeline where geometry and labels have
-      // both settled, so it is the only place either state can be measured for
-      // real — which is exactly why the choice belongs here rather than in the
-      // router. Comparison stays whole-drawing: the label that gets lifted
-      // belongs to a *neighbour* of the moved flow, so asking "did this edge
-      // keep its own label" always answered yes and reverted nothing.
-      //
-      // Ties keep the repair. The router only proposes ladder-positive moves, so
-      // an equally-damaged repaired drawing is one whose gain simply is not
-      // visible to the metrics this audit can compute after settling.
-      // An invariant the repair breaks and the revert does not is not payable,
-      // whatever else the repair cleared. Everything below that is a trade.
+      // Ties keep the repair — the router proposes only ladder-positive moves,
+      // so an equally-damaged repair is one whose gain this audit cannot see
+      // after settling. An invariant the repair breaks and the revert does not
+      // is never payable; everything below that is a trade.
       if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
         repaired.forEach((edge, index) => {
           edge.pts = repairedRoutes[index];
@@ -552,13 +507,11 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     }
   }
   const overlapsAfter = countLabelOverlaps();
-  // Settling can move a label off a band that nothing else pinned — an extreme
-  // label at the top of the drawing escaping downward strands dead height that
-  // the layout-stage compact already ran too early to see. Reclaiming again
-  // here closes that for every settle trigger. Safe on settled geometry: band
-  // removal is monotone, keeps ≥14px between pinned extents, and never reorders
-  // anything, so it cannot create an overlap, a pierce, or a new collision.
-  // No-op when settling stranded nothing, which is the common case.
+  // Settling can move a label off a band nothing else pinned, stranding dead
+  // height the layout-stage compact ran too early to see. Safe on settled
+  // geometry: band removal is monotone, keeps ≥14px between pinned extents and
+  // reorders nothing, so it cannot create an overlap, a pierce or a collision.
+  // No-op when settling stranded nothing, the common case.
   compactVertical(scene);
 
   const verticalSegments: { x: number; y1: number; y2: number }[] = [];
@@ -814,12 +767,11 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   };
 
   /**
-   * Flow lines and flow labels are emitted in two separate passes, not one per
-   * edge. Labels sit *on* their run (invariant §4d), and a label is only
-   * readable there because its halo masks the line behind it — which works only
-   * for lines already drawn. Interleaving them left every label at the mercy of
-   * every edge drawn after it: the halo hid its own flow and nothing else, so a
-   * crossing run struck straight through the words.
+   * Lines and labels are emitted in two passes, not one per edge. A label sits
+   * *on* its run (§4d) and is readable only because its halo masks the line
+   * behind it, which works only for lines already drawn. Interleaved, the halo
+   * hid its own flow and nothing else, so every edge drawn afterwards struck
+   * through the words.
    */
   const renderEdgePath = (edge: SceneEdge): string => {
     if (!edge.pts.length) return "";

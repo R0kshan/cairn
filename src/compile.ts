@@ -1,16 +1,16 @@
 /**
- * One-call orchestration of the whole pipeline: `parse` → `validate` → `layout`
- * → `render`, returning `{ svg, diagnostics, metrics }` instead of writing a
- * file or exiting a process. This is what embedders use; `cli.ts` drives the
- * same stages itself because it needs the intermediate results (diagnostics
- * formatting, the matrix export, watch mode).
+ * One-call orchestration of the whole pipeline: `parse` → `validate` →
+ * `layout` → `render`, returning `{ svg, diagnostics, metrics }` instead of
+ * writing a file or exiting a process. What embedders use; `cli.ts` drives
+ * the same stages itself since it needs the intermediate results (diagnostics
+ * formatting, matrix export, watch mode).
  *
- * Errors are data, not exceptions — a source with error diagnostics comes back
+ * Errors are data, not exceptions: a source with error diagnostics comes back
  * as `svg: null` with the diagnostics attached, never a throw.
  *
- * Environment-neutral: it never injects an ELK factory. `layout()` resolves one
- * lazily via `elk-engine.ts`, and the entry points (`playground.ts` for the
- * browser, `cli-npm.ts` for the bundled npm CLI) inject the right one first.
+ * Environment-neutral: never injects an ELK factory. `layout()` resolves one
+ * lazily via `elk-engine.ts`; the entry points (`playground.ts` for the
+ * browser, `cli-npm.ts` for the npm CLI) inject the right one first.
  */
 
 import { parse } from "./parser.ts";

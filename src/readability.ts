@@ -1,38 +1,16 @@
 /**
- * The readability ladder: one ranking, one acceptance rule, shared by every
- * pass that moves geometry.
+ * The readability ladder: one ranking and one acceptance rule, shared by every
+ * pass that moves geometry. Tiers and their defects: `documentation/LADDER.md`.
  *
- * Before this existed each pass carried its own accept/reject test — "strictly
- * shorter", "fewer crossings", "no new partner", "clears a container" — and the
- * tests disagreed. That produced three classes of bug, all of them found the
- * hard way:
+ * A profile is keyed by defect *identity*, never tallied — a count cannot see a
+ * defect move: reordering four risers once lowered a drawing's crossing count
+ * while handing a fifth flow a new crossing in clean space.
  *
- * - **A total falls while a defect moves.** Reordering four risers lowered a
- *   drawing's crossing count *and* handed a fifth flow a brand-new crossing in
- *   clean space. Counting cannot see this; comparing the *set* of defects can,
- *   which is why a profile here is keyed by identity, never tallied.
- * - **A pass fixes its own metric and breaks a better one.** Unweaving bought a
- *   turn with a crossing; clearing a container bought it with a weave.
- * - **A pass validates geometry a later pass then reshapes**, so what was proven
- *   clean is not what gets drawn.
+ * A change is judged on the whole scene and may only trade downwards.
  *
- * The ladder answers all three: defects are ranked by *what the reader loses*,
- * a change is judged on the whole scene, and a change may only ever trade
- * downwards.
- *
- * | Tier | The reader loses | Examples |
- * |------|------------------|----------|
- * | 0 | information outright | a run through a box, through a container it has no business in, through a title; two flows drawn as one line |
- * | 1 | attribution | (labels — owned by `label-anchor` and the renderer, which run later) |
- * | 2 | the thread of a line | crossings, fan tangles, near-parallel runs |
- * | 3 | only time | weaving routes, wrong-side departures, staircases |
- * | 4 | nothing much | tight attachments |
- *
-  * Tier 1 is only partially modelled here: label placement happens after every
-  * geometry pass, so a router cannot evaluate final label positions. The profile
-  * carries one Tier 1 key — `unlabelled:<edge>`, meaning the proposed route
-  * leaves its own label no seat clear of boxes and titles. Everything else at
-  * that tier belongs to `label-anchor` and `settleLabelPositions` (§4a, §4d).
+ * Tier 1 is only partly modelled: labels are settled after every geometry pass,
+ * so the profile carries one Tier 1 key, `unlabelled:<edge>`. The rest belongs
+ * to `label-anchor` and `settleLabelPositions` (§4a, §4d).
  */
 
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
@@ -141,11 +119,10 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
 
   const endsOf = (pts: Point[]) => [sideOf(pts[0]), sideOf(pts[pts.length - 1])];
 
-  // Memoised per-edge derivations. `local` is called once per candidate route
-  // inside an optimiser loop, and re-deriving runs and seats for every *other*
-  // edge each time is what made an unbounded version take 28s on one drawing.
-  // Anything belonging to an edge that has not moved is stable; `forget` drops
-  // an entry when it does.
+  // Memoised per-edge derivations. `local` runs once per candidate route inside
+  // an optimiser loop; re-deriving runs and seats for every *other* edge each
+  // time took 28s on one drawing. Entries stay valid until the edge moves, when
+  // `forget` drops them.
   const runsCache = new Map<string, Run[]>();
   const endsCache = new Map<string, ReturnType<typeof endsOf>>();
   const runsFor = (edge: SceneEdge, pts: Point[], overridden: boolean) => {
@@ -193,10 +170,10 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
     return made;
   };
   /**
-   * Two routes whose bounding boxes miss each other by more than the widest
-   * proximity rule (10px, `nearParallel`) share no defect, so the pair can be
-   * skipped whole. Most pairs in a drawing are nowhere near each other; without
-   * this prune the optimiser spent all its time proving that.
+   * Two routes whose bounds miss by more than the widest proximity rule (10px,
+   * `nearParallel`) share no defect, so the pair is skipped whole. Most pairs in
+   * a drawing are nowhere near each other, and without this the optimiser spent
+   * all its time proving that.
    */
   const farApart = (a: Bounds, b: Bounds) =>
     a.x2 + 10 < b.x1 || b.x2 + 10 < a.x1 || a.y2 + 10 < b.y1 || b.y2 + 10 < a.y1;
@@ -205,20 +182,16 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
   const pair = (a: string, b: string) => (a < b ? `${a}~${b}` : `${b}~${a}`);
 
   /**
-   * Every defect that involves at least one of `ids`, with `overrides` standing
-   * in for those edges' routes. Defects not touching `ids` cannot change, so
-   * they are not computed — that is what makes this affordable per candidate.
+   * Every defect involving at least one of `ids`, with `overrides` standing in
+   * for those edges' routes. Defects not touching `ids` cannot change, so they
+   * are not computed — that is what makes this affordable per candidate.
    *
-   * `soloOnly` stops before the pairwise phase, returning just the defects a
-   * route has on its own — through a box, a container, a title, a weave. It
-   * exists for one caller: an optimiser rejecting a candidate that gains a
-   * tier-0 defect *by itself* never needs the pairwise phase, and the pairwise
-   * phase is the expensive one (every edge in the drawing, every segment pair).
-   * Sound because the two phases emit disjoint key namespaces, so a solo tier-0
-   * key that appears here appears in the full profile too — a cheap reject can
-   * never differ from the verdict the full profile would have given. It is the
-   * same code either way; a second predicate that meant *almost* this is exactly
-   * the mistake INVARIANTS §3 records.
+   * `soloOnly` stops before the pairwise phase, returning only what a route
+   * costs on its own: through a box, a container, a title, a weave. An optimiser
+   * rejecting a candidate for a solo tier-0 defect never needs the expensive
+   * half (every edge × every segment pair). Sound because the phases emit
+   * disjoint key namespaces, so a solo key here appears in the full profile too
+   * — same code, never a second predicate meaning *almost* this (§3).
    */
   const local = (
     ids: Set<string>,
@@ -278,18 +251,17 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
       }
 
       // ---- Tier 1: can this flow's labels still sit on it? ---------------
-      // Label placement happens after every geometry pass, so a router cannot
-      // evaluate Tier 1 properly. What it *can* check is whether the route it
-      // is proposing leaves each label anywhere to sit that clears the boxes and
-      // titles — a route that strands its own label forces `label-anchor` to
-      // take it off the line, which is the §4d defect.
+      // Labels settle after every geometry pass, so a router cannot judge Tier 1
+      // properly. It can check one thing: does the proposed route leave each
+      // label a seat clear of boxes and titles? A route that strands its own
+      // label forces `label-anchor` to take it off the line — the §4d defect.
       for (const label of edge.labels) {
         if (!label.width || !label.height) continue;
         const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
-        // Mirror `label-anchor`: it tries every run, so testing only the
-        // longest one lets the optimiser choose a route it believes is seatable
-        // and land 12 drawings on `labelOffLine`. Kept allocation-free — this
-        // runs for every candidate of every edge.
+        // Mirror `label-anchor`, which tries every run: testing only the longest
+        // let the optimiser pick a route it believed seatable and landed 12
+        // drawings on `labelOffLine`. Allocation-free — this runs for every
+        // candidate of every edge.
         let seatable = false;
         for (let index = 0; index + 1 < pts.length && !seatable; index++) {
           const p = pts[index];
@@ -316,15 +288,13 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
         if (!seatable) profile.set(`unlabelled:${edge.id}`, 1);
       }
 
-      // A terminal with no room for its arrowhead (§4i). Tier 2: the flow is
-      // still attributable, but its *direction* — which is meaning, not polish —
-      // takes work to read, and a head jammed against the corner feeding it
-      // reads as a line, not an arrow.
+      // A terminal with no room for its arrowhead (§4i). Tier 2: the flow stays
+      // attributable, but a head jammed against its feeding corner reads as a
+      // line, and direction is meaning.
       //
-      // Deliberately scoped to the arrowhead, not to "runs near a container
-      // border". The wider rule was tried and pushed runs off borders straight
-      // onto container *names* — it fought §4e and gained a tier 0 defect on ten
-      // drawings to fix a tier 2 one. Both reported cases were short terminals.
+      // Scoped to the arrowhead, not "runs near a container border": the wider
+      // rule pushed runs off borders onto container *names*, buying a tier-0
+      // defect on ten drawings to fix a tier-2 one.
       for (const [from, to] of [
         [0, 1],
         [pts.length - 1, pts.length - 2],
@@ -424,8 +394,8 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
           }
 
         // Two flows landing on the same point of a node side read as one line.
-        // Reuses the seats already resolved above — `sideOf` scans every leaf,
-        // and calling it four times per pair per candidate dominated the loop.
+        // Reuses the seats resolved above: `sideOf` scans every leaf, and four
+        // calls per pair per candidate dominated the loop.
         const theirEnds = endsFor(other, theirs, overrides.has(other.id));
         for (const [ai, seatA] of ends.entries())
           for (const [bi, seatB] of theirEnds.entries()) {
@@ -438,10 +408,9 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
             if (apart < 6)
               profile.set(`seat:${pair(edge.id, other.id)}@${seatA.node.id}|${seatA.side}`, 0);
             else {
-              // Tier 4: seats closer than the side can comfortably hold. Modelled
-              // because the ladder can only protect what it can see — leaving
-              // this out let the optimiser crowd node sides freely while every
-              // tier it *did* model looked fine.
+              // Tier 4: seats closer than the side comfortably holds. The ladder
+              // protects only what it can see — leaving this out let the
+              // optimiser crowd node sides while every modelled tier looked fine.
               const side = vertical ? seatA.node.height : seatA.node.width;
               const need = Math.min(12, (side - 6) / 2);
               if (apart < need * 0.8)
@@ -457,26 +426,22 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
 }
 
 /**
- * Does `after` beat `before` on the ladder?
+ * Does `after` beat `before` on the ladder? Walks tiers from most to least
+ * important and stops at the first whose defect *set* differs: only losses is an
+ * improvement, and everything below it is fair payment; any gain is refused,
+ * including a gain alongside a loss, which is a defect moving rather than going.
  *
- * Walks the tiers from most to least important and stops at the first one whose
- * defect *set* differs. If that tier only lost defects, the change is an
- * improvement and everything below it is fair payment. If it gained any — even
- * while losing others, which is a defect *moving* rather than going — the change
- * is refused.
- *
- * This is the rule that a count-based test cannot express, and every bug this
- * module exists to prevent came from a count-based test.
+ * A count-based test cannot express that, and every bug this module prevents
+ * came from one.
  */
 export function ladderAccepts(before: Profile, after: Profile): boolean {
   return ladderVerdict(before, after) >= 0;
 }
 
 /**
- * The tier a change pays off at, or -1 if it is not an improvement. Callers that
- * need to know *what* a move bought — not merely that it bought something — use
- * this: a move that only clears eye-travel is not worth risking a label's
- * attribution over, and the tier is the only way to tell the two apart.
+ * The tier a change pays off at, or -1 if it is no improvement. For callers that
+ * need *what* a move bought: clearing eye-travel is not worth risking a label's
+ * attribution, and the tier is the only way to tell those apart.
  */
 export function ladderVerdict(before: Profile, after: Profile): number {
   for (let tier = 0; tier < 5; tier++) {

@@ -125,165 +125,172 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     else reportError("`}` expected to close `" + parent.id + "`", lookAhead().span);
   }
 
-  function parseStatement(parent: Element | null) {
-    if (matchToken("nl")) {
-      advance();
-      return;
-    }
-    if (matchToken("id", "style")) {
-      const savedPosition = position;
-      advance();
-      if (matchToken("lbrace")) {
-        advance();
-        if (parent) {
-          parent.style = parent.style ?? {};
-          parseStyleEntries(null, parent.style);
-        } else parseStyleEntries(model.style, null);
-        return;
-      }
+  /** `style { … }` at any nesting level. Backtracks if `style` isn't
+   *  actually followed by a block, so `style` stays usable as an id elsewhere. */
+  function tryStyleBlock(parent: Element | null): boolean {
+    if (!matchToken("id", "style")) return false;
+    const savedPosition = position;
+    advance();
+    if (!matchToken("lbrace")) {
       position = savedPosition;
+      return false;
     }
-    if (!parent && matchToken("id", "legend")) {
-      const savedPosition = position;
-      advance();
-      if (matchToken("lbrace")) {
-        advance();
-        skipNewlines();
-        while (!matchToken("rbrace") && !matchToken("eof")) {
-          if (matchToken("id", "note")) {
-            advance();
-            if (matchToken("str")) model.legendNotes.push(advance().text);
-            else
-              reportError(
-                "text expected after `note`",
-                lookAhead().span,
-                'e.g. `note "Named-data flows are subject to GDPR"`',
-              );
-          } else {
-            reportError('legend entries are `note "…"` lines', lookAhead().span);
-            syncToNextLine();
-          }
-          skipNewlines();
-        }
-        if (matchToken("rbrace")) advance();
-        else reportError("`}` expected to close the legend block", lookAhead().span);
-        return;
-      }
+    advance();
+    if (parent) {
+      parent.style = parent.style ?? {};
+      parseStyleEntries(null, parent.style);
+    } else parseStyleEntries(model.style, null);
+    return true;
+  }
+
+  /** Top-level `legend { note "…" … }`. Backtracks for the same reason as
+   *  `tryStyleBlock`. */
+  function tryLegendBlock(): boolean {
+    if (!matchToken("id", "legend")) return false;
+    const savedPosition = position;
+    advance();
+    if (!matchToken("lbrace")) {
       position = savedPosition;
+      return false;
     }
-    if (!parent && matchToken("id", "business-object")) {
-      advance();
-      if (!matchToken("id")) {
-        reportError(
-          "identifier expected after `business-object`",
-          lookAhead().span,
-          'e.g. `business-object BO_CMD "Commande" "description"`',
-        );
+    advance();
+    skipNewlines();
+    while (!matchToken("rbrace") && !matchToken("eof")) {
+      if (matchToken("id", "note")) {
+        advance();
+        if (matchToken("str")) model.legendNotes.push(advance().text);
+        else
+          reportError(
+            "text expected after `note`",
+            lookAhead().span,
+            'e.g. `note "Named-data flows are subject to GDPR"`',
+          );
+      } else {
+        reportError('legend entries are `note "…"` lines', lookAhead().span);
         syncToNextLine();
-        return;
       }
-      const idToken = advance();
-      let name = idToken.text,
-        description: string | undefined;
-      if (matchToken("str")) name = advance().text;
-      if (matchToken("str")) description = advance().text;
-      model.businessObjects.push({
-        id: idToken.text,
-        idSpan: idToken.span,
-        name,
-        description,
-      });
-      return;
+      skipNewlines();
     }
+    if (matchToken("rbrace")) advance();
+    else reportError("`}` expected to close the legend block", lookAhead().span);
+    return true;
+  }
+
+  /** Top-level `business-object ID "name" "description"`. No backtrack: once
+   *  the keyword matches, the line commits to this shape. */
+  function tryBusinessObject(): boolean {
+    if (!matchToken("id", "business-object")) return false;
+    advance();
     if (!matchToken("id")) {
-      reportError("declaration expected (element, flow or `style`)", lookAhead().span);
+      reportError(
+        "identifier expected after `business-object`",
+        lookAhead().span,
+        'e.g. `business-object BO_CMD "Commande" "description"`',
+      );
+      syncToNextLine();
+      return true;
+    }
+    const idToken = advance();
+    let name = idToken.text,
+      description: string | undefined;
+    if (matchToken("str")) name = advance().text;
+    if (matchToken("str")) description = advance().text;
+    model.businessObjects.push({
+      id: idToken.text,
+      idSpan: idToken.span,
+      name,
+      description,
+    });
+    return true;
+  }
+
+  /** `ID -> ID : "label" (tech) [objects] { style }`, everything after the
+   *  arrow optional. `sourceToken` is already consumed by the caller. */
+  function parseFlow(sourceToken: Token): void {
+    advance();
+    if (!matchToken("id")) {
+      reportError("target identifier expected after `->`", lookAhead().span);
       syncToNextLine();
       return;
     }
-
-    const sourceToken = advance();
-    if (matchToken("arrow")) {
+    const targetToken = advance();
+    const flow: Flow = {
+      id: "F" + String(++flowSequenceNumber).padStart(2, "0"),
+      from: sourceToken.text,
+      fromSpan: sourceToken.span,
+      to: targetToken.text,
+      toSpan: targetToken.span,
+      span: {
+        line: sourceToken.span.line,
+        col: sourceToken.span.col,
+        len: targetToken.span.col + targetToken.span.len - sourceToken.span.col,
+      },
+    };
+    if (matchToken("colon")) {
       advance();
-      if (!matchToken("id")) {
-        reportError("target identifier expected after `->`", lookAhead().span);
-        syncToNextLine();
-        return;
+      if (matchToken("str")) flow.label = advance().text;
+      else if (
+        !matchToken("lparen") &&
+        !matchToken("lbrack") &&
+        !matchToken("lbrace") &&
+        !matchToken("nl") &&
+        !matchToken("rbrace") &&
+        !matchToken("eof")
+      ) {
+        reportError(
+          "flow label expected after `:`",
+          lookAhead().span,
+          'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`',
+        );
       }
-      const targetToken = advance();
-      const flow: Flow = {
-        id: "F" + String(++flowSequenceNumber).padStart(2, "0"),
-        from: sourceToken.text,
-        fromSpan: sourceToken.span,
-        to: targetToken.text,
-        toSpan: targetToken.span,
-        span: {
-          line: sourceToken.span.line,
-          col: sourceToken.span.col,
-          len: targetToken.span.col + targetToken.span.len - sourceToken.span.col,
-        },
-      };
-      if (matchToken("colon")) {
-        advance();
-        if (matchToken("str")) flow.label = advance().text;
-        else if (
-          !matchToken("lparen") &&
-          !matchToken("lbrack") &&
-          !matchToken("lbrace") &&
-          !matchToken("nl") &&
-          !matchToken("rbrace") &&
-          !matchToken("eof")
-        ) {
-          reportError(
-            "flow label expected after `:`",
-            lookAhead().span,
-            'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`',
-          );
-        }
-      }
-      if (matchToken("lparen")) {
-        const openParen = advance();
-        const values: string[] = [];
-        while ((matchToken("id") || matchToken("num") || matchToken("str")) && values.length < 2) {
-          values.push(advance().text);
-          if (matchToken("comma")) advance();
-        }
-        if (matchToken("rparen")) advance();
-        else
-          reportError(
-            "`)` expected to close the technical attributes",
-            lookAhead().span,
-            'e.g. `A -> B : "Envoi" (SFTP, XML)`',
-          );
-        flow.tech = {
-          protocol: values[0],
-          format: values[1],
-          span: openParen.span,
-        };
-      }
-      if (matchToken("lbrack")) {
-        advance();
-        flow.objects = [];
-        while (matchToken("id")) {
-          const token = advance();
-          flow.objects.push({ id: token.text, span: token.span });
-          if (matchToken("comma")) advance();
-        }
-        if (matchToken("rbrack")) advance();
-        else
-          reportError(
-            "`]` expected to close the business-object list",
-            lookAhead().span,
-            'e.g. `A -> B : "Validation" [BO_CMD]`',
-          );
-      }
-      if (matchToken("lbrace")) {
-        advance();
-        flow.style = {};
-        parseStyleEntries(null, flow.style);
-      }
-      model.flows.push(flow);
-      return;
     }
+    if (matchToken("lparen")) {
+      const openParen = advance();
+      const values: string[] = [];
+      while ((matchToken("id") || matchToken("num") || matchToken("str")) && values.length < 2) {
+        values.push(advance().text);
+        if (matchToken("comma")) advance();
+      }
+      if (matchToken("rparen")) advance();
+      else
+        reportError(
+          "`)` expected to close the technical attributes",
+          lookAhead().span,
+          'e.g. `A -> B : "Envoi" (SFTP, XML)`',
+        );
+      flow.tech = {
+        protocol: values[0],
+        format: values[1],
+        span: openParen.span,
+      };
+    }
+    if (matchToken("lbrack")) {
+      advance();
+      flow.objects = [];
+      while (matchToken("id")) {
+        const token = advance();
+        flow.objects.push({ id: token.text, span: token.span });
+        if (matchToken("comma")) advance();
+      }
+      if (matchToken("rbrack")) advance();
+      else
+        reportError(
+          "`]` expected to close the business-object list",
+          lookAhead().span,
+          'e.g. `A -> B : "Validation" [BO_CMD]`',
+        );
+    }
+    if (matchToken("lbrace")) {
+      advance();
+      flow.style = {};
+      parseStyleEntries(null, flow.style);
+    }
+    model.flows.push(flow);
+  }
+
+  /** `<kind> ID "label" (attr) { … }`, everything after the id optional.
+   *  `sourceToken` (the kind) is already consumed by the caller. */
+  function parseElement(sourceToken: Token, parent: Element | null): void {
     if (!matchToken("id")) {
       reportError(
         `invalid declaration: \`${sourceToken.text}\` alone on this line`,
@@ -332,6 +339,31 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     (parent ? parent.children : model.elements).push(element);
   }
 
+  /** Everything else: `ID -> ID : …` flows and `<kind> ID "label" { … }`
+   *  elements. The two share their leading identifier, so they are one
+   *  grammar production, not two. */
+  function parseFlowOrElement(parent: Element | null): void {
+    if (!matchToken("id")) {
+      reportError("declaration expected (element, flow or `style`)", lookAhead().span);
+      syncToNextLine();
+      return;
+    }
+    const sourceToken = advance();
+    if (matchToken("arrow")) parseFlow(sourceToken);
+    else parseElement(sourceToken, parent);
+  }
+
+  function parseStatement(parent: Element | null) {
+    if (matchToken("nl")) {
+      advance();
+      return;
+    }
+    if (tryStyleBlock(parent)) return;
+    if (!parent && tryLegendBlock()) return;
+    if (!parent && tryBusinessObject()) return;
+    parseFlowOrElement(parent);
+  }
+
   skipNewlines();
   while (!matchToken("eof")) {
     parseStatement(null);
@@ -348,6 +380,117 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
 const LINE_STYLES = new Set(["solid", "dashed", "dotted"]);
 const LABEL_POSITIONS = new Set(["on-line", "above", "below"]);
 const DISPOSITIONS = new Set(["wide", "tall", "slide", "page"]);
+
+/** The shape every uniform-looking `key: value` style property shares:
+ *  read one token of the given kind, check it against an allowed set (if
+ *  any), assign it or report the expected form. Properties that don't fit —
+ *  multi-token values, side effects, or a nested `kind` target — stay as
+ *  explicit `switch` cases below. */
+interface UniformStyleEntry {
+  kind: "id" | "color";
+  allowed?: ReadonlySet<string>;
+  assign: (target: DiagramStyle, value: Token) => void;
+  expected: string;
+}
+
+const UNIFORM_STYLE_ENTRIES: Record<string, UniformStyleEntry> = {
+  "crossing-hops": {
+    kind: "id",
+    allowed: new Set(["on", "off"]),
+    assign: (target, value) => {
+      target.crossingHops = value.text === "on";
+    },
+    expected: "`on` or `off`",
+  },
+  compact: {
+    kind: "id",
+    allowed: new Set(["on", "off"]),
+    assign: (target, value) => {
+      target.compact = value.text === "on";
+    },
+    expected: "`on` or `off`",
+  },
+  arrows: {
+    kind: "id",
+    allowed: new Set(["normal", "large"]),
+    assign: (target, value) => {
+      target.arrows = value.text as DiagramStyle["arrows"];
+    },
+    expected: "`normal` or `large`",
+  },
+  "flow-color": {
+    kind: "id",
+    allowed: new Set(["none", "by-source"]),
+    assign: (target, value) => {
+      target.flowColor = value.text as DiagramStyle["flowColor"];
+    },
+    expected: "`none` or `by-source`",
+  },
+  disposition: {
+    kind: "id",
+    allowed: DISPOSITIONS,
+    assign: (target, value) => {
+      target.disposition = value.text as DiagramStyle["disposition"];
+    },
+    expected:
+      "`wide` (elongated horizontal), `tall` (elongated vertical), `slide` (balanced 16:9), `page` (balanced A4 portrait)",
+  },
+  legend: {
+    kind: "id",
+    allowed: new Set(["auto", "off"]),
+    assign: (target, value) => {
+      target.legend = value.text as DiagramStyle["legend"];
+    },
+    expected: "`auto` or `off`",
+  },
+  "flow-text": {
+    kind: "id",
+    allowed: new Set(["full", "numbered"]),
+    assign: (target, value) => {
+      target.flowText = value.text as DiagramStyle["flowText"];
+    },
+    expected:
+      "`full` (labels on arrows) or `numbered` (number badges + FLUX table below the diagram)",
+  },
+  "flow-label": {
+    kind: "id",
+    allowed: LABEL_POSITIONS,
+    assign: (target, value) => {
+      target.flowLabel = value.text as DiagramStyle["flowLabel"];
+    },
+    expected: "`on-line`, `above` or `below`",
+  },
+  theme: {
+    kind: "id",
+    allowed: new Set(themeNames),
+    assign: (target, value) => {
+      target.theme = value.text;
+    },
+    expected: "`" + themeNames.join("` | `") + "`",
+  },
+  accent: {
+    kind: "color",
+    assign: (target, value) => {
+      target.accent = value.text;
+    },
+    expected: "`#hex` color (retints flows on top of the theme)",
+  },
+  lang: {
+    kind: "id",
+    allowed: new Set(["en", "fr"]),
+    assign: (target, value) => {
+      target.lang = value.text as DiagramStyle["lang"];
+    },
+    expected: "`en` or `fr` (localizes rendered labels; keywords stay English)",
+  },
+  background: {
+    kind: "color",
+    assign: (target, value) => {
+      target.background = value.text;
+    },
+    expected: "`#hex` color (canvas background)",
+  },
+};
 
 function applyStyleEntry(
   key: Token,
@@ -414,104 +557,19 @@ function applyStyleEntry(
     return;
   }
   if (!target) return;
+  const uniform = UNIFORM_STYLE_ENTRIES[keyText];
+  if (uniform) {
+    const value = firstValue();
+    if (value?.kind === uniform.kind && (!uniform.allowed || uniform.allowed.has(value.text)))
+      uniform.assign(target, value);
+    else reportBadValue(value ?? key, uniform.expected);
+    return;
+  }
   switch (keyText) {
-    case "crossing-hops": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "on" || value.text === "off"))
-        target.crossingHops = value.text === "on";
-      else reportBadValue(value ?? key, "`on` or `off`");
-      break;
-    }
-    case "compact": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "on" || value.text === "off"))
-        target.compact = value.text === "on";
-      else reportBadValue(value ?? key, "`on` or `off`");
-      break;
-    }
-    case "arrows": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "normal" || value.text === "large"))
-        target.arrows = value.text as DiagramStyle["arrows"];
-      else reportBadValue(value ?? key, "`normal` or `large`");
-      break;
-    }
-    case "flow-color": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "none" || value.text === "by-source"))
-        target.flowColor = value.text as DiagramStyle["flowColor"];
-      else reportBadValue(value ?? key, "`none` or `by-source`");
-      break;
-    }
-    case "disposition": {
-      const value = firstValue();
-      if (value?.kind === "id" && DISPOSITIONS.has(value.text))
-        target.disposition = value.text as DiagramStyle["disposition"];
-      else
-        reportBadValue(
-          value ?? key,
-          "`wide` (elongated horizontal), `tall` (elongated vertical), `slide` (balanced 16:9), `page` (balanced A4 portrait)",
-        );
-      break;
-    }
-    case "legend": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "auto" || value.text === "off"))
-        target.legend = value.text as DiagramStyle["legend"];
-      else reportBadValue(value ?? key, "`auto` or `off`");
-      break;
-    }
-    case "flow-text": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "full" || value.text === "numbered"))
-        target.flowText = value.text as DiagramStyle["flowText"];
-      else
-        reportBadValue(
-          value ?? key,
-          "`full` (labels on arrows) or `numbered` (number badges + FLUX table below the diagram)",
-        );
-      break;
-    }
-    case "flow-label": {
-      const value = firstValue();
-      if (value?.kind === "id" && LABEL_POSITIONS.has(value.text))
-        target.flowLabel = value.text as DiagramStyle["flowLabel"];
-      else reportBadValue(value ?? key, "`on-line`, `above` or `below`");
-      break;
-    }
     case "flow-stroke": {
       const stroke = extractStroke(values, key.span);
       target.flowStroke = { ...target.flowStroke, ...stroke };
       if (stroke.color) target.flowStrokeColorSet = true;
-      break;
-    }
-    case "theme": {
-      const value = firstValue();
-      if (value?.kind === "id" && themeNames.includes(value.text)) target.theme = value.text;
-      else reportBadValue(value ?? key, "`" + themeNames.join("` | `") + "`");
-      break;
-    }
-    case "accent": {
-      const value = firstValue();
-      if (value?.kind === "color") target.accent = value.text;
-      else reportBadValue(value ?? key, "`#hex` color (retints flows on top of the theme)");
-      break;
-    }
-    case "lang": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "en" || value.text === "fr"))
-        target.lang = value.text as DiagramStyle["lang"];
-      else
-        reportBadValue(
-          value ?? key,
-          "`en` or `fr` (localizes rendered labels; keywords stay English)",
-        );
-      break;
-    }
-    case "background": {
-      const value = firstValue();
-      if (value?.kind === "color") target.background = value.text;
-      else reportBadValue(value ?? key, "`#hex` color (canvas background)");
       break;
     }
     case "fill": {

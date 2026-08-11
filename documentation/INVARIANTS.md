@@ -2,6 +2,79 @@
 
 These invariants must never be broken. Every change is verified against them.
 
+## Contents
+
+- [At a glance](#at-a-glance) — what enforces what
+- [1. Zero label overlaps](#1-zero-label-overlaps)
+- [2. Byte-deterministic output](#2-byte-deterministic-output)
+- [3. Readability is gated by `npm run sweep`](#3-readability-is-gated-by-npm-run-sweep)
+  - [A guard must measure what the invariant measures](#a-guard-must-measure-what-the-invariant-measures)
+- [4. Flow labels](#4-flow-labels)
+  - [4a. Every label belongs to a visible flow](#4a-every-label-belongs-to-a-visible-flow)
+  - [4b. Flows leaving one node side must not tangle in its fan](#4b-flows-leaving-one-node-side-must-not-tangle-in-its-fan)
+  - [4c. A flow's terminals face its counterpart](#4c-a-flows-terminals-face-its-counterpart)
+  - [4d. Labels sit **on** their flow, never beside it](#4d-labels-sit-on-their-flow-never-beside-it)
+  - [4e. Nothing is drawn across a container's name](#4e-nothing-is-drawn-across-a-containers-name)
+  - [4f. Corridor risers nest, they do not interleave](#4f-corridor-risers-nest-they-do-not-interleave)
+  - [4g. A flow does not weave](#4g-a-flow-does-not-weave)
+  - [4h. A run only crosses containers it belongs to](#4h-a-run-only-crosses-containers-it-belongs-to)
+  - [4i. An arrowhead has room to read as an arrow](#4i-an-arrowhead-has-room-to-read-as-an-arrow)
+  - [4j. The run a label sits on is the only run under its words](#4j-the-run-a-label-sits-on-is-the-only-run-under-its-words)
+- [5. Security](#5-security)
+- [6. Diagnostics are coded, never thrown](#6-diagnostics-are-coded-never-thrown)
+- [7. Nesting rules](#7-nesting-rules)
+- [8. Every flow is a distinct edge](#8-every-flow-is-a-distinct-edge)
+- [9. Layout reading order](#9-layout-reading-order)
+- [10. Slide / page orientation](#10-slide--page-orientation)
+- [11. Backward flow rerouting](#11-backward-flow-rerouting)
+- [12. Element kind validity per view](#12-element-kind-validity-per-view)
+- [13. `cairn new` must not overwrite files](#13-cairn-new-must-not-overwrite-files)
+- [14. Snapshot & corpus gates](#14-snapshot--corpus-gates)
+- [15. Flow matrix export invariants](#15-flow-matrix-export-invariants)
+- [16. Flow positioning is blind to the DSL](#16-flow-positioning-is-blind-to-the-dsl)
+
+## At a glance
+
+Four kinds of gate hold this document up. Knowing which one holds a rule tells
+you what a violation looks like when you cause one.
+
+| Gate | What it does when broken |
+|---|---|
+| **zero** | `npm run sweep` fails on the first occurrence, at any count |
+| **ratchet** | a rate ceiling in `scripts/sweep.ts` fails; ceilings only ever fall |
+| **reference** | a committed digest, baseline or snapshot stops matching |
+| **test** | a case in `tests/*.test.ts` fails |
+| **structural** | the code cannot express the violation — types or imports forbid it |
+
+| # | Invariant | Enforced in | Gate |
+|---:|---|---|---|
+| 1 | Zero label overlaps | `svg-render` label settling | zero |
+| 2 | Byte-deterministic output | arithmetic discipline in the output path | reference (`corpus.digest`, snapshots) |
+| 3 | Readability gated by the sweep | every geometry pass | zero + ratchet + `readability.baseline` |
+| 4 | Flow labels required and attributable (§4a–§4j) | `validator`, `label-anchor`, `edge-tidy`, `svg-render` | zero (`labelAdrift`) + ratchet |
+| 5 | User text escaped, reserved keys rejected | `xml-escape`, `parser` | test |
+| 6 | Diagnostics are coded, never thrown | `parser`, `validator` | test |
+| 7 | Nesting rules per view | `validator` (`E0210–E0218`, `E0202`, `E0220`, `E0222`) | test |
+| 8 | Every flow is a distinct edge | `scene-layout`, `edge-tidy` | zero (`coincident`) + test |
+| 9 | Layout reading order | `scene-layout` partitions | test |
+| 10 | Slide landscape, page portrait | `scene-layout` | test |
+| 11 | Backward flows rerouted, never left wrapped | `route-detour`, `edge-tidy` §4c | ratchet (`attachAway`) + test |
+| 12 | Element kind validity per view | `validator` (`E0201`) | test |
+| 13 | `cairn new` never overwrites | `cli.ts` (`wx` = `O_CREAT\|O_EXCL`) | test |
+| 14 | Snapshot & corpus gates | `tests/corpus.ts` | reference |
+| 15 | Flow matrix export | `flow-matrix` | reference + test |
+| 16 | Flow positioning is blind to the DSL | `edge-tidy`, `route-detour`, `label-anchor`, `compact`, `readability` | structural + test |
+
+Two rules cut across all of them:
+
+- **Never re-approve a reference to go green.** Digests, snapshots, ceilings and
+  the per-drawing baseline move only when the change that moved them is
+  understood and attributed (§3, §14).
+- **A guard must measure what the invariant measures.** Where a pass avoids a
+  defect and the sweep counts it, both must use the same predicate — the
+  mismatch is invisible in code review and has cost four debugging sessions
+  (§3).
+
 ## 1. Zero label overlaps
 
 Every example builds with `label overlaps: 0` (CI-gated).
@@ -42,7 +115,7 @@ at tier N only if it improved at a tier that matters more, and the sweep reports
 those separately as accepted trades. Tier 0 has nothing above it, so nothing
 ever buys a tier 0 regression — metrics in MUST_BE_ZERO are checked unconditionally,
 while tier-0 ratchets (throughContainer, titleStruck, labelPierced) are gated by their ceilings.
-[`FLOW_ROUTING.md`](FLOW_ROUTING.md) explains the
+[`internals/ROUTING.md`](internals/ROUTING.md) explains the
 ladder and [`LADDER.md`](LADDER.md) documents its
 implementation — what every metric measures, its tier, and which of the three
 gates holds it; [`../tests/README.md`](../tests/README.md) explains how the gates fit
@@ -466,3 +539,39 @@ don't understand.
 The matrix (csv/md/svg) splits protocol from port, annotates each endpoint with
 its network zone (infrastructure), and localises headers via `style { lang: fr
 }`. Matrix output is byte-deterministic like SVG.
+
+## 16. Flow positioning is blind to the DSL
+
+Everything that moves a flow — `edge-tidy`, `route-detour`, `label-anchor`,
+`compact`, and the `readability` metrics that judge them — sees **geometry
+only**. No pass branches on an element kind (`actor`, `datastore`,
+`trust-zone`, …) or on a view name (`logical`, `application`, …).
+
+DSL meaning enters at exactly one place: `scene-layout`, which reads the
+`views` registry to decide partitions and reading order (§9, §12). From the
+moment a `Scene` exists, a node is a box with an id and a `container` flag, and
+a flow is a polyline. `SceneNode` still carries `kind`, because the renderer
+needs it to pick a shape — the invariant is that no *positioning* pass reads
+it.
+
+This is what makes the pipeline extensible in the way
+[`ARCHITECTURE.md`](./ARCHITECTURE.md) §4 claims: adding a view or an element
+kind is one registry entry and touches no routing code. The moment a router
+special-cases a kind, every ratchet in `scripts/sweep.ts` becomes a measurement
+of that special case rather than of the layout rules, and a new view inherits
+none of the tuning.
+
+Enforced structurally and by test:
+
+- `edge-tidy`, `label-anchor`, `compact` and `readability` import nothing but
+  `scene-layout` types and `geometry` — they *cannot* see a kind.
+- `route-detour` is the one pass importing `Model`, and only for style and
+  metrics: `model.style.font.size`, `model.style.compact`, and `model.flows`
+  for numbering. Never a kind.
+- `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
+  registry appears in those sources, so the check covers kinds added later.
+
+Not to be confused with declaration-order independence, which does **not**
+hold: reversing the flow declarations in `logical-archi.cairn` moves 48 path
+segments and 60 node boxes, because elk orders its layers by edge insertion.
+That is a known limitation, not a guarantee.

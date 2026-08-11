@@ -7,7 +7,7 @@ short; this document is where the detail it points to lives.
 ## 1. What cairn is and isn't
 
 A diagram-as-code CLI for enterprise-architecture views — `logical`,
-`application`, `infrastructure`, `security` — rendered to SVG, plus an
+`application`, `infrastructure` — rendered to SVG, plus an
 infrastructure *flow matrix* export. It sells **dense
 diagrams that stay readable**: overlap-free labels, typed views, deterministic
 output. It is not a general diagramming tool — for flowcharts, sequence, or
@@ -33,7 +33,7 @@ than aborting the pipeline — see §5.
 | 4a. Reroute | [`route-detour.ts`](../src/route-detour.ts) | `Scene` → `Scene` | No-op (byte-identical) when no edge qualifies as a wrap-around detour |
 | 4b. Tidy | [`edge-tidy.ts`](../src/edge-tidy.ts) | `Scene` → `Scene` | Every flow individually traceable: collapses sub-pixel jogs, separates flows sharing a node side to `MIN_ATTACH_GAP` |
 | 4c. Compact | [`compact.ts`](../src/compact.ts) | `Scene` → `Scene` | Removes only bands with zero pinning content (no node, label, or horizontal segment) — never distorts a container or reintroduces an overlap |
-| 5. Render | [`svg-render.ts`](../src/svg-render.ts) | `Scene` → `string` (SVG) | All text through `esc()`/`escAttr()`; byte-identical across runs and platforms |
+| 5. Render | [`svg-render.ts`](../src/svg-render.ts) | `Scene` → `string` (SVG) | All text through `esc()`/`escAttr()`; byte-identical across runs and platforms. Not pure rendering: also settles final label positions and, for repaired routes, writes `edge.pts = edge.repairedFrom!` before emitting — the last geometry mutation happens here, not in stage 4b |
 
 `scripts/sweep.ts` runs stages 1–5 over every example × every disposition and
 counts violations of the invariants stages 4–4c exist to guarantee — see §5.

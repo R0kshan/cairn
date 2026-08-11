@@ -59,11 +59,10 @@ export interface SceneLabel extends Box {
   flowId: string;
   text: string;
   /**
-   * Height of the *text* rows inside the box, which sit at its top; a
-   * protocol line and business-object chips fill the rest below them. Seating a
-   * label on its run means centring this, not the box — centre the box and the
-   * run lands between the text and the chip, which is neither on the line nor
-   * under it. 0 when the label is chips only.
+   * Height of the *text* rows, which sit at the top of the box; a protocol line
+   * and chips fill the rest. Seating a label on its run means centring this, not
+   * the box — centre the box and the run lands between text and chip, which is
+   * neither on the line nor under it. 0 for a chips-only label.
    */
   textH: number;
 }
@@ -91,12 +90,10 @@ export interface Scene {
   edges: SceneEdge[];
   layoutMs: number;
   /**
-   * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept.
-   *
-   * The renderer audits those repairs for label collateral the router could not
-   * see, and the ladder's rule for that is "a loss at tier T is payable only by
-   * a gain at a tier strictly better than T" — so the audit has to know what
-   * the repair bought. Absent when nothing was repaired.
+   * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept. The
+   * renderer audits those repairs for label collateral the router could not see,
+   * and "a loss at tier T is payable only by a gain at a better tier" needs to
+   * know what the repair bought. Absent when nothing was repaired.
    */
   repairTier?: number;
 }
@@ -258,16 +255,14 @@ function collectSceneEdges(
 }
 
 /**
- * Mirrors a scene across the diagonal. `route-detour` reasons in one
- * orientation — flows run right-to-left and channels sit above or below. A
- * DOWN layout is the same problem rotated: its backward flows run bottom-to-top
- * and want channels to the left or right. Transposing in and out lets it run
- * through the very same rules (and the same gated invariants) instead of a
- * second, parallel implementation.
+ * Mirrors a scene across the diagonal. `route-detour` reasons in one orientation
+ * — flows right-to-left, channels above or below — and a DOWN layout is that
+ * problem rotated. Transposing in and out reuses the same rules and gated
+ * invariants instead of a second implementation.
  *
- * Label boxes swap with everything else on the way in, so lane spacing budgets
- * a label's width where the drawing needs width; the text itself is never
- * rotated, which is why title bands are computed before transposing.
+ * Label boxes swap with everything else on the way in, so lane spacing budgets a
+ * label's width where the drawing needs width. The text itself never rotates,
+ * which is why title bands are computed before transposing.
  */
 function transpose(scene: Scene, titleBoxes: TitleBox[]): void {
   for (const node of scene.nodes) {
@@ -324,16 +319,15 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
 }
 
 /**
- * Defects the sweep gates on that the house ladder deliberately does not
- * model, keyed for the same set-based verdict so `ladderAccepts` can judge a
- * wholesale relayout the way the gate will. Two blind spots, both deliberate
- * router design (readability.ts): the ladder's `hug:` is the §4i arrowhead
- * rule — leaf-only, 8px/12px — while the sweep's `sideHug` covers containers
- * at 3px/24px; and its `title:` checks runs only, never labels, while the
- * sweep's `titleStruck` covers both. A router choosing per-edge candidates can
- * afford those omissions; a verdict choosing between two whole layouts cannot
- * — the constrained pass was buying attachAway fixes with container-side hugs
- * and labels parked on title bands it could not see.
+ * Defects the sweep gates on that the house ladder deliberately does not model,
+ * keyed for the same set-based verdict so `ladderAccepts` judges a wholesale
+ * relayout the way the gate will. Two blind spots, both deliberate router design
+ * (`readability.ts`): `hug:` is the §4i arrowhead rule, leaf-only at 8px/12px,
+ * while the sweep's `sideHug` covers containers at 3px/24px; and `title:` checks
+ * runs only while `titleStruck` covers labels too. A router picking per-edge
+ * candidates can afford that; a choice between two whole layouts cannot — the
+ * constrained pass was buying attachAway fixes with container hugs and labels
+ * parked on title bands it could not see.
  */
 function selectionExtras(scene: Scene, model: Model): Profile {
   const extra: Profile = new Map();
@@ -374,16 +368,14 @@ function selectionExtras(scene: Scene, model: Model): Profile {
 }
 
 /**
- * The ladder's verdict, adapted to a whole-layout choice. `ladderVerdict`
- * keys defects by identity *and position* — right for a router moving one
- * edge, where a moved crossing is a new one; wrong for choosing between two
- * complete layouts, where every coordinate shifts a few px and the same
- * crossing between the same pair reads as gained at one address and lost at
- * another, which refuses every relayout outright. Identity here is the defect
- * kind and its participants — positions and segment indices dropped — with
- * multiplicity kept as a count, so a pair gaining a *second* crossing is
- * still a gain. The rule is unchanged: walk tiers, refuse on any gain,
- * accept at the first tier that only lost.
+ * The ladder's verdict, adapted to a whole-layout choice. `ladderVerdict` keys
+ * defects by identity *and position* — right for a router moving one edge, where
+ * a moved crossing is a new one; wrong between two complete layouts, where every
+ * coordinate shifts a few px and one crossing reads as gained at one address and
+ * lost at another, refusing every relayout. Identity here drops positions and
+ * segment indices, keeping multiplicity as a count so a pair gaining a *second*
+ * crossing is still a gain. The rule is unchanged: walk tiers, refuse on any
+ * gain, accept at the first tier that only lost.
  */
 function relayoutVerdict(before: Profile, after: Profile): number {
   const normalize = (key: string) => key.replace(/@[-\d.,]+$/, "").replace(/:\d+(?=@|$)/, "");
@@ -418,19 +410,15 @@ function relayoutVerdict(before: Profile, after: Profile): number {
 }
 
 /**
- * Rebuild `graph` with explicit ports on the nodes `flagged` flows touch, so
- * elk routes them out the side *facing* the counterpart instead of wrapping
- * around the drawing's far margin. elk's default for a backward flow in a
- * layered layout is to follow the main direction and loop around the outside,
- * which is how a route comes to depart away from its target and arrive from
- * beyond it (`attachAway`) — the population `route-detour` only claims once
- * it is wasteful enough, leaving the merely-bad to the wrap.
+ * Rebuild `graph` with explicit ports on the nodes `flagged` flows touch, so elk
+ * routes them out the side *facing* the counterpart. elk's default for a
+ * backward flow in a layered layout is to loop around the outside, departing
+ * away from its target and arriving from beyond it (`attachAway`).
  *
- * `elk.port.side` is honored only at `FIXED_SIDE` or stricter, which
- * constrains every edge of the node — so every incident flow gets a port:
- * flagged ones face their counterpart (measured on the first-pass scene),
- * unflagged ones keep the side elk itself chose in the first pass, so a good
- * route is not disturbed to fix a bad one.
+ * `elk.port.side` is honored only at `FIXED_SIDE` or stricter, which constrains
+ * every edge of the node — so every incident flow gets a port: flagged ones face
+ * their counterpart (measured on the first-pass scene), unflagged ones keep the
+ * side elk already chose, so a good route is not disturbed to fix a bad one.
  */
 function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, model: Model): void {
   type Side = "NORTH" | "SOUTH" | "EAST" | "WEST";
@@ -664,12 +652,11 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     if (sideways) transpose(scene, titleBoxes);
     rerouteDetours(scene, model, numbered, titleBoxes);
     if (sideways) transpose(scene, titleBoxes);
-    // `rerouteDetours` shifts the whole scene when a top-channel lane sits
-    // above y=0 (its shift-down block at the end), so the boxes measured
-    // before it are stale by that amount. Handing them to `tidyEdges` makes
-    // its re-side pass accept runs that strike titles where they now are —
-    // measured on logical-fr/slide, where §4c sent F19's L through a band
-    // it could not see. Re-derive before any pass that reads them.
+    // `rerouteDetours` shifts the whole scene when a top-channel lane sits above
+    // y=0, so boxes measured before it are stale by that amount. Handing those
+    // to `tidyEdges` makes its re-side pass accept runs that strike titles where
+    // they now are — on logical-fr/slide, §4c sent F19's L through a band it
+    // could not see. Re-derive before any pass that reads them.
     const routedTitles = titleBoxesOf(scene, model);
     // Straighten routing noise and separate flows sharing a node side, for
     // every edge — elk's as much as the rerouted ones.
@@ -682,47 +669,34 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // disposition, since elk leaves spare corridors whether or not the reroute
     // above moved anything.
     compactVertical(scene);
-    // Route repair runs *after* compaction, not before it. `compact` shifts
-    // every y through a monotone map, which shrinks the gaps a route was judged
-    // on — so an optimiser placed above it validates geometry that compaction
-    // then narrows into near-parallel runs, tight attachments and micro-jogs.
-    // The optimiser is the last pass that *re-routes*: the only pass below it
-    // that moves edge geometry is the attachment spread after the ladder, and
-    // that one only slides terminals along a side they already sit on.
-    //
-    // Title boxes are re-derived here, not reused. The set captured above was
-    // measured before `compactVertical`, which shifts every y through a monotone
-    // map and therefore moves the containers whose names those boxes describe.
-    // Handing the stale set to a pass that runs *after* compaction makes it
-    // dodge the bands where they used to be and strike them where they now are —
-    // which is exactly what `titleStruck` reported on 17 drawings, all of them
-    // tier 0 regressions the router believed it was refusing.
-    //
-    // A route change can cost a *different* flow's label its seat: the anchorer
-    // resolves the collisions a move creates by taking some label off its run,
-    // and which one it picks cannot be predicted from the moved edge alone. So
-    // the repair is allowed to try, and then audited — any flow whose label was
-    // on its run before and is not after has its route put back. That keeps the
-    // ladder's rule (a Tier 1 loss is only ever bought by a Tier 0 gain)
-    // without refusing every move that merely *might* cost a label.
-    // Deep copy: `optimiseRoutes` finishes by squaring every edge, which mutates
-    // Point objects in place, so a shallow snapshot is not a snapshot.
+    // The repair is tried and then audited, not refused outright: a route change
+    // can cost a *different* flow's label its seat, so any flow whose label was
+    // on its run before and is not after is put back. That keeps the ladder's
+    // rule (a Tier 1 loss is bought only by a Tier 0 gain) without refusing every
+    // move that merely *might* cost a label. Deep copy — `optimiseRoutes` squares
+    // every edge in place, so a shallow snapshot is not a snapshot.
     const routesBefore = new Map(
       scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))]),
     );
+    // Re-derived, not reused: the boxes above predate `compactVertical`, which
+    // moves every container's y. Reusing them made a later pass dodge bands
+    // where they used to be and strike them where they now are — 17 drawings
+    // reported `titleStruck` before this was fixed.
     const settledTitles = titleBoxesOf(scene, model);
+    // After compaction, not before: `compact` shrinks the gaps a route is judged
+    // on, so validating above it judges geometry that compaction then narrows
+    // into near-parallel runs and micro-jogs. Last pass that re-routes — only
+    // the spread below still moves geometry, along a side its terminal sits on.
     optimiseRoutes(scene, settledTitles);
     // The ladder trades a lower-tier win for a tier-4 `tight` when every seat
     // it can reach sits within `MIN_ATTACH_GAP` of a sibling — honest, but it
     // leaves the side crowded. The same spread that ran inside `tidyEdges`
     // runs here again, after the pass that re-crowds.
     spreadAttachments(scene);
-    // Record *every* edge the repair moved. Restricting this to edges whose
-    // label was seated beforehand made the rollback partial — the renderer put
-    // some flows back while leaving the rest where the optimiser had moved them,
-    // and a drawing that is half repaired is not a drawing either pass ever
-    // evaluated. That mixture is what produced `coincident` runs, a must-be-zero
-    // breach. Whether the repair was worth keeping is judged whole-drawing in
+    // Record *every* edge the repair moved. Restricting it to edges whose label
+    // was seated beforehand made the rollback partial, leaving a drawing half
+    // repaired — a state neither pass ever evaluated, and the source of
+    // `coincident` runs, a must-be-zero breach. Worth is judged whole-drawing in
     // the renderer; this only has to make the undo complete.
     for (const edge of scene.edges) {
       const original = routesBefore.get(edge.id);
@@ -736,21 +710,18 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         );
       if (moved) edge.repairedFrom = original;
     }
-    // `compactVertical` shrank the gaps the side-clearance pass judged, so a
-    // run that cleared its sides before compaction can hug one after it. Run
-    // the clearance *after* the repair recording so the hug fix is not swept
-    // into the renderer's batch audit and reverted as collateral of an
-    // unrelated optimiser trade — measured on application-large-fr/wide, F19's
-    // hug fix at y=445 was batch-reverted to y=451 because another edge's label
-    // harm outweighed it. Moved here, the fix is permanent; it is present in
-    // both audit states, so the renderer's batch comparison is unaffected.
+    // `compactVertical` shrank the gaps this pass judges, so a run that cleared
+    // its sides before compaction can hug one after. Placed *after* the repair
+    // recording so the hug fix is not swept into the renderer's batch audit and
+    // reverted as collateral — on application-large-fr/wide, F19's fix at y=445
+    // was batch-reverted to y=451 over another edge's label harm. Here it is in
+    // both audit states, so the comparison is unaffected and the fix permanent.
     clearSideHugs(scene, settledTitles);
     anchorFlowLabels(scene, settledTitles);
-    // Adjacent-edge crossings between two flows seated on the same leaf side,
-    // further out than the §4b fan can see, are swapped here for the same
-    // reason clearSideHugs runs here: outside the renderer's batch audit so an
-    // unrelated optimiser trade cannot revert the swap. Strict gate — only
-    // swaps that strictly remove a crossing without shuffling it elsewhere.
+    // Crossings between two flows on the same leaf side, further out than the
+    // §4b fan can see. Here for the same reason as `clearSideHugs`: outside the
+    // renderer's batch audit, so an unrelated optimiser trade cannot revert the
+    // swap. Only swaps that remove a crossing without shuffling it elsewhere.
     swapCrossingSiblingSeats(scene);
     return scene;
   };
@@ -826,16 +797,13 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const skipPortPass = !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
     .process?.env?.CAIRN_NO_PORT_PASS;
   if (!away.size || skipPortPass) return scene;
-  // elk's default for a backward flow is to follow the main direction and
-  // wrap around the drawing's far margin; `route-detour` only claims the
-  // routes wasteful enough to deserve a channel, leaving the merely-bad to
-  // the wrap. Re-run the winning config with those flows pinned to ports
-  // facing their counterpart. The trade is judged by the house ladder, not by
-  // the metric being fixed: a wholesale relayout that clears wrong-side
-  // departures but strikes a title or merges a run is refused, the way
-  // `optimiseRoutes` refuses its own bad trades. Strictly opportunistic:
-  // port constraints hit an elk-internal scanline bug on some models, so a
-  // crash here just keeps the first pass.
+  // `route-detour` only claims the wrap-arounds wasteful enough to deserve a
+  // channel, leaving the merely-bad wrapped. Re-run the winning config with
+  // those flows pinned to ports facing their counterpart, judged by the house
+  // ladder rather than the metric being fixed: a relayout that clears wrong-side
+  // departures but strikes a title or merges a run is refused. Opportunistic —
+  // port constraints hit an elk scanline bug on some models, so a crash here
+  // just keeps the first pass.
   try {
     const constrained = makeGraph(winnerDirection, winnerOptions);
     constrainPorts(constrained, scene, away, model);

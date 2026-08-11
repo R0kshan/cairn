@@ -28,9 +28,33 @@
         "noExcessiveCognitiveComplexity": {
           "level": "warn",
           "options": { "maxAllowedComplexity": 60 }
+        },
+        "noExcessiveLinesPerFunction": {
+          "level": "warn",
+          "options": { "maxLines": 150, "skipBlankLines": true }
+        },
+        "useMaxParams": {
+          "level": "warn",
+          "options": { "max": 4 }
         }
       }
     }
   },
-  "assist": { "actions": { "source": { "organizeImports": "off" } } }
+  "assist": { "actions": { "source": { "organizeImports": "off" } } },
+  "overrides": [
+    {
+      "includes": ["tests/**/*.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "useMaxParams": "off",
+            "noExcessiveCognitiveComplexity": {
+              "level": "warn",
+              "options": { "maxAllowedComplexity": 100 }
+            }
+          }
+        }
+      }
+    }
+  ]
 }
