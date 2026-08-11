@@ -90,7 +90,7 @@
 <text x="49" y="393" font-size="11" text-anchor="start" fill="#444">Serveur de base de données (Zone de données)</text>
 <text x="347" y="393" font-size="11" text-anchor="start" fill="#444">Serveur de sauvegarde (Zone de données)</text>
 <text x="614" y="393" font-size="11" text-anchor="start" fill="#444">TCP</text>
-<text x="711.5" y="393" font-size="11" text-anchor="middle" fill="#444">9092</text>
+<text x="711.5" y="393" font-size="11" text-anchor="middle" fill="#444">5432</text>
 <text x="747" y="393" font-size="11" text-anchor="start" fill="#444"></text>
 <line x1="39" y1="34" x2="39" y2="402" stroke="#ddd" stroke-width="1"/>
 <line x1="337" y1="34" x2="337" y2="402" stroke="#ddd" stroke-width="1"/>

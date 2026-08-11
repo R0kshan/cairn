@@ -382,446 +382,475 @@ try {
 const perDrawing = new Map<string, Map<string, number>>();
 
 async function sweepShard(shardIndex: number, shardCount: number): Promise<void> {
-for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encoding: "utf8" })
-  // `readdirSync` returns platform-native separators, so on Windows a nested
-  // fixture arrives as `dispositions\\foo.cairn` and its tag never matches the
-  // `dispositions/foo/page` written by CI. The drawing then reads as "not in the
-  // baseline" and is *skipped* rather than gated — which quietly reduced the
-  // per-drawing gate to top-level fixtures only on Windows (130 of 288 drawings
-  // unchecked). Tags are an on-disk contract; normalise before building one.
-  .map((f) => f.replace(/\\/g, "/"))
-  .filter((f) => f.endsWith(".cairn") && !f.includes("broken"))
-  .filter((f) => !only || f.includes(only))
-  .sort()
-  .filter((_, index) => index % shardCount === shardIndex - 1)) {
-  const base = readFileSync(join(ROOT, "examples", file), "utf8").replace(/\r\n/g, "\n");
-  for (const disp of DISPOSITIONS) {
-    const tag = `${file.replace(".cairn", "")}/${disp}`;
-    let scene: Awaited<ReturnType<typeof layout>>;
-    let model: ReturnType<typeof parse>["model"];
-    let overlaps: number;
-    try {
-      // Parse first, then force the disposition post-parse — some fixtures
-      // (examples/dispositions/*) carry their own `style { disposition }`,
-      // and a source style must never win over the one this matrix cell tests.
-      const parsed = parse(base);
-      model = parsed.model;
-      model.style.disposition = disp;
-      const errors = [...parsed.diags, ...validate(model)].filter((d) => d.severity === "error");
-      if (errors.length) {
-        failures.push(`${file.replace(".cairn", "")}/${disp}: ${errors.length} validation error(s) — ${errors.map((d) => d.code).join(", ")}`);
+  for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encoding: "utf8" })
+    // `readdirSync` returns platform-native separators, so on Windows a nested
+    // fixture arrives as `dispositions\\foo.cairn` and its tag never matches the
+    // `dispositions/foo/page` written by CI. The drawing then reads as "not in the
+    // baseline" and is *skipped* rather than gated — which quietly reduced the
+    // per-drawing gate to top-level fixtures only on Windows (130 of 288 drawings
+    // unchecked). Tags are an on-disk contract; normalise before building one.
+    .map((f) => f.replace(/\\/g, "/"))
+    .filter((f) => f.endsWith(".cairn") && !f.includes("broken"))
+    .filter((f) => !only || f.includes(only))
+    .sort()
+    .filter((_, index) => index % shardCount === shardIndex - 1)) {
+    const base = readFileSync(join(ROOT, "examples", file), "utf8").replace(/\r\n/g, "\n");
+    for (const disp of DISPOSITIONS) {
+      const tag = `${file.replace(".cairn", "")}/${disp}`;
+      let scene: Awaited<ReturnType<typeof layout>>;
+      let model: ReturnType<typeof parse>["model"];
+      let overlaps: number;
+      try {
+        // Parse first, then force the disposition post-parse — some fixtures
+        // (examples/dispositions/*) carry their own `style { disposition }`,
+        // and a source style must never win over the one this matrix cell tests.
+        const parsed = parse(base);
+        model = parsed.model;
+        model.style.disposition = disp;
+        const errors = [...parsed.diags, ...validate(model)].filter((d) => d.severity === "error");
+        if (errors.length) {
+          failures.push(
+            `${file.replace(".cairn", "")}/${disp}: ${errors.length} validation error(s) — ${errors.map((d) => d.code).join(", ")}`,
+          );
+          continue;
+        }
+        scene = await layout(model, views[model.type!]);
+        overlaps = render(model, views[model.type!], scene).overlapsAfter;
+      } catch (e) {
+        failures.push(`${file.replace(".cairn", "")}/${disp}: exception — ${(e as Error).message}`);
         continue;
       }
-      scene = await layout(model, views[model.type!]);
-      overlaps = render(model, views[model.type!], scene).overlapsAfter;
-    } catch (e) {
-      failures.push(`${file.replace(".cairn", "")}/${disp}: exception — ${(e as Error).message}`);
-      continue;
-    }
-    examples.push(tag);
-    totalFlows += model.flows.length;
-    const leaves = scene.nodes.filter((n) => !n.container);
-    const note = (kind: string, msg: string) => {
-      totals[kind] = (totals[kind] ?? 0) + 1;
-      const mine = perDrawing.get(tag) ?? new Map<string, number>();
-      mine.set(kind, (mine.get(kind) ?? 0) + 1);
-      perDrawing.set(tag, mine);
-      hits.push(`${kind.padEnd(13)} ${tag.padEnd(32)} ${msg}`);
-    };
+      examples.push(tag);
+      totalFlows += model.flows.length;
+      const leaves = scene.nodes.filter((n) => !n.container);
+      const note = (kind: string, msg: string) => {
+        totals[kind] = (totals[kind] ?? 0) + 1;
+        const mine = perDrawing.get(tag) ?? new Map<string, number>();
+        mine.set(kind, (mine.get(kind) ?? 0) + 1);
+        perDrawing.set(tag, mine);
+        hits.push(`${kind.padEnd(13)} ${tag.padEnd(32)} ${msg}`);
+      };
 
-    if (overlaps > 0) note("overlaps", `${overlaps}`);
+      if (overlaps > 0) note("overlaps", `${overlaps}`);
 
-    const V: Run[] = [];
-    const H: Run[] = [];
-    for (const e of scene.edges) {
-      for (let i = 0; i + 1 < e.pts.length; i++) {
-        const a = e.pts[i];
-        const b = e.pts[i + 1];
-        const dx = Math.abs(a.x - b.x);
-        const dy = Math.abs(a.y - b.y);
-        if (dx >= 0.5 && dy >= 0.5) note("diagonal", `${e.id}`);
-        else if (dx < 0.5 && dy >= 0.5)
-          V.push({ id: e.id, at: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) });
-        else if (dy < 0.5 && dx >= 0.5)
-          H.push({ id: e.id, at: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x) });
-      }
-      for (let i = 1; i + 2 < e.pts.length; i++) {
-        const len =
-          Math.abs(e.pts[i + 1].x - e.pts[i].x) + Math.abs(e.pts[i + 1].y - e.pts[i].y);
-        if (len > 0 && len <= 20) note(len <= 6 ? "jog<=6" : "jog<=20", `${e.id} ${len.toFixed(1)}px`);
-      }
-    }
-
-    for (const list of [V, H])
-      for (let i = 0; i < list.length; i++)
-        for (let j = i + 1; j < list.length; j++) {
-          const a = list[i];
-          const b = list[j];
-          if (a.id === b.id) continue;
-          const gap = Math.abs(a.at - b.at);
-          const shared = Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo);
-          if (gap < 3 && shared > 8) note("coincident", `${a.id}~${b.id} gap=${gap.toFixed(1)}`);
-          else if (gap < 10 && shared > 40)
-            note("nearParallel", `${a.id}~${b.id} gap=${gap.toFixed(1)} run=${shared.toFixed(0)}`);
-        }
-
-    // A run hugging a node or container side it does not attach to reads as
-    // part of the border: the eye cannot tell the flow from the frame it
-    // rides (the run at x=1027 along SUIV_FLUX's left side x=1026 in
-    // logical-archi; F08 along the Settlement layer's left side for 207px in
-    // medium-tall). An endpoint exempts its own node — a flow may leave its
-    // node along the side it starts on. `shared` is measured against the
-    // side's own span, so perpendicular crossings and approach stubs that end
-    // at the border never reach the threshold.
-    const edgeEnds = new Map(model.flows.map((f) => [f.id, new Set([f.from, f.to])]));
-    for (const [list, vertical] of [
-      [V, true],
-      [H, false],
-    ] as const)
-      for (const s of list)
-        for (const n of scene.nodes) {
-          if (edgeEnds.get(s.id)?.has(n.id)) continue;
-          const shared = vertical
-            ? Math.min(s.hi, n.y + n.height) - Math.max(s.lo, n.y)
-            : Math.min(s.hi, n.x + n.width) - Math.max(s.lo, n.x);
-          if (shared <= 24) continue;
-          const gap = vertical
-            ? Math.min(Math.abs(s.at - n.x), Math.abs(s.at - (n.x + n.width)))
-            : Math.min(Math.abs(s.at - n.y), Math.abs(s.at - (n.y + n.height)));
-          if (gap < 3)
-            note(
-              "sideHug",
-              `${s.id} ${gap.toFixed(1)}px off ${n.id} ${vertical ? "v" : "h"}-side shared=${shared.toFixed(0)}`,
-            );
-        }
-
-    // A run crossing a *leaf* box is a bug; container interiors are routable.
-    for (const s of H)
-      for (const n of leaves)
-        if (s.at > n.y + 1 && s.at < n.y + n.height - 1 && s.lo < n.x + n.width - 1 && s.hi > n.x + 1)
-          note("throughBox", `${s.id} through ${n.id}`);
-    for (const s of V)
-      for (const n of leaves)
-        if (s.at > n.x + 1 && s.at < n.x + n.width - 1 && s.lo < n.y + n.height - 1 && s.hi > n.y + 1)
-          note("throughBox", `${s.id} through ${n.id}`);
-
-    // `far` is the same attachment's opposite endpoint, projected on the axis
-    // the side runs along: it says where the flow is *heading*, which is what
-    // decides whether two attachments are seated in the wrong order.
-    const seats = new Map<string, { at: number; far: number; id: string }[]>();
-    for (const e of scene.edges) {
-      if (!e.pts.length) continue;
-      for (const [p, q] of [
-        [e.pts[0], e.pts[e.pts.length - 1]],
-        [e.pts[e.pts.length - 1], e.pts[0]],
-      ] as const) {
-        for (const n of leaves) {
-          const wx = p.x > n.x - 2 && p.x < n.x + n.width + 2;
-          const wy = p.y > n.y - 2 && p.y < n.y + n.height + 2;
-          let side: string | null = null;
-          if (wx && Math.abs(p.y - n.y) < 2) side = "north";
-          else if (wx && Math.abs(p.y - (n.y + n.height)) < 2) side = "south";
-          else if (wy && Math.abs(p.x - n.x) < 2) side = "west";
-          else if (wy && Math.abs(p.x - (n.x + n.width)) < 2) side = "east";
-          if (!side) continue;
-          const vert = side === "east" || side === "west";
-          const key = `${n.id}|${side}|${vert ? n.height : n.width}`;
-          seats.set(key, [
-            ...(seats.get(key) ?? []),
-            { at: vert ? p.y : p.x, far: vert ? q.y : q.x, id: e.id },
-          ]);
-          break;
-        }
-      }
-    }
-    for (const [key, members] of seats) {
-      if (members.length < 2) continue;
-      const sideLength = Number(key.slice(key.lastIndexOf("|") + 1));
-      const need = Math.min(12, (sideLength - 6) / (members.length - 1));
-      const sorted = [...members].sort((a, b) => a.at - b.at);
-      for (let i = 1; i < sorted.length; i++) {
-        const gap = sorted[i].at - sorted[i - 1].at;
-        if (gap < 6) note("attachShared", `${key} ${sorted[i - 1].id}~${sorted[i].id} ${gap.toFixed(1)}px`);
-        else if (gap < need * 0.8) note("attachTight", `${key} ${gap.toFixed(1)}px need ${need.toFixed(1)}`);
-      }
-    }
-
-    // Two flows leaving the same side of a node and tangling inside its fan —
-    // the reader cannot tell which line owns which attachment point. Only the
-    // fan counts: further out, two routes crossing is ordinary and not
-    // something attachment order can fix. `inverted` marks the pairs seated in
-    // the inverse order of their destinations, which are the ones reseating can
-    // resolve outright.
-    const edgeById = new Map(scene.edges.map((e) => [e.id, e]));
-    const nodeById = new Map(leaves.map((n) => [n.id, n]));
-    for (const [key, members] of seats) {
-      if (members.length < 2) continue;
-      const host = nodeById.get(key.slice(0, key.indexOf("|")));
-      if (!host) continue;
-      for (let i = 0; i < members.length; i++)
-        for (let j = i + 1; j < members.length; j++) {
-          const a = members[i];
-          const b = members[j];
-          if (a.id === b.id) continue;
-          const ea = edgeById.get(a.id)!;
-          const eb = edgeById.get(b.id)!;
-          let at: Point | null = null;
-          for (let m = 0; m + 1 < ea.pts.length && !at; m++)
-            for (let n = 0; n + 1 < eb.pts.length && !at; n++) {
-              const hit = segmentsCross(ea.pts[m], ea.pts[m + 1], eb.pts[n], eb.pts[n + 1]);
-              if (hit && pointToBoxSq(hit, host) <= FAN_REACH * FAN_REACH) at = hit;
-            }
-          if (!at) continue;
-          const inverted = (a.at - b.at) * (a.far - b.far) < 0;
-          note(
-            "fanTangle",
-            `${key} ${a.id}~${b.id} at ${Math.sqrt(pointToBoxSq(at, host)).toFixed(0)}px${inverted ? " inverted" : ""}`,
-          );
-        }
-    }
-
-    // A flow label has to be attributable to its own flow. Two ways it stops
-    // being: it drifts off its own run, or another run gets closer to it than
-    // its own does. Measured after `render`, because that is what settles label
-    // positions — and because every geometry pass before it moves the line out
-    // from under the box elk chose.
-    for (const e of scene.edges) {
-      if (e.pts.length < 2) continue;
-      for (const l of e.labels) {
-        if (!l.width || !l.height) continue;
-        const own = boxToPolylineSq(l, e.pts);
-        let nearestOther = Number.POSITIVE_INFINITY;
-        let nearestId = "";
-        for (const o of scene.edges) {
-          if (o.id === e.id || o.pts.length < 2) continue;
-          const d = boxToPolylineSq(l, o.pts);
-          if (d < nearestOther) {
-            nearestOther = d;
-            nearestId = o.id;
-          }
-        }
-        const text = l.text.replace(/\n/g, " ") || "(annotation)";
-        if (own > LABEL_ADRIFT * LABEL_ADRIFT)
-          note("labelAdrift", `${e.id} "${text}" ${Math.sqrt(own).toFixed(0)}px off its own run`);
-        if (own > LABEL_ATTACHED * LABEL_ATTACHED && nearestOther < own)
-          note(
-            "labelOrphan",
-            `${e.id} "${text}" own=${Math.sqrt(own).toFixed(0)}px ${nearestId}=${Math.sqrt(nearestOther).toFixed(0)}px`,
-          );
-        // A foreign run drawn *through* the box touches the text itself. Neither
-        // rule above sees it: a label sitting on its own run has `own` of 0, so
-        // it is inside `LABEL_ATTACHED` and nothing can be "closer" than its own
-        // flow. Yet this is the worst case of all — two flows are touching the
-        // words, and the reader has no cue at all which one is speaking.
-        // Invariant §4d: the label's *text* sits on the run, not beside it.
-        // Measured on the text rows, which occupy the top of the box — the box
-        // centre is not the text centre whenever a protocol line or a chip
-        // hangs below, and centring the box is what used to leave the run
-        // running under the words instead of through them.
-        const textCentre = {
-          x: l.x + l.width / 2,
-          y: l.y + (l.textH > 0 ? l.textH / 2 : l.height / 2),
-        };
-        const onRun = boxToPolylineSq(
-          { x: textCentre.x, y: textCentre.y, width: 0, height: 0 },
-          e.pts,
-        );
-        const onLine = onRun <= ON_LINE_SLACK * ON_LINE_SLACK;
-        if (!onLine)
-          note("labelOffLine", `${e.id} "${text}" text centre ${Math.sqrt(onRun).toFixed(0)}px off its run`);
-        // A foreign run drawn *through* the box, for a label that is **not**
-        // sitting on its own run. Charged only in that case, and deliberately:
-        // once a label is on its flow, attribution is settled by position and
-        // the crossing run is masked behind its halo (flow lines are all drawn
-        // before any label). It is the floating label — beside one flow, with a
-        // second drawn through its words — that leaves the reader guessing,
-        // which is the defect this has always been about.
-        //
-        // `src/svg-render.ts`'s `pierced()` counts a wider population than this
-        // rule and §4j together — see the note there for why that one guard is
-        // allowed to be stricter than the gate it serves.
-        if (!onLine && nearestOther <= PIERCE_SLACK * PIERCE_SLACK)
-          note("labelPierced", `${e.id} "${text}" run ${nearestId} crosses its box`);
-        // Invariant §4j: the run the label sits on is the only run under its
-        // words. The exemption above is sound for a run *crossing* the label —
-        // the halo masks it and the label's position still says which line is
-        // speaking. It collapses when the intruder runs **parallel** to the
-        // label's own run and passes inside the box: both lines are masked the
-        // same way, both emerge above and below the words, and nothing is left
-        // to tell them apart. `small/page` seats "Search a slot and book" on a
-        // riser at x=91 with a second riser at x=96 through the same box, and
-        // `nearParallel` is the only thing that fires — a tier-2 complaint
-        // about a tier-1 loss.
-        //
-        // Charged only for on-line labels because an off-line one is already
-        // `labelPierced` above; this is the population that rule skips.
-        if (onLine) {
-          const host = hostRunOf(l, e.pts);
-          const straddler =
-            host === null ? "" : straddledBy(l, host, e.id, scene.edges);
-          if (straddler)
-            note("labelStraddled", `${e.id} "${text}" run ${straddler} parallel under its words`);
-        }
-      }
-    }
-
-    // Invariant §4g: a flow takes at most two turns between its endpoints.
-    for (const e of scene.edges) {
-      if (e.pts.length < 2) continue;
-      const turns = e.pts.length - 2;
-      if (turns > 2) note("turnHeavy", `${e.id} ${turns} turns`);
-    }
-
-    // Invariant §4h: a run may only cross a container that holds one of its own
-    // endpoints. Passing through a data centre or a zone you start or end
-    // inside is how anything gets anywhere; cutting through one you have no
-    // business in reads as traffic transiting that component. Invisible to
-    // `throughBox`, which tests leaves only — `Kafka -> Backup server` ran the
-    // width of `PostgreSQL standby` and nothing saw it.
-    {
-      const holds = new Map<string, Set<string>>();
-      for (const box of scene.nodes.filter((n) => n.container)) {
-        const set = new Set<string>();
-        for (const n of scene.nodes)
-          if (
-            n !== box &&
-            n.x >= box.x - 1 &&
-            n.y >= box.y - 1 &&
-            n.x + n.width <= box.x + box.width + 1 &&
-            n.y + n.height <= box.y + box.height + 1
-          )
-            set.add(n.id);
-        holds.set(box.id, set);
-      }
-      for (const e of scene.edges) {
-        const flow = model.flows.find((f) => f.id === e.id);
-        if (!flow || e.pts.length < 2) continue;
-        for (const box of scene.nodes.filter((n) => n.container)) {
-          const set = holds.get(box.id)!;
-          if (set.has(flow.from) || set.has(flow.to)) continue;
-          for (let i = 0; i + 1 < e.pts.length; i++) {
-            const a = e.pts[i];
-            const b = e.pts[i + 1];
-            if (
-              Math.min(a.x, b.x) < box.x + box.width - 1 &&
-              box.x + 1 < Math.max(a.x, b.x) &&
-              Math.min(a.y, b.y) < box.y + box.height - 1 &&
-              box.y + 1 < Math.max(a.y, b.y)
-            )
-              note("throughContainer", `${e.id} ${flow.from}->${flow.to} through ${box.id}`);
-          }
-        }
-      }
-    }
-
-    // Invariant §4f: flows that cross. Counted over the whole drawing, unlike
-    // `fanTangle`, which only sees crossings inside a node's fan — the corridor
-    // weave this exists to catch happens in open space between containers.
-    for (let i = 0; i < scene.edges.length; i++)
-      for (let j = i + 1; j < scene.edges.length; j++) {
-        const A = scene.edges[i];
-        const B = scene.edges[j];
-        for (let m = 0; m + 1 < A.pts.length; m++)
-          for (let n = 0; n + 1 < B.pts.length; n++)
-            if (segmentsCross(A.pts[m], A.pts[m + 1], B.pts[n], B.pts[n + 1]))
-              note("crossings", `${A.id}x${B.id}`);
-      }
-
-    // Invariant §4e: nothing is drawn across a container's title.
-    for (const band of titleBoxesOf(scene, model)) {
+      const V: Run[] = [];
+      const H: Run[] = [];
       for (const e of scene.edges) {
         for (let i = 0; i + 1 < e.pts.length; i++) {
           const a = e.pts[i];
           const b = e.pts[i + 1];
-          const x1 = Math.min(a.x, b.x);
-          const x2 = Math.max(a.x, b.x);
-          const y1 = Math.min(a.y, b.y);
-          const y2 = Math.max(a.y, b.y);
-          if (x1 < band.x + band.width && band.x < x2 && y1 < band.y + band.height && band.y < y2)
-            note("titleStruck", `${e.id} run across title at (${band.x.toFixed(0)},${band.y.toFixed(0)})`);
+          const dx = Math.abs(a.x - b.x);
+          const dy = Math.abs(a.y - b.y);
+          if (dx >= 0.5 && dy >= 0.5) note("diagonal", `${e.id}`);
+          else if (dx < 0.5 && dy >= 0.5)
+            V.push({ id: e.id, at: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) });
+          else if (dy < 0.5 && dx >= 0.5)
+            H.push({ id: e.id, at: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x) });
         }
-        for (const l of e.labels) {
-          if (!l.width || !l.height) continue;
-          if (
-            l.x < band.x + band.width &&
-            band.x < l.x + l.width &&
-            l.y < band.y + band.height &&
-            band.y < l.y + l.height
-          )
-            note("titleStruck", `${e.id} label across title at (${band.x.toFixed(0)},${band.y.toFixed(0)})`);
+        for (let i = 1; i + 2 < e.pts.length; i++) {
+          const len = Math.abs(e.pts[i + 1].x - e.pts[i].x) + Math.abs(e.pts[i + 1].y - e.pts[i].y);
+          if (len > 0 && len <= 20)
+            note(len <= 6 ? "jog<=6" : "jog<=20", `${e.id} ${len.toFixed(1)}px`);
         }
       }
-    }
 
-    const pinned: [number, number][] = scene.nodes.map((n) => [n.y, n.y + n.height]);
-    for (const e of scene.edges) for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
-    for (const s of H) pinned.push([s.at - 1, s.at + 1]);
-    pinned.sort((a, b) => a[0] - b[0]);
-    let reach = 0;
-    let sceneBot = 0;
-    for (const [top, bottom] of pinned) {
-      if (top - reach >= 30) note("deadBand", `${Math.round(top - reach)}px at y=${Math.round(reach)}`);
-      reach = Math.max(reach, bottom);
-      if (bottom > sceneBot) sceneBot = bottom;
-    }
-    const remain = sceneBot - reach;
-    if (remain >= 30) note("deadBand", `${Math.round(remain)}px trailing at y=${Math.round(reach)}`);
+      for (const list of [V, H])
+        for (let i = 0; i < list.length; i++)
+          for (let j = i + 1; j < list.length; j++) {
+            const a = list[i];
+            const b = list[j];
+            if (a.id === b.id) continue;
+            const gap = Math.abs(a.at - b.at);
+            const shared = Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo);
+            if (gap < 3 && shared > 8) note("coincident", `${a.id}~${b.id} gap=${gap.toFixed(1)}`);
+            else if (gap < 10 && shared > 40)
+              note(
+                "nearParallel",
+                `${a.id}~${b.id} gap=${gap.toFixed(1)} run=${shared.toFixed(0)}`,
+              );
+          }
 
-    // A terminal segment that sets off *away* from the flow's counterpart is a
-    // wrap-around the reader has to chase: the eye leaves the node expecting to
-    // approach the other end and is carried in the opposite direction first
-    // (RETURNS→PAY_ORCH in application-large-tall departed 347px east for a
-    // target up-and-left). Judged per axis with a tolerance: when the two nodes
-    // roughly align on an axis (within `ATTACH_AWAY_TOL`), moving either way on
-    // it is positioning, not wandering. Edges rerouted through detour channels
-    // wrap by design (invariant §11) and are exempt.
-    const ATTACH_AWAY_TOL = 24;
-    const byId = new Map(scene.nodes.map((n) => [n.id, n]));
-    for (const e of scene.edges) {
-      if (e.pts.length < 2 || e.detour) continue;
-      const flow = model.flows.find((f) => f.id === e.id);
-      const from = byId.get(flow?.from ?? "");
-      const to = byId.get(flow?.to ?? "");
-      if (!from || !to) continue;
-      const centerOf = (n: typeof from) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
-      const away = (seg: Point, target: Point): boolean =>
-        (Math.abs(seg.x) >= 0.5 &&
-          Math.abs(target.x) > ATTACH_AWAY_TOL &&
-          seg.x * target.x < 0) ||
-        (Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > ATTACH_AWAY_TOL && seg.y * target.y < 0);
-      const p0 = e.pts[0];
-      const p1 = e.pts[1];
-      const pn = e.pts[e.pts.length - 1];
-      const pm = e.pts[e.pts.length - 2];
-      const toCenter = centerOf(to);
-      const fromCenter = centerOf(from);
-      if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
-        note("attachAway", `${e.id} ${flow!.from}->${flow!.to} departs away`);
-      if (
-        away(
-          { x: pn.x - pm.x, y: pn.y - pm.y },
-          { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y },
+      // A run hugging a node or container side it does not attach to reads as
+      // part of the border: the eye cannot tell the flow from the frame it
+      // rides (the run at x=1027 along SUIV_FLUX's left side x=1026 in
+      // logical-archi; F08 along the Settlement layer's left side for 207px in
+      // medium-tall). An endpoint exempts its own node — a flow may leave its
+      // node along the side it starts on. `shared` is measured against the
+      // side's own span, so perpendicular crossings and approach stubs that end
+      // at the border never reach the threshold.
+      const edgeEnds = new Map(model.flows.map((f) => [f.id, new Set([f.from, f.to])]));
+      for (const [list, vertical] of [
+        [V, true],
+        [H, false],
+      ] as const)
+        for (const s of list)
+          for (const n of scene.nodes) {
+            if (edgeEnds.get(s.id)?.has(n.id)) continue;
+            const shared = vertical
+              ? Math.min(s.hi, n.y + n.height) - Math.max(s.lo, n.y)
+              : Math.min(s.hi, n.x + n.width) - Math.max(s.lo, n.x);
+            if (shared <= 24) continue;
+            const gap = vertical
+              ? Math.min(Math.abs(s.at - n.x), Math.abs(s.at - (n.x + n.width)))
+              : Math.min(Math.abs(s.at - n.y), Math.abs(s.at - (n.y + n.height)));
+            if (gap < 3)
+              note(
+                "sideHug",
+                `${s.id} ${gap.toFixed(1)}px off ${n.id} ${vertical ? "v" : "h"}-side shared=${shared.toFixed(0)}`,
+              );
+          }
+
+      // A run crossing a *leaf* box is a bug; container interiors are routable.
+      for (const s of H)
+        for (const n of leaves)
+          if (
+            s.at > n.y + 1 &&
+            s.at < n.y + n.height - 1 &&
+            s.lo < n.x + n.width - 1 &&
+            s.hi > n.x + 1
+          )
+            note("throughBox", `${s.id} through ${n.id}`);
+      for (const s of V)
+        for (const n of leaves)
+          if (
+            s.at > n.x + 1 &&
+            s.at < n.x + n.width - 1 &&
+            s.lo < n.y + n.height - 1 &&
+            s.hi > n.y + 1
+          )
+            note("throughBox", `${s.id} through ${n.id}`);
+
+      // `far` is the same attachment's opposite endpoint, projected on the axis
+      // the side runs along: it says where the flow is *heading*, which is what
+      // decides whether two attachments are seated in the wrong order.
+      const seats = new Map<string, { at: number; far: number; id: string }[]>();
+      for (const e of scene.edges) {
+        if (!e.pts.length) continue;
+        for (const [p, q] of [
+          [e.pts[0], e.pts[e.pts.length - 1]],
+          [e.pts[e.pts.length - 1], e.pts[0]],
+        ] as const) {
+          for (const n of leaves) {
+            const wx = p.x > n.x - 2 && p.x < n.x + n.width + 2;
+            const wy = p.y > n.y - 2 && p.y < n.y + n.height + 2;
+            let side: string | null = null;
+            if (wx && Math.abs(p.y - n.y) < 2) side = "north";
+            else if (wx && Math.abs(p.y - (n.y + n.height)) < 2) side = "south";
+            else if (wy && Math.abs(p.x - n.x) < 2) side = "west";
+            else if (wy && Math.abs(p.x - (n.x + n.width)) < 2) side = "east";
+            if (!side) continue;
+            const vert = side === "east" || side === "west";
+            const key = `${n.id}|${side}|${vert ? n.height : n.width}`;
+            seats.set(key, [
+              ...(seats.get(key) ?? []),
+              { at: vert ? p.y : p.x, far: vert ? q.y : q.x, id: e.id },
+            ]);
+            break;
+          }
+        }
+      }
+      for (const [key, members] of seats) {
+        if (members.length < 2) continue;
+        const sideLength = Number(key.slice(key.lastIndexOf("|") + 1));
+        const need = Math.min(12, (sideLength - 6) / (members.length - 1));
+        const sorted = [...members].sort((a, b) => a.at - b.at);
+        for (let i = 1; i < sorted.length; i++) {
+          const gap = sorted[i].at - sorted[i - 1].at;
+          if (gap < 6)
+            note("attachShared", `${key} ${sorted[i - 1].id}~${sorted[i].id} ${gap.toFixed(1)}px`);
+          else if (gap < need * 0.8)
+            note("attachTight", `${key} ${gap.toFixed(1)}px need ${need.toFixed(1)}`);
+        }
+      }
+
+      // Two flows leaving the same side of a node and tangling inside its fan —
+      // the reader cannot tell which line owns which attachment point. Only the
+      // fan counts: further out, two routes crossing is ordinary and not
+      // something attachment order can fix. `inverted` marks the pairs seated in
+      // the inverse order of their destinations, which are the ones reseating can
+      // resolve outright.
+      const edgeById = new Map(scene.edges.map((e) => [e.id, e]));
+      const nodeById = new Map(leaves.map((n) => [n.id, n]));
+      for (const [key, members] of seats) {
+        if (members.length < 2) continue;
+        const host = nodeById.get(key.slice(0, key.indexOf("|")));
+        if (!host) continue;
+        for (let i = 0; i < members.length; i++)
+          for (let j = i + 1; j < members.length; j++) {
+            const a = members[i];
+            const b = members[j];
+            if (a.id === b.id) continue;
+            const ea = edgeById.get(a.id)!;
+            const eb = edgeById.get(b.id)!;
+            let at: Point | null = null;
+            for (let m = 0; m + 1 < ea.pts.length && !at; m++)
+              for (let n = 0; n + 1 < eb.pts.length && !at; n++) {
+                const hit = segmentsCross(ea.pts[m], ea.pts[m + 1], eb.pts[n], eb.pts[n + 1]);
+                if (hit && pointToBoxSq(hit, host) <= FAN_REACH * FAN_REACH) at = hit;
+              }
+            if (!at) continue;
+            const inverted = (a.at - b.at) * (a.far - b.far) < 0;
+            note(
+              "fanTangle",
+              `${key} ${a.id}~${b.id} at ${Math.sqrt(pointToBoxSq(at, host)).toFixed(0)}px${inverted ? " inverted" : ""}`,
+            );
+          }
+      }
+
+      // A flow label has to be attributable to its own flow. Two ways it stops
+      // being: it drifts off its own run, or another run gets closer to it than
+      // its own does. Measured after `render`, because that is what settles label
+      // positions — and because every geometry pass before it moves the line out
+      // from under the box elk chose.
+      for (const e of scene.edges) {
+        if (e.pts.length < 2) continue;
+        for (const l of e.labels) {
+          if (!l.width || !l.height) continue;
+          const own = boxToPolylineSq(l, e.pts);
+          let nearestOther = Number.POSITIVE_INFINITY;
+          let nearestId = "";
+          for (const o of scene.edges) {
+            if (o.id === e.id || o.pts.length < 2) continue;
+            const d = boxToPolylineSq(l, o.pts);
+            if (d < nearestOther) {
+              nearestOther = d;
+              nearestId = o.id;
+            }
+          }
+          const text = l.text.replace(/\n/g, " ") || "(annotation)";
+          if (own > LABEL_ADRIFT * LABEL_ADRIFT)
+            note("labelAdrift", `${e.id} "${text}" ${Math.sqrt(own).toFixed(0)}px off its own run`);
+          if (own > LABEL_ATTACHED * LABEL_ATTACHED && nearestOther < own)
+            note(
+              "labelOrphan",
+              `${e.id} "${text}" own=${Math.sqrt(own).toFixed(0)}px ${nearestId}=${Math.sqrt(nearestOther).toFixed(0)}px`,
+            );
+          // A foreign run drawn *through* the box touches the text itself. Neither
+          // rule above sees it: a label sitting on its own run has `own` of 0, so
+          // it is inside `LABEL_ATTACHED` and nothing can be "closer" than its own
+          // flow. Yet this is the worst case of all — two flows are touching the
+          // words, and the reader has no cue at all which one is speaking.
+          // Invariant §4d: the label's *text* sits on the run, not beside it.
+          // Measured on the text rows, which occupy the top of the box — the box
+          // centre is not the text centre whenever a protocol line or a chip
+          // hangs below, and centring the box is what used to leave the run
+          // running under the words instead of through them.
+          const textCentre = {
+            x: l.x + l.width / 2,
+            y: l.y + (l.textH > 0 ? l.textH / 2 : l.height / 2),
+          };
+          const onRun = boxToPolylineSq(
+            { x: textCentre.x, y: textCentre.y, width: 0, height: 0 },
+            e.pts,
+          );
+          const onLine = onRun <= ON_LINE_SLACK * ON_LINE_SLACK;
+          if (!onLine)
+            note(
+              "labelOffLine",
+              `${e.id} "${text}" text centre ${Math.sqrt(onRun).toFixed(0)}px off its run`,
+            );
+          // A foreign run drawn *through* the box, for a label that is **not**
+          // sitting on its own run. Charged only in that case, and deliberately:
+          // once a label is on its flow, attribution is settled by position and
+          // the crossing run is masked behind its halo (flow lines are all drawn
+          // before any label). It is the floating label — beside one flow, with a
+          // second drawn through its words — that leaves the reader guessing,
+          // which is the defect this has always been about.
+          //
+          // `src/svg-render.ts`'s `pierced()` counts a wider population than this
+          // rule and §4j together — see the note there for why that one guard is
+          // allowed to be stricter than the gate it serves.
+          if (!onLine && nearestOther <= PIERCE_SLACK * PIERCE_SLACK)
+            note("labelPierced", `${e.id} "${text}" run ${nearestId} crosses its box`);
+          // Invariant §4j: the run the label sits on is the only run under its
+          // words. The exemption above is sound for a run *crossing* the label —
+          // the halo masks it and the label's position still says which line is
+          // speaking. It collapses when the intruder runs **parallel** to the
+          // label's own run and passes inside the box: both lines are masked the
+          // same way, both emerge above and below the words, and nothing is left
+          // to tell them apart. `small/page` seats "Search a slot and book" on a
+          // riser at x=91 with a second riser at x=96 through the same box, and
+          // `nearParallel` is the only thing that fires — a tier-2 complaint
+          // about a tier-1 loss.
+          //
+          // Charged only for on-line labels because an off-line one is already
+          // `labelPierced` above; this is the population that rule skips.
+          if (onLine) {
+            const host = hostRunOf(l, e.pts);
+            const straddler = host === null ? "" : straddledBy(l, host, e.id, scene.edges);
+            if (straddler)
+              note("labelStraddled", `${e.id} "${text}" run ${straddler} parallel under its words`);
+          }
+        }
+      }
+
+      // Invariant §4g: a flow takes at most two turns between its endpoints.
+      for (const e of scene.edges) {
+        if (e.pts.length < 2) continue;
+        const turns = e.pts.length - 2;
+        if (turns > 2) note("turnHeavy", `${e.id} ${turns} turns`);
+      }
+
+      // Invariant §4h: a run may only cross a container that holds one of its own
+      // endpoints. Passing through a data centre or a zone you start or end
+      // inside is how anything gets anywhere; cutting through one you have no
+      // business in reads as traffic transiting that component. Invisible to
+      // `throughBox`, which tests leaves only — `Kafka -> Backup server` ran the
+      // width of `PostgreSQL standby` and nothing saw it.
+      {
+        const holds = new Map<string, Set<string>>();
+        for (const box of scene.nodes.filter((n) => n.container)) {
+          const set = new Set<string>();
+          for (const n of scene.nodes)
+            if (
+              n !== box &&
+              n.x >= box.x - 1 &&
+              n.y >= box.y - 1 &&
+              n.x + n.width <= box.x + box.width + 1 &&
+              n.y + n.height <= box.y + box.height + 1
+            )
+              set.add(n.id);
+          holds.set(box.id, set);
+        }
+        for (const e of scene.edges) {
+          const flow = model.flows.find((f) => f.id === e.id);
+          if (!flow || e.pts.length < 2) continue;
+          for (const box of scene.nodes.filter((n) => n.container)) {
+            const set = holds.get(box.id)!;
+            if (set.has(flow.from) || set.has(flow.to)) continue;
+            for (let i = 0; i + 1 < e.pts.length; i++) {
+              const a = e.pts[i];
+              const b = e.pts[i + 1];
+              if (
+                Math.min(a.x, b.x) < box.x + box.width - 1 &&
+                box.x + 1 < Math.max(a.x, b.x) &&
+                Math.min(a.y, b.y) < box.y + box.height - 1 &&
+                box.y + 1 < Math.max(a.y, b.y)
+              )
+                note("throughContainer", `${e.id} ${flow.from}->${flow.to} through ${box.id}`);
+            }
+          }
+        }
+      }
+
+      // Invariant §4f: flows that cross. Counted over the whole drawing, unlike
+      // `fanTangle`, which only sees crossings inside a node's fan — the corridor
+      // weave this exists to catch happens in open space between containers.
+      for (let i = 0; i < scene.edges.length; i++)
+        for (let j = i + 1; j < scene.edges.length; j++) {
+          const A = scene.edges[i];
+          const B = scene.edges[j];
+          for (let m = 0; m + 1 < A.pts.length; m++)
+            for (let n = 0; n + 1 < B.pts.length; n++)
+              if (segmentsCross(A.pts[m], A.pts[m + 1], B.pts[n], B.pts[n + 1]))
+                note("crossings", `${A.id}x${B.id}`);
+        }
+
+      // Invariant §4e: nothing is drawn across a container's title.
+      for (const band of titleBoxesOf(scene, model)) {
+        for (const e of scene.edges) {
+          for (let i = 0; i + 1 < e.pts.length; i++) {
+            const a = e.pts[i];
+            const b = e.pts[i + 1];
+            const x1 = Math.min(a.x, b.x);
+            const x2 = Math.max(a.x, b.x);
+            const y1 = Math.min(a.y, b.y);
+            const y2 = Math.max(a.y, b.y);
+            if (x1 < band.x + band.width && band.x < x2 && y1 < band.y + band.height && band.y < y2)
+              note(
+                "titleStruck",
+                `${e.id} run across title at (${band.x.toFixed(0)},${band.y.toFixed(0)})`,
+              );
+          }
+          for (const l of e.labels) {
+            if (!l.width || !l.height) continue;
+            if (
+              l.x < band.x + band.width &&
+              band.x < l.x + l.width &&
+              l.y < band.y + band.height &&
+              band.y < l.y + l.height
+            )
+              note(
+                "titleStruck",
+                `${e.id} label across title at (${band.x.toFixed(0)},${band.y.toFixed(0)})`,
+              );
+          }
+        }
+      }
+
+      const pinned: [number, number][] = scene.nodes.map((n) => [n.y, n.y + n.height]);
+      for (const e of scene.edges) for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
+      for (const s of H) pinned.push([s.at - 1, s.at + 1]);
+      pinned.sort((a, b) => a[0] - b[0]);
+      let reach = 0;
+      let sceneBot = 0;
+      for (const [top, bottom] of pinned) {
+        if (top - reach >= 30)
+          note("deadBand", `${Math.round(top - reach)}px at y=${Math.round(reach)}`);
+        reach = Math.max(reach, bottom);
+        if (bottom > sceneBot) sceneBot = bottom;
+      }
+      const remain = sceneBot - reach;
+      if (remain >= 30)
+        note("deadBand", `${Math.round(remain)}px trailing at y=${Math.round(reach)}`);
+
+      // A terminal segment that sets off *away* from the flow's counterpart is a
+      // wrap-around the reader has to chase: the eye leaves the node expecting to
+      // approach the other end and is carried in the opposite direction first
+      // (RETURNS→PAY_ORCH in application-large-tall departed 347px east for a
+      // target up-and-left). Judged per axis with a tolerance: when the two nodes
+      // roughly align on an axis (within `ATTACH_AWAY_TOL`), moving either way on
+      // it is positioning, not wandering. Edges rerouted through detour channels
+      // wrap by design (invariant §11) and are exempt.
+      const ATTACH_AWAY_TOL = 24;
+      const byId = new Map(scene.nodes.map((n) => [n.id, n]));
+      for (const e of scene.edges) {
+        if (e.pts.length < 2 || e.detour) continue;
+        const flow = model.flows.find((f) => f.id === e.id);
+        const from = byId.get(flow?.from ?? "");
+        const to = byId.get(flow?.to ?? "");
+        if (!from || !to) continue;
+        const centerOf = (n: typeof from) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+        const away = (seg: Point, target: Point): boolean =>
+          (Math.abs(seg.x) >= 0.5 &&
+            Math.abs(target.x) > ATTACH_AWAY_TOL &&
+            seg.x * target.x < 0) ||
+          (Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > ATTACH_AWAY_TOL && seg.y * target.y < 0);
+        const p0 = e.pts[0];
+        const p1 = e.pts[1];
+        const pn = e.pts[e.pts.length - 1];
+        const pm = e.pts[e.pts.length - 2];
+        const toCenter = centerOf(to);
+        const fromCenter = centerOf(from);
+        if (
+          away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y })
         )
-      )
-        note("attachAway", `${e.id} ${flow!.from}->${flow!.to} arrives from beyond`);
-    }
+          note("attachAway", `${e.id} ${flow!.from}->${flow!.to} departs away`);
+        if (
+          away(
+            { x: pn.x - pm.x, y: pn.y - pm.y },
+            { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y },
+          )
+        )
+          note("attachAway", `${e.id} ${flow!.from}->${flow!.to} arrives from beyond`);
+      }
 
-    for (const e of scene.edges) {
-      const flow = model.flows.find((f) => f.id === e.id);
-      const a = byId.get(flow?.from ?? "");
-      const b = byId.get(flow?.to ?? "");
-      if (!a || !b) continue;
-      let len = 0;
-      for (let i = 1; i < e.pts.length; i++)
-        len += Math.abs(e.pts[i].x - e.pts[i - 1].x) + Math.abs(e.pts[i].y - e.pts[i - 1].y);
-      const direct =
-        Math.abs(a.x + a.width / 2 - b.x - b.width / 2) +
-        Math.abs(a.y + a.height / 2 - b.y - b.height / 2);
-      if (direct > 0 && len > 2.2 * direct && len - direct > 400)
-        note("longDetour", `${e.id} ${flow!.from}->${flow!.to} r=${(len / direct).toFixed(1)}`);
+      for (const e of scene.edges) {
+        const flow = model.flows.find((f) => f.id === e.id);
+        const a = byId.get(flow?.from ?? "");
+        const b = byId.get(flow?.to ?? "");
+        if (!a || !b) continue;
+        let len = 0;
+        for (let i = 1; i < e.pts.length; i++)
+          len += Math.abs(e.pts[i].x - e.pts[i - 1].x) + Math.abs(e.pts[i].y - e.pts[i - 1].y);
+        const direct =
+          Math.abs(a.x + a.width / 2 - b.x - b.width / 2) +
+          Math.abs(a.y + a.height / 2 - b.y - b.height / 2);
+        if (direct > 0 && len > 2.2 * direct && len - direct > 400)
+          note("longDetour", `${e.id} ${flow!.from}->${flow!.to} r=${(len / direct).toFixed(1)}`);
+      }
     }
   }
-}
 }
 
 /**
@@ -834,7 +863,8 @@ for (const file of readdirSync(join(ROOT, "examples"), { recursive: true, encodi
  * which is why the merge re-sorts everything into the order a serial run would
  * have produced rather than concatenating shards as they finish.
  */
-const jobsArg = process.argv.find((arg) => arg.startsWith("--jobs="))?.slice("--jobs=".length) ?? "1";
+const jobsArg =
+  process.argv.find((arg) => arg.startsWith("--jobs="))?.slice("--jobs=".length) ?? "1";
 /**
  * `auto` = one shard per core, capped at 8.
  *
@@ -865,8 +895,10 @@ const tagOrder = (a: string, b: string): number => {
   const [fileA, dispA] = cut(a);
   const [fileB, dispB] = cut(b);
   if (fileA !== fileB) return fileA < fileB ? -1 : 1;
-  return DISPOSITIONS.indexOf(dispA as (typeof DISPOSITIONS)[number]) -
-    DISPOSITIONS.indexOf(dispB as (typeof DISPOSITIONS)[number]);
+  return (
+    DISPOSITIONS.indexOf(dispA as (typeof DISPOSITIONS)[number]) -
+    DISPOSITIONS.indexOf(dispB as (typeof DISPOSITIONS)[number])
+  );
 };
 /** `kind<pad> tag<pad> message` — the tag is the second whitespace-delimited field. */
 const tagOfHit = (line: string): string => line.trim().split(/\s+/)[1] ?? "";
@@ -877,21 +909,33 @@ if (jobs > 1 && !emitJson) {
   // and record only its own slice.
   const passthrough = process.argv
     .slice(2)
-    .filter((arg) => !arg.startsWith("--jobs=") && !arg.startsWith("--shard=") && arg !== "--update-baseline");
+    .filter(
+      (arg) =>
+        !arg.startsWith("--jobs=") && !arg.startsWith("--shard=") && arg !== "--update-baseline",
+    );
   const shards = await Promise.all(
-    Array.from({ length: jobs }, (_, index) =>
-      new Promise<string>((resolve, reject) => {
-        execFile(
-          process.execPath,
-          [...process.execArgv, fileURLToPath(import.meta.url), ...passthrough, `--shard=${index + 1}/${jobs}`, "--emit-json"],
-          { maxBuffer: 256 * 1024 * 1024 },
-          (error, stdout, stderr) => (error ? reject(new Error(`${error.message}\n${stderr}`)) : resolve(stdout)),
-        );
-      }),
+    Array.from(
+      { length: jobs },
+      (_, index) =>
+        new Promise<string>((resolve, reject) => {
+          execFile(
+            process.execPath,
+            [
+              ...process.execArgv,
+              fileURLToPath(import.meta.url),
+              ...passthrough,
+              `--shard=${index + 1}/${jobs}`,
+              "--emit-json",
+            ],
+            { maxBuffer: 256 * 1024 * 1024 },
+            (error, stdout, stderr) =>
+              error ? reject(new Error(`${error.message}\n${stderr}`)) : resolve(stdout),
+          );
+        }),
     ),
   );
-  for (const raw of shards) {
-    const part = JSON.parse(raw) as {
+  for (const [index, raw] of shards.entries()) {
+    type Shard = {
       examples: string[];
       totalFlows: number;
       totals: [string, number][];
@@ -899,6 +943,18 @@ if (jobs > 1 && !emitJson) {
       hits: string[];
       failures: string[];
     };
+    let part: Shard;
+    try {
+      part = JSON.parse(raw) as Shard;
+    } catch (error) {
+      // Say which shard and how much arrived rather than letting the raw
+      // SyntaxError print the whole payload — the last time this fired it
+      // dumped 64 KB of hit lines and buried the one useful fact.
+      throw new Error(
+        `shard ${index + 1}/${jobs} returned ${raw.length} bytes that are not valid JSON ` +
+          `(${(error as Error).message}). Re-run with --jobs=1 to see the shard's own error.`,
+      );
+    }
     examples.push(...part.examples);
     totalFlows += part.totalFlows;
     for (const [kind, count] of part.totals) totals[kind] = (totals[kind] ?? 0) + count;
@@ -917,174 +973,195 @@ if (jobs > 1 && !emitJson) {
 }
 
 if (emitJson) {
-  process.stdout.write(
-    JSON.stringify({
-      examples,
-      totalFlows,
-      totals: Object.entries(totals),
-      perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
-      hits,
-      failures,
-    }),
-  );
+  // Await the flush before exiting. `process.stdout` is asynchronous when it is
+  // a pipe (which it always is here — the parent spawns this via execFile), and
+  // `process.exit` drops whatever has not reached the OS yet. The payload is
+  // hundreds of KB on the full corpus, so it was being cut at the 64 KiB pipe
+  // buffer and the parent died on `JSON.parse` with "Unterminated string in JSON
+  // at position 65528". Nothing below this block may run in child mode, hence
+  // the exit rather than a plain `return`.
+  await new Promise<void>((resolve, reject) => {
+    process.stdout.write(
+      JSON.stringify({
+        examples,
+        totalFlows,
+        totals: Object.entries(totals),
+        perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
+        hits,
+        failures,
+      }),
+      (error) => (error ? reject(error) : resolve()),
+    );
+  });
   process.exit(0);
 }
 
-console.log(
-  `swept ${examples.length} drawings (${DISPOSITIONS.length} dispositions, ${totalFlows} flow-instances)\n`,
-);
-let failed = false;
-for (const kind of MUST_BE_ZERO) {
-  const count = totals[kind] ?? 0;
-  console.log(`  ${count === 0 ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (invariant: must be 0)`);
-  if (count > 0) failed = true;
-}
-for (const kind of Object.keys(CEILING_RATE).sort()) {
-  const count = totals[kind] ?? 0;
-  const rate = totalFlows > 0 ? count / totalFlows : 0;
-  const ceiling = Math.ceil(CEILING_RATE[kind] * totalFlows);
-  const ok = count <= ceiling;
-  const arrow = count < ceiling ? ` — lower the rate to ${rate.toFixed(5)}` : "";
+// The report/gate section below must not run for an `--emit-json` child: it
+// writes its own console output, which would land on the same stdout stream
+// as the JSON payload above and corrupt it for the parent's `JSON.parse`.
+if (!emitJson) {
   console.log(
-    `  ${ok ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (rate ${rate.toFixed(5)}/flow, ceiling ${ceiling} @ ${CEILING_RATE[kind]}/flow)${arrow}`,
+    `swept ${examples.length} drawings (${DISPOSITIONS.length} dispositions, ${totalFlows} flow-instances)\n`,
   );
-  if (!ok) failed = true;
-}
-// Per-drawing floor: judged for every swept drawing, partial run or not.
-// A metric absent from the entire baseline file is newer than the file: its
-// counts have no accepted floor yet, so it is reported through the rates only
-// until `--update-baseline` records it — otherwise every drawing with any
-// pre-existing debt on a brand-new metric would read as a regression.
-const baselineKinds = new Set<string>();
-for (const entry of baseline.values()) for (const kind of entry.keys()) baselineKinds.add(kind);
-const allKinds = [...MUST_BE_ZERO, ...Object.keys(CEILING_RATE)].filter(
-  (kind) => baseline.size === 0 || baselineKinds.has(kind),
-);
-/**
- * The readability ladder, as metrics (INVARIANTS §4). Same tiers `readability.ts`
- * routes by, so the gate judges a change the way the router decided it.
- *
- * This matters because the two used to disagree. The gate demanded that no
- * drawing get worse on *any* metric; the router is built to trade — spending a
- * jog to remove a crossing is the whole point of a ladder. Under a flat gate
- * every correct trade reads as a regression, so the router could only be made
- * to pass by making it refuse the fixes it exists to perform.
- *
- * A regression at tier N is therefore accepted only when the same drawing
- * improved at a tier that matters more. Tier 0 has nothing above it, so nothing
- * ever buys a tier 0 regression — metrics in MUST_BE_ZERO are checked
- * separately and unconditionally; those with ceiling rates (throughContainer,
- * labelPierced, titleStruck) are also tier 0 but gated by their ceilings.
- */
-const TIER: Record<string, number> = {
-  diagonal: 0,
-  throughBox: 0,
-  throughContainer: 0,
-  coincident: 0,
-  attachShared: 0,
-  labelAdrift: 0,
-  labelPierced: 0,
-  titleStruck: 0,
-  deadBand: 0,
-  labelOrphan: 1,
-  labelOffLine: 1,
-  labelStraddled: 1,
-  crossings: 2,
-  fanTangle: 2,
-  nearParallel: 2,
-  // A run riding a node or container side it does not attach to destroys the
-  // reading of the frame — the flow merges with the border and the eye cannot
-  // tell them apart, which is an attribution failure, not eye travel. Rated
-  // one tier above crossings by explicit design decision: a hug fix may be
-  // paid for with a crossing (verified geometrically forced on logical-archi's
-  // F02, where every re-side crosses F11's riser), never the reverse.
-  sideHug: 1,
-  turnHeavy: 3,
-  "jog<=6": 3,
-  "jog<=20": 3,
-  attachAway: 3,
-  longDetour: 3,
-  attachTight: 4,
-};
-
-const regressions: string[] = [];
-const improvements: string[] = [];
-const trades: string[] = [];
-const unknown: string[] = [];
-for (const tag of examples) {
-  const floor = baseline.get(tag);
-  const mine = perDrawing.get(tag) ?? new Map<string, number>();
-  if (!floor) {
-    if ([...mine.values()].some((count) => count > 0)) unknown.push(tag);
-    continue;
+  let failed = false;
+  for (const kind of MUST_BE_ZERO) {
+    const count = totals[kind] ?? 0;
+    console.log(`  ${count === 0 ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (invariant: must be 0)`);
+    if (count > 0) failed = true;
   }
-  const worse: { kind: string; line: string; tier: number }[] = [];
-  let bestGain = Number.POSITIVE_INFINITY;
-  for (const kind of allKinds) {
-    const now = mine.get(kind) ?? 0;
-    const was = floor.get(kind) ?? 0;
-    const tier = TIER[kind] ?? 4;
-    if (now > was) worse.push({ kind, line: `${tag}: ${kind} ${was} -> ${now}`, tier });
-    else if (now < was) {
-      improvements.push(`${tag}: ${kind} ${was} -> ${now}`);
-      bestGain = Math.min(bestGain, tier);
+  for (const kind of Object.keys(CEILING_RATE).sort()) {
+    const count = totals[kind] ?? 0;
+    const rate = totalFlows > 0 ? count / totalFlows : 0;
+    const ceiling = Math.ceil(CEILING_RATE[kind] * totalFlows);
+    const ok = count <= ceiling;
+    const arrow = count < ceiling ? ` — lower the rate to ${rate.toFixed(5)}` : "";
+    console.log(
+      `  ${ok ? "✓" : "✗"} ${kind.padEnd(13)} ${count}  (rate ${rate.toFixed(5)}/flow, ceiling ${ceiling} @ ${CEILING_RATE[kind]}/flow)${arrow}`,
+    );
+    if (!ok) failed = true;
+  }
+  // Per-drawing floor: judged for every swept drawing, partial run or not.
+  // A metric absent from the entire baseline file is newer than the file: its
+  // counts have no accepted floor yet, so it is reported through the rates only
+  // until `--update-baseline` records it — otherwise every drawing with any
+  // pre-existing debt on a brand-new metric would read as a regression.
+  const baselineKinds = new Set<string>();
+  for (const entry of baseline.values()) for (const kind of entry.keys()) baselineKinds.add(kind);
+  const allKinds = [...MUST_BE_ZERO, ...Object.keys(CEILING_RATE)].filter(
+    (kind) => baseline.size === 0 || baselineKinds.has(kind),
+  );
+  /**
+   * The readability ladder, as metrics (INVARIANTS §4). Same tiers `readability.ts`
+   * routes by, so the gate judges a change the way the router decided it.
+   *
+   * This matters because the two used to disagree. The gate demanded that no
+   * drawing get worse on *any* metric; the router is built to trade — spending a
+   * jog to remove a crossing is the whole point of a ladder. Under a flat gate
+   * every correct trade reads as a regression, so the router could only be made
+   * to pass by making it refuse the fixes it exists to perform.
+   *
+   * A regression at tier N is therefore accepted only when the same drawing
+   * improved at a tier that matters more. Tier 0 has nothing above it, so nothing
+   * ever buys a tier 0 regression — metrics in MUST_BE_ZERO are checked
+   * separately and unconditionally; those with ceiling rates (throughContainer,
+   * labelPierced, titleStruck) are also tier 0 but gated by their ceilings.
+   */
+  const TIER: Record<string, number> = {
+    diagonal: 0,
+    throughBox: 0,
+    throughContainer: 0,
+    coincident: 0,
+    attachShared: 0,
+    labelAdrift: 0,
+    labelPierced: 0,
+    titleStruck: 0,
+    deadBand: 0,
+    labelOrphan: 1,
+    labelOffLine: 1,
+    labelStraddled: 1,
+    crossings: 2,
+    fanTangle: 2,
+    nearParallel: 2,
+    // A run riding a node or container side it does not attach to destroys the
+    // reading of the frame — the flow merges with the border and the eye cannot
+    // tell them apart, which is an attribution failure, not eye travel. Rated
+    // one tier above crossings by explicit design decision: a hug fix may be
+    // paid for with a crossing (verified geometrically forced on logical-archi's
+    // F02, where every re-side crosses F11's riser), never the reverse.
+    sideHug: 1,
+    turnHeavy: 3,
+    "jog<=6": 3,
+    "jog<=20": 3,
+    attachAway: 3,
+    longDetour: 3,
+    attachTight: 4,
+  };
+
+  const regressions: string[] = [];
+  const improvements: string[] = [];
+  const trades: string[] = [];
+  const unknown: string[] = [];
+  for (const tag of examples) {
+    const floor = baseline.get(tag);
+    const mine = perDrawing.get(tag) ?? new Map<string, number>();
+    if (!floor) {
+      if ([...mine.values()].some((count) => count > 0)) unknown.push(tag);
+      continue;
+    }
+    const worse: { kind: string; line: string; tier: number }[] = [];
+    let bestGain = Number.POSITIVE_INFINITY;
+    for (const kind of allKinds) {
+      const now = mine.get(kind) ?? 0;
+      const was = floor.get(kind) ?? 0;
+      const tier = TIER[kind] ?? 4;
+      if (now > was) worse.push({ kind, line: `${tag}: ${kind} ${was} -> ${now}`, tier });
+      else if (now < was) {
+        improvements.push(`${tag}: ${kind} ${was} -> ${now}`);
+        bestGain = Math.min(bestGain, tier);
+      }
+    }
+    for (const item of worse) {
+      if (bestGain < item.tier) trades.push(`${item.line} (paid for a tier ${bestGain} gain)`);
+      else regressions.push(item.line);
     }
   }
-  for (const item of worse) {
-    if (bestGain < item.tier) trades.push(`${item.line} (paid for a tier ${bestGain} gain)`);
-    else regressions.push(item.line);
-  }
-}
-if (regressions.length) {
-  console.log(`\nper-drawing regressions vs baseline (${regressions.length}):`);
-  for (const r of regressions) console.log(`  ✗ ${r}`);
-  failed = true;
-}
-if (trades.length) {
-  console.log(`\n${trades.length} ladder trade(s) accepted — a lower-priority defect paid for a higher-priority fix:`);
-  for (const t of trades.slice(0, 12)) console.log(`  ~ ${t}`);
-  if (trades.length > 12) console.log(`  ... and ${trades.length - 12} more`);
-}
-if (improvements.length)
-  console.log(
-    `\n${improvements.length} per-drawing improvement(s) — run with --update-baseline to lock them in`,
-  );
-if (unknown.length)
-  console.log(
-    `\n${unknown.length} drawing(s) not in the baseline — run with --update-baseline to record them`,
-  );
-if (updateBaseline) {
-  // Merge only what was swept: a partial run must never touch the floors of
-  // drawings it did not draw.
-  for (const tag of examples) {
-    const mine = perDrawing.get(tag) ?? new Map<string, number>();
-    const entry = new Map<string, number>();
-    for (const [kind, count] of mine) if (count > 0) entry.set(kind, count);
-    if (entry.size) baseline.set(tag, entry);
-    else baseline.delete(tag);
-  }
-  const lines = ["# per-drawing defect floors — regenerate with: npm run sweep -- --update-baseline"];
-  for (const tag of [...baseline.keys()].sort())
-    for (const kind of [...baseline.get(tag)!.keys()].sort())
-      lines.push(`${tag}\t${kind}\t${baseline.get(tag)!.get(kind)}`);
-  writeFileSync(BASELINE_PATH, `${lines.join("\n")}\n`);
-  console.log(`\nbaseline updated for ${examples.length} swept drawing(s) → ${BASELINE_PATH}`);
-}
-
-if (detail) for (const h of hits) console.log(h);
-if (failures.length) {
-  console.log(`\nfailures (${failures.length}):`);
-  for (const f of failures) console.log(`  ${f}`);
-  failed = true;
-}
-const partial = only || shardArg;
-if (partial) {
-  console.log(`\npartial run (${only ? `--only=${only}` : ""}${only && shardArg ? " " : ""}${shardArg ? `--shard=${shardArg}` : ""}): rates above are informational — the per-drawing baseline still gates`);
   if (regressions.length) {
-    console.error("\nsweep failed (per-drawing baseline)");
+    console.log(`\nper-drawing regressions vs baseline (${regressions.length}):`);
+    for (const r of regressions) console.log(`  ✗ ${r}`);
+    failed = true;
+  }
+  if (trades.length) {
+    console.log(
+      `\n${trades.length} ladder trade(s) accepted — a lower-priority defect paid for a higher-priority fix:`,
+    );
+    for (const t of trades.slice(0, 12)) console.log(`  ~ ${t}`);
+    if (trades.length > 12) console.log(`  ... and ${trades.length - 12} more`);
+  }
+  if (improvements.length)
+    console.log(
+      `\n${improvements.length} per-drawing improvement(s) — run with --update-baseline to lock them in`,
+    );
+  if (unknown.length)
+    console.log(
+      `\n${unknown.length} drawing(s) not in the baseline — run with --update-baseline to record them`,
+    );
+  if (updateBaseline) {
+    // Merge only what was swept: a partial run must never touch the floors of
+    // drawings it did not draw.
+    for (const tag of examples) {
+      const mine = perDrawing.get(tag) ?? new Map<string, number>();
+      const entry = new Map<string, number>();
+      for (const [kind, count] of mine) if (count > 0) entry.set(kind, count);
+      if (entry.size) baseline.set(tag, entry);
+      else baseline.delete(tag);
+    }
+    const lines = [
+      "# per-drawing defect floors — regenerate with: npm run sweep -- --update-baseline",
+    ];
+    for (const tag of [...baseline.keys()].sort())
+      for (const kind of [...baseline.get(tag)!.keys()].sort())
+        lines.push(`${tag}\t${kind}\t${baseline.get(tag)!.get(kind)}`);
+    writeFileSync(BASELINE_PATH, `${lines.join("\n")}\n`);
+    console.log(`\nbaseline updated for ${examples.length} swept drawing(s) → ${BASELINE_PATH}`);
+  }
+
+  if (detail) for (const h of hits) console.log(h);
+  if (failures.length) {
+    console.log(`\nfailures (${failures.length}):`);
+    for (const f of failures) console.log(`  ${f}`);
+    failed = true;
+  }
+  const partial = only || shardArg;
+  if (partial) {
+    console.log(
+      `\npartial run (${only ? `--only=${only}` : ""}${only && shardArg ? " " : ""}${shardArg ? `--shard=${shardArg}` : ""}): rates above are informational — the per-drawing baseline still gates`,
+    );
+    if (regressions.length) {
+      console.error("\nsweep failed (per-drawing baseline)");
+      process.exit(1);
+    }
+  } else if (failed) {
+    console.error("\nsweep failed");
     process.exit(1);
   }
-} else if (failed) {
-  console.error("\nsweep failed");
-  process.exit(1);
 }

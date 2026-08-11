@@ -10,9 +10,9 @@
 <text x="87" y="252.5" font-size="13" font-weight="bold" fill="#17202c">External targets</text>
 <rect x="431" y="149.5" width="798" height="478.6666666666667" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="441" y="167.5" font-size="13" font-weight="bold" fill="#17202c">Main infrastructure</text>
-<rect x="982" y="285.8333333333333" width="213" height="284" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="982" y="285.8333333333333" width="213" height="284" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="992" y="303.8333333333333" font-size="13" font-weight="bold" fill="#17202c">Central control layer</text>
-<rect x="465" y="260.1666666666667" width="198" height="284" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="465" y="260.1666666666667" width="198" height="284" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="475" y="278.1666666666667" font-size="13" font-weight="bold" fill="#17202c">Remote site layer</text>
 <rect x="1423" y="293.5" width="205" height="284" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1433" y="311.5" font-size="13" font-weight="bold" fill="#17202c">External resources</text>
@@ -154,7 +154,7 @@
 <text x="182" y="919" font-size="10" fill="#17202c">Actor group</text>
 <rect x="272" y="908" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
 <text x="304" y="919" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="908" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<rect x="368" y="908" width="26" height="14" rx="3" fill="#f6f4fb" stroke="#cf9f2f"/>
 <text x="400" y="919" font-size="10" fill="#17202c">Layer</text>
 <rect x="458" y="908" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="490" y="919" font-size="10" fill="#17202c">Functional block</text>

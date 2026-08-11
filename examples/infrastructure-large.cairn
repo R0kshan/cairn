@@ -1,4 +1,7 @@
 diagram infrastructure "E-commerce platform — infrastructure view"
+style {
+  fill network-zone: #eef6ff
+}
 
 site DC1 "Main data center" {
   network-zone DMZ1 "DMZ" {

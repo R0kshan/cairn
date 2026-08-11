@@ -14,4 +14,4 @@
 | 10 | Message broker (Application zone) | CRM (Application zone) | TCP | 9092 |  |
 | 11 | Billing (Application zone) | Transfer gateway (DMZ) | SFTP | 22 |  |
 | 12 | Transfer gateway (DMZ) | Partner EDI platform | AS4 | 443 |  |
-| 13 | Database server (Data zone) | Backup server (Data zone) | TCP | 9092 |  |
+| 13 | Database server (Data zone) | Backup server (Data zone) | TCP | 5432 |  |

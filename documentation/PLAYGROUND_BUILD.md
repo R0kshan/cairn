@@ -10,7 +10,9 @@ The playground (`playground/`) ships two bundles compiled from `src/` via
 | `playground/lib/engine.node.mjs` | ESM | no | Node / Vercel (`api/svg.mjs`) |
 
 If you opened `cairn-engine.js` and saw a wall of mangled code: that is a build
-artifact, not source. The readable source is `src/*.ts`.
+artifact, not source. The readable source is `src/*.ts` — `src/playground.ts` for
+the entry, `src/compile.ts` for what `compile()` actually does, `src/api.ts` for
+the exported surface.
 
 ## Build
 
@@ -18,8 +20,20 @@ artifact, not source. The readable source is `src/*.ts`.
 npm run build:playground
 ```
 
-This regenerates both bundles. It uses esbuild via `npx` — **Bun is not needed**
-(Bun is only used for CLI release binaries).
+This regenerates both bundles. It uses the pinned `esbuild` devDependency —
+**Bun is not needed** (Bun is only used for CLI release binaries).
+
+## Why these bundles are committed and the npm ones are not
+
+All of them are esbuild output from `src/`, but they ship differently. Vercel
+deploys the playground with **no build step**, so `playground/*` has to be in the
+repo. The npm bundles — `bin/cairn.mjs` (`scripts/build-cli.sh`) and
+`dist/cairn.mjs` (`scripts/build-api.sh`) — are built by `prepack` on the publish
+path, so committing them would only create a second copy to go stale; both are
+git-ignored.
+
+`dist/cairn.mjs` is built from `src/playground.ts` too, so this page's entry
+point is also the package's `.` export. It differs only in being unminified.
 
 ## Update playground after modifying `src/`
 

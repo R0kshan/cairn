@@ -4,9 +4,9 @@
 <rect width="855" height="317" fill="#ffffff"/>
 <rect x="188" y="22" width="657" height="181" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="198" y="40" font-size="13" font-weight="bold" fill="#17202c">Cloud host</text>
-<rect x="202" y="85.5" width="126" height="83" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="202" y="85.5" width="126" height="83" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="212" y="103.5" font-size="13" font-weight="bold" fill="#17202c">Public zone</text>
-<rect x="440" y="49" width="396" height="145" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="440" y="49" width="396" height="145" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="450" y="67" font-size="13" font-weight="bold" fill="#17202c">Private zone</text>
 <rect x="454" y="90" width="126" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="464" y="108" font-size="13" font-weight="bold" fill="#17202c">Web VM</text>
@@ -39,7 +39,7 @@
 <text x="20" y="245" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="235" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
 <text x="182" y="246" font-size="10" fill="#17202c">Site / data center</text>
-<rect x="308" y="235" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<rect x="308" y="235" width="26" height="14" rx="3" fill="#eef6ff" stroke="#1a8f66" stroke-dasharray="5 3"/>
 <text x="340" y="246" font-size="10" fill="#17202c">Network zone</text>
 <rect x="435" y="235" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="467" y="246" font-size="10" fill="#17202c">Server / VM</text>

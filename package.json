@@ -1,37 +1,69 @@
 {
-  "name": "cairn",
-  "version": "1.0.0-RC10",
+  "name": "@r0kshan/cairn",
+  "version": "1.0.0-RC11",
   "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
+  "license": "Apache-2.0",
+  "homepage": "https://github.com/R0kshan/cairn#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/R0kshan/cairn.git"
+  },
+  "bugs": {
+    "url": "https://github.com/R0kshan/cairn/issues"
+  },
+  "keywords": [
+    "diagram",
+    "diagram-as-code",
+    "architecture",
+    "enterprise-architecture",
+    "svg",
+    "elkjs",
+    "cli"
+  ],
   "type": "module",
+  "engines": {
+    "node": ">=22.6"
+  },
   "bin": {
-    "cairn": "bin/cairn.js"
+    "cairn": "bin/cairn.mjs"
+  },
+  "exports": {
+    ".": "./dist/cairn.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "files": [
-    "bin/",
-    "src/",
-    "README.md",
-    "documentation/"
+    "bin/cairn.mjs",
+    "dist/cairn.mjs",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md",
+    "licenses/"
   ],
   "scripts": {
     "cairn": "node --experimental-strip-types src/cli.ts",
     "test": "node --experimental-strip-types scripts/sweep.ts --jobs=auto && node --experimental-strip-types --test \"tests/*.test.ts\"",
     "snapshots": "node --experimental-strip-types scripts/update-snapshots.mjs",
     "build:binaries": "bash scripts/build-binaries.sh",
+    "build:api": "bash scripts/build-api.sh",
+    "build:cli": "bash scripts/build-cli.sh",
     "build:playground": "bash scripts/build-playground.sh",
+    "prepack": "npm run build:cli && npm run build:api",
     "lint": "biome lint src tests",
     "format": "biome format --write src tests",
     "typecheck": "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
     "sweep": "node --experimental-strip-types scripts/sweep.ts --jobs=auto",
     "test:binary": "bash scripts/smoke-binary.sh",
+    "test:npm": "bash scripts/smoke-npm.sh",
     "examples": "node --experimental-strip-types scripts/render-examples.mjs"
-  },
-  "dependencies": {
-    "elkjs": "^0.12.0"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
     "@types/node": "^26.1.1",
+    "elkjs": "^0.12.0",
+    "esbuild": "0.28.1",
     "typescript": "^7.0.2"
   }
 }

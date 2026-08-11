@@ -8,23 +8,23 @@
 <text x="20" y="91" font-size="13" font-weight="bold" fill="#17202c">Internal teams</text>
 <rect x="1532" y="362" width="885" height="491.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="1542" y="380" font-size="13" font-weight="bold" fill="#17202c">Commerce front</text>
-<rect x="1566" y="534.5" width="156" height="217" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="1566" y="534.5" width="156" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="1576" y="552.5" font-size="13" font-weight="bold" fill="#17202c">Presentation layer</text>
-<rect x="1985" y="540.5" width="388" height="237" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="1985" y="540.5" width="388" height="237" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="1995" y="558.5" font-size="13" font-weight="bold" fill="#17202c">Customer-journey layer</text>
 <rect x="374" y="72" width="981" height="548.6" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="384" y="90" font-size="13" font-weight="bold" fill="#17202c">Commerce core</text>
-<rect x="987" y="125.9" width="334" height="238" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="987" y="125.9" width="334" height="238" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="997" y="143.9" font-size="13" font-weight="bold" fill="#17202c">Sales layer</text>
-<rect x="545" y="403.6" width="128" height="208" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="545" y="403.6" width="128" height="208" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="555" y="421.6" font-size="13" font-weight="bold" fill="#17202c">Offer layer</text>
-<rect x="408" y="154" width="402" height="167.4" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="408" y="154" width="402" height="167.4" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="418" y="172" font-size="13" font-weight="bold" fill="#17202c">Execution layer</text>
 <rect x="2551" y="240" width="642" height="186" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="2561" y="258" font-size="13" font-weight="bold" fill="#17202c">Data platform</text>
-<rect x="2565" y="267" width="135" height="150" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="2565" y="267" width="135" height="150" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="2575" y="285" font-size="13" font-weight="bold" fill="#17202c">Collection layer</text>
-<rect x="2847" y="274.8" width="332" height="96.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="2847" y="274.8" width="332" height="96.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="2857" y="292.8" font-size="13" font-weight="bold" fill="#17202c">Analytics layer</text>
 <rect x="3333" y="48" width="142" height="351" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="3343" y="66" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
@@ -296,7 +296,7 @@
 <text x="182" y="1382" font-size="10" fill="#17202c">Actor group</text>
 <rect x="272" y="1371" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
 <text x="304" y="1382" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="1371" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<rect x="368" y="1371" width="26" height="14" rx="3" fill="#f6f4fb" stroke="#cf9f2f"/>
 <text x="400" y="1382" font-size="10" fill="#17202c">Layer</text>
 <rect x="458" y="1371" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="490" y="1382" font-size="10" fill="#17202c">Functional block</text>
