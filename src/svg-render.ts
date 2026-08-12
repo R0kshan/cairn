@@ -76,6 +76,96 @@ function collectElementStyles(elements: Model["elements"]): ElementStyleEntry[] 
   ]);
 }
 
+/** A seat the settler may try, as the label's top-left corner. */
+interface Seat {
+  x: number;
+  y: number;
+}
+
+/** The two judgements and the two seat ladders every escape round consults. */
+interface Settler {
+  collides: (label: SceneLabel) => boolean;
+  attributableHere: (label: SceneLabel) => boolean;
+  ownRunMidpoints: (label: SceneLabel) => Seat[];
+  alongOwnRun: (label: SceneLabel) => Seat[];
+}
+
+/**
+ * Round 0: stay on the line. Every seat here is *on* the run — midpoints and
+ * slides along it — so §4d survives the escape. Only a label with nowhere to go
+ * along its own flow reaches the perpendicular rounds.
+ *
+ * Two sweeps over the same seats: the first also wants attribution, the second
+ * takes any overlap-free seat, pierced or not. Overlapping is unreadable,
+ * off-the-line breaks §4d, pierced is a ratchet — so a pierced seat *on* the run
+ * beats a clean one beside it.
+ */
+function settleOnOwnRun(s: Settler, label: SceneLabel): boolean {
+  const onLineSeats = [...s.ownRunMidpoints(label), ...s.alongOwnRun(label)];
+  for (const wantAttributable of [true, false])
+    for (const seat of onLineSeats) {
+      label.x = seat.x;
+      label.y = seat.y;
+      if (s.collides(label)) continue;
+      if (wantAttributable && !s.attributableHere(label)) continue;
+      return true;
+    }
+  return false;
+}
+
+/**
+ * The perpendicular ladder, walked only once every on-line slide has failed.
+ *
+ * The attributable round slides further than the relaxed one: along its own run
+ * a label keeps `own` at 0 whatever the distance, so a long slide is how a label
+ * wider than the gap between two crossing runs dodges the piercing one without
+ * leaving its flow. The relaxed round keeps the short ladder — unguarded long
+ * throws land in a stranger's corridor.
+ */
+function settleOffOwnRun(s: Settler, label: SceneLabel, here: Seat): boolean {
+  for (const attributable of [true, false]) {
+    const origins = attributable ? [here, ...s.ownRunMidpoints(label)] : [here];
+    const slides = attributable
+      ? [0, -24, 24, -48, 48, -72, 72, -96, 96]
+      : [0, -24, 24, -48, 48];
+    for (const origin of origins)
+      for (const dx of slides)
+        for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86])
+          for (const dir of step === 0 ? [1] : [-1, 1]) {
+            label.y = origin.y + dir * step;
+            label.x = origin.x + dx;
+            if (s.collides(label)) continue;
+            if (attributable && !s.attributableHere(label)) continue;
+            return true;
+          }
+  }
+  return false;
+}
+
+/**
+ * Move one label out of trouble, or leave it exactly where it was.
+ *
+ * A label is moved for either reason. Overlap alone was the old trigger, and it
+ * misses the whole `labelPierced` population: a label centred on its own run
+ * overlaps nothing at all while another flow is drawn through the middle of its
+ * text.
+ *
+ * Two rounds. The first refuses any escape that detaches the label from its flow
+ * or parks it nearer another, walking it to a different run of its own flow
+ * instead; the second drops that condition. Not a preference: an overlapping
+ * label is unreadable, an ambiguous one merely misleading, so zero overlaps
+ * outranks attribution. Attribution is a ratchet exactly because it has to yield
+ * here.
+ */
+function settleOneLabel(s: Settler, label: SceneLabel): void {
+  if (!s.collides(label) && s.attributableHere(label)) return;
+  const origin: Seat = { x: label.x, y: label.y };
+  if (settleOnOwnRun(s, label)) return;
+  if (settleOffOwnRun(s, label, origin)) return;
+  label.x = origin.x;
+  label.y = origin.y;
+}
+
 export function render(model: Model, view: View, scene: Scene): RenderResult {
   const style = model.style;
   const fonts = fontSizes(style.font.size);
@@ -279,103 +369,40 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
   /** Container names, which carry no halo and so may not be sat on (§4e). */
   const titleBands = titleBoxesOf(scene, model);
 
+  const settler: Settler = {
+    /**
+     * Somewhere this label may not sit at all.
+     *
+     * Container names sit with the node boxes, not the soft preferences the
+     * escape ladder trades, because §4e is tier 0 while every one of those is
+     * tier 1: a name drawn through is destroyed information, a label beside its
+     * line is still readable. `label-anchor` ranks these the other way — that
+     * predates the ladder, which now decides.
+     *
+     * Surfaced once `laneBeyond` started clearing runs (§4j): labels that never
+     * needed to escape began escaping, and five `slide` drawings put one on a
+     * container name on the way out.
+     */
+    collides: (label) =>
+      labels.some((other) => other !== label && boxesOverlap(other, label)) ||
+      nodeBoxes.some((node) => boxesOverlap(node, label)) ||
+      titleBands.some((band) => boxesOverlap(band, label)),
+    /** Can the reader tell, from this position alone, which flow is speaking? */
+    attributableHere: (label) => {
+      const own = offOwnRun(label);
+      return own <= ADRIFT_SQ && !stolen(label, own) && !pierced(label);
+    },
+    ownRunMidpoints,
+    alongOwnRun,
+  };
+
   const settleLabelPositions = () => {
     for (const label of labels) {
       const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
       if (requested === "above") label.y -= label.height / 2 + 5;
       else if (requested === "below") label.y += label.height / 2 + 5;
     }
-    for (const label of labels) {
-      /**
-       * Somewhere this label may not sit at all.
-       *
-       * Container names sit with the node boxes, not the soft preferences below,
-       * because §4e is tier 0 while every preference the escape ladder trades is
-       * tier 1: a name drawn through is destroyed information, a label beside its
-       * line is still readable. `label-anchor` ranks these the other way — that
-       * predates the ladder, which now decides.
-       *
-       * Surfaced once `laneBeyond` started clearing runs (§4j): labels that never
-       * needed to escape began escaping, and five `slide` drawings put one on a
-       * container name on the way out.
-       */
-      const collides = () =>
-        labels.some((other) => other !== label && boxesOverlap(other, label)) ||
-        nodeBoxes.some((node) => boxesOverlap(node, label)) ||
-        titleBands.some((band) => boxesOverlap(band, label));
-      /** Can the reader tell, from this position alone, which flow is speaking? */
-      const attributableHere = () => {
-        const own = offOwnRun(label);
-        return own <= ADRIFT_SQ && !stolen(label, own) && !pierced(label);
-      };
-      // A label is moved for either reason. Overlap alone was the old trigger,
-      // and it misses the whole `labelPierced` population: a label centred on
-      // its own run overlaps nothing at all while another flow is drawn through
-      // the middle of its text.
-      if (!collides() && attributableHere()) continue;
-      const originY = label.y,
-        originX = label.x;
-      const here = { x: originX, y: originY };
-      // Two rounds. The first refuses any escape that detaches the label from
-      // its flow or parks it nearer another, walking it to a different run of
-      // its own flow instead; the second drops that condition.
-      //
-      // Not a preference: an overlapping label is unreadable, an ambiguous one
-      // merely misleading, so zero overlaps outranks attribution. Attribution is
-      // a ratchet exactly because it has to yield here.
-      let settled = false;
-      // Round 0: stay on the line. Every seat here is *on* the run — midpoints
-      // and slides along it — so §4d survives the escape. Only a label with
-      // nowhere to go along its own flow reaches the perpendicular rounds.
-      //
-      // Two sweeps over the same seats: the first also wants attribution, the
-      // second takes any overlap-free seat, pierced or not. Overlapping is
-      // unreadable, off-the-line breaks §4d, pierced is a ratchet — so a pierced
-      // seat *on* the run beats a clean one beside it.
-      const onLineSeats = [...ownRunMidpoints(label), ...alongOwnRun(label)];
-      for (const wantAttributable of [true, false]) {
-        for (const seat of onLineSeats) {
-          label.x = seat.x;
-          label.y = seat.y;
-          if (collides()) continue;
-          if (wantAttributable && !attributableHere()) continue;
-          settled = true;
-          break;
-        }
-        if (settled) break;
-      }
-      for (const attributable of settled ? [] : [true, false]) {
-        const origins = attributable ? [here, ...ownRunMidpoints(label)] : [here];
-        // The attributable round slides further than the relaxed one: along its
-        // own run a label keeps `own` at 0 whatever the distance, so a long
-        // slide is how a label wider than the gap between two crossing runs
-        // dodges the piercing one without leaving its flow. The relaxed round
-        // keeps the short ladder — unguarded long throws land in a stranger's
-        // corridor.
-        const slides = attributable
-          ? [0, -24, 24, -48, 48, -72, 72, -96, 96]
-          : [0, -24, 24, -48, 48];
-        outer: for (const origin of origins) {
-          for (const dx of slides) {
-            for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
-              for (const dir of step === 0 ? [1] : [-1, 1]) {
-                label.y = origin.y + dir * step;
-                label.x = origin.x + dx;
-                if (collides()) continue;
-                if (attributable && !attributableHere()) continue;
-                settled = true;
-                break outer;
-              }
-            }
-          }
-        }
-        if (settled) break;
-      }
-      if (!settled) {
-        label.x = originX;
-        label.y = originY;
-      }
-    }
+    for (const label of labels) settleOneLabel(settler, label);
   };
 
   const overlapsBefore = countLabelOverlaps();

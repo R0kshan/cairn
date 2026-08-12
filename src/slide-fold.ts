@@ -5,6 +5,11 @@
  * the default flow. Lays out each middle group with ELK, then places columns and
  * routes inter-group flows itself. `LaneAllocator` assigns non-overlapping lanes
  * to parallel connectors. Returns `null` when folding doesn't apply.
+ *
+ * `foldedLayout` runs its phases in a fixed order, and each one depends on the
+ * frame the previous fixed: lay the middle groups out with elk, size the source
+ * and sink columns, classify the inter-group flows, derive the coordinate frame
+ * from what those demand, place the nodes in it, then route the connectors.
  */
 
 import type { Model, Element } from "./models/ast.ts";
@@ -20,6 +25,8 @@ const PAD_TOP = 30,
 const LANE_STEP = 10;
 const LANE_V = 11;
 const LABEL_WRAP = 16;
+
+type Flow = Model["flows"][number];
 
 class LaneAllocator {
   lanes: { rangeStart: number; rangeEnd: number }[][] = [];
@@ -68,6 +75,41 @@ interface ColGroup {
 
 type Cls = "A" | "B" | "C" | "D" | "E" | "X";
 
+/** Font sizes and label helpers derived from the model's style, resolved once. */
+interface FoldStyle {
+  numbered: boolean;
+  edge: number;
+  node: number;
+  cont: number;
+  scale: number;
+  chipsOf: (flow: { objects?: { id: string }[] }) => string[];
+  numLabel: (flow: { id: string }) => { text: string; width: number; height: number };
+}
+
+function foldStyle(model: Model): FoldStyle {
+  const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
+  const numbered = model.style.flowText === "numbered";
+  const { edge, node, cont, scale } = fontSizes(model.style.font.size);
+  return {
+    numbered,
+    edge,
+    node,
+    cont,
+    scale,
+    chipsOf: (flow) =>
+      numbered
+        ? []
+        : (flow.objects ?? []).map(
+            (objectRef) => businessObjectNames.get(objectRef.id) ?? objectRef.id,
+          ),
+    numLabel: (flow) => ({
+      text: String(parseInt(flow.id.slice(1), 10)),
+      width: Math.round(26 * scale),
+      height: Math.round(17 * scale),
+    }),
+  };
+}
+
 /** Converts an `Element` (and its children, recursively) into elk's input node shape. */
 function toElkNode(element: Element, containerFontSize: number, nodeFontSize: number): ElkNode {
   if (element.children.length) {
@@ -98,18 +140,15 @@ function toElkNode(element: Element, containerFontSize: number, nodeFontSize: nu
  */
 function walkFoldedNodes(
   elkNode: LaidOutNode,
-  offsetX: number,
-  offsetY: number,
+  offset: Point,
   elementById: Map<string, Element>,
   syntheticIds: Set<string>,
 ): WalkedFoldNode[] {
   return (elkNode.children ?? []).flatMap((child) => {
-    const absoluteX = offsetX + child.x;
-    const absoluteY = offsetY + child.y;
-    const origin = { x: absoluteX, y: absoluteY };
+    const origin = { x: offset.x + child.x, y: offset.y + child.y };
     if (syntheticIds.has(child.id)) return [{ id: child.id, origin, isPort: true }];
     const element = elementById.get(child.id)!;
-    const box: Box = { x: absoluteX, y: absoluteY, width: child.width, height: child.height };
+    const box: Box = { x: origin.x, y: origin.y, width: child.width, height: child.height };
     const node: SceneNode = {
       id: child.id,
       kind: element.kind,
@@ -122,9 +161,16 @@ function walkFoldedNodes(
     };
     return [
       { id: child.id, origin, isPort: false, node, box },
-      ...walkFoldedNodes(child, absoluteX, absoluteY, elementById, syntheticIds),
+      ...walkFoldedNodes(child, origin, elementById, syntheticIds),
     ];
   });
+}
+
+/** What resolving an elk edge to absolute coordinates needs. */
+interface EdgeCollectContext {
+  origins: Map<string, Point>;
+  syntheticIds: Set<string>;
+  edgeFontSize: number;
 }
 
 /**
@@ -136,24 +182,22 @@ function walkFoldedNodes(
  */
 function collectFoldedEdges(
   elkNode: LaidOutNode,
-  origins: Map<string, Point>,
   rootOffset: Point,
-  syntheticIds: Set<string>,
-  edgeFontSize: number,
+  ctx: EdgeCollectContext,
 ): CollectedFoldEdges {
   const edges: SceneEdge[] = [];
   const edgePoints: [string, Point[]][] = [];
   for (const edge of elkNode.edges ?? []) {
     const section = edge.sections?.[0];
     if (!section) continue;
-    const origin = (edge.container && origins.get(edge.container)) || rootOffset;
+    const origin = (edge.container && ctx.origins.get(edge.container)) || rootOffset;
     const points = [section.startPoint, ...(section.bendPoints ?? []), section.endPoint].map(
       (point) => ({
         x: point.x + origin.x,
         y: point.y + origin.y,
       }),
     );
-    if (syntheticIds.has(edge.id)) {
+    if (ctx.syntheticIds.has(edge.id)) {
       edgePoints.push([edge.id, points]);
       continue;
     }
@@ -164,39 +208,439 @@ function collectFoldedEdges(
       y: label.y + origin.y,
       width: label.width,
       height: label.height,
-      textH: label.text ? label.text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
+      textH: label.text ? label.text.split("\n").length * (ctx.edgeFontSize + 3) + 4 : 0,
     }));
     edges.push({ id: edge.id, pts: points, labels });
   }
   for (const child of elkNode.children ?? []) {
-    const childResult = collectFoldedEdges(child, origins, rootOffset, syntheticIds, edgeFontSize);
+    const childResult = collectFoldedEdges(child, rootOffset, ctx);
     edges.push(...childResult.edges);
     edgePoints.push(...childResult.edgePoints);
   }
   return { edges, edgePoints };
 }
 
+// ---- phase 1: laying each middle group out with elk ---------------------------
+
+/** The flow partition of the model, and the synthetic ids the port stubs use. */
+interface FoldGraph {
+  rootOf: Map<string, Element>;
+  interFlows: Flow[];
+  internalFlows: Flow[];
+  syntheticIds: Set<string>;
+}
+
+/** The elk label list for an internal flow — numbered views carry just the index. */
+function internalFlowLabels(flow: Flow, style: FoldStyle) {
+  if (style.numbered) return [style.numLabel(flow)];
+  const text = flow.label ? wrapText(flow.label, LABEL_WRAP + 4) : techText(flow.tech);
+  const chips = style.chipsOf(flow);
+  if (!text && !chips.length) return [];
+  return [
+    {
+      text,
+      ...flowLabelBox({
+        text,
+        chipNames: chips,
+        fontSize: style.edge,
+        tech: flow.label ? techText(flow.tech) : undefined,
+        scale: style.scale,
+      }),
+    },
+  ];
+}
+
+/**
+ * One middle group as an elk graph. Inter-group flows cannot cross the group
+ * boundary, so each is represented inside it by a 1x1 port node pinned to the
+ * first or last layer, plus a stub edge to the real endpoint; the caller
+ * stitches those stubs onto the connector it routes by hand.
+ */
+function buildGroupGraph(group: Element, style: FoldStyle, fg: FoldGraph): ElkNode {
+  const node = toElkNode(group, style.cont, style.node);
+  const nodeChildren = (node.children ??= []);
+  for (const flow of fg.interFlows) {
+    if (fg.rootOf.get(flow.from) === group) {
+      fg.syntheticIds.add(`${flow.id}_out`);
+      nodeChildren.push({
+        id: `${flow.id}_out`,
+        width: 1,
+        height: 1,
+        layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" },
+      });
+    }
+    if (fg.rootOf.get(flow.to) === group) {
+      fg.syntheticIds.add(`${flow.id}_in`);
+      nodeChildren.push({
+        id: `${flow.id}_in`,
+        width: 1,
+        height: 1,
+        layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" },
+      });
+    }
+  }
+  const internal = fg.internalFlows
+    .filter((flow) => fg.rootOf.get(flow.from) === group)
+    .map((flow) => ({
+      id: flow.id,
+      sources: [flow.from],
+      targets: [flow.to],
+      labels: internalFlowLabels(flow, style),
+    }));
+  const outStubs = fg.interFlows
+    .filter((flow) => fg.rootOf.get(flow.from) === group)
+    .map((flow) => {
+      fg.syntheticIds.add(`${flow.id}_oe`);
+      return { id: `${flow.id}_oe`, sources: [flow.from], targets: [`${flow.id}_out`] };
+    });
+  const inStubs = fg.interFlows
+    .filter((flow) => fg.rootOf.get(flow.to) === group)
+    .map((flow) => {
+      fg.syntheticIds.add(`${flow.id}_ie`);
+      return { id: `${flow.id}_ie`, sources: [`${flow.id}_in`], targets: [flow.to] };
+    });
+  return {
+    id: `fold_${group.id}`,
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": "RIGHT",
+      "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+      "elk.edgeRouting": "ORTHOGONAL",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "36",
+      "elk.spacing.nodeNode": "14",
+      "elk.spacing.edgeEdge": "10",
+      "elk.spacing.edgeNode": "11",
+      "elk.spacing.edgeLabel": "3",
+      "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
+      "elk.edgeLabels.placement": "CENTER",
+    },
+    children: [node],
+    edges: [...internal, ...outStubs, ...inStubs],
+  };
+}
+
+// ---- phase 2: sizing the source and sink columns ------------------------------
+
+/** Stacks a partition's groups into fixed-width columns of centred blocks. */
+function layoutColumn(elements: Element[], style: FoldStyle): ColGroup[] {
+  return elements.map((group) => {
+    const blocks = group.children.map((child) => {
+      const size = nodeSize(child.kind, child.label ?? child.id, style.node);
+      return { element: child, width: size.width, height: size.height, x: 0, y: 0 };
+    });
+    const columnWidth =
+      Math.max(
+        measure(group.label ?? group.id, style.cont).width + 20,
+        ...blocks.map((block) => block.width),
+      ) +
+      2 * PAD;
+    let blockY = PAD_TOP;
+    for (const block of blocks) {
+      block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
+      block.y = blockY;
+      blockY += block.height + 14;
+    }
+    return { element: group, width: columnWidth, height: blockY - 14 + PAD, blocks };
+  });
+}
+
+// ---- phase 3: classifying the inter-group flows -------------------------------
+
+/**
+ * Which gutter an inter-group flow belongs in. A/B are the straight
+ * source→middle and middle→sink hops; C/D/E double back through a horizontal
+ * gutter between two middle rows, so they also carry which gutter that is.
+ */
+function classifyFlow(
+  flow: Flow,
+  ctx: {
+    partitionOf: (element: Element) => number;
+    rootOf: Map<string, Element>;
+    rowIndex: Map<string, number>;
+  },
+): { cls: Cls; gutter?: number } {
+  const { partitionOf, rootOf, rowIndex } = ctx;
+  const sourcePartition = partitionOf(rootOf.get(flow.from)!);
+  const destPartition = partitionOf(rootOf.get(flow.to)!);
+  if (sourcePartition === 0 && destPartition === 1) return { cls: "A" };
+  if (sourcePartition === 1 && destPartition === 2) return { cls: "B" };
+  if (sourcePartition === 1 && destPartition === 1) {
+    const sourceRowIndex = rowIndex.get(rootOf.get(flow.from)!.id)!;
+    const destRowIndex = rowIndex.get(rootOf.get(flow.to)!.id)!;
+    return { cls: "C", gutter: destRowIndex > sourceRowIndex ? destRowIndex : destRowIndex + 1 };
+  }
+  if (sourcePartition === 2 && destPartition === 1)
+    return { cls: "D", gutter: rowIndex.get(rootOf.get(flow.to)!.id)! };
+  if (sourcePartition === 1 && destPartition === 0)
+    return { cls: "E", gutter: rowIndex.get(rootOf.get(flow.from)!.id)! };
+  return { cls: "X" };
+}
+
+// ---- phase 4: the coordinate frame --------------------------------------------
+
+interface FoldRow {
+  element: Element;
+  box: Box;
+  result: LaidOutNode | null;
+}
+
+/**
+ * Stacks the middle groups top to bottom, leaving each gutter as much room as
+ * the flows routed through it demand.
+ */
+function layoutMiddleRows(
+  middles: Element[],
+  middleResults: Map<string, LaidOutNode>,
+  geom: { xMiddle: number; gutterHeight: (gutterIndex: number) => number },
+  style: FoldStyle,
+): { rows: FoldRow[]; middleHeight: number } {
+  const rows: FoldRow[] = [];
+  let yCursor = 16 + geom.gutterHeight(0);
+  middles.forEach((element, index) => {
+    const result = middleResults.get(element.id) ?? null;
+    const size = result
+      ? { width: result.children![0].width, height: result.children![0].height }
+      : nodeSize(element.kind, element.label ?? element.id, style.node);
+    rows.push({
+      element,
+      box: { x: geom.xMiddle, y: yCursor, width: size.width, height: size.height },
+      result,
+    });
+    yCursor += size.height + Math.max(40, geom.gutterHeight(index + 1));
+  });
+  return { rows, middleHeight: yCursor - Math.max(40, geom.gutterHeight(middles.length)) };
+}
+
+/** Centres a partition's columns against the middle stack. */
+function placeCol(cols: ColGroup[], x: number, middleHeight: number): { group: ColGroup; box: Box }[] {
+  const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
+  let colY = Math.max(20, 20 + (middleHeight - total) / 2);
+  return cols.map((col) => {
+    const box = { x, y: colY, width: col.width, height: col.height };
+    colY += col.height + 30;
+    return { group: col, box };
+  });
+}
+
+// ---- phase 5: placing the nodes -----------------------------------------------
+
+/** The scene under construction: what every placement phase writes into. */
+interface FoldScene {
+  nodes: SceneNode[];
+  absoluteBoxes: Map<string, Box>;
+  absolutePorts: Map<string, Point>;
+  origins: Map<string, Point>;
+}
+
+function pushCol(placed: { group: ColGroup; box: Box }[], scene: FoldScene): void {
+  for (const { group, box } of placed) {
+    scene.nodes.push({
+      id: group.element.id,
+      kind: group.element.kind,
+      label: group.element.label ?? group.element.id,
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      container: true,
+    });
+    scene.absoluteBoxes.set(group.element.id, box);
+    for (const block of group.blocks) {
+      const nodeBox = {
+        x: box.x + block.x,
+        y: box.y + block.y,
+        width: block.width,
+        height: block.height,
+      };
+      scene.nodes.push({
+        id: block.element.id,
+        kind: block.element.kind,
+        label: block.element.label ?? block.element.id,
+        x: nodeBox.x,
+        y: nodeBox.y,
+        width: nodeBox.width,
+        height: nodeBox.height,
+        container: false,
+      });
+      scene.absoluteBoxes.set(block.element.id, nodeBox);
+    }
+  }
+}
+
+/** Where a laid-out group's elk coordinates sit in the assembled scene. */
+const rowOffset = (row: FoldRow): Point => ({
+  x: row.box.x - row.result!.children![0].x,
+  y: row.box.y - row.result!.children![0].y,
+});
+
+function pushMiddleRows(
+  rows: FoldRow[],
+  scene: FoldScene,
+  elementById: Map<string, Element>,
+  syntheticIds: Set<string>,
+): void {
+  for (const row of rows) {
+    const { element, box, result } = row;
+    if (!result) {
+      scene.nodes.push({
+        id: element.id,
+        kind: element.kind,
+        label: element.label ?? element.id,
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        container: false,
+      });
+      scene.absoluteBoxes.set(element.id, box);
+      continue;
+    }
+    const offset = rowOffset(row);
+    scene.origins.set(result.id, offset);
+    for (const walked of walkFoldedNodes(result, offset, elementById, syntheticIds)) {
+      scene.origins.set(walked.id, walked.origin);
+      if (walked.isPort) {
+        scene.absolutePorts.set(walked.id, walked.origin);
+        continue;
+      }
+      scene.nodes.push(walked.node!);
+      scene.absoluteBoxes.set(walked.id, walked.box!);
+    }
+  }
+}
+
+// ---- phase 6: routing the connectors ------------------------------------------
+
+/** The gutter lanes a connector may claim, in the frame already fixed. */
+interface Gutters {
+  laneLeftX: (y1: number, y2: number) => number;
+  laneRightX: (y1: number, y2: number) => number;
+  gutterInfo: (
+    gutterIndex: number,
+    x1: number,
+    x2: number,
+  ) => { y: number; laneIndex: number; labelY: number };
+  xLeftGutter: number;
+  xRightGutter: number;
+  xSink: number;
+}
+
+interface RoutedConnector {
+  points: Point[];
+  laneIndex: number;
+  labelY: number;
+}
+
+/**
+ * The hand-routed polyline for one inter-group flow. Allocation order matters:
+ * each lane call claims a slot, so the branches must ask in the same sequence
+ * they always have or parallel connectors change lanes.
+ */
+function routeConnector(
+  entry: { cls: Cls; gutter?: number },
+  ends: { source: Point; dest: Point; sourceBox: Box },
+  gut: Gutters,
+): RoutedConnector {
+  const { cls } = entry;
+  const { dest } = ends;
+  if (cls === "C" || cls === "D" || cls === "E") {
+    // Only a sink→middle flow starts on the source's left; the others leave the
+    // right side, so the left seat is never resolved for them.
+    const start = cls === "D" ? sideMid(ends.sourceBox, "left") : ends.source;
+    const info = gut.gutterInfo(
+      entry.gutter!,
+      gut.xLeftGutter,
+      cls === "D" ? gut.xSink : gut.xRightGutter + 120,
+    );
+    const rightX = gut.laneRightX(start.y, info.y);
+    const leftX = gut.laneLeftX(info.y, dest.y);
+    return {
+      points: [
+        start,
+        { x: rightX, y: start.y },
+        { x: rightX, y: info.y },
+        { x: leftX, y: info.y },
+        { x: leftX, y: dest.y },
+        dest,
+      ],
+      laneIndex: info.laneIndex,
+      labelY: info.labelY,
+    };
+  }
+  // B crosses the right gutter; A and the X fallback both take the left.
+  const laneX =
+    cls === "B"
+      ? gut.laneRightX(ends.source.y, dest.y)
+      : gut.laneLeftX(ends.source.y, dest.y);
+  return {
+    points: [ends.source, { x: laneX, y: ends.source.y }, { x: laneX, y: dest.y }, dest],
+    laneIndex: 0,
+    labelY: 0,
+  };
+}
+
+/**
+ * A connector's label: parked in its gutter's label zone when it has one (the
+ * six-point routes), otherwise tucked above the final approach.
+ */
+function connectorLabel(
+  flow: Flow,
+  routed: RoutedConnector,
+  style: FoldStyle,
+): SceneLabel | undefined {
+  const chips = style.chipsOf(flow);
+  const text = style.numbered
+    ? style.numLabel(flow).text
+    : flow.label
+      ? wrapText(flow.label, LABEL_WRAP)
+      : techText(flow.tech) || (chips.length ? "" : undefined);
+  if (text === undefined) return undefined;
+  const measured = style.numbered
+    ? { width: Math.round(26 * style.scale), height: Math.round(17 * style.scale) }
+    : flowLabelBox({
+        text,
+        chipNames: chips,
+        fontSize: style.edge,
+        tech: flow.label ? techText(flow.tech) : undefined,
+        scale: style.scale,
+      });
+  const textH = text ? text.split("\n").length * (style.edge + 3) + 4 : 0;
+  const { points } = routed;
+  if (points.length >= 6) {
+    const segmentLeft = Math.min(points[2].x, points[3].x);
+    const segmentRight = Math.max(points[2].x, points[3].x);
+    const availableSpan = Math.max(40, segmentRight - segmentLeft - measured.width - 20);
+    return {
+      flowId: flow.id,
+      text,
+      x: segmentLeft + 10 + ((routed.laneIndex * 173) % availableSpan),
+      y: routed.labelY,
+      width: measured.width,
+      height: measured.height,
+      textH,
+    };
+  }
+  const secondLast = points[points.length - 2];
+  const last = points[points.length - 1];
+  return {
+    flowId: flow.id,
+    text,
+    x: (secondLast.x + last.x) / 2 - measured.width / 2,
+    y: last.y - measured.height - 4,
+    width: measured.width,
+    height: measured.height,
+    textH,
+  };
+}
+
+const sideMid = (box: Box, side: "left" | "right"): Point => ({
+  x: side === "left" ? box.x : box.x + box.width,
+  y: box.y + box.height / 2,
+});
+
 export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<Scene | null> {
   const roots = model.elements;
-  const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
-  const numbered = model.style.flowText === "numbered";
-  const {
-    edge: edgeFontSize,
-    node: nodeFontSize,
-    cont: containerFontSize,
-    scale: fontScale,
-  } = fontSizes(model.style.font.size);
-  const chipsOf = (flow: { objects?: { id: string }[] }) =>
-    numbered
-      ? []
-      : (flow.objects ?? []).map(
-          (objectRef) => businessObjectNames.get(objectRef.id) ?? objectRef.id,
-        );
-  const numLabel = (flow: { id: string }) => ({
-    text: String(parseInt(flow.id.slice(1), 10)),
-    width: Math.round(26 * fontScale),
-    height: Math.round(17 * fontScale),
-  });
+  const style = foldStyle(model);
   const partitionOf = (element: Element) => view.partitions[element.kind] ?? 1;
   const sources = roots.filter((element) => partitionOf(element) === 0);
   const middles = roots.filter((element) => partitionOf(element) === 1);
@@ -209,175 +653,33 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   for (const root of roots) {
     for (const element of subtreeElements(root)) rootOf.set(element.id, root);
   }
-
-  const interFlows = model.flows.filter((flow) => {
-    const sourceRoot = rootOf.get(flow.from);
-    const destRoot = rootOf.get(flow.to);
-    return sourceRoot && destRoot && sourceRoot !== destRoot;
-  });
-  const internalFlows = model.flows.filter(
-    (flow) => rootOf.get(flow.from) && rootOf.get(flow.from) === rootOf.get(flow.to),
-  );
-
+  const fg: FoldGraph = {
+    rootOf,
+    interFlows: model.flows.filter((flow) => {
+      const sourceRoot = rootOf.get(flow.from);
+      const destRoot = rootOf.get(flow.to);
+      return sourceRoot && destRoot && sourceRoot !== destRoot;
+    }),
+    internalFlows: model.flows.filter(
+      (flow) => rootOf.get(flow.from) && rootOf.get(flow.from) === rootOf.get(flow.to),
+    ),
+    syntheticIds: new Set<string>(),
+  };
   const elementById = new Map(indexElementsById(roots));
-  const syntheticIds = new Set<string>();
 
   const middleResults = new Map<string, LaidOutNode>();
   for (const group of middleGroups) {
-    const node = toElkNode(group, containerFontSize, nodeFontSize);
-    const nodeChildren = (node.children ??= []);
-    for (const flow of interFlows) {
-      if (rootOf.get(flow.from) === group) {
-        syntheticIds.add(`${flow.id}_out`);
-        nodeChildren.push({
-          id: `${flow.id}_out`,
-          width: 1,
-          height: 1,
-          layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" },
-        });
-      }
-      if (rootOf.get(flow.to) === group) {
-        syntheticIds.add(`${flow.id}_in`);
-        nodeChildren.push({
-          id: `${flow.id}_in`,
-          width: 1,
-          height: 1,
-          layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" },
-        });
-      }
-    }
-    const graph: ElkNode = {
-      id: `fold_${group.id}`,
-      layoutOptions: {
-        "elk.algorithm": "layered",
-        "elk.direction": "RIGHT",
-        "elk.hierarchyHandling": "INCLUDE_CHILDREN",
-        "elk.edgeRouting": "ORTHOGONAL",
-        "elk.layered.spacing.nodeNodeBetweenLayers": "36",
-        "elk.spacing.nodeNode": "14",
-        "elk.spacing.edgeEdge": "10",
-        "elk.spacing.edgeNode": "11",
-        "elk.spacing.edgeLabel": "3",
-        "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
-        "elk.edgeLabels.placement": "CENTER",
-      },
-      children: [node],
-      edges: [
-        ...internalFlows
-          .filter((flow) => rootOf.get(flow.from) === group)
-          .map((flow) => {
-            if (numbered)
-              return {
-                id: flow.id,
-                sources: [flow.from],
-                targets: [flow.to],
-                labels: [numLabel(flow)],
-              };
-            const text = flow.label ? wrapText(flow.label, LABEL_WRAP + 4) : techText(flow.tech);
-            const chips = chipsOf(flow);
-            return {
-              id: flow.id,
-              sources: [flow.from],
-              targets: [flow.to],
-              labels:
-                text || chips.length
-                  ? [
-                      {
-                        text,
-                        ...flowLabelBox({
-                          text,
-                          chipNames: chips,
-                          fontSize: edgeFontSize,
-                          tech: flow.label ? techText(flow.tech) : undefined,
-                          scale: fontScale,
-                        }),
-                      },
-                    ]
-                  : [],
-            };
-          }),
-        ...interFlows
-          .filter((flow) => rootOf.get(flow.from) === group)
-          .map((flow) => {
-            syntheticIds.add(`${flow.id}_oe`);
-            return {
-              id: `${flow.id}_oe`,
-              sources: [flow.from],
-              targets: [`${flow.id}_out`],
-            };
-          }),
-        ...interFlows
-          .filter((flow) => rootOf.get(flow.to) === group)
-          .map((flow) => {
-            syntheticIds.add(`${flow.id}_ie`);
-            return {
-              id: `${flow.id}_ie`,
-              sources: [`${flow.id}_in`],
-              targets: [flow.to],
-            };
-          }),
-      ],
-    };
-    middleResults.set(group.id, (await elk.layout(graph)) as unknown as LaidOutNode);
+    const laid = await elk.layout(buildGroupGraph(group, style, fg));
+    middleResults.set(group.id, laid as unknown as LaidOutNode);
   }
 
-  const layoutColumn = (elements: Element[]): ColGroup[] =>
-    elements.map((group) => {
-      const blocks = group.children.map((child) => {
-        const size = nodeSize(child.kind, child.label ?? child.id, nodeFontSize);
-        return {
-          element: child,
-          width: size.width,
-          height: size.height,
-          x: 0,
-          y: 0,
-        };
-      });
-      const columnWidth =
-        Math.max(
-          measure(group.label ?? group.id, containerFontSize).width + 20,
-          ...blocks.map((block) => block.width),
-        ) +
-        2 * PAD;
-      let blockY = PAD_TOP;
-      for (const block of blocks) {
-        block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
-        block.y = blockY;
-        blockY += block.height + 14;
-      }
-      return {
-        element: group,
-        width: columnWidth,
-        height: blockY - 14 + PAD,
-        blocks,
-      };
-    });
-  const sourceColumns = layoutColumn(sources);
-  const sinkColumns = layoutColumn(sinks);
+  const sourceColumns = layoutColumn(sources, style);
+  const sinkColumns = layoutColumn(sinks, style);
 
   const rowIndex = new Map(middles.map((middle, middleIndex) => [middle.id, middleIndex]));
-  const classify = (flow: (typeof interFlows)[number]): { cls: Cls; gutter?: number } => {
-    const sourcePartition = partitionOf(rootOf.get(flow.from)!);
-    const destPartition = partitionOf(rootOf.get(flow.to)!);
-    if (sourcePartition === 0 && destPartition === 1) return { cls: "A" };
-    if (sourcePartition === 1 && destPartition === 2) return { cls: "B" };
-    if (sourcePartition === 1 && destPartition === 1) {
-      const sourceRowIndex = rowIndex.get(rootOf.get(flow.from)!.id)!;
-      const destRowIndex = rowIndex.get(rootOf.get(flow.to)!.id)!;
-      return {
-        cls: "C",
-        gutter: destRowIndex > sourceRowIndex ? destRowIndex : destRowIndex + 1,
-      };
-    }
-    if (sourcePartition === 2 && destPartition === 1)
-      return { cls: "D", gutter: rowIndex.get(rootOf.get(flow.to)!.id)! };
-    if (sourcePartition === 1 && destPartition === 0)
-      return { cls: "E", gutter: rowIndex.get(rootOf.get(flow.from)!.id)! };
-    return { cls: "X" };
-  };
-  const classified = interFlows.map((flow) => ({
+  const classified = fg.interFlows.map((flow) => ({
     flow,
-    ...classify(flow),
+    ...classifyFlow(flow, { partitionOf, rootOf, rowIndex }),
   }));
 
   const gutterDemand: number[] = Array(middles.length + 1).fill(0);
@@ -392,11 +694,13 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
     28 + Math.min(Math.ceil(rightGutterFlowCount / 2), 10) * LANE_STEP + LABEL_W;
 
   const widthSource = Math.max(0, ...sourceColumns.map((col) => col.width));
-  const widthMiddleFn = (element: Element) =>
-    element.children.length
-      ? middleResults.get(element.id)!.children![0].width
-      : nodeSize(element.kind, element.label ?? element.id, nodeFontSize).width;
-  const widthMiddle = Math.max(...middles.map(widthMiddleFn));
+  const widthMiddle = Math.max(
+    ...middles.map((element) =>
+      element.children.length
+        ? middleResults.get(element.id)!.children![0].width
+        : nodeSize(element.kind, element.label ?? element.id, style.node).width,
+    ),
+  );
   const widthSink = Math.max(0, ...sinkColumns.map((col) => col.width));
 
   const xSource = 10;
@@ -405,141 +709,41 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   const xRightGutter = xMiddle + widthMiddle + 10;
   const xSink = xRightGutter + widthRightGutter;
 
-  const hasChips = interFlows.some((flow) => flow.objects?.length);
+  const hasChips = fg.interFlows.some((flow) => flow.objects?.length);
   const LABEL_ROW = hasChips ? 48 : 29;
   const LABEL_ZONE = 4 + 2 * LABEL_ROW;
   const gutterHeight = (gutterIndex: number) =>
     14 + gutterDemand[gutterIndex] * LANE_V + (gutterDemand[gutterIndex] ? LABEL_ZONE : 0);
-  const rows: {
-    element: Element;
-    box: Box;
-    result: LaidOutNode | null;
-  }[] = [];
-  let yCursor = 16 + gutterHeight(0);
-  middles.forEach((element, index) => {
-    const result = middleResults.get(element.id) ?? null;
-    const size = result
-      ? {
-          width: result.children![0].width,
-          height: result.children![0].height,
-        }
-      : (() => {
-          const node = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
-          return { width: node.width, height: node.height };
-        })();
-    rows.push({
-      element,
-      box: {
-        x: xMiddle,
-        y: yCursor,
-        width: size.width,
-        height: size.height,
-      },
-      result,
-    });
-    yCursor += size.height + Math.max(40, gutterHeight(index + 1));
-  });
-  const middleHeight = yCursor - Math.max(40, gutterHeight(middles.length));
+  const { rows, middleHeight } = layoutMiddleRows(
+    middles,
+    middleResults,
+    { xMiddle, gutterHeight },
+    style,
+  );
 
-  const placeCol = (cols: ColGroup[], x: number): { group: ColGroup; box: Box }[] => {
-    const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
-    let colY = Math.max(20, 20 + (middleHeight - total) / 2);
-    return cols.map((col) => {
-      const box = { x, y: colY, width: col.width, height: col.height };
-      colY += col.height + 30;
-      return { group: col, box };
-    });
+  const sourcePlaced = placeCol(sourceColumns, xSource, middleHeight);
+  const sinkPlaced = placeCol(sinkColumns, xSink, middleHeight);
+
+  const scene: FoldScene = {
+    nodes: [],
+    absoluteBoxes: new Map(),
+    absolutePorts: new Map(),
+    origins: new Map(),
   };
-  const sourcePlaced = placeCol(sourceColumns, xSource);
-  const sinkPlaced = placeCol(sinkColumns, xSink);
-
-  const nodes: SceneNode[] = [];
-  const absoluteBoxes = new Map<string, Box>();
-  const pushCol = (placed: { group: ColGroup; box: Box }[]) => {
-    for (const { group, box } of placed) {
-      nodes.push({
-        id: group.element.id,
-        kind: group.element.kind,
-        label: group.element.label ?? group.element.id,
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height,
-        container: true,
-      });
-      absoluteBoxes.set(group.element.id, box);
-      for (const block of group.blocks) {
-        const nodeBox = {
-          x: box.x + block.x,
-          y: box.y + block.y,
-          width: block.width,
-          height: block.height,
-        };
-        nodes.push({
-          id: block.element.id,
-          kind: block.element.kind,
-          label: block.element.label ?? block.element.id,
-          x: nodeBox.x,
-          y: nodeBox.y,
-          width: nodeBox.width,
-          height: nodeBox.height,
-          container: false,
-        });
-        absoluteBoxes.set(block.element.id, nodeBox);
-      }
-    }
-  };
-  pushCol(sourcePlaced);
-  pushCol(sinkPlaced);
-
-  const absolutePorts = new Map<string, Point>();
-  const origins = new Map<string, Point>();
-  for (const { element, box, result } of rows) {
-    if (!result) {
-      nodes.push({
-        id: element.id,
-        kind: element.kind,
-        label: element.label ?? element.id,
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height,
-        container: false,
-      });
-      absoluteBoxes.set(element.id, box);
-      continue;
-    }
-    const rootOffset = {
-      x: box.x - result.children![0].x,
-      y: box.y - result.children![0].y,
-    };
-    origins.set(result.id, rootOffset);
-    for (const walked of walkFoldedNodes(
-      result,
-      rootOffset.x,
-      rootOffset.y,
-      elementById,
-      syntheticIds,
-    )) {
-      origins.set(walked.id, walked.origin);
-      if (walked.isPort) {
-        absolutePorts.set(walked.id, walked.origin);
-        continue;
-      }
-      nodes.push(walked.node!);
-      absoluteBoxes.set(walked.id, walked.box!);
-    }
-  }
+  pushCol(sourcePlaced, scene);
+  pushCol(sinkPlaced, scene);
+  pushMiddleRows(rows, scene, elementById, fg.syntheticIds);
 
   const edges: SceneEdge[] = [];
   const edgePoints = new Map<string, Point[]>();
-  for (const { box, result } of rows) {
-    if (!result) continue;
-    const rootOffset = {
-      x: box.x - result.children![0].x,
-      y: box.y - result.children![0].y,
-    };
-    const collected = collectFoldedEdges(result, origins, rootOffset, syntheticIds, edgeFontSize);
+  const collectCtx: EdgeCollectContext = {
+    origins: scene.origins,
+    syntheticIds: fg.syntheticIds,
+    edgeFontSize: style.edge,
+  };
+  for (const row of rows) {
+    if (!row.result) continue;
+    const collected = collectFoldedEdges(row.result, rowOffset(row), collectCtx);
     edges.push(...collected.edges);
     for (const [edgeId, points] of collected.edgePoints) edgePoints.set(edgeId, points);
   }
@@ -547,153 +751,63 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
   const leftLaneAlloc = new LaneAllocator();
   const rightLaneAlloc = new LaneAllocator();
   const gutterAllocators = gutterDemand.map(() => new LaneAllocator());
-  const laneLeftX = (y1: number, y2: number) =>
-    xLeftGutter + 14 + leftLaneAlloc.alloc(y1, y2) * LANE_STEP;
-  const laneRightX = (y1: number, y2: number) =>
-    xRightGutter + 14 + rightLaneAlloc.alloc(y1, y2) * LANE_STEP;
-  const gutterInfo = (gutterIndex: number, x1: number, x2: number) => {
-    const top =
-      gutterIndex === 0 ? 14 : rows[gutterIndex - 1].box.y + rows[gutterIndex - 1].box.height + 10;
-    const laneIndex = gutterAllocators[gutterIndex].alloc(x1, x2);
-    return {
-      y: top + LABEL_ZONE + laneIndex * LANE_V,
-      laneIndex,
-      labelY: top + 2 + (laneIndex % 2) * LABEL_ROW,
-    };
+  const gutters: Gutters = {
+    laneLeftX: (y1, y2) => xLeftGutter + 14 + leftLaneAlloc.alloc(y1, y2) * LANE_STEP,
+    laneRightX: (y1, y2) => xRightGutter + 14 + rightLaneAlloc.alloc(y1, y2) * LANE_STEP,
+    gutterInfo: (gutterIndex, x1, x2) => {
+      const top =
+        gutterIndex === 0
+          ? 14
+          : rows[gutterIndex - 1].box.y + rows[gutterIndex - 1].box.height + 10;
+      const laneIndex = gutterAllocators[gutterIndex].alloc(x1, x2);
+      return {
+        y: top + LABEL_ZONE + laneIndex * LANE_V,
+        laneIndex,
+        labelY: top + 2 + (laneIndex % 2) * LABEL_ROW,
+      };
+    },
+    xLeftGutter,
+    xRightGutter,
+    xSink,
   };
-  const sideMid = (box: Box, side: "left" | "right"): Point => ({
-    x: side === "left" ? box.x : box.x + box.width,
-    y: box.y + box.height / 2,
-  });
 
-  for (const { flow, cls, gutter } of classified) {
+  for (const entry of classified) {
+    const { flow } = entry;
     const sourceRoot = rootOf.get(flow.from)!;
     const destRoot = rootOf.get(flow.to)!;
-    const outPort = absolutePorts.get(`${flow.id}_out`);
-    const inPort = absolutePorts.get(`${flow.id}_in`);
-    const sourcePoint =
-      outPort ??
-      sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id)!, "right");
-    const destPoint =
-      inPort ?? sideMid(absoluteBoxes.get(flow.to) ?? absoluteBoxes.get(destRoot.id)!, "left");
-    const preSegments = edgePoints.get(`${flow.id}_oe`) ?? [];
-    const postSegments = edgePoints.get(`${flow.id}_ie`) ?? [];
-    const points: Point[] = [];
-    let flowLaneIndex = 0;
-    let gutterY = 0;
-    let gutterLabelY = 0;
-
-    if (cls === "A") {
-      const leftX = laneLeftX(sourcePoint.y, destPoint.y);
-      points.push(
-        sourcePoint,
-        { x: leftX, y: sourcePoint.y },
-        { x: leftX, y: destPoint.y },
-        destPoint,
-      );
-    } else if (cls === "B") {
-      const rightX = laneRightX(sourcePoint.y, destPoint.y);
-      points.push(
-        sourcePoint,
-        { x: rightX, y: sourcePoint.y },
-        { x: rightX, y: destPoint.y },
-        destPoint,
-      );
-    } else if (cls === "C" || cls === "D" || cls === "E") {
-      const gutterIndex = gutter!;
-      const start: Point =
-        cls === "D"
-          ? sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id)!, "left")
-          : sourcePoint;
-      const info = gutterInfo(gutterIndex, xLeftGutter, cls === "D" ? xSink : xRightGutter + 120);
-      gutterY = info.y;
-      flowLaneIndex = info.laneIndex;
-      gutterLabelY = info.labelY;
-      const rightX = laneRightX(start.y, gutterY);
-      const leftX = laneLeftX(gutterY, destPoint.y);
-      points.push(
-        start,
-        { x: rightX, y: start.y },
-        { x: rightX, y: gutterY },
-        { x: leftX, y: gutterY },
-        { x: leftX, y: destPoint.y },
-        destPoint,
-      );
-    } else {
-      const leftX = laneLeftX(sourcePoint.y, destPoint.y);
-      points.push(
-        sourcePoint,
-        { x: leftX, y: sourcePoint.y },
-        { x: leftX, y: destPoint.y },
-        destPoint,
-      );
-    }
-
-    const mergedPoints = [...preSegments, ...points, ...postSegments];
-    let label: SceneLabel | undefined;
-    const chips = chipsOf(flow);
-    const text = numbered
-      ? numLabel(flow).text
-      : flow.label
-        ? wrapText(flow.label, LABEL_WRAP)
-        : techText(flow.tech) || (chips.length ? "" : undefined);
-    if (text !== undefined) {
-      const measured = numbered
-        ? { width: Math.round(26 * fontScale), height: Math.round(17 * fontScale) }
-        : flowLabelBox({
-            text,
-            chipNames: chips,
-            fontSize: edgeFontSize,
-            tech: flow.label ? techText(flow.tech) : undefined,
-            scale: fontScale,
-          });
-      if (points.length >= 6) {
-        const segmentLeft = Math.min(points[2].x, points[3].x);
-        const segmentRight = Math.max(points[2].x, points[3].x);
-        const availableSpan = Math.max(40, segmentRight - segmentLeft - measured.width - 20);
-        const centerX = segmentLeft + 10 + ((flowLaneIndex * 173) % availableSpan);
-        label = {
-          flowId: flow.id,
-          text,
-          x: centerX,
-          y: gutterLabelY,
-          width: measured.width,
-          height: measured.height,
-          textH: text ? text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
-        };
-      } else {
-        const secondLast = points[points.length - 2];
-        const last = points[points.length - 1];
-        label = {
-          flowId: flow.id,
-          text,
-          x: (secondLast.x + last.x) / 2 - measured.width / 2,
-          y: last.y - measured.height - 4,
-          width: measured.width,
-          height: measured.height,
-          textH: text ? text.split("\n").length * (edgeFontSize + 3) + 4 : 0,
-        };
-      }
-    }
+    const sourceBox = scene.absoluteBoxes.get(flow.from) ?? scene.absoluteBoxes.get(sourceRoot.id)!;
+    const destBox = scene.absoluteBoxes.get(flow.to) ?? scene.absoluteBoxes.get(destRoot.id)!;
+    const routed = routeConnector(
+      entry,
+      {
+        source: scene.absolutePorts.get(`${flow.id}_out`) ?? sideMid(sourceBox, "right"),
+        dest: scene.absolutePorts.get(`${flow.id}_in`) ?? sideMid(destBox, "left"),
+        sourceBox,
+      },
+      gutters,
+    );
+    const label = connectorLabel(flow, routed, style);
     edges.push({
       id: flow.id,
-      pts: mergedPoints,
+      pts: [
+        ...(edgePoints.get(`${flow.id}_oe`) ?? []),
+        ...routed.points,
+        ...(edgePoints.get(`${flow.id}_ie`) ?? []),
+      ],
       labels: label ? [label] : [],
     });
   }
 
-  const totalWidth = Math.ceil(xSink + widthSink + 10);
-  const totalHeight = Math.ceil(
-    Math.max(
-      middleHeight + 30,
-      ...sinkPlaced.map((placed) => placed.box.y + placed.box.height + 20),
-      ...sourcePlaced.map((placed) => placed.box.y + placed.box.height + 20),
-    ),
-  );
   return {
-    width: totalWidth,
-    height: totalHeight,
-    nodes,
+    width: Math.ceil(xSink + widthSink + 10),
+    height: Math.ceil(
+      Math.max(
+        middleHeight + 30,
+        ...sinkPlaced.map((placed) => placed.box.y + placed.box.height + 20),
+        ...sourcePlaced.map((placed) => placed.box.y + placed.box.height + 20),
+      ),
+    ),
+    nodes: scene.nodes,
     edges,
     layoutMs: 0,
   };

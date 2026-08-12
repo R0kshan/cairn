@@ -15,6 +15,242 @@ import { defaultDiagramStyle } from "./models/ast.ts";
 import { themeNames } from "./themes.ts";
 import { indexElementsById } from "./element-tree.ts";
 
+/**
+ * The parser's cursor and the productions that recurse back into it. Bundled so
+ * the leaf productions can live at top level instead of nesting inside `parse`
+ * — they mutate the shared cursor, so they cannot simply take copies.
+ */
+interface Parser {
+  model: Model;
+  lookAhead: (offset?: number) => Token;
+  matchToken: (kind: string, text?: string) => boolean;
+  advance: () => Token;
+  skipNewlines: () => void;
+  reportError: (message: string, span: Span, help?: string) => void;
+  syncToNextLine: () => void;
+  /** Cursor marks, for the keyword blocks that commit only once `{` follows. */
+  save: () => number;
+  restore: (mark: number) => void;
+  /** Boxed so `parseFlow` can advance it — flow ids are assigned in source order. */
+  flowSequence: { next: number };
+  parseStyleEntries: (target: DiagramStyle | null, inline: StyleProps | null) => void;
+  parseElementBody: (parent: Element) => void;
+}
+
+/** `ID -> ID : "label" (proto, format) [BO…] { … }`, everything after the target
+ *  optional. `sourceToken` (the source id) is already consumed by the caller. */
+function parseFlow(p: Parser, sourceToken: Token): void {
+  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  advance();
+  if (!matchToken("id")) {
+    reportError("target identifier expected after `->`", lookAhead().span);
+    syncToNextLine();
+    return;
+  }
+  const targetToken = advance();
+  const flow: Flow = {
+    id: "F" + String(++p.flowSequence.next).padStart(2, "0"),
+    from: sourceToken.text,
+    fromSpan: sourceToken.span,
+    to: targetToken.text,
+    toSpan: targetToken.span,
+    span: {
+      line: sourceToken.span.line,
+      col: sourceToken.span.col,
+      len: targetToken.span.col + targetToken.span.len - sourceToken.span.col,
+    },
+  };
+  if (matchToken("colon")) {
+    advance();
+    if (matchToken("str")) flow.label = advance().text;
+    else if (
+      !matchToken("lparen") &&
+      !matchToken("lbrack") &&
+      !matchToken("lbrace") &&
+      !matchToken("nl") &&
+      !matchToken("rbrace") &&
+      !matchToken("eof")
+    ) {
+      reportError(
+        "flow label expected after `:`",
+        lookAhead().span,
+        'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`',
+      );
+    }
+  }
+  if (matchToken("lparen")) {
+    const openParen = advance();
+    const values: string[] = [];
+    while ((matchToken("id") || matchToken("num") || matchToken("str")) && values.length < 2) {
+      values.push(advance().text);
+      if (matchToken("comma")) advance();
+    }
+    if (matchToken("rparen")) advance();
+    else
+      reportError(
+        "`)` expected to close the technical attributes",
+        lookAhead().span,
+        'e.g. `A -> B : "Envoi" (SFTP, XML)`',
+      );
+    flow.tech = {
+      protocol: values[0],
+      format: values[1],
+      span: openParen.span,
+    };
+  }
+  if (matchToken("lbrack")) {
+    advance();
+    flow.objects = [];
+    while (matchToken("id")) {
+      const token = advance();
+      flow.objects.push({ id: token.text, span: token.span });
+      if (matchToken("comma")) advance();
+    }
+    if (matchToken("rbrack")) advance();
+    else
+      reportError(
+        "`]` expected to close the business-object list",
+        lookAhead().span,
+        'e.g. `A -> B : "Validation" [BO_CMD]`',
+      );
+  }
+  if (matchToken("lbrace")) {
+    advance();
+    flow.style = {};
+    p.parseStyleEntries(null, flow.style);
+  }
+  model.flows.push(flow);
+}
+
+/** `<kind> ID "label" (attr) { … }`, everything after the id optional.
+ *  `sourceToken` (the kind) is already consumed by the caller. */
+function parseElement(p: Parser, sourceToken: Token, parent: Element | null): void {
+  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  if (!matchToken("id")) {
+    reportError(
+      `invalid declaration: \`${sourceToken.text}\` alone on this line`,
+      sourceToken.span,
+      'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`',
+    );
+    syncToNextLine();
+    return;
+  }
+  const identifierToken = advance();
+  const element: Element = {
+    kind: sourceToken.text,
+    kindSpan: sourceToken.span,
+    id: identifierToken.text,
+    idSpan: identifierToken.span,
+    children: [],
+    parent: parent ?? undefined,
+  };
+  if (matchToken("str")) element.label = advance().text;
+  if (matchToken("lparen")) {
+    advance();
+    if (matchToken("id")) {
+      const token = advance();
+      element.attr = {
+        value: token.text,
+        span: token.span,
+      };
+    } else
+      reportError(
+        "attribute value expected after `(`",
+        lookAhead().span,
+        'e.g. `trust-zone DMZ "DMZ" (public)`',
+      );
+    if (matchToken("rparen")) advance();
+    else
+      reportError(
+        "`)` expected to close the attribute",
+        lookAhead().span,
+        'e.g. `trust-zone DMZ "DMZ" (public)`',
+      );
+  }
+  if (matchToken("lbrace")) {
+    advance();
+    p.parseElementBody(element);
+  }
+  (parent ? parent.children : model.elements).push(element);
+}
+
+/** Top-level `legend { note "…" }`. Backtracks when `legend` is not followed by
+ *  a brace, so an element may still be called `legend`. */
+function tryLegendBlock(p: Parser): boolean {
+  const { matchToken, advance, reportError, lookAhead, skipNewlines, syncToNextLine, model } = p;
+  if (!matchToken("id", "legend")) return false;
+  const mark = p.save();
+  advance();
+  if (!matchToken("lbrace")) {
+    p.restore(mark);
+    return false;
+  }
+  advance();
+  skipNewlines();
+  while (!matchToken("rbrace") && !matchToken("eof")) {
+    if (matchToken("id", "note")) {
+      advance();
+      if (matchToken("str")) model.legendNotes.push(advance().text);
+      else
+        reportError(
+          "text expected after `note`",
+          lookAhead().span,
+          'e.g. `note "Named-data flows are subject to GDPR"`',
+        );
+    } else {
+      reportError('legend entries are `note "…"` lines', lookAhead().span);
+      syncToNextLine();
+    }
+    skipNewlines();
+  }
+  if (matchToken("rbrace")) advance();
+  else reportError("`}` expected to close the legend block", lookAhead().span);
+  return true;
+}
+
+/** Top-level `business-object ID "name" "description"`. No backtrack: once the
+ *  keyword matches, the line commits to this shape. */
+function tryBusinessObject(p: Parser): boolean {
+  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  if (!matchToken("id", "business-object")) return false;
+  advance();
+  if (!matchToken("id")) {
+    reportError(
+      "identifier expected after `business-object`",
+      lookAhead().span,
+      'e.g. `business-object BO_CMD "Commande" "description"`',
+    );
+    syncToNextLine();
+    return true;
+  }
+  const idToken = advance();
+  let name = idToken.text;
+  let description: string | undefined;
+  if (matchToken("str")) name = advance().text;
+  if (matchToken("str")) description = advance().text;
+  model.businessObjects.push({
+    id: idToken.text,
+    idSpan: idToken.span,
+    name,
+    description,
+  });
+  return true;
+}
+
+/** Everything else: `ID -> ID : …` flows and `<kind> ID "label" { … }` elements.
+ *  The two share their leading identifier, so they are one grammar production,
+ *  not two. */
+function parseFlowOrElement(p: Parser, parent: Element | null): void {
+  if (!p.matchToken("id")) {
+    p.reportError("declaration expected (element, flow or `style`)", p.lookAhead().span);
+    p.syncToNextLine();
+    return;
+  }
+  const sourceToken = p.advance();
+  if (p.matchToken("arrow")) parseFlow(p, sourceToken);
+  else parseElement(p, sourceToken, parent);
+}
+
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
   const tokens = lex(src, diagnostics);
@@ -47,7 +283,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     style: defaultDiagramStyle(),
     index: new Map(),
   };
-  let flowSequenceNumber = 0;
+  const flowSequence = { next: 0 };
 
   skipNewlines();
   if (matchToken("id", "diagram")) {
@@ -145,213 +381,22 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
 
   /** Top-level `legend { note "…" … }`. Backtracks for the same reason as
    *  `tryStyleBlock`. */
-  function tryLegendBlock(): boolean {
-    if (!matchToken("id", "legend")) return false;
-    const savedPosition = position;
-    advance();
-    if (!matchToken("lbrace")) {
-      position = savedPosition;
-      return false;
-    }
-    advance();
-    skipNewlines();
-    while (!matchToken("rbrace") && !matchToken("eof")) {
-      if (matchToken("id", "note")) {
-        advance();
-        if (matchToken("str")) model.legendNotes.push(advance().text);
-        else
-          reportError(
-            "text expected after `note`",
-            lookAhead().span,
-            'e.g. `note "Named-data flows are subject to GDPR"`',
-          );
-      } else {
-        reportError('legend entries are `note "…"` lines', lookAhead().span);
-        syncToNextLine();
-      }
-      skipNewlines();
-    }
-    if (matchToken("rbrace")) advance();
-    else reportError("`}` expected to close the legend block", lookAhead().span);
-    return true;
-  }
-
-  /** Top-level `business-object ID "name" "description"`. No backtrack: once
-   *  the keyword matches, the line commits to this shape. */
-  function tryBusinessObject(): boolean {
-    if (!matchToken("id", "business-object")) return false;
-    advance();
-    if (!matchToken("id")) {
-      reportError(
-        "identifier expected after `business-object`",
-        lookAhead().span,
-        'e.g. `business-object BO_CMD "Commande" "description"`',
-      );
-      syncToNextLine();
-      return true;
-    }
-    const idToken = advance();
-    let name = idToken.text,
-      description: string | undefined;
-    if (matchToken("str")) name = advance().text;
-    if (matchToken("str")) description = advance().text;
-    model.businessObjects.push({
-      id: idToken.text,
-      idSpan: idToken.span,
-      name,
-      description,
-    });
-    return true;
-  }
-
-  /** `ID -> ID : "label" (tech) [objects] { style }`, everything after the
-   *  arrow optional. `sourceToken` is already consumed by the caller. */
-  function parseFlow(sourceToken: Token): void {
-    advance();
-    if (!matchToken("id")) {
-      reportError("target identifier expected after `->`", lookAhead().span);
-      syncToNextLine();
-      return;
-    }
-    const targetToken = advance();
-    const flow: Flow = {
-      id: "F" + String(++flowSequenceNumber).padStart(2, "0"),
-      from: sourceToken.text,
-      fromSpan: sourceToken.span,
-      to: targetToken.text,
-      toSpan: targetToken.span,
-      span: {
-        line: sourceToken.span.line,
-        col: sourceToken.span.col,
-        len: targetToken.span.col + targetToken.span.len - sourceToken.span.col,
-      },
-    };
-    if (matchToken("colon")) {
-      advance();
-      if (matchToken("str")) flow.label = advance().text;
-      else if (
-        !matchToken("lparen") &&
-        !matchToken("lbrack") &&
-        !matchToken("lbrace") &&
-        !matchToken("nl") &&
-        !matchToken("rbrace") &&
-        !matchToken("eof")
-      ) {
-        reportError(
-          "flow label expected after `:`",
-          lookAhead().span,
-          'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`',
-        );
-      }
-    }
-    if (matchToken("lparen")) {
-      const openParen = advance();
-      const values: string[] = [];
-      while ((matchToken("id") || matchToken("num") || matchToken("str")) && values.length < 2) {
-        values.push(advance().text);
-        if (matchToken("comma")) advance();
-      }
-      if (matchToken("rparen")) advance();
-      else
-        reportError(
-          "`)` expected to close the technical attributes",
-          lookAhead().span,
-          'e.g. `A -> B : "Envoi" (SFTP, XML)`',
-        );
-      flow.tech = {
-        protocol: values[0],
-        format: values[1],
-        span: openParen.span,
-      };
-    }
-    if (matchToken("lbrack")) {
-      advance();
-      flow.objects = [];
-      while (matchToken("id")) {
-        const token = advance();
-        flow.objects.push({ id: token.text, span: token.span });
-        if (matchToken("comma")) advance();
-      }
-      if (matchToken("rbrack")) advance();
-      else
-        reportError(
-          "`]` expected to close the business-object list",
-          lookAhead().span,
-          'e.g. `A -> B : "Validation" [BO_CMD]`',
-        );
-    }
-    if (matchToken("lbrace")) {
-      advance();
-      flow.style = {};
-      parseStyleEntries(null, flow.style);
-    }
-    model.flows.push(flow);
-  }
-
-  /** `<kind> ID "label" (attr) { … }`, everything after the id optional.
-   *  `sourceToken` (the kind) is already consumed by the caller. */
-  function parseElement(sourceToken: Token, parent: Element | null): void {
-    if (!matchToken("id")) {
-      reportError(
-        `invalid declaration: \`${sourceToken.text}\` alone on this line`,
-        sourceToken.span,
-        'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`',
-      );
-      syncToNextLine();
-      return;
-    }
-    const identifierToken = advance();
-    const element: Element = {
-      kind: sourceToken.text,
-      kindSpan: sourceToken.span,
-      id: identifierToken.text,
-      idSpan: identifierToken.span,
-      children: [],
-      parent: parent ?? undefined,
-    };
-    if (matchToken("str")) element.label = advance().text;
-    if (matchToken("lparen")) {
-      advance();
-      if (matchToken("id")) {
-        const token = advance();
-        element.attr = {
-          value: token.text,
-          span: token.span,
-        };
-      } else
-        reportError(
-          "attribute value expected after `(`",
-          lookAhead().span,
-          'e.g. `trust-zone DMZ "DMZ" (public)`',
-        );
-      if (matchToken("rparen")) advance();
-      else
-        reportError(
-          "`)` expected to close the attribute",
-          lookAhead().span,
-          'e.g. `trust-zone DMZ "DMZ" (public)`',
-        );
-    }
-    if (matchToken("lbrace")) {
-      advance();
-      parseElementBody(element);
-    }
-    (parent ? parent.children : model.elements).push(element);
-  }
-
-  /** Everything else: `ID -> ID : …` flows and `<kind> ID "label" { … }`
-   *  elements. The two share their leading identifier, so they are one
-   *  grammar production, not two. */
-  function parseFlowOrElement(parent: Element | null): void {
-    if (!matchToken("id")) {
-      reportError("declaration expected (element, flow or `style`)", lookAhead().span);
-      syncToNextLine();
-      return;
-    }
-    const sourceToken = advance();
-    if (matchToken("arrow")) parseFlow(sourceToken);
-    else parseElement(sourceToken, parent);
-  }
+  const parser: Parser = {
+    model,
+    lookAhead,
+    matchToken,
+    advance,
+    skipNewlines,
+    reportError,
+    syncToNextLine,
+    save: () => position,
+    restore: (mark: number) => {
+      position = mark;
+    },
+    flowSequence,
+    parseStyleEntries,
+    parseElementBody,
+  };
 
   function parseStatement(parent: Element | null) {
     if (matchToken("nl")) {
@@ -359,9 +404,9 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
       return;
     }
     if (tryStyleBlock(parent)) return;
-    if (!parent && tryLegendBlock()) return;
-    if (!parent && tryBusinessObject()) return;
-    parseFlowOrElement(parent);
+    if (!parent && tryLegendBlock(parser)) return;
+    if (!parent && tryBusinessObject(parser)) return;
+    parseFlowOrElement(parser, parent);
   }
 
   skipNewlines();

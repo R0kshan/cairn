@@ -27,7 +27,7 @@
         "noForEach": "off",
         "noExcessiveCognitiveComplexity": {
           "level": "warn",
-          "options": { "maxAllowedComplexity": 60 }
+          "options": { "maxAllowedComplexity": 58 }
         },
         "noExcessiveLinesPerFunction": {
           "level": "warn",

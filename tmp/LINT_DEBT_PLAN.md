@@ -1,218 +1,140 @@
-# Plan — clear the remaining complexity debt
+# Complexity debt — status record
 
-`npm run typecheck` is **clean** (exit 0) with all six new compiler flags on.
-Everything below is lint and nesting debt, measured against the tree as of this
-run.
+The campaign described by the earlier version of this file has landed. This is
+what actually happened, measured, so the next session starts from the tree as it
+is rather than from a stale map.
 
-**Note on a moving tree:** another session has landed the `tidyEdges`
-decomposition — `createTidyContext`, `straightenAndCollapse`,
-`reaimWrapAroundTerminals`, `decoincideParallelRuns`, `liftRunsOffTitleBands`,
-`nestCorridorRisers`, `unweaveAndClearContainers` are all top-level now and
-`tidyEdges` is ~40 lines. That work is **done**; this plan starts after it.
-Re-measure before acting if more lands.
+**Baseline** is `70df40a` (`Refactor (WIP)`), measured with the six compiler
+flags and the biome gate already in place.
 
 ---
 
-## 1. The debt, measured
+## 1. Result
 
-**42 warnings**: 17 cognitive complexity, 13 lines-per-function, 12 max-params.
-Plus three files over the nesting default.
+| Rule | Baseline | Now |
+|---|---:|---:|
+| `noExcessiveCognitiveComplexity` | 19 | **0** |
+| `noExcessiveLinesPerFunction` | 8 | **2** |
+| `useMaxParams` | 15 | **0** |
+| **total** | **42** | **2** |
 
-### Cognitive complexity (ceiling 60)
+Worst scores, before → after:
 
-| Score | Location | Function |
+- cognitive: **255** (`readability.local`) → **58** (`label-anchor.ts:209`)
+- parameters: **10** (`tryResideCandidate`) → **4** (every function in `src`)
+- nesting: **13** (`slide-fold`) → **10** (`edge-tidy`)
+
+Five files went from carrying debt to completely clean: `readability.ts`,
+`route-detour.ts`, `slide-fold.ts`, `parser.ts`, `scene-layout.ts`.
+
+---
+
+## 2. What the earlier plan got wrong
+
+Worth recording, because both errors came from measuring once and acting later.
+
+- **`readability.ts` was the worst file in the repo and the plan never listed
+  it as a campaign.** It appeared only under *lines*; its `local` closure scored
+  **255**, the highest anywhere. It was also the cheapest to fix — an inspector,
+  pure computation, no geometry mutation — so it went first and cleared three
+  warnings in one pass.
+- **C3 was described as "purely a size and readability win — lower risk than
+  C1", on the grounds that `rerouteDetours` scored under 60.** Against the
+  measured tree it scored **246**. The claim came from an older measurement. The
+  campaign was fine, but it was never the low-risk one.
+
+The lesson is the one `WORKING_METHODOLOGY.md` already states: re-measure before
+acting. Both mistakes are invisible until you run the gate.
+
+---
+
+## 3. Duplication removed (§3)
+
+The extractions were worth more than the scores suggest, because several
+collapsed genuinely duplicated guards — the drift `INVARIANTS.md` §3 names as the
+cause of four debugging sessions:
+
+- `route-detour.findSideApproach` replaces **five** near-identical "try each
+  delta beside the node for a clear descent" blocks. They had already drifted:
+  only some carried the `x < 4` canvas guard.
+- `edge-tidy.seatedLabelsExcept` replaces **three** copies of the seated-foreign-
+  label scan; `segmentGapSq` / `segmentTouchesBox` replace four more copies of
+  the segment-to-box gap formula.
+- `readability.memoise` replaces three near-identical per-edge cache blocks.
+- `SEAT_OFFSETS` is now one constant shared by the reaim and unweave searches,
+  which previously kept private copies of the same ladder.
+
+---
+
+## 4. What is left
+
+Two warnings, both `noExcessiveLinesPerFunction`, both orchestrators rather than
+complex code — every cognitive and parameter warning in `src` is gone.
+
+| Lines | Location | Why it was left |
 |---:|---|---|
-| **218** | `edge-tidy.ts:821` | inner block of `clearSideHugs` |
-| **159** | `label-anchor.ts:110` | `anchorFlowLabels` |
-| **132** | `edge-tidy.ts:459` | `clearSideHugs` |
-| **129** | `edge-tidy.ts:1222` | `swapCrossingSiblingSeats` |
-| **115** | `edge-tidy.ts:2343` | `unweaveAndClearContainers` |
-| **107** | `svg-render.ts:286` | `settleLabelPositions` |
-| **101** | `edge-tidy.ts:2040` | `decoincideParallelRuns` |
-| 86 | `edge-tidy.ts:2124` | `liftRunsOffTitleBands` |
-| 84, 82, 72, 68 | `edge-tidy.ts:380/85/471/265` | `spreadAttachments` / `straighten` internals |
-| 77 | `slide-fold.ts:179` | `foldedLayout` |
-| 76 | `edge-tidy.ts:2734` | `optimiseRoutes` |
-| 74 | `edge-tidy.ts:1450` | `straightenAndCollapse` |
-| 70 | `tests/behavior.test.ts:136` | test body |
-| 61 | `label-anchor.ts:343` | inner block |
+| 568 | `svg-render.ts` `render` | The settling / repair-audit interplay the earlier plan flagged: settling runs up to three times interleaved with the audit and `edge.pts = edge.repairedFrom`, and `RenderResult.overlapsAfter` feeds the sweep's zero-gated `overlaps` metric (asserted `=== 0` at `tests/behavior.test.ts`). The **cognitive** spike there (`settleLabelPositions`, 107) *was* cleared — what remains is size alone. |
+| 308 | `edge-tidy.ts` `optimiseRoutes` inner block | Splitting it means separating the seat / lane / shape / ladder models, which share a mutable `generation` counter that invalidates several caches. Mechanical but coupled; the driver loop was already extracted, which is what cleared its cognitive 76. |
 
-### Lines per function (ceiling 150)
-
-| Lines | Location | Function |
-|---:|---|---|
-| **609** | `route-detour.ts:63` | `rerouteDetours` |
-| **599** | `svg-render.ts:79` | `render` |
-| **528** | `edge-tidy.ts:459` | `clearSideHugs` |
-| **417** | `slide-fold.ts:179` | `foldedLayout` |
-| 339 | `edge-tidy.ts:2734` | `optimiseRoutes` |
-| 279 | `parser.ts:18` | `parse` |
-| 252 | `edge-tidy.ts:1655` | `reaimWrapAroundTerminals` |
-| 234 | `readability.ts:89` | `inspect` |
-| 219 | `scene-layout.ts:510` | `layout` |
-| 213 | `edge-tidy.ts:2343` | `unweaveAndClearContainers` |
-| 192 | `edge-tidy.ts:927` | `resideAttempt` |
-| 191 | `label-anchor.ts:110` | `anchorFlowLabels` |
-| 160 | `readability.ts:200` | `local` |
-
-### Max params (ceiling 4)
-
-`edge-tidy.ts:2961` `laneBeyond` **8** · `edge-tidy.ts:3084` 6 ·
-`route-detour.ts:236` 6 · `parser.ts:495` 6 · `tests/sidehug.test.ts:28` 6 ·
-`edge-tidy.ts:3034`, `edge-tidy.ts:190`, `route-detour.ts:623`,
-`route-detour.ts:803`, `slide-fold.ts:99`, `slide-fold.ts:137`,
-`text-metrics.ts:58` all 5.
-
-### Nesting (`npm run nesting`)
-
-`edge-tidy.ts` **16** (`:1118`) · `slide-fold.ts` **13** (`:288`) ·
-`scene-layout.ts` 9 · four files at 8 · `watch.ts` 7.
+Neither is complexity debt. Both are "one function holds a long sequence of
+steps" — real, but a different kind of risk, and worth doing deliberately rather
+than as the tail of a long session.
 
 ---
 
-## 2. The one observation that sets the order
+## 5. Ratchets taken
 
-**`clearSideHugs` is four problems in one place.** `edge-tidy.ts:459-987`
-carries cognitive 132 *and* the 218 inner block *and* 528 lines *and* the
-worst nesting in the repo (depth 16 at `:1118`, inside `resideAttempt`). No
-other site overlaps like this. One campaign there removes the top cognitive
-score, the top nesting figure, and two of the four largest functions.
+Tightened only after the work landed green; none was ever raised to pass.
 
-Everything else is ordinary work by comparison.
-
----
-
-## 3. Campaigns, in payoff order
-
-### C1 — `clearSideHugs` transaction + validator (highest payoff)
-
-`edge-tidy.ts:459-987`. Three propose/validate/revert blocks — `attempt`,
-`relocateRiser`, `resideAttempt` — sharing one helper set, with
-`relocateRiser` and `resideAttempt` declared *inside* the per-run loop so they
-close over `run`/`edge`/`own` and are rebuilt every iteration.
-
-1. Extract the shared route validator first. The same opening ~12 lines
-   (orthogonality → run extraction → `runHitsNode` → `runIsClear`) appear in
-   every gate here and five more times across the file. `INVARIANTS.md` §3 is
-   explicit that duplicated guards drift, and names it as the cause of four
-   debugging sessions.
-2. Wrap it: `proposeRoute(edge, build, accept)` — validate the *finished*
-   polyline, keep or discard wholesale. Partial validation is what merged two
-   flows into one line.
-3. Lift the three blocks to top-level functions taking their loop state as
-   explicit parameters.
-4. Guard-clause the survivors: `if (a && b) { … }` → `if (!a) continue;`
-   `if (!b) continue;`. Same operands, same short-circuit order — safe.
-
-**Clears:** cognitive 218 and 132; lines 528 and 192; nesting 16 → ~6.
-**Then lower** `CEILING["edge-tidy.ts"]` in `scripts/nesting-depth.ts` to what
-it actually reaches. The gate prints `← ratchet earned: lower to N`.
-
-### C2 — `label-anchor.anchorFlowLabels`
-
-`:110`, cognitive 159 (second worst in the repo), 191 lines, plus a 61 inner
-block at `:343`. Not yet touched by any plan. Same treatment: extract the
-per-label seat search, guard-clause the loop body.
-
-### C3 — `route-detour.rerouteDetours`
-
-`:63`, **609 lines** — the largest function left. Phase-extract like
-`tidyEdges`: the channel planner, the slot allocator and the acceptance test
-are three jobs behind one name. Its cognitive score is already under 60, so
-this is purely a size and readability win — lower risk than C1.
-
-### C4 — `svg-render` settling, still a spike
-
-`render` `:79` is 599 lines; `settleLabelPositions` `:286` is cognitive 107.
-The extraction target is understood, but the risk is unchanged: settling runs
-up to three times, interleaved with the repair audit and
-`edge.pts = edge.repairedFrom`, and `RenderResult.overlapsAfter` feeds the
-sweep's zero-gated `overlaps` metric (asserted `=== 0` at
-`tests/behavior.test.ts:90`). Time-box it. If it stalls, document the stage in
-`ARCHITECTURE.md` §2 and stop.
-
-### C5 — the remaining `edge-tidy` phases
-
-`unweaveAndClearContainers` 115/213, `decoincideParallelRuns` 101,
-`liftRunsOffTitleBands` 86, `straightenAndCollapse` 74,
-`reaimWrapAroundTerminals` 252 lines, `optimiseRoutes` 76/339. These are now
-*isolated*, which is the whole point of the extraction that just landed —
-each can be split on its own without touching its neighbours. §4g and §4h stay
-one function.
-
-### C6 — `slide-fold.foldedLayout`
-
-`:179`, 417 lines, cognitive 77, nesting 13. Same phase pattern. Low traffic,
-so it goes last.
-
-### C7 — parameter counts
-
-Twelve sites. Two rules:
-
-- **Bundle only where the call is not hot.** `parser.ts:495` (6),
-  `route-detour.ts:236` (6), `text-metrics.ts:58` (5) are fine as option
-  objects.
-- **In `optimiseRoutes`' inner loops — `laneBeyond` (8 params),
-  `edge-tidy.ts:3034`/`:3084` (5–6) — pass a context object created once**, not
-  an object literal per call. A literal per invocation allocates inside a hot
-  path; `useMaxParams` cannot tell the difference and would happily make the
-  code slower.
+- `biome.json` `maxAllowedComplexity`: **60 → 58**, the exact figure the tree now
+  reaches. It cannot go lower without decomposing `label-anchor.ts:209` (58),
+  `scene-layout.ts:431` (57) and `lexer.ts:27` (56) — those are the next targets
+  if the score is to keep coming down.
+- `useMaxParams` stays at **4**: every function is now at or under it, so the
+  rule is exactly tight. Going to 3 would raise 55 warnings.
+- `maxLines` stays at **150** — it cannot tighten while the two functions above
+  exceed it.
+- `scripts/nesting-depth.ts` `CEILING` shrank from seven entries to four:
+  `readability.ts` (8→5), `route-detour.ts` (8→6) and `slide-fold.ts` (13→6) all
+  dropped to or below the `DEFAULT` of 6 and were removed from the table
+  entirely; `scene-layout.ts` 9→7, `edge-tidy.ts` 11→10, `svg-render.ts` 8→7.
 
 ---
 
-## 4. Tests: a config decision, not a refactor
+## 6. Verification
 
-Two warnings are in `tests/` — `behavior.test.ts:136` (cognitive 70) and
-`sidehug.test.ts:28` (6 params, a scene-building helper). Test helpers
-legitimately take many arguments, and a long assertion body is not the same
-defect as a long routing pass.
-
-Recommendation: relax these two rules for `tests/` via a biome override rather
-than churn the tests.
-
-```jsonc
-"overrides": [
-  {
-    "includes": ["tests/**/*.ts"],
-    "linter": { "rules": { "complexity": {
-      "useMaxParams": "off",
-      "noExcessiveCognitiveComplexity": { "level": "warn", "options": { "maxAllowedComplexity": 100 } }
-    } } }
-  }
-]
-```
-
-Say so explicitly in the config rather than letting two permanent warnings sit
-there — a gate people learn to ignore is not a gate.
-
----
-
-## 5. Ratchet schedule
-
-Tighten only after a campaign lands green. Never raise one to pass.
-
-| After | `maxAllowedComplexity` | `maxLines` | `nesting-depth` CEILING |
-|---|---:|---:|---|
-| today | 60 | 150 | as calibrated |
-| C1 | 60 | 150 | `edge-tidy.ts` 16 → ~6 |
-| C1 + C2 | 40 | 120 | — |
-| C3 + C5 | 40 | 100 | `scene-layout.ts` 9 → 6 |
-| C4 + C6 | 25 | 80 | `slide-fold.ts` 13 → 6 |
-| long term | 15 (`error`) | 60 (`error`) | `DEFAULT` 6 everywhere, drop the table |
-
----
-
-## 6. Verification, every commit
+Every campaign was verified the same way, and the pass condition never moved:
 
 ```
-npx tsc --noEmit
-npm run lint                                                   # biome + nesting gate
-node --experimental-strip-types --test tests/corpus.test.ts     # ~14 s
+npm run typecheck                                            # clean, exit 0
+npm run lint                                                 # biome + nesting gate
+node --experimental-strip-types --test tests/corpus.test.ts  # after every edit
+npm test                                                     # at each campaign boundary
 ```
 
-Full `npm test` (sweep included) at each campaign boundary.
+**`tests/__snapshots__/corpus.digest` stayed byte-identical throughout** —
+SHA-256 `1150A1C16008BC2856FB1FD42BAC39EC4383E0EC7C8EE62E60FF15A625E1AB26`,
+unchanged from the baseline commit to the final state. Zero baseline writes, zero
+snapshot re-approvals, 97/97 tests green at every boundary.
 
-Pass condition is unchanged and non-negotiable:
-**`tests/__snapshots__/corpus.digest` byte-identical, zero baseline writes,
-zero snapshot re-approvals.** A campaign that cannot hold that is not a
-refactor — revert it.
+One extra check was needed. `slide-fold`'s output is used only when it wins a
+fit-score comparison against the default layout, so an unchanged digest would not
+by itself prove the refactor was a no-op — it could simply have lost. The old and
+new `foldedLayout` were run side by side over all nine `slide` examples: three
+produce a real folded layout with identical structural hashes, six correctly
+return `null` in both. That harness was temporary and is not in the tree.
+
+---
+
+## 7. Regressions caught during the work
+
+Recorded because they show what the gates are for:
+
+- Extracting `spreadAttachments` introduced a **new** rule violation
+  (`useIterableCallbackReturn`) by giving a `forEach` callback an implicit
+  return. Caught by the next lint run, fixed with a block body.
+- The first draft of `slide-fold.routeConnector` made the `"D"`-class left-side
+  seat **eager** where the original computed it lazily inside the branch. On a
+  flow whose endpoint box was missing from the map that would have thrown where
+  the original never evaluated it. Caught by re-reading the diff before running,
+  and restored to lazy.

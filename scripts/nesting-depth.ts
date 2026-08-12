@@ -33,12 +33,9 @@ const DEFAULT = 6;
  * entry with slack is an entry to lower — the run says so when it sees one.
  */
 const CEILING: Record<string, number> = {
-  "edge-tidy.ts": 11,
-  "slide-fold.ts": 13,
-  "scene-layout.ts": 9,
-  "readability.ts": 8,
-  "route-detour.ts": 8,
-  "svg-render.ts": 8,
+  "edge-tidy.ts": 10,
+  "scene-layout.ts": 7,
+  "svg-render.ts": 7,
   "watch.ts": 7,
 };
 

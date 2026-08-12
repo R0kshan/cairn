@@ -504,36 +504,88 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
   }
 }
 
-export async function layout(model: Model, view: View): Promise<Scene> {
-  const elk = await getElk();
-  const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
-  const numbered = model.style.flowText === "numbered";
-  const compact = model.style.compact;
-  const COMPACT_WRAP = 10;
-  const {
-    edge: edgeFontSize,
-    node: nodeFontSize,
-    cont: containerFontSize,
-    scale: fontScale,
-  } = fontSizes(model.style.font.size);
+/** Everything the elk graph builder needs from the model and its style. */
+interface GraphContext {
+  model: Model;
+  view: View;
+  ingressExternal: Set<string>;
+  compact: boolean;
+  numbered: boolean;
+  fonts: { edge: number; node: number; cont: number; scale: number };
+  businessObjectName: Map<string, string>;
+}
 
-  const disposition = model.style.disposition;
-  const ASPECT_TARGETS: Record<string, number | undefined> = {
-    slide: 16 / 9,
-    page: 0.71,
+interface GraphOptions {
+  labelWrap?: number;
+  tight?: boolean;
+  minLayers?: boolean;
+}
+
+const INGRESS_PARTITION = -1;
+const EGRESS_PARTITION = 900;
+const COMPACT_WRAP = 10;
+
+/** Which elk partition an element belongs to. */
+function elkPartitionOf(
+  element: Element,
+  index: number,
+  view: View,
+  ingressExternal: Set<string>,
+): number {
+  if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
+  if (element.kind === "actor" || element.kind === "actor-group") return INGRESS_PARTITION;
+  if (element.kind === "external")
+    return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
+  if (view.partitions[element.kind] !== undefined) return 90 + view.partitions[element.kind];
+  return index;
+}
+
+/** The elk edge for one flow, with the label it carries already measured. */
+function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, labelWrap?: number) {
+  const { compact, numbered, fonts, businessObjectName } = ctx;
+  if (numbered)
+    return {
+      id: flow.id,
+      sources: [flow.from],
+      targets: [flow.to],
+      labels: [
+        {
+          text: String(parseInt(flow.id.slice(1), 10)),
+          width: Math.round(26 * fonts.scale),
+          height: Math.round(17 * fonts.scale),
+        },
+      ],
+    };
+  const wrap = labelWrap ?? (compact ? COMPACT_WRAP : undefined);
+  const raw = flow.label && wrap ? wrapText(flow.label, wrap) : flow.label;
+  const chips = (flow.objects ?? []).map(
+    (objectRef) => businessObjectName.get(objectRef.id) ?? objectRef.id,
+  );
+  const tech = techText(flow.tech);
+  const text = raw || (tech ? tech : "");
+  const labelBox = flowLabelBox({
+    text,
+    chipNames: chips,
+    fontSize: fonts.edge,
+    tech: raw ? tech : undefined,
+    scale: fonts.scale,
+  });
+  return {
+    id: flow.id,
+    sources: [flow.from],
+    targets: [flow.to],
+    labels: text || chips.length ? [{ text, ...labelBox }] : [],
   };
-  const aspectTarget = ASPECT_TARGETS[disposition];
+}
 
-  const ingressExternalElements = view.partitionByOrder
-    ? computeIngressExternalElements(model)
-    : new Set<string>();
-  const INGRESS_PARTITION = -1,
-    EGRESS_PARTITION = 900;
-
-  const makeGraph = (
-    direction: "RIGHT" | "DOWN",
-    options?: { labelWrap?: number; tight?: boolean; minLayers?: boolean },
-  ): ElkNode => ({
+/** The whole model as one elk graph, in the given direction. */
+function buildElkGraph(
+  ctx: GraphContext,
+  direction: "RIGHT" | "DOWN",
+  options?: GraphOptions,
+): ElkNode {
+  const { model, view, ingressExternal, compact, numbered, fonts } = ctx;
+  return {
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
@@ -575,62 +627,160 @@ export async function layout(model: Model, view: View): Promise<Scene> {
         : {}),
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode(element, compact, containerFontSize, nodeFontSize);
-      const partition = view.partitionByOrder
-        ? element.kind === "actor" || element.kind === "actor-group"
-          ? INGRESS_PARTITION
-          : element.kind === "external"
-            ? ingressExternalElements.has(element.id)
-              ? INGRESS_PARTITION
-              : EGRESS_PARTITION
-            : view.partitions[element.kind] !== undefined
-              ? 90 + view.partitions[element.kind]
-              : index
-        : (view.partitions[element.kind] ?? 1);
+      const elkNode = toElkNode(element, compact, fonts.cont, fonts.node);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
-        "elk.partitioning.partition": String(partition),
+        "elk.partitioning.partition": String(
+          elkPartitionOf(element, index, view, ingressExternal),
+        ),
       };
       return elkNode;
     }),
-    edges: model.flows.map((flow) => {
-      if (numbered) {
-        return {
-          id: flow.id,
-          sources: [flow.from],
-          targets: [flow.to],
-          labels: [
-            {
-              text: String(parseInt(flow.id.slice(1), 10)),
-              width: Math.round(26 * fontScale),
-              height: Math.round(17 * fontScale),
-            },
-          ],
-        };
-      }
-      const wrap = options?.labelWrap ?? (compact ? COMPACT_WRAP : undefined);
-      const raw = flow.label && wrap ? wrapText(flow.label, wrap) : flow.label;
-      const chips = (flow.objects ?? []).map(
-        (objectRef) => businessObjectName.get(objectRef.id) ?? objectRef.id,
+    edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap)),
+  };
+}
+
+/**
+ * Record *every* edge the repair moved. Restricting it to edges whose label was
+ * seated beforehand made the rollback partial, leaving a drawing half repaired —
+ * a state neither pass ever evaluated, and the source of `coincident` runs, a
+ * must-be-zero breach. Worth is judged whole-drawing in the renderer; this only
+ * has to make the undo complete.
+ */
+function recordRepairs(scene: Scene, routesBefore: Map<string, Point[]>): void {
+  for (const edge of scene.edges) {
+    const original = routesBefore.get(edge.id);
+    if (!original) continue;
+    const moved =
+      original.length !== edge.pts.length ||
+      original.some(
+        (point, index) =>
+          Math.abs(point.x - edge.pts[index].x) > 0.01 ||
+          Math.abs(point.y - edge.pts[index].y) > 0.01,
       );
-      const tech = techText(flow.tech);
-      const text = raw || (tech ? tech : "");
-      const subTitle = raw ? tech : undefined;
-      const labelBox = flowLabelBox({
-        text,
-        chipNames: chips,
-        fontSize: edgeFontSize,
-        tech: subTitle,
-        scale: fontScale,
-      });
-      return {
-        id: flow.id,
-        sources: [flow.from],
-        targets: [flow.to],
-        labels: text || chips.length ? [{ text, ...labelBox }] : [],
-      };
-    }),
-  });
+    if (moved) edge.repairedFrom = original;
+  }
+}
+
+/**
+ * Every pass that moves geometry after elk has laid the graph out, in the order
+ * the invariants require. Title bands are re-derived before each pass that reads
+ * them, never carried across one that moves nodes.
+ */
+function runGeometryPasses(
+  scene: Scene,
+  model: Model,
+  options: { numbered: boolean; sideways: boolean },
+): void {
+  const { numbered, sideways } = options;
+  // Issue #26 applies to every disposition. A DOWN layout wraps its backward
+  // flows around the sides rather than the top, so it is routed through the
+  // same pass with the scene mirrored across the diagonal.
+  const titleBoxes = titleBoxesOf(scene, model);
+  if (sideways) transpose(scene, titleBoxes);
+  rerouteDetours(scene, model, numbered, titleBoxes);
+  if (sideways) transpose(scene, titleBoxes);
+
+  // `rerouteDetours` shifts the whole scene when a top-channel lane sits above
+  // y=0, so boxes measured before it are stale by that amount. Handing those to
+  // `tidyEdges` makes its re-side pass accept runs that strike titles where they
+  // now are — on logical-fr/slide, §4c sent F19's L through a band it could not
+  // see. Re-derive before any pass that reads them.
+  const routedTitles = titleBoxesOf(scene, model);
+  // Straighten routing noise and separate flows sharing a node side, for every
+  // edge — elk's as much as the rerouted ones.
+  tidyEdges(scene, routedTitles);
+  // Every pass above moves routes without moving the labels that name them. Put
+  // each label back on its own flow before anything measures where labels are —
+  // `compact` below is the first thing that does.
+  anchorFlowLabels(scene, routedTitles);
+  // Reclaim the bands elk sized for routes that no longer run there — every
+  // disposition, since elk leaves spare corridors whether or not the reroute
+  // above moved anything.
+  compactVertical(scene);
+
+  // The repair is tried and then audited, not refused outright: a route change
+  // can cost a *different* flow's label its seat, so any flow whose label was on
+  // its run before and is not after is put back. That keeps the ladder's rule (a
+  // Tier 1 loss is bought only by a Tier 0 gain) without refusing every move that
+  // merely *might* cost a label. Deep copy — `optimiseRoutes` squares every edge
+  // in place, so a shallow snapshot is not a snapshot.
+  const routesBefore = new Map(
+    scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))]),
+  );
+  // Re-derived, not reused: the boxes above predate `compactVertical`, which
+  // moves every container's y. Reusing them made a later pass dodge bands where
+  // they used to be and strike them where they now are — 17 drawings reported
+  // `titleStruck` before this was fixed.
+  const settledTitles = titleBoxesOf(scene, model);
+  // After compaction, not before: `compact` shrinks the gaps a route is judged
+  // on, so validating above it judges geometry that compaction then narrows into
+  // near-parallel runs and micro-jogs. Last pass that re-routes — only the spread
+  // below still moves geometry, along a side its terminal sits on.
+  optimiseRoutes(scene, settledTitles);
+  // The ladder trades a lower-tier win for a tier-4 `tight` when every seat it
+  // can reach sits within `MIN_ATTACH_GAP` of a sibling — honest, but it leaves
+  // the side crowded. The same spread that ran inside `tidyEdges` runs here
+  // again, after the pass that re-crowds.
+  spreadAttachments(scene);
+  recordRepairs(scene, routesBefore);
+
+  // `compactVertical` shrank the gaps this pass judges, so a run that cleared its
+  // sides before compaction can hug one after. Placed *after* the repair
+  // recording so the hug fix is not swept into the renderer's batch audit and
+  // reverted as collateral — on application-large-fr/wide, F19's fix at y=445 was
+  // batch-reverted to y=451 over another edge's label harm. Here it is in both
+  // audit states, so the comparison is unaffected and the fix permanent.
+  clearSideHugs(scene, settledTitles);
+  anchorFlowLabels(scene, settledTitles);
+  // Crossings between two flows on the same leaf side, further out than the §4b
+  // fan can see. Here for the same reason as `clearSideHugs`: outside the
+  // renderer's batch audit, so an unrelated optimiser trade cannot revert the
+  // swap. Only swaps that remove a crossing without shuffling it elsewhere.
+  swapCrossingSiblingSeats(scene);
+}
+
+export async function layout(model: Model, view: View): Promise<Scene> {
+  const elk = await getElk();
+  const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
+  const numbered = model.style.flowText === "numbered";
+  const compact = model.style.compact;
+  const {
+    edge: edgeFontSize,
+    node: nodeFontSize,
+    cont: containerFontSize,
+    scale: fontScale,
+  } = fontSizes(model.style.font.size);
+
+  const disposition = model.style.disposition;
+  const ASPECT_TARGETS: Record<string, number | undefined> = {
+    slide: 16 / 9,
+    page: 0.71,
+  };
+  const aspectTarget = ASPECT_TARGETS[disposition];
+
+  const ingressExternalElements = view.partitionByOrder
+    ? computeIngressExternalElements(model)
+    : new Set<string>();
+
+  const graphContext: GraphContext = {
+    model,
+    view,
+    ingressExternal: ingressExternalElements,
+    compact,
+    numbered,
+    fonts: {
+      edge: edgeFontSize,
+      node: nodeFontSize,
+      cont: containerFontSize,
+      scale: fontScale,
+    },
+    businessObjectName,
+  };
+  const makeGraph = (
+    direction: "RIGHT" | "DOWN",
+    options?: GraphOptions,
+  ): ElkNode => buildElkGraph(graphContext, direction, options);
 
   const kindOf = new Map(indexElementsById(model.elements));
 
@@ -651,85 +801,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       edges,
       layoutMs,
     };
-    // Issue #26 applies to every disposition. A DOWN layout wraps its backward
-    // flows around the sides rather than the top, so it is routed through the
-    // same pass with the scene mirrored across the diagonal.
-    const titleBoxes = titleBoxesOf(scene, model);
-    const sideways = disposition === "page" || disposition === "tall";
-    if (sideways) transpose(scene, titleBoxes);
-    rerouteDetours(scene, model, numbered, titleBoxes);
-    if (sideways) transpose(scene, titleBoxes);
-    // `rerouteDetours` shifts the whole scene when a top-channel lane sits above
-    // y=0, so boxes measured before it are stale by that amount. Handing those
-    // to `tidyEdges` makes its re-side pass accept runs that strike titles where
-    // they now are — on logical-fr/slide, §4c sent F19's L through a band it
-    // could not see. Re-derive before any pass that reads them.
-    const routedTitles = titleBoxesOf(scene, model);
-    // Straighten routing noise and separate flows sharing a node side, for
-    // every edge — elk's as much as the rerouted ones.
-    tidyEdges(scene, routedTitles);
-    // Every pass above moves routes without moving the labels that name them.
-    // Put each label back on its own flow before anything measures where labels
-    // are — `compact` below is the first thing that does.
-    anchorFlowLabels(scene, routedTitles);
-    // Reclaim the bands elk sized for routes that no longer run there — every
-    // disposition, since elk leaves spare corridors whether or not the reroute
-    // above moved anything.
-    compactVertical(scene);
-    // The repair is tried and then audited, not refused outright: a route change
-    // can cost a *different* flow's label its seat, so any flow whose label was
-    // on its run before and is not after is put back. That keeps the ladder's
-    // rule (a Tier 1 loss is bought only by a Tier 0 gain) without refusing every
-    // move that merely *might* cost a label. Deep copy — `optimiseRoutes` squares
-    // every edge in place, so a shallow snapshot is not a snapshot.
-    const routesBefore = new Map(
-      scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))]),
-    );
-    // Re-derived, not reused: the boxes above predate `compactVertical`, which
-    // moves every container's y. Reusing them made a later pass dodge bands
-    // where they used to be and strike them where they now are — 17 drawings
-    // reported `titleStruck` before this was fixed.
-    const settledTitles = titleBoxesOf(scene, model);
-    // After compaction, not before: `compact` shrinks the gaps a route is judged
-    // on, so validating above it judges geometry that compaction then narrows
-    // into near-parallel runs and micro-jogs. Last pass that re-routes — only
-    // the spread below still moves geometry, along a side its terminal sits on.
-    optimiseRoutes(scene, settledTitles);
-    // The ladder trades a lower-tier win for a tier-4 `tight` when every seat
-    // it can reach sits within `MIN_ATTACH_GAP` of a sibling — honest, but it
-    // leaves the side crowded. The same spread that ran inside `tidyEdges`
-    // runs here again, after the pass that re-crowds.
-    spreadAttachments(scene);
-    // Record *every* edge the repair moved. Restricting it to edges whose label
-    // was seated beforehand made the rollback partial, leaving a drawing half
-    // repaired — a state neither pass ever evaluated, and the source of
-    // `coincident` runs, a must-be-zero breach. Worth is judged whole-drawing in
-    // the renderer; this only has to make the undo complete.
-    for (const edge of scene.edges) {
-      const original = routesBefore.get(edge.id);
-      if (!original) continue;
-      const moved =
-        original.length !== edge.pts.length ||
-        original.some(
-          (point, index) =>
-            Math.abs(point.x - edge.pts[index].x) > 0.01 ||
-            Math.abs(point.y - edge.pts[index].y) > 0.01,
-        );
-      if (moved) edge.repairedFrom = original;
-    }
-    // `compactVertical` shrank the gaps this pass judges, so a run that cleared
-    // its sides before compaction can hug one after. Placed *after* the repair
-    // recording so the hug fix is not swept into the renderer's batch audit and
-    // reverted as collateral — on application-large-fr/wide, F19's fix at y=445
-    // was batch-reverted to y=451 over another edge's label harm. Here it is in
-    // both audit states, so the comparison is unaffected and the fix permanent.
-    clearSideHugs(scene, settledTitles);
-    anchorFlowLabels(scene, settledTitles);
-    // Crossings between two flows on the same leaf side, further out than the
-    // §4b fan can see. Here for the same reason as `clearSideHugs`: outside the
-    // renderer's batch audit, so an unrelated optimiser trade cannot revert the
-    // swap. Only swaps that remove a crossing without shuffling it elsewhere.
-    swapCrossingSiblingSeats(scene);
+    runGeometryPasses(scene, model, {
+      numbered,
+      sideways: disposition === "page" || disposition === "tall",
+    });
     return scene;
   };
 
