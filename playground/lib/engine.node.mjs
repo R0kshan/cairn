@@ -97394,7 +97394,8 @@ function segmentsAreClean(rctx, pts, outside, labelBoxes) {
     const from = runVertical ? a.y : a.x;
     const to = runVertical ? b.y : b.x;
     if (runHitsNode(runVertical, at, from, to)) return false;
-    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to)) return false;
+    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+      return false;
     if (labelBoxes.some((box) => segmentTouchesBox(a, b, box))) return false;
     if (titleBoxes.some((band) => segmentTouchesBox(a, b, band))) return false;
     if (runVertical && ridesContainerBorder(containers, a, b, at)) return false;
@@ -97984,7 +97985,8 @@ function unweaveRouteClean(uctx, outside, pts) {
     const from = runVertical ? a.y : a.x;
     const to = runVertical ? b.y : b.x;
     if (runHitsNode(runVertical, at, from, to)) return false;
-    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to)) return false;
+    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+      return false;
     if (segmentStrikesBand(uctx, a, b)) return false;
     const length = deltaX + deltaY;
     if (index > 0 && index + 2 < pts.length && length > 0 && length <= 20) return false;
@@ -98144,6 +98146,118 @@ function labelsSeated(edge) {
     return best <= SLACK_SQ;
   });
 }
+var SEAT_GRID = [0, -18, 18];
+var SEAT_CLEAR = 14;
+function createSeatModel(titleBoxes) {
+  const blockedSpan = (node, side) => {
+    const alongX = side === "north" || side === "south";
+    const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
+    let lo = Number.POSITIVE_INFINITY;
+    let hi = Number.NEGATIVE_INFINITY;
+    for (const band of titleBoxes) {
+      const bandLo = alongX ? band.x : band.y;
+      const bandHi = alongX ? band.x + band.width : band.y + band.height;
+      if (centre < bandLo || centre > bandHi) continue;
+      lo = Math.min(lo, bandLo);
+      hi = Math.max(hi, bandHi);
+    }
+    return lo <= hi ? [lo, hi] : null;
+  };
+  const seatOffsetCache = /* @__PURE__ */ new Map();
+  const seatOffsetsFor = (node, side) => {
+    const key = `${node.id}|${side}`;
+    const hit = seatOffsetCache.get(key);
+    if (hit) return hit;
+    const span = blockedSpan(node, side);
+    const alongX = side === "north" || side === "south";
+    const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
+    const made = span ? [...SEAT_GRID, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre] : SEAT_GRID;
+    seatOffsetCache.set(key, made);
+    return made;
+  };
+  const seatOn = (node, side, offset) => {
+    const alongX = Math.min(
+      Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
+      node.x + node.width - SIDE_INSET
+    );
+    const alongY = Math.min(
+      Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
+      node.y + node.height - SIDE_INSET
+    );
+    return side === "north" ? { x: alongX, y: node.y } : side === "south" ? { x: alongX, y: node.y + node.height } : side === "west" ? { x: node.x, y: alongY } : { x: node.x + node.width, y: alongY };
+  };
+  return {
+    SIDES: ["north", "south", "east", "west"],
+    seatOffsetsFor,
+    seatOn,
+    outward: (side) => side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4,
+    horizontalSide: (side) => side === "east" || side === "west"
+  };
+}
+function createLadderModel(deps) {
+  const { scene, inspector, clock, preRouted, isChannelU } = deps;
+  const beforeCache = /* @__PURE__ */ new Map();
+  const soloCache = /* @__PURE__ */ new Map();
+  const cached = (store, ids, make) => {
+    const key = `${clock.generation}|${[...ids].sort().join(",")}`;
+    const hit = store.get(key);
+    if (hit) return hit;
+    const made = make();
+    store.set(key, made);
+    return made;
+  };
+  const profileNow = (ids) => cached(beforeCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map()));
+  const selfWrecks = (ids, overrides) => {
+    const was = cached(soloCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map(), true));
+    for (const [key, tier] of inspector.local(ids, overrides, true))
+      if (tier === 0 && !was.has(key)) return true;
+    return false;
+  };
+  const damage = (profile) => {
+    const tiers = [0, 0, 0, 0, 0];
+    for (const tier of profile.values()) tiers[tier]++;
+    return tiers;
+  };
+  return {
+    profileNow,
+    /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
+    lessDamaged: (a, b) => {
+      for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+      return false;
+    },
+    /** The ladder's verdict on a move, and what the drawing would look like after it. */
+    weigh: (group, overrides) => {
+      const ids = new Set(group.map((edge) => edge.id));
+      if (selfWrecks(ids, overrides)) return null;
+      const after = inspector.local(ids, overrides);
+      if (ladderVerdict(profileNow(ids), after) < 0) return null;
+      return { after, damage: damage(after) };
+    },
+    tryMove: (group, overrides) => {
+      const ids = new Set(group.map((edge) => edge.id));
+      if (selfWrecks(ids, overrides)) return false;
+      const verdict = ladderVerdict(profileNow(ids), inspector.local(ids, overrides));
+      if (verdict < 0) return false;
+      scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
+      for (const edge of group) {
+        const route = overrides.get(edge.id);
+        if (!route) continue;
+        if (!preRouted.has(edge.id)) edge.detour = isChannelU(route);
+      }
+      for (const edge of group) {
+        const pts = overrides.get(edge.id);
+        if (pts) {
+          edge.pts = pts.map((p) => ({ ...p }));
+          inspector.forget(edge.id);
+        }
+      }
+      clock.generation++;
+      beforeCache.clear();
+      soloCache.clear();
+      return true;
+    }
+  };
+}
 function bestSingleRoute(o, edge) {
   let bestRoute = null;
   let bestDamage = null;
@@ -98190,164 +98304,134 @@ function repairToFixpoint(o) {
     if (!changed) break;
   }
 }
+var CHANNEL_MARGIN = 10;
+var CHANNEL_STEP = 24;
+var CHANNEL_CLEAR = 10;
+function createLaneModel(deps) {
+  const { scene, inspector, titleBoxes, clock, horizontalSide } = deps;
+  const contentTop = Math.min(...scene.nodes.map((node) => node.y));
+  const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
+  const contentRight = Math.max(...scene.nodes.map((node) => node.x + node.width));
+  const STRADDLE_MARGIN = 2;
+  const runReach = (edge, vertical) => {
+    let reach = CHANNEL_CLEAR;
+    for (const label of edge.labels) {
+      if (!label.width || !label.height) continue;
+      const across = (vertical ? label.height : label.width) / 2 + STRADDLE_MARGIN;
+      if (across > reach) reach = across;
+    }
+    return reach;
+  };
+  const runBlockCache = /* @__PURE__ */ new Map();
+  const parallelRunBlocks = (edge, vertical) => {
+    const key = `${edge.id}|${vertical}`;
+    const hit = runBlockCache.get(key);
+    if (hit && hit.at === clock.generation) return hit.blocks;
+    const laneVertical = !vertical;
+    const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
+    const blocks = [];
+    for (const other of scene.edges) {
+      if (other.id === edge.id || other.pts.length < 2) continue;
+      for (let index = 0; index + 1 < other.pts.length; index++) {
+        const a = other.pts[index];
+        const b = other.pts[index + 1];
+        const runVertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+        const runHorizontal = Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON;
+        if (runVertical === runHorizontal) continue;
+        if (runVertical !== laneVertical) continue;
+        const at = laneVertical ? a.x : a.y;
+        const from = laneVertical ? a.y : a.x;
+        const to = laneVertical ? b.y : b.x;
+        blocks.push({
+          alongLo: Math.min(from, to),
+          alongHi: Math.max(from, to),
+          acrossLo: at - slack,
+          acrossHi: at + slack
+        });
+      }
+    }
+    runBlockCache.set(key, { at: clock.generation, blocks });
+    return blocks;
+  };
+  const laneBeyond = (search, subject, clearRuns) => {
+    const { spanLo, spanHi, vertical, before } = search;
+    const { ends, edge } = subject;
+    const own = /* @__PURE__ */ new Set();
+    for (const end of ends) if (end) own.add(end.node.id);
+    const blocks = [];
+    const push = (x, y, w, h) => blocks.push(
+      vertical ? { alongLo: x, alongHi: x + w, acrossLo: y, acrossHi: y + h } : { alongLo: y, alongHi: y + h, acrossLo: x, acrossHi: x + w }
+    );
+    for (const leaf of inspector.leaves)
+      if (!own.has(leaf.id)) push(leaf.x, leaf.y, leaf.width, leaf.height);
+    for (const box of inspector.boxes) {
+      const inside = inspector.holds.get(box.id);
+      if (own.has(box.id) || [...own].some((id) => inside.has(id))) continue;
+      push(box.x, box.y, box.width, box.height);
+    }
+    for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
+    if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    let lane = search.start;
+    for (let guard = 0; guard <= blocks.length; guard++) {
+      const hit = blocks.find(
+        (block) => block.alongLo < spanHi && spanLo < block.alongHi && lane > block.acrossLo - CHANNEL_CLEAR && lane < block.acrossHi + CHANNEL_CLEAR
+      );
+      if (!hit) return lane;
+      lane = before ? hit.acrossLo - CHANNEL_CLEAR : hit.acrossHi + CHANNEL_CLEAR;
+    }
+    return null;
+  };
+  const channelU = (a, b, side, subject) => {
+    const vertical = !horizontalSide(side);
+    const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    const before = side === "north" || side === "west";
+    const search = {
+      spanLo: vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y),
+      spanHi: vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y),
+      start: before ? near - CHANNEL_STEP : far + CHANNEL_STEP,
+      vertical,
+      before
+    };
+    const derived = laneBeyond(search, subject, false);
+    const clear = laneBeyond(search, subject, true);
+    const outside = before ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
+    const limit = vertical ? scene.height : scene.width;
+    const lanes = [derived, clear, outside].filter(
+      (lane, index, all) => lane !== null && all.indexOf(lane) === index
+    );
+    return lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
+      (lane) => vertical ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b] : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b]
+    );
+  };
+  const isChannelU = (pts) => {
+    if (pts.length !== 4) return false;
+    const firstVertical = Math.abs(pts[0].x - pts[1].x) < ORTHOGONAL_EPSILON;
+    const lastVertical = Math.abs(pts[2].x - pts[3].x) < ORTHOGONAL_EPSILON;
+    if (firstVertical !== lastVertical) return false;
+    const lane = firstVertical ? pts[1].y : pts[1].x;
+    const fromA = lane - (firstVertical ? pts[0].y : pts[0].x);
+    const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
+    return fromA * fromB > 0;
+  };
+  return { channelU, isChannelU };
+}
 function optimiseRoutes(scene, titleBoxes = [], folded = false) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge) => enforceOrthogonalOn(edge, leaves);
   if (!folded) {
     const inspector = inspect(scene, titleBoxes);
     const preRouted = new Set(scene.edges.filter((edge) => edge.detour).map((edge) => edge.id));
-    const SEAT_OFFSETS2 = [0, -18, 18];
-    const SEAT_CLEAR = 14;
-    const SIDES = ["north", "south", "east", "west"];
-    const blockedSpan = (node, side) => {
-      const alongX = side === "north" || side === "south";
-      const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-      let lo = Number.POSITIVE_INFINITY;
-      let hi = Number.NEGATIVE_INFINITY;
-      for (const band of titleBoxes) {
-        const bandLo = alongX ? band.x : band.y;
-        const bandHi = alongX ? band.x + band.width : band.y + band.height;
-        if (centre < bandLo || centre > bandHi) continue;
-        lo = Math.min(lo, bandLo);
-        hi = Math.max(hi, bandHi);
-      }
-      return lo <= hi ? [lo, hi] : null;
-    };
-    const seatOffsetCache = /* @__PURE__ */ new Map();
-    const seatOffsetsFor = (node, side) => {
-      const key = `${node.id}|${side}`;
-      const hit = seatOffsetCache.get(key);
-      if (hit) return hit;
-      const span = blockedSpan(node, side);
-      const alongX = side === "north" || side === "south";
-      const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-      const made = span ? [...SEAT_OFFSETS2, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre] : SEAT_OFFSETS2;
-      seatOffsetCache.set(key, made);
-      return made;
-    };
-    const seatOn = (node, side, offset) => {
-      const alongX = Math.min(
-        Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
-        node.x + node.width - SIDE_INSET
-      );
-      const alongY = Math.min(
-        Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
-        node.y + node.height - SIDE_INSET
-      );
-      return side === "north" ? { x: alongX, y: node.y } : side === "south" ? { x: alongX, y: node.y + node.height } : side === "west" ? { x: node.x, y: alongY } : { x: node.x + node.width, y: alongY };
-    };
-    const outward = (side) => side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4;
-    const horizontalSide = (side) => side === "east" || side === "west";
-    const contentTop = Math.min(...scene.nodes.map((node) => node.y));
-    const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
-    const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
-    const contentRight = Math.max(...scene.nodes.map((node) => node.x + node.width));
-    const CHANNEL_MARGIN = 10;
-    const CHANNEL_STEP = 24;
-    const CHANNEL_CLEAR = 10;
-    let generation = 0;
-    const STRADDLE_MARGIN = 2;
-    const runReach = (edge, vertical) => {
-      let reach = CHANNEL_CLEAR;
-      for (const label of edge.labels) {
-        if (!label.width || !label.height) continue;
-        const across = (vertical ? label.height : label.width) / 2 + STRADDLE_MARGIN;
-        if (across > reach) reach = across;
-      }
-      return reach;
-    };
-    const runBlockCache = /* @__PURE__ */ new Map();
-    const parallelRunBlocks = (edge, vertical) => {
-      const key = `${edge.id}|${vertical}`;
-      const hit = runBlockCache.get(key);
-      if (hit && hit.at === generation) return hit.blocks;
-      const laneVertical = !vertical;
-      const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
-      const blocks = [];
-      for (const other of scene.edges) {
-        if (other.id === edge.id || other.pts.length < 2) continue;
-        for (let index = 0; index + 1 < other.pts.length; index++) {
-          const a = other.pts[index];
-          const b = other.pts[index + 1];
-          const runVertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
-          const runHorizontal = Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON;
-          if (runVertical === runHorizontal) continue;
-          if (runVertical !== laneVertical) continue;
-          const at = laneVertical ? a.x : a.y;
-          const from = laneVertical ? a.y : a.x;
-          const to = laneVertical ? b.y : b.x;
-          blocks.push({
-            alongLo: Math.min(from, to),
-            alongHi: Math.max(from, to),
-            acrossLo: at - slack,
-            acrossHi: at + slack
-          });
-        }
-      }
-      runBlockCache.set(key, { at: generation, blocks });
-      return blocks;
-    };
-    const laneBeyond = (search, subject, clearRuns) => {
-      const { spanLo, spanHi, vertical, before } = search;
-      const { ends, edge } = subject;
-      const own = /* @__PURE__ */ new Set();
-      for (const end of ends) if (end) own.add(end.node.id);
-      const blocks = [];
-      const push = (x, y, w, h) => blocks.push(
-        vertical ? { alongLo: x, alongHi: x + w, acrossLo: y, acrossHi: y + h } : { alongLo: y, alongHi: y + h, acrossLo: x, acrossHi: x + w }
-      );
-      for (const leaf of inspector.leaves)
-        if (!own.has(leaf.id)) push(leaf.x, leaf.y, leaf.width, leaf.height);
-      for (const box of inspector.boxes) {
-        const inside = inspector.holds.get(box.id);
-        if (own.has(box.id) || [...own].some((id) => inside.has(id))) continue;
-        push(box.x, box.y, box.width, box.height);
-      }
-      for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
-      if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
-      let lane = search.start;
-      for (let guard = 0; guard <= blocks.length; guard++) {
-        const hit = blocks.find(
-          (block) => block.alongLo < spanHi && spanLo < block.alongHi && lane > block.acrossLo - CHANNEL_CLEAR && lane < block.acrossHi + CHANNEL_CLEAR
-        );
-        if (!hit) return lane;
-        lane = before ? hit.acrossLo - CHANNEL_CLEAR : hit.acrossHi + CHANNEL_CLEAR;
-      }
-      return null;
-    };
-    const channelU = (a, b, side, subject) => {
-      const vertical = !horizontalSide(side);
-      const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
-      const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
-      const before = side === "north" || side === "west";
-      const search = {
-        spanLo: vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y),
-        spanHi: vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y),
-        start: before ? near - CHANNEL_STEP : far + CHANNEL_STEP,
-        vertical,
-        before
-      };
-      const derived = laneBeyond(search, subject, false);
-      const clear = laneBeyond(search, subject, true);
-      const outside = before ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
-      const limit = vertical ? scene.height : scene.width;
-      const lanes = [derived, clear, outside].filter(
-        (lane, index, all) => lane !== null && all.indexOf(lane) === index
-      );
-      return lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
-        (lane) => vertical ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b] : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b]
-      );
-    };
-    const isChannelU = (pts) => {
-      if (pts.length !== 4) return false;
-      const firstVertical = Math.abs(pts[0].x - pts[1].x) < ORTHOGONAL_EPSILON;
-      const lastVertical = Math.abs(pts[2].x - pts[3].x) < ORTHOGONAL_EPSILON;
-      if (firstVertical !== lastVertical) return false;
-      const lane = firstVertical ? pts[1].y : pts[1].x;
-      const fromA = lane - (firstVertical ? pts[0].y : pts[0].x);
-      const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
-      return fromA * fromB > 0;
-    };
+    const { SIDES, seatOffsetsFor, seatOn, outward, horizontalSide } = createSeatModel(titleBoxes);
+    const clock = { generation: 0 };
+    const { channelU, isChannelU } = createLaneModel({
+      scene,
+      inspector,
+      titleBoxes,
+      clock,
+      horizontalSide
+    });
     const shapesFor = (a, b, sides, subject) => {
       const aH = horizontalSide(sides.a);
       const bH = horizontalSide(sides.b);
@@ -98367,9 +98451,9 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
     };
     const routeCache = /* @__PURE__ */ new Map();
     const routesFor = (edge) => {
-      const cacheKey = `${generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
-      const cached2 = routeCache.get(cacheKey);
-      if (cached2) return cached2;
+      const cacheKey = `${clock.generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
+      const cached = routeCache.get(cacheKey);
+      if (cached) return cached;
       const ends = inspector.endsOf(edge.pts);
       if (!ends[0] || !ends[1] || ends[0].node === ends[1].node) return [];
       const subject = { ends, edge };
@@ -98414,74 +98498,21 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
         return inspector.endsOf(other.pts).some((end) => end && mine.includes(end.node));
       });
     };
-    const beforeCache = /* @__PURE__ */ new Map();
-    const soloCache = /* @__PURE__ */ new Map();
-    const cached = (store, ids, make) => {
-      const key = `${generation}|${[...ids].sort().join(",")}`;
-      const hit = store.get(key);
-      if (hit) return hit;
-      const made = make();
-      store.set(key, made);
-      return made;
-    };
-    const profileNow = (ids) => cached(beforeCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map()));
-    const selfWrecks = (ids, overrides) => {
-      const was = cached(soloCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map(), true));
-      for (const [key, tier] of inspector.local(ids, overrides, true))
-        if (tier === 0 && !was.has(key)) return true;
-      return false;
-    };
-    const damage = (profile) => {
-      const tiers = [0, 0, 0, 0, 0];
-      for (const tier of profile.values()) tiers[tier]++;
-      return tiers;
-    };
-    const lessDamaged = (a, b) => {
-      for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
-      return false;
-    };
-    const weigh = (group, overrides) => {
-      const ids = new Set(group.map((edge) => edge.id));
-      if (selfWrecks(ids, overrides)) return null;
-      const after = inspector.local(ids, overrides);
-      if (ladderVerdict(profileNow(ids), after) < 0) return null;
-      return { after, damage: damage(after) };
-    };
-    const tryMove = (group, overrides) => {
-      const ids = new Set(group.map((edge) => edge.id));
-      if (selfWrecks(ids, overrides)) return false;
-      const before = profileNow(ids);
-      const after = inspector.local(ids, overrides);
-      const verdict = ladderVerdict(before, after);
-      if (verdict < 0) return false;
-      scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
-      for (const edge of group) {
-        const route = overrides.get(edge.id);
-        if (!route) continue;
-        if (!preRouted.has(edge.id)) {
-          edge.detour = isChannelU(route);
-        }
-      }
-      for (const edge of group) {
-        const pts = overrides.get(edge.id);
-        if (pts) {
-          edge.pts = pts.map((p) => ({ ...p }));
-          inspector.forget(edge.id);
-        }
-      }
-      generation++;
-      beforeCache.clear();
-      soloCache.clear();
-      return true;
-    };
+    const ladder = createLadderModel({
+      scene,
+      inspector,
+      clock,
+      preRouted,
+      isChannelU
+    });
     repairToFixpoint({
       ordered,
-      profileNow,
       routesFor,
-      weigh,
-      lessDamaged,
-      tryMove,
-      neighboursOf
+      neighboursOf,
+      profileNow: ladder.profileNow,
+      weigh: ladder.weigh,
+      lessDamaged: ladder.lessDamaged,
+      tryMove: ladder.tryMove
     });
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
@@ -98575,66 +98606,46 @@ function createLabelSeatContext(scene, titleBoxes) {
     attributableAt
   };
 }
-function seatLabelOnRoute(ctx, edge, label) {
-  const { leaves, nearestOtherSq, overlaps, coversNode, straddledSeat, attributableAt } = ctx;
-  if (!label.width || !label.height) return null;
-  const own = boxToPolylineSq(label, edge.pts);
-  const host = hostSegment(label, edge);
-  if (host < 0) return null;
-  const seatOn = (segment) => {
-    const a = edge.pts[segment];
-    const b = edge.pts[segment + 1];
-    return seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2);
-  };
-  const segmentOrder = [
-    host,
-    ...Array.from({ length: edge.pts.length - 1 }, (_, i) => i).filter((i) => i !== host)
-  ];
-  let seat = null;
-  const seatsOf = (segment) => {
-    const a = edge.pts[segment];
-    const b = edge.pts[segment + 1];
-    const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-    const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-    const need = vertical ? label.height : label.width;
-    const room = Math.max(0, (span - need) / 2);
-    const fractions = room === 0 ? [0] : [0, -0.5, 0.5, -0.25, 0.25, -1, 1];
-    return fractions.map(
-      (fraction) => vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + room * fraction) : seatAt(label, (a.x + b.x) / 2 + room * fraction, (a.y + b.y) / 2)
-    );
-  };
-  const segVertical = (segment) => {
-    const a = edge.pts[segment];
-    const b = edge.pts[segment + 1];
-    return Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-  };
-  for (const wantUnpierced of [true, false]) {
-    for (const segment of segmentOrder) {
-      for (const candidate of seatsOf(segment)) {
+var segmentIsVertical = (edge, segment) => {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  return Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+};
+var midpointSeat = (label, edge, segment) => {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  return seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2);
+};
+function slideSeats(label, edge, segment) {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  const vertical = segmentIsVertical(edge, segment);
+  const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+  const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
+  const fractions = room === 0 ? [0] : [0, -0.5, 0.5, -0.25, 0.25, -1, 1];
+  return fractions.map(
+    (fraction) => vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + room * fraction) : seatAt(label, (a.x + b.x) / 2 + room * fraction, (a.y + b.y) / 2)
+  );
+}
+function chooseSeat(ctx, edge, label, segmentOrder) {
+  const { coversNode, straddledSeat, nearestOtherSq } = ctx;
+  for (const wantUnpierced of [true, false])
+    for (const segment of segmentOrder)
+      for (const candidate of slideSeats(label, edge, segment)) {
         if (coversNode(candidate)) continue;
-        if (straddledSeat(candidate, segVertical(segment), edge)) continue;
+        if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
         if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
-        seat = candidate;
-        break;
+        return candidate;
       }
-      if (seat) break;
-    }
-    if (seat) break;
-  }
-  if (!seat) seat = seatOn(host);
-  const alternatives = [];
-  const tolerated = [];
-  for (const segment of segmentOrder)
-    for (const candidate of seatsOf(segment)) {
-      if (straddledSeat(candidate, segVertical(segment), edge)) continue;
-      if (!coversNode(candidate)) alternatives.push(candidate);
-      else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
-    }
-  const stretched = [];
+  return null;
+}
+function stretchedSeats(ctx, edge, label, segmentOrder) {
+  const { coversNode, straddledSeat } = ctx;
+  const out = [];
   for (const segment of segmentOrder) {
     const a = edge.pts[segment];
     const b = edge.pts[segment + 1];
-    const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+    const vertical = segmentIsVertical(edge, segment);
     const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
     const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
     const outer = span / 2;
@@ -98644,44 +98655,66 @@ function seatLabelOnRoute(ctx, edge, label) {
       const candidate = vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + offset) : seatAt(label, (a.x + b.x) / 2 + offset, (a.y + b.y) / 2);
       if (coversNode(candidate)) continue;
       if (straddledSeat(candidate, vertical, edge)) continue;
-      stretched.push(candidate);
+      out.push(candidate);
     }
   }
-  alternatives.push(...stretched);
-  const besideRun = () => {
-    const out = [];
-    for (const segment of segmentOrder) {
-      const a = edge.pts[segment];
-      const b = edge.pts[segment + 1];
-      const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-      const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-      const need = vertical ? label.height : label.width;
-      const outer = span / 2;
-      const midX = (a.x + b.x) / 2;
-      const midY = (a.y + b.y) / 2;
-      for (const along of [
-        0,
-        -outer / 2,
-        outer / 2,
-        -outer,
-        outer,
-        -outer - need / 2,
-        outer + need / 2
-      ])
-        for (const away of [0, -14, 14, -28, 28, -44, 44]) {
-          const candidate = seatAt(
-            label,
-            midX + (vertical ? away : along),
-            midY + (vertical ? along : away)
-          );
-          if (coversNode(candidate)) continue;
-          if (away === 0 && straddledSeat(candidate, vertical, edge)) continue;
-          if (!attributableAt(label, candidate, edge)) continue;
-          out.push(candidate);
-        }
+  return out;
+}
+function besideRunSeats(ctx, edge, label, segmentOrder) {
+  const { coversNode, straddledSeat, attributableAt } = ctx;
+  const out = [];
+  for (const segment of segmentOrder) {
+    const a = edge.pts[segment];
+    const b = edge.pts[segment + 1];
+    const vertical = segmentIsVertical(edge, segment);
+    const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+    const need = vertical ? label.height : label.width;
+    const outer = span / 2;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    for (const along of [
+      0,
+      -outer / 2,
+      outer / 2,
+      -outer,
+      outer,
+      -outer - need / 2,
+      outer + need / 2
+    ])
+      for (const away of [0, -14, 14, -28, 28, -44, 44]) {
+        const candidate = seatAt(
+          label,
+          midX + (vertical ? away : along),
+          midY + (vertical ? along : away)
+        );
+        if (coversNode(candidate)) continue;
+        if (away === 0 && straddledSeat(candidate, vertical, edge)) continue;
+        if (!attributableAt(label, candidate, edge)) continue;
+        out.push(candidate);
+      }
+  }
+  return out;
+}
+function seatLabelOnRoute(ctx, edge, label) {
+  const { leaves, overlaps, coversNode, straddledSeat } = ctx;
+  if (!label.width || !label.height) return null;
+  const own = boxToPolylineSq(label, edge.pts);
+  const host = hostSegment(label, edge);
+  if (host < 0) return null;
+  const segmentOrder = [
+    host,
+    ...Array.from({ length: edge.pts.length - 1 }, (_, i) => i).filter((i) => i !== host)
+  ];
+  const seat = chooseSeat(ctx, edge, label, segmentOrder) ?? midpointSeat(label, edge, host);
+  const alternatives = [];
+  const tolerated = [];
+  for (const segment of segmentOrder)
+    for (const candidate of slideSeats(label, edge, segment)) {
+      if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+      if (!coversNode(candidate)) alternatives.push(candidate);
+      else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
     }
-    return out;
-  };
+  alternatives.push(...stretchedSeats(ctx, edge, label, segmentOrder));
   alternatives.push(...tolerated);
   const entry = {
     label,
@@ -98689,11 +98722,39 @@ function seatLabelOnRoute(ctx, edge, label) {
     from: { x: label.x, y: label.y },
     own,
     alternatives,
-    besideRun
+    besideRun: () => besideRunSeats(ctx, edge, label, segmentOrder)
   };
   label.x = seat.x;
   label.y = seat.y;
   return entry;
+}
+var labelsOverlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+var seatArea = (entry) => entry.label.width * entry.label.height;
+var clearAt = (seated, entry, at) => {
+  const trial = { ...entry.label, x: at.x, y: at.y };
+  return !seated.some((other) => other !== entry && labelsOverlap(trial, other.label));
+};
+function resolveLabelCollision(seated, a, b) {
+  const order = [a, b].sort(
+    (x, y) => seatArea(y) - seatArea(x) || x.label.flowId.localeCompare(y.label.flowId)
+  );
+  for (const rung of [
+    (entry) => entry.alternatives,
+    (entry) => entry.besideRun()
+  ])
+    for (const entry of order) {
+      const free = rung(entry).find((candidate) => clearAt(seated, entry, candidate));
+      if (!free) continue;
+      entry.label.x = free.x;
+      entry.label.y = free.y;
+      return true;
+    }
+  const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
+  if (!giving) return false;
+  giving.label.x = giving.from.x;
+  giving.label.y = giving.from.y;
+  giving.done = true;
+  return true;
 }
 function anchorFlowLabels(scene, titleBoxes = []) {
   const ctx = createLabelSeatContext(scene, titleBoxes);
@@ -98705,12 +98766,6 @@ function anchorFlowLabels(scene, titleBoxes = []) {
       if (entry) seated.push(entry);
     }
   }
-  const overlapping = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-  const rank = (entry) => entry.label.width * entry.label.height;
-  const clearAt = (entry, at) => {
-    const trial = { ...entry.label, x: at.x, y: at.y };
-    return !seated.some((other) => other !== entry && overlapping(trial, other.label));
-  };
   for (let round = 0; round < 3; round++) {
     let moved = false;
     for (let i = 0; i < seated.length; i++)
@@ -98718,37 +98773,8 @@ function anchorFlowLabels(scene, titleBoxes = []) {
         const a = seated[i];
         const b = seated[j];
         if (a.done || b.done) continue;
-        if (!overlapping(a.label, b.label)) continue;
-        const order = [a, b].sort(
-          (x, y) => rank(y) - rank(x) || x.label.flowId.localeCompare(y.label.flowId)
-        );
-        let escaped = false;
-        for (const entry of order) {
-          const free = entry.alternatives.find((candidate) => clearAt(entry, candidate));
-          if (!free) continue;
-          entry.label.x = free.x;
-          entry.label.y = free.y;
-          escaped = true;
-          break;
-        }
-        for (const entry of escaped ? [] : order) {
-          const free = entry.besideRun().find((candidate) => clearAt(entry, candidate));
-          if (!free) continue;
-          entry.label.x = free.x;
-          entry.label.y = free.y;
-          escaped = true;
-          break;
-        }
-        if (escaped) {
-          moved = true;
-          continue;
-        }
-        const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
-        if (!giving) continue;
-        giving.label.x = giving.from.x;
-        giving.label.y = giving.from.y;
-        giving.done = true;
-        moved = true;
+        if (!labelsOverlap(a.label, b.label)) continue;
+        if (resolveLabelCollision(seated, a, b)) moved = true;
       }
     if (!moved) break;
   }
@@ -99326,6 +99352,7 @@ var SEC_LEVEL_FR = {
   secret: "secret"
 };
 var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
+var round1 = (n) => Math.round(n * 10) / 10;
 function assignSourceHues(model, hues) {
   const sourceHue = /* @__PURE__ */ new Map();
   for (const flow of model.flows) {
@@ -99339,6 +99366,62 @@ function collectElementStyles(elements) {
     { id: element.id, style: element.style, attrValue: element.attr?.value },
     ...collectElementStyles(element.children)
   ]);
+}
+var ADRIFT_SQ = 20 * 20;
+var ATTACHED_SQ = 6 * 6;
+function auditRouteRepairs(deps) {
+  const { scene, labels, titles, offOwnRun, pierced, stolen, labelsSeated: labelsSeated2, resettle } = deps;
+  const repaired = scene.edges.filter((edge) => edge.repairedFrom);
+  if (!repaired.length) return;
+  const labelHarm = () => {
+    const harm = [0, 0];
+    for (const label of labels) {
+      const own = offOwnRun(label);
+      if (own > ADRIFT_SQ) harm[0]++;
+      if (pierced(label)) harm[0]++;
+      if (titles.some((title) => boxesOverlap(title, label))) harm[0]++;
+      if (stolen(label, own)) harm[1]++;
+    }
+    for (const edge of scene.edges) if (!labelsSeated2(edge)) harm[1]++;
+    return harm;
+  };
+  const soloProfile = () => inspect(scene, titles).local(new Set(scene.edges.map((edge) => edge.id)), /* @__PURE__ */ new Map(), true);
+  const stateHarm = () => {
+    const tiers = [0, 0, 0, 0, 0];
+    for (const tier of soloProfile().values()) tiers[tier]++;
+    const [labels0, labels1] = labelHarm();
+    tiers[0] += labels0;
+    tiers[1] += labels1;
+    return tiers;
+  };
+  const breaches = () => {
+    const found = /* @__PURE__ */ new Set();
+    labels.forEach((label, index) => {
+      if (offOwnRun(label) > ADRIFT_SQ) found.add(`adrift:${index}`);
+    });
+    for (const [key, tier] of soloProfile())
+      if (tier === 0 && (key.startsWith("leaf:") || key.startsWith("diag:"))) found.add(key);
+    return found;
+  };
+  const lessDamaged = (a, b) => {
+    for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+    return false;
+  };
+  const withRepair = stateHarm();
+  const breachesWith = breaches();
+  const repairedRoutes = repaired.map((edge) => edge.pts);
+  for (const edge of repaired) edge.pts = edge.repairedFrom;
+  resettle();
+  const withoutRepair = stateHarm();
+  const breachesWithout = breaches();
+  const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
+  if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
+    repaired.forEach((edge, index) => {
+      edge.pts = repairedRoutes[index];
+    });
+    resettle();
+  }
+  for (const edge of repaired) edge.repairedFrom = void 0;
 }
 function settleOnOwnRun(s, label) {
   const onLineSeats = [...s.ownRunMidpoints(label), ...s.alongOwnRun(label)];
@@ -99377,61 +99460,136 @@ function settleOneLabel(s, label) {
   label.x = origin.x;
   label.y = origin.y;
 }
-function render(model, view, scene) {
-  const style = model.style;
-  const fonts = fontSizes(style.font.size);
-  const { edge: edgeFontSize, node: nodeFontSize, cont: containerFontSize } = fonts;
-  const round1 = (n) => Math.round(n * 10) / 10;
-  const annot = {
-    tech: round1(fonts.tech),
-    chip: round1(fonts.chip),
-    tag: round1(fonts.tag),
-    band: round1(fonts.band),
-    bandTitle: round1(fonts.bandTitle),
-    chipH: Math.round(fonts.chipH),
-    scale: fonts.scale,
-    chipRectH: Math.round(15 * fonts.scale),
-    chipTextDy: round1(11 * fonts.scale)
-  };
-  const scaled = (n) => round1(n * fonts.scale);
-  const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
-  const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
-  const defaultEdgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
-  const sourceHue = style.flowColor === "by-source" ? assignSourceHues(model, flowPalette[isDarkTheme ? "dark" : "light"]) : /* @__PURE__ */ new Map();
-  const flowColorOf = (flow) => flow?.style?.stroke?.color ?? (style.flowColor === "by-source" ? sourceHue.get(flow?.from ?? "") ?? defaultEdgeColor : defaultEdgeColor);
-  const arrowMarkers = /* @__PURE__ */ new Map();
-  const markerName = (color) => {
-    let name = arrowMarkers.get(color);
-    if (!name) {
-      name = arrowMarkers.size === 0 ? "arr" : `arr${arrowMarkers.size}`;
-      arrowMarkers.set(color, name);
+function createNodeRenderers(paint) {
+  const { palette, style, annot, nodeFontSize, containerFontSize, resolveStyle, elementAttr } = paint;
+  const centeredNodeLabel = (lines, centerX2, topBaseline, fill) => lines.map(
+    (line, index) => `<text x="${centerX2}" y="${topBaseline + index * (nodeFontSize + 2)}" font-size="${nodeFontSize}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
+`
+  ).join("");
+  const centerLinesY = (top, height, lineCount) => top + height / 2 - (lineCount - 1) * (nodeFontSize + 2) / 2 + 4;
+  const renderContainerNode = (node) => {
+    const nodeStyle = resolveStyle(node.kind, node.id);
+    const fill = escAttr(nodeStyle.fill ?? palette.containerFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.containerStroke), text = escAttr(nodeStyle.text ?? palette.containerLabel);
+    const dash = dashArray(nodeStyle.stroke?.style);
+    let svg = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+`;
+    node.label.split("\n").forEach((line, index) => {
+      svg += `<text x="${node.x + 10}" y="${node.y + 18 + index * 14}" font-size="${containerFontSize}" font-weight="bold" fill="${text}">${esc(line)}</text>
+`;
+    });
+    const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : void 0;
+    if (level) {
+      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
+      svg += `<text x="${node.x + node.width - 9}" y="${node.y + node.height - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
+`;
     }
-    return name;
+    return svg;
   };
-  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
-  const objectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
-  const numbered = style.flowText === "numbered";
-  const ui = UI[style.lang] ?? UI.en;
-  const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
-  const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
-  const elementStyle = /* @__PURE__ */ new Map();
-  const elementAttr = /* @__PURE__ */ new Map();
-  for (const entry of collectElementStyles(model.elements)) {
-    elementStyle.set(entry.id, entry.style);
-    elementAttr.set(entry.id, entry.attrValue);
-  }
-  const resolveStyle = (kind, id) => {
-    let base = kindDefaults[kind] ?? {};
-    const level = elementAttr.get(id);
-    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
-    const perKind = style.kind[kind] ?? {};
-    const inline = elementStyle.get(id) ?? {};
-    return {
-      fill: inline.fill ?? perKind.fill ?? base.fill,
-      stroke: { ...base.stroke, ...perKind.stroke, ...inline.stroke },
-      text: inline.text ?? perKind.text ?? base.text
-    };
+  const renderActor = (node, nodeStyle, lines) => {
+    const centerX2 = node.x + node.width / 2;
+    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.actorStroke);
+    const text = escAttr(nodeStyle.text ?? palette.actorText);
+    let svg = `<circle cx="${centerX2}" cy="${node.y + 10}" r="7" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+<path d="M ${centerX2 - 11} ${node.y + 32} q 11 -19 22 0" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+`;
+    lines.forEach((line, index) => {
+      svg += `<text x="${centerX2}" y="${node.y + 44 + index * 11}" font-size="${nodeFontSize - 1.5}" text-anchor="middle" fill="${text}">${esc(line)}</text>
+`;
+    });
+    return svg;
   };
+  const renderDatastore = (node, nodeStyle, lines) => {
+    const ry = 7;
+    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), fill = escAttr(nodeStyle.fill ?? palette.nodeFill);
+    const body = `<path d="M ${node.x} ${node.y + ry} v ${node.height - 2 * ry} a ${node.width / 2} ${ry} 0 0 0 ${node.width} 0 v ${-(node.height - 2 * ry)}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    const centerY2 = node.y + ry + (node.height - ry) / 2 - (lines.length - 1) * (nodeFontSize + 2) / 2 + 4;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerY2,
+      escAttr(nodeStyle.text ?? palette.nodeText)
+    );
+  };
+  const renderQueue = (node, nodeStyle, lines) => {
+    const rx = 8;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<path d="M ${node.x + rx} ${node.y} h ${node.width - 2 * rx} a ${rx} ${node.height / 2} 0 0 1 0 ${node.height} h ${-(node.width - 2 * rx)} a ${rx} ${node.height / 2} 0 0 1 0 ${-node.height}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${node.x + rx}" cy="${node.y + node.height / 2}" rx="${rx}" ry="${node.height / 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + rx + (node.width - rx) / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderGateway = (node, nodeStyle, lines) => {
+    const centerX2 = node.x + node.width / 2;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${round1(node.x + 8)} ${round1(node.y + 8)} L ${round1(node.x + 22)} ${round1(node.y + 8)} Q ${round1(node.x + 24)} ${round1(node.y + 13)} ${round1(node.x + 15)} ${round1(node.y + 20)} Q ${round1(node.x + 6)} ${round1(node.y + 13)} ${round1(node.x + 8)} ${round1(node.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    return body + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
+  };
+  const renderAuth = (node, nodeStyle, lines) => {
+    const centerX2 = node.x + node.width / 2;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<rect x="${node.x + 6}" y="${node.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${node.x + 10} ${node.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<circle cx="${node.x + 15}" cy="${node.y + 16}" r="2.5" fill="${stroke}"/>
+`;
+    return body + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
+  };
+  const renderPlainBox = (node, nodeStyle, lines) => {
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const dash = dashArray(nodeStyle.stroke?.style);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+`;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderIdp = (node, nodeStyle, lines) => {
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>
+`;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderLeafNode = (node) => {
+    const nodeStyle = resolveStyle(node.kind, node.id);
+    const lines = node.label.split("\n");
+    switch (node.kind) {
+      case "actor":
+        return renderActor(node, nodeStyle, lines);
+      case "datastore":
+        return renderDatastore(node, nodeStyle, lines);
+      case "queue":
+        return renderQueue(node, nodeStyle, lines);
+      case "gateway":
+        return renderGateway(node, nodeStyle, lines);
+      case "auth":
+        return renderAuth(node, nodeStyle, lines);
+      case "idp":
+        return renderIdp(node, nodeStyle, lines);
+      default:
+        return renderPlainBox(node, nodeStyle, lines);
+    }
+  };
+  return { renderContainerNode, renderLeafNode };
+}
+function createLabelSettler(deps) {
+  const { scene, model, flowById, style } = deps;
   const nodeBoxes = scene.nodes.filter((node) => !node.container).map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height }));
   const labels = scene.edges.flatMap((edge) => edge.labels);
   const countLabelOverlaps = () => {
@@ -99446,8 +99604,6 @@ function render(model, view, scene) {
   const ownRun = /* @__PURE__ */ new Map();
   for (const edge of scene.edges) for (const label of edge.labels) ownRun.set(label, edge);
   const routes = scene.edges.filter((edge) => edge.pts.length >= 2).map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
-  const ADRIFT_SQ = 20 * 20;
-  const ATTACHED_SQ = 6 * 6;
   const offOwnRun = (label) => {
     const edge = ownRun.get(label);
     return edge && edge.pts.length >= 2 ? boxToPolylineSq(label, edge.pts) : 0;
@@ -99534,288 +99690,34 @@ function render(model, view, scene) {
     }
     for (const label of labels) settleOneLabel(settler, label);
   };
-  const overlapsBefore = countLabelOverlaps();
-  settleLabelPositions();
-  {
-    const repaired = scene.edges.filter((edge) => edge.repairedFrom);
-    if (repaired.length) {
-      const titles = titleBands;
-      const labelHarm = () => {
-        const harm = [0, 0];
-        for (const label of labels) {
-          const own = offOwnRun(label);
-          if (own > ADRIFT_SQ) harm[0]++;
-          if (pierced(label)) harm[0]++;
-          if (titles.some((title) => boxesOverlap(title, label))) harm[0]++;
-          if (stolen(label, own)) harm[1]++;
-        }
-        for (const edge of scene.edges) if (!labelsSeated(edge)) harm[1]++;
-        return harm;
-      };
-      const runHarm = () => {
-        const tiers = [0, 0, 0, 0, 0];
-        const profile = inspect(scene, titles).local(
-          new Set(scene.edges.map((edge) => edge.id)),
-          /* @__PURE__ */ new Map(),
-          true
-        );
-        for (const tier of profile.values()) tiers[tier]++;
-        return tiers;
-      };
-      const stateHarm = () => {
-        const tiers = runHarm();
-        const [labels0, labels1] = labelHarm();
-        tiers[0] += labels0;
-        tiers[1] += labels1;
-        return tiers;
-      };
-      const breaches = () => {
-        const found = /* @__PURE__ */ new Set();
-        labels.forEach((label, index) => {
-          if (offOwnRun(label) > ADRIFT_SQ) found.add(`adrift:${index}`);
-        });
-        for (const [key, tier] of inspect(scene, titles).local(
-          new Set(scene.edges.map((edge) => edge.id)),
-          /* @__PURE__ */ new Map(),
-          true
-        ))
-          if (tier === 0 && (key.startsWith("leaf:") || key.startsWith("diag:"))) found.add(key);
-        return found;
-      };
-      const lessDamaged = (a, b) => {
-        for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
-        return false;
-      };
-      const withRepair = stateHarm();
-      const breachesWith = breaches();
-      const repairedRoutes = repaired.map((edge) => edge.pts);
-      for (const edge of repaired) edge.pts = edge.repairedFrom;
-      anchorFlowLabels(scene, titles);
-      settleLabelPositions();
-      const withoutRepair = stateHarm();
-      const breachesWithout = breaches();
-      const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
-      if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
-        repaired.forEach((edge, index) => {
-          edge.pts = repairedRoutes[index];
-        });
-        anchorFlowLabels(scene, titles);
-        settleLabelPositions();
-      }
-      for (const edge of repaired) edge.repairedFrom = void 0;
-    }
-  }
-  const overlapsAfter = countLabelOverlaps();
-  compactVertical(scene);
-  const verticalSegments = [];
-  if (style.crossingHops) {
-    for (const edge of scene.edges) {
-      for (let segmentIndex = 0; segmentIndex + 1 < edge.pts.length; segmentIndex++) {
-        const point = edge.pts[segmentIndex], nextPoint = edge.pts[segmentIndex + 1];
-        if (Math.abs(point.x - nextPoint.x) < 0.5)
-          verticalSegments.push({
-            x: point.x,
-            y1: Math.min(point.y, nextPoint.y),
-            y2: Math.max(point.y, nextPoint.y)
-          });
-      }
-    }
-  }
-  const edgePath = (pts) => {
-    let path = `M ${pts[0].x} ${pts[0].y}`;
-    for (let segmentIndex = 0; segmentIndex + 1 < pts.length; segmentIndex++) {
-      const point = pts[segmentIndex], nextPoint = pts[segmentIndex + 1];
-      if (style.crossingHops && Math.abs(point.y - nextPoint.y) < 0.5 && Math.abs(point.x - nextPoint.x) >= 0.5) {
-        const direction = Math.sign(nextPoint.x - point.x);
-        const rangeStart = Math.min(point.x, nextPoint.x) + HOP_RADIUS + 1, rangeEnd = Math.max(point.x, nextPoint.x) - HOP_RADIUS - 1;
-        const crossings = verticalSegments.filter(
-          (vertical) => vertical.x > rangeStart && vertical.x < rangeEnd && point.y > vertical.y1 + 1 && point.y < vertical.y2 - 1
-        ).map((vertical) => vertical.x).sort((pointA, pointB) => direction > 0 ? pointA - pointB : pointB - pointA);
-        for (const crossingX of crossings)
-          path += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
-      }
-      path += ` L ${nextPoint.x} ${nextPoint.y}`;
-    }
-    return path;
+  return {
+    labels,
+    titleBands,
+    countLabelOverlaps,
+    offOwnRun,
+    stolen,
+    pierced,
+    settleLabelPositions
   };
-  const centeredNodeLabel = (lines, centerX2, topBaseline, fill) => lines.map(
-    (line, index) => `<text x="${centerX2}" y="${topBaseline + index * (nodeFontSize + 2)}" font-size="${nodeFontSize}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
-`
-  ).join("");
-  const centerLinesY = (top, height, lineCount) => top + height / 2 - (lineCount - 1) * (nodeFontSize + 2) / 2 + 4;
-  const renderContainerNode = (node) => {
-    const nodeStyle = resolveStyle(node.kind, node.id);
-    const fill = escAttr(nodeStyle.fill ?? palette.containerFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.containerStroke), text = escAttr(nodeStyle.text ?? palette.containerLabel);
-    const dash = dashArray(nodeStyle.stroke?.style);
-    let svg2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
-`;
-    node.label.split("\n").forEach((line, index) => {
-      svg2 += `<text x="${node.x + 10}" y="${node.y + 18 + index * 14}" font-size="${containerFontSize}" font-weight="bold" fill="${text}">${esc(line)}</text>
-`;
-    });
-    const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : void 0;
-    if (level) {
-      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
-      svg2 += `<text x="${node.x + node.width - 9}" y="${node.y + node.height - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
-`;
-    }
-    return svg2;
-  };
-  const renderActor = (node, nodeStyle, lines) => {
-    const centerX2 = node.x + node.width / 2;
-    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.actorStroke);
-    const text = escAttr(nodeStyle.text ?? palette.actorText);
-    let svg2 = `<circle cx="${centerX2}" cy="${node.y + 10}" r="7" fill="none" stroke="${stroke}" stroke-width="1.5"/>
-<path d="M ${centerX2 - 11} ${node.y + 32} q 11 -19 22 0" fill="none" stroke="${stroke}" stroke-width="1.5"/>
-`;
-    lines.forEach((line, index) => {
-      svg2 += `<text x="${centerX2}" y="${node.y + 44 + index * 11}" font-size="${nodeFontSize - 1.5}" text-anchor="middle" fill="${text}">${esc(line)}</text>
-`;
-    });
-    return svg2;
-  };
-  const renderDatastore = (node, nodeStyle, lines) => {
-    const ry = 7;
-    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), fill = escAttr(nodeStyle.fill ?? palette.nodeFill);
-    const body2 = `<path d="M ${node.x} ${node.y + ry} v ${node.height - 2 * ry} a ${node.width / 2} ${ry} 0 0 0 ${node.width} 0 v ${-(node.height - 2 * ry)}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-`;
-    const centerY2 = node.y + ry + (node.height - ry) / 2 - (lines.length - 1) * (nodeFontSize + 2) / 2 + 4;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + node.width / 2,
-      centerY2,
-      escAttr(nodeStyle.text ?? palette.nodeText)
-    );
-  };
-  const renderQueue = (node, nodeStyle, lines) => {
-    const rx = 8;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<path d="M ${node.x + rx} ${node.y} h ${node.width - 2 * rx} a ${rx} ${node.height / 2} 0 0 1 0 ${node.height} h ${-(node.width - 2 * rx)} a ${rx} ${node.height / 2} 0 0 1 0 ${-node.height}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<ellipse cx="${node.x + rx}" cy="${node.y + node.height / 2}" rx="${rx}" ry="${node.height / 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-`;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + rx + (node.width - rx) / 2,
-      centerLinesY(node.y, node.height, lines.length),
-      text
-    );
-  };
-  const renderGateway = (node, nodeStyle, lines) => {
-    const centerX2 = node.x + node.width / 2;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<path d="M ${round1(node.x + 8)} ${round1(node.y + 8)} L ${round1(node.x + 22)} ${round1(node.y + 8)} Q ${round1(node.x + 24)} ${round1(node.y + 13)} ${round1(node.x + 15)} ${round1(node.y + 20)} Q ${round1(node.x + 6)} ${round1(node.y + 13)} ${round1(node.x + 8)} ${round1(node.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-`;
-    return body2 + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
-  };
-  const renderAuth = (node, nodeStyle, lines) => {
-    const centerX2 = node.x + node.width / 2;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<rect x="${node.x + 6}" y="${node.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-<path d="M ${node.x + 10} ${node.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-<circle cx="${node.x + 15}" cy="${node.y + 16}" r="2.5" fill="${stroke}"/>
-`;
-    return body2 + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
-  };
-  const renderPlainBox = (node, nodeStyle, lines) => {
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const dash = dashArray(nodeStyle.stroke?.style);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
-`;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + node.width / 2,
-      centerLinesY(node.y, node.height, lines.length),
-      text
-    );
-  };
-  const renderIdp = (node, nodeStyle, lines) => {
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>
-`;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + node.width / 2,
-      centerLinesY(node.y, node.height, lines.length),
-      text
-    );
-  };
-  const renderLeafNode = (node) => {
-    const nodeStyle = resolveStyle(node.kind, node.id);
-    const lines = node.label.split("\n");
-    switch (node.kind) {
-      case "actor":
-        return renderActor(node, nodeStyle, lines);
-      case "datastore":
-        return renderDatastore(node, nodeStyle, lines);
-      case "queue":
-        return renderQueue(node, nodeStyle, lines);
-      case "gateway":
-        return renderGateway(node, nodeStyle, lines);
-      case "auth":
-        return renderAuth(node, nodeStyle, lines);
-      case "idp":
-        return renderIdp(node, nodeStyle, lines);
-      default:
-        return renderPlainBox(node, nodeStyle, lines);
-    }
-  };
-  const renderNumberedBadge = (label) => {
-    const centerX2 = label.x + label.width / 2, centerY2 = label.y + label.height / 2 + scaled(3.6), size = scaled(10.5);
-    return `<text x="${centerX2}" y="${centerY2}" font-size="${size}" text-anchor="middle" fill="${palette.halo}" stroke="${palette.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(label.text)}</text>
-<text x="${centerX2}" y="${centerY2}" font-size="${size}" text-anchor="middle" fill="${palette.edgeLabel}" font-weight="bold">${esc(label.text)}</text>
-`;
-  };
-  const renderTextLabel = (label, flowStyle) => {
-    const lines = label.text ? label.text.split("\n") : [];
-    const color = escAttr(flowStyle?.text ?? palette.edgeLabel);
-    let svg2 = lines.map(
-      (line, index) => `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + index * (edgeFontSize + 3)}" font-size="${edgeFontSize}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
-`
-    ).join("");
-    const flow = flowById.get(label.flowId);
-    const tech = techText(flow?.tech);
-    if (tech && flow?.label) {
-      svg2 += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
-`;
-    }
-    const chips = (flow?.objects ?? []).map((objectRef) => objectName.get(objectRef.id) ?? objectRef.id);
-    if (!chips.length) return svg2;
-    const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
-    let positionX = label.x + label.width / 2 - totalW / 2;
-    const cy = label.y + label.height - annot.chipH + 2;
-    for (const name of chips) {
-      const chipWidth = chipW(name, annot.scale);
-      svg2 += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
-`;
-      svg2 += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
-`;
-      positionX += chipWidth + 4;
-    }
-    return svg2;
-  };
-  const renderEdgePath = (edge) => {
-    if (!edge.pts.length) return "";
-    const flow = flowById.get(edge.id);
-    const flowStyle = flow?.style;
-    const color = flowColorOf(flow);
-    const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
-    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
-    const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
-    return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
-`;
-  };
-  const renderEdgeLabels = (edge) => {
-    if (!edge.pts.length) return "";
-    const flowStyle = flowById.get(edge.id)?.style;
-    let svg2 = "";
-    for (const label of edge.labels) {
-      svg2 += numbered ? renderNumberedBadge(label) : renderTextLabel(label, flowStyle);
-    }
-    return svg2;
-  };
+}
+function createBandRenderers(paint) {
+  const {
+    scene,
+    model,
+    view,
+    style,
+    palette,
+    annot,
+    ui,
+    legendNames,
+    legendFlowLabel,
+    scaled,
+    objectName,
+    resolveStyle,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  } = paint;
   let bandY = scene.height;
   let bandsSvg = "";
   const contentX = 150;
@@ -99947,14 +99849,248 @@ function render(model, view, scene) {
       bandY += scaled(20);
     }
   };
+  return {
+    renderFlowsBand,
+    renderObjectsBand,
+    renderLegendBand,
+    bandsSvg: () => bandsSvg,
+    bandY: () => bandY
+  };
+}
+function createEdgePainter(paint) {
+  const {
+    scene,
+    style,
+    palette,
+    annot,
+    edgeFontSize,
+    scaled,
+    flowById,
+    objectName,
+    flowColorOf,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  } = paint;
+  const verticalSegments = [];
+  if (style.crossingHops) {
+    for (const edge of scene.edges) {
+      for (let segmentIndex = 0; segmentIndex + 1 < edge.pts.length; segmentIndex++) {
+        const point = edge.pts[segmentIndex], nextPoint = edge.pts[segmentIndex + 1];
+        if (Math.abs(point.x - nextPoint.x) < 0.5)
+          verticalSegments.push({
+            x: point.x,
+            y1: Math.min(point.y, nextPoint.y),
+            y2: Math.max(point.y, nextPoint.y)
+          });
+      }
+    }
+  }
+  const edgePath = (pts) => {
+    let path = `M ${pts[0].x} ${pts[0].y}`;
+    for (let segmentIndex = 0; segmentIndex + 1 < pts.length; segmentIndex++) {
+      const point = pts[segmentIndex], nextPoint = pts[segmentIndex + 1];
+      if (style.crossingHops && Math.abs(point.y - nextPoint.y) < 0.5 && Math.abs(point.x - nextPoint.x) >= 0.5) {
+        const direction = Math.sign(nextPoint.x - point.x);
+        const rangeStart = Math.min(point.x, nextPoint.x) + HOP_RADIUS + 1, rangeEnd = Math.max(point.x, nextPoint.x) - HOP_RADIUS - 1;
+        const crossings = verticalSegments.filter(
+          (vertical) => vertical.x > rangeStart && vertical.x < rangeEnd && point.y > vertical.y1 + 1 && point.y < vertical.y2 - 1
+        ).map((vertical) => vertical.x).sort((pointA, pointB) => direction > 0 ? pointA - pointB : pointB - pointA);
+        for (const crossingX of crossings)
+          path += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
+      }
+      path += ` L ${nextPoint.x} ${nextPoint.y}`;
+    }
+    return path;
+  };
+  const renderNumberedBadge = (label) => {
+    const centerX2 = label.x + label.width / 2, centerY2 = label.y + label.height / 2 + scaled(3.6), size = scaled(10.5);
+    return `<text x="${centerX2}" y="${centerY2}" font-size="${size}" text-anchor="middle" fill="${palette.halo}" stroke="${palette.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(label.text)}</text>
+<text x="${centerX2}" y="${centerY2}" font-size="${size}" text-anchor="middle" fill="${palette.edgeLabel}" font-weight="bold">${esc(label.text)}</text>
+`;
+  };
+  const renderTextLabel = (label, flowStyle) => {
+    const lines = label.text ? label.text.split("\n") : [];
+    const color = escAttr(flowStyle?.text ?? palette.edgeLabel);
+    let svg = lines.map(
+      (line, index) => `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + index * (edgeFontSize + 3)}" font-size="${edgeFontSize}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
+`
+    ).join("");
+    const flow = flowById.get(label.flowId);
+    const tech = techText(flow?.tech);
+    if (tech && flow?.label) {
+      svg += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
+`;
+    }
+    const chips = (flow?.objects ?? []).map(
+      (objectRef) => objectName.get(objectRef.id) ?? objectRef.id
+    );
+    if (!chips.length) return svg;
+    const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
+    let positionX = label.x + label.width / 2 - totalW / 2;
+    const cy = label.y + label.height - annot.chipH + 2;
+    for (const name of chips) {
+      const chipWidth = chipW(name, annot.scale);
+      svg += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
+`;
+      svg += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
+`;
+      positionX += chipWidth + 4;
+    }
+    return svg;
+  };
+  const renderEdgePath = (edge) => {
+    if (!edge.pts.length) return "";
+    const flow = flowById.get(edge.id);
+    const flowStyle = flow?.style;
+    const color = flowColorOf(flow);
+    const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
+    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
+    const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
+    return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
+`;
+  };
+  const renderEdgeLabels = (edge) => {
+    if (!edge.pts.length) return "";
+    const flowStyle = flowById.get(edge.id)?.style;
+    let svg = "";
+    for (const label of edge.labels) {
+      svg += numbered ? renderNumberedBadge(label) : renderTextLabel(label, flowStyle);
+    }
+    return svg;
+  };
+  return { renderEdgePath, renderEdgeLabels };
+}
+function render(model, view, scene) {
+  const style = model.style;
+  const fonts = fontSizes(style.font.size);
+  const { edge: edgeFontSize, node: nodeFontSize, cont: containerFontSize } = fonts;
+  const annot = {
+    tech: round1(fonts.tech),
+    chip: round1(fonts.chip),
+    tag: round1(fonts.tag),
+    band: round1(fonts.band),
+    bandTitle: round1(fonts.bandTitle),
+    chipH: Math.round(fonts.chipH),
+    scale: fonts.scale,
+    chipRectH: Math.round(15 * fonts.scale),
+    chipTextDy: round1(11 * fonts.scale)
+  };
+  const scaled = (n) => round1(n * fonts.scale);
+  const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
+  const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
+  const defaultEdgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
+  const sourceHue = style.flowColor === "by-source" ? assignSourceHues(model, flowPalette[isDarkTheme ? "dark" : "light"]) : /* @__PURE__ */ new Map();
+  const flowColorOf = (flow) => flow?.style?.stroke?.color ?? (style.flowColor === "by-source" ? sourceHue.get(flow?.from ?? "") ?? defaultEdgeColor : defaultEdgeColor);
+  const arrowMarkers = /* @__PURE__ */ new Map();
+  const markerName = (color) => {
+    let name = arrowMarkers.get(color);
+    if (!name) {
+      name = arrowMarkers.size === 0 ? "arr" : `arr${arrowMarkers.size}`;
+      arrowMarkers.set(color, name);
+    }
+    return name;
+  };
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
+  const objectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
+  const numbered = style.flowText === "numbered";
+  const ui = UI[style.lang] ?? UI.en;
+  const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
+  const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
+  const elementStyle = /* @__PURE__ */ new Map();
+  const elementAttr = /* @__PURE__ */ new Map();
+  for (const entry of collectElementStyles(model.elements)) {
+    elementStyle.set(entry.id, entry.style);
+    elementAttr.set(entry.id, entry.attrValue);
+  }
+  const resolveStyle = (kind, id) => {
+    let base = kindDefaults[kind] ?? {};
+    const level = elementAttr.get(id);
+    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
+    const perKind = style.kind[kind] ?? {};
+    const inline = elementStyle.get(id) ?? {};
+    return {
+      fill: inline.fill ?? perKind.fill ?? base.fill,
+      stroke: { ...base.stroke, ...perKind.stroke, ...inline.stroke },
+      text: inline.text ?? perKind.text ?? base.text
+    };
+  };
+  const {
+    labels,
+    titleBands,
+    countLabelOverlaps,
+    offOwnRun,
+    stolen,
+    pierced,
+    settleLabelPositions
+  } = createLabelSettler({ scene, model, flowById, style });
+  const overlapsBefore = countLabelOverlaps();
+  settleLabelPositions();
+  auditRouteRepairs({
+    scene,
+    labels,
+    titles: titleBands,
+    offOwnRun,
+    pierced,
+    stolen,
+    labelsSeated,
+    resettle: () => {
+      anchorFlowLabels(scene, titleBands);
+      settleLabelPositions();
+    }
+  });
+  const overlapsAfter = countLabelOverlaps();
+  compactVertical(scene);
+  const { renderContainerNode, renderLeafNode } = createNodeRenderers({
+    palette,
+    style,
+    annot,
+    nodeFontSize,
+    containerFontSize,
+    resolveStyle,
+    elementAttr
+  });
+  const { renderEdgePath, renderEdgeLabels } = createEdgePainter({
+    scene,
+    style,
+    palette,
+    annot,
+    edgeFontSize,
+    scaled,
+    flowById,
+    objectName,
+    flowColorOf,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  });
   let body = "";
   for (const node of scene.nodes) if (node.container) body += renderContainerNode(node);
   for (const node of scene.nodes) if (!node.container) body += renderLeafNode(node);
   for (const edge of scene.edges) body += renderEdgePath(edge);
   for (const edge of scene.edges) body += renderEdgeLabels(edge);
-  if (numbered && model.flows.length) renderFlowsBand();
-  if (model.businessObjects.length) renderObjectsBand();
-  if (style.legend === "auto") renderLegendBand();
+  const bands = createBandRenderers({
+    scene,
+    model,
+    view,
+    style,
+    palette,
+    annot,
+    ui,
+    legendNames,
+    legendFlowLabel,
+    scaled,
+    objectName,
+    resolveStyle,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  });
+  if (numbered && model.flows.length) bands.renderFlowsBand();
+  if (model.businessObjects.length) bands.renderObjectsBand();
+  if (style.legend === "auto") bands.renderLegendBand();
+  const bandsSvg = bands.bandsSvg();
+  const bandY = bands.bandY();
   const viewWidth = scene.width, viewHeight = scene.height;
   const totalHeight = bandY > viewHeight ? bandY + 14 : viewHeight;
   const markerSize = style.arrows === "large" ? round1(11 * fonts.scale) : 7;

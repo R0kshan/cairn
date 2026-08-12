@@ -203,108 +203,90 @@ function createLabelSeatContext(scene: Scene, titleBoxes: TitleBox[]): LabelSeat
   };
 }
 
-/** Finds where `label` should sit on `edge`, and mutates it there. Returns
- *  `null` when the label is empty or its route has no viable host segment —
- *  the caller then leaves it unseated. */
-function seatLabelOnRoute(
+const segmentIsVertical = (edge: SceneEdge, segment: number): boolean => {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  return Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+};
+
+/** The seat centred on a segment's midpoint. */
+const midpointSeat = (label: SceneLabel, edge: SceneEdge, segment: number): Box => {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  return seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2);
+};
+
+/**
+ * Seats along one segment: the midpoint, then slides either way. `room` is how
+ * far a seat may slide without overhanging the run's ends — zero when the label
+ * is longer than the run it sits on.
+ */
+function slideSeats(label: SceneLabel, edge: SceneEdge, segment: number): Box[] {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  const vertical = segmentIsVertical(edge, segment);
+  const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+  const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
+  const fractions = room === 0 ? [0] : [0, -0.5, 0.5, -0.25, 0.25, -1, 1];
+  return fractions.map((fraction) =>
+    vertical
+      ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + room * fraction)
+      : seatAt(label, (a.x + b.x) / 2 + room * fraction, (a.y + b.y) / 2),
+  );
+}
+
+/**
+ * The seat this label takes, or null when every candidate is pierced.
+ *
+ * Two sweeps over the same seats: the first wants clear of node boxes *and*
+ * unpierced, the second settles for clear of boxes. A pierced seat still reads
+ * correctly — the halo masks the run — while a seat over a box forces the
+ * settler to take the label off its run. A *straddled* seat is refused in both:
+ * the halo masks a parallel intruder the same way, leaving nothing to say which
+ * line is speaking (§4j).
+ */
+function chooseSeat(
   ctx: LabelSeatContext,
   edge: SceneEdge,
   label: SceneLabel,
-): SeatedLabel | null {
-  const { leaves, nearestOtherSq, overlaps, coversNode, straddledSeat, attributableAt } = ctx;
-  if (!label.width || !label.height) return null;
-  const own = boxToPolylineSq(label, edge.pts);
-  // *Every* label is seated on its run — there is no "close enough".
-  // Skipping labels already within a few px left them where elk parks them,
-  // ~3px clear, reading as a caption beside the flow rather than a name on it.
-  const host = hostSegment(label, edge);
-  if (host < 0) return null;
-  const seatOn = (segment: number): Box => {
-    const a = edge.pts[segment];
-    const b = edge.pts[segment + 1];
-    return seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2);
-  };
-  // Prefer a seat no foreign run crosses: host midpoint, then points along
-  // it, then the other segments. Sliding *along* the run keeps the label on
-  // the line, so it is exhausted before conceding a different segment.
-  const segmentOrder = [
-    host,
-    ...Array.from({ length: edge.pts.length - 1 }, (_, i) => i).filter((i) => i !== host),
-  ];
-  // Two sweeps over the same seats: the first wants clear of node boxes
-  // *and* unpierced, the second settles for clear of boxes. A pierced seat
-  // still reads correctly — the halo masks the run — while a seat over a
-  // box forces the settler to take the label off its run. A *straddled*
-  // seat is refused in both: the halo masks a parallel intruder the same
-  // way, leaving nothing to say which line is speaking (§4j).
-  let seat: Box | null = null;
-  const seatsOf = (segment: number): Box[] => {
-    const a = edge.pts[segment];
-    const b = edge.pts[segment + 1];
-    const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-    const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-    const need = vertical ? label.height : label.width;
-    // How far the seat may slide from the midpoint without overhanging the
-    // run's ends. Zero when the label is longer than the run it sits on.
-    const room = Math.max(0, (span - need) / 2);
-    const fractions = room === 0 ? [0] : [0, -0.5, 0.5, -0.25, 0.25, -1, 1];
-    return fractions.map((fraction) =>
-      vertical
-        ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + room * fraction)
-        : seatAt(label, (a.x + b.x) / 2 + room * fraction, (a.y + b.y) / 2),
-    );
-  };
-  const segVertical = (segment: number): boolean => {
-    const a = edge.pts[segment];
-    const b = edge.pts[segment + 1];
-    return Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-  };
-  for (const wantUnpierced of [true, false]) {
-    for (const segment of segmentOrder) {
-      for (const candidate of seatsOf(segment)) {
+  segmentOrder: number[],
+): Box | null {
+  const { coversNode, straddledSeat, nearestOtherSq } = ctx;
+  for (const wantUnpierced of [true, false])
+    for (const segment of segmentOrder)
+      for (const candidate of slideSeats(label, edge, segment)) {
         if (coversNode(candidate)) continue;
-        if (straddledSeat(candidate, segVertical(segment), edge)) continue;
+        if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
         if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
-        seat = candidate;
-        break;
+        return candidate;
       }
-      if (seat) break;
-    }
-    if (seat) break;
-  }
-  // Every seat is pierced. On the run still beats floating beside it:
-  // `labelPierced` is a ratchet, off-the-line is the invariant. Take the
-  // host seat; the settler can slide along the run too.
-  if (!seat) seat = seatOn(host);
-  // Every on-line seat this label could take, so a collision below can be
-  // answered by sliding rather than leaving the run. Two tiers: clean seats,
-  // then seats overlapping only a container title. A label on a title is a
-  // §4e blemish, off its run breaks §4d. Without the second tier it reverted
-  // to elk's placement and took two labels off their line in `security-fr`.
-  const alternatives: Box[] = [];
-  const tolerated: Box[] = [];
-  for (const segment of segmentOrder)
-    for (const candidate of seatsOf(segment)) {
-      if (straddledSeat(candidate, segVertical(segment), edge)) continue;
-      if (!coversNode(candidate)) alternatives.push(candidate);
-      else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
-    }
-  // Slides that let the *box* overhang its run's end. `seatsOf` stops where
-  // the box would, which is stricter than §4d — whose rule is the text
-  // centre, half a label further out. Capped so the centre never leaves the
-  // segment, so `own` is 0 and §4a exempts these from `labelOrphan` and
-  // `labelPierced`.
-  //
-  // Worth its own rung even though `besideRun` regenerates them at
-  // `away = 0`: reaching them there costs a title strike, since `besideRun`
-  // runs only after the plain slide failed. Removing it cost `security-fr` a
-  // `titleStruck` in page and tall — invisible to `snapshots:report`, which
-  // renders one disposition per example; only the sweep sees the rest.
-  const stretched: Box[] = [];
+  return null;
+}
+
+/**
+ * Slides that let the *box* overhang its run's end. `slideSeats` stops where the
+ * box would, which is stricter than §4d — whose rule is the text centre, half a
+ * label further out. Capped so the centre never leaves the segment, so `own` is
+ * 0 and §4a exempts these from `labelOrphan` and `labelPierced`.
+ *
+ * Worth its own rung even though `besideRunSeats` regenerates them at
+ * `away = 0`: reaching them there costs a title strike, since that runs only
+ * after the plain slide failed. Removing it cost `security-fr` a `titleStruck`
+ * in page and tall — invisible to `snapshots:report`, which renders one
+ * disposition per example; only the sweep sees the rest.
+ */
+function stretchedSeats(
+  ctx: LabelSeatContext,
+  edge: SceneEdge,
+  label: SceneLabel,
+  segmentOrder: number[],
+): Box[] {
+  const { coversNode, straddledSeat } = ctx;
+  const out: Box[] = [];
   for (const segment of segmentOrder) {
     const a = edge.pts[segment];
     const b = edge.pts[segment + 1];
-    const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+    const vertical = segmentIsVertical(edge, segment);
     const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
     const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
     const outer = span / 2;
@@ -316,57 +298,111 @@ function seatLabelOnRoute(
         : seatAt(label, (a.x + b.x) / 2 + offset, (a.y + b.y) / 2);
       if (coversNode(candidate)) continue;
       if (straddledSeat(candidate, vertical, edge)) continue;
-      stretched.push(candidate);
+      out.push(candidate);
     }
   }
-  alternatives.push(...stretched);
-  // The rung between "slide along the run" and "give up": seats *beside* the
-  // run that still read as belonging to it. Where two runs sit closer than a
-  // label is tall, no on-line seat clears the neighbour's label — `medium`'s
-  // F10/F12 (10px apart, labels 111px/71px wide between nodes 181px apart)
-  // left F12 9px off its run with F06 through its words.
-  //
-  // Two dimensions, since the seat that solves F10 is past its run's end
-  // *and* 43px below it. Along-offsets reach half a label beyond each end
-  // (`attributableAt` enforces the text-centre rule §4d actually states);
-  // away-offsets step perpendicular.
-  //
-  // Built on demand: computing it for every label cost the sweep across all
-  // 4352 flow-instances.
-  const besideRun = (): Box[] => {
-    const out: Box[] = [];
-    for (const segment of segmentOrder) {
-      const a = edge.pts[segment];
-      const b = edge.pts[segment + 1];
-      const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-      const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-      const need = vertical ? label.height : label.width;
-      const outer = span / 2;
-      const midX = (a.x + b.x) / 2;
-      const midY = (a.y + b.y) / 2;
-      for (const along of [
-        0,
-        -outer / 2,
-        outer / 2,
-        -outer,
-        outer,
-        -outer - need / 2,
-        outer + need / 2,
-      ])
-        for (const away of [0, -14, 14, -28, 28, -44, 44]) {
-          const candidate = seatAt(
-            label,
-            midX + (vertical ? away : along),
-            midY + (vertical ? along : away),
-          );
-          if (coversNode(candidate)) continue;
-          if (away === 0 && straddledSeat(candidate, vertical, edge)) continue;
-          if (!attributableAt(label, candidate, edge)) continue;
-          out.push(candidate);
-        }
+  return out;
+}
+
+/**
+ * The rung between "slide along the run" and "give up": seats *beside* the run
+ * that still read as belonging to it. Where two runs sit closer than a label is
+ * tall, no on-line seat clears the neighbour's label — `medium`'s F10/F12 (10px
+ * apart, labels 111px/71px wide between nodes 181px apart) left F12 9px off its
+ * run with F06 through its words.
+ *
+ * Two dimensions, since the seat that solves F10 is past its run's end *and*
+ * 43px below it. Along-offsets reach half a label beyond each end
+ * (`attributableAt` enforces the text-centre rule §4d actually states);
+ * away-offsets step perpendicular.
+ *
+ * Called on demand: computing it for every label cost the sweep across all 4352
+ * flow-instances.
+ */
+function besideRunSeats(
+  ctx: LabelSeatContext,
+  edge: SceneEdge,
+  label: SceneLabel,
+  segmentOrder: number[],
+): Box[] {
+  const { coversNode, straddledSeat, attributableAt } = ctx;
+  const out: Box[] = [];
+  for (const segment of segmentOrder) {
+    const a = edge.pts[segment];
+    const b = edge.pts[segment + 1];
+    const vertical = segmentIsVertical(edge, segment);
+    const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+    const need = vertical ? label.height : label.width;
+    const outer = span / 2;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    for (const along of [
+      0,
+      -outer / 2,
+      outer / 2,
+      -outer,
+      outer,
+      -outer - need / 2,
+      outer + need / 2,
+    ])
+      for (const away of [0, -14, 14, -28, 28, -44, 44]) {
+        const candidate = seatAt(
+          label,
+          midX + (vertical ? away : along),
+          midY + (vertical ? along : away),
+        );
+        if (coversNode(candidate)) continue;
+        if (away === 0 && straddledSeat(candidate, vertical, edge)) continue;
+        if (!attributableAt(label, candidate, edge)) continue;
+        out.push(candidate);
+      }
+  }
+  return out;
+}
+
+/** Finds where `label` should sit on `edge`, and mutates it there. Returns
+ *  `null` when the label is empty or its route has no viable host segment —
+ *  the caller then leaves it unseated. */
+function seatLabelOnRoute(
+  ctx: LabelSeatContext,
+  edge: SceneEdge,
+  label: SceneLabel,
+): SeatedLabel | null {
+  const { leaves, overlaps, coversNode, straddledSeat } = ctx;
+  if (!label.width || !label.height) return null;
+  const own = boxToPolylineSq(label, edge.pts);
+  // *Every* label is seated on its run — there is no "close enough".
+  // Skipping labels already within a few px left them where elk parks them,
+  // ~3px clear, reading as a caption beside the flow rather than a name on it.
+  const host = hostSegment(label, edge);
+  if (host < 0) return null;
+  // Prefer a seat no foreign run crosses: host midpoint, then points along
+  // it, then the other segments. Sliding *along* the run keeps the label on
+  // the line, so it is exhausted before conceding a different segment.
+  const segmentOrder = [
+    host,
+    ...Array.from({ length: edge.pts.length - 1 }, (_, i) => i).filter((i) => i !== host),
+  ];
+
+  // Every seat is pierced. On the run still beats floating beside it:
+  // `labelPierced` is a ratchet, off-the-line is the invariant. Take the
+  // host seat; the settler can slide along the run too.
+  const seat = chooseSeat(ctx, edge, label, segmentOrder) ?? midpointSeat(label, edge, host);
+
+  // Every on-line seat this label could take, so a collision below can be
+  // answered by sliding rather than leaving the run. Two tiers: clean seats,
+  // then seats overlapping only a container title. A label on a title is a
+  // §4e blemish, off its run breaks §4d. Without the second tier it reverted
+  // to elk's placement and took two labels off their line in `security-fr`.
+  const alternatives: Box[] = [];
+  const tolerated: Box[] = [];
+  for (const segment of segmentOrder)
+    for (const candidate of slideSeats(label, edge, segment)) {
+      if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+      if (!coversNode(candidate)) alternatives.push(candidate);
+      else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
     }
-    return out;
-  };
+  alternatives.push(...stretchedSeats(ctx, edge, label, segmentOrder));
   alternatives.push(...tolerated);
 
   const entry: SeatedLabel = {
@@ -375,11 +411,64 @@ function seatLabelOnRoute(
     from: { x: label.x, y: label.y },
     own,
     alternatives,
-    besideRun,
+    besideRun: () => besideRunSeats(ctx, edge, label, segmentOrder),
   };
   label.x = seat.x;
   label.y = seat.y;
   return entry;
+}
+
+const labelsOverlap = (a: SceneLabel, b: SceneLabel) =>
+  a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+
+/** Bigger boxes yield last — the big one is the label that cannot fit. */
+const seatArea = (entry: SeatedLabel) => entry.label.width * entry.label.height;
+
+/** Does moving this label to `at` clear every other seated label? */
+const clearAt = (seated: SeatedLabel[], entry: SeatedLabel, at: { x: number; y: number }) => {
+  const trial = { ...entry.label, x: at.x, y: at.y };
+  return !seated.some((other) => other !== entry && labelsOverlap(trial, other.label));
+};
+
+/**
+ * Separate one overlapping pair, cheapest escape first; true when something
+ * moved. Both labels are offered each rung, larger first, ties breaking on flow
+ * id rather than iteration order.
+ *
+ * 1. Slide along the run — any on-line seat clearing every placed label keeps
+ *    §4d for *both* flows. Asked of each label in turn, not only the preferred
+ *    yielder: `large-fr/wide` sent F04 to the settler with F07's thirteen
+ *    alternatives untried, and the settler's only escape was an 86px throw
+ *    landing 24px off F04's run (`labelAdrift`).
+ * 2. A seat beside the run — off the line is a `labelOffLine` ratchet, off the
+ *    *flow* is §4a, so only seats `attributableAt` accepts. Reached only here,
+ *    so a corridor the slide solves never pays for these candidates.
+ * 3. Elk's placement, and only for a label already close to its run — reverting
+ *    an adrift one reintroduces §4a. Leaving the pair to the settler instead was
+ *    measured on `medium` and cost 5 `overlaps` and 5 `labelAdrift`, both
+ *    must-be-zero. Something has to move here.
+ */
+function resolveLabelCollision(seated: SeatedLabel[], a: SeatedLabel, b: SeatedLabel): boolean {
+  const order = [a, b].sort(
+    (x, y) => seatArea(y) - seatArea(x) || x.label.flowId.localeCompare(y.label.flowId),
+  );
+  for (const rung of [
+    (entry: SeatedLabel) => entry.alternatives,
+    (entry: SeatedLabel) => entry.besideRun(),
+  ])
+    for (const entry of order) {
+      const free = rung(entry).find((candidate) => clearAt(seated, entry, candidate));
+      if (!free) continue;
+      entry.label.x = free.x;
+      entry.label.y = free.y;
+      return true;
+    }
+  const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
+  if (!giving) return false;
+  giving.label.x = giving.from.x;
+  giving.label.y = giving.from.y;
+  giving.done = true;
+  return true;
 }
 
 export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): void {
@@ -397,21 +486,8 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
   // Seats are chosen one flow at a time, so two can land on each other — and a
   // collision is invariant §1, which the settler can only clear by flinging a
   // label past `ADRIFT`, trading §4d and §4a for §1. `medium`'s 12px corridor
-  // cannot seat a 142px two-line label beside its neighbour at all.
-  //
-  // So the pair is resolved here, by what §4d says each escape costs the reader:
-  // slide along the run (never leaves the line), a seat beside it (keeps
-  // attribution), then elk's placement (keeps neither). Both labels are offered
-  // each escape, larger first — the big box is the one that cannot fit. Ties
-  // break on flow id, never iteration order.
-  const overlapping = (a: SceneLabel, b: SceneLabel) =>
-    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-  const rank = (entry: (typeof seated)[number]) => entry.label.width * entry.label.height;
-  /** Does moving this label to `at` clear every other seated label? */
-  const clearAt = (entry: (typeof seated)[number], at: { x: number; y: number }) => {
-    const trial = { ...entry.label, x: at.x, y: at.y };
-    return !seated.some((other) => other !== entry && overlapping(trial, other.label));
-  };
+  // cannot seat a 142px two-line label beside its neighbour at all. Each pair is
+  // resolved here instead, by what §4d says the escape costs the reader.
   for (let round = 0; round < 3; round++) {
     let moved = false;
     for (let i = 0; i < seated.length; i++)
@@ -419,51 +495,8 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
         const a = seated[i];
         const b = seated[j];
         if (a.done || b.done) continue;
-        if (!overlapping(a.label, b.label)) continue;
-        const order = [a, b].sort(
-          (x, y) => rank(y) - rank(x) || x.label.flowId.localeCompare(y.label.flowId),
-        );
-        // Slide before leaving the line: any on-line seat clearing every placed
-        // label keeps §4d for *both* flows. Asked of each label in turn, not
-        // only the preferred yielder — `large-fr/wide` sent F04 to the settler
-        // with F07's thirteen alternatives untried, and the settler's only
-        // escape was an 86px throw landing 24px off F04's run (`labelAdrift`).
-        let escaped = false;
-        for (const entry of order) {
-          const free = entry.alternatives.find((candidate) => clearAt(entry, candidate));
-          if (!free) continue;
-          entry.label.x = free.x;
-          entry.label.y = free.y;
-          escaped = true;
-          break;
-        }
-        // Neither label can stay on its line. Step one off it, but only onto a
-        // seat `attributableAt` accepts — off the line is a `labelOffLine`
-        // ratchet, off the *flow* is §4a. Reached only here, so a corridor the
-        // slide above solves never pays for these candidates.
-        for (const entry of escaped ? [] : order) {
-          const free = entry.besideRun().find((candidate) => clearAt(entry, candidate));
-          if (!free) continue;
-          entry.label.x = free.x;
-          entry.label.y = free.y;
-          escaped = true;
-          break;
-        }
-        if (escaped) {
-          moved = true;
-          continue;
-        }
-        // Nothing on or beside either run. Elk's placement is the last resort,
-        // and only for a label already close to its run — reverting an adrift
-        // one reintroduces §4a. Unconditional on purpose: leaving the pair to
-        // the settler instead was measured on `medium` and cost 5 `overlaps`
-        // and 5 `labelAdrift`, both must-be-zero. Something has to move here.
-        const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
-        if (!giving) continue;
-        giving.label.x = giving.from.x;
-        giving.label.y = giving.from.y;
-        giving.done = true;
-        moved = true;
+        if (!labelsOverlap(a.label, b.label)) continue;
+        if (resolveLabelCollision(seated, a, b)) moved = true;
       }
     if (!moved) break;
   }

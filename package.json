@@ -58,13 +58,14 @@
     "test:binary": "bash scripts/smoke-binary.sh",
     "test:npm": "bash scripts/smoke-npm.sh",
     "examples": "node --experimental-strip-types scripts/render-examples.mjs",
-    "nesting": "node --experimental-strip-types scripts/nesting-depth.ts"
+    "nesting": "oxlint --config .oxlintrc.json src"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
     "@types/node": "^26.1.1",
     "elkjs": "^0.12.0",
     "esbuild": "0.28.1",
+    "oxlint": "1.16.0",
     "typescript": "^7.0.2"
   }
 }

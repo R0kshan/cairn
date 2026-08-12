@@ -384,11 +384,7 @@ function farEndCanFollow(
  * governs how close they may end up. Without this the guard blocks the very
  * separation it is meant to protect.
  */
-function spreadTargetClear(
-  ctx: SpreadContext,
-  member: Attachment,
-  move: SpreadMove,
-): boolean {
+function spreadTargetClear(ctx: SpreadContext, member: Attachment, move: SpreadMove): boolean {
   const { target, vertical, relaxed, siblings } = move;
   const terminalPoint = member.edge.pts[member.terminal];
   const neighbourPoint = member.edge.pts[member.neighbour];
@@ -446,7 +442,9 @@ function spreadSide(ctx: SpreadContext, group: AttachGroup): void {
   // A crowded side gives up its corner margin before it gives up the gap.
   const needed = (members.length - 1) * MIN_ATTACH_GAP;
   const inset =
-    length - 2 * SIDE_INSET >= needed ? SIDE_INSET : Math.max(MIN_SIDE_INSET, (length - needed) / 2);
+    length - 2 * SIDE_INSET >= needed
+      ? SIDE_INSET
+      : Math.max(MIN_SIDE_INSET, (length - needed) / 2);
   members.sort(
     (memberA, memberB) =>
       memberA.along - memberB.along ||
@@ -879,12 +877,7 @@ function landsOnAnotherSide(ctx: HugContext, move: HugMove, own: Set<SceneNode>)
  * visual confusion in the same corridor. Refuse the move only when it *creates*
  * the proximity.
  */
-function movedRunConflicts(
-  ctx: HugContext,
-  edge: SceneEdge,
-  pts: Point[],
-  move: HugMove,
-): boolean {
+function movedRunConflicts(ctx: HugContext, edge: SceneEdge, pts: Point[], move: HugMove): boolean {
   const { scene, otherSideRuns } = ctx;
   const { run, target } = move;
   const movedA = pts[run.i];
@@ -1181,12 +1174,7 @@ function rejoinDegrades(edge: SceneEdge, pts: Point[], cand: ResideCandidate): b
 }
 
 /** No hugs on the new or moved segments (own nodes exempt). */
-function resideHugs(
-  ctx: HugContext,
-  pts: Point[],
-  fromIdx: number,
-  own: Set<SceneNode>,
-): boolean {
+function resideHugs(ctx: HugContext, pts: Point[], fromIdx: number, own: Set<SceneNode>): boolean {
   for (let i = fromIdx; i + 1 < pts.length; i++) {
     const a = pts[i];
     const b = pts[i + 1];
@@ -1368,12 +1356,7 @@ function riserClearsLayer(layer: SceneNode | null, side: Side, riserAt: number):
   return riserAt <= layer.y + layer.height - 8;
 }
 
-function resideAtSide(
-  ctx: HugContext,
-  edge: SceneEdge,
-  run: HugRun,
-  own: Set<SceneNode>,
-): boolean {
+function resideAtSide(ctx: HugContext, edge: SceneEdge, run: HugRun, own: Set<SceneNode>): boolean {
   const { leaves, containerOf } = ctx;
   if (edge.pts.length < 3) return false;
   const isStart = run.i === 0;
@@ -1441,11 +1424,7 @@ function ownNodesOf(edge: SceneEdge, leaves: SceneNode[]): Set<SceneNode> {
  * rejects anything inside 3px. An empty range means a terminal that cannot slide
  * along its border at all, so the run is left alone entirely.
  */
-function slideClamp(
-  edge: SceneEdge,
-  run: HugRun,
-  leaves: SceneNode[],
-): { lo: number; hi: number } {
+function slideClamp(edge: SceneEdge, run: HugRun, leaves: SceneNode[]): { lo: number; hi: number } {
   let lo = -Infinity;
   let hi = Infinity;
   for (const [idx, isFirst] of [
@@ -1467,12 +1446,7 @@ function slideClamp(
 }
 
 /** Clear one hugging run: slide it off the border, else re-side its terminal. */
-function clearRunHug(
-  ctx: HugContext,
-  edge: SceneEdge,
-  run: HugRun,
-  own: Set<SceneNode>,
-): boolean {
+function clearRunHug(ctx: HugContext, edge: SceneEdge, run: HugRun, own: Set<SceneNode>): boolean {
   const { scene, leaves, hugTargetsOf } = ctx;
   const targets: number[] = [];
   for (const node of scene.nodes) {
@@ -1626,10 +1600,7 @@ interface SwapMatch {
   bAlong: number;
 }
 
-function matchSharedSide(
-  aEnds: (SwapSeat | null)[],
-  bEnds: (SwapSeat | null)[],
-): SwapMatch | null {
+function matchSharedSide(aEnds: (SwapSeat | null)[], bEnds: (SwapSeat | null)[]): SwapMatch | null {
   for (const [aIdx, aSeat] of aEnds.entries())
     for (const [bIdx, bSeat] of bEnds.entries())
       if (aSeat && bSeat && aSeat.node === bSeat.node && aSeat.side === bSeat.side)
@@ -2115,12 +2086,7 @@ function segmentTouchesBox(
 
 /** A vertical run riding a container's dashed border, 7px minimum — matching
  *  the channel planner's own clearance. */
-function ridesContainerBorder(
-  containers: SceneNode[],
-  a: Point,
-  b: Point,
-  at: number,
-): boolean {
+function ridesContainerBorder(containers: SceneNode[], a: Point, b: Point, at: number): boolean {
   const yLo = Math.min(a.y, b.y);
   const yHi = Math.max(a.y, b.y);
   return containers.some(
@@ -2149,7 +2115,8 @@ function segmentsAreClean(
     const from = runVertical ? a.y : a.x;
     const to = runVertical ? b.y : b.x;
     if (runHitsNode(runVertical, at, from, to)) return false;
-    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to)) return false;
+    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+      return false;
     if (labelBoxes.some((box) => segmentTouchesBox(a, b, box))) return false;
     // route-detour's obstacle model, honoured by anything that claims to beat a
     // channel: no run through a container's title band — edges draw last and
@@ -3061,7 +3028,8 @@ function unweaveRouteClean(
     const from = runVertical ? a.y : a.x;
     const to = runVertical ? b.y : b.x;
     if (runHitsNode(runVertical, at, from, to)) return false;
-    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to)) return false;
+    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+      return false;
     if (segmentStrikesBand(uctx, a, b)) return false;
     // Interior segments must clear the *staircase* threshold, not merely the
     // micro-jog one: a Z whose crossing lane is 15px long reads as a step and is
@@ -3333,6 +3301,251 @@ interface LaneSearch {
   before: boolean;
 }
 
+/** Where a flow may attach, and which way each side faces. */
+interface SeatModel {
+  SIDES: Side[];
+  seatOffsetsFor: (node: SceneNode, side: Side) => number[];
+  seatOn: (node: SceneNode, side: Side, offset: number) => Point;
+  outward: (side: Side) => number;
+  horizontalSide: (side: Side) => boolean;
+}
+
+/**
+ * Three seats a side, not five. The optimiser evaluates every candidate against
+ * the whole scene, so the candidate count is the cost driver; 25 seat pairs per
+ * side pair tripled build time for a handful of extra solutions the ±18 offsets
+ * already reach.
+ */
+const SEAT_GRID = [0, -18, 18];
+
+/**
+ * How far a derived seat steps past the name it is escaping.
+ *
+ * `ARROW_ROOM`, not a token 4px: the step becomes the first leg of whatever
+ * route uses the seat, and a leg under 14px is charged as `cramped` (§4i). At
+ * 4px the optimiser cleared a struck title, was immediately handed a tier-2
+ * cramped terminal for the 12px leg it had just created, and bought its way out
+ * with a two-turn detour — trading the tidy route for an ugly one to fix a
+ * defect the seat itself introduced.
+ */
+const SEAT_CLEAR = 14;
+
+function createSeatModel(titleBoxes: TitleBox[]): SeatModel {
+  /**
+   * Container names lying across a node side, merged into the one interval a
+   * seat has to escape — or `null` when the side is clear.
+   *
+   * Judged at the side's centre, which is where the default seat sits: a name
+   * that does not cover the centre is not what is pushing the flow off, and
+   * widening the search for it only costs candidates.
+   */
+  const blockedSpan = (node: SceneNode, side: Side): [number, number] | null => {
+    const alongX = side === "north" || side === "south";
+    const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
+    let lo = Number.POSITIVE_INFINITY;
+    let hi = Number.NEGATIVE_INFINITY;
+    for (const band of titleBoxes) {
+      const bandLo = alongX ? band.x : band.y;
+      const bandHi = alongX ? band.x + band.width : band.y + band.height;
+      if (centre < bandLo || centre > bandHi) continue;
+      lo = Math.min(lo, bandLo);
+      hi = Math.max(hi, bandHi);
+    }
+    return lo <= hi ? [lo, hi] : null;
+  };
+
+  /**
+   * Where a flow may attach to a side: three fixed seats, plus the two that step
+   * clear of a container's name when one lies across that side.
+   *
+   * Derived, not added to the fixed list, for the reason `laneBeyond` exists: a
+   * wider fixed list is guesswork that costs candidates everywhere to help in a
+   * few places, and 25 seat pairs per side pair tripled build time.
+   *
+   * Every side pair gets the same reach. Giving it to same-facing sides only
+   * left `infrastructure-small-tall` with no L or Z able to get out from under
+   * the "Public zone" name, so a U won by default and a flow that should have
+   * stepped 44px sideways bulged out of its column.
+   */
+  const seatOffsetCache = new Map<string, number[]>();
+  const seatOffsetsFor = (node: SceneNode, side: Side): number[] => {
+    const key = `${node.id}|${side}`;
+    const hit = seatOffsetCache.get(key);
+    if (hit) return hit;
+    const span = blockedSpan(node, side);
+    const alongX = side === "north" || side === "south";
+    const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
+    const made = span
+      ? [...SEAT_GRID, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre]
+      : SEAT_GRID;
+    seatOffsetCache.set(key, made);
+    return made;
+  };
+
+  const seatOn = (node: SceneNode, side: Side, offset: number): Point => {
+    const alongX = Math.min(
+      Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
+      node.x + node.width - SIDE_INSET,
+    );
+    const alongY = Math.min(
+      Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
+      node.y + node.height - SIDE_INSET,
+    );
+    return side === "north"
+      ? { x: alongX, y: node.y }
+      : side === "south"
+        ? { x: alongX, y: node.y + node.height }
+        : side === "west"
+          ? { x: node.x, y: alongY }
+          : { x: node.x + node.width, y: alongY };
+  };
+
+  return {
+    SIDES: ["north", "south", "east", "west"],
+    seatOffsetsFor,
+    seatOn,
+    outward: (side) => (side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4),
+    horizontalSide: (side) => side === "east" || side === "west",
+  };
+}
+
+/**
+ * Bumped by every accepted move; invalidates every cache keyed on the scene's
+ * geometry. Shared between the lane, route and ladder models, so it is a box
+ * rather than a closed-over counter.
+ */
+interface RepairClock {
+  generation: number;
+}
+
+/** The ladder's judgements on a proposed move, and the commit that applies it. */
+interface LadderModel {
+  profileNow: (ids: Set<string>) => Profile;
+  lessDamaged: (a: number[], b: number[]) => boolean;
+  weigh: (
+    group: SceneEdge[],
+    overrides: Map<string, Point[]>,
+  ) => { after: Profile; damage: number[] } | null;
+  tryMove: (group: SceneEdge[], overrides: Map<string, Point[]>) => boolean;
+}
+
+function createLadderModel(deps: {
+  scene: Scene;
+  inspector: ReturnType<typeof inspect>;
+  clock: RepairClock;
+  preRouted: Set<string>;
+  isChannelU: (pts: Point[]) => boolean;
+}): LadderModel {
+  const { scene, inspector, clock, preRouted, isChannelU } = deps;
+
+  /**
+   * The unmoved profile of a group, memoised until some edge moves.
+   *
+   * `local(ids, new Map())` is a pure function of current geometry, which
+   * changes only when a candidate is accepted — recomputing it per rejected
+   * candidate (up to 144 per edge per round, plus twice in the driver loop) was
+   * over half of all `local` calls and ~20% of a corpus build. Any accepted move
+   * bumps the generation counter, since `before` depends on every edge in the
+   * scene, not only those in `ids`.
+   */
+  const beforeCache = new Map<string, Profile>();
+  const soloCache = new Map<string, Profile>();
+  const cached = (store: Map<string, Profile>, ids: Set<string>, make: () => Profile): Profile => {
+    const key = `${clock.generation}|${[...ids].sort().join(",")}`;
+    const hit = store.get(key);
+    if (hit) return hit;
+    const made = make();
+    store.set(key, made);
+    return made;
+  };
+  const profileNow = (ids: Set<string>): Profile =>
+    cached(beforeCache, ids, () => inspector.local(ids, new Map()));
+
+  /**
+   * Does this candidate gain a tier-0 defect *on its own* — a run put through a
+   * box, a container or a title? `ladderVerdict` rejects any tier-0 gain
+   * outright, so answering yes here settles the candidate without the pairwise
+   * phase, which costs every edge in the drawing.
+   */
+  const selfWrecks = (ids: Set<string>, overrides: Map<string, Point[]>): boolean => {
+    const was = cached(soloCache, ids, () => inspector.local(ids, new Map(), true));
+    for (const [key, tier] of inspector.local(ids, overrides, true))
+      if (tier === 0 && !was.has(key)) return true;
+    return false;
+  };
+
+  /**
+   * Defects a route would leave behind, counted per tier — the tie-break between
+   * two routes the ladder has *both* already accepted.
+   *
+   * This is a count, which §"sets, not counts" forbids — but forbids for a
+   * different question. That rule guards before-vs-after comparison, where a
+   * total cannot see a defect *move*. Here every candidate has already been
+   * through `ladderVerdict` against the same `before`, so none of them gains
+   * anything at the tier it pays at; what is left is "which of these acceptable
+   * drawings is least damaged", and for that a per-tier count is the honest
+   * measure.
+   */
+  const damage = (profile: Profile): number[] => {
+    const tiers = [0, 0, 0, 0, 0];
+    for (const tier of profile.values()) tiers[tier]++;
+    return tiers;
+  };
+
+  return {
+    profileNow,
+    /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
+    lessDamaged: (a, b) => {
+      for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+      return false;
+    },
+    /** The ladder's verdict on a move, and what the drawing would look like after it. */
+    weigh: (group, overrides) => {
+      const ids = new Set(group.map((edge) => edge.id));
+      if (selfWrecks(ids, overrides)) return null;
+      const after = inspector.local(ids, overrides);
+      if (ladderVerdict(profileNow(ids), after) < 0) return null;
+      return { after, damage: damage(after) };
+    },
+    tryMove: (group, overrides) => {
+      const ids = new Set(group.map((edge) => edge.id));
+      if (selfWrecks(ids, overrides)) return false;
+      const verdict = ladderVerdict(profileNow(ids), inspector.local(ids, overrides));
+      if (verdict < 0) return false;
+      // What the repair bought, for the renderer's label audit (§4d).
+      scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
+      for (const edge of group) {
+        const route = overrides.get(edge.id);
+        if (!route) continue;
+        // A channel U leaves both nodes by the same side and meets in a lane
+        // beyond them, so both terminals necessarily set off away from their
+        // counterpart. That is the shape working, not a wrap-around to chase,
+        // and §11 already exempts flows routed through a channel for exactly
+        // this reason — `route-detour` marks its own the same way.
+        //
+        // Re-decided on every commit, never merely set: a flow routed as a U in
+        // one round and re-routed to something else in the next would otherwise
+        // keep an exemption its final shape has not earned, and quietly drop out
+        // of the `attachAway` count. Flows `route-detour` marked keep their flag
+        // whatever this pass does — the channel they were sent through is not
+        // this pass's to revoke.
+        if (!preRouted.has(edge.id)) edge.detour = isChannelU(route);
+      }
+      for (const edge of group) {
+        const pts = overrides.get(edge.id);
+        if (pts) {
+          edge.pts = pts.map((p) => ({ ...p }));
+          inspector.forget(edge.id);
+        }
+      }
+      clock.generation++;
+      beforeCache.clear();
+      soloCache.clear();
+      return true;
+    },
+  };
+}
+
 /** What the repair driver needs from the optimiser's model of the scene. */
 interface RouteOptimiser {
   ordered: SceneEdge[];
@@ -3427,6 +3640,248 @@ function repairToFixpoint(o: RouteOptimiser): void {
   }
 }
 
+/** The channel a same-facing U escapes into, and how to recognise the shape. */
+interface LaneModel {
+  channelU: (a: Point, b: Point, side: Side, subject: RouteSubject) => Point[][];
+  isChannelU: (pts: Point[]) => boolean;
+}
+
+/** Clear of the outermost border without leaving the canvas. */
+const CHANNEL_MARGIN = 10;
+/** How far past the nearer seat a mid-drawing channel has to sit to be worth a turn. */
+const CHANNEL_STEP = 24;
+/** Room a lane keeps from whatever it clears — past `HUG_CLEAR`, so the two never read as one line. */
+const CHANNEL_CLEAR = 10;
+
+function createLaneModel(deps: {
+  scene: Scene;
+  inspector: ReturnType<typeof inspect>;
+  titleBoxes: TitleBox[];
+  clock: RepairClock;
+  horizontalSide: (side: Side) => boolean;
+}): LaneModel {
+  const { scene, inspector, titleBoxes, clock, horizontalSide } = deps;
+  // Extent of the drawing, for the channel a same-facing U escapes into.
+  const contentTop = Math.min(...scene.nodes.map((node) => node.y));
+  const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
+  const contentRight = Math.max(...scene.nodes.map((node) => node.x + node.width));
+
+  /**
+   * How far past a foreign run a lane has to sit for the label it carries to
+   * clear that run (§4j) — half the label, plus enough that the box edge does
+   * not graze the line.
+   *
+   * Derived from the edge's own labels rather than a constant, because that
+   * is what the defect is measured against: a 142px label needs 73px of room
+   * and a bare `(AMQP)` needs 26, and a single number would either strand the
+   * wide ones or shove the narrow ones across the drawing for nothing. An
+   * unlabelled flow reaches nothing extra — `CHANNEL_CLEAR` already keeps the
+   * lines apart, and §4j is a rule about words.
+   */
+  const STRADDLE_MARGIN = 2;
+  const runReach = (edge: SceneEdge, vertical: boolean): number => {
+    let reach = CHANNEL_CLEAR;
+    for (const label of edge.labels) {
+      if (!label.width || !label.height) continue;
+      const across = (vertical ? label.height : label.width) / 2 + STRADDLE_MARGIN;
+      if (across > reach) reach = across;
+    }
+    return reach;
+  };
+
+  /**
+   * Every run already parallel to a lane on this axis, as obstacles the
+   * lane must clear.
+   *
+   * Memoised per edge × axis: `laneBeyond` is called once per same-facing
+   * seat pair, up to a hundred times for one edge, and rebuilding this from
+   * every segment each time is the difference between a cheap check and a
+   * visible build cost.
+   *
+   * Invalidated by `generation`, the same counter the unmoved-profile cache
+   * uses, since these are other flows' routes and an accepted move changes
+   * them.
+   */
+  interface LaneBlock {
+    alongLo: number;
+    alongHi: number;
+    acrossLo: number;
+    acrossHi: number;
+  }
+  const runBlockCache = new Map<string, { at: number; blocks: LaneBlock[] }>();
+  const parallelRunBlocks = (edge: SceneEdge, vertical: boolean): LaneBlock[] => {
+    const key = `${edge.id}|${vertical}`;
+    const hit = runBlockCache.get(key);
+    if (hit && hit.at === clock.generation) return hit.blocks;
+    // The lane runs across the span, so it is vertical exactly when the span
+    // axis is not — and a foreign run is parallel to it on the same terms.
+    const laneVertical = !vertical;
+    const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
+    const blocks: LaneBlock[] = [];
+    for (const other of scene.edges) {
+      if (other.id === edge.id || other.pts.length < 2) continue;
+      for (let index = 0; index + 1 < other.pts.length; index++) {
+        const a = other.pts[index];
+        const b = other.pts[index + 1];
+        const runVertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+        const runHorizontal = Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON;
+        if (runVertical === runHorizontal) continue;
+        if (runVertical !== laneVertical) continue;
+        const at = laneVertical ? a.x : a.y;
+        const from = laneVertical ? a.y : a.x;
+        const to = laneVertical ? b.y : b.x;
+        blocks.push({
+          alongLo: Math.min(from, to),
+          alongHi: Math.max(from, to),
+          acrossLo: at - slack,
+          acrossHi: at + slack,
+        });
+      }
+    }
+    runBlockCache.set(key, { at: clock.generation, blocks });
+    return blocks;
+  };
+
+  /**
+   * The lowest lane beyond `start` the connecting run may legally occupy
+   * across `span`. §4h turned from a score into a coordinate: obstacles are
+   * every leaf box, container title, and container holding neither endpoint
+   * that overlaps `span` — the turn is derived, not guessed and checked after.
+   *
+   * Parallel runs are obstacles too (§4j). With boxes only, two independently
+   * derived lanes could coincide: on `small/page` this returned its default
+   * `near - CHANNEL_STEP` = 91 without iterating, five pixels from a riser
+   * another flow had put at 96, seating both labels under the other's flow.
+   *
+   * Cleared by `runReach`, not `CHANNEL_CLEAR` — 10px between lines
+   * (`nearParallel`) is nothing once the label on the lane reaches half its
+   * width either side.
+   *
+   * Iterative because clearing one obstacle exposes the next; bounded by the
+   * obstacle count and monotone. `null` when the drawing leaves no room.
+   */
+  const laneBeyond = (
+    search: LaneSearch,
+    subject: RouteSubject,
+    clearRuns: boolean,
+  ): number | null => {
+    const { spanLo, spanHi, vertical, before } = search;
+    const { ends, edge } = subject;
+    const own = new Set<string>();
+    for (const end of ends) if (end) own.add(end.node.id);
+    interface Block {
+      alongLo: number;
+      alongHi: number;
+      acrossLo: number;
+      acrossHi: number;
+    }
+    const blocks: Block[] = [];
+    const push = (x: number, y: number, w: number, h: number) =>
+      blocks.push(
+        vertical
+          ? { alongLo: x, alongHi: x + w, acrossLo: y, acrossHi: y + h }
+          : { alongLo: y, alongHi: y + h, acrossLo: x, acrossHi: x + w },
+      );
+    for (const leaf of inspector.leaves)
+      if (!own.has(leaf.id)) push(leaf.x, leaf.y, leaf.width, leaf.height);
+    for (const box of inspector.boxes) {
+      // §4h: a container holding one of this flow's endpoints is not an
+      // obstacle — passing through it is how the flow leaves at all.
+      const inside = inspector.holds.get(box.id)!;
+      if (own.has(box.id) || [...own].some((id) => inside.has(id))) continue;
+      push(box.x, box.y, box.width, box.height);
+    }
+    for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
+    if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+
+    let lane = search.start;
+    for (let guard = 0; guard <= blocks.length; guard++) {
+      const hit = blocks.find(
+        (block) =>
+          block.alongLo < spanHi &&
+          spanLo < block.alongHi &&
+          lane > block.acrossLo - CHANNEL_CLEAR &&
+          lane < block.acrossHi + CHANNEL_CLEAR,
+      );
+      if (!hit) return lane;
+      lane = before ? hit.acrossLo - CHANNEL_CLEAR : hit.acrossHi + CHANNEL_CLEAR;
+    }
+    return null;
+  };
+
+  /**
+   * The U: leave both nodes by the *same* side and join in a channel beyond
+   * them both. Reached when every L and Z ploughs through a container the flow
+   * has no business in — the tier-3 turns pay for the tier-0 defect cleared.
+   *
+   * Three lanes, nearest first. The first is derived from the obstacles the
+   * run must clear (`laneBeyond`), so the turn happens exactly as late as §4h
+   * requires — an earlier fixed 24px guess cleared `logical`'s Reporting layer
+   * by five pixels of luck. The second also clears parallel runs, so this
+   * lane's label cannot land under a stranger's flow (§4j). The third is
+   * outside the drawing, for when both run out of canvas.
+   *
+   * The run-clear lane is added, never substituted: substituting moved five
+   * `slide` drawings onto container names, since a lane clearing every
+   * parallel run can be far out and folded layouts reflow around it. Added it
+   * costs nothing — longer, so it sorts after the lane it would replace.
+   *
+   * All are 2-turn routes, sorting among the Ls rather than behind the Zs. A
+   * clean L still wins; the ranking only decides what to try.
+   */
+  const channelU = (a: Point, b: Point, side: Side, subject: RouteSubject): Point[][] => {
+    const vertical = !horizontalSide(side);
+    const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    const before = side === "north" || side === "west";
+    // One search object for both probes, not one per call — this sits inside
+    // the candidate generator (C7: never allocate per call in a hot path).
+    const search: LaneSearch = {
+      spanLo: vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y),
+      spanHi: vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y),
+      start: before ? near - CHANNEL_STEP : far + CHANNEL_STEP,
+      vertical,
+      before,
+    };
+    const derived = laneBeyond(search, subject, false);
+    const clear = laneBeyond(search, subject, true);
+    const outside = before
+      ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN
+      : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
+    const limit = vertical ? scene.height : scene.width;
+    const lanes = [derived, clear, outside].filter(
+      (lane, index, all): lane is number => lane !== null && all.indexOf(lane) === index,
+    );
+    return lanes
+      .filter((lane) => (before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far))
+      .map((lane) =>
+        vertical
+          ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b]
+          : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b],
+      );
+  };
+
+  /**
+   * Is this the shape `channelU` builds? Four points whose two terminal legs
+   * are parallel and both set off to the *same* side of the lane that joins
+   * them. Recognised from geometry rather than tagged at construction so the
+   * squaring pass, which rebuilds the points, cannot lose the label.
+   */
+  const isChannelU = (pts: Point[]): boolean => {
+    if (pts.length !== 4) return false;
+    const firstVertical = Math.abs(pts[0].x - pts[1].x) < ORTHOGONAL_EPSILON;
+    const lastVertical = Math.abs(pts[2].x - pts[3].x) < ORTHOGONAL_EPSILON;
+    if (firstVertical !== lastVertical) return false;
+    const lane = firstVertical ? pts[1].y : pts[1].x;
+    const fromA = lane - (firstVertical ? pts[0].y : pts[0].x);
+    const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
+    return fromA * fromB > 0;
+  };
+
+  return { channelU, isChannelU };
+}
+
 export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded = false): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
@@ -3446,323 +3901,17 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     const inspector = inspect(scene, titleBoxes);
     /** Flows `route-detour` already sent through a channel — their flag is not ours to touch. */
     const preRouted = new Set(scene.edges.filter((edge) => edge.detour).map((edge) => edge.id));
-    // Three seats a side, not five. The optimiser evaluates every candidate
-    // against the whole scene, so the candidate count is the cost driver; 25
-    // seat pairs per side pair tripled build time for a handful of extra
-    // solutions the ±18 offsets already reach.
-    const SEAT_OFFSETS = [0, -18, 18];
-    /**
-     * How far a derived seat steps past the name it is escaping.
-     *
-     * `ARROW_ROOM`, not a token 4px: the step becomes the first leg of whatever
-     * route uses the seat, and a leg under 14px is charged as `cramped` (§4i).
-     * At 4px the optimiser cleared a struck title, was immediately handed a
-     * tier-2 cramped terminal for the 12px leg it had just created, and bought
-     * its way out with a two-turn detour — trading the tidy route for an ugly
-     * one to fix a defect the seat itself introduced.
-     */
-    const SEAT_CLEAR = 14;
-    const SIDES: Side[] = ["north", "south", "east", "west"];
-
-    /**
-     * Container names lying across a node side, merged into the one interval a
-     * seat has to escape — or `null` when the side is clear.
-     *
-     * Judged at the side's centre, which is where the default seat sits: a name
-     * that does not cover the centre is not what is pushing the flow off, and
-     * widening the search for it only costs candidates.
-     */
-    const blockedSpan = (node: SceneNode, side: Side): [number, number] | null => {
-      const alongX = side === "north" || side === "south";
-      const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-      let lo = Number.POSITIVE_INFINITY;
-      let hi = Number.NEGATIVE_INFINITY;
-      for (const band of titleBoxes) {
-        const bandLo = alongX ? band.x : band.y;
-        const bandHi = alongX ? band.x + band.width : band.y + band.height;
-        if (centre < bandLo || centre > bandHi) continue;
-        lo = Math.min(lo, bandLo);
-        hi = Math.max(hi, bandHi);
-      }
-      return lo <= hi ? [lo, hi] : null;
-    };
-
-    /**
-     * Where a flow may attach to a side: three fixed seats, plus the two that
-     * step clear of a container's name when one lies across that side.
-     *
-     * Derived, not added to the fixed list, for the reason `laneBeyond` exists:
-     * a wider fixed list is guesswork that costs candidates everywhere to help
-     * in a few places, and 25 seat pairs per side pair tripled build time.
-     *
-     * Every side pair gets the same reach. Giving it to same-facing sides only
-     * left `infrastructure-small-tall` with no L or Z able to get out from under
-     * the "Public zone" name, so a U won by default and a flow that should have
-     * stepped 44px sideways bulged out of its column.
-     */
-    const seatOffsetCache = new Map<string, number[]>();
-    const seatOffsetsFor = (node: SceneNode, side: Side): number[] => {
-      const key = `${node.id}|${side}`;
-      const hit = seatOffsetCache.get(key);
-      if (hit) return hit;
-      const span = blockedSpan(node, side);
-      const alongX = side === "north" || side === "south";
-      const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-      const made = span
-        ? [...SEAT_OFFSETS, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre]
-        : SEAT_OFFSETS;
-      seatOffsetCache.set(key, made);
-      return made;
-    };
-
-    const seatOn = (node: SceneNode, side: Side, offset: number): Point => {
-      const alongX = Math.min(
-        Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
-        node.x + node.width - SIDE_INSET,
-      );
-      const alongY = Math.min(
-        Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
-        node.y + node.height - SIDE_INSET,
-      );
-      return side === "north"
-        ? { x: alongX, y: node.y }
-        : side === "south"
-          ? { x: alongX, y: node.y + node.height }
-          : side === "west"
-            ? { x: node.x, y: alongY }
-            : { x: node.x + node.width, y: alongY };
-    };
-    const outward = (side: Side) =>
-      side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4;
-    const horizontalSide = (side: Side) => side === "east" || side === "west";
-
-    // Extent of the drawing, for the channel a same-facing U escapes into.
-    const contentTop = Math.min(...scene.nodes.map((node) => node.y));
-    const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
-    const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
-    const contentRight = Math.max(...scene.nodes.map((node) => node.x + node.width));
-    /** Clear of the outermost border without leaving the canvas. */
-    const CHANNEL_MARGIN = 10;
-    /** How far past the nearer seat a mid-drawing channel has to sit to be worth a turn. */
-    const CHANNEL_STEP = 24;
-
-    /** Room a lane keeps from whatever it clears — past `HUG_CLEAR`, so the two never read as one line. */
-    const CHANNEL_CLEAR = 10;
+    const { SIDES, seatOffsetsFor, seatOn, outward, horizontalSide } = createSeatModel(titleBoxes);
 
     /** Bumped by every accepted move; invalidates every cache keyed on the scene's geometry. */
-    let generation = 0;
-
-    /**
-     * How far past a foreign run a lane has to sit for the label it carries to
-     * clear that run (§4j) — half the label, plus enough that the box edge does
-     * not graze the line.
-     *
-     * Derived from the edge's own labels rather than a constant, because that
-     * is what the defect is measured against: a 142px label needs 73px of room
-     * and a bare `(AMQP)` needs 26, and a single number would either strand the
-     * wide ones or shove the narrow ones across the drawing for nothing. An
-     * unlabelled flow reaches nothing extra — `CHANNEL_CLEAR` already keeps the
-     * lines apart, and §4j is a rule about words.
-     */
-    const STRADDLE_MARGIN = 2;
-    const runReach = (edge: SceneEdge, vertical: boolean): number => {
-      let reach = CHANNEL_CLEAR;
-      for (const label of edge.labels) {
-        if (!label.width || !label.height) continue;
-        const across = (vertical ? label.height : label.width) / 2 + STRADDLE_MARGIN;
-        if (across > reach) reach = across;
-      }
-      return reach;
-    };
-
-    /**
-     * Every run already parallel to a lane on this axis, as obstacles the
-     * lane must clear.
-     *
-     * Memoised per edge × axis: `laneBeyond` is called once per same-facing
-     * seat pair, up to a hundred times for one edge, and rebuilding this from
-     * every segment each time is the difference between a cheap check and a
-     * visible build cost.
-     *
-     * Invalidated by `generation`, the same counter the unmoved-profile cache
-     * uses, since these are other flows' routes and an accepted move changes
-     * them.
-     */
-    interface LaneBlock {
-      alongLo: number;
-      alongHi: number;
-      acrossLo: number;
-      acrossHi: number;
-    }
-    const runBlockCache = new Map<string, { at: number; blocks: LaneBlock[] }>();
-    const parallelRunBlocks = (edge: SceneEdge, vertical: boolean): LaneBlock[] => {
-      const key = `${edge.id}|${vertical}`;
-      const hit = runBlockCache.get(key);
-      if (hit && hit.at === generation) return hit.blocks;
-      // The lane runs across the span, so it is vertical exactly when the span
-      // axis is not — and a foreign run is parallel to it on the same terms.
-      const laneVertical = !vertical;
-      const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
-      const blocks: LaneBlock[] = [];
-      for (const other of scene.edges) {
-        if (other.id === edge.id || other.pts.length < 2) continue;
-        for (let index = 0; index + 1 < other.pts.length; index++) {
-          const a = other.pts[index];
-          const b = other.pts[index + 1];
-          const runVertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
-          const runHorizontal = Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON;
-          if (runVertical === runHorizontal) continue;
-          if (runVertical !== laneVertical) continue;
-          const at = laneVertical ? a.x : a.y;
-          const from = laneVertical ? a.y : a.x;
-          const to = laneVertical ? b.y : b.x;
-          blocks.push({
-            alongLo: Math.min(from, to),
-            alongHi: Math.max(from, to),
-            acrossLo: at - slack,
-            acrossHi: at + slack,
-          });
-        }
-      }
-      runBlockCache.set(key, { at: generation, blocks });
-      return blocks;
-    };
-
-    /**
-     * The lowest lane beyond `start` the connecting run may legally occupy
-     * across `span`. §4h turned from a score into a coordinate: obstacles are
-     * every leaf box, container title, and container holding neither endpoint
-     * that overlaps `span` — the turn is derived, not guessed and checked after.
-     *
-     * Parallel runs are obstacles too (§4j). With boxes only, two independently
-     * derived lanes could coincide: on `small/page` this returned its default
-     * `near - CHANNEL_STEP` = 91 without iterating, five pixels from a riser
-     * another flow had put at 96, seating both labels under the other's flow.
-     *
-     * Cleared by `runReach`, not `CHANNEL_CLEAR` — 10px between lines
-     * (`nearParallel`) is nothing once the label on the lane reaches half its
-     * width either side.
-     *
-     * Iterative because clearing one obstacle exposes the next; bounded by the
-     * obstacle count and monotone. `null` when the drawing leaves no room.
-     */
-    const laneBeyond = (
-      search: LaneSearch,
-      subject: RouteSubject,
-      clearRuns: boolean,
-    ): number | null => {
-      const { spanLo, spanHi, vertical, before } = search;
-      const { ends, edge } = subject;
-      const own = new Set<string>();
-      for (const end of ends) if (end) own.add(end.node.id);
-      interface Block {
-        alongLo: number;
-        alongHi: number;
-        acrossLo: number;
-        acrossHi: number;
-      }
-      const blocks: Block[] = [];
-      const push = (x: number, y: number, w: number, h: number) =>
-        blocks.push(
-          vertical
-            ? { alongLo: x, alongHi: x + w, acrossLo: y, acrossHi: y + h }
-            : { alongLo: y, alongHi: y + h, acrossLo: x, acrossHi: x + w },
-        );
-      for (const leaf of inspector.leaves)
-        if (!own.has(leaf.id)) push(leaf.x, leaf.y, leaf.width, leaf.height);
-      for (const box of inspector.boxes) {
-        // §4h: a container holding one of this flow's endpoints is not an
-        // obstacle — passing through it is how the flow leaves at all.
-        const inside = inspector.holds.get(box.id)!;
-        if (own.has(box.id) || [...own].some((id) => inside.has(id))) continue;
-        push(box.x, box.y, box.width, box.height);
-      }
-      for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
-      if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
-
-      let lane = search.start;
-      for (let guard = 0; guard <= blocks.length; guard++) {
-        const hit = blocks.find(
-          (block) =>
-            block.alongLo < spanHi &&
-            spanLo < block.alongHi &&
-            lane > block.acrossLo - CHANNEL_CLEAR &&
-            lane < block.acrossHi + CHANNEL_CLEAR,
-        );
-        if (!hit) return lane;
-        lane = before ? hit.acrossLo - CHANNEL_CLEAR : hit.acrossHi + CHANNEL_CLEAR;
-      }
-      return null;
-    };
-
-    /**
-     * The U: leave both nodes by the *same* side and join in a channel beyond
-     * them both. Reached when every L and Z ploughs through a container the flow
-     * has no business in — the tier-3 turns pay for the tier-0 defect cleared.
-     *
-     * Three lanes, nearest first. The first is derived from the obstacles the
-     * run must clear (`laneBeyond`), so the turn happens exactly as late as §4h
-     * requires — an earlier fixed 24px guess cleared `logical`'s Reporting layer
-     * by five pixels of luck. The second also clears parallel runs, so this
-     * lane's label cannot land under a stranger's flow (§4j). The third is
-     * outside the drawing, for when both run out of canvas.
-     *
-     * The run-clear lane is added, never substituted: substituting moved five
-     * `slide` drawings onto container names, since a lane clearing every
-     * parallel run can be far out and folded layouts reflow around it. Added it
-     * costs nothing — longer, so it sorts after the lane it would replace.
-     *
-     * All are 2-turn routes, sorting among the Ls rather than behind the Zs. A
-     * clean L still wins; the ranking only decides what to try.
-     */
-    const channelU = (a: Point, b: Point, side: Side, subject: RouteSubject): Point[][] => {
-      const vertical = !horizontalSide(side);
-      const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
-      const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
-      const before = side === "north" || side === "west";
-      // One search object for both probes, not one per call — this sits inside
-      // the candidate generator (C7: never allocate per call in a hot path).
-      const search: LaneSearch = {
-        spanLo: vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y),
-        spanHi: vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y),
-        start: before ? near - CHANNEL_STEP : far + CHANNEL_STEP,
-        vertical,
-        before,
-      };
-      const derived = laneBeyond(search, subject, false);
-      const clear = laneBeyond(search, subject, true);
-      const outside = before
-        ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN
-        : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
-      const limit = vertical ? scene.height : scene.width;
-      const lanes = [derived, clear, outside].filter(
-        (lane, index, all): lane is number => lane !== null && all.indexOf(lane) === index,
-      );
-      return lanes
-        .filter((lane) => (before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far))
-        .map((lane) =>
-          vertical
-            ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b]
-            : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b],
-        );
-    };
-
-    /**
-     * Is this the shape `channelU` builds? Four points whose two terminal legs
-     * are parallel and both set off to the *same* side of the lane that joins
-     * them. Recognised from geometry rather than tagged at construction so the
-     * squaring pass, which rebuilds the points, cannot lose the label.
-     */
-    const isChannelU = (pts: Point[]): boolean => {
-      if (pts.length !== 4) return false;
-      const firstVertical = Math.abs(pts[0].x - pts[1].x) < ORTHOGONAL_EPSILON;
-      const lastVertical = Math.abs(pts[2].x - pts[3].x) < ORTHOGONAL_EPSILON;
-      if (firstVertical !== lastVertical) return false;
-      const lane = firstVertical ? pts[1].y : pts[1].x;
-      const fromA = lane - (firstVertical ? pts[0].y : pts[0].x);
-      const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
-      return fromA * fromB > 0;
-    };
+    const clock: RepairClock = { generation: 0 };
+    const { channelU, isChannelU } = createLaneModel({
+      scene,
+      inspector,
+      titleBoxes,
+      clock,
+      horizontalSide,
+    });
 
     /** Every straight run, L, Z or same-side U joining these two seats. */
     const shapesFor = (
@@ -3795,7 +3944,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       // were enough while candidates depended only on the two nodes; a channel
       // lane now clears the runs already in the drawing (§4j), so an accepted
       // move elsewhere can change what this edge's candidates are.
-      const cacheKey = `${generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
+      const cacheKey = `${clock.generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
       const cached = routeCache.get(cacheKey);
       if (cached) return cached;
       const ends = inspector.endsOf(edge.pts);
@@ -3857,129 +4006,22 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       });
     };
 
-    /**
-     * The unmoved profile of a group, memoised until some edge moves.
-     *
-     * `local(ids, new Map())` is a pure function of current geometry, which
-     * changes only when a candidate is accepted — recomputing it per rejected
-     * candidate (up to 144 per edge per round, plus twice in the driver loop)
-     * was over half of all `local` calls and ~20% of a corpus build. Any
-     * accepted move bumps the generation counter, since `before` depends on
-     * every edge in the scene, not only those in `ids`.
-     *
-     * Declared above `parallelRunBlocks`, which invalidates on the same counter.
-     */
-    const beforeCache = new Map<string, Profile>();
-    const soloCache = new Map<string, Profile>();
-    const cached = (
-      store: Map<string, Profile>,
-      ids: Set<string>,
-      make: () => Profile,
-    ): Profile => {
-      const key = `${generation}|${[...ids].sort().join(",")}`;
-      const hit = store.get(key);
-      if (hit) return hit;
-      const made = make();
-      store.set(key, made);
-      return made;
-    };
-    const profileNow = (ids: Set<string>): Profile =>
-      cached(beforeCache, ids, () => inspector.local(ids, new Map()));
-
-    /**
-     * Does this candidate gain a tier-0 defect *on its own* — a run put through
-     * a box, a container or a title? `ladderVerdict` rejects any tier-0 gain
-     * outright, so answering yes here settles the candidate without the
-     * pairwise phase, which costs every edge in the drawing.
-     */
-    const selfWrecks = (ids: Set<string>, overrides: Map<string, Point[]>): boolean => {
-      const was = cached(soloCache, ids, () => inspector.local(ids, new Map(), true));
-      for (const [key, tier] of inspector.local(ids, overrides, true))
-        if (tier === 0 && !was.has(key)) return true;
-      return false;
-    };
-
-    /**
-     * Defects a route would leave behind, counted per tier — the tie-break
-     * between two routes the ladder has *both* already accepted.
-     *
-     * This is a count, which §"sets, not counts" forbids — but forbids for a
-     * different question. That rule guards before-vs-after comparison, where a
-     * total cannot see a defect *move*. Here every candidate has already been
-     * through `ladderVerdict` against the same `before`, so none of them gains
-     * anything at the tier it pays at; what is left is "which of these
-     * acceptable drawings is least damaged", and for that a per-tier count is
-     * the honest measure.
-     */
-    const damage = (profile: Profile): number[] => {
-      const tiers = [0, 0, 0, 0, 0];
-      for (const tier of profile.values()) tiers[tier]++;
-      return tiers;
-    };
-    /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
-    const lessDamaged = (a: number[], b: number[]): boolean => {
-      for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
-      return false;
-    };
-
-    /** The ladder's verdict on a move, and what the drawing would look like after it. */
-    const weigh = (group: SceneEdge[], overrides: Map<string, Point[]>) => {
-      const ids = new Set(group.map((edge) => edge.id));
-      if (selfWrecks(ids, overrides)) return null;
-      const after = inspector.local(ids, overrides);
-      if (ladderVerdict(profileNow(ids), after) < 0) return null;
-      return { after, damage: damage(after) };
-    };
-
-    const tryMove = (group: SceneEdge[], overrides: Map<string, Point[]>) => {
-      const ids = new Set(group.map((edge) => edge.id));
-      if (selfWrecks(ids, overrides)) return false;
-      const before = profileNow(ids);
-      const after = inspector.local(ids, overrides);
-      const verdict = ladderVerdict(before, after);
-      if (verdict < 0) return false;
-      // What the repair bought, for the renderer's label audit (§4d).
-      scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
-      for (const edge of group) {
-        const route = overrides.get(edge.id);
-        if (!route) continue;
-        // A channel U leaves both nodes by the same side and meets in a lane
-        // beyond them, so both terminals necessarily set off away from their
-        // counterpart. That is the shape working, not a wrap-around to chase,
-        // and §11 already exempts flows routed through a channel for exactly
-        // this reason — `route-detour` marks its own the same way.
-        //
-        // Re-decided on every commit, never merely set: a flow routed as a U in
-        // one round and re-routed to something else in the next would otherwise
-        // keep an exemption its final shape has not earned, and quietly drop out
-        // of the `attachAway` count. Flows `route-detour` marked keep their flag
-        // whatever this pass does — the channel they were sent through is not
-        // this pass's to revoke.
-        if (!preRouted.has(edge.id)) {
-          edge.detour = isChannelU(route);
-        }
-      }
-      for (const edge of group) {
-        const pts = overrides.get(edge.id);
-        if (pts) {
-          edge.pts = pts.map((p) => ({ ...p }));
-          inspector.forget(edge.id);
-        }
-      }
-      generation++;
-      beforeCache.clear();
-      soloCache.clear();
-      return true;
-    };
+    const ladder = createLadderModel({
+      scene,
+      inspector,
+      clock,
+      preRouted,
+      isChannelU,
+    });
 
     repairToFixpoint({
       ordered,
-      profileNow,
       routesFor,
-      weigh,
-      lessDamaged,
-      tryMove,
       neighboursOf,
+      profileNow: ladder.profileNow,
+      weigh: ladder.weigh,
+      lessDamaged: ladder.lessDamaged,
+      tryMove: ladder.tryMove,
     });
   }
 

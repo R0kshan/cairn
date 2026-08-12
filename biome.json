@@ -31,7 +31,7 @@
         },
         "noExcessiveLinesPerFunction": {
           "level": "warn",
-          "options": { "maxLines": 150, "skipBlankLines": true }
+          "options": { "maxLines": 147, "skipBlankLines": true }
         },
         "useMaxParams": {
           "level": "warn",
