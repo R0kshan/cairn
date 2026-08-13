@@ -93420,7 +93420,7 @@ function applyStyleEntry(entry) {
     return;
   }
   if (!target) return;
-  const uniform = UNIFORM_STYLE_ENTRIES[keyText];
+  const uniform = Object.hasOwn(UNIFORM_STYLE_ENTRIES, keyText) ? UNIFORM_STYLE_ENTRIES[keyText] : void 0;
   if (uniform) {
     const value = firstValue();
     if (value?.kind === uniform.kind && (!uniform.allowed || uniform.allowed.has(value.text)))
@@ -99613,7 +99613,11 @@ function createLabelSettler(deps) {
   };
   const ownRun = /* @__PURE__ */ new Map();
   for (const edge of scene.edges) for (const label of edge.labels) ownRun.set(label, edge);
-  const routes = scene.edges.filter((edge) => edge.pts.length >= 2).map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
+  let routes = [];
+  const refreshRoutes = () => {
+    routes = scene.edges.filter((edge) => edge.pts.length >= 2).map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
+  };
+  refreshRoutes();
   const offOwnRun = (label) => {
     const edge = ownRun.get(label);
     return edge && edge.pts.length >= 2 ? boxToPolylineSq(label, edge.pts) : 0;
@@ -99693,6 +99697,7 @@ function createLabelSettler(deps) {
     alongOwnRun
   };
   const settleLabelPositions = () => {
+    refreshRoutes();
     for (const label of labels) {
       const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
       if (requested === "above") label.y -= label.height / 2 + 5;

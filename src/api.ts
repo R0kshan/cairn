@@ -1,6 +1,8 @@
 /**
- * The engine's public surface. **Re-exports only** — the modules below may be
- * renamed, split or moved freely; nothing here changes unless the contract does.
+ * The engine's public surface. **Re-exports only, except `version`** — the
+ * modules below may be renamed, split or moved freely; nothing here changes
+ * unless the contract does. `version` is local because the build scripts
+ * replace `CAIRN_BUILD_VERSION` at bundle time (see the note on it below).
  *
  * Published chain: `api.ts` → `playground.ts` → `dist/cairn.mjs`. An export
  * added to `playground.ts` widens the contract too, and a published export

@@ -539,9 +539,20 @@ function createLabelSettler(deps: {
 
   const ownRun = new Map<SceneLabel, SceneEdge>();
   for (const edge of scene.edges) for (const label of edge.labels) ownRun.set(label, edge);
-  const routes = scene.edges
-    .filter((edge) => edge.pts.length >= 2)
-    .map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
+  /**
+   * Bounds are derived from `edge.pts`, which `auditRouteRepairs` swaps between
+   * settling passes. Rebuilt on each settle so the cheap prefilter in `stolen`
+   * and `pierced` never disagrees with the polyline test it guards — a stale
+   * box rejects routes that now pierce, and the audit then compares the two
+   * candidate drawings on partly stale data.
+   */
+  let routes: { edge: SceneEdge; bounds: Box }[] = [];
+  const refreshRoutes = () => {
+    routes = scene.edges
+      .filter((edge) => edge.pts.length >= 2)
+      .map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
+  };
+  refreshRoutes();
 
   const offOwnRun = (label: SceneLabel) => {
     const edge = ownRun.get(label);
@@ -673,6 +684,7 @@ function createLabelSettler(deps: {
   };
 
   const settleLabelPositions = () => {
+    refreshRoutes();
     for (const label of labels) {
       const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
       if (requested === "above") label.y -= label.height / 2 + 5;

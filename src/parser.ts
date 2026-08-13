@@ -379,8 +379,8 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     return true;
   }
 
-  /** Top-level `legend { note "…" … }`. Backtracks for the same reason as
-   *  `tryStyleBlock`. */
+  /** The cursor and the recursive productions handed to the top-level parsing
+   *  functions extracted above. */
   const parser: Parser = {
     model,
     lookAhead,
@@ -603,7 +603,13 @@ function applyStyleEntry(entry: {
     return;
   }
   if (!target) return;
-  const uniform = UNIFORM_STYLE_ENTRIES[keyText];
+  // `keyText` is user source, so a bare index would resolve `constructor`,
+  // `toString` and friends off `Object.prototype`: the entry reads as truthy,
+  // every field is `undefined`, and the writer gets `expected: undefined`
+  // instead of the `unknown style property` diagnostic below.
+  const uniform = Object.hasOwn(UNIFORM_STYLE_ENTRIES, keyText)
+    ? UNIFORM_STYLE_ENTRIES[keyText]
+    : undefined;
   if (uniform) {
     const value = firstValue();
     if (value?.kind === uniform.kind && (!uniform.allowed || uniform.allowed.has(value.text)))

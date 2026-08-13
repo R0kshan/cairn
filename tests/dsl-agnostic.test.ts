@@ -58,8 +58,11 @@ for (const pass of POSITIONING_PASSES) {
 }
 
 test("only route-detour reaches for the Model, and only for style (INVARIANTS §16)", () => {
+  // Match the specifier, not the whole statement: the `from "…"` clause stays
+  // on one line in both the single-line and the multi-line import form, so
+  // reformatting a grown import cannot silently switch this check off.
   const importsModel = POSITIONING_PASSES.filter((pass) =>
-    /^import .*from "\.\/models\/ast\.ts";$/m.test(codeOf(pass)),
+    codeOf(pass).includes('from "./models/ast.ts"'),
   );
   assert.deepEqual(importsModel, ["route-detour.ts"]);
 });
