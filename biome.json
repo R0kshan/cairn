@@ -14,12 +14,10 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "off",
         "noAssignInExpressions": "off"
       },
       "style": {
         "noNonNullAssertion": "off",
-        "noParameterAssign": "off",
         "useNodejsImportProtocol": "error",
         "useTemplate": "off"
       },

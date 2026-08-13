@@ -1848,18 +1848,31 @@ function fansOf(scene: Scene, edge: SceneEdge, leaves: SceneNode[]): Fan[] {
   return fans;
 }
 
+// Crossings between two polylines, counted only where they land within
+// FAN_REACH of the node the fan hangs off — a crossing further away belongs to
+// some other part of the diagram and is not this fan's problem.
+function crossingsNearNode(node: SceneNode, pts: Point[], other: Point[]): number {
+  let count = 0;
+  for (let start = 0; start + 1 < pts.length; start++)
+    for (let otherStart = 0; otherStart + 1 < other.length; otherStart++) {
+      const hit = segmentsCross(
+        pts[start],
+        pts[start + 1],
+        other[otherStart],
+        other[otherStart + 1],
+      );
+      if (!hit) continue;
+      const gapX = Math.max(0, node.x - hit.x, hit.x - (node.x + node.width));
+      const gapY = Math.max(0, node.y - hit.y, hit.y - (node.y + node.height));
+      if (gapX * gapX + gapY * gapY <= FAN_REACH * FAN_REACH) count++;
+    }
+  return count;
+}
+
 function fanCrossings(fans: Fan[], pts: Point[]): number {
   let count = 0;
   for (const { node, siblings } of fans)
-    for (const sibling of siblings)
-      for (let i = 0; i + 1 < pts.length; i++)
-        for (let j = 0; j + 1 < sibling.pts.length; j++) {
-          const hit = segmentsCross(pts[i], pts[i + 1], sibling.pts[j], sibling.pts[j + 1]);
-          if (!hit) continue;
-          const dx = Math.max(0, node.x - hit.x, hit.x - (node.x + node.width));
-          const dy = Math.max(0, node.y - hit.y, hit.y - (node.y + node.height));
-          if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH) count++;
-        }
+    for (const sibling of siblings) count += crossingsNearNode(node, pts, sibling.pts);
   return count;
 }
 
@@ -2686,13 +2699,14 @@ function nestCorridorRisers(ctx: TidyContext): void {
   // Grouping by geometry instead would need a corridor width to guess at; this
   // needs nothing, and by construction only touches flows that have a defect.
   const parent = risers.map((_, index) => index);
-  const find = (index: number): number => {
-    let root = index;
+  const find = (start: number): number => {
+    let root = start;
     while (parent[root] !== root) root = parent[root];
-    while (parent[index] !== root) {
-      const next = parent[index];
-      parent[index] = root;
-      index = next;
+    let node = start;
+    while (parent[node] !== root) {
+      const next = parent[node];
+      parent[node] = root;
+      node = next;
     }
     return root;
   };

@@ -97234,18 +97234,27 @@ function fansOf(scene, edge, leaves) {
   }
   return fans;
 }
+function crossingsNearNode(node, pts, other) {
+  let count = 0;
+  for (let start = 0; start + 1 < pts.length; start++)
+    for (let otherStart = 0; otherStart + 1 < other.length; otherStart++) {
+      const hit = segmentsCross(
+        pts[start],
+        pts[start + 1],
+        other[otherStart],
+        other[otherStart + 1]
+      );
+      if (!hit) continue;
+      const gapX = Math.max(0, node.x - hit.x, hit.x - (node.x + node.width));
+      const gapY = Math.max(0, node.y - hit.y, hit.y - (node.y + node.height));
+      if (gapX * gapX + gapY * gapY <= FAN_REACH2 * FAN_REACH2) count++;
+    }
+  return count;
+}
 function fanCrossings(fans, pts) {
   let count = 0;
   for (const { node, siblings } of fans)
-    for (const sibling of siblings)
-      for (let i = 0; i + 1 < pts.length; i++)
-        for (let j = 0; j + 1 < sibling.pts.length; j++) {
-          const hit = segmentsCross(pts[i], pts[i + 1], sibling.pts[j], sibling.pts[j + 1]);
-          if (!hit) continue;
-          const dx = Math.max(0, node.x - hit.x, hit.x - (node.x + node.width));
-          const dy = Math.max(0, node.y - hit.y, hit.y - (node.y + node.height));
-          if (dx * dx + dy * dy <= FAN_REACH2 * FAN_REACH2) count++;
-        }
+    for (const sibling of siblings) count += crossingsNearNode(node, pts, sibling.pts);
   return count;
 }
 function collapsedPolylineOk(ctx, guards, pts) {
@@ -97763,13 +97772,14 @@ function nestCorridorRisers(ctx) {
   const flowRank = (edge) => Number.parseInt(edge.id.slice(1), 10) || 0;
   const risers = scene.edges.map((edge) => ({ edge, riser: riserIndexOf(edge) })).filter((entry) => entry.riser >= 0).sort((a, b) => flowRank(a.edge) - flowRank(b.edge));
   const parent = risers.map((_, index) => index);
-  const find = (index) => {
-    let root = index;
+  const find = (start) => {
+    let root = start;
     while (parent[root] !== root) root = parent[root];
-    while (parent[index] !== root) {
-      const next = parent[index];
-      parent[index] = root;
-      index = next;
+    let node = start;
+    while (parent[node] !== root) {
+      const next = parent[node];
+      parent[node] = root;
+      node = next;
     }
     return root;
   };

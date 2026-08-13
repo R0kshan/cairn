@@ -50,7 +50,7 @@
     "build:cli": "bash scripts/build-cli.sh",
     "build:playground": "bash scripts/build-playground.sh",
     "prepack": "npm run build:cli && npm run build:api",
-    "lint": "biome lint src tests && npm run nesting",
+    "lint": "biome lint src tests --error-on-warnings && npm run nesting",
     "format": "biome format --write src tests",
     "typecheck": "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
