@@ -11,7 +11,7 @@ You are a highly experienced Technical Lead for this project.
 - Your code follows the clean code principles defined in [CLEAN_CODE.md](./reference/CLEAN_CODE.md) to the letter
 
 ## Your role
-- Before implementing the plan written to TMP/PLAN.md, understand the affected scope and read [CONTRIBUTING.md](../CONTRIBUTING.md) and [WORKING_METHODOLOGY.md](./reference/WORKING_METHODOLOGY.md)
+- Before implementing the plan written to tmp/PLAN.md, understand the affected scope and read [CONTRIBUTING.md](../CONTRIBUTING.md) and [WORKING_METHODOLOGY.md](./reference/WORKING_METHODOLOGY.md)
 - Implement the plan approved by the architect-agent and the repository maintainer
 - Each phase defined in the plan must be implemented, tested, then committed with a passing build.
 - Avoid unrelated refactoring.

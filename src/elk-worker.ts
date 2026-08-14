@@ -4,24 +4,13 @@
  * in-process (no worker), then restores the global. The compiled release binary
  * bundles this module's graph, so keep it free of Bun/Deno APIs.
  *
- * ---
- * CodeQL: "Missing origin verification in `postMessage` handler"
- * (js/missing-origin-verification), reported against the generated playground
- * bundles. Recorded here because the finding is NOT fixable in `src/`:
- *
- *  - It is not our code. The handler is elkjs's GWT-compiled worker dispatch
- *    (`saveDispatch`), inlined by the bundler. `src/` contains no `postMessage`,
- *    `addEventListener`, or message handler of any kind.
- *  - Editing the bundle is pointless: `playground/*.js` and `playground/lib/*.mjs`
- *    are build artifacts of `npm run build:playground` and are overwritten on the
- *    next build. Patching `node_modules/elkjs` is likewise lost on `npm install`.
- *  - The sink is unreachable in both of our builds. elkjs only wires
- *    `self.onmessage = saveDispatch` behind `typeof document === "undefined" &&
- *    typeof self !== "undefined"` — the dedicated-Web-Worker signature. The
- *    playground runs ELK on the main thread (where `document` exists), and we
- *    never pass `workerUrl`/`workerFactory`, so no real Worker is ever created.
- *    In Node the `delete globalThis.self` below independently forces that same
- *    branch to be skipped.
+ * CodeQL flags js/missing-origin-verification against the generated playground
+ * bundles. Not fixable in `src/`: the handler is elkjs's own GWT-compiled worker
+ * dispatch (`saveDispatch`), inlined by the bundler, and edits to the bundle or
+ * `node_modules/elkjs` are lost on the next install. The sink is unreachable in
+ * both builds anyway — elkjs wires `self.onmessage` only behind the
+ * dedicated-Web-Worker signature, which neither the main-thread playground nor
+ * Node (where `delete globalThis.self` below skips the branch) satisfies.
  */
 
 import ELKConstructor, { type ELK } from "elkjs/lib/elk.bundled.js";

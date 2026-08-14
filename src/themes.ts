@@ -8,7 +8,7 @@
 import type { StyleProps } from "./models/ast.ts";
 import type { View } from "./views.ts";
 
-export interface Palette {
+interface Palette {
   background: string;
   containerLabel: string;
   containerFill: string;
@@ -58,7 +58,7 @@ export const lightPalette: Palette = {
   chipText: "#7a6216",
 };
 
-export const darkPalette: Palette = {
+const darkPalette: Palette = {
   background: "#1e2227",
   containerLabel: "#e6edf3",
   containerFill: "#2a2f37",
@@ -115,7 +115,7 @@ export const flowPalette: Record<"light" | "dark", string[]> = {
   ],
 };
 
-export interface Theme {
+interface Theme {
   palette: Palette;
   roles: Record<string, StyleProps>;
   levels: Record<string, StyleProps>;

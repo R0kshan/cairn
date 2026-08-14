@@ -14,19 +14,45 @@
     "rules": {
       "recommended": true,
       "suspicious": {
-        "noExplicitAny": "off",
         "noAssignInExpressions": "off"
       },
       "style": {
         "noNonNullAssertion": "off",
-        "noParameterAssign": "off",
         "useNodejsImportProtocol": "error",
         "useTemplate": "off"
       },
       "complexity": {
-        "noForEach": "off"
+        "noForEach": "off",
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": { "maxAllowedComplexity": 58 }
+        },
+        "noExcessiveLinesPerFunction": {
+          "level": "warn",
+          "options": { "maxLines": 147, "skipBlankLines": true }
+        },
+        "useMaxParams": {
+          "level": "warn",
+          "options": { "max": 4 }
+        }
       }
     }
   },
-  "assist": { "actions": { "source": { "organizeImports": "off" } } }
+  "assist": { "actions": { "source": { "organizeImports": "off" } } },
+  "overrides": [
+    {
+      "includes": ["tests/**/*.ts"],
+      "linter": {
+        "rules": {
+          "complexity": {
+            "useMaxParams": "off",
+            "noExcessiveCognitiveComplexity": {
+              "level": "warn",
+              "options": { "maxAllowedComplexity": 100 }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

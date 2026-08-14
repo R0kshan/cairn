@@ -1,8 +1,7 @@
 /**
  * SVG string-safety helpers. `esc` escapes text content (`&`, `<`, `>`);
- * `escAttr` additionally escapes `"` for attribute values. SVG output is
- * untrusted-string territory — every user-supplied string must pass through one
- * of these (see the security convention in AGENTS.md#repo-specific-conventions).
+ * `escAttr` also escapes `"` for attribute values. Every user-supplied string
+ * must pass through one of these — INVARIANTS §5.
  */
 
 export const esc = (text: string) =>

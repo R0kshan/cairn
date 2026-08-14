@@ -92929,6 +92929,197 @@ function indexElementsById(elements) {
 }
 
 // src/parser.ts
+function parseFlow(p, sourceToken) {
+  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  advance();
+  if (!matchToken("id")) {
+    reportError("target identifier expected after `->`", lookAhead().span);
+    syncToNextLine();
+    return;
+  }
+  const targetToken = advance();
+  const flow = {
+    id: "F" + String(++p.flowSequence.next).padStart(2, "0"),
+    from: sourceToken.text,
+    fromSpan: sourceToken.span,
+    to: targetToken.text,
+    toSpan: targetToken.span,
+    span: {
+      line: sourceToken.span.line,
+      col: sourceToken.span.col,
+      len: targetToken.span.col + targetToken.span.len - sourceToken.span.col
+    }
+  };
+  if (matchToken("colon")) {
+    advance();
+    if (matchToken("str")) flow.label = advance().text;
+    else if (!matchToken("lparen") && !matchToken("lbrack") && !matchToken("lbrace") && !matchToken("nl") && !matchToken("rbrace") && !matchToken("eof")) {
+      reportError(
+        "flow label expected after `:`",
+        lookAhead().span,
+        'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`'
+      );
+    }
+  }
+  if (matchToken("lparen")) {
+    const openParen = advance();
+    const values = [];
+    while ((matchToken("id") || matchToken("num") || matchToken("str")) && values.length < 2) {
+      values.push(advance().text);
+      if (matchToken("comma")) advance();
+    }
+    if (matchToken("rparen")) advance();
+    else
+      reportError(
+        "`)` expected to close the technical attributes",
+        lookAhead().span,
+        'e.g. `A -> B : "Envoi" (SFTP, XML)`'
+      );
+    flow.tech = {
+      protocol: values[0],
+      format: values[1],
+      span: openParen.span
+    };
+  }
+  if (matchToken("lbrack")) {
+    advance();
+    flow.objects = [];
+    while (matchToken("id")) {
+      const token = advance();
+      flow.objects.push({ id: token.text, span: token.span });
+      if (matchToken("comma")) advance();
+    }
+    if (matchToken("rbrack")) advance();
+    else
+      reportError(
+        "`]` expected to close the business-object list",
+        lookAhead().span,
+        'e.g. `A -> B : "Validation" [BO_CMD]`'
+      );
+  }
+  if (matchToken("lbrace")) {
+    advance();
+    flow.style = {};
+    p.parseStyleEntries(null, flow.style);
+  }
+  model.flows.push(flow);
+}
+function parseElement(p, sourceToken, parent) {
+  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  if (!matchToken("id")) {
+    reportError(
+      `invalid declaration: \`${sourceToken.text}\` alone on this line`,
+      sourceToken.span,
+      'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`'
+    );
+    syncToNextLine();
+    return;
+  }
+  const identifierToken = advance();
+  const element = {
+    kind: sourceToken.text,
+    kindSpan: sourceToken.span,
+    id: identifierToken.text,
+    idSpan: identifierToken.span,
+    children: [],
+    parent: parent ?? void 0
+  };
+  if (matchToken("str")) element.label = advance().text;
+  if (matchToken("lparen")) {
+    advance();
+    if (matchToken("id")) {
+      const token = advance();
+      element.attr = {
+        value: token.text,
+        span: token.span
+      };
+    } else
+      reportError(
+        "attribute value expected after `(`",
+        lookAhead().span,
+        'e.g. `trust-zone DMZ "DMZ" (public)`'
+      );
+    if (matchToken("rparen")) advance();
+    else
+      reportError(
+        "`)` expected to close the attribute",
+        lookAhead().span,
+        'e.g. `trust-zone DMZ "DMZ" (public)`'
+      );
+  }
+  if (matchToken("lbrace")) {
+    advance();
+    p.parseElementBody(element);
+  }
+  (parent ? parent.children : model.elements).push(element);
+}
+function tryLegendBlock(p) {
+  const { matchToken, advance, reportError, lookAhead, skipNewlines, syncToNextLine, model } = p;
+  if (!matchToken("id", "legend")) return false;
+  const mark = p.save();
+  advance();
+  if (!matchToken("lbrace")) {
+    p.restore(mark);
+    return false;
+  }
+  advance();
+  skipNewlines();
+  while (!matchToken("rbrace") && !matchToken("eof")) {
+    if (matchToken("id", "note")) {
+      advance();
+      if (matchToken("str")) model.legendNotes.push(advance().text);
+      else
+        reportError(
+          "text expected after `note`",
+          lookAhead().span,
+          'e.g. `note "Named-data flows are subject to GDPR"`'
+        );
+    } else {
+      reportError('legend entries are `note "\u2026"` lines', lookAhead().span);
+      syncToNextLine();
+    }
+    skipNewlines();
+  }
+  if (matchToken("rbrace")) advance();
+  else reportError("`}` expected to close the legend block", lookAhead().span);
+  return true;
+}
+function tryBusinessObject(p) {
+  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  if (!matchToken("id", "business-object")) return false;
+  advance();
+  if (!matchToken("id")) {
+    reportError(
+      "identifier expected after `business-object`",
+      lookAhead().span,
+      'e.g. `business-object BO_CMD "Commande" "description"`'
+    );
+    syncToNextLine();
+    return true;
+  }
+  const idToken = advance();
+  let name = idToken.text;
+  let description;
+  if (matchToken("str")) name = advance().text;
+  if (matchToken("str")) description = advance().text;
+  model.businessObjects.push({
+    id: idToken.text,
+    idSpan: idToken.span,
+    name,
+    description
+  });
+  return true;
+}
+function parseFlowOrElement(p, parent) {
+  if (!p.matchToken("id")) {
+    p.reportError("declaration expected (element, flow or `style`)", p.lookAhead().span);
+    p.syncToNextLine();
+    return;
+  }
+  const sourceToken = p.advance();
+  if (p.matchToken("arrow")) parseFlow(p, sourceToken);
+  else parseElement(p, sourceToken, parent);
+}
 function parse(src) {
   const diagnostics = [];
   const tokens = lex(src, diagnostics);
@@ -92957,7 +93148,7 @@ function parse(src) {
     style: defaultDiagramStyle(),
     index: /* @__PURE__ */ new Map()
   };
-  let flowSequenceNumber = 0;
+  const flowSequence = { next: 0 };
   skipNewlines();
   if (matchToken("id", "diagram")) {
     advance();
@@ -93012,7 +93203,7 @@ function parse(src) {
         if (values.length && matchToken("id") && lookAhead(1).kind === "colon") break;
         values.push(advance());
       }
-      applyStyleEntry(keyToken, styleTargetKind, values, target, inline, diagnostics);
+      applyStyleEntry({ key: keyToken, styleTargetKind, values, target, inline, diagnostics });
       skipNewlines();
     }
     if (matchToken("rbrace")) advance();
@@ -93027,202 +93218,46 @@ function parse(src) {
     if (matchToken("rbrace")) advance();
     else reportError("`}` expected to close `" + parent.id + "`", lookAhead().span);
   }
+  function tryStyleBlock(parent) {
+    if (!matchToken("id", "style")) return false;
+    const savedPosition = position;
+    advance();
+    if (!matchToken("lbrace")) {
+      position = savedPosition;
+      return false;
+    }
+    advance();
+    if (parent) {
+      parent.style = parent.style ?? {};
+      parseStyleEntries(null, parent.style);
+    } else parseStyleEntries(model.style, null);
+    return true;
+  }
+  const parser = {
+    model,
+    lookAhead,
+    matchToken,
+    advance,
+    skipNewlines,
+    reportError,
+    syncToNextLine,
+    save: () => position,
+    restore: (mark) => {
+      position = mark;
+    },
+    flowSequence,
+    parseStyleEntries,
+    parseElementBody
+  };
   function parseStatement(parent) {
     if (matchToken("nl")) {
       advance();
       return;
     }
-    if (matchToken("id", "style")) {
-      const savedPosition = position;
-      advance();
-      if (matchToken("lbrace")) {
-        advance();
-        if (parent) {
-          parent.style = parent.style ?? {};
-          parseStyleEntries(null, parent.style);
-        } else parseStyleEntries(model.style, null);
-        return;
-      }
-      position = savedPosition;
-    }
-    if (!parent && matchToken("id", "legend")) {
-      const savedPosition = position;
-      advance();
-      if (matchToken("lbrace")) {
-        advance();
-        skipNewlines();
-        while (!matchToken("rbrace") && !matchToken("eof")) {
-          if (matchToken("id", "note")) {
-            advance();
-            if (matchToken("str")) model.legendNotes.push(advance().text);
-            else
-              reportError(
-                "text expected after `note`",
-                lookAhead().span,
-                'e.g. `note "Named-data flows are subject to GDPR"`'
-              );
-          } else {
-            reportError('legend entries are `note "\u2026"` lines', lookAhead().span);
-            syncToNextLine();
-          }
-          skipNewlines();
-        }
-        if (matchToken("rbrace")) advance();
-        else reportError("`}` expected to close the legend block", lookAhead().span);
-        return;
-      }
-      position = savedPosition;
-    }
-    if (!parent && matchToken("id", "business-object")) {
-      advance();
-      if (!matchToken("id")) {
-        reportError(
-          "identifier expected after `business-object`",
-          lookAhead().span,
-          'e.g. `business-object BO_CMD "Commande" "description"`'
-        );
-        syncToNextLine();
-        return;
-      }
-      const idToken = advance();
-      let name = idToken.text, description;
-      if (matchToken("str")) name = advance().text;
-      if (matchToken("str")) description = advance().text;
-      model.businessObjects.push({
-        id: idToken.text,
-        idSpan: idToken.span,
-        name,
-        description
-      });
-      return;
-    }
-    if (!matchToken("id")) {
-      reportError("declaration expected (element, flow or `style`)", lookAhead().span);
-      syncToNextLine();
-      return;
-    }
-    const sourceToken = advance();
-    if (matchToken("arrow")) {
-      advance();
-      if (!matchToken("id")) {
-        reportError("target identifier expected after `->`", lookAhead().span);
-        syncToNextLine();
-        return;
-      }
-      const targetToken = advance();
-      const flow = {
-        id: "F" + String(++flowSequenceNumber).padStart(2, "0"),
-        from: sourceToken.text,
-        fromSpan: sourceToken.span,
-        to: targetToken.text,
-        toSpan: targetToken.span,
-        span: {
-          line: sourceToken.span.line,
-          col: sourceToken.span.col,
-          len: targetToken.span.col + targetToken.span.len - sourceToken.span.col
-        }
-      };
-      if (matchToken("colon")) {
-        advance();
-        if (matchToken("str")) flow.label = advance().text;
-        else if (!matchToken("lparen") && !matchToken("lbrack") && !matchToken("lbrace") && !matchToken("nl") && !matchToken("rbrace") && !matchToken("eof")) {
-          reportError(
-            "flow label expected after `:`",
-            lookAhead().span,
-            'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`'
-          );
-        }
-      }
-      if (matchToken("lparen")) {
-        const openParen = advance();
-        const values = [];
-        while ((matchToken("id") || matchToken("num") || matchToken("str")) && values.length < 2) {
-          values.push(advance().text);
-          if (matchToken("comma")) advance();
-        }
-        if (matchToken("rparen")) advance();
-        else
-          reportError(
-            "`)` expected to close the technical attributes",
-            lookAhead().span,
-            'e.g. `A -> B : "Envoi" (SFTP, XML)`'
-          );
-        flow.tech = {
-          protocol: values[0],
-          format: values[1],
-          span: openParen.span
-        };
-      }
-      if (matchToken("lbrack")) {
-        advance();
-        flow.objects = [];
-        while (matchToken("id")) {
-          const token = advance();
-          flow.objects.push({ id: token.text, span: token.span });
-          if (matchToken("comma")) advance();
-        }
-        if (matchToken("rbrack")) advance();
-        else
-          reportError(
-            "`]` expected to close the business-object list",
-            lookAhead().span,
-            'e.g. `A -> B : "Validation" [BO_CMD]`'
-          );
-      }
-      if (matchToken("lbrace")) {
-        advance();
-        flow.style = {};
-        parseStyleEntries(null, flow.style);
-      }
-      model.flows.push(flow);
-      return;
-    }
-    if (!matchToken("id")) {
-      reportError(
-        `invalid declaration: \`${sourceToken.text}\` alone on this line`,
-        sourceToken.span,
-        'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`'
-      );
-      syncToNextLine();
-      return;
-    }
-    const identifierToken = advance();
-    const element = {
-      kind: sourceToken.text,
-      kindSpan: sourceToken.span,
-      id: identifierToken.text,
-      idSpan: identifierToken.span,
-      children: [],
-      parent: parent ?? void 0
-    };
-    if (matchToken("str")) element.label = advance().text;
-    if (matchToken("lparen")) {
-      advance();
-      if (matchToken("id")) {
-        const token = advance();
-        element.attr = {
-          value: token.text,
-          span: token.span
-        };
-      } else
-        reportError(
-          "attribute value expected after `(`",
-          lookAhead().span,
-          'e.g. `trust-zone DMZ "DMZ" (public)`'
-        );
-      if (matchToken("rparen")) advance();
-      else
-        reportError(
-          "`)` expected to close the attribute",
-          lookAhead().span,
-          'e.g. `trust-zone DMZ "DMZ" (public)`'
-        );
-    }
-    if (matchToken("lbrace")) {
-      advance();
-      parseElementBody(element);
-    }
-    (parent ? parent.children : model.elements).push(element);
+    if (tryStyleBlock(parent)) return;
+    if (!parent && tryLegendBlock(parser)) return;
+    if (!parent && tryBusinessObject(parser)) return;
+    parseFlowOrElement(parser, parent);
   }
   skipNewlines();
   while (!matchToken("eof")) {
@@ -93237,7 +93272,104 @@ function parse(src) {
 var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
 var LABEL_POSITIONS = /* @__PURE__ */ new Set(["on-line", "above", "below"]);
 var DISPOSITIONS = /* @__PURE__ */ new Set(["wide", "tall", "slide", "page"]);
-function applyStyleEntry(key, styleTargetKind, values, target, inline, diagnostics) {
+var UNIFORM_STYLE_ENTRIES = {
+  "crossing-hops": {
+    kind: "id",
+    allowed: /* @__PURE__ */ new Set(["on", "off"]),
+    assign: (target, value) => {
+      target.crossingHops = value.text === "on";
+    },
+    expected: "`on` or `off`"
+  },
+  compact: {
+    kind: "id",
+    allowed: /* @__PURE__ */ new Set(["on", "off"]),
+    assign: (target, value) => {
+      target.compact = value.text === "on";
+    },
+    expected: "`on` or `off`"
+  },
+  arrows: {
+    kind: "id",
+    allowed: /* @__PURE__ */ new Set(["normal", "large"]),
+    assign: (target, value) => {
+      target.arrows = value.text;
+    },
+    expected: "`normal` or `large`"
+  },
+  "flow-color": {
+    kind: "id",
+    allowed: /* @__PURE__ */ new Set(["none", "by-source"]),
+    assign: (target, value) => {
+      target.flowColor = value.text;
+    },
+    expected: "`none` or `by-source`"
+  },
+  disposition: {
+    kind: "id",
+    allowed: DISPOSITIONS,
+    assign: (target, value) => {
+      target.disposition = value.text;
+    },
+    expected: "`wide` (elongated horizontal), `tall` (elongated vertical), `slide` (balanced 16:9), `page` (balanced A4 portrait)"
+  },
+  legend: {
+    kind: "id",
+    allowed: /* @__PURE__ */ new Set(["auto", "off"]),
+    assign: (target, value) => {
+      target.legend = value.text;
+    },
+    expected: "`auto` or `off`"
+  },
+  "flow-text": {
+    kind: "id",
+    allowed: /* @__PURE__ */ new Set(["full", "numbered"]),
+    assign: (target, value) => {
+      target.flowText = value.text;
+    },
+    expected: "`full` (labels on arrows) or `numbered` (number badges + FLUX table below the diagram)"
+  },
+  "flow-label": {
+    kind: "id",
+    allowed: LABEL_POSITIONS,
+    assign: (target, value) => {
+      target.flowLabel = value.text;
+    },
+    expected: "`on-line`, `above` or `below`"
+  },
+  theme: {
+    kind: "id",
+    allowed: new Set(themeNames),
+    assign: (target, value) => {
+      target.theme = value.text;
+    },
+    expected: "`" + themeNames.join("` | `") + "`"
+  },
+  accent: {
+    kind: "color",
+    assign: (target, value) => {
+      target.accent = value.text;
+    },
+    expected: "`#hex` color (retints flows on top of the theme)"
+  },
+  lang: {
+    kind: "id",
+    allowed: /* @__PURE__ */ new Set(["en", "fr"]),
+    assign: (target, value) => {
+      target.lang = value.text;
+    },
+    expected: "`en` or `fr` (localizes rendered labels; keywords stay English)"
+  },
+  background: {
+    kind: "color",
+    assign: (target, value) => {
+      target.background = value.text;
+    },
+    expected: "`#hex` color (canvas background)"
+  }
+};
+function applyStyleEntry(entry) {
+  const { key, styleTargetKind, values, target, inline, diagnostics } = entry;
   const extractStroke = (tokens, _span) => {
     const strokeProps = {};
     for (const token of tokens) {
@@ -93288,104 +93420,19 @@ function applyStyleEntry(key, styleTargetKind, values, target, inline, diagnosti
     return;
   }
   if (!target) return;
+  const uniform = Object.hasOwn(UNIFORM_STYLE_ENTRIES, keyText) ? UNIFORM_STYLE_ENTRIES[keyText] : void 0;
+  if (uniform) {
+    const value = firstValue();
+    if (value?.kind === uniform.kind && (!uniform.allowed || uniform.allowed.has(value.text)))
+      uniform.assign(target, value);
+    else reportBadValue(value ?? key, uniform.expected);
+    return;
+  }
   switch (keyText) {
-    case "crossing-hops": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "on" || value.text === "off"))
-        target.crossingHops = value.text === "on";
-      else reportBadValue(value ?? key, "`on` or `off`");
-      break;
-    }
-    case "compact": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "on" || value.text === "off"))
-        target.compact = value.text === "on";
-      else reportBadValue(value ?? key, "`on` or `off`");
-      break;
-    }
-    case "arrows": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "normal" || value.text === "large"))
-        target.arrows = value.text;
-      else reportBadValue(value ?? key, "`normal` or `large`");
-      break;
-    }
-    case "flow-color": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "none" || value.text === "by-source"))
-        target.flowColor = value.text;
-      else reportBadValue(value ?? key, "`none` or `by-source`");
-      break;
-    }
-    case "disposition": {
-      const value = firstValue();
-      if (value?.kind === "id" && DISPOSITIONS.has(value.text))
-        target.disposition = value.text;
-      else
-        reportBadValue(
-          value ?? key,
-          "`wide` (elongated horizontal), `tall` (elongated vertical), `slide` (balanced 16:9), `page` (balanced A4 portrait)"
-        );
-      break;
-    }
-    case "legend": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "auto" || value.text === "off"))
-        target.legend = value.text;
-      else reportBadValue(value ?? key, "`auto` or `off`");
-      break;
-    }
-    case "flow-text": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "full" || value.text === "numbered"))
-        target.flowText = value.text;
-      else
-        reportBadValue(
-          value ?? key,
-          "`full` (labels on arrows) or `numbered` (number badges + FLUX table below the diagram)"
-        );
-      break;
-    }
-    case "flow-label": {
-      const value = firstValue();
-      if (value?.kind === "id" && LABEL_POSITIONS.has(value.text))
-        target.flowLabel = value.text;
-      else reportBadValue(value ?? key, "`on-line`, `above` or `below`");
-      break;
-    }
     case "flow-stroke": {
       const stroke = extractStroke(values, key.span);
       target.flowStroke = { ...target.flowStroke, ...stroke };
       if (stroke.color) target.flowStrokeColorSet = true;
-      break;
-    }
-    case "theme": {
-      const value = firstValue();
-      if (value?.kind === "id" && themeNames.includes(value.text)) target.theme = value.text;
-      else reportBadValue(value ?? key, "`" + themeNames.join("` | `") + "`");
-      break;
-    }
-    case "accent": {
-      const value = firstValue();
-      if (value?.kind === "color") target.accent = value.text;
-      else reportBadValue(value ?? key, "`#hex` color (retints flows on top of the theme)");
-      break;
-    }
-    case "lang": {
-      const value = firstValue();
-      if (value?.kind === "id" && (value.text === "en" || value.text === "fr"))
-        target.lang = value.text;
-      else
-        reportBadValue(
-          value ?? key,
-          "`en` or `fr` (localizes rendered labels; keywords stay English)"
-        );
-      break;
-    }
-    case "background": {
-      const value = firstValue();
-      if (value?.kind === "color") target.background = value.text;
-      else reportBadValue(value ?? key, "`#hex` color (canvas background)");
       break;
     }
     case "fill": {
@@ -94441,7 +94488,8 @@ function wrapText(text, maxChars) {
 var CHIP_HEIGHT = 19;
 var chipW = (name, scale = 1) => Math.ceil(name.length * 9.5 * scale * CHAR_WIDTH) + Math.round(16 * scale);
 var techText = (tech) => tech?.protocol ? `(${tech.protocol}${tech.format ? ", " + tech.format : ""})` : "";
-var flowLabelBox = (text, chipNames, fontSize, tech, scale = 1) => {
+var flowLabelBox = (opts) => {
+  const { text, chipNames, fontSize, tech, scale = 1 } = opts;
   const measured = text ? measure(text, fontSize) : { width: 0, height: 0 };
   const chips = chipNames.reduce((sum, name) => sum + chipW(name, scale) + 4, -4);
   const techW = tech ? Math.ceil(tech.length * 9 * scale * CHAR_WIDTH) + 6 : 0;
@@ -94482,6 +94530,26 @@ var LaneAllocator = class {
     return this.lanes.length - 1;
   }
 };
+function foldStyle(model) {
+  const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
+  const numbered = model.style.flowText === "numbered";
+  const { edge, node, cont, scale } = fontSizes(model.style.font.size);
+  return {
+    numbered,
+    edge,
+    node,
+    cont,
+    scale,
+    chipsOf: (flow) => numbered ? [] : (flow.objects ?? []).map(
+      (objectRef) => businessObjectNames.get(objectRef.id) ?? objectRef.id
+    ),
+    numLabel: (flow) => ({
+      text: String(parseInt(flow.id.slice(1), 10)),
+      width: Math.round(26 * scale),
+      height: Math.round(17 * scale)
+    })
+  };
+}
 function toElkNode(element, containerFontSize, nodeFontSize) {
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
@@ -94502,14 +94570,12 @@ function toElkNode(element, containerFontSize, nodeFontSize) {
   const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
   return { id: element.id, width: size.width, height: size.height };
 }
-function walkFoldedNodes(elkNode, offsetX, offsetY, elementById, syntheticIds) {
+function walkFoldedNodes(elkNode, offset, elementById, syntheticIds) {
   return (elkNode.children ?? []).flatMap((child) => {
-    const absoluteX = offsetX + child.x;
-    const absoluteY = offsetY + child.y;
-    const origin = { x: absoluteX, y: absoluteY };
+    const origin = { x: offset.x + child.x, y: offset.y + child.y };
     if (syntheticIds.has(child.id)) return [{ id: child.id, origin, isPort: true }];
     const element = elementById.get(child.id);
-    const box = { x: absoluteX, y: absoluteY, width: child.width, height: child.height };
+    const box = { x: origin.x, y: origin.y, width: child.width, height: child.height };
     const node = {
       id: child.id,
       kind: element.kind,
@@ -94522,24 +94588,24 @@ function walkFoldedNodes(elkNode, offsetX, offsetY, elementById, syntheticIds) {
     };
     return [
       { id: child.id, origin, isPort: false, node, box },
-      ...walkFoldedNodes(child, absoluteX, absoluteY, elementById, syntheticIds)
+      ...walkFoldedNodes(child, origin, elementById, syntheticIds)
     ];
   });
 }
-function collectFoldedEdges(elkNode, origins, rootOffset, syntheticIds, edgeFontSize) {
+function collectFoldedEdges(elkNode, rootOffset, ctx) {
   const edges = [];
   const edgePoints = [];
   for (const edge of elkNode.edges ?? []) {
     const section = edge.sections?.[0];
     if (!section) continue;
-    const origin = edge.container && origins.get(edge.container) || rootOffset;
+    const origin = edge.container && ctx.origins.get(edge.container) || rootOffset;
     const points = [section.startPoint, ...section.bendPoints ?? [], section.endPoint].map(
       (point) => ({
         x: point.x + origin.x,
         y: point.y + origin.y
       })
     );
-    if (syntheticIds.has(edge.id)) {
+    if (ctx.syntheticIds.has(edge.id)) {
       edgePoints.push([edge.id, points]);
       continue;
     }
@@ -94550,35 +94616,297 @@ function collectFoldedEdges(elkNode, origins, rootOffset, syntheticIds, edgeFont
       y: label.y + origin.y,
       width: label.width,
       height: label.height,
-      textH: label.text ? label.text.split("\n").length * (edgeFontSize + 3) + 4 : 0
+      textH: label.text ? label.text.split("\n").length * (ctx.edgeFontSize + 3) + 4 : 0
     }));
     edges.push({ id: edge.id, pts: points, labels });
   }
   for (const child of elkNode.children ?? []) {
-    const childResult = collectFoldedEdges(child, origins, rootOffset, syntheticIds, edgeFontSize);
+    const childResult = collectFoldedEdges(child, rootOffset, ctx);
     edges.push(...childResult.edges);
     edgePoints.push(...childResult.edgePoints);
   }
   return { edges, edgePoints };
 }
+function internalFlowLabels(flow, style) {
+  if (style.numbered) return [style.numLabel(flow)];
+  const text = flow.label ? wrapText(flow.label, LABEL_WRAP + 4) : techText(flow.tech);
+  const chips = style.chipsOf(flow);
+  if (!text && !chips.length) return [];
+  return [
+    {
+      text,
+      ...flowLabelBox({
+        text,
+        chipNames: chips,
+        fontSize: style.edge,
+        tech: flow.label ? techText(flow.tech) : void 0,
+        scale: style.scale
+      })
+    }
+  ];
+}
+function buildGroupGraph(group, style, fg) {
+  const node = toElkNode(group, style.cont, style.node);
+  const nodeChildren = node.children ??= [];
+  for (const flow of fg.interFlows) {
+    if (fg.rootOf.get(flow.from) === group) {
+      fg.syntheticIds.add(`${flow.id}_out`);
+      nodeChildren.push({
+        id: `${flow.id}_out`,
+        width: 1,
+        height: 1,
+        layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" }
+      });
+    }
+    if (fg.rootOf.get(flow.to) === group) {
+      fg.syntheticIds.add(`${flow.id}_in`);
+      nodeChildren.push({
+        id: `${flow.id}_in`,
+        width: 1,
+        height: 1,
+        layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" }
+      });
+    }
+  }
+  const internal = fg.internalFlows.filter((flow) => fg.rootOf.get(flow.from) === group).map((flow) => ({
+    id: flow.id,
+    sources: [flow.from],
+    targets: [flow.to],
+    labels: internalFlowLabels(flow, style)
+  }));
+  const outStubs = fg.interFlows.filter((flow) => fg.rootOf.get(flow.from) === group).map((flow) => {
+    fg.syntheticIds.add(`${flow.id}_oe`);
+    return { id: `${flow.id}_oe`, sources: [flow.from], targets: [`${flow.id}_out`] };
+  });
+  const inStubs = fg.interFlows.filter((flow) => fg.rootOf.get(flow.to) === group).map((flow) => {
+    fg.syntheticIds.add(`${flow.id}_ie`);
+    return { id: `${flow.id}_ie`, sources: [`${flow.id}_in`], targets: [flow.to] };
+  });
+  return {
+    id: `fold_${group.id}`,
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": "RIGHT",
+      "elk.hierarchyHandling": "INCLUDE_CHILDREN",
+      "elk.edgeRouting": "ORTHOGONAL",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "36",
+      "elk.spacing.nodeNode": "14",
+      "elk.spacing.edgeEdge": "10",
+      "elk.spacing.edgeNode": "11",
+      "elk.spacing.edgeLabel": "3",
+      "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
+      "elk.edgeLabels.placement": "CENTER"
+    },
+    children: [node],
+    edges: [...internal, ...outStubs, ...inStubs]
+  };
+}
+function layoutColumn(elements, style) {
+  return elements.map((group) => {
+    const blocks = group.children.map((child) => {
+      const size = nodeSize(child.kind, child.label ?? child.id, style.node);
+      return { element: child, width: size.width, height: size.height, x: 0, y: 0 };
+    });
+    const columnWidth = Math.max(
+      measure(group.label ?? group.id, style.cont).width + 20,
+      ...blocks.map((block) => block.width)
+    ) + 2 * PAD;
+    let blockY = PAD_TOP;
+    for (const block of blocks) {
+      block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
+      block.y = blockY;
+      blockY += block.height + 14;
+    }
+    return { element: group, width: columnWidth, height: blockY - 14 + PAD, blocks };
+  });
+}
+function classifyFlow(flow, ctx) {
+  const { partitionOf, rootOf, rowIndex } = ctx;
+  const sourcePartition = partitionOf(rootOf.get(flow.from));
+  const destPartition = partitionOf(rootOf.get(flow.to));
+  if (sourcePartition === 0 && destPartition === 1) return { cls: "A" };
+  if (sourcePartition === 1 && destPartition === 2) return { cls: "B" };
+  if (sourcePartition === 1 && destPartition === 1) {
+    const sourceRowIndex = rowIndex.get(rootOf.get(flow.from).id);
+    const destRowIndex = rowIndex.get(rootOf.get(flow.to).id);
+    return { cls: "C", gutter: destRowIndex > sourceRowIndex ? destRowIndex : destRowIndex + 1 };
+  }
+  if (sourcePartition === 2 && destPartition === 1)
+    return { cls: "D", gutter: rowIndex.get(rootOf.get(flow.to).id) };
+  if (sourcePartition === 1 && destPartition === 0)
+    return { cls: "E", gutter: rowIndex.get(rootOf.get(flow.from).id) };
+  return { cls: "X" };
+}
+function layoutMiddleRows(middles, middleResults, geom, style) {
+  const rows = [];
+  let yCursor = 16 + geom.gutterHeight(0);
+  middles.forEach((element, index) => {
+    const result = middleResults.get(element.id) ?? null;
+    const size = result ? { width: result.children[0].width, height: result.children[0].height } : nodeSize(element.kind, element.label ?? element.id, style.node);
+    rows.push({
+      element,
+      box: { x: geom.xMiddle, y: yCursor, width: size.width, height: size.height },
+      result
+    });
+    yCursor += size.height + Math.max(40, geom.gutterHeight(index + 1));
+  });
+  return { rows, middleHeight: yCursor - Math.max(40, geom.gutterHeight(middles.length)) };
+}
+function placeCol(cols, x, middleHeight) {
+  const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
+  let colY = Math.max(20, 20 + (middleHeight - total) / 2);
+  return cols.map((col) => {
+    const box = { x, y: colY, width: col.width, height: col.height };
+    colY += col.height + 30;
+    return { group: col, box };
+  });
+}
+function pushCol(placed, scene) {
+  for (const { group, box } of placed) {
+    scene.nodes.push({
+      id: group.element.id,
+      kind: group.element.kind,
+      label: group.element.label ?? group.element.id,
+      x: box.x,
+      y: box.y,
+      width: box.width,
+      height: box.height,
+      container: true
+    });
+    scene.absoluteBoxes.set(group.element.id, box);
+    for (const block of group.blocks) {
+      const nodeBox = {
+        x: box.x + block.x,
+        y: box.y + block.y,
+        width: block.width,
+        height: block.height
+      };
+      scene.nodes.push({
+        id: block.element.id,
+        kind: block.element.kind,
+        label: block.element.label ?? block.element.id,
+        x: nodeBox.x,
+        y: nodeBox.y,
+        width: nodeBox.width,
+        height: nodeBox.height,
+        container: false
+      });
+      scene.absoluteBoxes.set(block.element.id, nodeBox);
+    }
+  }
+}
+var rowOffset = (row) => ({
+  x: row.box.x - row.result.children[0].x,
+  y: row.box.y - row.result.children[0].y
+});
+function pushMiddleRows(rows, scene, elementById, syntheticIds) {
+  for (const row of rows) {
+    const { element, box, result } = row;
+    if (!result) {
+      scene.nodes.push({
+        id: element.id,
+        kind: element.kind,
+        label: element.label ?? element.id,
+        x: box.x,
+        y: box.y,
+        width: box.width,
+        height: box.height,
+        container: false
+      });
+      scene.absoluteBoxes.set(element.id, box);
+      continue;
+    }
+    const offset = rowOffset(row);
+    scene.origins.set(result.id, offset);
+    for (const walked of walkFoldedNodes(result, offset, elementById, syntheticIds)) {
+      scene.origins.set(walked.id, walked.origin);
+      if (walked.isPort) {
+        scene.absolutePorts.set(walked.id, walked.origin);
+        continue;
+      }
+      scene.nodes.push(walked.node);
+      scene.absoluteBoxes.set(walked.id, walked.box);
+    }
+  }
+}
+function routeConnector(entry, ends, gut) {
+  const { cls } = entry;
+  const { dest } = ends;
+  if (cls === "C" || cls === "D" || cls === "E") {
+    const start = cls === "D" ? sideMid(ends.sourceBox, "left") : ends.source;
+    const info = gut.gutterInfo(
+      entry.gutter,
+      gut.xLeftGutter,
+      cls === "D" ? gut.xSink : gut.xRightGutter + 120
+    );
+    const rightX = gut.laneRightX(start.y, info.y);
+    const leftX = gut.laneLeftX(info.y, dest.y);
+    return {
+      points: [
+        start,
+        { x: rightX, y: start.y },
+        { x: rightX, y: info.y },
+        { x: leftX, y: info.y },
+        { x: leftX, y: dest.y },
+        dest
+      ],
+      laneIndex: info.laneIndex,
+      labelY: info.labelY
+    };
+  }
+  const laneX = cls === "B" ? gut.laneRightX(ends.source.y, dest.y) : gut.laneLeftX(ends.source.y, dest.y);
+  return {
+    points: [ends.source, { x: laneX, y: ends.source.y }, { x: laneX, y: dest.y }, dest],
+    laneIndex: 0,
+    labelY: 0
+  };
+}
+function connectorLabel(flow, routed, style) {
+  const chips = style.chipsOf(flow);
+  const text = style.numbered ? style.numLabel(flow).text : flow.label ? wrapText(flow.label, LABEL_WRAP) : techText(flow.tech) || (chips.length ? "" : void 0);
+  if (text === void 0) return void 0;
+  const measured = style.numbered ? { width: Math.round(26 * style.scale), height: Math.round(17 * style.scale) } : flowLabelBox({
+    text,
+    chipNames: chips,
+    fontSize: style.edge,
+    tech: flow.label ? techText(flow.tech) : void 0,
+    scale: style.scale
+  });
+  const textH = text ? text.split("\n").length * (style.edge + 3) + 4 : 0;
+  const { points } = routed;
+  if (points.length >= 6) {
+    const segmentLeft = Math.min(points[2].x, points[3].x);
+    const segmentRight = Math.max(points[2].x, points[3].x);
+    const availableSpan = Math.max(40, segmentRight - segmentLeft - measured.width - 20);
+    return {
+      flowId: flow.id,
+      text,
+      x: segmentLeft + 10 + routed.laneIndex * 173 % availableSpan,
+      y: routed.labelY,
+      width: measured.width,
+      height: measured.height,
+      textH
+    };
+  }
+  const secondLast = points[points.length - 2];
+  const last = points[points.length - 1];
+  return {
+    flowId: flow.id,
+    text,
+    x: (secondLast.x + last.x) / 2 - measured.width / 2,
+    y: last.y - measured.height - 4,
+    width: measured.width,
+    height: measured.height,
+    textH
+  };
+}
+var sideMid = (box, side) => ({
+  x: side === "left" ? box.x : box.x + box.width,
+  y: box.y + box.height / 2
+});
 async function foldedLayout(model, view, elk) {
   const roots = model.elements;
-  const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
-  const numbered = model.style.flowText === "numbered";
-  const {
-    edge: edgeFontSize,
-    node: nodeFontSize,
-    cont: containerFontSize,
-    scale: fontScale
-  } = fontSizes(model.style.font.size);
-  const chipsOf = (flow) => numbered ? [] : (flow.objects ?? []).map(
-    (objectRef) => businessObjectNames.get(objectRef.id) ?? objectRef.id
-  );
-  const numLabel = (flow) => ({
-    text: String(parseInt(flow.id.slice(1), 10)),
-    width: Math.round(26 * fontScale),
-    height: Math.round(17 * fontScale)
-  });
+  const style = foldStyle(model);
   const partitionOf = (element) => view.partitions[element.kind] ?? 1;
   const sources = roots.filter((element) => partitionOf(element) === 0);
   const middles = roots.filter((element) => partitionOf(element) === 1);
@@ -94590,158 +94918,30 @@ async function foldedLayout(model, view, elk) {
   for (const root of roots) {
     for (const element of subtreeElements(root)) rootOf.set(element.id, root);
   }
-  const interFlows = model.flows.filter((flow) => {
-    const sourceRoot = rootOf.get(flow.from);
-    const destRoot = rootOf.get(flow.to);
-    return sourceRoot && destRoot && sourceRoot !== destRoot;
-  });
-  const internalFlows = model.flows.filter(
-    (flow) => rootOf.get(flow.from) && rootOf.get(flow.from) === rootOf.get(flow.to)
-  );
+  const fg = {
+    rootOf,
+    interFlows: model.flows.filter((flow) => {
+      const sourceRoot = rootOf.get(flow.from);
+      const destRoot = rootOf.get(flow.to);
+      return sourceRoot && destRoot && sourceRoot !== destRoot;
+    }),
+    internalFlows: model.flows.filter(
+      (flow) => rootOf.get(flow.from) && rootOf.get(flow.from) === rootOf.get(flow.to)
+    ),
+    syntheticIds: /* @__PURE__ */ new Set()
+  };
   const elementById = new Map(indexElementsById(roots));
-  const syntheticIds = /* @__PURE__ */ new Set();
   const middleResults = /* @__PURE__ */ new Map();
   for (const group of middleGroups) {
-    const node = toElkNode(group, containerFontSize, nodeFontSize);
-    const nodeChildren = node.children ??= [];
-    for (const flow of interFlows) {
-      if (rootOf.get(flow.from) === group) {
-        syntheticIds.add(`${flow.id}_out`);
-        nodeChildren.push({
-          id: `${flow.id}_out`,
-          width: 1,
-          height: 1,
-          layoutOptions: { "elk.layered.layering.layerConstraint": "LAST" }
-        });
-      }
-      if (rootOf.get(flow.to) === group) {
-        syntheticIds.add(`${flow.id}_in`);
-        nodeChildren.push({
-          id: `${flow.id}_in`,
-          width: 1,
-          height: 1,
-          layoutOptions: { "elk.layered.layering.layerConstraint": "FIRST" }
-        });
-      }
-    }
-    const graph = {
-      id: `fold_${group.id}`,
-      layoutOptions: {
-        "elk.algorithm": "layered",
-        "elk.direction": "RIGHT",
-        "elk.hierarchyHandling": "INCLUDE_CHILDREN",
-        "elk.edgeRouting": "ORTHOGONAL",
-        "elk.layered.spacing.nodeNodeBetweenLayers": "36",
-        "elk.spacing.nodeNode": "14",
-        "elk.spacing.edgeEdge": "10",
-        "elk.spacing.edgeNode": "11",
-        "elk.spacing.edgeLabel": "3",
-        "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
-        "elk.edgeLabels.placement": "CENTER"
-      },
-      children: [node],
-      edges: [
-        ...internalFlows.filter((flow) => rootOf.get(flow.from) === group).map((flow) => {
-          if (numbered)
-            return {
-              id: flow.id,
-              sources: [flow.from],
-              targets: [flow.to],
-              labels: [numLabel(flow)]
-            };
-          const text = flow.label ? wrapText(flow.label, LABEL_WRAP + 4) : techText(flow.tech);
-          const chips = chipsOf(flow);
-          return {
-            id: flow.id,
-            sources: [flow.from],
-            targets: [flow.to],
-            labels: text || chips.length ? [
-              {
-                text,
-                ...flowLabelBox(
-                  text,
-                  chips,
-                  edgeFontSize,
-                  flow.label ? techText(flow.tech) : void 0,
-                  fontScale
-                )
-              }
-            ] : []
-          };
-        }),
-        ...interFlows.filter((flow) => rootOf.get(flow.from) === group).map((flow) => {
-          syntheticIds.add(`${flow.id}_oe`);
-          return {
-            id: `${flow.id}_oe`,
-            sources: [flow.from],
-            targets: [`${flow.id}_out`]
-          };
-        }),
-        ...interFlows.filter((flow) => rootOf.get(flow.to) === group).map((flow) => {
-          syntheticIds.add(`${flow.id}_ie`);
-          return {
-            id: `${flow.id}_ie`,
-            sources: [`${flow.id}_in`],
-            targets: [flow.to]
-          };
-        })
-      ]
-    };
-    middleResults.set(group.id, await elk.layout(graph));
+    const laid = await elk.layout(buildGroupGraph(group, style, fg));
+    middleResults.set(group.id, laid);
   }
-  const layoutColumn = (elements) => elements.map((group) => {
-    const blocks = group.children.map((child) => {
-      const size = nodeSize(child.kind, child.label ?? child.id, nodeFontSize);
-      return {
-        element: child,
-        width: size.width,
-        height: size.height,
-        x: 0,
-        y: 0
-      };
-    });
-    const columnWidth = Math.max(
-      measure(group.label ?? group.id, containerFontSize).width + 20,
-      ...blocks.map((block) => block.width)
-    ) + 2 * PAD;
-    let blockY = PAD_TOP;
-    for (const block of blocks) {
-      block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
-      block.y = blockY;
-      blockY += block.height + 14;
-    }
-    return {
-      element: group,
-      width: columnWidth,
-      height: blockY - 14 + PAD,
-      blocks
-    };
-  });
-  const sourceColumns = layoutColumn(sources);
-  const sinkColumns = layoutColumn(sinks);
+  const sourceColumns = layoutColumn(sources, style);
+  const sinkColumns = layoutColumn(sinks, style);
   const rowIndex = new Map(middles.map((middle, middleIndex) => [middle.id, middleIndex]));
-  const classify = (flow) => {
-    const sourcePartition = partitionOf(rootOf.get(flow.from));
-    const destPartition = partitionOf(rootOf.get(flow.to));
-    if (sourcePartition === 0 && destPartition === 1) return { cls: "A" };
-    if (sourcePartition === 1 && destPartition === 2) return { cls: "B" };
-    if (sourcePartition === 1 && destPartition === 1) {
-      const sourceRowIndex = rowIndex.get(rootOf.get(flow.from).id);
-      const destRowIndex = rowIndex.get(rootOf.get(flow.to).id);
-      return {
-        cls: "C",
-        gutter: destRowIndex > sourceRowIndex ? destRowIndex : destRowIndex + 1
-      };
-    }
-    if (sourcePartition === 2 && destPartition === 1)
-      return { cls: "D", gutter: rowIndex.get(rootOf.get(flow.to).id) };
-    if (sourcePartition === 1 && destPartition === 0)
-      return { cls: "E", gutter: rowIndex.get(rootOf.get(flow.from).id) };
-    return { cls: "X" };
-  };
-  const classified = interFlows.map((flow) => ({
+  const classified = fg.interFlows.map((flow) => ({
     flow,
-    ...classify(flow)
+    ...classifyFlow(flow, { partitionOf, rootOf, rowIndex })
   }));
   const gutterDemand = Array(middles.length + 1).fill(0);
   for (const entry of classified) if (entry.gutter !== void 0) gutterDemand[entry.gutter]++;
@@ -94751,270 +94951,151 @@ async function foldedLayout(model, view, elk) {
   const widthLeftGutter = 28 + Math.min(Math.ceil(leftGutterFlowCount / 2), 10) * LANE_STEP + LABEL_W;
   const widthRightGutter = 28 + Math.min(Math.ceil(rightGutterFlowCount / 2), 10) * LANE_STEP + LABEL_W;
   const widthSource = Math.max(0, ...sourceColumns.map((col) => col.width));
-  const widthMiddleFn = (element) => element.children.length ? middleResults.get(element.id).children[0].width : nodeSize(element.kind, element.label ?? element.id, nodeFontSize).width;
-  const widthMiddle = Math.max(...middles.map(widthMiddleFn));
+  const widthMiddle = Math.max(
+    ...middles.map(
+      (element) => element.children.length ? middleResults.get(element.id).children[0].width : nodeSize(element.kind, element.label ?? element.id, style.node).width
+    )
+  );
   const widthSink = Math.max(0, ...sinkColumns.map((col) => col.width));
   const xSource = 10;
   const xLeftGutter = xSource + widthSource + 10;
   const xMiddle = xLeftGutter + widthLeftGutter;
   const xRightGutter = xMiddle + widthMiddle + 10;
   const xSink = xRightGutter + widthRightGutter;
-  const hasChips = interFlows.some((flow) => flow.objects?.length);
+  const hasChips = fg.interFlows.some((flow) => flow.objects?.length);
   const LABEL_ROW = hasChips ? 48 : 29;
   const LABEL_ZONE = 4 + 2 * LABEL_ROW;
   const gutterHeight = (gutterIndex) => 14 + gutterDemand[gutterIndex] * LANE_V + (gutterDemand[gutterIndex] ? LABEL_ZONE : 0);
-  const rows = [];
-  let yCursor = 16 + gutterHeight(0);
-  middles.forEach((element, index) => {
-    const result = middleResults.get(element.id) ?? null;
-    const size = result ? {
-      width: result.children[0].width,
-      height: result.children[0].height
-    } : (() => {
-      const node = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
-      return { width: node.width, height: node.height };
-    })();
-    rows.push({
-      element,
-      box: {
-        x: xMiddle,
-        y: yCursor,
-        width: size.width,
-        height: size.height
-      },
-      result
-    });
-    yCursor += size.height + Math.max(40, gutterHeight(index + 1));
-  });
-  const middleHeight = yCursor - Math.max(40, gutterHeight(middles.length));
-  const placeCol = (cols, x) => {
-    const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
-    let colY = Math.max(20, 20 + (middleHeight - total) / 2);
-    return cols.map((col) => {
-      const box = { x, y: colY, width: col.width, height: col.height };
-      colY += col.height + 30;
-      return { group: col, box };
-    });
+  const { rows, middleHeight } = layoutMiddleRows(
+    middles,
+    middleResults,
+    { xMiddle, gutterHeight },
+    style
+  );
+  const sourcePlaced = placeCol(sourceColumns, xSource, middleHeight);
+  const sinkPlaced = placeCol(sinkColumns, xSink, middleHeight);
+  const scene = {
+    nodes: [],
+    absoluteBoxes: /* @__PURE__ */ new Map(),
+    absolutePorts: /* @__PURE__ */ new Map(),
+    origins: /* @__PURE__ */ new Map()
   };
-  const sourcePlaced = placeCol(sourceColumns, xSource);
-  const sinkPlaced = placeCol(sinkColumns, xSink);
-  const nodes = [];
-  const absoluteBoxes = /* @__PURE__ */ new Map();
-  const pushCol = (placed) => {
-    for (const { group, box } of placed) {
-      nodes.push({
-        id: group.element.id,
-        kind: group.element.kind,
-        label: group.element.label ?? group.element.id,
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height,
-        container: true
-      });
-      absoluteBoxes.set(group.element.id, box);
-      for (const block of group.blocks) {
-        const nodeBox = {
-          x: box.x + block.x,
-          y: box.y + block.y,
-          width: block.width,
-          height: block.height
-        };
-        nodes.push({
-          id: block.element.id,
-          kind: block.element.kind,
-          label: block.element.label ?? block.element.id,
-          x: nodeBox.x,
-          y: nodeBox.y,
-          width: nodeBox.width,
-          height: nodeBox.height,
-          container: false
-        });
-        absoluteBoxes.set(block.element.id, nodeBox);
-      }
-    }
-  };
-  pushCol(sourcePlaced);
-  pushCol(sinkPlaced);
-  const absolutePorts = /* @__PURE__ */ new Map();
-  const origins = /* @__PURE__ */ new Map();
-  for (const { element, box, result } of rows) {
-    if (!result) {
-      nodes.push({
-        id: element.id,
-        kind: element.kind,
-        label: element.label ?? element.id,
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height,
-        container: false
-      });
-      absoluteBoxes.set(element.id, box);
-      continue;
-    }
-    const rootOffset = {
-      x: box.x - result.children[0].x,
-      y: box.y - result.children[0].y
-    };
-    origins.set(result.id, rootOffset);
-    for (const walked of walkFoldedNodes(result, rootOffset.x, rootOffset.y, elementById, syntheticIds)) {
-      origins.set(walked.id, walked.origin);
-      if (walked.isPort) {
-        absolutePorts.set(walked.id, walked.origin);
-        continue;
-      }
-      nodes.push(walked.node);
-      absoluteBoxes.set(walked.id, walked.box);
-    }
-  }
+  pushCol(sourcePlaced, scene);
+  pushCol(sinkPlaced, scene);
+  pushMiddleRows(rows, scene, elementById, fg.syntheticIds);
   const edges = [];
   const edgePoints = /* @__PURE__ */ new Map();
-  for (const { box, result } of rows) {
-    if (!result) continue;
-    const rootOffset = {
-      x: box.x - result.children[0].x,
-      y: box.y - result.children[0].y
-    };
-    const collected = collectFoldedEdges(result, origins, rootOffset, syntheticIds, edgeFontSize);
+  const collectCtx = {
+    origins: scene.origins,
+    syntheticIds: fg.syntheticIds,
+    edgeFontSize: style.edge
+  };
+  for (const row of rows) {
+    if (!row.result) continue;
+    const collected = collectFoldedEdges(row.result, rowOffset(row), collectCtx);
     edges.push(...collected.edges);
     for (const [edgeId, points] of collected.edgePoints) edgePoints.set(edgeId, points);
   }
   const leftLaneAlloc = new LaneAllocator();
   const rightLaneAlloc = new LaneAllocator();
   const gutterAllocators = gutterDemand.map(() => new LaneAllocator());
-  const laneLeftX = (y1, y2) => xLeftGutter + 14 + leftLaneAlloc.alloc(y1, y2) * LANE_STEP;
-  const laneRightX = (y1, y2) => xRightGutter + 14 + rightLaneAlloc.alloc(y1, y2) * LANE_STEP;
-  const gutterInfo = (gutterIndex, x1, x2) => {
-    const top = gutterIndex === 0 ? 14 : rows[gutterIndex - 1].box.y + rows[gutterIndex - 1].box.height + 10;
-    const laneIndex = gutterAllocators[gutterIndex].alloc(x1, x2);
-    return {
-      y: top + LABEL_ZONE + laneIndex * LANE_V,
-      laneIndex,
-      labelY: top + 2 + laneIndex % 2 * LABEL_ROW
-    };
+  const gutters = {
+    laneLeftX: (y1, y2) => xLeftGutter + 14 + leftLaneAlloc.alloc(y1, y2) * LANE_STEP,
+    laneRightX: (y1, y2) => xRightGutter + 14 + rightLaneAlloc.alloc(y1, y2) * LANE_STEP,
+    gutterInfo: (gutterIndex, x1, x2) => {
+      const top = gutterIndex === 0 ? 14 : rows[gutterIndex - 1].box.y + rows[gutterIndex - 1].box.height + 10;
+      const laneIndex = gutterAllocators[gutterIndex].alloc(x1, x2);
+      return {
+        y: top + LABEL_ZONE + laneIndex * LANE_V,
+        laneIndex,
+        labelY: top + 2 + laneIndex % 2 * LABEL_ROW
+      };
+    },
+    xLeftGutter,
+    xRightGutter,
+    xSink
   };
-  const sideMid = (box, side) => ({
-    x: side === "left" ? box.x : box.x + box.width,
-    y: box.y + box.height / 2
-  });
-  for (const { flow, cls, gutter } of classified) {
+  for (const entry of classified) {
+    const { flow } = entry;
     const sourceRoot = rootOf.get(flow.from);
     const destRoot = rootOf.get(flow.to);
-    const outPort = absolutePorts.get(`${flow.id}_out`);
-    const inPort = absolutePorts.get(`${flow.id}_in`);
-    const sourcePoint = outPort ?? sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id), "right");
-    const destPoint = inPort ?? sideMid(absoluteBoxes.get(flow.to) ?? absoluteBoxes.get(destRoot.id), "left");
-    const preSegments = edgePoints.get(`${flow.id}_oe`) ?? [];
-    const postSegments = edgePoints.get(`${flow.id}_ie`) ?? [];
-    const points = [];
-    let flowLaneIndex = 0;
-    let gutterY = 0;
-    let gutterLabelY = 0;
-    if (cls === "A") {
-      const leftX = laneLeftX(sourcePoint.y, destPoint.y);
-      points.push(
-        sourcePoint,
-        { x: leftX, y: sourcePoint.y },
-        { x: leftX, y: destPoint.y },
-        destPoint
-      );
-    } else if (cls === "B") {
-      const rightX = laneRightX(sourcePoint.y, destPoint.y);
-      points.push(
-        sourcePoint,
-        { x: rightX, y: sourcePoint.y },
-        { x: rightX, y: destPoint.y },
-        destPoint
-      );
-    } else if (cls === "C" || cls === "D" || cls === "E") {
-      const gutterIndex = gutter;
-      const start = cls === "D" ? sideMid(absoluteBoxes.get(flow.from) ?? absoluteBoxes.get(sourceRoot.id), "left") : sourcePoint;
-      const info = gutterInfo(gutterIndex, xLeftGutter, cls === "D" ? xSink : xRightGutter + 120);
-      gutterY = info.y;
-      flowLaneIndex = info.laneIndex;
-      gutterLabelY = info.labelY;
-      const rightX = laneRightX(start.y, gutterY);
-      const leftX = laneLeftX(gutterY, destPoint.y);
-      points.push(
-        start,
-        { x: rightX, y: start.y },
-        { x: rightX, y: gutterY },
-        { x: leftX, y: gutterY },
-        { x: leftX, y: destPoint.y },
-        destPoint
-      );
-    } else {
-      const leftX = laneLeftX(sourcePoint.y, destPoint.y);
-      points.push(
-        sourcePoint,
-        { x: leftX, y: sourcePoint.y },
-        { x: leftX, y: destPoint.y },
-        destPoint
-      );
-    }
-    const mergedPoints = [...preSegments, ...points, ...postSegments];
-    let label;
-    const chips = chipsOf(flow);
-    const text = numbered ? numLabel(flow).text : flow.label ? wrapText(flow.label, LABEL_WRAP) : techText(flow.tech) || (chips.length ? "" : void 0);
-    if (text !== void 0) {
-      const measured = numbered ? { width: Math.round(26 * fontScale), height: Math.round(17 * fontScale) } : flowLabelBox(
-        text,
-        chips,
-        edgeFontSize,
-        flow.label ? techText(flow.tech) : void 0,
-        fontScale
-      );
-      if (points.length >= 6) {
-        const segmentLeft = Math.min(points[2].x, points[3].x);
-        const segmentRight = Math.max(points[2].x, points[3].x);
-        const availableSpan = Math.max(40, segmentRight - segmentLeft - measured.width - 20);
-        const centerX = segmentLeft + 10 + flowLaneIndex * 173 % availableSpan;
-        label = {
-          flowId: flow.id,
-          text,
-          x: centerX,
-          y: gutterLabelY,
-          width: measured.width,
-          height: measured.height,
-          textH: text ? text.split("\n").length * (edgeFontSize + 3) + 4 : 0
-        };
-      } else {
-        const secondLast = points[points.length - 2];
-        const last = points[points.length - 1];
-        label = {
-          flowId: flow.id,
-          text,
-          x: (secondLast.x + last.x) / 2 - measured.width / 2,
-          y: last.y - measured.height - 4,
-          width: measured.width,
-          height: measured.height,
-          textH: text ? text.split("\n").length * (edgeFontSize + 3) + 4 : 0
-        };
-      }
-    }
+    const sourceBox = scene.absoluteBoxes.get(flow.from) ?? scene.absoluteBoxes.get(sourceRoot.id);
+    const destBox = scene.absoluteBoxes.get(flow.to) ?? scene.absoluteBoxes.get(destRoot.id);
+    const routed = routeConnector(
+      entry,
+      {
+        source: scene.absolutePorts.get(`${flow.id}_out`) ?? sideMid(sourceBox, "right"),
+        dest: scene.absolutePorts.get(`${flow.id}_in`) ?? sideMid(destBox, "left"),
+        sourceBox
+      },
+      gutters
+    );
+    const label = connectorLabel(flow, routed, style);
     edges.push({
       id: flow.id,
-      pts: mergedPoints,
+      pts: [
+        ...edgePoints.get(`${flow.id}_oe`) ?? [],
+        ...routed.points,
+        ...edgePoints.get(`${flow.id}_ie`) ?? []
+      ],
       labels: label ? [label] : []
     });
   }
-  const totalWidth = Math.ceil(xSink + widthSink + 10);
-  const totalHeight = Math.ceil(
-    Math.max(
-      middleHeight + 30,
-      ...sinkPlaced.map((placed) => placed.box.y + placed.box.height + 20),
-      ...sourcePlaced.map((placed) => placed.box.y + placed.box.height + 20)
-    )
-  );
   return {
-    width: totalWidth,
-    height: totalHeight,
-    nodes,
+    width: Math.ceil(xSink + widthSink + 10),
+    height: Math.ceil(
+      Math.max(
+        middleHeight + 30,
+        ...sinkPlaced.map((placed) => placed.box.y + placed.box.height + 20),
+        ...sourcePlaced.map((placed) => placed.box.y + placed.box.height + 20)
+      )
+    ),
+    nodes: scene.nodes,
     edges,
     layoutMs: 0
   };
 }
+
+// src/geometry.ts
+var MIN_ATTACH_GAP = 12;
+var boxesOverlap = (boxA, boxB) => !(boxA.x + boxA.width <= boxB.x || boxB.x + boxB.width <= boxA.x || boxA.y + boxA.height <= boxB.y || boxB.y + boxB.height <= boxA.y);
+var boxToSegmentSq = (box, a, b) => {
+  const dx = Math.max(0, box.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (box.x + box.width));
+  const dy = Math.max(0, box.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (box.y + box.height));
+  return dx * dx + dy * dy;
+};
+var boxGapSq = (boxA, boxB) => {
+  const dx = Math.max(0, boxA.x - (boxB.x + boxB.width), boxB.x - (boxA.x + boxA.width));
+  const dy = Math.max(0, boxA.y - (boxB.y + boxB.height), boxB.y - (boxA.y + boxA.height));
+  return dx * dx + dy * dy;
+};
+var boundsOf = (points) => {
+  let minX = points[0].x;
+  let maxX = points[0].x;
+  let minY = points[0].y;
+  let maxY = points[0].y;
+  for (const point of points) {
+    if (point.x < minX) minX = point.x;
+    if (point.x > maxX) maxX = point.x;
+    if (point.y < minY) minY = point.y;
+    if (point.y > maxY) maxY = point.y;
+  }
+  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+};
+var pathLength = (points) => {
+  let length = 0;
+  for (let index = 0; index + 1 < points.length; index++)
+    length += Math.abs(points[index + 1].x - points[index].x) + Math.abs(points[index + 1].y - points[index].y);
+  return length;
+};
+var boxToPolylineSq = (box, points) => {
+  let best = Number.POSITIVE_INFINITY;
+  for (let index = 0; index + 1 < points.length; index++) {
+    const distance = boxToSegmentSq(box, points[index], points[index + 1]);
+    if (distance < best) best = distance;
+  }
+  return best;
+};
 
 // src/route-detour.ts
 var RATIO_THRESHOLD = 1.4;
@@ -95022,35 +95103,33 @@ var MIN_WASTE = 300;
 var CHANNEL_GAP = 10;
 var LINE_CLEARANCE = 12;
 var MIN_PARALLEL_RUN = 40;
-var RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64, -72, 72];
-var WEST_DESCENT_DELTAS = [-10, -18, -26, -34, -42, -50, -58, -66, -74, -82, -90, -98, -106];
-var EAST_DESCENT_DELTAS = [
-  10,
-  14,
-  18,
-  22,
-  26,
-  30,
-  34,
-  42,
-  50,
-  58,
-  66,
-  74,
-  82,
-  90,
-  98,
-  106
+var RISER_DELTAS = [
+  0,
+  -8,
+  8,
+  -16,
+  16,
+  -24,
+  24,
+  -32,
+  32,
+  -40,
+  40,
+  -48,
+  48,
+  -56,
+  56,
+  -64,
+  64,
+  -72,
+  72
 ];
+var WEST_DESCENT_DELTAS = [-10, -18, -26, -34, -42, -50, -58, -66, -74, -82, -90, -98, -106];
+var EAST_DESCENT_DELTAS = [10, 14, 18, 22, 26, 30, 34, 42, 50, 58, 66, 74, 82, 90, 98, 106];
+var ENTRY_Y_DELTAS_DOWN = [0, 6, 12, 18, 24, -6, -12, -18, -24];
+var ENTRY_Y_DELTAS_UP = [0, -6, -12, -18, -24, 6, 12, 18, 24];
 var TITLE_CLEARANCE = 8;
-var MIN_SLOT_GAP = 12;
 var MIN_DEPTH_GAIN = 24;
-function pathLength(pts) {
-  let length = 0;
-  for (let index = 1; index < pts.length; index++)
-    length += Math.abs(pts[index].x - pts[index - 1].x) + Math.abs(pts[index].y - pts[index - 1].y);
-  return length;
-}
 function titleBoxesOf(scene, model) {
   const { cont: containerFontSize } = fontSizes(model.style.font.size);
   const compact = model.style.compact;
@@ -95061,12 +95140,15 @@ function titleBoxesOf(scene, model) {
     height: (compact ? 11 : 13) + node.label.split("\n").length * 14
   }));
 }
-function rerouteDetours(scene, model, numbered, titleBoxes = []) {
+var INF = 1e9;
+var centerX = (node) => node.x + node.width / 2;
+var centerY = (node) => node.y + node.height / 2;
+var flowNumberOf = (edge) => parseInt(edge.id.slice(1), 10);
+var isTop = (plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop" || plan.entry.kind === "eastTop";
+var isBottom = (plan) => !isTop(plan);
+function detourCandidates(scene, model) {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
-  const leafBoxes = scene.nodes.filter((node) => !node.container);
   const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
-  const centerX = (node) => node.x + node.width / 2;
-  const centerY = (node) => node.y + node.height / 2;
   const candidates = [];
   for (const edge of scene.edges) {
     const flow = flowById.get(edge.id);
@@ -95080,14 +95162,35 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
     if (length < RATIO_THRESHOLD * direct || length - direct < MIN_WASTE) continue;
     candidates.push({ edge, source, target });
   }
-  if (!candidates.length) return;
   candidates.sort(
-    (candidateA, candidateB) => parseInt(candidateA.edge.id.slice(1), 10) - parseInt(candidateB.edge.id.slice(1), 10)
+    (candidateA, candidateB) => flowNumberOf(candidateA.edge) - flowNumberOf(candidateB.edge)
   );
-  const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
-  const minNodeTop = Math.min(...scene.nodes.map((node) => node.y));
-  const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
-  const INF = 1e9;
+  return candidates;
+}
+function verticalConflict(segment, x, top, bottom) {
+  const shared = Math.min(segment.bottom, bottom) - Math.max(segment.top, top);
+  if (shared <= 0) return false;
+  const gap = Math.abs(segment.x - x);
+  return gap < 7 || gap < LINE_CLEARANCE && shared > MIN_PARALLEL_RUN;
+}
+var blockedBelowBy = (leafBoxes, x, top) => leafBoxes.some(
+  (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1
+);
+var blockedAboveBy = (leafBoxes, titleBoxes, x, bottom) => leafBoxes.some((node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1) || titleBoxes.some(
+  (box) => x >= box.x - TITLE_CLEARANCE && x <= box.x + box.width + TITLE_CLEARANCE && box.y < bottom - 1
+);
+var horizontalBlocked = (leafBoxes, y, probe) => leafBoxes.some(
+  (node) => node !== probe.target && node.y - 2 <= y && node.y + node.height + 2 >= y && node.x < probe.xEnd && node.x + node.width > probe.xStart
+);
+var crossesForeignContainer = (containerBoxes, y, probe) => {
+  const { target, xStart, xEnd } = probe;
+  return containerBoxes.some(
+    (box) => !(box.x <= target.x && target.x + target.width <= box.x + box.width && box.y <= target.y && target.y + target.height <= box.y + box.height) && box.y < y && y < box.y + box.height && box.x < xEnd && box.x + box.width > xStart
+  );
+};
+function createChannel(scene, titleBoxes, candidates) {
+  const leafBoxes = scene.nodes.filter((node) => !node.container);
+  const containerBoxes = scene.nodes.filter((node) => node.container);
   const usedVerticals = [];
   const usedHorizontals = [];
   const addEdgeVerticals = (edge) => {
@@ -95110,63 +95213,41 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
   };
   const candidateIds = new Set(candidates.map((candidate) => candidate.edge.id));
   for (const edge of scene.edges) if (!candidateIds.has(edge.id)) addEdgeVerticals(edge);
-  for (const node of scene.nodes)
-    if (node.container) {
-      usedVerticals.push({ x: node.x, top: node.y, bottom: node.y + node.height });
-      usedVerticals.push({ x: node.x + node.width, top: node.y, bottom: node.y + node.height });
-    }
-  const verticalConflict = (segment, x, top, bottom) => {
-    const shared = Math.min(segment.bottom, bottom) - Math.max(segment.top, top);
-    if (shared <= 0) return false;
-    const gap = Math.abs(segment.x - x);
-    return gap < 7 || gap < LINE_CLEARANCE && shared > MIN_PARALLEL_RUN;
-  };
+  for (const node of containerBoxes) {
+    usedVerticals.push({ x: node.x, top: node.y, bottom: node.y + node.height });
+    usedVerticals.push({ x: node.x + node.width, top: node.y, bottom: node.y + node.height });
+  }
+  const baseVerticals = usedVerticals.slice();
   const riserConflicts = (x, top, bottom) => usedVerticals.some((segment) => verticalConflict(segment, x, top, bottom));
   const horizontalConflicts = (y, left, right) => usedHorizontals.some(
     (segment) => Math.abs(segment.y - y) < 7 && segment.left < right && left < segment.right
   );
-  const baseVerticals = usedVerticals.slice();
-  const baseRiserConflicts = (x, top, bottom) => baseVerticals.some((segment) => verticalConflict(segment, x, top, bottom));
-  const riserBlockedBelow = (x, top) => leafBoxes.some(
-    (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1
-  );
-  const riserBlockedAbove = (x, bottom) => leafBoxes.some(
-    (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1
-  ) || titleBoxes.some(
-    (box) => x >= box.x - TITLE_CLEARANCE && x <= box.x + box.width + TITLE_CLEARANCE && box.y < bottom - 1
-  );
+  const blockedBelow = (x, top) => blockedBelowBy(leafBoxes, x, top);
+  const blockedAbove = (x, bottom) => blockedAboveBy(leafBoxes, titleBoxes, x, bottom);
   const findRiserX = (node, side) => {
     const center = centerX(node);
     for (const delta of RISER_DELTAS) {
       const x = center + delta;
       if (x < node.x + 4 || x > node.x + node.width - 4) continue;
       if (side === "south") {
-        if (riserBlockedBelow(x, node.y + node.height)) continue;
+        if (blockedBelow(x, node.y + node.height)) continue;
         if (riserConflicts(x, node.y + node.height, INF)) continue;
       } else {
-        if (riserBlockedAbove(x, node.y)) continue;
+        if (blockedAbove(x, node.y)) continue;
         if (riserConflicts(x, -INF, node.y)) continue;
       }
       return x;
     }
     return null;
   };
-  const horizontalBlocked = (y, xStart, xEnd, ignore) => leafBoxes.some(
-    (node) => node !== ignore && node.y - 2 <= y && node.y + node.height + 2 >= y && node.x < xEnd && node.x + node.width > xStart
-  );
-  const ENTRY_Y_DELTAS_DOWN = [0, 6, 12, 18, 24, -6, -12, -18, -24];
-  const ENTRY_Y_DELTAS_UP = [0, -6, -12, -18, -24, 6, 12, 18, 24];
-  const containerBoxes = scene.nodes.filter((node) => node.container);
-  const crossesForeignContainer = (y, xStart, xEnd, target) => containerBoxes.some(
-    (box) => !(box.x <= target.x && target.x + target.width <= box.x + box.width && box.y <= target.y && target.y + target.height <= box.y + box.height) && box.y < y && y < box.y + box.height && box.x < xEnd && box.x + box.width > xStart
-  );
-  const findEntryY = (target, fromBelow, xStart, xEnd, descentX, edgeX) => {
+  const findEntryY = (probe) => {
+    const { target, fromBelow, xStart, xEnd, descentX, edgeX } = probe;
     for (const delta of fromBelow ? ENTRY_Y_DELTAS_DOWN : ENTRY_Y_DELTAS_UP) {
       const y = centerY(target) + delta;
       if (y < target.y + 4 || y > target.y + target.height - 4) continue;
       if (horizontalConflicts(y, xStart, xEnd)) continue;
-      if (horizontalBlocked(y, xStart, xEnd, target)) continue;
-      if (crossesForeignContainer(y, xStart, xEnd, target)) continue;
+      if (horizontalBlocked(leafBoxes, y, probe)) continue;
+      if (crossesForeignContainer(containerBoxes, y, probe)) continue;
       const descentCrosses = usedHorizontals.some(
         (segment) => (Math.abs(segment.left - edgeX) < 3 || Math.abs(segment.right - edgeX) < 3) && segment.left < descentX && descentX < segment.right && (fromBelow ? segment.y > y + 1 : segment.y < y - 1) && segment.y > target.y - 2 && segment.y < target.y + target.height + 2
       );
@@ -95175,215 +95256,200 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
     }
     return null;
   };
-  const plans = [];
-  let westCount = 0;
-  for (const candidate of candidates) {
-    const { source, target } = candidate;
-    let planned = null;
-    let exitVia;
-    const bottomRisers = maxNodeBottom - (source.y + source.height) + (maxNodeBottom - (target.y + target.height));
-    const topRisers = source.y - minNodeTop + (target.y - minNodeTop);
-    const preferTop = topRisers < bottomRisers * 0.75 && findRiserX(source, "north") !== null && findRiserX(target, "north") !== null;
-    let exitX = preferTop ? null : findRiserX(source, "south");
-    if (exitX === null && findRiserX(source, "north") === null) {
-      for (const delta of EAST_DESCENT_DELTAS) {
-        const turnX = source.x + source.width + delta;
-        const leaveY = findEntryY(
-          source,
-          true,
-          source.x + source.width,
-          turnX,
-          turnX,
-          source.x + source.width
-        );
-        if (leaveY === null) continue;
-        if (riserBlockedBelow(turnX, leaveY)) continue;
-        if (riserConflicts(turnX, leaveY, INF)) continue;
-        exitVia = { y: leaveY };
-        exitX = turnX;
-        usedHorizontals.push({ y: leaveY, left: source.x + source.width, right: turnX });
-        break;
-      }
-    }
-    if (exitX !== null) {
-      const southX = findRiserX(target, "south");
-      if (southX !== null) {
-        planned = { ...candidate, exitX, exitVia, entry: { kind: "south", x: southX } };
-        usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-        usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
-      } else {
-        let eastEntry = null;
-        for (const delta of EAST_DESCENT_DELTAS) {
-          const descentX = target.x + target.width + delta;
-          const entryY = findEntryY(
-            target,
-            true,
-            target.x + target.width,
-            descentX,
-            descentX,
-            target.x + target.width
-          );
-          if (entryY === null) continue;
-          if (riserBlockedBelow(descentX, entryY)) continue;
-          if (riserConflicts(descentX, entryY, INF)) continue;
-          eastEntry = { x: descentX, y: entryY };
-          break;
-        }
-        const westX = Math.max(4, contentLeft - 12 - westCount * 8);
-        const westY = findEntryY(target, true, westX, target.x, westX, target.x);
-        const laneDepth = (descentX) => {
-          const spanLeftX = Math.min(exitX, descentX);
-          const spanRightX = Math.max(exitX, descentX);
-          const spanned = scene.nodes.filter(
-            (node) => node.x < spanRightX && node.x + node.width > spanLeftX
-          );
-          return spanned.length ? Math.max(...spanned.map((node) => node.y + node.height)) : maxNodeBottom;
-        };
-        if (eastEntry && (westY === null || laneDepth(eastEntry.x) < laneDepth(westX) - MIN_DEPTH_GAIN)) {
-          planned = { ...candidate, exitX, exitVia, entry: { kind: "east", ...eastEntry } };
-          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-          usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
-          usedHorizontals.push({
-            y: eastEntry.y,
-            left: target.x + target.width,
-            right: eastEntry.x
-          });
-        } else if (westY !== null) {
-          westCount++;
-          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: westX, y: westY } };
-          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-          usedVerticals.push({ x: westX, top: westY, bottom: INF });
-          usedHorizontals.push({ y: westY, left: westX, right: target.x });
-        }
-        for (const delta of planned ? [] : WEST_DESCENT_DELTAS) {
-          const descentX = target.x + delta;
-          if (descentX < 4) continue;
-          const entryY = findEntryY(target, true, descentX, target.x, descentX, target.x);
-          if (entryY === null) continue;
-          if (riserBlockedBelow(descentX, entryY)) continue;
-          if (riserConflicts(descentX, entryY, INF)) continue;
-          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: descentX, y: entryY } };
-          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-          usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
-          usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
-          break;
-        }
-      }
-    } else {
-      const exitXNorth = findRiserX(source, "north");
-      if (exitXNorth !== null) {
-        const entryXNorth = findRiserX(target, "north");
-        if (entryXNorth !== null) {
-          planned = { ...candidate, exitX: exitXNorth, entry: { kind: "north", x: entryXNorth } };
-          usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
-          usedVerticals.push({ x: entryXNorth, top: -INF, bottom: target.y });
-        } else {
-          for (const delta of EAST_DESCENT_DELTAS) {
-            const descentX = target.x + target.width + delta;
-            const entryY = findEntryY(
-              target,
-              false,
-              target.x + target.width,
-              descentX,
-              descentX,
-              target.x + target.width
-            );
-            if (entryY === null) continue;
-            if (riserBlockedAbove(descentX, entryY)) continue;
-            if (riserConflicts(descentX, -INF, entryY)) continue;
-            planned = {
-              ...candidate,
-              exitX: exitXNorth,
-              entry: { kind: "eastTop", x: descentX, y: entryY }
-            };
-            usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
-            usedVerticals.push({ x: descentX, top: -INF, bottom: entryY });
-            usedHorizontals.push({ y: entryY, left: target.x + target.width, right: descentX });
-            break;
-          }
-          for (const delta of planned ? [] : WEST_DESCENT_DELTAS) {
-            const descentX = target.x + delta;
-            if (descentX < 4) continue;
-            const entryY = findEntryY(target, false, descentX, target.x, descentX, target.x);
-            if (entryY === null) continue;
-            if (riserBlockedAbove(descentX, entryY)) continue;
-            if (riserConflicts(descentX, -INF, entryY)) continue;
-            planned = {
-              ...candidate,
-              exitX: exitXNorth,
-              entry: { kind: "westTop", x: descentX, y: entryY }
-            };
-            usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
-            usedVerticals.push({ x: descentX, top: -INF, bottom: entryY });
-            usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
-            break;
-          }
-        }
-      }
-    }
-    if (planned) plans.push(planned);
-    else addEdgeVerticals(candidate.edge);
+  return {
+    scene,
+    contentLeft: Math.min(...scene.nodes.map((node) => node.x)),
+    maxNodeBottom: Math.max(...scene.nodes.map((node) => node.y + node.height)),
+    minNodeTop: Math.min(...scene.nodes.map((node) => node.y)),
+    usedVerticals,
+    usedHorizontals,
+    addEdgeVerticals,
+    riserConflicts,
+    baseRiserConflicts: (x, top, bottom) => baseVerticals.some((segment) => verticalConflict(segment, x, top, bottom)),
+    blockedBelow,
+    blockedAbove,
+    findRiserX,
+    findEntryY
+  };
+}
+function findSideApproach(ch, node, east, fromBelow) {
+  const edgeX = east ? node.x + node.width : node.x;
+  for (const delta of east ? EAST_DESCENT_DELTAS : WEST_DESCENT_DELTAS) {
+    const x = edgeX + delta;
+    if (!east && x < 4) continue;
+    const y = ch.findEntryY({
+      target: node,
+      fromBelow,
+      xStart: east ? edgeX : x,
+      xEnd: east ? x : edgeX,
+      descentX: x,
+      edgeX
+    });
+    if (y === null) continue;
+    if (fromBelow ? ch.blockedBelow(x, y) : ch.blockedAbove(x, y)) continue;
+    if (fromBelow ? ch.riserConflicts(x, y, INF) : ch.riserConflicts(x, -INF, y)) continue;
+    return { x, y };
   }
-  if (!plans.length) return;
-  {
-    const attachGroups = /* @__PURE__ */ new Map();
-    const addAttachment = (plan, role, node, side) => {
-      const key = `${node.id}|${side}`;
-      const group = attachGroups.get(key) ?? { node, members: [] };
-      group.members.push({ plan, role });
-      attachGroups.set(key, group);
-    };
-    for (const plan of plans) {
-      const topPlan = plan.entry.kind === "north" || plan.entry.kind === "westTop" || plan.entry.kind === "eastTop";
-      addAttachment(plan, "exit", plan.source, topPlan ? "north" : "south");
-      if (plan.entry.kind === "south") addAttachment(plan, "entry", plan.target, "south");
-      if (plan.entry.kind === "north") addAttachment(plan, "entry", plan.target, "north");
-    }
-    const setAttachmentX = (attachment, x) => {
-      if (attachment.role === "exit") attachment.plan.exitX = x;
-      else attachment.plan.entry.x = x;
-    };
-    const farEndX = (attachment) => {
-      const { plan, role } = attachment;
-      if (role === "entry") return plan.exitX;
-      return plan.entry.x;
-    };
-    const flowNumber = (attachment) => parseInt(attachment.plan.edge.id.slice(1), 10);
-    const sortedKeys = [...attachGroups.keys()].sort();
-    for (const key of sortedKeys) {
-      const { node, members } = attachGroups.get(key);
-      if (members.length < 2) continue;
-      const side = key.slice(key.indexOf("|") + 1);
-      const freePositions = [];
-      for (let x = node.x + 4; x <= node.x + node.width - 4; x += 2) {
-        const clear = side === "south" ? !riserBlockedBelow(x, node.y + node.height) && !baseRiserConflicts(x, node.y + node.height, INF) : !riserBlockedAbove(x, node.y) && !baseRiserConflicts(x, -INF, node.y);
-        if (clear) freePositions.push(x);
-      }
-      if (freePositions.length < members.length) continue;
-      const usable = freePositions[freePositions.length - 1] - freePositions[0];
-      if (usable / (members.length + 1) < MIN_SLOT_GAP) continue;
-      const sideCenterX = node.x + node.width / 2;
-      const travelsLeft = (member) => farEndX(member) < sideCenterX ? 0 : 1;
-      members.sort(
-        (memberA, memberB) => travelsLeft(memberA) - travelsLeft(memberB) || farEndX(memberB) - farEndX(memberA) || flowNumber(memberA) - flowNumber(memberB)
-      );
-      members.forEach((member, index) => {
-        const pick = freePositions[Math.round((index + 1) * (freePositions.length - 1) / (members.length + 1))];
-        setAttachmentX(member, pick);
-      });
+  return null;
+}
+function prefersTopChannel(ch, candidate) {
+  const { source, target } = candidate;
+  const bottomRisers = ch.maxNodeBottom - (source.y + source.height) + (ch.maxNodeBottom - (target.y + target.height));
+  const topRisers = source.y - ch.minNodeTop + (target.y - ch.minNodeTop);
+  return topRisers < bottomRisers * 0.75 && ch.findRiserX(source, "north") !== null && ch.findRiserX(target, "north") !== null;
+}
+function planSidewaysExit(ch, source) {
+  const approach = findSideApproach(ch, source, true, true);
+  if (!approach) return null;
+  ch.usedHorizontals.push({ y: approach.y, left: source.x + source.width, right: approach.x });
+  return approach;
+}
+function laneDepth(ch, exitX, descentX) {
+  const spanLeftX = Math.min(exitX, descentX);
+  const spanRightX = Math.max(exitX, descentX);
+  const spanned = ch.scene.nodes.filter(
+    (node) => node.x < spanRightX && node.x + node.width > spanLeftX
+  );
+  return spanned.length ? Math.max(...spanned.map((node) => node.y + node.height)) : ch.maxNodeBottom;
+}
+function planBottomChannel(ch, candidate, exit, state) {
+  const { source, target } = candidate;
+  const { exitX, exitVia } = exit;
+  const base = { ...candidate, exitX, exitVia };
+  const sourceRiser = () => ({ x: exitX, top: source.y + source.height, bottom: INF });
+  const southX = ch.findRiserX(target, "south");
+  if (southX !== null) {
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
+    return { ...base, entry: { kind: "south", x: southX } };
+  }
+  const eastEntry = findSideApproach(ch, target, true, true);
+  const westX = Math.max(4, ch.contentLeft - 12 - state.westCount * 8);
+  const westY = ch.findEntryY({
+    target,
+    fromBelow: true,
+    xStart: westX,
+    xEnd: target.x,
+    descentX: westX,
+    edgeX: target.x
+  });
+  if (eastEntry && (westY === null || laneDepth(ch, exitX, eastEntry.x) < laneDepth(ch, exitX, westX) - MIN_DEPTH_GAIN)) {
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
+    ch.usedHorizontals.push({
+      y: eastEntry.y,
+      left: target.x + target.width,
+      right: eastEntry.x
+    });
+    return { ...base, entry: { kind: "east", ...eastEntry } };
+  }
+  if (westY !== null) {
+    state.westCount++;
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: westX, top: westY, bottom: INF });
+    ch.usedHorizontals.push({ y: westY, left: westX, right: target.x });
+    return { ...base, entry: { kind: "west", x: westX, y: westY } };
+  }
+  const gutter = findSideApproach(ch, target, false, true);
+  if (!gutter) return null;
+  ch.usedVerticals.push(sourceRiser());
+  ch.usedVerticals.push({ x: gutter.x, top: gutter.y, bottom: INF });
+  ch.usedHorizontals.push({ y: gutter.y, left: gutter.x, right: target.x });
+  return { ...base, entry: { kind: "west", ...gutter } };
+}
+function planTopChannel(ch, candidate) {
+  const { source, target } = candidate;
+  const exitX = ch.findRiserX(source, "north");
+  if (exitX === null) return null;
+  const sourceRiser = () => ({ x: exitX, top: -INF, bottom: source.y });
+  const entryX = ch.findRiserX(target, "north");
+  if (entryX !== null) {
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: entryX, top: -INF, bottom: target.y });
+    return { ...candidate, exitX, entry: { kind: "north", x: entryX } };
+  }
+  for (const east of [true, false]) {
+    const approach = findSideApproach(ch, target, east, false);
+    if (!approach) continue;
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: approach.x, top: -INF, bottom: approach.y });
+    ch.usedHorizontals.push(
+      east ? { y: approach.y, left: target.x + target.width, right: approach.x } : { y: approach.y, left: approach.x, right: target.x }
+    );
+    return { ...candidate, exitX, entry: { kind: east ? "eastTop" : "westTop", ...approach } };
+  }
+  return null;
+}
+function planCandidate(ch, candidate, state) {
+  const { source } = candidate;
+  let exitVia;
+  let exitX = prefersTopChannel(ch, candidate) ? null : ch.findRiserX(source, "south");
+  if (exitX === null && ch.findRiserX(source, "north") === null) {
+    const sideways = planSidewaysExit(ch, source);
+    if (sideways) {
+      exitVia = { y: sideways.y };
+      exitX = sideways.x;
     }
   }
-  const rerouted = new Set(plans.map((plan) => plan.edge.id));
-  const contentBottom = maxNodeBottom;
-  const contentTop = Math.min(...scene.nodes.map((node) => node.y));
-  const blockingBands = [];
+  if (exitX === null) return planTopChannel(ch, candidate);
+  return planBottomChannel(ch, candidate, { exitX, exitVia }, state);
+}
+function redistributeAttachments(plans, ch) {
+  const attachGroups = /* @__PURE__ */ new Map();
+  const addAttachment = (plan, role, node, side) => {
+    const key = `${node.id}|${side}`;
+    const group = attachGroups.get(key) ?? { node, members: [] };
+    group.members.push({ plan, role });
+    attachGroups.set(key, group);
+  };
+  for (const plan of plans) {
+    addAttachment(plan, "exit", plan.source, isTop(plan) ? "north" : "south");
+    if (plan.entry.kind === "south") addAttachment(plan, "entry", plan.target, "south");
+    if (plan.entry.kind === "north") addAttachment(plan, "entry", plan.target, "north");
+  }
+  const setAttachmentX = (attachment, x) => {
+    if (attachment.role === "exit") attachment.plan.exitX = x;
+    else attachment.plan.entry.x = x;
+  };
+  const farEndX = (attachment) => {
+    const { plan, role } = attachment;
+    if (role === "entry") return plan.exitX;
+    return plan.entry.x;
+  };
+  const flowNumber = (attachment) => flowNumberOf(attachment.plan.edge);
+  const sortedKeys = [...attachGroups.keys()].sort();
+  for (const key of sortedKeys) {
+    const { node, members } = attachGroups.get(key);
+    if (members.length < 2) continue;
+    const side = key.slice(key.indexOf("|") + 1);
+    const freePositions = [];
+    for (let x = node.x + 4; x <= node.x + node.width - 4; x += 2) {
+      const clear = side === "south" ? !ch.blockedBelow(x, node.y + node.height) && !ch.baseRiserConflicts(x, node.y + node.height, INF) : !ch.blockedAbove(x, node.y) && !ch.baseRiserConflicts(x, -INF, node.y);
+      if (clear) freePositions.push(x);
+    }
+    if (freePositions.length < members.length) continue;
+    const usable = freePositions[freePositions.length - 1] - freePositions[0];
+    if (usable / (members.length + 1) < MIN_ATTACH_GAP) continue;
+    const sideCenterX = node.x + node.width / 2;
+    const travelsLeft = (member) => farEndX(member) < sideCenterX ? 0 : 1;
+    members.sort(
+      (memberA, memberB) => travelsLeft(memberA) - travelsLeft(memberB) || farEndX(memberB) - farEndX(memberA) || flowNumber(memberA) - flowNumber(memberB)
+    );
+    members.forEach((member, index) => {
+      const pick = freePositions[Math.round((index + 1) * (freePositions.length - 1) / (members.length + 1))];
+      setAttachmentX(member, pick);
+    });
+  }
+}
+function buildBlockingBands(scene, rerouted) {
+  const bands = [];
   for (const edge of scene.edges) {
     if (rerouted.has(edge.id)) continue;
     for (let index = 0; index + 1 < edge.pts.length; index++) {
       const pointA = edge.pts[index];
       const pointB = edge.pts[index + 1];
       if (Math.abs(pointA.y - pointB.y) < 0.5 && Math.abs(pointA.x - pointB.x) >= 0.5)
-        blockingBands.push({
+        bands.push({
           // Padded: a lane running a few px from an elk horizontal over a long
           // shared span reads as one thick line, not two flows.
           top: pointA.y - LINE_CLEARANCE,
@@ -95394,7 +95460,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
         });
     }
     for (const label of edge.labels)
-      blockingBands.push({
+      bands.push({
         top: label.y,
         bottom: label.y + label.height,
         left: label.x,
@@ -95403,7 +95469,7 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
       });
   }
   for (const node of scene.nodes)
-    blockingBands.push({
+    bands.push({
       top: node.y,
       bottom: node.y + node.height,
       left: node.x,
@@ -95411,226 +95477,222 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
       minOverlap: 0,
       nodeId: node.id
     });
-  const bandConflicts = (top, bottom, left, right, exempt = /* @__PURE__ */ new Set()) => blockingBands.some((band) => {
-    const shared = Math.min(band.right, right) - Math.max(band.left, left);
+  return bands;
+}
+function bandConflicts(bands, rect, exempt) {
+  return bands.some((band) => {
+    const shared = Math.min(band.right, rect.right) - Math.max(band.left, rect.left);
     if (band.nodeId && exempt.has(band.nodeId)) {
       if (shared <= MIN_PARALLEL_RUN) return false;
       return [band.top, band.bottom].some(
-        (border) => border - LINE_CLEARANCE < bottom && top < border + LINE_CLEARANCE
+        (border) => border - LINE_CLEARANCE < rect.bottom && rect.top < border + LINE_CLEARANCE
       );
     }
-    return band.top < bottom && top < band.bottom && shared > band.minOverlap;
+    return band.top < rect.bottom && rect.top < band.bottom && shared > band.minOverlap;
   });
-  const containerNodes = scene.nodes.filter((node) => node.container);
-  const enclosersOf = (node) => containerNodes.filter(
-    (box) => box.id !== node.id && box.x <= node.x && node.x + node.width <= box.x + box.width && box.y <= node.y && node.y + node.height <= box.y + box.height
+}
+var enclosersOf = (containerNodes, node) => containerNodes.filter(
+  (box) => box.id !== node.id && box.x <= node.x && node.x + node.width <= box.x + box.width && box.y <= node.y && node.y + node.height <= box.y + box.height
+);
+function sharedEnclosers(containerNodes, plan) {
+  const around = new Set(enclosersOf(containerNodes, plan.source).map((box) => box.id));
+  return new Set(
+    enclosersOf(containerNodes, plan.target).filter((box) => around.has(box.id)).map((box) => box.id)
   );
-  const sharedEnclosers = (plan) => {
-    const around = new Set(enclosersOf(plan.source).map((box) => box.id));
-    return new Set(
-      enclosersOf(plan.target).filter((box) => around.has(box.id)).map((box) => box.id)
+}
+function makeAllocator() {
+  const lanes = [];
+  return (intervalStart, intervalEnd) => {
+    const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
+    const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
+    for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
+      const hasOverlap = lanes[laneIndex].some(
+        (existing) => existing.rangeStart < rangeEnd && rangeStart < existing.rangeEnd
+      );
+      if (hasOverlap) continue;
+      lanes[laneIndex].push({ rangeStart, rangeEnd });
+      return laneIndex;
+    }
+    lanes.push([{ rangeStart, rangeEnd }]);
+    return lanes.length - 1;
+  };
+}
+var spanLeft = (plan) => Math.min(plan.exitX, plan.entry.x);
+var spanRight = (plan) => Math.max(plan.exitX, plan.entry.x);
+var enclosedBy = (inner, outer) => spanLeft(outer) <= spanLeft(inner) && spanRight(inner) <= spanRight(outer) && spanRight(inner) - spanLeft(inner) < spanRight(outer) - spanLeft(outer);
+function assignLanes(subset, laneIndexOf, alloc) {
+  const remaining = [...subset].sort(
+    (planA, planB) => flowNumberOf(planA.edge) - flowNumberOf(planB.edge)
+  );
+  while (remaining.length) {
+    const innermost = remaining.findIndex(
+      (plan2) => !remaining.some((other) => other !== plan2 && enclosedBy(other, plan2))
     );
+    const [plan] = remaining.splice(innermost < 0 ? 0 : innermost, 1);
+    laneIndexOf.set(plan.edge.id, alloc(plan.exitX, plan.entry.x));
+  }
+}
+function createLaneContext(scene, rerouted) {
+  return {
+    scene,
+    bands: buildBlockingBands(scene, rerouted),
+    containerNodes: scene.nodes.filter((node) => node.container),
+    laneIndexOf: /* @__PURE__ */ new Map()
   };
-  const isTop = (plan) => plan.entry.kind === "north" || plan.entry.kind === "westTop" || plan.entry.kind === "eastTop";
-  const bottomPlans = plans.filter((plan) => !isTop(plan));
-  const topPlans = plans.filter(isTop);
-  const makeAllocator = () => {
-    const lanes = [];
-    return (intervalStart, intervalEnd) => {
-      const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
-      const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
-      for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
-        const hasOverlap = lanes[laneIndex].some(
-          (existing) => existing.rangeStart < rangeEnd && rangeStart < existing.rangeEnd
-        );
-        if (hasOverlap) continue;
-        lanes[laneIndex].push({ rangeStart, rangeEnd });
-        return laneIndex;
+}
+function spanAnchor(scene, span, direction, anchor) {
+  const spanned = scene.nodes.filter(
+    (node) => !span.exempt.has(node.id) && node.x < span.right && node.x + node.width > span.left
+  );
+  if (!spanned.length) return anchor;
+  return direction > 0 ? Math.max(...spanned.map((node) => node.y + node.height)) : Math.min(...spanned.map((node) => node.y));
+}
+function resolveLanePosition(lc, span, direction) {
+  const { left, right, exempt, labelHeight } = span;
+  const fits = (candidate) => !bandConflicts(
+    lc.bands,
+    direction > 0 ? { top: candidate - 1, bottom: candidate + labelHeight + 3, left, right } : { top: candidate - labelHeight - 3, bottom: candidate + 1, left, right },
+    exempt
+  );
+  let position = span.start;
+  if (!fits(position))
+    for (const gap of [8, 6, 4]) {
+      const tighter = position - direction * (CHANNEL_GAP - gap);
+      if (fits(tighter)) {
+        position = tighter;
+        break;
       }
-      lanes.push([{ rangeStart, rangeEnd }]);
-      return lanes.length - 1;
-    };
-  };
-  const spanLeft = (plan) => Math.min(plan.exitX, plan.entry.x);
-  const spanRight = (plan) => Math.max(plan.exitX, plan.entry.x);
-  const enclosedBy = (inner, outer) => spanLeft(outer) <= spanLeft(inner) && spanRight(inner) <= spanRight(outer) && spanRight(inner) - spanLeft(inner) < spanRight(outer) - spanLeft(outer);
-  const laneIndexOf = /* @__PURE__ */ new Map();
-  const assignLanes = (subset, alloc) => {
-    const remaining = [...subset].sort(
-      (planA, planB) => parseInt(planA.edge.id.slice(1), 10) - parseInt(planB.edge.id.slice(1), 10)
+    }
+  for (let guard = 0; guard < 80; guard++) {
+    if (fits(position)) break;
+    position += direction * 6;
+  }
+  return position;
+}
+function laneOffsets(lc, subset, direction, anchor) {
+  const byLane = /* @__PURE__ */ new Map();
+  for (const plan of subset) {
+    const lane = lc.laneIndexOf.get(plan.edge.id);
+    byLane.set(lane, [...byLane.get(lane) ?? [], plan]);
+  }
+  const labelHeights = [];
+  const positions = [];
+  for (let lane = 0; lane < byLane.size; lane++) {
+    const members = byLane.get(lane) ?? [];
+    const labelHeight = Math.max(
+      0,
+      ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height))
     );
-    while (remaining.length) {
-      const innermost = remaining.findIndex(
-        (plan2) => !remaining.some((other) => other !== plan2 && enclosedBy(other, plan2))
-      );
-      const [plan] = remaining.splice(innermost < 0 ? 0 : innermost, 1);
-      laneIndexOf.set(plan.edge.id, alloc(plan.exitX, plan.entry.x));
+    const left = Math.min(...members.map(spanLeft));
+    const right = Math.max(...members.map(spanRight));
+    const exempt = /* @__PURE__ */ new Set();
+    if (members.length) {
+      const perMember = members.map((plan) => sharedEnclosers(lc.containerNodes, plan));
+      for (const id of perMember[0])
+        if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
     }
-  };
-  assignLanes(bottomPlans, makeAllocator());
-  assignLanes(topPlans, makeAllocator());
-  const laneOffsets = (subset, direction, anchor) => {
-    const spanAnchor = (left, right, exempt) => {
-      const spanned = scene.nodes.filter(
-        (node) => !exempt.has(node.id) && node.x < right && node.x + node.width > left
-      );
-      if (!spanned.length) return anchor;
-      return direction > 0 ? Math.max(...spanned.map((node) => node.y + node.height)) : Math.min(...spanned.map((node) => node.y));
-    };
-    const byLane = /* @__PURE__ */ new Map();
-    for (const plan of subset) {
-      const lane = laneIndexOf.get(plan.edge.id);
-      byLane.set(lane, [...byLane.get(lane) ?? [], plan]);
+    const ownPosition = spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
+    const start = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
+    labelHeights.push(labelHeight);
+    positions.push(
+      resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction)
+    );
+  }
+  return positions;
+}
+function placeLaneLabels(edge, span, laneY, outward) {
+  for (const label of edge.labels) {
+    const segmentStart = Math.min(span.from, span.to);
+    const segmentEnd = Math.max(span.from, span.to);
+    const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
+    label.x = Math.min(Math.max(midpoint, segmentStart + 4), segmentEnd - 4 - label.width);
+    label.y = outward > 0 ? laneY + 3 : laneY - label.height - 3;
+  }
+}
+function placeNumberedLabels(edge, target, entry) {
+  for (const label of edge.labels) {
+    if (entry.kind === "north") {
+      label.x = entry.x + 6;
+      label.y = target.y - label.height - 6;
+    } else if (entry.kind === "south") {
+      label.x = entry.x + 6;
+      label.y = target.y + target.height + 6;
+    } else if (entry.kind === "east" || entry.kind === "eastTop") {
+      label.x = target.x + target.width + 6;
+      label.y = entry.y - label.height - 6;
+    } else {
+      label.x = target.x - label.width - 6;
+      label.y = entry.y - label.height - 6;
     }
-    const labelHeights = [];
-    const positions = [];
-    for (let lane = 0; lane < byLane.size; lane++) {
-      const members = byLane.get(lane) ?? [];
-      const labelHeight = Math.max(
-        0,
-        ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height))
-      );
-      const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
-      const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
-      const exempt = /* @__PURE__ */ new Set();
-      if (members.length) {
-        const perMember = members.map(sharedEnclosers);
-        for (const id of perMember[0])
-          if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
-      }
-      const base = spanAnchor(left, right, exempt);
-      const ownPosition = base + direction * CHANNEL_GAP;
-      let position = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
-      const fits = (candidate) => direction > 0 ? !bandConflicts(candidate - 1, candidate + labelHeight + 3, left, right, exempt) : !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
-      if (!fits(position))
-        for (const gap of [8, 6, 4]) {
-          const tighter = position - direction * (CHANNEL_GAP - gap);
-          if (fits(tighter)) {
-            position = tighter;
-            break;
-          }
-        }
-      for (let guard = 0; guard < 80; guard++) {
-        if (fits(position)) break;
-        position += direction * 6;
-      }
-      labelHeights.push(labelHeight);
-      positions.push(position);
+  }
+}
+function emitTopRoute(plan, laneY, numbered) {
+  const { edge, source, target, exitX, entry } = plan;
+  edge.pts = entry.kind === "north" ? [
+    { x: exitX, y: source.y },
+    { x: exitX, y: laneY },
+    { x: entry.x, y: laneY },
+    { x: entry.x, y: target.y }
+  ] : [
+    { x: exitX, y: source.y },
+    { x: exitX, y: laneY },
+    { x: entry.x, y: laneY },
+    { x: entry.x, y: entry.y },
+    {
+      x: entry.kind === "eastTop" ? target.x + target.width : target.x,
+      y: entry.y
     }
-    return positions;
-  };
-  const bottomLaneY = laneOffsets(bottomPlans, 1, contentBottom);
-  const topLaneY = laneOffsets(topPlans, -1, contentTop);
-  const placeLaneLabels = (edge, exitX, farX, laneY, outward) => {
-    for (const label of edge.labels) {
-      const segmentStart = Math.min(exitX, farX);
-      const segmentEnd = Math.max(exitX, farX);
-      const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
-      label.x = Math.min(Math.max(midpoint, segmentStart + 4), segmentEnd - 4 - label.width);
-      label.y = outward > 0 ? laneY + 3 : laneY - label.height - 3;
-    }
-  };
-  for (const plan of plans) {
-    const { edge, source, target, exitX, entry } = plan;
-    if (entry.kind === "north" || entry.kind === "westTop" || entry.kind === "eastTop") {
-      const laneY2 = topLaneY[laneIndexOf.get(edge.id)];
-      edge.pts = entry.kind === "north" ? [
-        { x: exitX, y: source.y },
-        { x: exitX, y: laneY2 },
-        { x: entry.x, y: laneY2 },
-        { x: entry.x, y: target.y }
-      ] : [
-        { x: exitX, y: source.y },
-        { x: exitX, y: laneY2 },
-        { x: entry.x, y: laneY2 },
-        { x: entry.x, y: entry.y },
-        {
-          x: entry.kind === "eastTop" ? target.x + target.width : target.x,
-          y: entry.y
-        }
-      ];
-      if (numbered) {
-        for (const label of edge.labels) {
-          if (entry.kind === "north") {
-            label.x = entry.x + 6;
-            label.y = target.y - label.height - 6;
-          } else if (entry.kind === "eastTop") {
-            label.x = target.x + target.width + 6;
-            label.y = entry.y - label.height - 6;
-          } else {
-            label.x = target.x - label.width - 6;
-            label.y = entry.y - label.height - 6;
-          }
-        }
-      } else {
-        placeLaneLabels(edge, exitX, entry.x, laneY2, -1);
-      }
-      continue;
-    }
-    const sourceBottom = source.y + source.height;
-    const farX = entry.x;
-    const laneY = bottomLaneY[laneIndexOf.get(edge.id)];
-    const head = plan.exitVia ? [
-      { x: source.x + source.width, y: plan.exitVia.y },
-      { x: exitX, y: plan.exitVia.y },
-      { x: exitX, y: laneY }
-    ] : [
-      { x: exitX, y: sourceBottom },
-      { x: exitX, y: laneY }
+  ];
+  if (numbered) placeNumberedLabels(edge, target, entry);
+  else placeLaneLabels(edge, { from: exitX, to: entry.x }, laneY, -1);
+}
+function emitBottomRoute(plan, laneY, numbered) {
+  const { edge, source, target, exitX, entry } = plan;
+  const farX = entry.x;
+  const head = plan.exitVia ? [
+    { x: source.x + source.width, y: plan.exitVia.y },
+    { x: exitX, y: plan.exitVia.y },
+    { x: exitX, y: laneY }
+  ] : [
+    { x: exitX, y: source.y + source.height },
+    { x: exitX, y: laneY }
+  ];
+  edge.detour = true;
+  if (entry.kind === "south") {
+    edge.pts = [...head, { x: farX, y: laneY }, { x: farX, y: target.y + target.height }];
+  } else if (entry.kind === "east") {
+    edge.pts = [
+      ...head,
+      { x: farX, y: laneY },
+      { x: farX, y: entry.y },
+      { x: target.x + target.width, y: entry.y }
     ];
-    edge.detour = true;
-    if (entry.kind === "south") {
-      edge.pts = [
-        ...head,
-        { x: farX, y: laneY },
-        { x: farX, y: target.y + target.height }
-      ];
-    } else if (entry.kind === "east") {
-      edge.pts = [
-        ...head,
-        { x: farX, y: laneY },
-        { x: farX, y: entry.y },
-        { x: target.x + target.width, y: entry.y }
-      ];
-    } else {
-      edge.pts = [
-        ...head,
-        { x: farX, y: laneY },
-        { x: farX, y: entry.y },
-        { x: target.x, y: entry.y }
-      ];
-    }
-    if (numbered) {
-      for (const label of edge.labels) {
-        if (entry.kind === "south") {
-          label.x = entry.x + 6;
-          label.y = target.y + target.height + 6;
-        } else if (entry.kind === "east") {
-          label.x = target.x + target.width + 6;
-          label.y = entry.y - label.height - 6;
-        } else {
-          label.x = target.x - label.width - 6;
-          label.y = entry.y - label.height - 6;
-        }
-      }
-    } else {
-      placeLaneLabels(edge, exitX, farX, laneY, 1);
-    }
+  } else {
+    edge.pts = [
+      ...head,
+      { x: farX, y: laneY },
+      { x: farX, y: entry.y },
+      { x: target.x, y: entry.y }
+    ];
   }
+  if (numbered) placeNumberedLabels(edge, target, entry);
+  else placeLaneLabels(edge, { from: exitX, to: farX }, laneY, 1);
+}
+function shiftAboveOrigin(scene) {
   let minY = 4;
-  if (topPlans.length)
-    for (const edge of scene.edges) {
-      for (const point of edge.pts) minY = Math.min(minY, point.y);
-      for (const label of edge.labels) minY = Math.min(minY, label.y);
-    }
-  if (minY < 4) {
-    const shift = 4 - minY;
-    for (const node of scene.nodes) node.y += shift;
-    for (const edge of scene.edges) {
-      for (const point of edge.pts) point.y += shift;
-      for (const label of edge.labels) label.y += shift;
-    }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) minY = Math.min(minY, point.y);
+    for (const label of edge.labels) minY = Math.min(minY, label.y);
   }
+  if (minY >= 4) return;
+  const shift = 4 - minY;
+  for (const node of scene.nodes) node.y += shift;
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) point.y += shift;
+    for (const label of edge.labels) label.y += shift;
+  }
+}
+function resizeScene(scene) {
   let maxX = 0;
   let maxY = 0;
   for (const node of scene.nodes) {
@@ -95649,6 +95711,34 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
   }
   scene.width = Math.ceil(maxX + 10);
   scene.height = Math.ceil(maxY + 10);
+}
+function rerouteDetours(scene, model, numbered, titleBoxes = []) {
+  const candidates = detourCandidates(scene, model);
+  if (!candidates.length) return;
+  const channel = createChannel(scene, titleBoxes, candidates);
+  const state = { westCount: 0 };
+  const plans = [];
+  for (const candidate of candidates) {
+    const planned = planCandidate(channel, candidate, state);
+    if (planned) plans.push(planned);
+    else channel.addEdgeVerticals(candidate.edge);
+  }
+  if (!plans.length) return;
+  redistributeAttachments(plans, channel);
+  const lanes = createLaneContext(scene, new Set(plans.map((plan) => plan.edge.id)));
+  const bottomPlans = plans.filter(isBottom);
+  const topPlans = plans.filter(isTop);
+  assignLanes(bottomPlans, lanes.laneIndexOf, makeAllocator());
+  assignLanes(topPlans, lanes.laneIndexOf, makeAllocator());
+  const bottomLaneY = laneOffsets(lanes, bottomPlans, 1, channel.maxNodeBottom);
+  const topLaneY = laneOffsets(lanes, topPlans, -1, channel.minNodeTop);
+  for (const plan of plans) {
+    const lane = lanes.laneIndexOf.get(plan.edge.id);
+    if (isTop(plan)) emitTopRoute(plan, topLaneY[lane], numbered);
+    else if (isBottom(plan)) emitBottomRoute(plan, bottomLaneY[lane], numbered);
+  }
+  if (topPlans.length) shiftAboveOrigin(scene);
+  resizeScene(scene);
 }
 
 // src/compact.ts
@@ -95744,9 +95834,33 @@ function runsOf(pts) {
   }
   return runs;
 }
-function inspect(scene, titleBoxes = []) {
-  const leaves = scene.nodes.filter((node) => !node.container);
-  const boxes = scene.nodes.filter((node) => node.container);
+function boundsOf2(pts) {
+  let x1 = pts[0].x;
+  let x2 = pts[0].x;
+  let y1 = pts[0].y;
+  let y2 = pts[0].y;
+  for (const p of pts) {
+    if (p.x < x1) x1 = p.x;
+    if (p.x > x2) x2 = p.x;
+    if (p.y < y1) y1 = p.y;
+    if (p.y > y2) y2 = p.y;
+  }
+  return { x1, y1, x2, y2 };
+}
+var farApart = (a, b) => a.x2 + 10 < b.x1 || b.x2 + 10 < a.x1 || a.y2 + 10 < b.y1 || b.y2 + 10 < a.y1;
+var pair = (a, b) => a < b ? `${a}~${b}` : `${b}~${a}`;
+function seatOf(leaves, p) {
+  for (const node of leaves) {
+    const withinX = p.x > node.x - 2 && p.x < node.x + node.width + 2;
+    const withinY = p.y > node.y - 2 && p.y < node.y + node.height + 2;
+    if (withinX && Math.abs(p.y - node.y) < 2) return { node, side: "north" };
+    if (withinX && Math.abs(p.y - (node.y + node.height)) < 2) return { node, side: "south" };
+    if (withinY && Math.abs(p.x - node.x) < 2) return { node, side: "west" };
+    if (withinY && Math.abs(p.x - (node.x + node.width)) < 2) return { node, side: "east" };
+  }
+  return null;
+}
+function containment(scene, boxes) {
   const holds = /* @__PURE__ */ new Map();
   for (const box of boxes) {
     const set = /* @__PURE__ */ new Set();
@@ -95755,226 +95869,237 @@ function inspect(scene, titleBoxes = []) {
         set.add(node.id);
     holds.set(box.id, set);
   }
-  const sideOf2 = (p) => {
-    for (const node of leaves) {
-      const withinX = p.x > node.x - 2 && p.x < node.x + node.width + 2;
-      const withinY = p.y > node.y - 2 && p.y < node.y + node.height + 2;
-      if (withinX && Math.abs(p.y - node.y) < 2) return { node, side: "north" };
-      if (withinX && Math.abs(p.y - (node.y + node.height)) < 2) return { node, side: "south" };
-      if (withinY && Math.abs(p.x - node.x) < 2) return { node, side: "west" };
-      if (withinY && Math.abs(p.x - (node.x + node.width)) < 2) return { node, side: "east" };
-    }
-    return null;
+  return holds;
+}
+function memoise(derive) {
+  const cache = /* @__PURE__ */ new Map();
+  return {
+    get(edge, pts, overridden) {
+      if (overridden) return derive(pts);
+      const hit = cache.get(edge.id);
+      if (hit) return hit;
+      const made = derive(pts);
+      cache.set(edge.id, made);
+      return made;
+    },
+    drop: (id) => cache.delete(id)
   };
+}
+function scanDestroyed(ctx, subj, profile) {
+  const { leaves, boxes, holds, titleBoxes } = ctx;
+  const { edge, pts, ends } = subj;
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const a = pts[index];
+    const b = pts[index + 1];
+    if (Math.abs(a.x - b.x) >= 0.5 && Math.abs(a.y - b.y) >= 0.5)
+      profile.set(`diag:${edge.id}:${index}`, 0);
+    const x1 = Math.min(a.x, b.x);
+    const x2 = Math.max(a.x, b.x);
+    const y1 = Math.min(a.y, b.y);
+    const y2 = Math.max(a.y, b.y);
+    for (const node of leaves)
+      if (x1 < node.x + node.width - 1 && node.x + 1 < x2 && y1 < node.y + node.height - 1 && node.y + 1 < y2)
+        profile.set(`leaf:${edge.id}~${node.id}`, 0);
+    for (const box of boxes) {
+      const inside = holds.get(box.id);
+      if (ends.some((end) => end && inside.has(end.node.id))) continue;
+      if (x1 < box.x + box.width - 1 && box.x + 1 < x2 && y1 < box.y + box.height - 1 && box.y + 1 < y2)
+        profile.set(`box:${edge.id}~${box.id}`, 0);
+    }
+    for (const band of titleBoxes)
+      if (x1 < band.x + band.width && band.x < x2 && y1 < band.y + band.height && band.y < y2)
+        profile.set(`title:${edge.id}~${band.x},${band.y}`, 0);
+  }
+}
+function labelSeatable(blockers, pts, label) {
+  const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const p = pts[index];
+    const q = pts[index + 1];
+    if (Math.abs(q.x - p.x) + Math.abs(q.y - p.y) < label.width) continue;
+    const sx = (p.x + q.x) / 2 - label.width / 2;
+    const sy = (p.y + q.y) / 2 - lead;
+    const sx2 = sx + label.width;
+    const sy2 = sy + label.height;
+    let blocked = false;
+    for (const box of blockers)
+      if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
+        blocked = true;
+        break;
+      }
+    if (!blocked) return true;
+  }
+  return false;
+}
+function scanLabelSeats(ctx, subj, profile) {
+  for (const label of subj.edge.labels) {
+    if (!label.width || !label.height) continue;
+    if (!labelSeatable(ctx.blockers, subj.pts, label))
+      profile.set(`unlabelled:${subj.edge.id}`, 1);
+  }
+}
+function scanArrowRoom(subj, profile) {
+  const { edge, pts } = subj;
+  for (const [from, to] of [
+    [0, 1],
+    [pts.length - 1, pts.length - 2]
+  ]) {
+    const span = Math.abs(pts[to].x - pts[from].x) + Math.abs(pts[to].y - pts[from].y);
+    if (span > 0 && span < ARROW_ROOM) profile.set(`cramped:${edge.id}:${from}`, 2);
+  }
+}
+function scanBorderHugs(ctx, subj, profile) {
+  const { edge, pts, ends } = subj;
+  const mineNodes = [ends[0]?.node, ends[1]?.node];
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const a = pts[index];
+    const b = pts[index + 1];
+    const horizontal = Math.abs(a.y - b.y) < 0.5;
+    if (!horizontal && Math.abs(a.x - b.x) >= 0.5) continue;
+    const at = horizontal ? a.y : a.x;
+    const lo = Math.min(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
+    const hi = Math.max(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
+    for (const box of ctx.leaves) {
+      if (mineNodes.includes(box)) continue;
+      const along = horizontal ? [box.x, box.x + box.width] : [box.y, box.y + box.height];
+      if (Math.min(hi, along[1]) - Math.max(lo, along[0]) < HUG_RUN) continue;
+      const sides = horizontal ? [box.y, box.y + box.height] : [box.x, box.x + box.width];
+      for (const side of sides)
+        if (Math.abs(at - side) < HUG_CLEAR) profile.set(`hug:${edge.id}:${index}@${box.id}`, 2);
+    }
+  }
+}
+function scanAwayTerminals(subj, profile) {
+  const { edge, pts, ends } = subj;
+  if (!ends[0] || !ends[1]) return;
+  const away = (seg, target) => Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > AWAY_TOL && seg.x * target.x < 0 || Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > AWAY_TOL && seg.y * target.y < 0;
+  const centre = (node) => ({
+    x: node.x + node.width / 2,
+    y: node.y + node.height / 2
+  });
+  const src = centre(ends[0].node);
+  const dst = centre(ends[1].node);
+  const p0 = pts[0];
+  const p1 = pts[1];
+  const pn = pts[pts.length - 1];
+  const pm = pts[pts.length - 2];
+  if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: dst.x - p0.x, y: dst.y - p0.y }))
+    profile.set(`away:${edge.id}:out`, 3);
+  if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - src.x, y: pn.y - src.y }))
+    profile.set(`away:${edge.id}:in`, 3);
+}
+function scanEyeTravel(subj, profile) {
+  const { edge, pts } = subj;
+  if (pts.length - 2 > MAX_TURNS) profile.set(`weave:${edge.id}`, 3);
+  for (let index = 1; index + 2 < pts.length; index++) {
+    const length = Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y);
+    if (length > 0 && length <= JOG_LIMIT) profile.set(`jog:${edge.id}:${index}`, 3);
+  }
+  scanAwayTerminals(subj, profile);
+}
+function scanCrossings(a, b, key, profile) {
+  const fanEnds = [...a.ends, ...b.ends];
+  for (let i = 0; i + 1 < a.pts.length; i++)
+    for (let j = 0; j + 1 < b.pts.length; j++) {
+      const hit = crossAt(a.pts[i], a.pts[i + 1], b.pts[j], b.pts[j + 1]);
+      if (!hit) continue;
+      profile.set(`cross:${key}@${Math.round(hit.x)},${Math.round(hit.y)}`, 2);
+      for (const end of fanEnds) {
+        if (!end) continue;
+        const dx = Math.max(0, end.node.x - hit.x, hit.x - (end.node.x + end.node.width));
+        const dy = Math.max(0, end.node.y - hit.y, hit.y - (end.node.y + end.node.height));
+        if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH)
+          profile.set(`fan:${key}@${end.node.id}`, 2);
+      }
+    }
+}
+function scanParallelRuns(mine, theirs, key, profile) {
+  for (const run of mine)
+    for (const run2 of theirs) {
+      if (run.vertical !== run2.vertical) continue;
+      const gap = Math.abs(run.at - run2.at);
+      const shared = Math.min(run.hi, run2.hi) - Math.max(run.lo, run2.lo);
+      if (gap < 3 && shared > 8) profile.set(`merge:${key}@${Math.round(run.at)}`, 0);
+      else if (gap < 10 && shared > 40) profile.set(`near:${key}@${Math.round(run.at)}`, 2);
+    }
+}
+function scanSharedSeats(a, b, key, profile) {
+  for (const [ai, seatA] of a.ends.entries())
+    for (const [bi, seatB] of b.ends.entries()) {
+      if (!seatA || !seatB || seatA.node !== seatB.node || seatA.side !== seatB.side) continue;
+      const p = ai === 0 ? a.pts[0] : a.pts[a.pts.length - 1];
+      const q = bi === 0 ? b.pts[0] : b.pts[b.pts.length - 1];
+      const vertical = seatA.side === "east" || seatA.side === "west";
+      const apart = Math.abs((vertical ? p.y : p.x) - (vertical ? q.y : q.x));
+      if (apart < 6) {
+        profile.set(`seat:${key}@${seatA.node.id}|${seatA.side}`, 0);
+        continue;
+      }
+      const side = vertical ? seatA.node.height : seatA.node.width;
+      const need = Math.min(12, (side - 6) / 2);
+      if (apart < need * 0.8)
+        profile.set(`tight:${key}@${seatA.node.id}|${seatA.side}`, 4);
+    }
+}
+function scanPairs(ctx, subj, query) {
+  const { ids, overrides, profile } = query;
+  const own = overrides.has(subj.edge.id);
+  const mine = ctx.runsFor(subj.edge, subj.pts, own);
+  const myBounds = ctx.boundsFor(subj.edge, subj.pts, own);
+  for (const other of ctx.scene.edges) {
+    if (other.id === subj.edge.id) continue;
+    const theirs = overrides.get(other.id) ?? other.pts;
+    if (theirs.length < 2) continue;
+    if (ids.has(other.id) && other.id < subj.edge.id) continue;
+    const overridden = overrides.has(other.id);
+    if (farApart(myBounds, ctx.boundsFor(other, theirs, overridden))) continue;
+    const them = { edge: other, pts: theirs, ends: ctx.endsFor(other, theirs, overridden) };
+    const key = pair(subj.edge.id, other.id);
+    scanCrossings(subj, them, key, profile);
+    scanParallelRuns(mine, ctx.runsFor(other, theirs, overridden), key, profile);
+    scanSharedSeats(subj, them, key, profile);
+  }
+}
+function inspect(scene, titleBoxes = []) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const boxes = scene.nodes.filter((node) => node.container);
+  const holds = containment(scene, boxes);
+  const sideOf2 = (p) => seatOf(leaves, p);
   const endsOf = (pts) => [sideOf2(pts[0]), sideOf2(pts[pts.length - 1])];
-  const runsCache = /* @__PURE__ */ new Map();
-  const endsCache = /* @__PURE__ */ new Map();
-  const runsFor = (edge, pts, overridden) => {
-    if (overridden) return runsOf(pts);
-    const hit = runsCache.get(edge.id);
-    if (hit) return hit;
-    const made = runsOf(pts);
-    runsCache.set(edge.id, made);
-    return made;
-  };
-  const endsFor = (edge, pts, overridden) => {
-    if (overridden) return endsOf(pts);
-    const hit = endsCache.get(edge.id);
-    if (hit) return hit;
-    const made = endsOf(pts);
-    endsCache.set(edge.id, made);
-    return made;
-  };
+  const runs = memoise(runsOf);
+  const ends = memoise(endsOf);
+  const bounds = memoise(boundsOf2);
   const forget = (id) => {
-    runsCache.delete(id);
-    endsCache.delete(id);
-    boundsCache.delete(id);
+    runs.drop(id);
+    ends.drop(id);
+    bounds.drop(id);
   };
-  const boundsOf2 = (pts) => {
-    let x1 = pts[0].x;
-    let x2 = pts[0].x;
-    let y1 = pts[0].y;
-    let y2 = pts[0].y;
-    for (const p of pts) {
-      if (p.x < x1) x1 = p.x;
-      if (p.x > x2) x2 = p.x;
-      if (p.y < y1) y1 = p.y;
-      if (p.y > y2) y2 = p.y;
-    }
-    return { x1, y1, x2, y2 };
+  const ctx = {
+    scene,
+    titleBoxes,
+    leaves,
+    boxes,
+    holds,
+    blockers: [...leaves, ...titleBoxes],
+    runsFor: runs.get,
+    endsFor: ends.get,
+    boundsFor: bounds.get
   };
-  const boundsCache = /* @__PURE__ */ new Map();
-  const boundsFor = (edge, pts, overridden) => {
-    if (overridden) return boundsOf2(pts);
-    const hit = boundsCache.get(edge.id);
-    if (hit) return hit;
-    const made = boundsOf2(pts);
-    boundsCache.set(edge.id, made);
-    return made;
-  };
-  const farApart = (a, b) => a.x2 + 10 < b.x1 || b.x2 + 10 < a.x1 || a.y2 + 10 < b.y1 || b.y2 + 10 < a.y1;
-  const pair = (a, b) => a < b ? `${a}~${b}` : `${b}~${a}`;
   const local = (ids, overrides, soloOnly = false) => {
     const profile = /* @__PURE__ */ new Map();
-    const ptsOf = (edge) => overrides.get(edge.id) ?? edge.pts;
-    const subject = scene.edges.filter((edge) => ids.has(edge.id));
-    for (const edge of subject) {
-      const pts = ptsOf(edge);
+    const query = { ids, overrides, profile };
+    for (const edge of scene.edges) {
+      if (!ids.has(edge.id)) continue;
+      const pts = overrides.get(edge.id) ?? edge.pts;
       if (pts.length < 2) continue;
-      const ends = endsFor(edge, pts, overrides.has(edge.id));
-      for (let index = 0; index + 1 < pts.length; index++) {
-        const a = pts[index];
-        const b = pts[index + 1];
-        const dx = Math.abs(a.x - b.x);
-        const dy = Math.abs(a.y - b.y);
-        if (dx >= 0.5 && dy >= 0.5) profile.set(`diag:${edge.id}:${index}`, 0);
-        const x1 = Math.min(a.x, b.x);
-        const x2 = Math.max(a.x, b.x);
-        const y1 = Math.min(a.y, b.y);
-        const y2 = Math.max(a.y, b.y);
-        for (const node of leaves)
-          if (x1 < node.x + node.width - 1 && node.x + 1 < x2 && y1 < node.y + node.height - 1 && node.y + 1 < y2)
-            profile.set(`leaf:${edge.id}~${node.id}`, 0);
-        for (const box of boxes) {
-          const inside = holds.get(box.id);
-          if (ends.some((end) => end && inside.has(end.node.id))) continue;
-          if (x1 < box.x + box.width - 1 && box.x + 1 < x2 && y1 < box.y + box.height - 1 && box.y + 1 < y2)
-            profile.set(`box:${edge.id}~${box.id}`, 0);
-        }
-        for (const band of titleBoxes)
-          if (x1 < band.x + band.width && band.x < x2 && y1 < band.y + band.height && band.y < y2)
-            profile.set(`title:${edge.id}~${band.x},${band.y}`, 0);
-      }
-      for (const label of edge.labels) {
-        if (!label.width || !label.height) continue;
-        const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
-        let seatable = false;
-        for (let index = 0; index + 1 < pts.length && !seatable; index++) {
-          const p = pts[index];
-          const q = pts[index + 1];
-          if (Math.abs(q.x - p.x) + Math.abs(q.y - p.y) < label.width) continue;
-          const sx = (p.x + q.x) / 2 - label.width / 2;
-          const sy = (p.y + q.y) / 2 - lead;
-          const sx2 = sx + label.width;
-          const sy2 = sy + label.height;
-          let blocked = false;
-          for (const box of leaves)
-            if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
-              blocked = true;
-              break;
-            }
-          if (!blocked) {
-            for (const box of titleBoxes)
-              if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
-                blocked = true;
-                break;
-              }
-          }
-          if (!blocked) seatable = true;
-        }
-        if (!seatable) profile.set(`unlabelled:${edge.id}`, 1);
-      }
-      for (const [from, to] of [
-        [0, 1],
-        [pts.length - 1, pts.length - 2]
-      ]) {
-        const span = Math.abs(pts[to].x - pts[from].x) + Math.abs(pts[to].y - pts[from].y);
-        if (span > 0 && span < ARROW_ROOM) profile.set(`cramped:${edge.id}:${from}`, 2);
-      }
-      const mineNodes = [ends[0]?.node, ends[1]?.node];
-      for (let index = 0; index + 1 < pts.length; index++) {
-        const a = pts[index];
-        const b = pts[index + 1];
-        const horizontal = Math.abs(a.y - b.y) < 0.5;
-        if (!horizontal && Math.abs(a.x - b.x) >= 0.5) continue;
-        const at = horizontal ? a.y : a.x;
-        const lo = Math.min(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
-        const hi = Math.max(horizontal ? a.x : a.y, horizontal ? b.x : b.y);
-        for (const box of leaves) {
-          if (mineNodes.includes(box)) continue;
-          const along = horizontal ? [box.x, box.x + box.width] : [box.y, box.y + box.height];
-          if (Math.min(hi, along[1]) - Math.max(lo, along[0]) < HUG_RUN) continue;
-          const sides = horizontal ? [box.y, box.y + box.height] : [box.x, box.x + box.width];
-          for (const side of sides)
-            if (Math.abs(at - side) < HUG_CLEAR)
-              profile.set(`hug:${edge.id}:${index}@${box.id}`, 2);
-        }
-      }
-      if (pts.length - 2 > MAX_TURNS) profile.set(`weave:${edge.id}`, 3);
-      for (let index = 1; index + 2 < pts.length; index++) {
-        const length = Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y);
-        if (length > 0 && length <= JOG_LIMIT) profile.set(`jog:${edge.id}:${index}`, 3);
-      }
-      if (ends[0] && ends[1]) {
-        const away = (seg, target) => Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > AWAY_TOL && seg.x * target.x < 0 || Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > AWAY_TOL && seg.y * target.y < 0;
-        const centre = (node) => ({
-          x: node.x + node.width / 2,
-          y: node.y + node.height / 2
-        });
-        const src = centre(ends[0].node);
-        const dst = centre(ends[1].node);
-        const p0 = pts[0];
-        const p1 = pts[1];
-        const pn = pts[pts.length - 1];
-        const pm = pts[pts.length - 2];
-        if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: dst.x - p0.x, y: dst.y - p0.y }))
-          profile.set(`away:${edge.id}:out`, 3);
-        if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - src.x, y: pn.y - src.y }))
-          profile.set(`away:${edge.id}:in`, 3);
-      }
+      const subj = { edge, pts, ends: ctx.endsFor(edge, pts, overrides.has(edge.id)) };
+      scanDestroyed(ctx, subj, profile);
+      scanLabelSeats(ctx, subj, profile);
+      scanArrowRoom(subj, profile);
+      scanBorderHugs(ctx, subj, profile);
+      scanEyeTravel(subj, profile);
       if (soloOnly) continue;
-      const mine = runsFor(edge, pts, overrides.has(edge.id));
-      const myBounds = boundsFor(edge, pts, overrides.has(edge.id));
-      for (const other of scene.edges) {
-        if (other.id === edge.id) continue;
-        const theirs = ptsOf(other);
-        if (theirs.length < 2) continue;
-        if (ids.has(other.id) && other.id < edge.id) continue;
-        if (farApart(myBounds, boundsFor(other, theirs, overrides.has(other.id)))) continue;
-        const fanEnds = [...ends, ...endsFor(other, theirs, overrides.has(other.id))];
-        for (let i = 0; i + 1 < pts.length; i++)
-          for (let j = 0; j + 1 < theirs.length; j++) {
-            const hit = crossAt(pts[i], pts[i + 1], theirs[j], theirs[j + 1]);
-            if (!hit) continue;
-            profile.set(`cross:${pair(edge.id, other.id)}@${Math.round(hit.x)},${Math.round(hit.y)}`, 2);
-            for (const end of fanEnds) {
-              if (!end) continue;
-              const dx = Math.max(0, end.node.x - hit.x, hit.x - (end.node.x + end.node.width));
-              const dy = Math.max(0, end.node.y - hit.y, hit.y - (end.node.y + end.node.height));
-              if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH)
-                profile.set(`fan:${pair(edge.id, other.id)}@${end.node.id}`, 2);
-            }
-          }
-        const others = runsFor(other, theirs, overrides.has(other.id));
-        for (const run of mine)
-          for (const run2 of others) {
-            if (run.vertical !== run2.vertical) continue;
-            const gap = Math.abs(run.at - run2.at);
-            const shared = Math.min(run.hi, run2.hi) - Math.max(run.lo, run2.lo);
-            if (gap < 3 && shared > 8)
-              profile.set(`merge:${pair(edge.id, other.id)}@${Math.round(run.at)}`, 0);
-            else if (gap < 10 && shared > 40)
-              profile.set(`near:${pair(edge.id, other.id)}@${Math.round(run.at)}`, 2);
-          }
-        const theirEnds = endsFor(other, theirs, overrides.has(other.id));
-        for (const [ai, seatA] of ends.entries())
-          for (const [bi, seatB] of theirEnds.entries()) {
-            if (!seatA || !seatB || seatA.node !== seatB.node || seatA.side !== seatB.side)
-              continue;
-            const p = ai === 0 ? pts[0] : pts[pts.length - 1];
-            const q = bi === 0 ? theirs[0] : theirs[theirs.length - 1];
-            const vertical = seatA.side === "east" || seatA.side === "west";
-            const apart = Math.abs((vertical ? p.y : p.x) - (vertical ? q.y : q.x));
-            if (apart < 6)
-              profile.set(`seat:${pair(edge.id, other.id)}@${seatA.node.id}|${seatA.side}`, 0);
-            else {
-              const side = vertical ? seatA.node.height : seatA.node.width;
-              const need = Math.min(12, (side - 6) / 2);
-              if (apart < need * 0.8)
-                profile.set(`tight:${pair(edge.id, other.id)}@${seatA.node.id}|${seatA.side}`, 4);
-            }
-          }
-      }
+      scanPairs(ctx, subj, query);
     }
     return profile;
   };
@@ -95995,12 +96120,15 @@ function ladderVerdict(before, after) {
 }
 
 // src/edge-tidy.ts
+var ORTHOGONAL_EPSILON = 0.5;
+var MIN_HUG_SPAN = 24;
+var CHANNEL_INSET = 24;
 var SNAP = 6;
 var JOG_SNAP = 6;
-var MIN_ATTACH_GAP = 12;
 var SIDE_INSET = 6;
 var MIN_SIDE_INSET = 3;
 var FAN_REACH2 = 48;
+var SEAT_OFFSETS = [0, -18, 18, -36, 36];
 var segmentsCross = (a1, a2, b1, b2) => {
   const side = (p, q, r) => (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
   const d1 = side(b1, b2, a1) > 0;
@@ -96008,17 +96136,16 @@ var segmentsCross = (a1, a2, b1, b2) => {
   const d3 = side(a1, a2, b1) > 0;
   const d4 = side(a1, a2, b2) > 0;
   if (d1 === d2 || d3 === d4) return null;
-  const aVertical = Math.abs(a1.x - a2.x) < 0.5;
+  const aVertical = Math.abs(a1.x - a2.x) < ORTHOGONAL_EPSILON;
   return aVertical ? { x: a1.x, y: b1.y } : { x: b1.x, y: a1.y };
 };
 var segmentLength = (a, b) => Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
-function straighten(points, runIsClear) {
-  const pts = points.map((point) => ({ ...point }));
-  const skipped = /* @__PURE__ */ new Set();
+var wouldMerge = (gap, shared) => gap < 4 && shared > 6 || gap < 11 && shared > 36;
+function snapNearDiagonals(pts) {
   for (let index = 0; index + 1 < pts.length; index++) {
     const deltaX = pts[index + 1].x - pts[index].x;
     const deltaY = pts[index + 1].y - pts[index].y;
-    if (Math.abs(deltaX) < 0.5 || Math.abs(deltaY) < 0.5) continue;
+    if (Math.abs(deltaX) < ORTHOGONAL_EPSILON || Math.abs(deltaY) < ORTHOGONAL_EPSILON) continue;
     if (Math.min(Math.abs(deltaX), Math.abs(deltaY)) > SNAP) continue;
     const moveLater = index + 1 < pts.length - 1;
     const from = moveLater ? pts[index] : pts[index + 1];
@@ -96026,82 +96153,109 @@ function straighten(points, runIsClear) {
     if (Math.abs(deltaX) >= Math.abs(deltaY)) to.y = from.y;
     else to.x = from.x;
   }
+}
+function dropStraightPoint(pts) {
+  for (let index = 1; index + 1 < pts.length; index++) {
+    const straightX = Math.abs(pts[index].x - pts[index - 1].x) <= ORTHOGONAL_EPSILON && Math.abs(pts[index + 1].x - pts[index].x) <= ORTHOGONAL_EPSILON;
+    const straightY = Math.abs(pts[index].y - pts[index - 1].y) <= ORTHOGONAL_EPSILON && Math.abs(pts[index + 1].y - pts[index].y) <= ORTHOGONAL_EPSILON;
+    if (straightX || straightY) {
+      pts.splice(index, 1);
+      return true;
+    }
+  }
+  return false;
+}
+function collapseOneJog(pts, skipped, runIsClear) {
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const length = segmentLength(pts[index], pts[index + 1]);
+    if (length === 0) {
+      pts.splice(index + 1, 1);
+      return true;
+    }
+    if (length > JOG_SNAP) continue;
+    if (skipped.has(index)) continue;
+    const hasBefore = index - 1 >= 0;
+    const hasAfter = index + 2 < pts.length;
+    if (!hasBefore && !hasAfter) continue;
+    const beforeLength = hasBefore ? segmentLength(pts[index - 1], pts[index]) : -1;
+    const afterLength = hasAfter ? segmentLength(pts[index + 1], pts[index + 2]) : -1;
+    const anchors = (beforeLength >= afterLength ? [hasBefore ? pts[index - 1] : null, hasAfter ? pts[index + 2] : null] : [hasAfter ? pts[index + 2] : null, hasBefore ? pts[index - 1] : null]).filter((point) => point !== null);
+    const vertical = Math.abs(pts[index + 1].x - pts[index].x) < ORTHOGONAL_EPSILON;
+    const touched = [pts[index], pts[index + 1]];
+    if (hasBefore) touched.push(pts[index - 1]);
+    if (hasAfter) touched.push(pts[index + 2]);
+    const spanOf = (point) => vertical ? point.x : point.y;
+    const from = Math.min(...touched.map(spanOf));
+    const to = Math.max(...touched.map(spanOf));
+    const anchor = anchors.find(
+      (candidate) => runIsClear(!vertical, vertical ? candidate.y : candidate.x, from, to)
+    );
+    if (!anchor) {
+      skipped.add(index);
+      continue;
+    }
+    for (const point of touched) {
+      if (vertical) point.y = anchor.y;
+      else point.x = anchor.x;
+    }
+    return true;
+  }
+  return false;
+}
+function straighten(points, runIsClear) {
+  const pts = points.map((point) => ({ ...point }));
+  const skipped = /* @__PURE__ */ new Set();
+  snapNearDiagonals(pts);
   for (let guard = 0; guard < 60; guard++) {
-    let changed = false;
-    for (let index = 1; index + 1 < pts.length; index++) {
-      const straightX = Math.abs(pts[index].x - pts[index - 1].x) <= 0.5 && Math.abs(pts[index + 1].x - pts[index].x) <= 0.5;
-      const straightY = Math.abs(pts[index].y - pts[index - 1].y) <= 0.5 && Math.abs(pts[index + 1].y - pts[index].y) <= 0.5;
-      if (straightX || straightY) {
-        pts.splice(index, 1);
-        changed = true;
-        break;
-      }
-    }
-    if (changed) continue;
-    for (let index = 0; index + 1 < pts.length; index++) {
-      const length = segmentLength(pts[index], pts[index + 1]);
-      if (length === 0) {
-        pts.splice(index + 1, 1);
-        changed = true;
-        break;
-      }
-      if (length > JOG_SNAP) continue;
-      if (skipped.has(index)) continue;
-      const hasBefore = index - 1 >= 0;
-      const hasAfter = index + 2 < pts.length;
-      if (!hasBefore && !hasAfter) continue;
-      const beforeLength = hasBefore ? segmentLength(pts[index - 1], pts[index]) : -1;
-      const afterLength = hasAfter ? segmentLength(pts[index + 1], pts[index + 2]) : -1;
-      const anchors = (beforeLength >= afterLength ? [hasBefore ? pts[index - 1] : null, hasAfter ? pts[index + 2] : null] : [hasAfter ? pts[index + 2] : null, hasBefore ? pts[index - 1] : null]).filter((point) => point !== null);
-      const vertical = Math.abs(pts[index + 1].x - pts[index].x) < 0.5;
-      const touched = [pts[index], pts[index + 1]];
-      if (hasBefore) touched.push(pts[index - 1]);
-      if (hasAfter) touched.push(pts[index + 2]);
-      const spanOf = (point) => vertical ? point.x : point.y;
-      const from = Math.min(...touched.map(spanOf));
-      const to = Math.max(...touched.map(spanOf));
-      const anchor = anchors.find(
-        (candidate) => runIsClear(!vertical, vertical ? candidate.y : candidate.x, from, to)
-      );
-      if (!anchor) {
-        skipped.add(index);
-        continue;
-      }
-      for (const point of touched) {
-        if (vertical) point.y = anchor.y;
-        else point.x = anchor.x;
-      }
-      changed = true;
-      break;
-    }
-    if (!changed) break;
+    if (dropStraightPoint(pts)) continue;
+    if (!collapseOneJog(pts, skipped, runIsClear)) break;
   }
   return pts;
+}
+function segmentGapSq(box, a, b) {
+  const gapX = Math.max(0, box.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (box.x + box.width));
+  const gapY = Math.max(0, box.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (box.y + box.height));
+  return gapX * gapX + gapY * gapY;
+}
+function seatedLabelsExcept(scene, except) {
+  const boxes = [];
+  for (const other of scene.edges) {
+    if (other === except || other.pts.length < 2) continue;
+    for (const label of other.labels) {
+      if (!label.width || !label.height) continue;
+      let own = Number.POSITIVE_INFINITY;
+      for (let index = 0; index + 1 < other.pts.length; index++)
+        own = Math.min(own, segmentGapSq(label, other.pts[index], other.pts[index + 1]));
+      if (own <= SNAP * SNAP) boxes.push(label);
+    }
+  }
+  return boxes;
 }
 function sideOf(point, nodes) {
   for (const node of nodes) {
     const withinX = point.x > node.x - 2 && point.x < node.x + node.width + 2;
     const withinY = point.y > node.y - 2 && point.y < node.y + node.height + 2;
     if (withinX && Math.abs(point.y - node.y) < 2) return { node, side: "north" };
-    if (withinX && Math.abs(point.y - (node.y + node.height)) < 2)
-      return { node, side: "south" };
+    if (withinX && Math.abs(point.y - (node.y + node.height)) < 2) return { node, side: "south" };
     if (withinY && Math.abs(point.x - node.x) < 2) return { node, side: "west" };
-    if (withinY && Math.abs(point.x - (node.x + node.width)) < 2)
-      return { node, side: "east" };
+    if (withinY && Math.abs(point.x - (node.x + node.width)) < 2) return { node, side: "east" };
   }
   return null;
 }
-function runHitsNodeIn(vertical, at, from, to, leaves) {
-  const lo = Math.min(from, to);
-  const hi = Math.max(from, to);
-  return leaves.some((node) => {
-    const across = vertical ? at > node.x + 1 && at < node.x + node.width - 1 : at > node.y + 1 && at < node.y + node.height - 1;
-    if (!across) return false;
-    return vertical ? node.y < hi - 1 && node.y + node.height > lo + 1 : node.x < hi - 1 && node.x + node.width > lo + 1;
-  });
+function nodeHitTest(leaves) {
+  return (vertical, at, from, to) => {
+    const lo = Math.min(from, to);
+    const hi = Math.max(from, to);
+    return leaves.some((node) => {
+      const across = vertical ? at > node.x + 1 && at < node.x + node.width - 1 : at > node.y + 1 && at < node.y + node.height - 1;
+      if (!across) return false;
+      return vertical ? node.y < hi - 1 && node.y + node.height > lo + 1 : node.x < hi - 1 && node.x + node.width > lo + 1;
+    });
+  };
 }
 function enforceOrthogonalOn(edge, leaves) {
   const pts = edge.pts;
+  const hitsNode = nodeHitTest(leaves);
   const seats = [sideOf(pts[0], leaves), sideOf(pts[pts.length - 1], leaves)];
   const borderAxis = (index) => {
     const seat = index === 0 ? seats[0] : index === pts.length - 1 ? seats[1] : null;
@@ -96113,7 +96267,7 @@ function enforceOrthogonalOn(edge, leaves) {
     for (let index = 0; index + 1 < pts.length; index++) {
       const deltaX = pts[index + 1].x - pts[index].x;
       const deltaY = pts[index + 1].y - pts[index].y;
-      if (Math.abs(deltaX) < 0.5 || Math.abs(deltaY) < 0.5) continue;
+      if (Math.abs(deltaX) < ORTHOGONAL_EPSILON || Math.abs(deltaY) < ORTHOGONAL_EPSILON) continue;
       const axis = Math.abs(deltaX) >= Math.abs(deltaY) ? "y" : "x";
       const movable = (candidate) => candidate !== 0 && candidate !== pts.length - 1 || borderAxis(candidate) !== axis;
       const options = [index + 1, index].filter(movable);
@@ -96122,13 +96276,100 @@ function enforceOrthogonalOn(edge, leaves) {
         const other = candidate === index + 1 ? index : index + 1;
         const at = pts[other][axis];
         const span = axis === "y" ? [pts[index].x, pts[index + 1].x] : [pts[index].y, pts[index + 1].y];
-        return !runHitsNodeIn(axis === "x", at, span[0], span[1], leaves);
+        return !hitsNode(axis === "x", at, span[0], span[1]);
       });
       const target = clear ?? options[0];
       pts[target][axis] = pts[target === index + 1 ? index : index + 1][axis];
       fixed = true;
     }
     if (!fixed) break;
+  }
+}
+function wantedAlongs(members, low, high) {
+  const wanted = members.map((member) => member.along);
+  for (let index = 1; index < wanted.length; index++)
+    wanted[index] = Math.max(wanted[index], wanted[index - 1] + MIN_ATTACH_GAP);
+  wanted[wanted.length - 1] = Math.min(wanted[wanted.length - 1], high);
+  for (let index = wanted.length - 2; index >= 0; index--)
+    wanted[index] = Math.min(wanted[index], wanted[index + 1] - MIN_ATTACH_GAP);
+  if (wanted[0] < low) {
+    const step = (high - low) / (members.length - 1);
+    for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
+  }
+  return wanted;
+}
+function farEndCanFollow(leaves, neighbourPoint, target, vertical) {
+  const farSeat = sideOf(neighbourPoint, leaves);
+  if (!farSeat) return false;
+  const farVertical = farSeat.side === "east" || farSeat.side === "west";
+  if (farVertical !== vertical) return false;
+  const farStart = vertical ? farSeat.node.y : farSeat.node.x;
+  const farLength = vertical ? farSeat.node.height : farSeat.node.width;
+  return target >= farStart + MIN_SIDE_INSET && target <= farStart + farLength - MIN_SIDE_INSET;
+}
+function spreadTargetClear(ctx, member, move) {
+  const { target, vertical, relaxed, siblings } = move;
+  const terminalPoint = member.edge.pts[member.terminal];
+  const neighbourPoint = member.edge.pts[member.neighbour];
+  const others = ctx.runsExcept(...siblings.map((sibling) => sibling.edge.id));
+  const runFrom = vertical ? terminalPoint.x : terminalPoint.y;
+  const runTo = vertical ? neighbourPoint.x : neighbourPoint.y;
+  const list = vertical ? others.horizontal : others.vertical;
+  if (ctx.runHitsNode(!vertical, target, runFrom, runTo)) return false;
+  if (!relaxed) return ctx.runIsClear(list, target, runFrom, runTo);
+  return !list.some(
+    (other) => Math.abs(other.at - target) < 4 && Math.min(other.hi, Math.max(runFrom, runTo)) - Math.max(other.lo, Math.min(runFrom, runTo)) > 6
+  );
+}
+function shiftAttachment(ctx, member, move) {
+  const { target, vertical } = move;
+  if (Math.abs(target - member.along) < 0.01) return;
+  const { edge, terminal, neighbour } = member;
+  const terminalPoint = edge.pts[terminal];
+  const neighbourPoint = edge.pts[neighbour];
+  const straightRun = vertical ? Math.abs(neighbourPoint.y - terminalPoint.y) < ORTHOGONAL_EPSILON : Math.abs(neighbourPoint.x - terminalPoint.x) < ORTHOGONAL_EPSILON;
+  if (!straightRun) return;
+  if (edge.pts.length === 2 && !farEndCanFollow(ctx.leaves, neighbourPoint, target, vertical))
+    return;
+  if (!spreadTargetClear(ctx, member, move)) return;
+  if (vertical) {
+    terminalPoint.y = target;
+    neighbourPoint.y = target;
+  } else {
+    terminalPoint.x = target;
+    neighbourPoint.x = target;
+  }
+  member.along = target;
+}
+function spreadSide(ctx, group) {
+  const { node, side, members } = group;
+  if (members.length < 2) return;
+  const vertical = side === "east" || side === "west";
+  for (const member of members)
+    member.along = vertical ? member.edge.pts[member.terminal].y : member.edge.pts[member.terminal].x;
+  const start = vertical ? node.y : node.x;
+  const length = vertical ? node.height : node.width;
+  const needed = (members.length - 1) * MIN_ATTACH_GAP;
+  const inset = length - 2 * SIDE_INSET >= needed ? SIDE_INSET : Math.max(MIN_SIDE_INSET, (length - needed) / 2);
+  members.sort(
+    (memberA, memberB) => memberA.along - memberB.along || parseInt(memberA.edge.id.slice(1), 10) - parseInt(memberB.edge.id.slice(1), 10)
+  );
+  if (members.every(
+    (member, index) => index === 0 || member.along - members[index - 1].along >= MIN_ATTACH_GAP
+  ))
+    return;
+  const wanted = wantedAlongs(members, start + inset, start + length - inset);
+  for (const relaxed of [false, true]) {
+    if (relaxed) {
+      const sorted = [...members].sort((a, b) => a.along - b.along);
+      const stillShared = sorted.some(
+        (member, index) => index > 0 && member.along - sorted[index - 1].along < 6
+      );
+      if (!stillShared) break;
+    }
+    members.forEach((member, index) => {
+      shiftAttachment(ctx, member, { target: wanted[index], vertical, relaxed, siblings: members });
+    });
   }
 }
 function spreadAttachments(scene) {
@@ -96142,19 +96383,19 @@ function spreadAttachments(scene) {
       for (let index = 0; index + 1 < edge.pts.length; index++) {
         const a = edge.pts[index];
         const b = edge.pts[index + 1];
-        if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+        if (Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON && Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON)
           horizontal.push({ lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x), at: a.y });
-        else if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+        else if (Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON && Math.abs(a.y - b.y) >= ORTHOGONAL_EPSILON)
           vertical.push({ lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y), at: a.x });
       }
     }
     return { horizontal, vertical };
   };
-  const runHitsNode = (vertical, at, from, to) => runHitsNodeIn(vertical, at, from, to, leaves);
+  const runHitsNode = nodeHitTest(leaves);
   const runIsClear = (others, at, from, to) => !others.some((other) => {
     const gap = Math.abs(other.at - at);
     const shared = Math.min(other.hi, Math.max(from, to)) - Math.max(other.lo, Math.min(from, to));
-    return gap < 4 && shared > 6 || gap < 11 && shared > 36;
+    return wouldMerge(gap, shared);
   });
   const enforceOrthogonal = (edge) => enforceOrthogonalOn(edge, leaves);
   const groups = /* @__PURE__ */ new Map();
@@ -96178,117 +96419,59 @@ function spreadAttachments(scene) {
       groups.set(key, group);
     }
   }
+  const ctx = { leaves, runsExcept, runHitsNode, runIsClear };
   const sortedKeys = [...groups.keys()].sort();
   for (let round = 0; round < 3; round++)
-    for (const key of sortedKeys) {
-      const { node, side, members } = groups.get(key);
-      if (members.length < 2) continue;
-      const vertical = side === "east" || side === "west";
-      for (const member of members)
-        member.along = vertical ? member.edge.pts[member.terminal].y : member.edge.pts[member.terminal].x;
-      const start = vertical ? node.y : node.x;
-      const length = vertical ? node.height : node.width;
-      const needed = (members.length - 1) * MIN_ATTACH_GAP;
-      const inset = length - 2 * SIDE_INSET >= needed ? SIDE_INSET : Math.max(MIN_SIDE_INSET, (length - needed) / 2);
-      const low = start + inset;
-      const high = start + length - inset;
-      members.sort(
-        (memberA, memberB) => memberA.along - memberB.along || parseInt(memberA.edge.id.slice(1), 10) - parseInt(memberB.edge.id.slice(1), 10)
-      );
-      if (members.every((member, index) => index === 0 || member.along - members[index - 1].along >= MIN_ATTACH_GAP))
-        continue;
-      const wanted = members.map((member) => member.along);
-      for (let index = 1; index < wanted.length; index++)
-        wanted[index] = Math.max(wanted[index], wanted[index - 1] + MIN_ATTACH_GAP);
-      wanted[wanted.length - 1] = Math.min(wanted[wanted.length - 1], high);
-      for (let index = wanted.length - 2; index >= 0; index--)
-        wanted[index] = Math.min(wanted[index], wanted[index + 1] - MIN_ATTACH_GAP);
-      if (wanted[0] < low) {
-        const step = (high - low) / (members.length - 1);
-        for (let index = 0; index < wanted.length; index++) wanted[index] = low + index * step;
-      }
-      for (const relaxed of [false, true]) {
-        if (relaxed) {
-          const sorted = [...members].sort((a, b) => a.along - b.along);
-          const stillShared = sorted.some(
-            (member, index) => index > 0 && member.along - sorted[index - 1].along < 6
-          );
-          if (!stillShared) break;
-        }
-        members.forEach((member, index) => {
-          const target = wanted[index];
-          if (Math.abs(target - member.along) < 0.01) return;
-          const { edge, terminal, neighbour } = member;
-          const terminalPoint = edge.pts[terminal];
-          const neighbourPoint = edge.pts[neighbour];
-          const straightRun = vertical ? Math.abs(neighbourPoint.y - terminalPoint.y) < 0.5 : Math.abs(neighbourPoint.x - terminalPoint.x) < 0.5;
-          if (!straightRun) return;
-          if (edge.pts.length === 2) {
-            const farSeat = sideOf(neighbourPoint, leaves);
-            if (!farSeat) return;
-            const farVertical = farSeat.side === "east" || farSeat.side === "west";
-            if (farVertical !== vertical) return;
-            const farStart = vertical ? farSeat.node.y : farSeat.node.x;
-            const farLength = vertical ? farSeat.node.height : farSeat.node.width;
-            if (target < farStart + MIN_SIDE_INSET || target > farStart + farLength - MIN_SIDE_INSET)
-              return;
-          }
-          const others = runsExcept(...members.map((sibling) => sibling.edge.id));
-          const runFrom = vertical ? terminalPoint.x : terminalPoint.y;
-          const runTo = vertical ? neighbourPoint.x : neighbourPoint.y;
-          const list = vertical ? others.horizontal : others.vertical;
-          const clear = !runHitsNode(!vertical, target, runFrom, runTo) && (relaxed ? !list.some(
-            (other) => Math.abs(other.at - target) < 4 && Math.min(other.hi, Math.max(runFrom, runTo)) - Math.max(other.lo, Math.min(runFrom, runTo)) > 6
-          ) : runIsClear(list, target, runFrom, runTo));
-          if (!clear) return;
-          if (vertical) {
-            terminalPoint.y = target;
-            neighbourPoint.y = target;
-          } else {
-            terminalPoint.x = target;
-            neighbourPoint.x = target;
-          }
-          member.along = target;
-        });
-      }
-    }
+    for (const key of sortedKeys) spreadSide(ctx, groups.get(key));
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }
-function clearSideHugs(scene, titleBoxes = []) {
+function containersHolding(scene, owns) {
+  const owned = /* @__PURE__ */ new Set();
+  for (const n of owns)
+    for (const c of scene.nodes) {
+      if (!c.container) continue;
+      if (n.x >= c.x - 1 && n.y >= c.y - 1 && n.x + n.width <= c.x + c.width + 1 && n.y + n.height <= c.y + c.height + 1)
+        owned.add(c);
+    }
+  return owned;
+}
+function segmentOverlapsTitle(titleBoxes, a, b) {
+  const x1 = Math.min(a.x, b.x);
+  const x2 = Math.max(a.x, b.x);
+  const y1 = Math.min(a.y, b.y);
+  const y2 = Math.max(a.y, b.y);
+  return titleBoxes.some(
+    (band) => x1 < band.x + band.width && band.x < x2 && y1 < band.y + band.height && band.y < y2
+  );
+}
+function runCutsForeignContainer(scene, owned, run) {
+  for (const c of scene.nodes) {
+    if (!c.container || owned.has(c)) continue;
+    const across = run.vert ? run.at > c.x + 1 && run.at < c.x + c.width - 1 : run.at > c.y + 1 && run.at < c.y + c.height - 1;
+    if (!across) continue;
+    const hits = run.vert ? c.y < run.hi - 1 && c.y + c.height > run.lo + 1 : c.x < run.hi - 1 && c.x + c.width > run.lo + 1;
+    if (hits) return true;
+  }
+  return false;
+}
+function createHugContext(scene, titleBoxes) {
   const SIDE_CLEAR = 8;
   const leaves = scene.nodes.filter((node) => !node.container);
   const tier0Blocked = (pts, fromIdx, owns) => {
-    const owned = /* @__PURE__ */ new Set();
-    for (const n of owns) {
-      for (const c of scene.nodes) {
-        if (!c.container) continue;
-        if (n.x >= c.x - 1 && n.y >= c.y - 1 && n.x + n.width <= c.x + c.width + 1 && n.y + n.height <= c.y + c.height + 1)
-          owned.add(c);
-      }
-    }
+    const owned = containersHolding(scene, owns);
     for (let i = fromIdx; i + 1 < pts.length; i++) {
       const a = pts[i];
       const b = pts[i + 1];
-      const vert = Math.abs(a.x - b.x) < 0.5;
-      if (Math.abs(a[vert ? "y" : "x"] - b[vert ? "y" : "x"]) < 0.5) continue;
-      const x1 = Math.min(a.x, b.x);
-      const x2 = Math.max(a.x, b.x);
-      const y1 = Math.min(a.y, b.y);
-      const y2 = Math.max(a.y, b.y);
-      for (const band of titleBoxes) {
-        if (x1 < band.x + band.width && band.x < x2 && y1 < band.y + band.height && band.y < y2)
-          return true;
-      }
-      const at = vert ? a.x : a.y;
-      const lo = vert ? y1 : x1;
-      const hi = vert ? y2 : x2;
-      for (const c of scene.nodes) {
-        if (!c.container || owned.has(c)) continue;
-        const across = vert ? at > c.x + 1 && at < c.x + c.width - 1 : at > c.y + 1 && at < c.y + c.height - 1;
-        if (!across) continue;
-        const hits = vert ? c.y < hi - 1 && c.y + c.height > lo + 1 : c.x < hi - 1 && c.x + c.width > lo + 1;
-        if (hits) return true;
-      }
+      const vert = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+      if (Math.abs(a[vert ? "y" : "x"] - b[vert ? "y" : "x"]) < ORTHOGONAL_EPSILON) continue;
+      if (segmentOverlapsTitle(titleBoxes, a, b)) return true;
+      const run = {
+        vert,
+        at: vert ? a.x : a.y,
+        lo: vert ? Math.min(a.y, b.y) : Math.min(a.x, b.x),
+        hi: vert ? Math.max(a.y, b.y) : Math.max(a.x, b.x)
+      };
+      if (runCutsForeignContainer(scene, owned, run)) return true;
     }
     return false;
   };
@@ -96297,9 +96480,9 @@ function clearSideHugs(scene, titleBoxes = []) {
     for (let i = 0; i + 1 < edge.pts.length; i++) {
       const a = edge.pts[i];
       const b = edge.pts[i + 1];
-      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+      if (Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON && Math.abs(a.y - b.y) >= ORTHOGONAL_EPSILON)
         out.push({ vert: true, at: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y), i });
-      else if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+      else if (Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON && Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON)
         out.push({ vert: false, at: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x), i });
     }
     return out;
@@ -96308,7 +96491,7 @@ function clearSideHugs(scene, titleBoxes = []) {
     const spanLo = run.vert ? node.y : node.x;
     const spanHi = run.vert ? node.y + node.height : node.x + node.width;
     const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
-    if (shared <= 24) return null;
+    if (shared <= MIN_HUG_SPAN) return null;
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
     if (Math.abs(run.at - nearLo) < 3)
@@ -96321,7 +96504,7 @@ function clearSideHugs(scene, titleBoxes = []) {
     const spanLo = run.vert ? node.y : node.x;
     const spanHi = run.vert ? node.y + node.height : node.x + node.width;
     const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
-    if (shared <= 24) return [];
+    if (shared <= MIN_HUG_SPAN) return [];
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
     let sign = 0;
@@ -96335,7 +96518,7 @@ function clearSideHugs(scene, titleBoxes = []) {
     } else return [];
     return [side + sign * SIDE_CLEAR, side + sign * 3.5];
   };
-  const runHitsNode = (vertical, at, from, to) => runHitsNodeIn(vertical, at, from, to, leaves);
+  const runHitsNode = nodeHitTest(leaves);
   const otherSideRuns = /* @__PURE__ */ new Map();
   for (const edge of scene.edges) otherSideRuns.set(edge.id, sideRunsOf(edge));
   const containerOf = (node) => {
@@ -96348,611 +96531,633 @@ function clearSideHugs(scene, titleBoxes = []) {
     }
     return best;
   };
-  for (const edge of scene.edges) {
-    if (edge.pts.length < 2) continue;
-    const own = /* @__PURE__ */ new Set();
-    for (const p of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
-      const seat = sideOf(p, leaves);
-      if (seat) own.add(seat.node);
-    }
-    for (let guard = 0; guard < 8; guard++) {
-      const runsHere = sideRunsOf(edge);
-      let applied = false;
-      for (const run of runsHere) {
-        const targets = [];
-        for (const node of scene.nodes) {
-          if (own.has(node)) continue;
-          for (const t of hugTargetsOf(run, node)) if (!targets.includes(t)) targets.push(t);
+  return {
+    scene,
+    leaves,
+    tier0Blocked,
+    sideRunsOf,
+    hugTargetOf,
+    hugTargetsOf,
+    runHitsNode,
+    containerOf,
+    otherSideRuns
+  };
+}
+function slidTerminalsClash(ctx, edge, pts, move) {
+  const { scene, leaves } = ctx;
+  const { run, axis } = move;
+  for (const [idx, isFirst] of [
+    [run.i, true],
+    [run.i + 1, false]
+  ]) {
+    const isTerminal = isFirst ? run.i === 0 : run.i + 1 === pts.length - 1;
+    if (!isTerminal) continue;
+    const seat = sideOf(edge.pts[idx], leaves);
+    if (!seat) continue;
+    const moved = pts[idx];
+    const vertSide = seat.side === "east" || seat.side === "west";
+    const spanLo = vertSide ? seat.node.y : seat.node.x;
+    const spanHi = vertSide ? seat.node.y + seat.node.height : seat.node.x + seat.node.width;
+    if (Math.abs(moved[vertSide ? "y" : "x"] - spanLo) < 2.5) return true;
+    if (Math.abs(moved[vertSide ? "y" : "x"] - spanHi) < 2.5) return true;
+    for (const other of scene.edges) {
+      if (other.id === edge.id || other.pts.length < 2) continue;
+      for (const q of [other.pts[0], other.pts[other.pts.length - 1]]) {
+        const qSeat = sideOf(q, leaves);
+        if (qSeat && qSeat.node === seat.node && qSeat.side === seat.side) {
+          const along = run.vert ? q.x : q.y;
+          if (Math.abs(along - pts[idx][axis]) < 6) return true;
         }
-        if (!targets.length) continue;
-        const axis = run.vert ? "x" : "y";
-        let clampLo = -Infinity;
-        let clampHi = Infinity;
-        for (const [idx, isFirst] of [
-          [run.i, true],
-          [run.i + 1, false]
-        ]) {
-          const isTerminal = isFirst ? run.i === 0 : run.i + 1 === edge.pts.length - 1;
-          if (!isTerminal) continue;
-          const seat = sideOf(edge.pts[idx], leaves);
-          if (!seat) continue;
-          const slides = run.vert ? seat.side === "north" || seat.side === "south" : seat.side === "west" || seat.side === "east";
-          if (!slides) {
-            clampLo = Infinity;
-            clampHi = -Infinity;
-            break;
-          }
-          clampLo = Math.max(clampLo, run.vert ? seat.node.x : seat.node.y);
-          clampHi = Math.min(
-            clampHi,
-            run.vert ? seat.node.x + seat.node.width : seat.node.y + seat.node.height
-          );
-        }
-        if (clampLo > clampHi) {
-          continue;
-        }
-        const attempt = (target) => {
-          const delta = target - run.at;
-          if (Math.abs(delta) < 0.5) {
-            return false;
-          }
-          const pts = edge.pts.map((p) => ({ ...p }));
-          pts[run.i][axis] += delta;
-          pts[run.i + 1][axis] += delta;
-          let ok = true;
-          for (const [idx, isFirst] of [
-            [run.i, true],
-            [run.i + 1, false]
-          ]) {
-            const isTerminal = isFirst ? run.i === 0 : run.i + 1 === pts.length - 1;
-            if (!isTerminal) continue;
-            const seat = sideOf(edge.pts[idx], leaves);
-            if (!seat) continue;
-            const moved = pts[idx];
-            const vertSide = seat.side === "east" || seat.side === "west";
-            const spanLo = vertSide ? seat.node.y : seat.node.x;
-            const spanHi = vertSide ? seat.node.y + seat.node.height : seat.node.x + seat.node.width;
-            if (Math.abs(moved[vertSide ? "y" : "x"] - spanLo) < 2.5) {
-              ok = false;
-              break;
-            }
-            if (Math.abs(moved[vertSide ? "y" : "x"] - spanHi) < 2.5) {
-              ok = false;
-              break;
-            }
-            for (const other of scene.edges) {
-              if (other.id === edge.id || other.pts.length < 2) continue;
-              for (const q of [other.pts[0], other.pts[other.pts.length - 1]]) {
-                const qSeat = sideOf(q, leaves);
-                if (qSeat && qSeat.node === seat.node && qSeat.side === seat.side) {
-                  const along = run.vert ? q.x : q.y;
-                  if (Math.abs(along - pts[idx][axis]) < 6) ok = false;
-                }
-              }
-            }
-            if (!ok) break;
-          }
-          if (!ok) {
-            return false;
-          }
-          for (const k of [run.i - 1, run.i + 1]) {
-            if (k < 0 || k + 1 >= pts.length) continue;
-            const before = edge.pts[k + 1][axis] - edge.pts[k][axis];
-            const after = pts[k + 1][axis] - pts[k][axis];
-            if (Math.abs(after) < 0.5 || before * after < 0) {
-              ok = false;
-              break;
-            }
-          }
-          if (!ok) {
-            return false;
-          }
-          if (runHitsNode(run.vert, target, run.lo, run.hi)) {
-            return false;
-          }
-          if (tier0Blocked(pts, Math.max(0, run.i - 1), own)) return false;
-          for (const k of [run.i - 1, run.i + 1]) {
-            if (k < 0 || k + 1 >= pts.length) continue;
-            const a = pts[k];
-            const b = pts[k + 1];
-            const v = Math.abs(a.x - b.x) < 0.5;
-            const at = v ? a.x : a.y;
-            const lo = v ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
-            const hi = v ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
-            if (Math.abs(hi - lo) >= 0.5 && runHitsNode(v, at, lo, hi)) {
-              ok = false;
-              break;
-            }
-          }
-          if (!ok) {
-            return false;
-          }
-          for (const node of scene.nodes) {
-            if (own.has(node)) continue;
-            if (hugTargetOf({ ...run, at: target }, node) !== null) {
-              ok = false;
-              break;
-            }
-          }
-          if (!ok) {
-            return false;
-          }
-          const movedA = pts[run.i];
-          const movedB = pts[run.i + 1];
-          let newCrossings = 0;
-          for (const other of scene.edges) {
-            if (other.id === edge.id) continue;
-            for (const o of otherSideRuns.get(other.id) ?? []) {
-              if (o.vert === run.vert) {
-                const shared = Math.min(run.hi, o.hi) - Math.max(run.lo, o.lo);
-                const gapBefore = Math.abs(o.at - run.at);
-                const gapAfter = Math.abs(o.at - target);
-                if (gapAfter < 3 && shared > 8 || gapBefore >= 10 && gapAfter < 10 && shared > 40) {
-                  ok = false;
-                  break;
-                }
-              } else {
-                const oA = o.vert ? { x: o.at, y: o.lo } : { x: o.lo, y: o.at };
-                const oB = o.vert ? { x: o.at, y: o.hi } : { x: o.hi, y: o.at };
-                const crossedBefore = segmentsCross(edge.pts[run.i], edge.pts[run.i + 1], oA, oB);
-                const crossedAfter = segmentsCross(movedA, movedB, oA, oB);
-                if (!crossedBefore && crossedAfter) newCrossings++;
-              }
-            }
-            if (!ok) break;
-          }
-          if (!ok) {
-            return false;
-          }
-          if (newCrossings > 1) {
-            return false;
-          }
-          edge.pts = pts;
-          otherSideRuns.set(edge.id, sideRunsOf(edge));
-          return true;
-        };
-        const relocateRiser = (foreign, ePts, eRiserAt) => {
-          let r = -1;
-          for (let i = 1; i + 2 < foreign.pts.length; i++) {
-            const a = foreign.pts[i];
-            const b = foreign.pts[i + 1];
-            if (Math.abs(a.x - b.x) >= 0.5 || Math.abs(a.y - b.y) < 0.5) continue;
-            if (Math.abs(foreign.pts[i - 1].y - a.y) >= 0.5) continue;
-            if (Math.abs(foreign.pts[i + 2].y - b.y) >= 0.5) continue;
-            r = i;
-            break;
-          }
-          if (r < 0) return false;
-          const oldX = foreign.pts[r].x;
-          const loY = Math.min(foreign.pts[r].y, foreign.pts[r + 1].y);
-          const hiY = Math.max(foreign.pts[r].y, foreign.pts[r + 1].y);
-          for (let step = 8; step <= 400; step += 8) {
-            const newX = oldX - step;
-            if (newX < 4) break;
-            if (Math.abs(newX - eRiserAt) < 10) continue;
-            const fSource = sideOf(foreign.pts[0], leaves);
-            const fTarget = sideOf(foreign.pts[foreign.pts.length - 1], leaves);
-            const cSource = fSource ? containerOf(fSource.node) : null;
-            const cTarget = fTarget ? containerOf(fTarget.node) : null;
-            const inLayer = (c, x) => c !== null && x > c.x - 8 && x < c.x + c.width + 8;
-            if (inLayer(cSource, newX) || inLayer(cTarget, newX)) continue;
-            const pts = foreign.pts.map((p) => ({ ...p }));
-            pts[r].x = newX;
-            pts[r + 1].x = newX;
-            let ok = true;
-            for (const k of [r - 1, r + 1]) {
-              if (k < 0 || k + 1 >= pts.length) continue;
-              const before = foreign.pts[k + 1].x - foreign.pts[k].x;
-              const after = pts[k + 1].x - pts[k].x;
-              if (Math.abs(after) < 0.5 || before * after < 0) {
-                ok = false;
-                break;
-              }
-            }
-            if (!ok) continue;
-            if (runHitsNode(true, newX, loY, hiY)) continue;
-            {
-              const fOwn = /* @__PURE__ */ new Set();
-              for (const p of [foreign.pts[0], foreign.pts[foreign.pts.length - 1]]) {
-                const s = sideOf(p, leaves);
-                if (s) fOwn.add(s.node);
-              }
-              if (tier0Blocked(pts, Math.max(0, r - 1), fOwn)) continue;
-            }
-            const riserRun = { vert: true, at: newX, lo: loY, hi: hiY };
-            let hug = false;
-            for (const node of scene.nodes) {
-              const fSeat = sideOf(foreign.pts[0], leaves);
-              const fSeat2 = sideOf(foreign.pts[foreign.pts.length - 1], leaves);
-              if ((fSeat?.node === node || fSeat2?.node === node) && !node.container) continue;
-              if (hugTargetOf(riserRun, node) !== null) {
-                hug = true;
-                break;
-              }
-            }
-            if (hug) continue;
-            let trade = 0;
-            let otherNew = 0;
-            for (const other of scene.edges) {
-              if (other.id === foreign.id) continue;
-              const otherPts = other.id === edge.id ? ePts : other.pts;
-              for (let oi = 0; oi + 1 < otherPts.length; oi++) {
-                for (let fi = 0; fi + 1 < pts.length; fi++) {
-                  const after = segmentsCross(pts[fi], pts[fi + 1], otherPts[oi], otherPts[oi + 1]);
-                  if (other.id === edge.id) {
-                    if (after) trade++;
-                  } else {
-                    const before = segmentsCross(
-                      foreign.pts[fi],
-                      foreign.pts[fi + 1],
-                      other.pts[oi],
-                      other.pts[oi + 1]
-                    );
-                    if (!before && after) otherNew++;
-                  }
-                }
-              }
-            }
-            if (trade !== 1 || otherNew > 1) {
-              continue;
-            }
-            foreign.pts = pts;
-            otherSideRuns.set(foreign.id, sideRunsOf(foreign));
-            return true;
-          }
-          return false;
-        };
-        const resideAttempt = (terminalNode) => {
-          if (edge.pts.length < 3) return false;
-          const isStart = run.i === 0;
-          const terminalIdx = isStart ? 0 : edge.pts.length - 1;
-          const neighbourIdx = isStart ? 1 : edge.pts.length - 2;
-          if (neighbourIdx < 0 || neighbourIdx >= edge.pts.length) return false;
-          const seat = sideOf(edge.pts[terminalIdx], leaves);
-          if (!seat || seat.node !== terminalNode) return false;
-          const vertSeat = seat.side === "north" || seat.side === "south";
-          const newSides = vertSeat ? ["west", "east"] : ["north", "south"];
-          for (const newSide of newSides) {
-            const newTerminalValue = newSide === "west" ? terminalNode.x : newSide === "east" ? terminalNode.x + terminalNode.width : newSide === "north" ? terminalNode.y : terminalNode.y + terminalNode.height;
-            const spanLo = newSide === "west" || newSide === "east" ? terminalNode.y : terminalNode.x;
-            const spanHi = newSide === "west" || newSide === "east" ? terminalNode.y + terminalNode.height : terminalNode.x + terminalNode.width;
-            const sideLength = spanHi - spanLo;
-            const siblings = scene.edges.filter((e) => e.id !== edge.id && e.pts.length >= 2).flatMap((e) => [e.pts[0], e.pts[e.pts.length - 1]]).map((p) => {
-              const s = sideOf(p, leaves);
-              if (!s || s.node !== terminalNode || s.side !== newSide) return null;
-              return s.side === "east" || s.side === "west" ? p.y : p.x;
-            }).filter((v) => v !== null);
-            const required = Math.min(12, (sideLength - 6) / (siblings.length + 1)) * 0.8;
-            const alongs = [];
-            const mid = (spanLo + spanHi) / 2;
-            for (let k = 0; k * 8 + 8 <= sideLength / 2 + 8; k++) {
-              for (const candidate of [mid + k * 8, mid - k * 8]) {
-                if (candidate < spanLo || candidate > spanHi) continue;
-                if (Math.abs(candidate - spanLo) < 2.5 || Math.abs(candidate - spanHi) < 2.5)
-                  continue;
-                if (siblings.some((s) => Math.abs(s - candidate) < Math.max(6, required)))
-                  continue;
-                if (!alongs.includes(candidate)) alongs.push(candidate);
-              }
-            }
-            const nodeContainer = containerOf(terminalNode);
-            const clearsLayer = (riserAt) => {
-              if (!nodeContainer) return true;
-              if (newSide === "west" && riserAt > nodeContainer.x - 8) return false;
-              if (newSide === "east" && riserAt < nodeContainer.x + nodeContainer.width + 8)
-                return false;
-              if (newSide === "north" && riserAt < nodeContainer.y + 8) return false;
-              if (newSide === "south" && riserAt > nodeContainer.y + nodeContainer.height - 8)
-                return false;
-              return true;
-            };
-            const replaceMapOf = (pts) => {
-              const map = [];
-              for (let k = 0; k + 1 < pts.length; k++) {
-                if (isStart) map.push(k >= 2 ? k - 1 : -1);
-                else map.push(k < edge.pts.length - 1 ? k : -1);
-              }
-              return map;
-            };
-            for (const newTerminalAlong of alongs) {
-              for (const dir of [-1, 1]) {
-                for (let step = 8; step <= 400; step += 8) {
-                  const riserAt = run.at + dir * step;
-                  if (riserAt < 4) break;
-                  if (!clearsLayer(riserAt)) continue;
-                  let pts;
-                  let fromIdx;
-                  if (isStart) {
-                    const rest = edge.pts.slice(neighbourIdx).map((p) => ({ ...p }));
-                    const rejoin = { ...rest[0] };
-                    if (run.vert) rejoin.x = riserAt;
-                    else rejoin.y = riserAt;
-                    pts = run.vert ? [
-                      { x: newTerminalValue, y: newTerminalAlong },
-                      { x: riserAt, y: newTerminalAlong },
-                      rejoin,
-                      ...rest.slice(1)
-                    ] : [
-                      { x: newTerminalAlong, y: newTerminalValue },
-                      { x: newTerminalAlong, y: riserAt },
-                      rejoin,
-                      ...rest.slice(1)
-                    ];
-                    fromIdx = 0;
-                  } else {
-                    pts = edge.pts.slice(0, neighbourIdx + 1).map((p) => ({ ...p }));
-                    if (run.vert) pts[pts.length - 1].x = riserAt;
-                    else pts[pts.length - 1].y = riserAt;
-                    if (run.vert) {
-                      pts.push({ x: riserAt, y: newTerminalAlong });
-                      pts.push({ x: newTerminalValue, y: newTerminalAlong });
-                    } else {
-                      pts.push({ x: newTerminalAlong, y: riserAt });
-                      pts.push({ x: newTerminalAlong, y: newTerminalValue });
-                    }
-                    fromIdx = neighbourIdx;
-                  }
-                  const replaceMap = replaceMapOf(pts);
-                  let ok = true;
-                  for (let i = fromIdx; i + 1 < pts.length; i++) {
-                    const a = pts[i];
-                    const b = pts[i + 1];
-                    const v = Math.abs(a.x - b.x) < 0.5;
-                    if (Math.abs(a[v ? "y" : "x"] - b[v ? "y" : "x"]) < 0.5) continue;
-                    const at = v ? a.x : a.y;
-                    const lo = v ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
-                    const hi = v ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
-                    if (runHitsNode(v, at, lo, hi)) {
-                      ok = false;
-                      break;
-                    }
-                  }
-                  if (!ok) continue;
-                  if (tier0Blocked(pts, fromIdx, own)) continue;
-                  if (isStart) {
-                    const rest = edge.pts.slice(neighbourIdx);
-                    if (rest.length >= 2) {
-                      const axis2 = run.vert ? "x" : "y";
-                      const before = rest[1][axis2] - rest[0][axis2];
-                      const after = rest[1][axis2] - riserAt;
-                      if (Math.abs(after) < 0.5 || before * after < 0) continue;
-                    }
-                  } else if (neighbourIdx > 0) {
-                    const axis2 = run.vert ? "x" : "y";
-                    const before = edge.pts[neighbourIdx][axis2] - edge.pts[neighbourIdx - 1][axis2];
-                    const after = pts[neighbourIdx][axis2] - pts[neighbourIdx - 1][axis2];
-                    if (Math.abs(after) < 0.5 || before * after < 0) continue;
-                  }
-                  let hug = false;
-                  for (let i = fromIdx; i + 1 < pts.length && !hug; i++) {
-                    const a = pts[i];
-                    const b = pts[i + 1];
-                    const segVert = Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5;
-                    const segHoriz = Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5;
-                    if (!segVert && !segHoriz) continue;
-                    const segRun = {
-                      vert: segVert,
-                      at: segVert ? a.x : a.y,
-                      lo: segVert ? Math.min(a.y, b.y) : Math.min(a.x, b.x),
-                      hi: segVert ? Math.max(a.y, b.y) : Math.max(a.x, b.x)
-                    };
-                    for (const node of scene.nodes) {
-                      if (own.has(node)) continue;
-                      if (hugTargetOf(segRun, node) !== null) {
-                        hug = true;
-                        break;
-                      }
-                    }
-                  }
-                  if (hug) continue;
-                  const crossedBeforePairs = /* @__PURE__ */ new Set();
-                  const crossedAfterPairs = /* @__PURE__ */ new Set();
-                  for (const other of scene.edges) {
-                    if (other.id === edge.id) continue;
-                    for (let oi = 0; oi + 1 < other.pts.length; oi++) {
-                      for (let ni = fromIdx; ni + 1 < pts.length; ni++) {
-                        const oldIdx = replaceMap[ni];
-                        const before = oldIdx >= 0 ? segmentsCross(
-                          edge.pts[oldIdx],
-                          edge.pts[oldIdx + 1],
-                          other.pts[oi],
-                          other.pts[oi + 1]
-                        ) : false;
-                        const after = segmentsCross(
-                          pts[ni],
-                          pts[ni + 1],
-                          other.pts[oi],
-                          other.pts[oi + 1]
-                        );
-                        if (!before && after) crossedAfterPairs.add(other.id);
-                        if (before && !after) crossedBeforePairs.add(other.id);
-                      }
-                    }
-                  }
-                  const gained = [...crossedAfterPairs].filter((id) => !crossedBeforePairs.has(id));
-                  const newTerminal = isStart ? pts[0] : pts[pts.length - 1];
-                  if (gained.length === 0) {
-                    const newSeat = sideOf(newTerminal, leaves);
-                    if (!newSeat) continue;
-                    let seatOk = true;
-                    for (const other of scene.edges) {
-                      if (other.id === edge.id || other.pts.length < 2) continue;
-                      for (const q of [other.pts[0], other.pts[other.pts.length - 1]]) {
-                        const qSeat = sideOf(q, leaves);
-                        if (qSeat && qSeat.node === newSeat.node && qSeat.side === newSeat.side) {
-                          const along = newSeat.side === "east" || newSeat.side === "west" ? q.y : q.x;
-                          const myAlong = newSeat.side === "east" || newSeat.side === "west" ? newTerminal.y : newTerminal.x;
-                          if (Math.abs(along - myAlong) < 6) seatOk = false;
-                        }
-                      }
-                      if (!seatOk) break;
-                    }
-                    if (!seatOk) continue;
-                    edge.pts = pts;
-                    otherSideRuns.set(edge.id, sideRunsOf(edge));
-                    return true;
-                  }
-                  if (gained.length === 1) {
-                    const foreign = scene.edges.find((e) => e.id === gained[0]);
-                    if (foreign && relocateRiser(foreign, pts, riserAt)) {
-                      edge.pts = pts;
-                      otherSideRuns.set(edge.id, sideRunsOf(edge));
-                      return true;
-                    }
-                  }
-                }
-              }
-            }
-          }
-          return false;
-        };
-        for (const rawTarget of targets) {
-          const target = Math.min(Math.max(rawTarget, clampLo), clampHi);
-          if (attempt(target)) {
-            applied = true;
-            break;
-          }
-        }
-        if (!applied) {
-          const isTerminal = run.i === 0 || run.i + 1 === edge.pts.length - 1;
-          if (isTerminal) {
-            const terminalIdx = run.i === 0 ? 0 : edge.pts.length - 1;
-            const terminalSeat = sideOf(edge.pts[terminalIdx], leaves);
-            if (terminalSeat) {
-              if (resideAttempt(terminalSeat.node)) {
-                applied = true;
-              }
-            }
-          }
-        }
-        if (applied) break;
       }
-      if (!applied) break;
     }
   }
+  return false;
+}
+function neighboursDegrade(edge, pts, move) {
+  const { run, axis } = move;
+  for (const k of [run.i - 1, run.i + 1]) {
+    if (k < 0 || k + 1 >= pts.length) continue;
+    const before = edge.pts[k + 1][axis] - edge.pts[k][axis];
+    const after = pts[k + 1][axis] - pts[k][axis];
+    if (Math.abs(after) < ORTHOGONAL_EPSILON || before * after < 0) return true;
+  }
+  return false;
+}
+function neighboursHitNode(ctx, pts, move) {
+  const { run } = move;
+  for (const k of [run.i - 1, run.i + 1]) {
+    if (k < 0 || k + 1 >= pts.length) continue;
+    const a = pts[k];
+    const b = pts[k + 1];
+    const v = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+    const at = v ? a.x : a.y;
+    const lo = v ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const hi = v ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    if (Math.abs(hi - lo) >= ORTHOGONAL_EPSILON && ctx.runHitsNode(v, at, lo, hi)) return true;
+  }
+  return false;
+}
+function landsOnAnotherSide(ctx, move, own) {
+  for (const node of ctx.scene.nodes) {
+    if (own.has(node)) continue;
+    if (ctx.hugTargetOf({ ...move.run, at: move.target }, node) !== null) return true;
+  }
+  return false;
+}
+function movedRunConflicts(ctx, edge, pts, move) {
+  const { scene, otherSideRuns } = ctx;
+  const { run, target } = move;
+  const movedA = pts[run.i];
+  const movedB = pts[run.i + 1];
+  let newCrossings = 0;
+  for (const other of scene.edges) {
+    if (other.id === edge.id) continue;
+    for (const o of otherSideRuns.get(other.id) ?? []) {
+      if (o.vert === run.vert) {
+        const shared = Math.min(run.hi, o.hi) - Math.max(run.lo, o.lo);
+        const gapBefore = Math.abs(o.at - run.at);
+        const gapAfter = Math.abs(o.at - target);
+        if (gapAfter < 3 && shared > 8 || gapBefore >= 10 && gapAfter < 10 && shared > 40)
+          return true;
+      } else {
+        const oA = o.vert ? { x: o.at, y: o.lo } : { x: o.lo, y: o.at };
+        const oB = o.vert ? { x: o.at, y: o.hi } : { x: o.hi, y: o.at };
+        const crossedBefore = segmentsCross(edge.pts[run.i], edge.pts[run.i + 1], oA, oB);
+        const crossedAfter = segmentsCross(movedA, movedB, oA, oB);
+        if (!crossedBefore && crossedAfter) newCrossings++;
+      }
+    }
+  }
+  return newCrossings > 1;
+}
+function attemptHugFix(ctx, edge, move, own) {
+  const { tier0Blocked, runHitsNode, otherSideRuns, sideRunsOf } = ctx;
+  const { run, axis, target } = move;
+  const delta = target - run.at;
+  if (Math.abs(delta) < ORTHOGONAL_EPSILON) return false;
+  const pts = edge.pts.map((p) => ({ ...p }));
+  pts[run.i][axis] += delta;
+  pts[run.i + 1][axis] += delta;
+  if (slidTerminalsClash(ctx, edge, pts, move)) return false;
+  if (neighboursDegrade(edge, pts, move)) return false;
+  if (runHitsNode(run.vert, target, run.lo, run.hi)) return false;
+  if (tier0Blocked(pts, Math.max(0, run.i - 1), own)) return false;
+  if (neighboursHitNode(ctx, pts, move)) return false;
+  if (landsOnAnotherSide(ctx, move, own)) return false;
+  if (movedRunConflicts(ctx, edge, pts, move)) return false;
+  edge.pts = pts;
+  otherSideRuns.set(edge.id, sideRunsOf(edge));
+  return true;
+}
+function interiorRiserIndex(foreign) {
+  for (let i = 1; i + 2 < foreign.pts.length; i++) {
+    const a = foreign.pts[i];
+    const b = foreign.pts[i + 1];
+    if (Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON || Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON)
+      continue;
+    if (Math.abs(foreign.pts[i - 1].y - a.y) >= ORTHOGONAL_EPSILON) continue;
+    if (Math.abs(foreign.pts[i + 2].y - b.y) >= ORTHOGONAL_EPSILON) continue;
+    return i;
+  }
+  return -1;
+}
+function riserInsideOwnLayer(ctx, foreign, newX) {
+  const { leaves, containerOf } = ctx;
+  const inLayer = (c) => c !== null && newX > c.x - 8 && newX < c.x + c.width + 8;
+  const source = sideOf(foreign.pts[0], leaves);
+  const target = sideOf(foreign.pts[foreign.pts.length - 1], leaves);
+  return inLayer(source ? containerOf(source.node) : null) || inLayer(target ? containerOf(target.node) : null);
+}
+function riserNeighboursReverse(foreign, pts, r) {
+  for (const k of [r - 1, r + 1]) {
+    if (k < 0 || k + 1 >= pts.length) continue;
+    const before = foreign.pts[k + 1].x - foreign.pts[k].x;
+    const after = pts[k + 1].x - pts[k].x;
+    if (Math.abs(after) < ORTHOGONAL_EPSILON || before * after < 0) return true;
+  }
+  return false;
+}
+function movedRiserHugs(ctx, foreign, riserRun) {
+  const { scene, leaves, hugTargetOf } = ctx;
+  const source = sideOf(foreign.pts[0], leaves);
+  const target = sideOf(foreign.pts[foreign.pts.length - 1], leaves);
+  for (const node of scene.nodes) {
+    if ((source?.node === node || target?.node === node) && !node.container) continue;
+    if (hugTargetOf(riserRun, node) !== null) return true;
+  }
+  return false;
+}
+function relocationCrossingsOk(ctx, foreign, pts, blocked) {
+  let trade = 0;
+  let otherNew = 0;
+  for (const other of ctx.scene.edges) {
+    if (other.id === foreign.id) continue;
+    const otherPts = other.id === blocked.edge.id ? blocked.pts : other.pts;
+    for (let oi = 0; oi + 1 < otherPts.length; oi++) {
+      for (let fi = 0; fi + 1 < pts.length; fi++) {
+        const after = segmentsCross(pts[fi], pts[fi + 1], otherPts[oi], otherPts[oi + 1]);
+        if (other.id === blocked.edge.id) {
+          if (after) trade++;
+        } else {
+          const before = segmentsCross(
+            foreign.pts[fi],
+            foreign.pts[fi + 1],
+            other.pts[oi],
+            other.pts[oi + 1]
+          );
+          if (!before && after) otherNew++;
+        }
+      }
+    }
+  }
+  return trade === 1 && otherNew <= 1;
+}
+function relocateRiser(ctx, foreign, blocked) {
+  const { leaves, runHitsNode, tier0Blocked, otherSideRuns, sideRunsOf } = ctx;
+  const r = interiorRiserIndex(foreign);
+  if (r < 0) return false;
+  const oldX = foreign.pts[r].x;
+  const loY = Math.min(foreign.pts[r].y, foreign.pts[r + 1].y);
+  const hiY = Math.max(foreign.pts[r].y, foreign.pts[r + 1].y);
+  const fOwn = /* @__PURE__ */ new Set();
+  for (const p of [foreign.pts[0], foreign.pts[foreign.pts.length - 1]]) {
+    const s = sideOf(p, leaves);
+    if (s) fOwn.add(s.node);
+  }
+  for (let step = 8; step <= 400; step += 8) {
+    const newX = oldX - step;
+    if (newX < 4) break;
+    if (Math.abs(newX - blocked.riserAt) < 10) continue;
+    if (riserInsideOwnLayer(ctx, foreign, newX)) continue;
+    const pts = foreign.pts.map((p) => ({ ...p }));
+    pts[r].x = newX;
+    pts[r + 1].x = newX;
+    if (riserNeighboursReverse(foreign, pts, r)) continue;
+    if (runHitsNode(true, newX, loY, hiY)) continue;
+    if (tier0Blocked(pts, Math.max(0, r - 1), fOwn)) continue;
+    if (movedRiserHugs(ctx, foreign, { vert: true, at: newX, lo: loY, hi: hiY, i: r })) continue;
+    if (!relocationCrossingsOk(ctx, foreign, pts, blocked)) continue;
+    foreign.pts = pts;
+    otherSideRuns.set(foreign.id, sideRunsOf(foreign));
+    return true;
+  }
+  return false;
+}
+function buildResideRoute(edge, cand) {
+  const { run, isStart, neighbourIdx, terminalValue, terminalAlong, riserAt } = cand;
+  if (isStart) {
+    const rest = edge.pts.slice(neighbourIdx).map((p) => ({ ...p }));
+    const rejoin = { ...rest[0] };
+    if (run.vert) rejoin.x = riserAt;
+    else rejoin.y = riserAt;
+    const head = run.vert ? [
+      { x: terminalValue, y: terminalAlong },
+      { x: riserAt, y: terminalAlong }
+    ] : [
+      { x: terminalAlong, y: terminalValue },
+      { x: terminalAlong, y: riserAt }
+    ];
+    return { pts: [...head, rejoin, ...rest.slice(1)], fromIdx: 0 };
+  }
+  const pts = edge.pts.slice(0, neighbourIdx + 1).map((p) => ({ ...p }));
+  if (run.vert) pts[pts.length - 1].x = riserAt;
+  else pts[pts.length - 1].y = riserAt;
+  if (run.vert) {
+    pts.push({ x: riserAt, y: terminalAlong });
+    pts.push({ x: terminalValue, y: terminalAlong });
+  } else {
+    pts.push({ x: terminalAlong, y: riserAt });
+    pts.push({ x: terminalAlong, y: terminalValue });
+  }
+  return { pts, fromIdx: neighbourIdx };
+}
+function resideHitsNodes(ctx, pts, fromIdx) {
+  for (let i = fromIdx; i + 1 < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const v = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+    if (Math.abs(a[v ? "y" : "x"] - b[v ? "y" : "x"]) < ORTHOGONAL_EPSILON) continue;
+    const at = v ? a.x : a.y;
+    const lo = v ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const hi = v ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    if (ctx.runHitsNode(v, at, lo, hi)) return true;
+  }
+  return false;
+}
+function rejoinDegrades(edge, pts, cand) {
+  const { run, isStart, neighbourIdx, riserAt } = cand;
+  const axis = run.vert ? "x" : "y";
+  if (isStart) {
+    const rest = edge.pts.slice(neighbourIdx);
+    if (rest.length < 2) return false;
+    const before2 = rest[1][axis] - rest[0][axis];
+    const after2 = rest[1][axis] - riserAt;
+    return Math.abs(after2) < ORTHOGONAL_EPSILON || before2 * after2 < 0;
+  }
+  if (neighbourIdx <= 0) return false;
+  const before = edge.pts[neighbourIdx][axis] - edge.pts[neighbourIdx - 1][axis];
+  const after = pts[neighbourIdx][axis] - pts[neighbourIdx - 1][axis];
+  return Math.abs(after) < ORTHOGONAL_EPSILON || before * after < 0;
+}
+function resideHugs(ctx, pts, fromIdx, own) {
+  for (let i = fromIdx; i + 1 < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const segVert = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON && Math.abs(a.y - b.y) >= ORTHOGONAL_EPSILON;
+    const segHoriz = Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON && Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON;
+    if (!segVert && !segHoriz) continue;
+    const segRun = {
+      vert: segVert,
+      at: segVert ? a.x : a.y,
+      lo: segVert ? Math.min(a.y, b.y) : Math.min(a.x, b.x),
+      hi: segVert ? Math.max(a.y, b.y) : Math.max(a.x, b.x)
+    };
+    for (const node of ctx.scene.nodes) {
+      if (own.has(node)) continue;
+      if (ctx.hugTargetOf(segRun, node) !== null) return true;
+    }
+  }
+  return false;
+}
+function gainedCrossings(ctx, edge, route) {
+  const { pts, fromIdx, replaceMap } = route;
+  const crossedBeforePairs = /* @__PURE__ */ new Set();
+  const crossedAfterPairs = /* @__PURE__ */ new Set();
+  for (const other of ctx.scene.edges) {
+    if (other.id === edge.id) continue;
+    for (let oi = 0; oi + 1 < other.pts.length; oi++) {
+      for (let ni = fromIdx; ni + 1 < pts.length; ni++) {
+        const oldIdx = replaceMap[ni];
+        const before = oldIdx >= 0 ? segmentsCross(
+          edge.pts[oldIdx],
+          edge.pts[oldIdx + 1],
+          other.pts[oi],
+          other.pts[oi + 1]
+        ) : false;
+        const after = segmentsCross(pts[ni], pts[ni + 1], other.pts[oi], other.pts[oi + 1]);
+        if (!before && after) crossedAfterPairs.add(other.id);
+        if (before && !after) crossedBeforePairs.add(other.id);
+      }
+    }
+  }
+  return [...crossedAfterPairs].filter((id) => !crossedBeforePairs.has(id));
+}
+function newSeatUnusable(ctx, edge, terminal) {
+  const { scene, leaves } = ctx;
+  const newSeat = sideOf(terminal, leaves);
+  if (!newSeat) return true;
+  const vertical = newSeat.side === "east" || newSeat.side === "west";
+  const myAlong = vertical ? terminal.y : terminal.x;
+  for (const other of scene.edges) {
+    if (other.id === edge.id || other.pts.length < 2) continue;
+    for (const q of [other.pts[0], other.pts[other.pts.length - 1]]) {
+      const qSeat = sideOf(q, leaves);
+      if (qSeat && qSeat.node === newSeat.node && qSeat.side === newSeat.side) {
+        const along = vertical ? q.y : q.x;
+        if (Math.abs(along - myAlong) < 6) return true;
+      }
+    }
+  }
+  return false;
+}
+function tryResideCandidate(ctx, edge, cand, own) {
+  const { scene, tier0Blocked, otherSideRuns, sideRunsOf } = ctx;
+  const { pts, fromIdx } = buildResideRoute(edge, cand);
+  const replaceMap = cand.replaceMapOf(pts);
+  if (resideHitsNodes(ctx, pts, fromIdx)) return false;
+  if (tier0Blocked(pts, fromIdx, own)) return false;
+  if (rejoinDegrades(edge, pts, cand)) return false;
+  if (resideHugs(ctx, pts, fromIdx, own)) return false;
+  const gained = gainedCrossings(ctx, edge, { pts, fromIdx, replaceMap });
+  const accept = () => {
+    edge.pts = pts;
+    otherSideRuns.set(edge.id, sideRunsOf(edge));
+    return true;
+  };
+  if (gained.length === 0) {
+    const newTerminal = cand.isStart ? pts[0] : pts[pts.length - 1];
+    if (newSeatUnusable(ctx, edge, newTerminal)) return false;
+    return accept();
+  }
+  if (gained.length === 1) {
+    const foreign = scene.edges.find((e) => e.id === gained[0]);
+    if (foreign && relocateRiser(ctx, foreign, { edge, pts, riserAt: cand.riserAt }))
+      return accept();
+  }
+  return false;
+}
+function sideGeometry(node, side) {
+  const vertical = side === "west" || side === "east";
+  return {
+    value: side === "west" ? node.x : side === "east" ? node.x + node.width : side === "north" ? node.y : node.y + node.height,
+    spanLo: vertical ? node.y : node.x,
+    spanHi: vertical ? node.y + node.height : node.x + node.width
+  };
+}
+function resideAlongs(ctx, edge, target, span) {
+  const { scene, leaves } = ctx;
+  const { spanLo, spanHi } = span;
+  const sideLength = spanHi - spanLo;
+  const siblings = scene.edges.filter((e) => e.id !== edge.id && e.pts.length >= 2).flatMap((e) => [e.pts[0], e.pts[e.pts.length - 1]]).map((p) => {
+    const s = sideOf(p, leaves);
+    if (!s || s.node !== target.node || s.side !== target.side) return null;
+    return s.side === "east" || s.side === "west" ? p.y : p.x;
+  }).filter((v) => v !== null);
+  const required = Math.min(12, (sideLength - 6) / (siblings.length + 1)) * 0.8;
+  const alongs = [];
+  const mid = (spanLo + spanHi) / 2;
+  for (let k = 0; k * 8 + 8 <= sideLength / 2 + 8; k++) {
+    for (const candidate of [mid + k * 8, mid - k * 8]) {
+      if (candidate < spanLo || candidate > spanHi) continue;
+      if (Math.abs(candidate - spanLo) < 2.5 || Math.abs(candidate - spanHi) < 2.5) continue;
+      if (siblings.some((s) => Math.abs(s - candidate) < Math.max(6, required))) continue;
+      if (!alongs.includes(candidate)) alongs.push(candidate);
+    }
+  }
+  return alongs;
+}
+function riserClearsLayer(layer, side, riserAt) {
+  if (!layer) return true;
+  if (side === "west") return riserAt <= layer.x - 8;
+  if (side === "east") return riserAt >= layer.x + layer.width + 8;
+  if (side === "north") return riserAt >= layer.y + 8;
+  return riserAt <= layer.y + layer.height - 8;
+}
+function resideAtSide(ctx, edge, run, own) {
+  const { leaves, containerOf } = ctx;
+  if (edge.pts.length < 3) return false;
+  const isStart = run.i === 0;
+  const neighbourIdx = isStart ? 1 : edge.pts.length - 2;
+  if (neighbourIdx < 0 || neighbourIdx >= edge.pts.length) return false;
+  const seat = sideOf(edge.pts[isStart ? 0 : edge.pts.length - 1], leaves);
+  if (!seat) return false;
+  const terminalNode = seat.node;
+  const layer = containerOf(terminalNode);
+  const replaceMapOf = (pts) => {
+    const map = [];
+    for (let k = 0; k + 1 < pts.length; k++) {
+      if (isStart) map.push(k >= 2 ? k - 1 : -1);
+      else map.push(k < edge.pts.length - 1 ? k : -1);
+    }
+    return map;
+  };
+  const vertSeat = seat.side === "north" || seat.side === "south";
+  const newSides = vertSeat ? ["west", "east"] : ["north", "south"];
+  for (const newSide of newSides) {
+    const geometry = sideGeometry(terminalNode, newSide);
+    const alongs = resideAlongs(ctx, edge, { node: terminalNode, side: newSide }, geometry);
+    for (const terminalAlong of alongs) {
+      for (const dir of [-1, 1]) {
+        for (let step = 8; step <= 400; step += 8) {
+          const riserAt = run.at + dir * step;
+          if (riserAt < 4) break;
+          if (!riserClearsLayer(layer, newSide, riserAt)) continue;
+          const candidate = {
+            run,
+            isStart,
+            neighbourIdx,
+            replaceMapOf,
+            terminalValue: geometry.value,
+            terminalAlong,
+            riserAt
+          };
+          if (tryResideCandidate(ctx, edge, candidate, own)) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+function ownNodesOf(edge, leaves) {
+  const own = /* @__PURE__ */ new Set();
+  for (const p of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+    const seat = sideOf(p, leaves);
+    if (seat) own.add(seat.node);
+  }
+  return own;
+}
+function slideClamp(edge, run, leaves) {
+  let lo = -Infinity;
+  let hi = Infinity;
+  for (const [idx, isFirst] of [
+    [run.i, true],
+    [run.i + 1, false]
+  ]) {
+    const isTerminal = isFirst ? run.i === 0 : run.i + 1 === edge.pts.length - 1;
+    if (!isTerminal) continue;
+    const seat = sideOf(edge.pts[idx], leaves);
+    if (!seat) continue;
+    const slides = run.vert ? seat.side === "north" || seat.side === "south" : seat.side === "west" || seat.side === "east";
+    if (!slides) return { lo: Infinity, hi: -Infinity };
+    lo = Math.max(lo, run.vert ? seat.node.x : seat.node.y);
+    hi = Math.min(hi, run.vert ? seat.node.x + seat.node.width : seat.node.y + seat.node.height);
+  }
+  return { lo, hi };
+}
+function clearRunHug(ctx, edge, run, own) {
+  const { scene, leaves, hugTargetsOf } = ctx;
+  const targets = [];
+  for (const node of scene.nodes) {
+    if (own.has(node)) continue;
+    for (const t of hugTargetsOf(run, node)) if (!targets.includes(t)) targets.push(t);
+  }
+  if (!targets.length) return false;
+  const clamp = slideClamp(edge, run, leaves);
+  if (clamp.lo > clamp.hi) return false;
+  const axis = run.vert ? "x" : "y";
+  for (const rawTarget of targets) {
+    const target = Math.min(Math.max(rawTarget, clamp.lo), clamp.hi);
+    if (attemptHugFix(ctx, edge, { run, axis, target }, own)) return true;
+  }
+  if (run.i !== 0 && run.i + 1 !== edge.pts.length - 1) return false;
+  if (!sideOf(edge.pts[run.i === 0 ? 0 : edge.pts.length - 1], leaves)) return false;
+  return resideAtSide(ctx, edge, run, own);
+}
+function clearEdgeHugs(ctx, edge) {
+  if (edge.pts.length < 2) return;
+  const own = ownNodesOf(edge, ctx.leaves);
+  for (let guard = 0; guard < 8; guard++) {
+    let applied = false;
+    for (const run of ctx.sideRunsOf(edge)) {
+      if (clearRunHug(ctx, edge, run, own)) {
+        applied = true;
+        break;
+      }
+    }
+    if (!applied) break;
+  }
+}
+function clearSideHugs(scene, titleBoxes = []) {
+  const ctx = createHugContext(scene, titleBoxes);
+  for (const edge of scene.edges) clearEdgeHugs(ctx, edge);
+}
+var seatWithAlong = (p, leaves) => {
+  const s = sideOf(p, leaves);
+  if (!s) return null;
+  return {
+    node: s.node,
+    side: s.side,
+    along: s.side === "east" || s.side === "west" ? p.y : p.x
+  };
+};
+var crossingsOf = (a, b) => {
+  let count = 0;
+  for (let i = 0; i + 1 < a.length; i++)
+    for (let j = 0; j + 1 < b.length; j++)
+      if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) count++;
+  return count;
+};
+function buildSwap(edge, terminalIdx, newAlong, leaves) {
+  const pts = edge.pts.map((p) => ({ ...p }));
+  const last = pts.length - 1;
+  const ti = terminalIdx === 0 ? 0 : last;
+  const ni = terminalIdx === 0 ? 1 : last - 1;
+  if (ni < 0 || ni > last) return null;
+  const s = seatWithAlong(edge.pts[ti], leaves);
+  if (!s) return null;
+  const v = s.side === "east" || s.side === "west";
+  const oldAlong = v ? pts[ti].y : pts[ti].x;
+  const delta = newAlong - oldAlong;
+  if (Math.abs(delta) < ORTHOGONAL_EPSILON) return null;
+  if (v) {
+    pts[ti].y += delta;
+    pts[ni].y += delta;
+  } else {
+    pts[ti].x += delta;
+    pts[ni].x += delta;
+  }
+  return pts;
+}
+function wouldHug(pts, leaves) {
+  const own = /* @__PURE__ */ new Set();
+  for (const p of [pts[0], pts[pts.length - 1]]) {
+    const s = sideOf(p, leaves);
+    if (s) own.add(s.node);
+  }
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const vert = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON && Math.abs(a.y - b.y) >= ORTHOGONAL_EPSILON;
+    const horiz = Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON && Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON;
+    if (!vert && !horiz) continue;
+    for (const node of leaves) {
+      if (own.has(node)) continue;
+      const shared = vert ? Math.min(Math.max(a.y, b.y), node.y + node.height) - Math.max(Math.min(a.y, b.y), node.y) : Math.min(Math.max(a.x, b.x), node.x + node.width) - Math.max(Math.min(a.x, b.x), node.x);
+      if (shared <= MIN_HUG_SPAN) continue;
+      const gap = vert ? Math.min(Math.abs(a.x - node.x), Math.abs(a.x - (node.x + node.width))) : Math.min(Math.abs(a.y - node.y), Math.abs(a.y - (node.y + node.height)));
+      if (gap < 3) return true;
+    }
+  }
+  return false;
+}
+function matchSharedSide(aEnds, bEnds) {
+  for (const [aIdx, aSeat] of aEnds.entries())
+    for (const [bIdx, bSeat] of bEnds.entries())
+      if (aSeat && bSeat && aSeat.node === bSeat.node && aSeat.side === bSeat.side)
+        return { aIdx, bIdx, aAlong: aSeat.along, bAlong: bSeat.along };
+  return null;
+}
+function swapAddsCrossings(scene, pair2, next) {
+  for (const other of scene.edges) {
+    if (other.id === pair2.a.id || other.id === pair2.b.id) continue;
+    const before = crossingsOf(pair2.a.pts, other.pts) + crossingsOf(pair2.b.pts, other.pts);
+    const after = crossingsOf(next.a, other.pts) + crossingsOf(next.b, other.pts);
+    if (after > before) return true;
+  }
+  return false;
+}
+function swapSeatsCollide(scene, pair2, newSeats, leaves) {
+  for (const other of scene.edges) {
+    if (other.id === pair2.a.id || other.id === pair2.b.id) continue;
+    for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
+      const s = seatWithAlong(p, leaves);
+      if (!s) continue;
+      for (const ns of newSeats)
+        if (s.node === ns.node && s.side === ns.side && Math.abs(s.along - ns.along) < 6)
+          return true;
+    }
+  }
+  return false;
+}
+function trySwapSeats(scene, pair2, match, leaves) {
+  const { a: A, b: B } = pair2;
+  if (Math.abs(match.aAlong - match.bAlong) < ORTHOGONAL_EPSILON) return;
+  if (crossingsOf(A.pts, B.pts) === 0) return;
+  const aCandidate = buildSwap(A, match.aIdx, match.bAlong, leaves);
+  const bCandidate = buildSwap(B, match.bIdx, match.aAlong, leaves);
+  if (!aCandidate || !bCandidate) return;
+  if (crossingsOf(aCandidate, bCandidate) > 0) return;
+  if (swapAddsCrossings(scene, pair2, { a: aCandidate, b: bCandidate })) return;
+  if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return;
+  const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
+  const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
+  if (!aNewSeat || !bNewSeat) return;
+  if (swapSeatsCollide(scene, pair2, [aNewSeat, bNewSeat], leaves)) return;
+  A.pts = aCandidate;
+  B.pts = bCandidate;
 }
 function swapCrossingSiblingSeats(scene) {
   const leaves = scene.nodes.filter((node) => !node.container);
-  const seatOf = (p) => {
-    const s = sideOf(p, leaves);
-    if (!s) return null;
-    return {
-      node: s.node,
-      side: s.side,
-      along: s.side === "east" || s.side === "west" ? p.y : p.x
-    };
-  };
-  const buildSwap = (edge, terminalIdx, newAlong) => {
-    const pts = edge.pts.map((p) => ({ ...p }));
-    const last = pts.length - 1;
-    const ti = terminalIdx === 0 ? 0 : last;
-    const ni = terminalIdx === 0 ? 1 : last - 1;
-    if (ni < 0 || ni > last) return null;
-    const s = seatOf(edge.pts[ti]);
-    if (!s) return null;
-    const v = s.side === "east" || s.side === "west";
-    const oldAlong = v ? pts[ti].y : pts[ti].x;
-    const delta = newAlong - oldAlong;
-    if (Math.abs(delta) < 0.5) return null;
-    if (v) {
-      pts[ti].y += delta;
-      pts[ni].y += delta;
-    } else {
-      pts[ti].x += delta;
-      pts[ni].x += delta;
-    }
-    return pts;
-  };
-  const crossingsOf = (a, b) => {
-    let count = 0;
-    for (let i = 0; i + 1 < a.length; i++)
-      for (let j = 0; j + 1 < b.length; j++)
-        if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) count++;
-    return count;
-  };
-  const wouldHug = (pts) => {
-    const own = /* @__PURE__ */ new Set();
-    for (const p of [pts[0], pts[pts.length - 1]]) {
-      const s = sideOf(p, leaves);
-      if (s) own.add(s.node);
-    }
-    for (let i = 0; i + 1 < pts.length; i++) {
-      const a = pts[i];
-      const b = pts[i + 1];
-      const vert = Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5;
-      const horiz = Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5;
-      if (!vert && !horiz) continue;
-      for (const node of leaves) {
-        if (own.has(node)) continue;
-        const shared = vert ? Math.min(Math.max(a.y, b.y), node.y + node.height) - Math.max(Math.min(a.y, b.y), node.y) : Math.min(Math.max(a.x, b.x), node.x + node.width) - Math.max(Math.min(a.x, b.x), node.x);
-        if (shared <= 24) continue;
-        const gap = vert ? Math.min(Math.abs(a.x - node.x), Math.abs(a.x - (node.x + node.width))) : Math.min(Math.abs(a.y - node.y), Math.abs(a.y - (node.y + node.height)));
-        if (gap < 3) return true;
-      }
-    }
-    return false;
-  };
+  const endsOf = (edge) => [
+    seatWithAlong(edge.pts[0], leaves),
+    seatWithAlong(edge.pts[edge.pts.length - 1], leaves)
+  ];
   for (let i = 0; i < scene.edges.length; i++) {
-    const A = scene.edges[i];
-    if (A.pts.length < 2) continue;
-    const aStart = seatOf(A.pts[0]);
-    const aEnd = seatOf(A.pts[A.pts.length - 1]);
-    if (!aStart && !aEnd) continue;
+    const a = scene.edges[i];
+    if (a.pts.length < 2) continue;
+    const aEnds = endsOf(a);
+    if (!aEnds[0] && !aEnds[1]) continue;
     for (let j = i + 1; j < scene.edges.length; j++) {
-      const B = scene.edges[j];
-      if (B.pts.length < 2) continue;
-      const bStart = seatOf(B.pts[0]);
-      const bEnd = seatOf(B.pts[B.pts.length - 1]);
-      if (!bStart && !bEnd) continue;
-      const match = aStart && bStart && aStart.node === bStart.node && aStart.side === bStart.side ? { aIdx: 0, bIdx: 0, seat: aStart } : aStart && bEnd && aStart.node === bEnd.node && aStart.side === bEnd.side ? { aIdx: 0, bIdx: 1, seat: aStart } : aEnd && bStart && aEnd.node === bStart.node && aEnd.side === bStart.side ? { aIdx: 1, bIdx: 0, seat: aEnd } : aEnd && bEnd && aEnd.node === bEnd.node && aEnd.side === bEnd.side ? { aIdx: 1, bIdx: 1, seat: aEnd } : null;
-      if (!match) continue;
-      const aAlong = match.aIdx === 0 ? aStart.along : aEnd.along;
-      const bAlong = match.bIdx === 0 ? bStart.along : bEnd.along;
-      if (Math.abs(aAlong - bAlong) < 0.5) continue;
-      if (crossingsOf(A.pts, B.pts) === 0) continue;
-      const aCandidate = buildSwap(A, match.aIdx, bAlong);
-      const bCandidate = buildSwap(B, match.bIdx, aAlong);
-      if (!aCandidate || !bCandidate) continue;
-      if (crossingsOf(aCandidate, bCandidate) > 0) continue;
-      let ok = true;
-      for (const other of scene.edges) {
-        if (other.id === A.id || other.id === B.id) continue;
-        const before = crossingsOf(A.pts, other.pts) + crossingsOf(B.pts, other.pts);
-        const after = crossingsOf(aCandidate, other.pts) + crossingsOf(bCandidate, other.pts);
-        if (after > before) {
-          ok = false;
-          break;
-        }
-      }
-      if (!ok) continue;
-      if (wouldHug(aCandidate) || wouldHug(bCandidate)) continue;
-      const aNewSeat = seatOf(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1]);
-      const bNewSeat = seatOf(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1]);
-      if (!aNewSeat || !bNewSeat) continue;
-      for (const other of scene.edges) {
-        if (other.id === A.id || other.id === B.id) continue;
-        for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
-          const s = seatOf(p);
-          if (!s) continue;
-          for (const ns of [aNewSeat, bNewSeat]) {
-            if (s.node === ns.node && s.side === ns.side && Math.abs(s.along - ns.along) < 6) {
-              ok = false;
-              break;
-            }
-          }
-          if (!ok) break;
-        }
-        if (!ok) break;
-      }
-      if (!ok) continue;
-      A.pts = aCandidate;
-      B.pts = bCandidate;
+      const b = scene.edges[j];
+      if (b.pts.length < 2) continue;
+      const bEnds = endsOf(b);
+      if (!bEnds[0] && !bEnds[1]) continue;
+      const match = matchSharedSide(aEnds, bEnds);
+      if (match) trySwapSeats(scene, { a, b }, match, leaves);
     }
   }
 }
-function tidyEdges(scene, titleBoxes = [], folded = false) {
-  const leaves = scene.nodes.filter((node) => !node.container);
-  if (!leaves.length) return;
+function createTidyContext(scene, leaves, titleBoxes, folded) {
   const runsExcept = (...edgeIds) => {
     const horizontal = [];
     const vertical = [];
@@ -96961,194 +97166,198 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
       for (let index = 0; index + 1 < edge.pts.length; index++) {
         const a = edge.pts[index];
         const b = edge.pts[index + 1];
-        if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+        if (Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON && Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON)
           horizontal.push({ lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x), at: a.y });
-        else if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+        else if (Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON && Math.abs(a.y - b.y) >= ORTHOGONAL_EPSILON)
           vertical.push({ lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y), at: a.x });
       }
     }
     return { horizontal, vertical };
   };
-  const runHitsNode = (vertical, at, from, to) => runHitsNodeIn(vertical, at, from, to, leaves);
+  const runHitsNode = nodeHitTest(leaves);
   const runIsClear = (others, at, from, to) => !others.some((other) => {
     const gap = Math.abs(other.at - at);
     const shared = Math.min(other.hi, Math.max(from, to)) - Math.max(other.lo, Math.min(from, to));
-    return gap < 4 && shared > 6 || gap < 11 && shared > 36;
+    return wouldMerge(gap, shared);
   });
   const enforceOrthogonal = (edge) => enforceOrthogonalOn(edge, leaves);
-  for (const edge of scene.edges) {
-    if (edge.pts.length < 2) continue;
-    const before = edge.pts.map((point) => ({ ...point }));
-    const others = runsExcept(edge.id);
-    const after = straighten(
-      edge.pts,
-      (vertical, at, from, to) => !runHitsNode(vertical, at, from, to) && runIsClear(vertical ? others.vertical : others.horizontal, at, from, to)
-    );
-    for (const [index, original] of [
-      [0, before[0]],
-      [after.length - 1, before[before.length - 1]]
-    ]) {
-      const seat = sideOf(original, leaves);
-      if (!seat) continue;
-      const { node, side } = seat;
-      const point = after[index];
-      if (side === "north" || side === "south") {
-        point.y = original.y;
-        point.x = Math.min(
-          Math.max(point.x, node.x + SIDE_INSET),
-          node.x + node.width - SIDE_INSET
-        );
-      } else {
-        point.x = original.x;
-        point.y = Math.min(
-          Math.max(point.y, node.y + SIDE_INSET),
-          node.y + node.height - SIDE_INSET
-        );
-      }
+  const bandFor = (a, b) => {
+    if (Math.abs(a.y - b.y) >= ORTHOGONAL_EPSILON) return null;
+    const lo = Math.min(a.x, b.x);
+    const hi = Math.max(a.x, b.x);
+    return titleBoxes.find(
+      (band) => a.y > band.y && a.y < band.y + band.height && lo < band.x + band.width && hi > band.x
+    ) ?? null;
+  };
+  return {
+    scene,
+    leaves,
+    titleBoxes,
+    folded,
+    runsExcept,
+    runHitsNode,
+    runIsClear,
+    enforceOrthogonal,
+    bandFor
+  };
+}
+function clampTerminalsToBorders(after, before, leaves) {
+  for (const [index, original] of [
+    [0, before[0]],
+    [after.length - 1, before[before.length - 1]]
+  ]) {
+    const seat = sideOf(original, leaves);
+    if (!seat) continue;
+    const { node, side } = seat;
+    const point = after[index];
+    if (side === "north" || side === "south") {
+      point.y = original.y;
+      point.x = Math.min(Math.max(point.x, node.x + SIDE_INSET), node.x + node.width - SIDE_INSET);
+    } else {
+      point.x = original.x;
+      point.y = Math.min(Math.max(point.y, node.y + SIDE_INSET), node.y + node.height - SIDE_INSET);
     }
-    edge.pts = after;
-    enforceOrthogonal(edge);
-    const beforeSimplify = edge.pts.map((point) => ({ ...point }));
-    const fans = [];
-    for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
-      const seat = sideOf(terminal, leaves);
-      if (!seat) continue;
-      const siblings = scene.edges.filter(
-        (other) => other !== edge && other.pts.length >= 2 && [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
-          const otherSeat = sideOf(p, leaves);
-          return otherSeat?.node === seat.node && otherSeat?.side === seat.side;
-        })
-      );
-      if (siblings.length) fans.push({ node: seat.node, siblings });
-    }
-    const fanCrossings = (pts) => {
-      let count = 0;
-      for (const { node, siblings } of fans)
-        for (const sibling of siblings)
-          for (let i = 0; i + 1 < pts.length; i++)
-            for (let j = 0; j + 1 < sibling.pts.length; j++) {
-              const hit = segmentsCross(pts[i], pts[i + 1], sibling.pts[j], sibling.pts[j + 1]);
-              if (!hit) continue;
-              const dx = Math.max(0, node.x - hit.x, hit.x - (node.x + node.width));
-              const dy = Math.max(0, node.y - hit.y, hit.y - (node.y + node.height));
-              if (dx * dx + dy * dy <= FAN_REACH2 * FAN_REACH2) count++;
-            }
-      return count;
-    };
-    const fanBefore = fans.length ? fanCrossings(beforeSimplify) : 0;
-    const seatedForeignLabels = [];
-    const segGapSq = (box, a, b) => {
-      const gapX = Math.max(0, box.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (box.x + box.width));
-      const gapY = Math.max(0, box.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (box.y + box.height));
-      return gapX * gapX + gapY * gapY;
-    };
-    for (const other of scene.edges) {
-      if (other === edge || other.pts.length < 2) continue;
-      for (const label of other.labels) {
-        if (!label.width || !label.height) continue;
-        let own = Number.POSITIVE_INFINITY;
-        for (let index = 0; index + 1 < other.pts.length; index++)
-          own = Math.min(own, segGapSq(label, other.pts[index], other.pts[index + 1]));
-        if (own <= SNAP * SNAP) seatedForeignLabels.push(label);
-      }
-    }
-    const outside = runsExcept(edge.id);
-    const polylineOk = (pts) => {
-      if (pts.length < 2) return false;
-      for (let index = 0; index + 1 < pts.length; index++) {
-        const a = pts[index];
-        const b = pts[index + 1];
-        const deltaX = Math.abs(a.x - b.x);
-        const deltaY = Math.abs(a.y - b.y);
-        if (deltaX >= 0.5 && deltaY >= 0.5) return false;
-        const runVertical = deltaX < 0.5;
-        const at = runVertical ? a.x : a.y;
-        const from = runVertical ? a.y : a.x;
-        const to = runVertical ? b.y : b.x;
-        if (runHitsNode(runVertical, at, from, to)) return false;
-        if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
-          return false;
-        for (const label of seatedForeignLabels) if (segGapSq(label, a, b) <= 1) return false;
-      }
-      if (fans.length && fanCrossings(pts) > fanBefore) return false;
-      return true;
-    };
-    for (let guard = 0; guard < 20; guard++) {
-      let changed = false;
-      for (let index = 2; index + 2 < edge.pts.length - 1 && !changed; index++) {
-        const a = edge.pts[index - 1];
-        const b = edge.pts[index];
-        const c = edge.pts[index + 1];
-        const d = edge.pts[index + 2];
-        const horizontal = (p, q) => Math.abs(p.y - q.y) < 0.5;
-        if (horizontal(a, b) !== horizontal(c, d)) continue;
-        if (horizontal(a, b) === horizontal(b, c)) continue;
-        const outerAlong = horizontal(a, b) ? (b.x - a.x) * (d.x - c.x) : (b.y - a.y) * (d.y - c.y);
-        if (outerAlong <= 0) continue;
-        const corners = horizontal(a, b) ? [
-          { x: d.x, y: a.y },
-          { x: a.x, y: d.y }
-        ] : [
-          { x: a.x, y: d.y },
-          { x: d.x, y: a.y }
-        ];
-        for (const merged of corners) {
-          const attempt = [...edge.pts.slice(0, index), merged, ...edge.pts.slice(index + 2)];
-          for (let k = 1; k + 1 < attempt.length; ) {
-            const p = attempt[k - 1];
-            const q = attempt[k];
-            const r = attempt[k + 1];
-            const collinearX = Math.abs(p.x - q.x) < 0.5 && Math.abs(q.x - r.x) < 0.5;
-            const collinearY = Math.abs(p.y - q.y) < 0.5 && Math.abs(q.y - r.y) < 0.5;
-            if (collinearX || collinearY) attempt.splice(k, 1);
-            else k++;
-          }
-          if (!polylineOk(attempt)) continue;
-          edge.pts = attempt;
-          changed = true;
-          break;
-        }
-      }
-      if (!changed) break;
-    }
-    enforceOrthogonal(edge);
   }
+}
+function fansOf(scene, edge, leaves) {
+  const fans = [];
+  for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+    const seat = sideOf(terminal, leaves);
+    if (!seat) continue;
+    const siblings = scene.edges.filter(
+      (other) => other !== edge && other.pts.length >= 2 && [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
+        const otherSeat = sideOf(p, leaves);
+        return otherSeat?.node === seat.node && otherSeat?.side === seat.side;
+      })
+    );
+    if (siblings.length) fans.push({ node: seat.node, siblings });
+  }
+  return fans;
+}
+function crossingsNearNode(node, pts, other) {
+  let count = 0;
+  for (let start = 0; start + 1 < pts.length; start++)
+    for (let otherStart = 0; otherStart + 1 < other.length; otherStart++) {
+      const hit = segmentsCross(
+        pts[start],
+        pts[start + 1],
+        other[otherStart],
+        other[otherStart + 1]
+      );
+      if (!hit) continue;
+      const gapX = Math.max(0, node.x - hit.x, hit.x - (node.x + node.width));
+      const gapY = Math.max(0, node.y - hit.y, hit.y - (node.y + node.height));
+      if (gapX * gapX + gapY * gapY <= FAN_REACH2 * FAN_REACH2) count++;
+    }
+  return count;
+}
+function fanCrossings(fans, pts) {
+  let count = 0;
+  for (const { node, siblings } of fans)
+    for (const sibling of siblings) count += crossingsNearNode(node, pts, sibling.pts);
+  return count;
+}
+function collapsedPolylineOk(ctx, guards, pts) {
+  const { runHitsNode, runIsClear } = ctx;
+  if (pts.length < 2) return false;
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const a = pts[index];
+    const b = pts[index + 1];
+    const deltaX = Math.abs(a.x - b.x);
+    const deltaY = Math.abs(a.y - b.y);
+    if (deltaX >= ORTHOGONAL_EPSILON && deltaY >= ORTHOGONAL_EPSILON) return false;
+    const runVertical = deltaX < ORTHOGONAL_EPSILON;
+    const at = runVertical ? a.x : a.y;
+    const from = runVertical ? a.y : a.x;
+    const to = runVertical ? b.y : b.x;
+    if (runHitsNode(runVertical, at, from, to)) return false;
+    if (!runIsClear(runVertical ? guards.outside.vertical : guards.outside.horizontal, at, from, to))
+      return false;
+    if (guards.labels.some((label) => segmentGapSq(label, a, b) <= 1)) return false;
+  }
+  if (guards.fans.length && fanCrossings(guards.fans, pts) > guards.fanBefore) return false;
+  return true;
+}
+function dropCollinear(attempt) {
+  for (let k = 1; k + 1 < attempt.length; ) {
+    const p = attempt[k - 1];
+    const q = attempt[k];
+    const r = attempt[k + 1];
+    const collinearX = Math.abs(p.x - q.x) < ORTHOGONAL_EPSILON && Math.abs(q.x - r.x) < ORTHOGONAL_EPSILON;
+    const collinearY = Math.abs(p.y - q.y) < ORTHOGONAL_EPSILON && Math.abs(q.y - r.y) < ORTHOGONAL_EPSILON;
+    if (collinearX || collinearY) attempt.splice(k, 1);
+    else k++;
+  }
+}
+function sCurveCorners(pts, index) {
+  const a = pts[index - 1];
+  const b = pts[index];
+  const c = pts[index + 1];
+  const d = pts[index + 2];
+  const horizontal = (p, q) => Math.abs(p.y - q.y) < ORTHOGONAL_EPSILON;
+  if (horizontal(a, b) !== horizontal(c, d)) return null;
+  if (horizontal(a, b) === horizontal(b, c)) return null;
+  const outerAlong = horizontal(a, b) ? (b.x - a.x) * (d.x - c.x) : (b.y - a.y) * (d.y - c.y);
+  if (outerAlong <= 0) return null;
+  return horizontal(a, b) ? [
+    { x: d.x, y: a.y },
+    { x: a.x, y: d.y }
+  ] : [
+    { x: a.x, y: d.y },
+    { x: d.x, y: a.y }
+  ];
+}
+function collapseSCurves(ctx, edge, guards) {
+  for (let guard = 0; guard < 20; guard++) {
+    let changed = false;
+    for (let index = 2; index + 2 < edge.pts.length - 1 && !changed; index++) {
+      const corners = sCurveCorners(edge.pts, index);
+      if (!corners) continue;
+      for (const merged of corners) {
+        const attempt = [...edge.pts.slice(0, index), merged, ...edge.pts.slice(index + 2)];
+        dropCollinear(attempt);
+        if (!collapsedPolylineOk(ctx, guards, attempt)) continue;
+        edge.pts = attempt;
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) break;
+  }
+}
+function straightenAndCollapseEdge(ctx, edge) {
+  const { scene, leaves, runsExcept, runHitsNode, runIsClear, enforceOrthogonal } = ctx;
+  if (edge.pts.length < 2) return;
+  const before = edge.pts.map((point) => ({ ...point }));
+  const others = runsExcept(edge.id);
+  const after = straighten(
+    edge.pts,
+    (vertical, at, from, to) => !runHitsNode(vertical, at, from, to) && runIsClear(vertical ? others.vertical : others.horizontal, at, from, to)
+  );
+  clampTerminalsToBorders(after, before, leaves);
+  edge.pts = after;
+  enforceOrthogonal(edge);
+  const beforeSimplify = edge.pts.map((point) => ({ ...point }));
+  const fans = fansOf(scene, edge, leaves);
+  collapseSCurves(ctx, edge, {
+    fans,
+    fanBefore: fans.length ? fanCrossings(fans, beforeSimplify) : 0,
+    labels: seatedLabelsExcept(scene, edge),
+    outside: runsExcept(edge.id)
+  });
+  enforceOrthogonal(edge);
+}
+function straightenAndCollapse(ctx) {
+  for (const edge of ctx.scene.edges) {
+    straightenAndCollapseEdge(ctx, edge);
+  }
+}
+function createReaimContext(ctx) {
+  const { scene, leaves, titleBoxes, runsExcept, runHitsNode, runIsClear } = ctx;
   const AWAY_TOL2 = 24;
   const containers = scene.nodes.filter((node) => node.container);
-  const seatedLabelBoxes = (except) => {
-    const boxes = [];
-    for (const other of scene.edges) {
-      if (other === except || other.pts.length < 2) continue;
-      for (const label of other.labels) {
-        if (!label.width || !label.height) continue;
-        let own = Number.POSITIVE_INFINITY;
-        for (let index = 0; index + 1 < other.pts.length; index++) {
-          const a = other.pts[index];
-          const b = other.pts[index + 1];
-          const gapX = Math.max(
-            0,
-            label.x - Math.max(a.x, b.x),
-            Math.min(a.x, b.x) - (label.x + label.width)
-          );
-          const gapY = Math.max(
-            0,
-            label.y - Math.max(a.y, b.y),
-            Math.min(a.y, b.y) - (label.y + label.height)
-          );
-          own = Math.min(own, gapX * gapX + gapY * gapY);
-        }
-        if (own <= SNAP * SNAP) boxes.push(label);
-      }
-    }
-    return boxes;
-  };
-  const pathLength2 = (pts) => {
-    let length = 0;
-    for (let index = 0; index + 1 < pts.length; index++)
-      length += Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y);
-    return length;
-  };
-  const isAway = (seg, target) => Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > AWAY_TOL2 && seg.x * target.x < 0 || Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > AWAY_TOL2 && seg.y * target.y < 0;
+  const seatedLabelBoxes = (except) => seatedLabelsExcept(scene, except);
+  const isAway = (seg, target) => Math.abs(seg.x) >= ORTHOGONAL_EPSILON && Math.abs(target.x) > AWAY_TOL2 && seg.x * target.x < 0 || Math.abs(seg.y) >= ORTHOGONAL_EPSILON && Math.abs(target.y) > AWAY_TOL2 && seg.y * target.y < 0;
   const wrapAround = (pts, srcNode, dstNode) => {
     const srcC = { x: srcNode.x + srcNode.width / 2, y: srcNode.y + srcNode.height / 2 };
     const dstC = { x: dstNode.x + dstNode.width / 2, y: dstNode.y + dstNode.height / 2 };
@@ -97158,258 +97367,312 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
     const pm = pts[pts.length - 2];
     return isAway({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: dstC.x - p0.x, y: dstC.y - p0.y }) || isAway({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - srcC.x, y: pn.y - srcC.y });
   };
-  for (const edge of scene.edges) {
-    if (edge.pts.length < 2) continue;
-    const srcSeat = sideOf(edge.pts[0], leaves);
-    const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
-    if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
-    const siblingCrossings = (pts) => {
-      let total = 0;
-      for (const other of scene.edges) {
-        if (other === edge || other.pts.length < 2) continue;
-        const ends = [other.pts[0], other.pts[other.pts.length - 1]].map(
-          (p) => sideOf(p, leaves)?.node
-        );
-        const isReturnLeg = ends.includes(srcSeat.node) && ends.includes(dstSeat.node) && ends[0] !== ends[1];
-        if (!isReturnLeg) continue;
-        for (let i = 0; i + 1 < pts.length; i++)
-          for (let j = 0; j + 1 < other.pts.length; j++)
-            if (segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1])) total++;
-      }
-      return total;
-    };
-    const wrapped = wrapAround(edge.pts, srcSeat.node, dstSeat.node);
-    const tangledBefore = siblingCrossings(edge.pts);
-    if (!wrapped && tangledBefore === 0) continue;
-    const src = srcSeat.node;
-    const dst = dstSeat.node;
-    const srcC = { x: src.x + src.width / 2, y: src.y + src.height / 2 };
-    const dstC = { x: dst.x + dst.width / 2, y: dst.y + dst.height / 2 };
-    const SEAT_OFFSETS = [0, -18, 18, -36, 36];
-    const seatOn = (node, side, offset) => {
-      const alongX = Math.min(
-        Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
-        node.x + node.width - SIDE_INSET
-      );
-      const alongY = Math.min(
-        Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
-        node.y + node.height - SIDE_INSET
-      );
-      return side === "north" ? { x: alongX, y: node.y } : side === "south" ? { x: alongX, y: node.y + node.height } : side === "west" ? { x: node.x, y: alongY } : { x: node.x + node.width, y: alongY };
-    };
-    const facingSides = (from, toward) => {
-      const dx = toward.x - (from.x + from.width / 2);
-      const dy = toward.y - (from.y + from.height / 2);
-      const sides = [];
-      const xSide = Math.abs(dx) > AWAY_TOL2 ? dx > 0 ? "east" : "west" : null;
-      const ySide = Math.abs(dy) > AWAY_TOL2 ? dy > 0 ? "south" : "north" : null;
-      if (Math.abs(dx) >= Math.abs(dy)) {
-        if (xSide) sides.push(xSide);
-        if (ySide) sides.push(ySide);
-      } else {
-        if (ySide) sides.push(ySide);
-        if (xSide) sides.push(xSide);
-      }
-      return sides;
-    };
-    const normalOf = (side) => side === "north" ? { x: 0, y: -1 } : side === "south" ? { x: 0, y: 1 } : side === "west" ? { x: -1, y: 0 } : { x: 1, y: 0 };
-    const candidates = [];
-    for (const srcSide of facingSides(src, dstC))
-      for (const dstSide of facingSides(dst, srcC)) {
-        const na = normalOf(srcSide);
-        const nb = normalOf(dstSide);
-        const horizontalA = na.x !== 0;
-        const horizontalB = nb.x !== 0;
-        for (const srcOffset of SEAT_OFFSETS)
-          for (const dstOffset of SEAT_OFFSETS) {
-            const a = seatOn(src, srcSide, srcOffset);
-            const b = seatOn(dst, dstSide, dstOffset);
-            if (horizontalA !== horizontalB) {
-              const corner = horizontalA ? { x: b.x, y: a.y } : { x: a.x, y: b.y };
-              candidates.push([a, corner, b]);
-            } else if (na.x === -nb.x && na.y === -nb.y) {
-              if (horizontalA) {
-                for (const mid of [(a.x + b.x) / 2, Math.min(a.x, b.x) + 12, Math.max(a.x, b.x) - 12])
-                  candidates.push([a, { x: mid, y: a.y }, { x: mid, y: b.y }, b]);
-              } else {
-                for (const mid of [(a.y + b.y) / 2, Math.min(a.y, b.y) + 12, Math.max(a.y, b.y) - 12])
-                  candidates.push([a, { x: a.x, y: mid }, { x: b.x, y: mid }, b]);
-              }
-            }
-          }
-      }
-    const outside = runsExcept(edge.id);
-    const labelBoxes = seatedLabelBoxes(edge);
-    const currentLength = pathLength2(edge.pts);
-    for (const candidate of candidates) {
-      const pts = candidate.filter(
-        (p, index) => index === 0 || Math.abs(p.x - candidate[index - 1].x) >= 0.5 || Math.abs(p.y - candidate[index - 1].y) >= 0.5
-      );
-      if (pts.length < 2) continue;
-      if (wrapAround(pts, src, dst)) {
-        continue;
-      }
-      const untangles = tangledBefore > 0 && siblingCrossings(pts) < tangledBefore;
-      if (untangles) {
-        if (pathLength2(pts) > currentLength + 64) continue;
-      } else if (pathLength2(pts) >= currentLength - 12) {
-        continue;
-      }
-      let ok = true;
-      for (let index = 0; ok && index + 1 < pts.length; index++) {
-        const a = pts[index];
-        const b = pts[index + 1];
-        const deltaX = Math.abs(a.x - b.x);
-        const deltaY = Math.abs(a.y - b.y);
-        if (deltaX >= 0.5 && deltaY >= 0.5) ok = false;
-        else {
-          const runVertical = deltaX < 0.5;
-          const at = runVertical ? a.x : a.y;
-          const from = runVertical ? a.y : a.x;
-          const to = runVertical ? b.y : b.x;
-          if (runHitsNode(runVertical, at, from, to)) {
-            ok = false;
-          } else if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to)) {
-            ok = false;
-          } else {
-            for (const box of labelBoxes) {
-              const gapX = Math.max(0, box.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (box.x + box.width));
-              const gapY = Math.max(0, box.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (box.y + box.height));
-              if (gapX * gapX + gapY * gapY <= 1) {
-                ok = false;
-                break;
-              }
-            }
-            if (ok)
-              for (const band of titleBoxes) {
-                const gapX = Math.max(0, band.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (band.x + band.width));
-                const gapY = Math.max(0, band.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (band.y + band.height));
-                if (gapX * gapX + gapY * gapY <= 1) {
-                  ok = false;
-                  break;
-                }
-              }
-            if (ok && runVertical)
-              for (const box of containers) {
-                const yLo = Math.min(a.y, b.y);
-                const yHi = Math.max(a.y, b.y);
-                if (yHi < box.y || yLo > box.y + box.height) continue;
-                if (Math.abs(at - box.x) < 7 || Math.abs(at - (box.x + box.width)) < 7) {
-                  ok = false;
-                  break;
-                }
-              }
-          }
-        }
-      }
-      if (!ok) continue;
-      if (pts.length >= 4) {
-        let shortInterior = false;
-        for (let index = 1; index + 2 < pts.length; index++) {
-          const length = Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y);
-          if (length <= 32) shortInterior = true;
-        }
-        if (shortInterior) {
-          continue;
-        }
-      }
-      let tangled = false;
-      for (const terminal of [pts[0], pts[pts.length - 1]]) {
-        const seat = sideOf(terminal, leaves);
-        if (!seat) continue;
-        for (const other of scene.edges) {
-          if (other === edge || other.pts.length < 2 || tangled) continue;
-          const seated = [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
-            const otherSeat = sideOf(p, leaves);
-            return otherSeat?.node === seat.node && otherSeat?.side === seat.side;
-          });
-          if (!seated) continue;
-          for (let i = 0; i + 1 < pts.length && !tangled; i++)
-            for (let j = 0; j + 1 < other.pts.length && !tangled; j++) {
-              const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
-              if (!hit) continue;
-              const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
-              const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
-              if (dx * dx + dy * dy <= FAN_REACH2 * FAN_REACH2) tangled = true;
-            }
-        }
-      }
-      if (tangled) {
-        continue;
-      }
-      let disturbs = false;
-      for (const terminal of [pts[0], pts[pts.length - 1]]) {
-        const seat = sideOf(terminal, leaves);
-        if (!seat || disturbs) continue;
-        const vertical = seat.side === "east" || seat.side === "west";
-        const along = vertical ? terminal.y : terminal.x;
-        for (const other of scene.edges) {
-          if (other === edge || other.pts.length < 2 || disturbs) continue;
-          for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
-            const otherSeat = sideOf(p, leaves);
-            if (otherSeat?.node !== seat.node || otherSeat?.side !== seat.side) continue;
-            if (Math.abs((vertical ? p.y : p.x) - along) < MIN_ATTACH_GAP) {
-              disturbs = true;
-              break;
+  return {
+    scene,
+    leaves,
+    titleBoxes,
+    runsExcept,
+    runHitsNode,
+    runIsClear,
+    containers,
+    awayTol: AWAY_TOL2,
+    seatedLabelBoxes,
+    wrapAround
+  };
+}
+function segmentTouchesBox(a, b, box) {
+  return segmentGapSq(box, a, b) <= 1;
+}
+function ridesContainerBorder(containers, a, b, at) {
+  const yLo = Math.min(a.y, b.y);
+  const yHi = Math.max(a.y, b.y);
+  return containers.some(
+    (box) => yHi >= box.y && yLo <= box.y + box.height && (Math.abs(at - box.x) < 7 || Math.abs(at - (box.x + box.width)) < 7)
+  );
+}
+function segmentsAreClean(rctx, pts, outside, labelBoxes) {
+  const { runHitsNode, runIsClear, titleBoxes, containers } = rctx;
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const a = pts[index];
+    const b = pts[index + 1];
+    const deltaX = Math.abs(a.x - b.x);
+    const deltaY = Math.abs(a.y - b.y);
+    if (deltaX >= ORTHOGONAL_EPSILON && deltaY >= ORTHOGONAL_EPSILON) return false;
+    const runVertical = deltaX < ORTHOGONAL_EPSILON;
+    const at = runVertical ? a.x : a.y;
+    const from = runVertical ? a.y : a.x;
+    const to = runVertical ? b.y : b.x;
+    if (runHitsNode(runVertical, at, from, to)) return false;
+    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+      return false;
+    if (labelBoxes.some((box) => segmentTouchesBox(a, b, box))) return false;
+    if (titleBoxes.some((band) => segmentTouchesBox(a, b, band))) return false;
+    if (runVertical && ridesContainerBorder(containers, a, b, at)) return false;
+  }
+  return true;
+}
+function generateReaimCandidates(AWAY_TOL2, from, to) {
+  const { node: src, centre: srcC } = from;
+  const { node: dst, centre: dstC } = to;
+  const seatOn = (node, side, offset) => {
+    const alongX = Math.min(
+      Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
+      node.x + node.width - SIDE_INSET
+    );
+    const alongY = Math.min(
+      Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
+      node.y + node.height - SIDE_INSET
+    );
+    return side === "north" ? { x: alongX, y: node.y } : side === "south" ? { x: alongX, y: node.y + node.height } : side === "west" ? { x: node.x, y: alongY } : { x: node.x + node.width, y: alongY };
+  };
+  const facingSides = (from2, toward) => {
+    const dx = toward.x - (from2.x + from2.width / 2);
+    const dy = toward.y - (from2.y + from2.height / 2);
+    const sides = [];
+    const xSide = Math.abs(dx) > AWAY_TOL2 ? dx > 0 ? "east" : "west" : null;
+    const ySide = Math.abs(dy) > AWAY_TOL2 ? dy > 0 ? "south" : "north" : null;
+    if (Math.abs(dx) >= Math.abs(dy)) {
+      if (xSide) sides.push(xSide);
+      if (ySide) sides.push(ySide);
+    } else {
+      if (ySide) sides.push(ySide);
+      if (xSide) sides.push(xSide);
+    }
+    return sides;
+  };
+  const normalOf = (side) => side === "north" ? { x: 0, y: -1 } : side === "south" ? { x: 0, y: 1 } : side === "west" ? { x: -1, y: 0 } : { x: 1, y: 0 };
+  const candidates = [];
+  for (const srcSide of facingSides(src, dstC))
+    for (const dstSide of facingSides(dst, srcC)) {
+      const na = normalOf(srcSide);
+      const nb = normalOf(dstSide);
+      const horizontalA = na.x !== 0;
+      const horizontalB = nb.x !== 0;
+      for (const srcOffset of SEAT_OFFSETS)
+        for (const dstOffset of SEAT_OFFSETS) {
+          const a = seatOn(src, srcSide, srcOffset);
+          const b = seatOn(dst, dstSide, dstOffset);
+          if (horizontalA !== horizontalB) {
+            const corner = horizontalA ? { x: b.x, y: a.y } : { x: a.x, y: b.y };
+            candidates.push([a, corner, b]);
+          } else if (na.x === -nb.x && na.y === -nb.y) {
+            if (horizontalA) {
+              for (const mid of [(a.x + b.x) / 2, Math.min(a.x, b.x) + 12, Math.max(a.x, b.x) - 12])
+                candidates.push([a, { x: mid, y: a.y }, { x: mid, y: b.y }, b]);
+            } else {
+              for (const mid of [(a.y + b.y) / 2, Math.min(a.y, b.y) + 12, Math.max(a.y, b.y) - 12])
+                candidates.push([a, { x: a.x, y: mid }, { x: b.x, y: mid }, b]);
             }
           }
         }
-      }
-      if (disturbs) {
-        continue;
-      }
-      let labelsSeatable = true;
-      for (const label of edge.labels) {
-        if (!label.width || !label.height || !labelsSeatable) continue;
-        let seatable = false;
-        for (let index = 0; index + 1 < pts.length && !seatable; index++) {
-          const seat = {
-            x: (pts[index].x + pts[index + 1].x) / 2 - label.width / 2,
-            y: (pts[index].y + pts[index + 1].y) / 2 - label.height / 2,
-            width: label.width,
-            height: label.height
-          };
-          const coveredByNode = leaves.some(
-            (node) => seat.x < node.x + node.width && node.x < seat.x + seat.width && seat.y < node.y + node.height && node.y < seat.y + seat.height
-          );
-          if (coveredByNode) continue;
-          let piercedSeat = false;
-          for (const list of [outside.horizontal, outside.vertical]) {
-            const listVertical = list === outside.vertical;
-            for (const run of list) {
-              const runX1 = listVertical ? run.at : run.lo;
-              const runX2 = listVertical ? run.at : run.hi;
-              const runY1 = listVertical ? run.lo : run.at;
-              const runY2 = listVertical ? run.hi : run.at;
-              const gapX = Math.max(0, seat.x - runX2, runX1 - (seat.x + seat.width));
-              const gapY = Math.max(0, seat.y - runY2, runY1 - (seat.y + seat.height));
-              if (gapX * gapX + gapY * gapY <= 1) {
-                piercedSeat = true;
-                break;
-              }
-            }
-            if (piercedSeat) break;
-          }
-          if (!piercedSeat) seatable = true;
+    }
+  return candidates;
+}
+function returnLegCrossings(rctx, edge, ends, pts) {
+  const { scene, leaves } = rctx;
+  let total = 0;
+  for (const other of scene.edges) {
+    if (other === edge || other.pts.length < 2) continue;
+    const otherEnds = [other.pts[0], other.pts[other.pts.length - 1]].map(
+      (p) => sideOf(p, leaves)?.node
+    );
+    const isReturnLeg = otherEnds.includes(ends.src) && otherEnds.includes(ends.dst) && otherEnds[0] !== otherEnds[1];
+    if (!isReturnLeg) continue;
+    for (let i = 0; i + 1 < pts.length; i++)
+      for (let j = 0; j + 1 < other.pts.length; j++)
+        if (segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1])) total++;
+  }
+  return total;
+}
+function hasShortInterior(pts) {
+  if (pts.length < 4) return false;
+  for (let index = 1; index + 2 < pts.length; index++) {
+    const length = Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y);
+    if (length <= 32) return true;
+  }
+  return false;
+}
+function tanglesAtNewSeats(rctx, edge, pts) {
+  const { scene, leaves } = rctx;
+  for (const terminal of [pts[0], pts[pts.length - 1]]) {
+    const seat = sideOf(terminal, leaves);
+    if (!seat) continue;
+    for (const other of scene.edges) {
+      if (other === edge || other.pts.length < 2) continue;
+      const seated = [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
+        const otherSeat = sideOf(p, leaves);
+        return otherSeat?.node === seat.node && otherSeat?.side === seat.side;
+      });
+      if (!seated) continue;
+      for (let i = 0; i + 1 < pts.length; i++)
+        for (let j = 0; j + 1 < other.pts.length; j++) {
+          const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
+          if (!hit) continue;
+          const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
+          const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
+          if (dx * dx + dy * dy <= FAN_REACH2 * FAN_REACH2) return true;
         }
-        if (!seatable) labelsSeatable = false;
-      }
-      if (!labelsSeatable) {
-        continue;
-      }
-      edge.pts = pts.map((p) => ({ ...p }));
-      edge.detour = false;
-      break;
     }
   }
-  spreadAttachments(scene);
+  return false;
+}
+function disturbsNeighbourSeats(rctx, edge, pts) {
+  const { scene, leaves } = rctx;
+  for (const terminal of [pts[0], pts[pts.length - 1]]) {
+    const seat = sideOf(terminal, leaves);
+    if (!seat) continue;
+    const vertical = seat.side === "east" || seat.side === "west";
+    const along = vertical ? terminal.y : terminal.x;
+    for (const other of scene.edges) {
+      if (other === edge || other.pts.length < 2) continue;
+      for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
+        const otherSeat = sideOf(p, leaves);
+        if (otherSeat?.node !== seat.node || otherSeat?.side !== seat.side) continue;
+        if (Math.abs((vertical ? p.y : p.x) - along) < MIN_ATTACH_GAP) return true;
+      }
+    }
+  }
+  return false;
+}
+function runsPierceSeat(outside, seat) {
+  for (const list of [outside.horizontal, outside.vertical]) {
+    const listVertical = list === outside.vertical;
+    for (const run of list) {
+      const runX1 = listVertical ? run.at : run.lo;
+      const runX2 = listVertical ? run.at : run.hi;
+      const runY1 = listVertical ? run.lo : run.at;
+      const runY2 = listVertical ? run.hi : run.at;
+      const gapX = Math.max(0, seat.x - runX2, runX1 - (seat.x + seat.width));
+      const gapY = Math.max(0, seat.y - runY2, runY1 - (seat.y + seat.height));
+      if (gapX * gapX + gapY * gapY <= 1) return true;
+    }
+  }
+  return false;
+}
+function labelsRideRoute(rctx, edge, pts, outside) {
+  const { leaves } = rctx;
+  for (const label of edge.labels) {
+    if (!label.width || !label.height) continue;
+    let seatable = false;
+    for (let index = 0; index + 1 < pts.length && !seatable; index++) {
+      const seat = {
+        x: (pts[index].x + pts[index + 1].x) / 2 - label.width / 2,
+        y: (pts[index].y + pts[index + 1].y) / 2 - label.height / 2,
+        width: label.width,
+        height: label.height
+      };
+      const coveredByNode = leaves.some(
+        (node) => seat.x < node.x + node.width && node.x < seat.x + seat.width && seat.y < node.y + node.height && node.y < seat.y + seat.height
+      );
+      if (coveredByNode) continue;
+      if (!runsPierceSeat(outside, seat)) seatable = true;
+    }
+    if (!seatable) return false;
+  }
+  return true;
+}
+function reaimEdge(rctx, edge) {
+  const { leaves, runsExcept, awayTol: AWAY_TOL2, seatedLabelBoxes, wrapAround } = rctx;
+  if (edge.pts.length < 2) return;
+  const srcSeat = sideOf(edge.pts[0], leaves);
+  const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
+  if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) return;
+  const src = srcSeat.node;
+  const dst = dstSeat.node;
+  const ends = { src, dst };
+  const wrapped = wrapAround(edge.pts, src, dst);
+  const tangledBefore = returnLegCrossings(rctx, edge, ends, edge.pts);
+  if (!wrapped && tangledBefore === 0) return;
+  const srcC = { x: src.x + src.width / 2, y: src.y + src.height / 2 };
+  const dstC = { x: dst.x + dst.width / 2, y: dst.y + dst.height / 2 };
+  const candidates = generateReaimCandidates(
+    AWAY_TOL2,
+    { node: src, centre: srcC },
+    { node: dst, centre: dstC }
+  );
+  const outside = runsExcept(edge.id);
+  const labelBoxes = seatedLabelBoxes(edge);
+  const currentLength = pathLength(edge.pts);
+  for (const candidate of candidates) {
+    const pts = candidate.filter(
+      (p, index) => index === 0 || Math.abs(p.x - candidate[index - 1].x) >= ORTHOGONAL_EPSILON || Math.abs(p.y - candidate[index - 1].y) >= ORTHOGONAL_EPSILON
+    );
+    if (pts.length < 2) continue;
+    if (wrapAround(pts, src, dst)) {
+      continue;
+    }
+    const untangles = tangledBefore > 0 && returnLegCrossings(rctx, edge, ends, pts) < tangledBefore;
+    if (untangles) {
+      if (pathLength(pts) > currentLength + 64) continue;
+    } else if (pathLength(pts) >= currentLength - 12) {
+      continue;
+    }
+    if (!segmentsAreClean(rctx, pts, outside, labelBoxes)) continue;
+    if (hasShortInterior(pts)) continue;
+    if (tanglesAtNewSeats(rctx, edge, pts)) continue;
+    if (disturbsNeighbourSeats(rctx, edge, pts)) continue;
+    if (!labelsRideRoute(rctx, edge, pts, outside)) continue;
+    edge.pts = pts.map((p) => ({ ...p }));
+    edge.detour = false;
+    break;
+  }
+}
+function reaimWrapAroundTerminals(ctx) {
+  const { scene } = ctx;
+  const rctx = createReaimContext(ctx);
+  for (const edge of scene.edges) reaimEdge(rctx, edge);
+}
+function shiftCoincidentRun(leaves, pts, b, newAt) {
+  if (b.vert) {
+    const segments = [];
+    for (let i = 0; i + 1 < pts.length; i++) {
+      if (Math.abs(pts[i].x - b.at) < ORTHOGONAL_EPSILON && Math.abs(pts[i + 1].x - b.at) < ORTHOGONAL_EPSILON && Math.abs(pts[i].y - pts[i + 1].y) >= ORTHOGONAL_EPSILON)
+        segments.push([i, i + 1]);
+    }
+    if (!segments.length) return;
+    const se = segments[0], ee = segments[segments.length - 1];
+    const loIdx = pts[se[0]].y < pts[se[1]].y ? se[0] : se[1];
+    const hiIdx = pts[ee[0]].y > pts[ee[1]].y ? ee[0] : ee[1];
+    const loSeat = sideOf(pts[loIdx], leaves);
+    const hiSeat = sideOf(pts[hiIdx], leaves);
+    const loFree = !loSeat || loSeat.side === "west" || loSeat.side === "east";
+    const hiFree = !hiSeat || hiSeat.side === "west" || hiSeat.side === "east";
+    if (!loFree && !hiFree) return;
+    if (newAt < 4) return;
+    for (const [si, ei] of segments) {
+      pts[si].x = newAt;
+      pts[ei].x = newAt;
+    }
+    if (loSeat) {
+      const targetX = loSeat.side === "west" ? loSeat.node.x : loSeat.node.x + loSeat.node.width;
+      if (Math.abs(pts[loIdx].x - targetX) > ORTHOGONAL_EPSILON) {
+        const newPt = { x: targetX, y: pts[loIdx].y };
+        pts.splice(loIdx, 0, newPt);
+      }
+    }
+    if (hiSeat && hiIdx !== loIdx) {
+      const targetX = hiSeat.side === "west" ? hiSeat.node.x : hiSeat.node.x + hiSeat.node.width;
+      const idx = hiIdx > loIdx ? hiIdx + (loSeat ? 1 : 0) : hiIdx;
+      if (Math.abs(pts[idx].x - targetX) > ORTHOGONAL_EPSILON) {
+        const newPt = { x: targetX, y: pts[idx].y };
+        pts.splice(idx, 0, newPt);
+      }
+    }
+  } else {
+    for (let i = 0; i < pts.length; i++) {
+      if (Math.abs(pts[i].y - b.at) < ORTHOGONAL_EPSILON) pts[i].y = newAt;
+    }
+  }
+}
+function decoincideParallelRuns(ctx) {
+  const { scene, leaves, enforceOrthogonal } = ctx;
   const runs = [];
   for (const edge of scene.edges) {
     for (let i = 0; i + 1 < edge.pts.length; i++) {
       const a = edge.pts[i], b = edge.pts[i + 1];
-      if (Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) >= 0.5)
+      if (Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON && Math.abs(a.y - b.y) >= ORTHOGONAL_EPSILON)
         runs.push({ edge, vert: true, at: a.x, lo: Math.min(a.y, b.y), hi: Math.max(a.y, b.y) });
-      if (Math.abs(a.y - b.y) < 0.5 && Math.abs(a.x - b.x) >= 0.5)
+      if (Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON && Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON)
         runs.push({ edge, vert: false, at: a.y, lo: Math.min(a.x, b.x), hi: Math.max(a.x, b.x) });
     }
   }
@@ -97426,57 +97689,51 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
     const delta = a.at > b.at ? -8 : 8;
     const newAt = b.at + delta;
     const pts = b.edge.pts;
-    if (b.vert) {
-      const segments = [];
-      for (let i = 0; i + 1 < pts.length; i++) {
-        if (Math.abs(pts[i].x - b.at) < 0.5 && Math.abs(pts[i + 1].x - b.at) < 0.5 && Math.abs(pts[i].y - pts[i + 1].y) >= 0.5)
-          segments.push([i, i + 1]);
-      }
-      if (!segments.length) continue;
-      const se = segments[0], ee = segments[segments.length - 1];
-      const loIdx = pts[se[0]].y < pts[se[1]].y ? se[0] : se[1];
-      const hiIdx = pts[ee[0]].y > pts[ee[1]].y ? ee[0] : ee[1];
-      const loSeat = sideOf(pts[loIdx], leaves);
-      const hiSeat = sideOf(pts[hiIdx], leaves);
-      const loFree = !loSeat || loSeat.side === "west" || loSeat.side === "east";
-      const hiFree = !hiSeat || hiSeat.side === "west" || hiSeat.side === "east";
-      if (!loFree && !hiFree) continue;
-      if (newAt < 4) continue;
-      for (const [si, ei] of segments) {
-        pts[si].x = newAt;
-        pts[ei].x = newAt;
-      }
-      if (loSeat) {
-        const targetX = loSeat.side === "west" ? loSeat.node.x : loSeat.node.x + loSeat.node.width;
-        if (Math.abs(pts[loIdx].x - targetX) > 0.5) {
-          const newPt = { x: targetX, y: pts[loIdx].y };
-          pts.splice(loIdx, 0, newPt);
-        }
-      }
-      if (hiSeat && hiIdx !== loIdx) {
-        const targetX = hiSeat.side === "west" ? hiSeat.node.x : hiSeat.node.x + hiSeat.node.width;
-        const idx = hiIdx > loIdx ? hiIdx + (loSeat ? 1 : 0) : hiIdx;
-        if (Math.abs(pts[idx].x - targetX) > 0.5) {
-          const newPt = { x: targetX, y: pts[idx].y };
-          pts.splice(idx, 0, newPt);
-        }
-      }
-    } else {
-      for (let i = 0; i < pts.length; i++) {
-        if (Math.abs(pts[i].y - b.at) < 0.5) pts[i].y = newAt;
-      }
-    }
+    shiftCoincidentRun(leaves, pts, b, newAt);
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
-  clearSideHugs(scene, titleBoxes);
-  const bandFor = (a, b) => {
-    if (Math.abs(a.y - b.y) >= 0.5) return null;
-    const lo = Math.min(a.x, b.x);
-    const hi = Math.max(a.x, b.x);
-    return titleBoxes.find(
-      (band) => a.y > band.y && a.y < band.y + band.height && lo < band.x + band.width && hi > band.x
-    ) ?? null;
-  };
+}
+function tryLiftOffBand(ctx, edge, lift, outside) {
+  const { runHitsNode, runIsClear, bandFor } = ctx;
+  const { index, band } = lift;
+  for (const target of [band.y + band.height + 6, band.y - 6]) {
+    const attempt = edge.pts.map((p) => ({ ...p }));
+    attempt[index].y = target;
+    attempt[index + 1].y = target;
+    let ok = true;
+    for (let k = 0; ok && k + 1 < attempt.length; k++) {
+      const p = attempt[k];
+      const q = attempt[k + 1];
+      const deltaX = Math.abs(p.x - q.x);
+      const deltaY = Math.abs(p.y - q.y);
+      if (deltaX >= ORTHOGONAL_EPSILON && deltaY >= ORTHOGONAL_EPSILON) ok = false;
+      else {
+        const runVertical = deltaX < ORTHOGONAL_EPSILON;
+        const at = runVertical ? p.x : p.y;
+        const from = runVertical ? p.y : p.x;
+        const to = runVertical ? q.y : q.x;
+        if (runHitsNode(runVertical, at, from, to)) ok = false;
+        else if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+          ok = false;
+        else if (!runVertical && bandFor(p, q)) ok = false;
+      }
+    }
+    if (ok)
+      for (let k = 1; k + 2 <= attempt.length - 1; k++) {
+        const length = Math.abs(attempt[k + 1].x - attempt[k].x) + Math.abs(attempt[k + 1].y - attempt[k].y);
+        if (length > 0 && length <= JOG_SNAP) {
+          ok = false;
+          break;
+        }
+      }
+    if (!ok) continue;
+    edge.pts = attempt;
+    return true;
+  }
+  return false;
+}
+function liftRunsOffTitleBands(ctx) {
+  const { scene, runsExcept, enforceOrthogonal, bandFor } = ctx;
   for (const edge of scene.edges) {
     if (edge.pts.length < 4) continue;
     for (let index = 1; index + 2 < edge.pts.length; index++) {
@@ -97485,51 +97742,22 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
       const band = bandFor(a, b);
       if (!band) continue;
       const outside = runsExcept(edge.id);
-      for (const target of [band.y + band.height + 6, band.y - 6]) {
-        const attempt = edge.pts.map((p) => ({ ...p }));
-        attempt[index].y = target;
-        attempt[index + 1].y = target;
-        let ok = true;
-        for (let k = 0; ok && k + 1 < attempt.length; k++) {
-          const p = attempt[k];
-          const q = attempt[k + 1];
-          const deltaX = Math.abs(p.x - q.x);
-          const deltaY = Math.abs(p.y - q.y);
-          if (deltaX >= 0.5 && deltaY >= 0.5) ok = false;
-          else {
-            const runVertical = deltaX < 0.5;
-            const at = runVertical ? p.x : p.y;
-            const from = runVertical ? p.y : p.x;
-            const to = runVertical ? q.y : q.x;
-            if (runHitsNode(runVertical, at, from, to)) ok = false;
-            else if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
-              ok = false;
-            else if (!runVertical && bandFor(p, q)) ok = false;
-          }
-        }
-        if (ok)
-          for (let k = 1; k + 2 <= attempt.length - 1; k++) {
-            const length = Math.abs(attempt[k + 1].x - attempt[k].x) + Math.abs(attempt[k + 1].y - attempt[k].y);
-            if (length > 0 && length <= JOG_SNAP) {
-              ok = false;
-              break;
-            }
-          }
-        if (!ok) continue;
-        edge.pts = attempt;
-        break;
-      }
+      tryLiftOffBand(ctx, edge, { index, band }, outside);
     }
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+}
+function nestCorridorRisers(ctx) {
+  const { scene, runsExcept, runHitsNode, runIsClear, enforceOrthogonal, bandFor } = ctx;
   const riserIndexOf = (edge) => {
     let found = -1;
     for (let index = 1; index + 2 < edge.pts.length; index++) {
       const a = edge.pts[index];
       const b = edge.pts[index + 1];
-      if (Math.abs(a.x - b.x) >= 0.5 || Math.abs(a.y - b.y) < 0.5) continue;
-      if (Math.abs(edge.pts[index - 1].y - a.y) >= 0.5) continue;
-      if (Math.abs(edge.pts[index + 2].y - b.y) >= 0.5) continue;
+      if (Math.abs(a.x - b.x) >= ORTHOGONAL_EPSILON || Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON)
+        continue;
+      if (Math.abs(edge.pts[index - 1].y - a.y) >= ORTHOGONAL_EPSILON) continue;
+      if (Math.abs(edge.pts[index + 2].y - b.y) >= ORTHOGONAL_EPSILON) continue;
       found = index;
     }
     return found;
@@ -97544,20 +97772,20 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
   const flowRank = (edge) => Number.parseInt(edge.id.slice(1), 10) || 0;
   const risers = scene.edges.map((edge) => ({ edge, riser: riserIndexOf(edge) })).filter((entry) => entry.riser >= 0).sort((a, b) => flowRank(a.edge) - flowRank(b.edge));
   const parent = risers.map((_, index) => index);
-  const find = (index) => {
-    let root = index;
+  const find = (start) => {
+    let root = start;
     while (parent[root] !== root) root = parent[root];
-    while (parent[index] !== root) {
-      const next = parent[index];
-      parent[index] = root;
-      index = next;
+    let node = start;
+    while (parent[node] !== root) {
+      const next = parent[node];
+      parent[node] = root;
+      node = next;
     }
     return root;
   };
   for (let i = 0; i < risers.length; i++)
     for (let j = i + 1; j < risers.length; j++)
-      if (crossCount(risers[i].edge.pts, risers[j].edge.pts) > 0)
-        parent[find(i)] = find(j);
+      if (crossCount(risers[i].edge.pts, risers[j].edge.pts) > 0) parent[find(i)] = find(j);
   const riserGroups = /* @__PURE__ */ new Map();
   for (let index = 0; index < risers.length; index++) {
     const root = find(index);
@@ -97572,9 +97800,7 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
     return out.sort((a, b) => a.join().localeCompare(b.join()));
   };
   for (const key of [...riserGroups.keys()].sort((a, b) => a - b)) {
-    const members = riserGroups.get(key).map(
-      (index) => risers[index]
-    );
+    const members = riserGroups.get(key).map((index) => risers[index]);
     if (members.length < 2 || members.length > 4) continue;
     const ids = members.map((member) => member.edge.id);
     const outsiders = scene.edges.filter((edge) => !ids.includes(edge.id));
@@ -97593,8 +97819,8 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
         const b = pts[index + 1];
         const deltaX = Math.abs(a.x - b.x);
         const deltaY = Math.abs(a.y - b.y);
-        if (deltaX >= 0.5 && deltaY >= 0.5) return false;
-        const runVertical = deltaX < 0.5;
+        if (deltaX >= ORTHOGONAL_EPSILON && deltaY >= ORTHOGONAL_EPSILON) return false;
+        const runVertical = deltaX < ORTHOGONAL_EPSILON;
         const at = runVertical ? a.x : a.y;
         const from = runVertical ? a.y : a.x;
         const to = runVertical ? b.y : b.x;
@@ -97632,6 +97858,18 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
     });
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+}
+function createUnweaveContext(ctx) {
+  const {
+    scene,
+    leaves,
+    titleBoxes,
+    folded,
+    runsExcept,
+    runHitsNode,
+    runIsClear,
+    enforceOrthogonal
+  } = ctx;
   const boxed = scene.nodes.filter((node) => node.container);
   const holdsOf = /* @__PURE__ */ new Map();
   for (const box of boxed) {
@@ -97691,12 +97929,6 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
       b
     ]);
   };
-  const lengthOf = (pts) => {
-    let total = 0;
-    for (let i = 0; i + 1 < pts.length; i++)
-      total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
-    return total;
-  };
   const crossingPartners = (pts, exceptId) => {
     const partners = /* @__PURE__ */ new Set();
     for (const other of scene.edges) {
@@ -97708,143 +97940,201 @@ function tidyEdges(scene, titleBoxes = [], folded = false) {
     }
     return partners;
   };
+  return {
+    scene,
+    leaves,
+    titleBoxes,
+    folded,
+    runsExcept,
+    runHitsNode,
+    runIsClear,
+    enforceOrthogonal,
+    UNWEAVE_TURNS,
+    BAND_MARGIN,
+    ALL_SIDES,
+    foreignContainerHits,
+    unweaveSeat,
+    unweaveRoutes,
+    crossingPartners
+  };
+}
+function unweaveSeatFree(uctx, edge, point, seat) {
+  const { scene, leaves } = uctx;
+  const vertical = seat.side === "east" || seat.side === "west";
+  const at = vertical ? point.y : point.x;
+  for (const other of scene.edges) {
+    if (other.id === edge.id || other.pts.length < 2) continue;
+    for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
+      const s = sideOf(p, leaves);
+      if (s?.node !== seat.node || s.side !== seat.side) continue;
+      if (Math.abs((vertical ? p.y : p.x) - at) < MIN_ATTACH_GAP) return false;
+    }
+  }
+  return true;
+}
+function segmentStrikesBand(uctx, a, b) {
+  const x1 = Math.min(a.x, b.x);
+  const x2 = Math.max(a.x, b.x);
+  const y1 = Math.min(a.y, b.y);
+  const y2 = Math.max(a.y, b.y);
+  const margin = uctx.BAND_MARGIN;
+  return uctx.titleBoxes.some(
+    (band) => x1 < band.x + band.width + margin && band.x - margin < x2 && y1 < band.y + band.height + margin && band.y - margin < y2
+  );
+}
+function unweaveRouteClean(uctx, outside, pts) {
+  const { runHitsNode, runIsClear } = uctx;
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const a = pts[index];
+    const b = pts[index + 1];
+    const deltaX = Math.abs(a.x - b.x);
+    const deltaY = Math.abs(a.y - b.y);
+    if (deltaX >= ORTHOGONAL_EPSILON && deltaY >= ORTHOGONAL_EPSILON) return false;
+    const runVertical = deltaX < ORTHOGONAL_EPSILON;
+    const at = runVertical ? a.x : a.y;
+    const from = runVertical ? a.y : a.x;
+    const to = runVertical ? b.y : b.x;
+    if (runHitsNode(runVertical, at, from, to)) return false;
+    if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
+      return false;
+    if (segmentStrikesBand(uctx, a, b)) return false;
+    const length = deltaX + deltaY;
+    if (index > 0 && index + 2 < pts.length && length > 0 && length <= 20) return false;
+  }
+  return true;
+}
+function fanTanglesOf(uctx, edge, pts) {
+  const { scene, leaves } = uctx;
+  let total = 0;
+  for (const terminal of [pts[0], pts[pts.length - 1]]) {
+    const seat = sideOf(terminal, leaves);
+    if (!seat) continue;
+    for (const other of scene.edges) {
+      if (other.id === edge.id || other.pts.length < 2) continue;
+      const sibling = [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
+        const s = sideOf(p, leaves);
+        return s?.node === seat.node && s.side === seat.side;
+      });
+      if (!sibling) continue;
+      for (let i = 0; i + 1 < pts.length; i++)
+        for (let j = 0; j + 1 < other.pts.length; j++) {
+          const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
+          if (!hit) continue;
+          const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
+          const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
+          if (dx * dx + dy * dy <= FAN_REACH2 * FAN_REACH2) total++;
+        }
+    }
+  }
+  return total;
+}
+function unweaveLabelsSeatable(uctx, edge, pts) {
+  const { leaves, titleBoxes, BAND_MARGIN } = uctx;
+  for (const label of edge.labels) {
+    if (!label.width || !label.height) continue;
+    const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+    let seatable = false;
+    for (let index = 0; index + 1 < pts.length && !seatable; index++) {
+      const seat = {
+        x: (pts[index].x + pts[index + 1].x) / 2 - label.width / 2,
+        y: (pts[index].y + pts[index + 1].y) / 2 - lead,
+        width: label.width,
+        height: label.height
+      };
+      const hits = (margin) => (box) => seat.x < box.x + box.width + margin && box.x - margin < seat.x + seat.width && seat.y < box.y + box.height + margin && box.y - margin < seat.y + seat.height;
+      if (!leaves.some(hits(0)) && !titleBoxes.some(hits(BAND_MARGIN))) seatable = true;
+    }
+    if (!seatable) return false;
+  }
+  return true;
+}
+function unweaveRouteAccepted(uctx, job, pts) {
+  const { foreignContainerHits, crossingPartners } = uctx;
+  const foreignAfter = foreignContainerHits(pts, job.ownEnds);
+  if (foreignAfter > job.foreignBefore) return false;
+  const clearsForeign = foreignAfter < job.foreignBefore;
+  if (clearsForeign ? pts.length - 2 > job.currentTurns : pts.length - 2 >= job.currentTurns)
+    return false;
+  if (!unweaveRouteClean(uctx, job.outside, pts)) return false;
+  const partners = crossingPartners(pts, job.edge.id);
+  if ([...partners].some((id) => !job.partnersNow.has(id))) return false;
+  if (fanTanglesOf(uctx, job.edge, pts) > job.fanTanglesNow) return false;
+  return unweaveLabelsSeatable(uctx, job.edge, pts);
+}
+function bestUnweaveRoute(uctx, job) {
+  const { ALL_SIDES, unweaveSeat, unweaveRoutes } = uctx;
+  const { edge, srcSeat, dstSeat } = job;
+  let best = null;
+  let bestLength = Number.POSITIVE_INFINITY;
+  for (const srcSide of ALL_SIDES)
+    for (const dstSide of ALL_SIDES)
+      for (const srcOffset of SEAT_OFFSETS)
+        for (const dstOffset of SEAT_OFFSETS) {
+          const a = unweaveSeat(srcSeat.node, srcSide, srcOffset);
+          const b = unweaveSeat(dstSeat.node, dstSide, dstOffset);
+          if (!unweaveSeatFree(uctx, edge, a, { node: srcSeat.node, side: srcSide })) continue;
+          if (!unweaveSeatFree(uctx, edge, b, { node: dstSeat.node, side: dstSide })) continue;
+          for (const raw of unweaveRoutes(a, srcSide, b, dstSide)) {
+            const pts = raw.filter(
+              (p, index) => index === 0 || Math.abs(p.x - raw[index - 1].x) >= ORTHOGONAL_EPSILON || Math.abs(p.y - raw[index - 1].y) >= ORTHOGONAL_EPSILON
+            );
+            if (pts.length < 2) continue;
+            const length = pathLength(pts);
+            if (length >= bestLength) continue;
+            if (!unweaveRouteAccepted(uctx, job, pts)) continue;
+            best = pts;
+            bestLength = length;
+          }
+        }
+  return best;
+}
+function unweaveEdge(uctx, edge) {
+  const { leaves, folded, runsExcept, enforceOrthogonal, UNWEAVE_TURNS, foreignContainerHits } = uctx;
+  if (folded || edge.pts.length < 2) return;
+  const srcSeat = sideOf(edge.pts[0], leaves);
+  const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
+  if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) return;
+  const currentTurns = edge.pts.length - 2;
+  const ownEnds = [srcSeat.node, dstSeat.node];
+  const foreignBefore = foreignContainerHits(edge.pts, ownEnds);
+  if (currentTurns < UNWEAVE_TURNS && foreignBefore === 0) return;
+  const best = bestUnweaveRoute(uctx, {
+    edge,
+    srcSeat,
+    dstSeat,
+    ownEnds,
+    currentTurns,
+    foreignBefore,
+    partnersNow: uctx.crossingPartners(edge.pts, edge.id),
+    outside: runsExcept(edge.id),
+    fanTanglesNow: fanTanglesOf(uctx, edge, edge.pts)
+  });
+  if (best) {
+    edge.pts = best;
+    enforceOrthogonal(edge);
+  }
+}
+function unweaveAndClearContainers(ctx) {
+  const uctx = createUnweaveContext(ctx);
+  const { scene } = uctx;
   for (const edge of [...scene.edges].sort(
     (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0)
   )) {
-    if (folded || edge.pts.length < 2) continue;
-    const currentTurns = edge.pts.length - 2;
-    const srcSeat = sideOf(edge.pts[0], leaves);
-    const dstSeat = sideOf(edge.pts[edge.pts.length - 1], leaves);
-    if (!srcSeat || !dstSeat || srcSeat.node === dstSeat.node) continue;
-    const ownEnds = [srcSeat.node, dstSeat.node];
-    const foreignBefore = foreignContainerHits(edge.pts, ownEnds);
-    if (currentTurns < UNWEAVE_TURNS && foreignBefore === 0) continue;
-    const partnersNow = crossingPartners(edge.pts, edge.id);
-    const outside = runsExcept(edge.id);
-    const takenOn = (node, side) => {
-      const along = [];
-      for (const other of scene.edges) {
-        if (other.id === edge.id || other.pts.length < 2) continue;
-        for (const p of [other.pts[0], other.pts[other.pts.length - 1]]) {
-          const seat = sideOf(p, leaves);
-          if (seat?.node !== node || seat.side !== side) continue;
-          along.push(side === "east" || side === "west" ? p.y : p.x);
-        }
-      }
-      return along;
-    };
-    const clearOfNeighbours = (point, node, side) => {
-      const vertical = side === "east" || side === "west";
-      const at = vertical ? point.y : point.x;
-      return takenOn(node, side).every((other) => Math.abs(other - at) >= MIN_ATTACH_GAP);
-    };
-    const cleanRoute = (pts) => {
-      for (let index = 0; index + 1 < pts.length; index++) {
-        const a = pts[index];
-        const b = pts[index + 1];
-        const deltaX = Math.abs(a.x - b.x);
-        const deltaY = Math.abs(a.y - b.y);
-        if (deltaX >= 0.5 && deltaY >= 0.5) return false;
-        const runVertical = deltaX < 0.5;
-        const at = runVertical ? a.x : a.y;
-        const from = runVertical ? a.y : a.x;
-        const to = runVertical ? b.y : b.x;
-        if (runHitsNode(runVertical, at, from, to)) return false;
-        if (!runIsClear(runVertical ? outside.vertical : outside.horizontal, at, from, to))
-          return false;
-        for (const band of titleBoxes) {
-          const x1 = Math.min(a.x, b.x);
-          const x2 = Math.max(a.x, b.x);
-          const y1 = Math.min(a.y, b.y);
-          const y2 = Math.max(a.y, b.y);
-          if (x1 < band.x + band.width + BAND_MARGIN && band.x - BAND_MARGIN < x2 && y1 < band.y + band.height + BAND_MARGIN && band.y - BAND_MARGIN < y2)
-            return false;
-        }
-        const length = deltaX + deltaY;
-        if (index > 0 && index + 2 < pts.length && length > 0 && length <= 20) return false;
-      }
-      return true;
-    };
-    const fanTanglesOf = (pts) => {
-      let total = 0;
-      for (const terminal of [pts[0], pts[pts.length - 1]]) {
-        const seat = sideOf(terminal, leaves);
-        if (!seat) continue;
-        for (const other of scene.edges) {
-          if (other.id === edge.id || other.pts.length < 2) continue;
-          const sibling = [other.pts[0], other.pts[other.pts.length - 1]].some((p) => {
-            const s = sideOf(p, leaves);
-            return s?.node === seat.node && s.side === seat.side;
-          });
-          if (!sibling) continue;
-          for (let i = 0; i + 1 < pts.length; i++)
-            for (let j = 0; j + 1 < other.pts.length; j++) {
-              const hit = segmentsCross(pts[i], pts[i + 1], other.pts[j], other.pts[j + 1]);
-              if (!hit) continue;
-              const dx = Math.max(0, seat.node.x - hit.x, hit.x - (seat.node.x + seat.node.width));
-              const dy = Math.max(0, seat.node.y - hit.y, hit.y - (seat.node.y + seat.node.height));
-              if (dx * dx + dy * dy <= FAN_REACH2 * FAN_REACH2) total++;
-            }
-        }
-      }
-      return total;
-    };
-    const fanTanglesNow = fanTanglesOf(edge.pts);
-    const labelsSeatable = (pts) => {
-      for (const label of edge.labels) {
-        if (!label.width || !label.height) continue;
-        const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
-        let seatable = false;
-        for (let index = 0; index + 1 < pts.length && !seatable; index++) {
-          const seat = {
-            x: (pts[index].x + pts[index + 1].x) / 2 - label.width / 2,
-            y: (pts[index].y + pts[index + 1].y) / 2 - lead,
-            width: label.width,
-            height: label.height
-          };
-          const hits = (margin) => (box) => seat.x < box.x + box.width + margin && box.x - margin < seat.x + seat.width && seat.y < box.y + box.height + margin && box.y - margin < seat.y + seat.height;
-          if (!leaves.some(hits(0)) && !titleBoxes.some(hits(BAND_MARGIN))) seatable = true;
-        }
-        if (!seatable) return false;
-      }
-      return true;
-    };
-    let best = null;
-    let bestLength = Number.POSITIVE_INFINITY;
-    for (const srcSide of ALL_SIDES)
-      for (const dstSide of ALL_SIDES)
-        for (const srcOffset of [0, -18, 18, -36, 36])
-          for (const dstOffset of [0, -18, 18, -36, 36]) {
-            const a = unweaveSeat(srcSeat.node, srcSide, srcOffset);
-            const b = unweaveSeat(dstSeat.node, dstSide, dstOffset);
-            if (!clearOfNeighbours(a, srcSeat.node, srcSide)) continue;
-            if (!clearOfNeighbours(b, dstSeat.node, dstSide)) continue;
-            for (const raw of unweaveRoutes(a, srcSide, b, dstSide)) {
-              const pts = raw.filter(
-                (p, index) => index === 0 || Math.abs(p.x - raw[index - 1].x) >= 0.5 || Math.abs(p.y - raw[index - 1].y) >= 0.5
-              );
-              if (pts.length < 2) continue;
-              const foreignAfter = foreignContainerHits(pts, ownEnds);
-              if (foreignAfter > foreignBefore) continue;
-              const clearsForeign = foreignAfter < foreignBefore;
-              if (clearsForeign ? pts.length - 2 > currentTurns : pts.length - 2 >= currentTurns)
-                continue;
-              const length = lengthOf(pts);
-              if (length >= bestLength) continue;
-              if (!cleanRoute(pts)) continue;
-              const partners = crossingPartners(pts, edge.id);
-              if ([...partners].some((id) => !partnersNow.has(id))) continue;
-              if (fanTanglesOf(pts) > fanTanglesNow) continue;
-              if (!labelsSeatable(pts)) continue;
-              best = pts;
-              bestLength = length;
-            }
-          }
-    if (best) {
-      edge.pts = best;
-      enforceOrthogonal(edge);
-    }
+    unweaveEdge(uctx, edge);
   }
+}
+function tidyEdges(scene, titleBoxes = [], folded = false) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const ctx = createTidyContext(scene, leaves, titleBoxes, folded);
+  straightenAndCollapse(ctx);
+  reaimWrapAroundTerminals(ctx);
+  spreadAttachments(scene);
+  decoincideParallelRuns(ctx);
+  clearSideHugs(scene, titleBoxes);
+  liftRunsOffTitleBands(ctx);
+  nestCorridorRisers(ctx);
+  unweaveAndClearContainers(ctx);
 }
 function labelsSeated(edge) {
   const SLACK_SQ = 2 * 2;
@@ -97866,200 +98156,332 @@ function labelsSeated(edge) {
     return best <= SLACK_SQ;
   });
 }
+var SEAT_GRID = [0, -18, 18];
+var SEAT_CLEAR = 14;
+function createSeatModel(titleBoxes) {
+  const blockedSpan = (node, side) => {
+    const alongX = side === "north" || side === "south";
+    const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
+    let lo = Number.POSITIVE_INFINITY;
+    let hi = Number.NEGATIVE_INFINITY;
+    for (const band of titleBoxes) {
+      const bandLo = alongX ? band.x : band.y;
+      const bandHi = alongX ? band.x + band.width : band.y + band.height;
+      if (centre < bandLo || centre > bandHi) continue;
+      lo = Math.min(lo, bandLo);
+      hi = Math.max(hi, bandHi);
+    }
+    return lo <= hi ? [lo, hi] : null;
+  };
+  const seatOffsetCache = /* @__PURE__ */ new Map();
+  const seatOffsetsFor = (node, side) => {
+    const key = `${node.id}|${side}`;
+    const hit = seatOffsetCache.get(key);
+    if (hit) return hit;
+    const span = blockedSpan(node, side);
+    const alongX = side === "north" || side === "south";
+    const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
+    const made = span ? [...SEAT_GRID, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre] : SEAT_GRID;
+    seatOffsetCache.set(key, made);
+    return made;
+  };
+  const seatOn = (node, side, offset) => {
+    const alongX = Math.min(
+      Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
+      node.x + node.width - SIDE_INSET
+    );
+    const alongY = Math.min(
+      Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
+      node.y + node.height - SIDE_INSET
+    );
+    return side === "north" ? { x: alongX, y: node.y } : side === "south" ? { x: alongX, y: node.y + node.height } : side === "west" ? { x: node.x, y: alongY } : { x: node.x + node.width, y: alongY };
+  };
+  return {
+    SIDES: ["north", "south", "east", "west"],
+    seatOffsetsFor,
+    seatOn,
+    outward: (side) => side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4,
+    horizontalSide: (side) => side === "east" || side === "west"
+  };
+}
+function createLadderModel(deps) {
+  const { scene, inspector, clock, preRouted, isChannelU } = deps;
+  const beforeCache = /* @__PURE__ */ new Map();
+  const soloCache = /* @__PURE__ */ new Map();
+  const cached = (store, ids, make) => {
+    const key = `${clock.generation}|${[...ids].sort().join(",")}`;
+    const hit = store.get(key);
+    if (hit) return hit;
+    const made = make();
+    store.set(key, made);
+    return made;
+  };
+  const profileNow = (ids) => cached(beforeCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map()));
+  const selfWrecks = (ids, overrides) => {
+    const was = cached(soloCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map(), true));
+    for (const [key, tier] of inspector.local(ids, overrides, true))
+      if (tier === 0 && !was.has(key)) return true;
+    return false;
+  };
+  const damage = (profile) => {
+    const tiers = [0, 0, 0, 0, 0];
+    for (const tier of profile.values()) tiers[tier]++;
+    return tiers;
+  };
+  return {
+    profileNow,
+    /** Lexicographic by tier: one fewer tier-0 defect beats any number of tier-4 ones. */
+    lessDamaged: (a, b) => {
+      for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+      return false;
+    },
+    /** The ladder's verdict on a move, and what the drawing would look like after it. */
+    weigh: (group, overrides) => {
+      const ids = new Set(group.map((edge) => edge.id));
+      if (selfWrecks(ids, overrides)) return null;
+      const after = inspector.local(ids, overrides);
+      if (ladderVerdict(profileNow(ids), after) < 0) return null;
+      return { after, damage: damage(after) };
+    },
+    tryMove: (group, overrides) => {
+      const ids = new Set(group.map((edge) => edge.id));
+      if (selfWrecks(ids, overrides)) return false;
+      const verdict = ladderVerdict(profileNow(ids), inspector.local(ids, overrides));
+      if (verdict < 0) return false;
+      scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
+      for (const edge of group) {
+        const route = overrides.get(edge.id);
+        if (!route) continue;
+        if (!preRouted.has(edge.id)) edge.detour = isChannelU(route);
+      }
+      for (const edge of group) {
+        const pts = overrides.get(edge.id);
+        if (pts) {
+          edge.pts = pts.map((p) => ({ ...p }));
+          inspector.forget(edge.id);
+        }
+      }
+      clock.generation++;
+      beforeCache.clear();
+      soloCache.clear();
+      return true;
+    }
+  };
+}
+function bestSingleRoute(o, edge) {
+  let bestRoute = null;
+  let bestDamage = null;
+  for (const pts of o.routesFor(edge)) {
+    const verdict = o.weigh([edge], /* @__PURE__ */ new Map([[edge.id, pts]]));
+    if (!verdict) continue;
+    if (!bestDamage || o.lessDamaged(verdict.damage, bestDamage)) {
+      bestDamage = verdict.damage;
+      bestRoute = pts;
+    }
+    if (bestDamage.every((count) => count === 0)) break;
+  }
+  return bestRoute;
+}
+function tryJointMove(o, edge, ids) {
+  const severest = Math.min(...[...o.profileNow(ids).values()]);
+  if (severest > 2) return false;
+  const mineTop = o.routesFor(edge).slice(0, 8);
+  for (const partner of o.neighboursOf(edge).slice(0, 4)) {
+    const theirsTop = o.routesFor(partner).slice(0, 8);
+    for (const mine of mineTop)
+      for (const theirs of theirsTop) {
+        const overrides = /* @__PURE__ */ new Map([
+          [edge.id, mine],
+          [partner.id, theirs]
+        ]);
+        if (o.tryMove([edge, partner], overrides)) return true;
+      }
+  }
+  return false;
+}
+function repairEdge(o, edge) {
+  if (edge.pts.length < 2) return false;
+  const ids = /* @__PURE__ */ new Set([edge.id]);
+  if (o.profileNow(ids).size === 0) return false;
+  const best = bestSingleRoute(o, edge);
+  if (best && o.tryMove([edge], /* @__PURE__ */ new Map([[edge.id, best]]))) return true;
+  return tryJointMove(o, edge, ids);
+}
+function repairToFixpoint(o) {
+  for (let round = 0; round < 3; round++) {
+    let changed = false;
+    for (const edge of o.ordered) if (repairEdge(o, edge)) changed = true;
+    if (!changed) break;
+  }
+}
+var CHANNEL_MARGIN = 10;
+var CHANNEL_STEP = 24;
+var CHANNEL_CLEAR = 10;
+function createLaneModel(deps) {
+  const { scene, inspector, titleBoxes, clock, horizontalSide } = deps;
+  const contentTop = Math.min(...scene.nodes.map((node) => node.y));
+  const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
+  const contentRight = Math.max(...scene.nodes.map((node) => node.x + node.width));
+  const STRADDLE_MARGIN = 2;
+  const runReach = (edge, vertical) => {
+    let reach = CHANNEL_CLEAR;
+    for (const label of edge.labels) {
+      if (!label.width || !label.height) continue;
+      const across = (vertical ? label.height : label.width) / 2 + STRADDLE_MARGIN;
+      if (across > reach) reach = across;
+    }
+    return reach;
+  };
+  const runBlockCache = /* @__PURE__ */ new Map();
+  const parallelRunBlocks = (edge, vertical) => {
+    const key = `${edge.id}|${vertical}`;
+    const hit = runBlockCache.get(key);
+    if (hit && hit.at === clock.generation) return hit.blocks;
+    const laneVertical = !vertical;
+    const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
+    const blocks = [];
+    for (const other of scene.edges) {
+      if (other.id === edge.id || other.pts.length < 2) continue;
+      for (let index = 0; index + 1 < other.pts.length; index++) {
+        const a = other.pts[index];
+        const b = other.pts[index + 1];
+        const runVertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+        const runHorizontal = Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON;
+        if (runVertical === runHorizontal) continue;
+        if (runVertical !== laneVertical) continue;
+        const at = laneVertical ? a.x : a.y;
+        const from = laneVertical ? a.y : a.x;
+        const to = laneVertical ? b.y : b.x;
+        blocks.push({
+          alongLo: Math.min(from, to),
+          alongHi: Math.max(from, to),
+          acrossLo: at - slack,
+          acrossHi: at + slack
+        });
+      }
+    }
+    runBlockCache.set(key, { at: clock.generation, blocks });
+    return blocks;
+  };
+  const laneBeyond = (search, subject, clearRuns) => {
+    const { spanLo, spanHi, vertical, before } = search;
+    const { ends, edge } = subject;
+    const own = /* @__PURE__ */ new Set();
+    for (const end of ends) if (end) own.add(end.node.id);
+    const blocks = [];
+    const push = (x, y, w, h) => blocks.push(
+      vertical ? { alongLo: x, alongHi: x + w, acrossLo: y, acrossHi: y + h } : { alongLo: y, alongHi: y + h, acrossLo: x, acrossHi: x + w }
+    );
+    for (const leaf of inspector.leaves)
+      if (!own.has(leaf.id)) push(leaf.x, leaf.y, leaf.width, leaf.height);
+    for (const box of inspector.boxes) {
+      const inside = inspector.holds.get(box.id);
+      if (own.has(box.id) || [...own].some((id) => inside.has(id))) continue;
+      push(box.x, box.y, box.width, box.height);
+    }
+    for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
+    if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    let lane = search.start;
+    for (let guard = 0; guard <= blocks.length; guard++) {
+      const hit = blocks.find(
+        (block) => block.alongLo < spanHi && spanLo < block.alongHi && lane > block.acrossLo - CHANNEL_CLEAR && lane < block.acrossHi + CHANNEL_CLEAR
+      );
+      if (!hit) return lane;
+      lane = before ? hit.acrossLo - CHANNEL_CLEAR : hit.acrossHi + CHANNEL_CLEAR;
+    }
+    return null;
+  };
+  const channelU = (a, b, side, subject) => {
+    const vertical = !horizontalSide(side);
+    const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    const before = side === "north" || side === "west";
+    const search = {
+      spanLo: vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y),
+      spanHi: vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y),
+      start: before ? near - CHANNEL_STEP : far + CHANNEL_STEP,
+      vertical,
+      before
+    };
+    const derived = laneBeyond(search, subject, false);
+    const clear = laneBeyond(search, subject, true);
+    const outside = before ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
+    const limit = vertical ? scene.height : scene.width;
+    const lanes = [derived, clear, outside].filter(
+      (lane, index, all) => lane !== null && all.indexOf(lane) === index
+    );
+    return lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
+      (lane) => vertical ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b] : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b]
+    );
+  };
+  const isChannelU = (pts) => {
+    if (pts.length !== 4) return false;
+    const firstVertical = Math.abs(pts[0].x - pts[1].x) < ORTHOGONAL_EPSILON;
+    const lastVertical = Math.abs(pts[2].x - pts[3].x) < ORTHOGONAL_EPSILON;
+    if (firstVertical !== lastVertical) return false;
+    const lane = firstVertical ? pts[1].y : pts[1].x;
+    const fromA = lane - (firstVertical ? pts[0].y : pts[0].x);
+    const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
+    return fromA * fromB > 0;
+  };
+  return { channelU, isChannelU };
+}
 function optimiseRoutes(scene, titleBoxes = [], folded = false) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge) => enforceOrthogonalOn(edge, leaves);
   if (!folded) {
     const inspector = inspect(scene, titleBoxes);
     const preRouted = new Set(scene.edges.filter((edge) => edge.detour).map((edge) => edge.id));
-    const SEAT_OFFSETS = [0, -18, 18];
-    const SEAT_CLEAR = 14;
-    const SIDES = ["north", "south", "east", "west"];
-    const blockedSpan = (node, side) => {
-      const alongX = side === "north" || side === "south";
-      const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-      let lo = Number.POSITIVE_INFINITY;
-      let hi = Number.NEGATIVE_INFINITY;
-      for (const band of titleBoxes) {
-        const bandLo = alongX ? band.x : band.y;
-        const bandHi = alongX ? band.x + band.width : band.y + band.height;
-        if (centre < bandLo || centre > bandHi) continue;
-        lo = Math.min(lo, bandLo);
-        hi = Math.max(hi, bandHi);
-      }
-      return lo <= hi ? [lo, hi] : null;
-    };
-    const seatOffsetCache = /* @__PURE__ */ new Map();
-    const seatOffsetsFor = (node, side) => {
-      const key = `${node.id}|${side}`;
-      const hit = seatOffsetCache.get(key);
-      if (hit) return hit;
-      const span = blockedSpan(node, side);
-      const alongX = side === "north" || side === "south";
-      const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-      const made = span ? [...SEAT_OFFSETS, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre] : SEAT_OFFSETS;
-      seatOffsetCache.set(key, made);
-      return made;
-    };
-    const seatOn = (node, side, offset) => {
-      const alongX = Math.min(
-        Math.max(node.x + node.width / 2 + offset, node.x + SIDE_INSET),
-        node.x + node.width - SIDE_INSET
-      );
-      const alongY = Math.min(
-        Math.max(node.y + node.height / 2 + offset, node.y + SIDE_INSET),
-        node.y + node.height - SIDE_INSET
-      );
-      return side === "north" ? { x: alongX, y: node.y } : side === "south" ? { x: alongX, y: node.y + node.height } : side === "west" ? { x: node.x, y: alongY } : { x: node.x + node.width, y: alongY };
-    };
-    const outward = (side) => side === "north" ? 1 : side === "south" ? 2 : side === "west" ? 3 : 4;
-    const horizontalSide = (side) => side === "east" || side === "west";
-    const contentTop = Math.min(...scene.nodes.map((node) => node.y));
-    const contentBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
-    const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
-    const contentRight = Math.max(...scene.nodes.map((node) => node.x + node.width));
-    const CHANNEL_MARGIN = 10;
-    const CHANNEL_STEP = 24;
-    const CHANNEL_CLEAR = 10;
-    let generation = 0;
-    const STRADDLE_MARGIN = 2;
-    const runReach = (edge, vertical) => {
-      let reach = CHANNEL_CLEAR;
-      for (const label of edge.labels) {
-        if (!label.width || !label.height) continue;
-        const across = (vertical ? label.height : label.width) / 2 + STRADDLE_MARGIN;
-        if (across > reach) reach = across;
-      }
-      return reach;
-    };
-    const runBlockCache = /* @__PURE__ */ new Map();
-    const parallelRunBlocks = (edge, vertical) => {
-      const key = `${edge.id}|${vertical}`;
-      const hit = runBlockCache.get(key);
-      if (hit && hit.at === generation) return hit.blocks;
-      const laneVertical = !vertical;
-      const slack = runReach(edge, vertical) - CHANNEL_CLEAR;
-      const blocks = [];
-      for (const other of scene.edges) {
-        if (other.id === edge.id || other.pts.length < 2) continue;
-        for (let index = 0; index + 1 < other.pts.length; index++) {
-          const a = other.pts[index];
-          const b = other.pts[index + 1];
-          const runVertical = Math.abs(a.x - b.x) < 0.5;
-          const runHorizontal = Math.abs(a.y - b.y) < 0.5;
-          if (runVertical === runHorizontal) continue;
-          if (runVertical !== laneVertical) continue;
-          const at = laneVertical ? a.x : a.y;
-          const from = laneVertical ? a.y : a.x;
-          const to = laneVertical ? b.y : b.x;
-          blocks.push({
-            alongLo: Math.min(from, to),
-            alongHi: Math.max(from, to),
-            acrossLo: at - slack,
-            acrossHi: at + slack
-          });
-        }
-      }
-      runBlockCache.set(key, { at: generation, blocks });
-      return blocks;
-    };
-    const laneBeyond = (spanLo, spanHi, start, vertical, before, ends, edge, clearRuns) => {
-      const own = /* @__PURE__ */ new Set();
-      for (const end of ends) if (end) own.add(end.node.id);
-      const blocks = [];
-      const push = (x, y, w, h) => blocks.push(
-        vertical ? { alongLo: x, alongHi: x + w, acrossLo: y, acrossHi: y + h } : { alongLo: y, alongHi: y + h, acrossLo: x, acrossHi: x + w }
-      );
-      for (const leaf of inspector.leaves)
-        if (!own.has(leaf.id)) push(leaf.x, leaf.y, leaf.width, leaf.height);
-      for (const box of inspector.boxes) {
-        const inside = inspector.holds.get(box.id);
-        if (own.has(box.id) || [...own].some((id) => inside.has(id))) continue;
-        push(box.x, box.y, box.width, box.height);
-      }
-      for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
-      if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
-      let lane = start;
-      for (let guard = 0; guard <= blocks.length; guard++) {
-        const hit = blocks.find(
-          (block) => block.alongLo < spanHi && spanLo < block.alongHi && lane > block.acrossLo - CHANNEL_CLEAR && lane < block.acrossHi + CHANNEL_CLEAR
-        );
-        if (!hit) return lane;
-        lane = before ? hit.acrossLo - CHANNEL_CLEAR : hit.acrossHi + CHANNEL_CLEAR;
-      }
-      return null;
-    };
-    const channelU = (a, b, side, ends, edge) => {
-      const vertical = !horizontalSide(side);
-      const near = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
-      const far = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
-      const before = side === "north" || side === "west";
-      const spanLo = vertical ? Math.min(a.x, b.x) : Math.min(a.y, b.y);
-      const spanHi = vertical ? Math.max(a.x, b.x) : Math.max(a.y, b.y);
-      const start = before ? near - CHANNEL_STEP : far + CHANNEL_STEP;
-      const derived = laneBeyond(spanLo, spanHi, start, vertical, before, ends, edge, false);
-      const clear = laneBeyond(spanLo, spanHi, start, vertical, before, ends, edge, true);
-      const outside = before ? (vertical ? contentTop : contentLeft) - CHANNEL_MARGIN : (vertical ? contentBottom : contentRight) + CHANNEL_MARGIN;
-      const limit = vertical ? scene.height : scene.width;
-      const lanes = [derived, clear, outside].filter(
-        (lane, index, all) => lane !== null && all.indexOf(lane) === index
-      );
-      return lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
-        (lane) => vertical ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b] : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b]
-      );
-    };
-    const isChannelU = (pts) => {
-      if (pts.length !== 4) return false;
-      const firstVertical = Math.abs(pts[0].x - pts[1].x) < 0.5;
-      const lastVertical = Math.abs(pts[2].x - pts[3].x) < 0.5;
-      if (firstVertical !== lastVertical) return false;
-      const lane = firstVertical ? pts[1].y : pts[1].x;
-      const fromA = lane - (firstVertical ? pts[0].y : pts[0].x);
-      const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
-      return fromA * fromB > 0;
-    };
-    const shapesFor = (a, aSide, b, bSide, ends, edge) => {
-      const aH = horizontalSide(aSide);
-      const bH = horizontalSide(bSide);
+    const { SIDES, seatOffsetsFor, seatOn, outward, horizontalSide } = createSeatModel(titleBoxes);
+    const clock = { generation: 0 };
+    const { channelU, isChannelU } = createLaneModel({
+      scene,
+      inspector,
+      titleBoxes,
+      clock,
+      horizontalSide
+    });
+    const shapesFor = (a, b, sides, subject) => {
+      const aH = horizontalSide(sides.a);
+      const bH = horizontalSide(sides.b);
       if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
-      if (outward(aSide) === outward(bSide)) return channelU(a, b, aSide, ends, edge);
+      if (outward(sides.a) === outward(sides.b)) return channelU(a, b, sides.a, subject);
       if (aH)
-        return [(a.x + b.x) / 2, Math.min(a.x, b.x) + 24, Math.max(a.x, b.x) - 24].map((mid) => [
-          a,
-          { x: mid, y: a.y },
-          { x: mid, y: b.y },
-          b
-        ]);
-      return [(a.y + b.y) / 2, Math.min(a.y, b.y) + 24, Math.max(a.y, b.y) - 24].map((mid) => [
-        a,
-        { x: a.x, y: mid },
-        { x: b.x, y: mid },
-        b
-      ]);
+        return [
+          (a.x + b.x) / 2,
+          Math.min(a.x, b.x) + CHANNEL_INSET,
+          Math.max(a.x, b.x) - CHANNEL_INSET
+        ].map((mid) => [a, { x: mid, y: a.y }, { x: mid, y: b.y }, b]);
+      return [
+        (a.y + b.y) / 2,
+        Math.min(a.y, b.y) + CHANNEL_INSET,
+        Math.max(a.y, b.y) - CHANNEL_INSET
+      ].map((mid) => [a, { x: a.x, y: mid }, { x: b.x, y: mid }, b]);
     };
     const routeCache = /* @__PURE__ */ new Map();
     const routesFor = (edge) => {
-      const cacheKey = `${generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
-      const cached2 = routeCache.get(cacheKey);
-      if (cached2) return cached2;
+      const cacheKey = `${clock.generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
+      const cached = routeCache.get(cacheKey);
+      if (cached) return cached;
       const ends = inspector.endsOf(edge.pts);
       if (!ends[0] || !ends[1] || ends[0].node === ends[1].node) return [];
+      const subject = { ends, edge };
       const out = [];
       const seen = /* @__PURE__ */ new Set();
       for (const aSide of SIDES)
-        for (const bSide of SIDES)
+        for (const bSide of SIDES) {
+          const sides = { a: aSide, b: bSide };
           for (const aOff of seatOffsetsFor(ends[0].node, aSide))
             for (const bOff of seatOffsetsFor(ends[1].node, bSide))
               for (const raw of shapesFor(
                 seatOn(ends[0].node, aSide, aOff),
-                aSide,
                 seatOn(ends[1].node, bSide, bOff),
-                bSide,
-                ends,
-                edge
+                sides,
+                subject
               )) {
                 const pts = raw.filter(
-                  (p, index) => index === 0 || Math.abs(p.x - raw[index - 1].x) >= 0.5 || Math.abs(p.y - raw[index - 1].y) >= 0.5
+                  (p, index) => index === 0 || Math.abs(p.x - raw[index - 1].x) >= ORTHOGONAL_EPSILON || Math.abs(p.y - raw[index - 1].y) >= ORTHOGONAL_EPSILON
                 );
                 if (pts.length < 2) continue;
                 const key = pts.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
@@ -98067,18 +98489,13 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
                 seen.add(key);
                 out.push(pts);
               }
-      const length = (pts) => {
-        let total = 0;
-        for (let i = 0; i + 1 < pts.length; i++)
-          total += Math.abs(pts[i + 1].x - pts[i].x) + Math.abs(pts[i + 1].y - pts[i].y);
-        return total;
-      };
+        }
       const squared = out.map((pts) => {
         const probe = { ...edge, pts: pts.map((p) => ({ ...p })) };
-        enforceOrthogonalOn(probe, leaves);
+        enforceOrthogonal(probe);
         return probe.pts;
       });
-      squared.sort((p, q) => p.length - q.length || length(p) - length(q));
+      squared.sort((p, q) => p.length - q.length || pathLength(p) - pathLength(q));
       routeCache.set(cacheKey, squared);
       return squared;
     };
@@ -98091,149 +98508,25 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
         return inspector.endsOf(other.pts).some((end) => end && mine.includes(end.node));
       });
     };
-    const beforeCache = /* @__PURE__ */ new Map();
-    const soloCache = /* @__PURE__ */ new Map();
-    const cached = (store, ids, make) => {
-      const key = `${generation}|${[...ids].sort().join(",")}`;
-      const hit = store.get(key);
-      if (hit) return hit;
-      const made = make();
-      store.set(key, made);
-      return made;
-    };
-    const profileNow = (ids) => cached(beforeCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map()));
-    const selfWrecks = (ids, overrides) => {
-      const was = cached(soloCache, ids, () => inspector.local(ids, /* @__PURE__ */ new Map(), true));
-      for (const [key, tier] of inspector.local(ids, overrides, true))
-        if (tier === 0 && !was.has(key)) return true;
-      return false;
-    };
-    const damage = (profile) => {
-      const tiers = [0, 0, 0, 0, 0];
-      for (const tier of profile.values()) tiers[tier]++;
-      return tiers;
-    };
-    const lessDamaged = (a, b) => {
-      for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
-      return false;
-    };
-    const weigh = (group, overrides) => {
-      const ids = new Set(group.map((edge) => edge.id));
-      if (selfWrecks(ids, overrides)) return null;
-      const after = inspector.local(ids, overrides);
-      if (ladderVerdict(profileNow(ids), after) < 0) return null;
-      return { after, damage: damage(after) };
-    };
-    const tryMove = (group, overrides) => {
-      const ids = new Set(group.map((edge) => edge.id));
-      if (selfWrecks(ids, overrides)) return false;
-      const before = profileNow(ids);
-      const after = inspector.local(ids, overrides);
-      const verdict = ladderVerdict(before, after);
-      if (verdict < 0) return false;
-      scene.repairTier = Math.min(scene.repairTier ?? 5, verdict);
-      for (const edge of group) {
-        const route = overrides.get(edge.id);
-        if (!route) continue;
-        if (!preRouted.has(edge.id)) {
-          edge.detour = isChannelU(route);
-        }
-      }
-      for (const edge of group) {
-        const pts = overrides.get(edge.id);
-        if (pts) {
-          edge.pts = pts.map((p) => ({ ...p }));
-          inspector.forget(edge.id);
-        }
-      }
-      generation++;
-      beforeCache.clear();
-      soloCache.clear();
-      return true;
-    };
-    for (let round = 0; round < 3; round++) {
-      let changed = false;
-      for (const edge of ordered) {
-        if (edge.pts.length < 2) continue;
-        const ids = /* @__PURE__ */ new Set([edge.id]);
-        if (profileNow(ids).size === 0) continue;
-        let moved = false;
-        let bestRoute = null;
-        let bestDamage = null;
-        for (const pts of routesFor(edge)) {
-          const verdict = weigh([edge], /* @__PURE__ */ new Map([[edge.id, pts]]));
-          if (!verdict) continue;
-          if (!bestDamage || lessDamaged(verdict.damage, bestDamage)) {
-            bestDamage = verdict.damage;
-            bestRoute = pts;
-          }
-          if (bestDamage.every((count) => count === 0)) break;
-        }
-        if (bestRoute && tryMove([edge], /* @__PURE__ */ new Map([[edge.id, bestRoute]]))) {
-          moved = true;
-        }
-        if (moved) {
-          changed = true;
-          continue;
-        }
-        const severest = Math.min(...[...profileNow(ids).values()]);
-        if (severest > 2) continue;
-        const mineTop = routesFor(edge).slice(0, 8);
-        outer: for (const partner of neighboursOf(edge).slice(0, 4)) {
-          const theirsTop = routesFor(partner).slice(0, 8);
-          for (const mine of mineTop)
-            for (const theirs of theirsTop) {
-              const overrides = /* @__PURE__ */ new Map([
-                [edge.id, mine],
-                [partner.id, theirs]
-              ]);
-              if (tryMove([edge, partner], overrides)) {
-                changed = true;
-                moved = true;
-                break outer;
-              }
-            }
-        }
-      }
-      if (!changed) break;
-    }
+    const ladder = createLadderModel({
+      scene,
+      inspector,
+      clock,
+      preRouted,
+      isChannelU
+    });
+    repairToFixpoint({
+      ordered,
+      routesFor,
+      neighboursOf,
+      profileNow: ladder.profileNow,
+      weigh: ladder.weigh,
+      lessDamaged: ladder.lessDamaged,
+      tryMove: ladder.tryMove
+    });
   }
   for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
 }
-
-// src/geometry.ts
-var boxesOverlap = (boxA, boxB) => !(boxA.x + boxA.width <= boxB.x || boxB.x + boxB.width <= boxA.x || boxA.y + boxA.height <= boxB.y || boxB.y + boxB.height <= boxA.y);
-var boxToSegmentSq = (box, a, b) => {
-  const dx = Math.max(0, box.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (box.x + box.width));
-  const dy = Math.max(0, box.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (box.y + box.height));
-  return dx * dx + dy * dy;
-};
-var boxGapSq = (boxA, boxB) => {
-  const dx = Math.max(0, boxA.x - (boxB.x + boxB.width), boxB.x - (boxA.x + boxA.width));
-  const dy = Math.max(0, boxA.y - (boxB.y + boxB.height), boxB.y - (boxA.y + boxA.height));
-  return dx * dx + dy * dy;
-};
-var boundsOf = (points) => {
-  let minX = points[0].x;
-  let maxX = points[0].x;
-  let minY = points[0].y;
-  let maxY = points[0].y;
-  for (const point of points) {
-    if (point.x < minX) minX = point.x;
-    if (point.x > maxX) maxX = point.x;
-    if (point.y < minY) minY = point.y;
-    if (point.y > maxY) maxY = point.y;
-  }
-  return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
-};
-var boxToPolylineSq = (box, points) => {
-  let best = Number.POSITIVE_INFINITY;
-  for (let index = 0; index + 1 < points.length; index++) {
-    const distance = boxToSegmentSq(box, points[index], points[index + 1]);
-    if (distance < best) best = distance;
-  }
-  return best;
-};
 
 // src/label-anchor.ts
 var ADRIFT = 20;
@@ -98268,7 +98561,7 @@ function seatAt(label, x, y) {
     height: label.height
   };
 }
-function anchorFlowLabels(scene, titleBoxes = []) {
+function createLabelSeatContext(scene, titleBoxes) {
   const routes = scene.edges.filter((edge) => edge.pts.length >= 2);
   const leaves = scene.nodes.filter((node) => !node.container);
   const nearestOtherSq = (box, own) => {
@@ -98301,7 +98594,6 @@ function anchorFlowLabels(scene, titleBoxes = []) {
     }
     return false;
   };
-  const seated = [];
   const attributableAt = (label, at, edge) => {
     const box = { x: at.x, y: at.y, width: label.width, height: label.height };
     const own = boxToPolylineSq(box, edge.pts);
@@ -98312,118 +98604,178 @@ function anchorFlowLabels(scene, titleBoxes = []) {
     const onLine = boxToPolylineSq(centre, edge.pts) <= ON_LINE * ON_LINE;
     return onLine || other > PIERCE * PIERCE;
   };
+  return {
+    scene,
+    routes,
+    leaves,
+    titleBoxes,
+    nearestOtherSq,
+    overlaps,
+    coversNode,
+    straddledSeat,
+    attributableAt
+  };
+}
+var segmentIsVertical = (edge, segment) => {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  return Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
+};
+var midpointSeat = (label, edge, segment) => {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  return seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2);
+};
+function slideSeats(label, edge, segment) {
+  const a = edge.pts[segment];
+  const b = edge.pts[segment + 1];
+  const vertical = segmentIsVertical(edge, segment);
+  const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+  const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
+  const fractions = room === 0 ? [0] : [0, -0.5, 0.5, -0.25, 0.25, -1, 1];
+  return fractions.map(
+    (fraction) => vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + room * fraction) : seatAt(label, (a.x + b.x) / 2 + room * fraction, (a.y + b.y) / 2)
+  );
+}
+function chooseSeat(ctx, edge, label, segmentOrder) {
+  const { coversNode, straddledSeat, nearestOtherSq } = ctx;
+  for (const wantUnpierced of [true, false])
+    for (const segment of segmentOrder)
+      for (const candidate of slideSeats(label, edge, segment)) {
+        if (coversNode(candidate)) continue;
+        if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+        if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+        return candidate;
+      }
+  return null;
+}
+function stretchedSeats(ctx, edge, label, segmentOrder) {
+  const { coversNode, straddledSeat } = ctx;
+  const out = [];
+  for (const segment of segmentOrder) {
+    const a = edge.pts[segment];
+    const b = edge.pts[segment + 1];
+    const vertical = segmentIsVertical(edge, segment);
+    const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+    const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
+    const outer = span / 2;
+    if (outer <= room) continue;
+    const middle = (room + outer) / 2;
+    for (const offset of [-middle, middle, -outer, outer]) {
+      const candidate = vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + offset) : seatAt(label, (a.x + b.x) / 2 + offset, (a.y + b.y) / 2);
+      if (coversNode(candidate)) continue;
+      if (straddledSeat(candidate, vertical, edge)) continue;
+      out.push(candidate);
+    }
+  }
+  return out;
+}
+function besideRunSeats(ctx, edge, label, segmentOrder) {
+  const { coversNode, straddledSeat, attributableAt } = ctx;
+  const out = [];
+  for (const segment of segmentOrder) {
+    const a = edge.pts[segment];
+    const b = edge.pts[segment + 1];
+    const vertical = segmentIsVertical(edge, segment);
+    const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+    const need = vertical ? label.height : label.width;
+    const outer = span / 2;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    for (const along of [
+      0,
+      -outer / 2,
+      outer / 2,
+      -outer,
+      outer,
+      -outer - need / 2,
+      outer + need / 2
+    ])
+      for (const away of [0, -14, 14, -28, 28, -44, 44]) {
+        const candidate = seatAt(
+          label,
+          midX + (vertical ? away : along),
+          midY + (vertical ? along : away)
+        );
+        if (coversNode(candidate)) continue;
+        if (away === 0 && straddledSeat(candidate, vertical, edge)) continue;
+        if (!attributableAt(label, candidate, edge)) continue;
+        out.push(candidate);
+      }
+  }
+  return out;
+}
+function seatLabelOnRoute(ctx, edge, label) {
+  const { leaves, overlaps, coversNode, straddledSeat } = ctx;
+  if (!label.width || !label.height) return null;
+  const own = boxToPolylineSq(label, edge.pts);
+  const host = hostSegment(label, edge);
+  if (host < 0) return null;
+  const segmentOrder = [
+    host,
+    ...Array.from({ length: edge.pts.length - 1 }, (_, i) => i).filter((i) => i !== host)
+  ];
+  const seat = chooseSeat(ctx, edge, label, segmentOrder) ?? midpointSeat(label, edge, host);
+  const alternatives = [];
+  const tolerated = [];
+  for (const segment of segmentOrder)
+    for (const candidate of slideSeats(label, edge, segment)) {
+      if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+      if (!coversNode(candidate)) alternatives.push(candidate);
+      else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
+    }
+  alternatives.push(...stretchedSeats(ctx, edge, label, segmentOrder));
+  alternatives.push(...tolerated);
+  const entry = {
+    label,
+    edge,
+    from: { x: label.x, y: label.y },
+    own,
+    alternatives,
+    besideRun: () => besideRunSeats(ctx, edge, label, segmentOrder)
+  };
+  label.x = seat.x;
+  label.y = seat.y;
+  return entry;
+}
+var labelsOverlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+var seatArea = (entry) => entry.label.width * entry.label.height;
+var clearAt = (seated, entry, at) => {
+  const trial = { ...entry.label, x: at.x, y: at.y };
+  return !seated.some((other) => other !== entry && labelsOverlap(trial, other.label));
+};
+function resolveLabelCollision(seated, a, b) {
+  const order = [a, b].sort(
+    (x, y) => seatArea(y) - seatArea(x) || x.label.flowId.localeCompare(y.label.flowId)
+  );
+  for (const rung of [
+    (entry) => entry.alternatives,
+    (entry) => entry.besideRun()
+  ])
+    for (const entry of order) {
+      const free = rung(entry).find((candidate) => clearAt(seated, entry, candidate));
+      if (!free) continue;
+      entry.label.x = free.x;
+      entry.label.y = free.y;
+      return true;
+    }
+  const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
+  if (!giving) return false;
+  giving.label.x = giving.from.x;
+  giving.label.y = giving.from.y;
+  giving.done = true;
+  return true;
+}
+function anchorFlowLabels(scene, titleBoxes = []) {
+  const ctx = createLabelSeatContext(scene, titleBoxes);
+  const seated = [];
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
     for (const label of edge.labels) {
-      if (!label.width || !label.height) continue;
-      const own = boxToPolylineSq(label, edge.pts);
-      const host = hostSegment(label, edge);
-      if (host < 0) continue;
-      const seatOn = (segment) => {
-        const a = edge.pts[segment];
-        const b = edge.pts[segment + 1];
-        return seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2);
-      };
-      const segmentOrder = [
-        host,
-        ...Array.from({ length: edge.pts.length - 1 }, (_, i) => i).filter((i) => i !== host)
-      ];
-      let seat = null;
-      const seatsOf = (segment) => {
-        const a = edge.pts[segment];
-        const b = edge.pts[segment + 1];
-        const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-        const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-        const need = vertical ? label.height : label.width;
-        const room = Math.max(0, (span - need) / 2);
-        const fractions = room === 0 ? [0] : [0, -0.5, 0.5, -0.25, 0.25, -1, 1];
-        return fractions.map(
-          (fraction) => vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + room * fraction) : seatAt(label, (a.x + b.x) / 2 + room * fraction, (a.y + b.y) / 2)
-        );
-      };
-      const segVertical = (segment) => {
-        const a = edge.pts[segment];
-        const b = edge.pts[segment + 1];
-        return Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-      };
-      for (const wantUnpierced of [true, false]) {
-        for (const segment of segmentOrder) {
-          for (const candidate of seatsOf(segment)) {
-            if (coversNode(candidate)) continue;
-            if (straddledSeat(candidate, segVertical(segment), edge)) continue;
-            if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
-            seat = candidate;
-            break;
-          }
-          if (seat) break;
-        }
-        if (seat) break;
-      }
-      if (!seat) seat = seatOn(host);
-      const alternatives = [];
-      const tolerated = [];
-      for (const segment of segmentOrder)
-        for (const candidate of seatsOf(segment)) {
-          if (straddledSeat(candidate, segVertical(segment), edge)) continue;
-          if (!coversNode(candidate)) alternatives.push(candidate);
-          else if (!leaves.some((node) => overlaps(candidate, node))) tolerated.push(candidate);
-        }
-      const stretched = [];
-      for (const segment of segmentOrder) {
-        const a = edge.pts[segment];
-        const b = edge.pts[segment + 1];
-        const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-        const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-        const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
-        const outer = span / 2;
-        if (outer <= room) continue;
-        const middle = (room + outer) / 2;
-        for (const offset of [-middle, middle, -outer, outer]) {
-          const candidate = vertical ? seatAt(label, (a.x + b.x) / 2, (a.y + b.y) / 2 + offset) : seatAt(label, (a.x + b.x) / 2 + offset, (a.y + b.y) / 2);
-          if (coversNode(candidate)) continue;
-          if (straddledSeat(candidate, vertical, edge)) continue;
-          stretched.push(candidate);
-        }
-      }
-      alternatives.push(...stretched);
-      const besideRun = () => {
-        const out = [];
-        for (const segment of segmentOrder) {
-          const a = edge.pts[segment];
-          const b = edge.pts[segment + 1];
-          const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-          const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-          const need = vertical ? label.height : label.width;
-          const outer = span / 2;
-          const midX = (a.x + b.x) / 2;
-          const midY = (a.y + b.y) / 2;
-          for (const along of [0, -outer / 2, outer / 2, -outer, outer, -outer - need / 2, outer + need / 2])
-            for (const away of [0, -14, 14, -28, 28, -44, 44]) {
-              const candidate = seatAt(
-                label,
-                midX + (vertical ? away : along),
-                midY + (vertical ? along : away)
-              );
-              if (coversNode(candidate)) continue;
-              if (away === 0 && straddledSeat(candidate, vertical, edge)) continue;
-              if (!attributableAt(label, candidate, edge)) continue;
-              out.push(candidate);
-            }
-        }
-        return out;
-      };
-      alternatives.push(...tolerated);
-      seated.push({ label, edge, from: { x: label.x, y: label.y }, own, alternatives, besideRun });
-      label.x = seat.x;
-      label.y = seat.y;
+      const entry = seatLabelOnRoute(ctx, edge, label);
+      if (entry) seated.push(entry);
     }
   }
-  const overlapping = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-  const rank = (entry) => entry.label.width * entry.label.height;
-  const clearAt = (entry, at) => {
-    const trial = { ...entry.label, x: at.x, y: at.y };
-    return !seated.some((other) => other !== entry && overlapping(trial, other.label));
-  };
   for (let round = 0; round < 3; round++) {
     let moved = false;
     for (let i = 0; i < seated.length; i++)
@@ -98431,37 +98783,8 @@ function anchorFlowLabels(scene, titleBoxes = []) {
         const a = seated[i];
         const b = seated[j];
         if (a.done || b.done) continue;
-        if (!overlapping(a.label, b.label)) continue;
-        const order = [a, b].sort(
-          (x, y) => rank(y) - rank(x) || x.label.flowId.localeCompare(y.label.flowId)
-        );
-        let escaped = false;
-        for (const entry of order) {
-          const free = entry.alternatives.find((candidate) => clearAt(entry, candidate));
-          if (!free) continue;
-          entry.label.x = free.x;
-          entry.label.y = free.y;
-          escaped = true;
-          break;
-        }
-        for (const entry of escaped ? [] : order) {
-          const free = entry.besideRun().find((candidate) => clearAt(entry, candidate));
-          if (!free) continue;
-          entry.label.x = free.x;
-          entry.label.y = free.y;
-          escaped = true;
-          break;
-        }
-        if (escaped) {
-          moved = true;
-          continue;
-        }
-        const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
-        if (!giving) continue;
-        giving.label.x = giving.from.x;
-        giving.label.y = giving.from.y;
-        giving.done = true;
-        moved = true;
+        if (!labelsOverlap(a.label, b.label)) continue;
+        if (resolveLabelCollision(seated, a, b)) moved = true;
       }
     if (!moved) break;
   }
@@ -98731,27 +99054,56 @@ function constrainPorts(graph, scene, flagged, model) {
     elkNode.ports = [...elkNode.ports ?? [], ...ports];
   }
 }
-async function layout(model, view) {
-  const elk = await getElk();
-  const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
-  const numbered = model.style.flowText === "numbered";
-  const compact = model.style.compact;
-  const COMPACT_WRAP = 10;
-  const {
-    edge: edgeFontSize,
-    node: nodeFontSize,
-    cont: containerFontSize,
-    scale: fontScale
-  } = fontSizes(model.style.font.size);
-  const disposition = model.style.disposition;
-  const ASPECT_TARGETS = {
-    slide: 16 / 9,
-    page: 0.71
+var INGRESS_PARTITION = -1;
+var EGRESS_PARTITION = 900;
+var COMPACT_WRAP = 10;
+function elkPartitionOf(element, index, view, ingressExternal) {
+  if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
+  if (element.kind === "actor" || element.kind === "actor-group") return INGRESS_PARTITION;
+  if (element.kind === "external")
+    return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
+  if (view.partitions[element.kind] !== void 0) return 90 + view.partitions[element.kind];
+  return index;
+}
+function elkFlowEdge(flow, ctx, labelWrap) {
+  const { compact, numbered, fonts, businessObjectName } = ctx;
+  if (numbered)
+    return {
+      id: flow.id,
+      sources: [flow.from],
+      targets: [flow.to],
+      labels: [
+        {
+          text: String(parseInt(flow.id.slice(1), 10)),
+          width: Math.round(26 * fonts.scale),
+          height: Math.round(17 * fonts.scale)
+        }
+      ]
+    };
+  const wrap = labelWrap ?? (compact ? COMPACT_WRAP : void 0);
+  const raw = flow.label && wrap ? wrapText(flow.label, wrap) : flow.label;
+  const chips = (flow.objects ?? []).map(
+    (objectRef) => businessObjectName.get(objectRef.id) ?? objectRef.id
+  );
+  const tech = techText(flow.tech);
+  const text = raw || (tech ? tech : "");
+  const labelBox = flowLabelBox({
+    text,
+    chipNames: chips,
+    fontSize: fonts.edge,
+    tech: raw ? tech : void 0,
+    scale: fonts.scale
+  });
+  return {
+    id: flow.id,
+    sources: [flow.from],
+    targets: [flow.to],
+    labels: text || chips.length ? [{ text, ...labelBox }] : []
   };
-  const aspectTarget = ASPECT_TARGETS[disposition];
-  const ingressExternalElements = view.partitionByOrder ? computeIngressExternalElements(model) : /* @__PURE__ */ new Set();
-  const INGRESS_PARTITION = -1, EGRESS_PARTITION = 900;
-  const makeGraph = (direction, options) => ({
+}
+function buildElkGraph(ctx, direction, options) {
+  const { model, view, ingressExternal, compact, numbered, fonts } = ctx;
+  return {
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
@@ -98789,50 +99141,82 @@ async function layout(model, view) {
       } : {}
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode2(element, compact, containerFontSize, nodeFontSize);
-      const partition = view.partitionByOrder ? element.kind === "actor" || element.kind === "actor-group" ? INGRESS_PARTITION : element.kind === "external" ? ingressExternalElements.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION : view.partitions[element.kind] !== void 0 ? 90 + view.partitions[element.kind] : index : view.partitions[element.kind] ?? 1;
+      const elkNode = toElkNode2(element, compact, fonts.cont, fonts.node);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
-        "elk.partitioning.partition": String(partition)
+        "elk.partitioning.partition": String(
+          elkPartitionOf(element, index, view, ingressExternal)
+        )
       };
       return elkNode;
     }),
-    edges: model.flows.map((flow) => {
-      if (numbered) {
-        return {
-          id: flow.id,
-          sources: [flow.from],
-          targets: [flow.to],
-          labels: [
-            {
-              text: String(parseInt(flow.id.slice(1), 10)),
-              width: Math.round(26 * fontScale),
-              height: Math.round(17 * fontScale)
-            }
-          ]
-        };
-      }
-      const wrap = options?.labelWrap ?? (compact ? COMPACT_WRAP : void 0);
-      const raw = flow.label && wrap ? wrapText(flow.label, wrap) : flow.label;
-      const chips = (flow.objects ?? []).map(
-        (objectRef) => businessObjectName.get(objectRef.id) ?? objectRef.id
-      );
-      const tech = techText(flow.tech);
-      const text = raw || (tech ? tech : "");
-      const subTitle = raw ? tech : void 0;
-      return {
-        id: flow.id,
-        sources: [flow.from],
-        targets: [flow.to],
-        labels: text || chips.length ? [
-          {
-            text,
-            ...flowLabelBox(text, chips, edgeFontSize, subTitle, fontScale)
-          }
-        ] : []
-      };
-    })
-  });
+    edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap))
+  };
+}
+function recordRepairs(scene, routesBefore) {
+  for (const edge of scene.edges) {
+    const original = routesBefore.get(edge.id);
+    if (!original) continue;
+    const moved = original.length !== edge.pts.length || original.some(
+      (point, index) => Math.abs(point.x - edge.pts[index].x) > 0.01 || Math.abs(point.y - edge.pts[index].y) > 0.01
+    );
+    if (moved) edge.repairedFrom = original;
+  }
+}
+function runGeometryPasses(scene, model, options) {
+  const { numbered, sideways } = options;
+  const titleBoxes = titleBoxesOf(scene, model);
+  if (sideways) transpose(scene, titleBoxes);
+  rerouteDetours(scene, model, numbered, titleBoxes);
+  if (sideways) transpose(scene, titleBoxes);
+  const routedTitles = titleBoxesOf(scene, model);
+  tidyEdges(scene, routedTitles);
+  anchorFlowLabels(scene, routedTitles);
+  compactVertical(scene);
+  const routesBefore = new Map(
+    scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
+  );
+  const settledTitles = titleBoxesOf(scene, model);
+  optimiseRoutes(scene, settledTitles);
+  spreadAttachments(scene);
+  recordRepairs(scene, routesBefore);
+  clearSideHugs(scene, settledTitles);
+  anchorFlowLabels(scene, settledTitles);
+  swapCrossingSiblingSeats(scene);
+}
+async function layout(model, view) {
+  const elk = await getElk();
+  const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
+  const numbered = model.style.flowText === "numbered";
+  const compact = model.style.compact;
+  const {
+    edge: edgeFontSize,
+    node: nodeFontSize,
+    cont: containerFontSize,
+    scale: fontScale
+  } = fontSizes(model.style.font.size);
+  const disposition = model.style.disposition;
+  const ASPECT_TARGETS = {
+    slide: 16 / 9,
+    page: 0.71
+  };
+  const aspectTarget = ASPECT_TARGETS[disposition];
+  const ingressExternalElements = view.partitionByOrder ? computeIngressExternalElements(model) : /* @__PURE__ */ new Set();
+  const graphContext = {
+    model,
+    view,
+    ingressExternal: ingressExternalElements,
+    compact,
+    numbered,
+    fonts: {
+      edge: edgeFontSize,
+      node: nodeFontSize,
+      cont: containerFontSize,
+      scale: fontScale
+    },
+    businessObjectName
+  };
+  const makeGraph = (direction, options) => buildElkGraph(graphContext, direction, options);
   const kindOf = new Map(indexElementsById(model.elements));
   const sceneFromResult = (result2, layoutMs2) => {
     const origins = {
@@ -98849,32 +99233,10 @@ async function layout(model, view) {
       edges,
       layoutMs: layoutMs2
     };
-    const titleBoxes = titleBoxesOf(scene2, model);
-    const sideways = disposition === "page" || disposition === "tall";
-    if (sideways) transpose(scene2, titleBoxes);
-    rerouteDetours(scene2, model, numbered, titleBoxes);
-    if (sideways) transpose(scene2, titleBoxes);
-    const routedTitles = titleBoxesOf(scene2, model);
-    tidyEdges(scene2, routedTitles);
-    anchorFlowLabels(scene2, routedTitles);
-    compactVertical(scene2);
-    const routesBefore = new Map(
-      scene2.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
-    );
-    const settledTitles = titleBoxesOf(scene2, model);
-    optimiseRoutes(scene2, settledTitles);
-    spreadAttachments(scene2);
-    for (const edge of scene2.edges) {
-      const original = routesBefore.get(edge.id);
-      if (!original) continue;
-      const moved = original.length !== edge.pts.length || original.some(
-        (point, index) => Math.abs(point.x - edge.pts[index].x) > 0.01 || Math.abs(point.y - edge.pts[index].y) > 0.01
-      );
-      if (moved) edge.repairedFrom = original;
-    }
-    clearSideHugs(scene2, settledTitles);
-    anchorFlowLabels(scene2, settledTitles);
-    swapCrossingSiblingSeats(scene2);
+    runGeometryPasses(scene2, model, {
+      numbered,
+      sideways: disposition === "page" || disposition === "tall"
+    });
     return scene2;
   };
   const startTime = Date.now();
@@ -98932,7 +99294,10 @@ async function layout(model, view) {
     const rescene = sceneFromResult(reresult, Date.now() - startTime);
     const allEdges = (s) => new Set(s.edges.map((edge) => edge.id));
     const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), /* @__PURE__ */ new Map());
-    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(allEdges(rescene), /* @__PURE__ */ new Map());
+    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(
+      allEdges(rescene),
+      /* @__PURE__ */ new Map()
+    );
     for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
     for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
     const verdict = relayoutVerdict(before, after);
@@ -98997,6 +99362,7 @@ var SEC_LEVEL_FR = {
   secret: "secret"
 };
 var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
+var round1 = (n) => Math.round(n * 10) / 10;
 function assignSourceHues(model, hues) {
   const sourceHue = /* @__PURE__ */ new Map();
   for (const flow of model.flows) {
@@ -99011,61 +99377,229 @@ function collectElementStyles(elements) {
     ...collectElementStyles(element.children)
   ]);
 }
-function render(model, view, scene) {
-  const style = model.style;
-  const fonts = fontSizes(style.font.size);
-  const { edge: edgeFontSize, node: nodeFontSize, cont: containerFontSize } = fonts;
-  const round1 = (n) => Math.round(n * 10) / 10;
-  const annot = {
-    tech: round1(fonts.tech),
-    chip: round1(fonts.chip),
-    tag: round1(fonts.tag),
-    band: round1(fonts.band),
-    bandTitle: round1(fonts.bandTitle),
-    chipH: Math.round(fonts.chipH),
-    scale: fonts.scale,
-    chipRectH: Math.round(15 * fonts.scale),
-    chipTextDy: round1(11 * fonts.scale)
-  };
-  const scaled = (n) => round1(n * fonts.scale);
-  const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
-  const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
-  const defaultEdgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
-  const sourceHue = style.flowColor === "by-source" ? assignSourceHues(model, flowPalette[isDarkTheme ? "dark" : "light"]) : /* @__PURE__ */ new Map();
-  const flowColorOf = (flow) => flow?.style?.stroke?.color ?? (style.flowColor === "by-source" ? sourceHue.get(flow?.from ?? "") ?? defaultEdgeColor : defaultEdgeColor);
-  const arrowMarkers = /* @__PURE__ */ new Map();
-  const markerName = (color) => {
-    let name = arrowMarkers.get(color);
-    if (!name) {
-      name = arrowMarkers.size === 0 ? "arr" : `arr${arrowMarkers.size}`;
-      arrowMarkers.set(color, name);
+var ADRIFT_SQ = 20 * 20;
+var ATTACHED_SQ = 6 * 6;
+function auditRouteRepairs(deps) {
+  const { scene, labels, titles, offOwnRun, pierced, stolen, labelsSeated: labelsSeated2, resettle } = deps;
+  const repaired = scene.edges.filter((edge) => edge.repairedFrom);
+  if (!repaired.length) return;
+  const labelHarm = () => {
+    const harm = [0, 0];
+    for (const label of labels) {
+      const own = offOwnRun(label);
+      if (own > ADRIFT_SQ) harm[0]++;
+      if (pierced(label)) harm[0]++;
+      if (titles.some((title) => boxesOverlap(title, label))) harm[0]++;
+      if (stolen(label, own)) harm[1]++;
     }
-    return name;
+    for (const edge of scene.edges) if (!labelsSeated2(edge)) harm[1]++;
+    return harm;
   };
-  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
-  const objectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
-  const numbered = style.flowText === "numbered";
-  const ui = UI[style.lang] ?? UI.en;
-  const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
-  const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
-  const elementStyle = /* @__PURE__ */ new Map();
-  const elementAttr = /* @__PURE__ */ new Map();
-  for (const entry of collectElementStyles(model.elements)) {
-    elementStyle.set(entry.id, entry.style);
-    elementAttr.set(entry.id, entry.attrValue);
+  const soloProfile = () => inspect(scene, titles).local(new Set(scene.edges.map((edge) => edge.id)), /* @__PURE__ */ new Map(), true);
+  const stateHarm = () => {
+    const tiers = [0, 0, 0, 0, 0];
+    for (const tier of soloProfile().values()) tiers[tier]++;
+    const [labels0, labels1] = labelHarm();
+    tiers[0] += labels0;
+    tiers[1] += labels1;
+    return tiers;
+  };
+  const breaches = () => {
+    const found = /* @__PURE__ */ new Set();
+    labels.forEach((label, index) => {
+      if (offOwnRun(label) > ADRIFT_SQ) found.add(`adrift:${index}`);
+    });
+    for (const [key, tier] of soloProfile())
+      if (tier === 0 && (key.startsWith("leaf:") || key.startsWith("diag:"))) found.add(key);
+    return found;
+  };
+  const lessDamaged = (a, b) => {
+    for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
+    return false;
+  };
+  const withRepair = stateHarm();
+  const breachesWith = breaches();
+  const repairedRoutes = repaired.map((edge) => edge.pts);
+  for (const edge of repaired) edge.pts = edge.repairedFrom;
+  resettle();
+  const withoutRepair = stateHarm();
+  const breachesWithout = breaches();
+  const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
+  if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
+    repaired.forEach((edge, index) => {
+      edge.pts = repairedRoutes[index];
+    });
+    resettle();
   }
-  const resolveStyle = (kind, id) => {
-    let base = kindDefaults[kind] ?? {};
-    const level = elementAttr.get(id);
-    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
-    const perKind = style.kind[kind] ?? {};
-    const inline = elementStyle.get(id) ?? {};
-    return {
-      fill: inline.fill ?? perKind.fill ?? base.fill,
-      stroke: { ...base.stroke, ...perKind.stroke, ...inline.stroke },
-      text: inline.text ?? perKind.text ?? base.text
-    };
+  for (const edge of repaired) edge.repairedFrom = void 0;
+}
+function settleOnOwnRun(s, label) {
+  const onLineSeats = [...s.ownRunMidpoints(label), ...s.alongOwnRun(label)];
+  for (const wantAttributable of [true, false])
+    for (const seat of onLineSeats) {
+      label.x = seat.x;
+      label.y = seat.y;
+      if (s.collides(label)) continue;
+      if (wantAttributable && !s.attributableHere(label)) continue;
+      return true;
+    }
+  return false;
+}
+function settleOffOwnRun(s, label, here) {
+  for (const attributable of [true, false]) {
+    const origins = attributable ? [here, ...s.ownRunMidpoints(label)] : [here];
+    const slides = attributable ? [0, -24, 24, -48, 48, -72, 72, -96, 96] : [0, -24, 24, -48, 48];
+    for (const origin of origins)
+      for (const dx of slides)
+        for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86])
+          for (const dir of step === 0 ? [1] : [-1, 1]) {
+            label.y = origin.y + dir * step;
+            label.x = origin.x + dx;
+            if (s.collides(label)) continue;
+            if (attributable && !s.attributableHere(label)) continue;
+            return true;
+          }
+  }
+  return false;
+}
+function settleOneLabel(s, label) {
+  if (!s.collides(label) && s.attributableHere(label)) return;
+  const origin = { x: label.x, y: label.y };
+  if (settleOnOwnRun(s, label)) return;
+  if (settleOffOwnRun(s, label, origin)) return;
+  label.x = origin.x;
+  label.y = origin.y;
+}
+function createNodeRenderers(paint) {
+  const { palette, style, annot, nodeFontSize, containerFontSize, resolveStyle, elementAttr } = paint;
+  const centeredNodeLabel = (lines, centerX2, topBaseline, fill) => lines.map(
+    (line, index) => `<text x="${centerX2}" y="${topBaseline + index * (nodeFontSize + 2)}" font-size="${nodeFontSize}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
+`
+  ).join("");
+  const centerLinesY = (top, height, lineCount) => top + height / 2 - (lineCount - 1) * (nodeFontSize + 2) / 2 + 4;
+  const renderContainerNode = (node) => {
+    const nodeStyle = resolveStyle(node.kind, node.id);
+    const fill = escAttr(nodeStyle.fill ?? palette.containerFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.containerStroke), text = escAttr(nodeStyle.text ?? palette.containerLabel);
+    const dash = dashArray(nodeStyle.stroke?.style);
+    let svg = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+`;
+    node.label.split("\n").forEach((line, index) => {
+      svg += `<text x="${node.x + 10}" y="${node.y + 18 + index * 14}" font-size="${containerFontSize}" font-weight="bold" fill="${text}">${esc(line)}</text>
+`;
+    });
+    const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : void 0;
+    if (level) {
+      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
+      svg += `<text x="${node.x + node.width - 9}" y="${node.y + node.height - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
+`;
+    }
+    return svg;
   };
+  const renderActor = (node, nodeStyle, lines) => {
+    const centerX2 = node.x + node.width / 2;
+    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.actorStroke);
+    const text = escAttr(nodeStyle.text ?? palette.actorText);
+    let svg = `<circle cx="${centerX2}" cy="${node.y + 10}" r="7" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+<path d="M ${centerX2 - 11} ${node.y + 32} q 11 -19 22 0" fill="none" stroke="${stroke}" stroke-width="1.5"/>
+`;
+    lines.forEach((line, index) => {
+      svg += `<text x="${centerX2}" y="${node.y + 44 + index * 11}" font-size="${nodeFontSize - 1.5}" text-anchor="middle" fill="${text}">${esc(line)}</text>
+`;
+    });
+    return svg;
+  };
+  const renderDatastore = (node, nodeStyle, lines) => {
+    const ry = 7;
+    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), fill = escAttr(nodeStyle.fill ?? palette.nodeFill);
+    const body = `<path d="M ${node.x} ${node.y + ry} v ${node.height - 2 * ry} a ${node.width / 2} ${ry} 0 0 0 ${node.width} 0 v ${-(node.height - 2 * ry)}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    const centerY2 = node.y + ry + (node.height - ry) / 2 - (lines.length - 1) * (nodeFontSize + 2) / 2 + 4;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerY2,
+      escAttr(nodeStyle.text ?? palette.nodeText)
+    );
+  };
+  const renderQueue = (node, nodeStyle, lines) => {
+    const rx = 8;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<path d="M ${node.x + rx} ${node.y} h ${node.width - 2 * rx} a ${rx} ${node.height / 2} 0 0 1 0 ${node.height} h ${-(node.width - 2 * rx)} a ${rx} ${node.height / 2} 0 0 1 0 ${-node.height}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<ellipse cx="${node.x + rx}" cy="${node.y + node.height / 2}" rx="${rx}" ry="${node.height / 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + rx + (node.width - rx) / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderGateway = (node, nodeStyle, lines) => {
+    const centerX2 = node.x + node.width / 2;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${round1(node.x + 8)} ${round1(node.y + 8)} L ${round1(node.x + 22)} ${round1(node.y + 8)} Q ${round1(node.x + 24)} ${round1(node.y + 13)} ${round1(node.x + 15)} ${round1(node.y + 20)} Q ${round1(node.x + 6)} ${round1(node.y + 13)} ${round1(node.x + 8)} ${round1(node.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+`;
+    return body + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
+  };
+  const renderAuth = (node, nodeStyle, lines) => {
+    const centerX2 = node.x + node.width / 2;
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
+<rect x="${node.x + 6}" y="${node.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<path d="M ${node.x + 10} ${node.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>
+<circle cx="${node.x + 15}" cy="${node.y + 16}" r="2.5" fill="${stroke}"/>
+`;
+    return body + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
+  };
+  const renderPlainBox = (node, nodeStyle, lines) => {
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const dash = dashArray(nodeStyle.stroke?.style);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+`;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderIdp = (node, nodeStyle, lines) => {
+    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>
+`;
+    return body + centeredNodeLabel(
+      lines,
+      node.x + node.width / 2,
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
+  };
+  const renderLeafNode = (node) => {
+    const nodeStyle = resolveStyle(node.kind, node.id);
+    const lines = node.label.split("\n");
+    switch (node.kind) {
+      case "actor":
+        return renderActor(node, nodeStyle, lines);
+      case "datastore":
+        return renderDatastore(node, nodeStyle, lines);
+      case "queue":
+        return renderQueue(node, nodeStyle, lines);
+      case "gateway":
+        return renderGateway(node, nodeStyle, lines);
+      case "auth":
+        return renderAuth(node, nodeStyle, lines);
+      case "idp":
+        return renderIdp(node, nodeStyle, lines);
+      default:
+        return renderPlainBox(node, nodeStyle, lines);
+    }
+  };
+  return { renderContainerNode, renderLeafNode };
+}
+function createLabelSettler(deps) {
+  const { scene, model, flowById, style } = deps;
   const nodeBoxes = scene.nodes.filter((node) => !node.container).map((node) => ({ x: node.x, y: node.y, width: node.width, height: node.height }));
   const labels = scene.edges.flatMap((edge) => edge.labels);
   const countLabelOverlaps = () => {
@@ -99079,9 +99613,11 @@ function render(model, view, scene) {
   };
   const ownRun = /* @__PURE__ */ new Map();
   for (const edge of scene.edges) for (const label of edge.labels) ownRun.set(label, edge);
-  const routes = scene.edges.filter((edge) => edge.pts.length >= 2).map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
-  const ADRIFT_SQ = 20 * 20;
-  const ATTACHED_SQ = 6 * 6;
+  let routes = [];
+  const refreshRoutes = () => {
+    routes = scene.edges.filter((edge) => edge.pts.length >= 2).map((edge) => ({ edge, bounds: boundsOf(edge.pts) }));
+  };
+  refreshRoutes();
   const offOwnRun = (label) => {
     const edge = ownRun.get(label);
     return edge && edge.pts.length >= 2 ? boxToPolylineSq(label, edge.pts) : 0;
@@ -99137,341 +99673,66 @@ function render(model, view, scene) {
     return seats;
   };
   const titleBands = titleBoxesOf(scene, model);
+  const settler = {
+    /**
+     * Somewhere this label may not sit at all.
+     *
+     * Container names sit with the node boxes, not the soft preferences the
+     * escape ladder trades, because §4e is tier 0 while every one of those is
+     * tier 1: a name drawn through is destroyed information, a label beside its
+     * line is still readable. `label-anchor` ranks these the other way — that
+     * predates the ladder, which now decides.
+     *
+     * Surfaced once `laneBeyond` started clearing runs (§4j): labels that never
+     * needed to escape began escaping, and five `slide` drawings put one on a
+     * container name on the way out.
+     */
+    collides: (label) => labels.some((other) => other !== label && boxesOverlap(other, label)) || nodeBoxes.some((node) => boxesOverlap(node, label)) || titleBands.some((band) => boxesOverlap(band, label)),
+    /** Can the reader tell, from this position alone, which flow is speaking? */
+    attributableHere: (label) => {
+      const own = offOwnRun(label);
+      return own <= ADRIFT_SQ && !stolen(label, own) && !pierced(label);
+    },
+    ownRunMidpoints,
+    alongOwnRun
+  };
   const settleLabelPositions = () => {
+    refreshRoutes();
     for (const label of labels) {
       const requested = flowById.get(label.flowId)?.style?.label ?? style.flowLabel;
       if (requested === "above") label.y -= label.height / 2 + 5;
       else if (requested === "below") label.y += label.height / 2 + 5;
     }
-    for (const label of labels) {
-      const collides = () => labels.some((other) => other !== label && boxesOverlap(other, label)) || nodeBoxes.some((node) => boxesOverlap(node, label)) || titleBands.some((band) => boxesOverlap(band, label));
-      const attributableHere = () => {
-        const own = offOwnRun(label);
-        return own <= ADRIFT_SQ && !stolen(label, own) && !pierced(label);
-      };
-      if (!collides() && attributableHere()) continue;
-      const originY = label.y, originX = label.x;
-      const here = { x: originX, y: originY };
-      let settled = false;
-      const onLineSeats = [...ownRunMidpoints(label), ...alongOwnRun(label)];
-      for (const wantAttributable of [true, false]) {
-        for (const seat of onLineSeats) {
-          label.x = seat.x;
-          label.y = seat.y;
-          if (collides()) continue;
-          if (wantAttributable && !attributableHere()) continue;
-          settled = true;
-          break;
-        }
-        if (settled) break;
-      }
-      for (const attributable of settled ? [] : [true, false]) {
-        const origins = attributable ? [here, ...ownRunMidpoints(label)] : [here];
-        const slides = attributable ? [0, -24, 24, -48, 48, -72, 72, -96, 96] : [0, -24, 24, -48, 48];
-        outer: for (const origin of origins) {
-          for (const dx of slides) {
-            for (const step of [0, 8, 14, 20, 28, 36, 44, 56, 70, 86]) {
-              for (const dir of step === 0 ? [1] : [-1, 1]) {
-                label.y = origin.y + dir * step;
-                label.x = origin.x + dx;
-                if (collides()) continue;
-                if (attributable && !attributableHere()) continue;
-                settled = true;
-                break outer;
-              }
-            }
-          }
-        }
-        if (settled) break;
-      }
-      if (!settled) {
-        label.x = originX;
-        label.y = originY;
-      }
-    }
+    for (const label of labels) settleOneLabel(settler, label);
   };
-  const overlapsBefore = countLabelOverlaps();
-  settleLabelPositions();
-  {
-    const repaired = scene.edges.filter((edge) => edge.repairedFrom);
-    if (repaired.length) {
-      const titles = titleBands;
-      const labelHarm = () => {
-        const harm = [0, 0];
-        for (const label of labels) {
-          const own = offOwnRun(label);
-          if (own > ADRIFT_SQ) harm[0]++;
-          if (pierced(label)) harm[0]++;
-          if (titles.some((title) => boxesOverlap(title, label))) harm[0]++;
-          if (stolen(label, own)) harm[1]++;
-        }
-        for (const edge of scene.edges) if (!labelsSeated(edge)) harm[1]++;
-        return harm;
-      };
-      const runHarm = () => {
-        const tiers = [0, 0, 0, 0, 0];
-        const profile = inspect(scene, titles).local(
-          new Set(scene.edges.map((edge) => edge.id)),
-          /* @__PURE__ */ new Map(),
-          true
-        );
-        for (const tier of profile.values()) tiers[tier]++;
-        return tiers;
-      };
-      const stateHarm = () => {
-        const tiers = runHarm();
-        const [labels0, labels1] = labelHarm();
-        tiers[0] += labels0;
-        tiers[1] += labels1;
-        return tiers;
-      };
-      const breaches = () => {
-        const found = /* @__PURE__ */ new Set();
-        labels.forEach((label, index) => {
-          if (offOwnRun(label) > ADRIFT_SQ) found.add(`adrift:${index}`);
-        });
-        for (const [key, tier] of inspect(scene, titles).local(
-          new Set(scene.edges.map((edge) => edge.id)),
-          /* @__PURE__ */ new Map(),
-          true
-        ))
-          if (tier === 0 && (key.startsWith("leaf:") || key.startsWith("diag:"))) found.add(key);
-        return found;
-      };
-      const lessDamaged = (a, b) => {
-        for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
-        return false;
-      };
-      const withRepair = stateHarm();
-      const breachesWith = breaches();
-      const repairedRoutes = repaired.map((edge) => edge.pts);
-      for (const edge of repaired) edge.pts = edge.repairedFrom;
-      anchorFlowLabels(scene, titles);
-      settleLabelPositions();
-      const withoutRepair = stateHarm();
-      const breachesWithout = breaches();
-      const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
-      if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
-        repaired.forEach((edge, index) => {
-          edge.pts = repairedRoutes[index];
-        });
-        anchorFlowLabels(scene, titles);
-        settleLabelPositions();
-      }
-      for (const edge of repaired) edge.repairedFrom = void 0;
-    }
-  }
-  const overlapsAfter = countLabelOverlaps();
-  compactVertical(scene);
-  const verticalSegments = [];
-  if (style.crossingHops) {
-    for (const edge of scene.edges) {
-      for (let segmentIndex = 0; segmentIndex + 1 < edge.pts.length; segmentIndex++) {
-        const point = edge.pts[segmentIndex], nextPoint = edge.pts[segmentIndex + 1];
-        if (Math.abs(point.x - nextPoint.x) < 0.5)
-          verticalSegments.push({
-            x: point.x,
-            y1: Math.min(point.y, nextPoint.y),
-            y2: Math.max(point.y, nextPoint.y)
-          });
-      }
-    }
-  }
-  const edgePath = (pts) => {
-    let path = `M ${pts[0].x} ${pts[0].y}`;
-    for (let segmentIndex = 0; segmentIndex + 1 < pts.length; segmentIndex++) {
-      const point = pts[segmentIndex], nextPoint = pts[segmentIndex + 1];
-      if (style.crossingHops && Math.abs(point.y - nextPoint.y) < 0.5 && Math.abs(point.x - nextPoint.x) >= 0.5) {
-        const direction = Math.sign(nextPoint.x - point.x);
-        const rangeStart = Math.min(point.x, nextPoint.x) + HOP_RADIUS + 1, rangeEnd = Math.max(point.x, nextPoint.x) - HOP_RADIUS - 1;
-        const crossings = verticalSegments.filter(
-          (vertical) => vertical.x > rangeStart && vertical.x < rangeEnd && point.y > vertical.y1 + 1 && point.y < vertical.y2 - 1
-        ).map((vertical) => vertical.x).sort((pointA, pointB) => direction > 0 ? pointA - pointB : pointB - pointA);
-        for (const crossingX of crossings)
-          path += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
-      }
-      path += ` L ${nextPoint.x} ${nextPoint.y}`;
-    }
-    return path;
+  return {
+    labels,
+    titleBands,
+    countLabelOverlaps,
+    offOwnRun,
+    stolen,
+    pierced,
+    settleLabelPositions
   };
-  const centeredNodeLabel = (lines, centerX, topBaseline, fill) => lines.map(
-    (line, index) => `<text x="${centerX}" y="${topBaseline + index * (nodeFontSize + 2)}" font-size="${nodeFontSize}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
-`
-  ).join("");
-  const centerLinesY = (top, height, lineCount) => top + height / 2 - (lineCount - 1) * (nodeFontSize + 2) / 2 + 4;
-  const renderContainerNode = (node) => {
-    const nodeStyle = resolveStyle(node.kind, node.id);
-    const fill = escAttr(nodeStyle.fill ?? palette.containerFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.containerStroke), text = escAttr(nodeStyle.text ?? palette.containerLabel);
-    const dash = dashArray(nodeStyle.stroke?.style);
-    let svg2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="6" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.2}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
-`;
-    node.label.split("\n").forEach((line, index) => {
-      svg2 += `<text x="${node.x + 10}" y="${node.y + 18 + index * 14}" font-size="${containerFontSize}" font-weight="bold" fill="${text}">${esc(line)}</text>
-`;
-    });
-    const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : void 0;
-    if (level) {
-      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
-      svg2 += `<text x="${node.x + node.width - 9}" y="${node.y + node.height - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
-`;
-    }
-    return svg2;
-  };
-  const renderActor = (node, nodeStyle, lines) => {
-    const centerX = node.x + node.width / 2;
-    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.actorStroke);
-    const text = escAttr(nodeStyle.text ?? palette.actorText);
-    let svg2 = `<circle cx="${centerX}" cy="${node.y + 10}" r="7" fill="none" stroke="${stroke}" stroke-width="1.5"/>
-<path d="M ${centerX - 11} ${node.y + 32} q 11 -19 22 0" fill="none" stroke="${stroke}" stroke-width="1.5"/>
-`;
-    lines.forEach((line, index) => {
-      svg2 += `<text x="${centerX}" y="${node.y + 44 + index * 11}" font-size="${nodeFontSize - 1.5}" text-anchor="middle" fill="${text}">${esc(line)}</text>
-`;
-    });
-    return svg2;
-  };
-  const renderDatastore = (node, nodeStyle, lines) => {
-    const ry = 7;
-    const stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), fill = escAttr(nodeStyle.fill ?? palette.nodeFill);
-    const body2 = `<path d="M ${node.x} ${node.y + ry} v ${node.height - 2 * ry} a ${node.width / 2} ${ry} 0 0 0 ${node.width} 0 v ${-(node.height - 2 * ry)}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-`;
-    const centerY = node.y + ry + (node.height - ry) / 2 - (lines.length - 1) * (nodeFontSize + 2) / 2 + 4;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + node.width / 2,
-      centerY,
-      escAttr(nodeStyle.text ?? palette.nodeText)
-    );
-  };
-  const renderQueue = (node, nodeStyle, lines) => {
-    const rx = 8;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<path d="M ${node.x + rx} ${node.y} h ${node.width - 2 * rx} a ${rx} ${node.height / 2} 0 0 1 0 ${node.height} h ${-(node.width - 2 * rx)} a ${rx} ${node.height / 2} 0 0 1 0 ${-node.height}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<ellipse cx="${node.x + rx}" cy="${node.y + node.height / 2}" rx="${rx}" ry="${node.height / 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-`;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + rx + (node.width - rx) / 2,
-      centerLinesY(node.y, node.height, lines.length),
-      text
-    );
-  };
-  const renderGateway = (node, nodeStyle, lines) => {
-    const centerX = node.x + node.width / 2;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<path d="M ${round1(node.x + 8)} ${round1(node.y + 8)} L ${round1(node.x + 22)} ${round1(node.y + 8)} Q ${round1(node.x + 24)} ${round1(node.y + 13)} ${round1(node.x + 15)} ${round1(node.y + 20)} Q ${round1(node.x + 6)} ${round1(node.y + 13)} ${round1(node.x + 8)} ${round1(node.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-`;
-    return body2 + centeredNodeLabel(lines, centerX + 10, centerLinesY(node.y, node.height, lines.length), text);
-  };
-  const renderAuth = (node, nodeStyle, lines) => {
-    const centerX = node.x + node.width / 2;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<rect x="${node.x + 6}" y="${node.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-<path d="M ${node.x + 10} ${node.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-<circle cx="${node.x + 15}" cy="${node.y + 16}" r="2.5" fill="${stroke}"/>
-`;
-    return body2 + centeredNodeLabel(lines, centerX + 10, centerLinesY(node.y, node.height, lines.length), text);
-  };
-  const renderPlainBox = (node, nodeStyle, lines) => {
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const dash = dashArray(nodeStyle.stroke?.style);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
-`;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + node.width / 2,
-      centerLinesY(node.y, node.height, lines.length),
-      text
-    );
-  };
-  const renderIdp = (node, nodeStyle, lines) => {
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body2 = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>
-`;
-    return body2 + centeredNodeLabel(
-      lines,
-      node.x + node.width / 2,
-      centerLinesY(node.y, node.height, lines.length),
-      text
-    );
-  };
-  const renderLeafNode = (node) => {
-    const nodeStyle = resolveStyle(node.kind, node.id);
-    const lines = node.label.split("\n");
-    switch (node.kind) {
-      case "actor":
-        return renderActor(node, nodeStyle, lines);
-      case "datastore":
-        return renderDatastore(node, nodeStyle, lines);
-      case "queue":
-        return renderQueue(node, nodeStyle, lines);
-      case "gateway":
-        return renderGateway(node, nodeStyle, lines);
-      case "auth":
-        return renderAuth(node, nodeStyle, lines);
-      case "idp":
-        return renderIdp(node, nodeStyle, lines);
-      default:
-        return renderPlainBox(node, nodeStyle, lines);
-    }
-  };
-  const renderNumberedBadge = (label) => {
-    const centerX = label.x + label.width / 2, centerY = label.y + label.height / 2 + scaled(3.6), size = scaled(10.5);
-    return `<text x="${centerX}" y="${centerY}" font-size="${size}" text-anchor="middle" fill="${palette.halo}" stroke="${palette.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(label.text)}</text>
-<text x="${centerX}" y="${centerY}" font-size="${size}" text-anchor="middle" fill="${palette.edgeLabel}" font-weight="bold">${esc(label.text)}</text>
-`;
-  };
-  const renderTextLabel = (label, flowStyle) => {
-    const lines = label.text ? label.text.split("\n") : [];
-    const color = escAttr(flowStyle?.text ?? palette.edgeLabel);
-    let svg2 = lines.map(
-      (line, index) => `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + index * (edgeFontSize + 3)}" font-size="${edgeFontSize}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
-`
-    ).join("");
-    const flow = flowById.get(label.flowId);
-    const tech = techText(flow?.tech);
-    if (tech && flow?.label) {
-      svg2 += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
-`;
-    }
-    const chips = (flow?.objects ?? []).map((objectRef) => objectName.get(objectRef.id) ?? objectRef.id);
-    if (!chips.length) return svg2;
-    const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
-    let positionX = label.x + label.width / 2 - totalW / 2;
-    const cy = label.y + label.height - annot.chipH + 2;
-    for (const name of chips) {
-      const chipWidth = chipW(name, annot.scale);
-      svg2 += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
-`;
-      svg2 += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
-`;
-      positionX += chipWidth + 4;
-    }
-    return svg2;
-  };
-  const renderEdgePath = (edge) => {
-    if (!edge.pts.length) return "";
-    const flow = flowById.get(edge.id);
-    const flowStyle = flow?.style;
-    const color = flowColorOf(flow);
-    const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
-    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
-    const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
-    return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
-`;
-  };
-  const renderEdgeLabels = (edge) => {
-    if (!edge.pts.length) return "";
-    const flowStyle = flowById.get(edge.id)?.style;
-    let svg2 = "";
-    for (const label of edge.labels) {
-      svg2 += numbered ? renderNumberedBadge(label) : renderTextLabel(label, flowStyle);
-    }
-    return svg2;
-  };
+}
+function createBandRenderers(paint) {
+  const {
+    scene,
+    model,
+    view,
+    style,
+    palette,
+    annot,
+    ui,
+    legendNames,
+    legendFlowLabel,
+    scaled,
+    objectName,
+    resolveStyle,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  } = paint;
   let bandY = scene.height;
   let bandsSvg = "";
   const contentX = 150;
@@ -99603,14 +99864,248 @@ function render(model, view, scene) {
       bandY += scaled(20);
     }
   };
+  return {
+    renderFlowsBand,
+    renderObjectsBand,
+    renderLegendBand,
+    bandsSvg: () => bandsSvg,
+    bandY: () => bandY
+  };
+}
+function createEdgePainter(paint) {
+  const {
+    scene,
+    style,
+    palette,
+    annot,
+    edgeFontSize,
+    scaled,
+    flowById,
+    objectName,
+    flowColorOf,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  } = paint;
+  const verticalSegments = [];
+  if (style.crossingHops) {
+    for (const edge of scene.edges) {
+      for (let segmentIndex = 0; segmentIndex + 1 < edge.pts.length; segmentIndex++) {
+        const point = edge.pts[segmentIndex], nextPoint = edge.pts[segmentIndex + 1];
+        if (Math.abs(point.x - nextPoint.x) < 0.5)
+          verticalSegments.push({
+            x: point.x,
+            y1: Math.min(point.y, nextPoint.y),
+            y2: Math.max(point.y, nextPoint.y)
+          });
+      }
+    }
+  }
+  const edgePath = (pts) => {
+    let path = `M ${pts[0].x} ${pts[0].y}`;
+    for (let segmentIndex = 0; segmentIndex + 1 < pts.length; segmentIndex++) {
+      const point = pts[segmentIndex], nextPoint = pts[segmentIndex + 1];
+      if (style.crossingHops && Math.abs(point.y - nextPoint.y) < 0.5 && Math.abs(point.x - nextPoint.x) >= 0.5) {
+        const direction = Math.sign(nextPoint.x - point.x);
+        const rangeStart = Math.min(point.x, nextPoint.x) + HOP_RADIUS + 1, rangeEnd = Math.max(point.x, nextPoint.x) - HOP_RADIUS - 1;
+        const crossings = verticalSegments.filter(
+          (vertical) => vertical.x > rangeStart && vertical.x < rangeEnd && point.y > vertical.y1 + 1 && point.y < vertical.y2 - 1
+        ).map((vertical) => vertical.x).sort((pointA, pointB) => direction > 0 ? pointA - pointB : pointB - pointA);
+        for (const crossingX of crossings)
+          path += ` L ${crossingX - direction * HOP_RADIUS} ${point.y} A ${HOP_RADIUS} ${HOP_RADIUS} 0 0 ${direction > 0 ? 1 : 0} ${crossingX + direction * HOP_RADIUS} ${point.y}`;
+      }
+      path += ` L ${nextPoint.x} ${nextPoint.y}`;
+    }
+    return path;
+  };
+  const renderNumberedBadge = (label) => {
+    const centerX2 = label.x + label.width / 2, centerY2 = label.y + label.height / 2 + scaled(3.6), size = scaled(10.5);
+    return `<text x="${centerX2}" y="${centerY2}" font-size="${size}" text-anchor="middle" fill="${palette.halo}" stroke="${palette.halo}" stroke-width="3" stroke-linejoin="round" font-weight="bold">${esc(label.text)}</text>
+<text x="${centerX2}" y="${centerY2}" font-size="${size}" text-anchor="middle" fill="${palette.edgeLabel}" font-weight="bold">${esc(label.text)}</text>
+`;
+  };
+  const renderTextLabel = (label, flowStyle) => {
+    const lines = label.text ? label.text.split("\n") : [];
+    const color = escAttr(flowStyle?.text ?? palette.edgeLabel);
+    let svg = lines.map(
+      (line, index) => `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + index * (edgeFontSize + 3)}" font-size="${edgeFontSize}" text-anchor="middle" fill="${color}" font-style="italic" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(line)}</text>
+`
+    ).join("");
+    const flow = flowById.get(label.flowId);
+    const tech = techText(flow?.tech);
+    if (tech && flow?.label) {
+      svg += `<text x="${label.x + label.width / 2}" y="${label.y + edgeFontSize + 1 + lines.length * (edgeFontSize + 3)}" font-size="${annot.tech}" text-anchor="middle" fill="${palette.techText}" stroke="${palette.halo}" stroke-width="${LABEL_HALO}" paint-order="stroke" stroke-linejoin="round">${esc(tech)}</text>
+`;
+    }
+    const chips = (flow?.objects ?? []).map(
+      (objectRef) => objectName.get(objectRef.id) ?? objectRef.id
+    );
+    if (!chips.length) return svg;
+    const totalW = chips.reduce((sum, name) => sum + chipW(name, annot.scale) + 4, -4);
+    let positionX = label.x + label.width / 2 - totalW / 2;
+    const cy = label.y + label.height - annot.chipH + 2;
+    for (const name of chips) {
+      const chipWidth = chipW(name, annot.scale);
+      svg += `<rect x="${positionX}" y="${cy}" width="${chipWidth}" height="${annot.chipRectH}" rx="${annot.chipRectH / 2}" fill="${palette.chipFill}" stroke="${palette.chipStroke}" stroke-width="1"/>
+`;
+      svg += `<text x="${positionX + chipWidth / 2}" y="${cy + annot.chipTextDy}" font-size="${annot.chip}" text-anchor="middle" fill="${palette.chipText}" font-weight="bold">${esc(name)}</text>
+`;
+      positionX += chipWidth + 4;
+    }
+    return svg;
+  };
+  const renderEdgePath = (edge) => {
+    if (!edge.pts.length) return "";
+    const flow = flowById.get(edge.id);
+    const flowStyle = flow?.style;
+    const color = flowColorOf(flow);
+    const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
+    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
+    const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
+    return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
+`;
+  };
+  const renderEdgeLabels = (edge) => {
+    if (!edge.pts.length) return "";
+    const flowStyle = flowById.get(edge.id)?.style;
+    let svg = "";
+    for (const label of edge.labels) {
+      svg += numbered ? renderNumberedBadge(label) : renderTextLabel(label, flowStyle);
+    }
+    return svg;
+  };
+  return { renderEdgePath, renderEdgeLabels };
+}
+function render(model, view, scene) {
+  const style = model.style;
+  const fonts = fontSizes(style.font.size);
+  const { edge: edgeFontSize, node: nodeFontSize, cont: containerFontSize } = fonts;
+  const annot = {
+    tech: round1(fonts.tech),
+    chip: round1(fonts.chip),
+    tag: round1(fonts.tag),
+    band: round1(fonts.band),
+    bandTitle: round1(fonts.bandTitle),
+    chipH: Math.round(fonts.chipH),
+    scale: fonts.scale,
+    chipRectH: Math.round(15 * fonts.scale),
+    chipTextDy: round1(11 * fonts.scale)
+  };
+  const scaled = (n) => round1(n * fonts.scale);
+  const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
+  const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
+  const defaultEdgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
+  const sourceHue = style.flowColor === "by-source" ? assignSourceHues(model, flowPalette[isDarkTheme ? "dark" : "light"]) : /* @__PURE__ */ new Map();
+  const flowColorOf = (flow) => flow?.style?.stroke?.color ?? (style.flowColor === "by-source" ? sourceHue.get(flow?.from ?? "") ?? defaultEdgeColor : defaultEdgeColor);
+  const arrowMarkers = /* @__PURE__ */ new Map();
+  const markerName = (color) => {
+    let name = arrowMarkers.get(color);
+    if (!name) {
+      name = arrowMarkers.size === 0 ? "arr" : `arr${arrowMarkers.size}`;
+      arrowMarkers.set(color, name);
+    }
+    return name;
+  };
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
+  const objectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
+  const numbered = style.flowText === "numbered";
+  const ui = UI[style.lang] ?? UI.en;
+  const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
+  const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
+  const elementStyle = /* @__PURE__ */ new Map();
+  const elementAttr = /* @__PURE__ */ new Map();
+  for (const entry of collectElementStyles(model.elements)) {
+    elementStyle.set(entry.id, entry.style);
+    elementAttr.set(entry.id, entry.attrValue);
+  }
+  const resolveStyle = (kind, id) => {
+    let base = kindDefaults[kind] ?? {};
+    const level = elementAttr.get(id);
+    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
+    const perKind = style.kind[kind] ?? {};
+    const inline = elementStyle.get(id) ?? {};
+    return {
+      fill: inline.fill ?? perKind.fill ?? base.fill,
+      stroke: { ...base.stroke, ...perKind.stroke, ...inline.stroke },
+      text: inline.text ?? perKind.text ?? base.text
+    };
+  };
+  const {
+    labels,
+    titleBands,
+    countLabelOverlaps,
+    offOwnRun,
+    stolen,
+    pierced,
+    settleLabelPositions
+  } = createLabelSettler({ scene, model, flowById, style });
+  const overlapsBefore = countLabelOverlaps();
+  settleLabelPositions();
+  auditRouteRepairs({
+    scene,
+    labels,
+    titles: titleBands,
+    offOwnRun,
+    pierced,
+    stolen,
+    labelsSeated,
+    resettle: () => {
+      anchorFlowLabels(scene, titleBands);
+      settleLabelPositions();
+    }
+  });
+  const overlapsAfter = countLabelOverlaps();
+  compactVertical(scene);
+  const { renderContainerNode, renderLeafNode } = createNodeRenderers({
+    palette,
+    style,
+    annot,
+    nodeFontSize,
+    containerFontSize,
+    resolveStyle,
+    elementAttr
+  });
+  const { renderEdgePath, renderEdgeLabels } = createEdgePainter({
+    scene,
+    style,
+    palette,
+    annot,
+    edgeFontSize,
+    scaled,
+    flowById,
+    objectName,
+    flowColorOf,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  });
   let body = "";
   for (const node of scene.nodes) if (node.container) body += renderContainerNode(node);
   for (const node of scene.nodes) if (!node.container) body += renderLeafNode(node);
   for (const edge of scene.edges) body += renderEdgePath(edge);
   for (const edge of scene.edges) body += renderEdgeLabels(edge);
-  if (numbered && model.flows.length) renderFlowsBand();
-  if (model.businessObjects.length) renderObjectsBand();
-  if (style.legend === "auto") renderLegendBand();
+  const bands = createBandRenderers({
+    scene,
+    model,
+    view,
+    style,
+    palette,
+    annot,
+    ui,
+    legendNames,
+    legendFlowLabel,
+    scaled,
+    objectName,
+    resolveStyle,
+    defaultEdgeColor,
+    markerName,
+    numbered
+  });
+  if (numbered && model.flows.length) bands.renderFlowsBand();
+  if (model.businessObjects.length) bands.renderObjectsBand();
+  if (style.legend === "auto") bands.renderLegendBand();
+  const bandsSvg = bands.bandsSvg();
+  const bandY = bands.bandY();
   const viewWidth = scene.width, viewHeight = scene.height;
   const totalHeight = bandY > viewHeight ? bandY + 14 : viewHeight;
   const markerSize = style.arrows === "large" ? round1(11 * fonts.scale) : 7;

@@ -6,10 +6,8 @@
  * real font metrics here; determinism depends on it (see AGENTS.md#non-negotiable-invariants).
  */
 
-export const DEFAULT_FONT_SIZE_EDGE = 11.5,
-  DEFAULT_FONT_SIZE_NODE = 12.5,
-  DEFAULT_FONT_SIZE_CONTAINER = 13;
-export const FONT_SIZE_BASE = 12.5;
+const DEFAULT_FONT_SIZE_NODE = 12.5;
+const FONT_SIZE_BASE = 12.5;
 export const CHAR_WIDTH = 0.56;
 
 export const fontSizes = (base: number) => {
@@ -51,19 +49,20 @@ export function wrapText(text: string, maxChars: number): string {
   return lines.join("\n");
 }
 
-export const CHIP_HEIGHT = 19;
+const CHIP_HEIGHT = 19;
 export const chipW = (name: string, scale = 1) =>
   Math.ceil(name.length * 9.5 * scale * CHAR_WIDTH) + Math.round(16 * scale);
 export const techText = (tech?: { protocol?: string; format?: string }) =>
   tech?.protocol ? `(${tech.protocol}${tech.format ? ", " + tech.format : ""})` : "";
 
-export const flowLabelBox = (
-  text: string,
-  chipNames: string[],
-  fontSize: number,
-  tech?: string,
-  scale = 1,
-) => {
+export const flowLabelBox = (opts: {
+  text: string;
+  chipNames: string[];
+  fontSize: number;
+  tech?: string;
+  scale?: number;
+}) => {
+  const { text, chipNames, fontSize, tech, scale = 1 } = opts;
   const measured = text ? measure(text, fontSize) : { width: 0, height: 0 };
   const chips = chipNames.reduce((sum, name) => sum + chipW(name, scale) + 4, -4);
   const techW = tech ? Math.ceil(tech.length * 9 * scale * CHAR_WIDTH) + 6 : 0;

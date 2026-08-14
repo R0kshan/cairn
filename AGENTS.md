@@ -58,6 +58,12 @@ Environment-neutral core; thin entries inject ELK.
 Never inject a factory in `api.ts` or `compile.ts` — it would override every
 consumer's, including the CLI's.
 
+## Non-negotiable invariants
+
+Moved to [`documentation/INVARIANTS.md`](./documentation/INVARIANTS.md#non-negotiable-invariants) —
+link there, not here. Kept as a heading so `AGENTS.md#non-negotiable-invariants`
+anchors used elsewhere in the repo keep resolving.
+
 <!-- code-review-graph MCP tools -->
 ## MCP Tools: code-review-graph
 

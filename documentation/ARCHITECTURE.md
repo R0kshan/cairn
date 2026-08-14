@@ -20,9 +20,12 @@ ER diagrams, Mermaid or D2 remain the better fit ([README](../README.md#why-cair
        → edge-tidy → compact → svg-render → SVG
 ```
 
-Each stage is a pure function over its input, does one job, and hands off a
-more refined representation. Diagnostics accumulate alongside the data rather
-than aborting the pipeline — see §5.
+Each stage is deterministic, does one job, and hands off a more refined
+representation. "Deterministic", not "pure": only stage 3 (`validator.ts`) is
+strictly non-mutating. Stages 4a–5 refine one `Scene` in place rather than
+returning a fresh one — same input, same output, but the object is the same
+object. Diagnostics accumulate alongside the data rather than aborting the
+pipeline — see §5.
 
 | Stage | File | In → Out | Guarantees |
 |---|---|---|---|
@@ -33,7 +36,7 @@ than aborting the pipeline — see §5.
 | 4a. Reroute | [`route-detour.ts`](../src/route-detour.ts) | `Scene` → `Scene` | No-op (byte-identical) when no edge qualifies as a wrap-around detour |
 | 4b. Tidy | [`edge-tidy.ts`](../src/edge-tidy.ts) | `Scene` → `Scene` | Every flow individually traceable: collapses sub-pixel jogs, separates flows sharing a node side to `MIN_ATTACH_GAP` |
 | 4c. Compact | [`compact.ts`](../src/compact.ts) | `Scene` → `Scene` | Removes only bands with zero pinning content (no node, label, or horizontal segment) — never distorts a container or reintroduces an overlap |
-| 5. Render | [`svg-render.ts`](../src/svg-render.ts) | `Scene` → `string` (SVG) | All text through `esc()`/`escAttr()`; byte-identical across runs and platforms |
+| 5. Render | [`svg-render.ts`](../src/svg-render.ts) | `Model` + `View` + `Scene` → `RenderResult` (`svg`, `overlapsBefore`, `overlapsAfter`) | All text through `esc()`/`escAttr()`; byte-identical across runs and platforms. Not pure rendering: settles final label positions, for repaired routes writes `edge.pts = edge.repairedFrom!`, then re-runs `compactVertical` on the settled geometry — the last geometry mutation happens here, after *every* stage 4 pass. Sub-pass 4c is not the end of layout: `layout()` keeps going past `compactVertical` with `optimiseRoutes`, `spreadAttachments`, `clearSideHugs`, `anchorFlowLabels` and `swapCrossingSiblingSeats` ([`scene-layout.ts`](../src/scene-layout.ts) — compaction, then those). Stage 5 runs after all of them |
 
 `scripts/sweep.ts` runs stages 1–5 over every example × every disposition and
 counts violations of the invariants stages 4–4c exist to guarantee — see §5.

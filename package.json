@@ -50,20 +50,22 @@
     "build:cli": "bash scripts/build-cli.sh",
     "build:playground": "bash scripts/build-playground.sh",
     "prepack": "npm run build:cli && npm run build:api",
-    "lint": "biome lint src tests",
+    "lint": "biome lint src tests --error-on-warnings && npm run nesting",
     "format": "biome format --write src tests",
     "typecheck": "tsc --noEmit",
     "snapshots:report": "node --experimental-strip-types scripts/snapshots-report.ts",
     "sweep": "node --experimental-strip-types scripts/sweep.ts --jobs=auto",
     "test:binary": "bash scripts/smoke-binary.sh",
     "test:npm": "bash scripts/smoke-npm.sh",
-    "examples": "node --experimental-strip-types scripts/render-examples.mjs"
+    "examples": "node --experimental-strip-types scripts/render-examples.mjs",
+    "nesting": "oxlint --config .oxlintrc.json src"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.4",
     "@types/node": "^26.1.1",
     "elkjs": "^0.12.0",
     "esbuild": "0.28.1",
+    "oxlint": "1.16.0",
     "typescript": "^7.0.2"
   }
 }

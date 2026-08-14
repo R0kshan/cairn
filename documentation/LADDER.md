@@ -3,7 +3,7 @@
 Every defect cairn can see, what it looks like on the page, how much it matters,
 and how it is enforced.
 
-[`FLOW_ROUTING.md`](FLOW_ROUTING.md) explains why the ladder exists.
+[`internals/ROUTING.md`](internals/ROUTING.md) explains why the ladder exists.
 [`INVARIANTS.md`](INVARIANTS.md) states the rules normatively. **This file is
 the one to read when a sweep line puzzles you**, or before touching anything that
 scores or gates a drawing.

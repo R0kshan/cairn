@@ -1,26 +1,21 @@
 /**
- * The engine's public surface. **Re-exports only** — modules below may be
- * renamed, split or moved freely, and nothing here should change unless the
- * contract does.
+ * The engine's public surface. **Re-exports only, except `version`** — the
+ * modules below may be renamed, split or moved freely; nothing here changes
+ * unless the contract does. `version` is local because the build scripts
+ * replace `CAIRN_BUILD_VERSION` at bundle time (see the note on it below).
  *
- * The published chain is `api.ts` → `playground.ts` → `dist/cairn.mjs`:
- * `scripts/build-api.sh` bundles `playground.ts`, the browser entry that injects
- * ELK and re-exports these names unchanged. So this file is not the *only* place
- * the contract can move — an `export` added to `playground.ts` would widen it
- * too. `scripts/smoke-npm.sh` asserts the installed package's export set matches
- * exactly, which is what keeps the two in step; a published export cannot be
- * withdrawn afterwards.
+ * Published chain: `api.ts` → `playground.ts` → `dist/cairn.mjs`. An export
+ * added to `playground.ts` widens the contract too, and a published export
+ * cannot be withdrawn — `scripts/smoke-npm.sh` asserts the installed export set
+ * matches exactly.
  *
- * Generated `.d.ts` declarations are still missing, so TypeScript consumers get
- * the engine untyped; tracked in https://github.com/R0kshan/cairn/issues/38.
+ * No `.d.ts` yet, so TypeScript consumers get the engine untyped
+ * (https://github.com/R0kshan/cairn/issues/38).
  *
- * (Unrelated to `playground/api/` — that directory is the Vercel HTTP endpoint.)
- *
- * Deliberately **environment-neutral**: nothing here injects an ELK factory.
- * That is the job of the entry points — `playground.ts` (browser) and
- * `cli-npm.ts` (the bundled npm CLI). Under Node, `elk-engine.ts`'s lazy
- * fallback loads `elk-worker.ts`, which is the correct default; an injection
- * here would silently override it for every consumer.
+ * Deliberately **environment-neutral**: nothing here injects an ELK factory —
+ * that is the entry points' job, `playground.ts` (browser) and `cli-npm.ts`
+ * (npm CLI). Injecting one here would override `elk-engine.ts`'s lazy fallback
+ * for every consumer.
  */
 
 import pkg from "../package.json" with { type: "json" };
@@ -36,19 +31,18 @@ export type { Diagnostic, Severity } from "./models/diagnostic.ts";
 export type { Span } from "./models/ast.ts";
 
 /**
- * Same build-time injection `cli.ts` uses (see its `CAIRN_BUILD_VERSION` note):
+ * Same build-time injection `cli.ts` uses (`CAIRN_BUILD_VERSION` note there):
  * every build script passes `--define`, and `typeof` — safe on an undeclared
  * identifier — falls through to package.json for unbundled dev runs.
  *
- * The define is not only about tag-accuracy here, it is what keeps the manifest
- * out of the bundles. esbuild does not tree-shake a JSON import down to the one
- * field used, so a bare `pkg.version` shipped `devDependencies`, `scripts` and
- * the rest into the browser bundle for the sake of one string. With the define
- * the ternary folds, `pkg` goes unreferenced, and the import is dropped.
- * Hardcoding the version instead would break the release: the publish job runs
- * `npm version "${GITHUB_REF_NAME#v}"` before packing, so package.json at build
- * time is the source of truth and `smoke-npm.sh` asserts the installed CLI
- * agrees with the tag.
+ * Not just tag-accuracy: it keeps the manifest out of the bundles. esbuild
+ * doesn't tree-shake a JSON import to one field, so a bare `pkg.version`
+ * shipped `devDependencies` and `scripts` into the browser bundle for one
+ * string — with the define the ternary folds, `pkg` goes unreferenced, and
+ * the import drops. Hardcoding the version instead would break the release:
+ * the publish job runs `npm version "${GITHUB_REF_NAME#v}"` before packing,
+ * so package.json at build time is the source of truth, and `smoke-npm.sh`
+ * asserts the installed CLI agrees with the tag.
  */
 declare const CAIRN_BUILD_VERSION: string | undefined;
 

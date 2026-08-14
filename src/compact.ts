@@ -1,20 +1,20 @@
 /**
- * Stage 4b: squeezes the horizontal bands that carry nothing but vertical edge
+ * Stage 4b: squeezes horizontal bands carrying nothing but vertical edge
  * segments. elk sizes a drawing for the routes it planned, so once
- * `route-detour.ts` pulls a wrap-around flow out of the margin — or elk simply
- * reserves a corridor it then routes around — the freed band stays as dead
- * height nobody reclaims. This pass removes it for every disposition: the
- * detour pass runs on all of them, and elk leaves spare bands either way.
+ * `route-detour.ts` pulls a wrap-around flow out of the margin — or elk
+ * simply reserves a corridor it routes around — the freed band stays as dead
+ * height nobody reclaims. Runs on every disposition, since elk leaves spare
+ * bands either way.
  *
- * Only bands where *nothing* sits are removed: a node (leaf or container), a
- * label, or a horizontal segment anywhere across the width pins its band. That
- * is what makes the pass safe — a container always pins the band its children
- * occupy, so no box is ever distorted, and every pair of boxes keeps a
- * positive vertical gap, so a zero-overlap drawing stays zero-overlap. Only
- * vertical segments span a removed band, and they simply get shorter.
+ * Only bands where nothing sits are removed: a node, a label, or a
+ * horizontal segment anywhere across the width pins its band — so a
+ * container always pins the band its children occupy (no box is ever
+ * distorted), every pair of boxes keeps a positive gap (zero-overlap stays
+ * zero-overlap), and only vertical segments span a removed band, simply
+ * getting shorter.
  *
- * Deterministic: integer shifts derived from existing coordinates, applied
- * through a monotone piecewise map.
+ * Deterministic: integer shifts from existing coordinates, through a
+ * monotone piecewise map.
  */
 
 import type { Scene } from "./scene-layout.ts";

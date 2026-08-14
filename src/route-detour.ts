@@ -1,73 +1,60 @@
 /**
- * Stage 4a: post-layout pass fixing elk's wrap-around routing of backward hierarchical
- * edges (issue #26). With `INCLUDE_CHILDREN`, elk routes any right-to-left
- * flow that crosses container boundaries by exiting east of the outermost
- * container and looping around the whole drawing — no layered option changes
- * this (`feedbackEdges`, cycle breaking and thoroughness were all tested and
- * are no-ops for hierarchical edges). This pass detects those detours and
- * reroutes them through a channel: preferably south out of the source into a
- * bottom lane, then north (or west, for left-column targets) into the target;
- * when nodes below block the south exit, symmetrically north out of the
- * source into a top lane, then south into the target's top edge. Container
- * title bands are obstacles for northbound risers. Deterministic: plain
- * arithmetic only, lanes ordered by numeric flow id, and a no-op
- * (byte-identical scene) when nothing qualifies.
+ * Stage 4a: fixes elk's wrap-around routing of backward hierarchical edges
+ * (issue #26). Under `INCLUDE_CHILDREN`, elk routes any right-to-left flow
+ * crossing container boundaries out east of the outermost container and around
+ * the whole drawing; no layered option changes that (`feedbackEdges`, cycle
+ * breaking and thoroughness were all tested, all no-ops for hierarchical edges).
  *
- * See documentation/decisions/ADR-0005-FLOW-ROUTING.md for why this pass
- * exists (elk options tested and rejected) and documentation/internals/
- * ROUTING_IMPLEMENTATION.md for the full mechanism — read both before
- * changing this file.
+ * This pass reroutes those through a channel: south out of the source into a
+ * bottom lane then north into the target — west for left-column targets, or
+ * north-then-south when nodes below block the south exit. Title bands are
+ * obstacles for northbound risers. Deterministic: plain arithmetic, lanes
+ * ordered by numeric flow id, byte-identical no-op when nothing qualifies.
+ *
+ * The pass runs in five phases, in this order: pick the candidates worth
+ * rerouting, build the obstacle registry they must dodge, plan each one into a
+ * channel, allocate the lanes those plans share, then emit the geometry.
+ *
+ * Read `documentation/internals/ROUTING.md` (why, and the elk options rejected)
+ * and `ROUTING_IMPLEMENTATION.md` (the mechanism) before changing this file.
  */
 
 import type { Model } from "./models/ast.ts";
 import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
 import { fontSizes, measure } from "./text-metrics.ts";
+import { type TitleBox, pathLength, MIN_ATTACH_GAP } from "./geometry.ts";
 
 const RATIO_THRESHOLD = 1.4;
 const MIN_WASTE = 300;
 const CHANNEL_GAP = 10;
 const LINE_CLEARANCE = 12;
 const MIN_PARALLEL_RUN = 40;
-const RISER_DELTAS = [0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64, -72, 72];
+const RISER_DELTAS = [
+  0, -8, 8, -16, 16, -24, 24, -32, 32, -40, 40, -48, 48, -56, 56, -64, 64, -72, 72,
+];
 // A descent may have to clear the target's own container — its border and its
 // title, which overflows the box — so the search reaches well past the node.
 const WEST_DESCENT_DELTAS = [-10, -18, -26, -34, -42, -50, -58, -66, -74, -82, -90, -98, -106];
-const EAST_DESCENT_DELTAS = [
-  10, 14, 18, 22, 26, 30, 34, 42, 50, 58, 66, 74, 82, 90, 98, 106,
-];
+const EAST_DESCENT_DELTAS = [10, 14, 18, 22, 26, 30, 34, 42, 50, 58, 66, 74, 82, 90, 98, 106];
+// Entry y for a side (east/west) approach: start at the target's center and
+// shift away from existing horizontals on that side. Flows arriving from below
+// prefer the lower half (inbound passes under outbound), flows arriving from
+// above prefer the upper half.
+const ENTRY_Y_DELTAS_DOWN = [0, 6, 12, 18, 24, -6, -12, -18, -24];
+const ENTRY_Y_DELTAS_UP = [0, -6, -12, -18, -24, 6, 12, 18, 24];
 /** Container titles are drawn under the flows with no halo — never graze them. */
 const TITLE_CLEARANCE = 8;
-/** Least distance between two flows attached to the same side of a node. */
-const MIN_SLOT_GAP = 12;
 /** How much higher a lane must sit to justify turning up mid-drawing. */
 const MIN_DEPTH_GAIN = 24;
 
-interface Point {
-  x: number;
-  y: number;
-}
-
-function pathLength(pts: Point[]): number {
-  let length = 0;
-  for (let index = 1; index < pts.length; index++)
-    length +=
-      Math.abs(pts[index].x - pts[index - 1].x) + Math.abs(pts[index].y - pts[index - 1].y);
-  return length;
-}
-
 /**
- * A container's title band in scene coordinates. Passed in rather than derived
- * here because for a DOWN layout the scene is transposed around this pass,
- * while the title text is not — it stays horizontal on the page.
+ * Title bands as drawn: top-left of each container, text running across.
+ *
+ * Call fresh at every point that needs them, never reuse an earlier result. The
+ * scene is transposed around a DOWN-disposition pass while the title text stays
+ * horizontal, and any pass that moves nodes (compaction, layout) invalidates a
+ * captured set the same way.
  */
-export interface TitleBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/** Title bands as drawn: top-left of each container, text running across. */
 export function titleBoxesOf(scene: Scene, model: Model): TitleBox[] {
   const { cont: containerFontSize } = fontSizes(model.style.font.size);
   const compact = model.style.compact;
@@ -81,19 +68,59 @@ export function titleBoxesOf(scene: Scene, model: Model): TitleBox[] {
     }));
 }
 
-export function rerouteDetours(
-  scene: Scene,
-  model: Model,
-  numbered: boolean,
-  titleBoxes: TitleBox[] = [],
-): void {
-  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
-  const leafBoxes = scene.nodes.filter((node) => !node.container);
-  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
-  const centerX = (node: SceneNode) => node.x + node.width / 2;
-  const centerY = (node: SceneNode) => node.y + node.height / 2;
+/** Stand-in for a boundless coordinate, so "unblocked past this point" is a
+ *  comparison, not a special case. */
+const INF = 1e9;
 
-  const candidates: { edge: SceneEdge; source: SceneNode; target: SceneNode }[] = [];
+const centerX = (node: SceneNode) => node.x + node.width / 2;
+const centerY = (node: SceneNode) => node.y + node.height / 2;
+
+const flowNumberOf = (edge: SceneEdge) => parseInt(edge.id.slice(1), 10);
+
+interface Plan {
+  edge: SceneEdge;
+  source: SceneNode;
+  target: SceneNode;
+  exitX: number;
+  /**
+   * Set when the source is boxed in on both channel sides and the flow has
+   * to leave sideways first: it departs the source's east edge at `y`, runs
+   * to `exitX`, and only then turns into the channel.
+   */
+  exitVia?: { y: number };
+  entry:
+    | { kind: "south"; x: number }
+    | { kind: "west"; x: number; y: number }
+    | { kind: "east"; x: number; y: number }
+    | { kind: "north"; x: number }
+    | { kind: "westTop"; x: number; y: number }
+    | { kind: "eastTop"; x: number; y: number };
+}
+
+/** A plan routed through the top channel, and its mirror through the bottom. */
+type TopPlan = Plan & { entry: Extract<Plan["entry"], { kind: "north" | "westTop" | "eastTop" }> };
+type BottomPlan = Plan & { entry: Extract<Plan["entry"], { kind: "south" | "west" | "east" }> };
+
+const isTop = (plan: Plan): plan is TopPlan =>
+  plan.entry.kind === "north" || plan.entry.kind === "westTop" || plan.entry.kind === "eastTop";
+const isBottom = (plan: Plan): plan is BottomPlan => !isTop(plan);
+
+// ---- phase 1: which flows are worth rerouting --------------------------------
+
+interface Candidate {
+  edge: SceneEdge;
+  source: SceneNode;
+  target: SceneNode;
+}
+
+/**
+ * Right-to-left flows elk sent the long way round: those whose drawn length so
+ * exceeds the direct distance that the detour is the route, not a detail.
+ */
+function detourCandidates(scene: Scene, model: Model): Candidate[] {
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
+  const candidates: Candidate[] = [];
   for (const edge of scene.edges) {
     const flow = flowById.get(edge.id);
     if (!flow || edge.pts.length < 2) continue;
@@ -107,24 +134,128 @@ export function rerouteDetours(
     if (length < RATIO_THRESHOLD * direct || length - direct < MIN_WASTE) continue;
     candidates.push({ edge, source, target });
   }
-  if (!candidates.length) return;
   candidates.sort(
-    (candidateA, candidateB) =>
-      parseInt(candidateA.edge.id.slice(1), 10) - parseInt(candidateB.edge.id.slice(1), 10),
+    (candidateA, candidateB) => flowNumberOf(candidateA.edge) - flowNumberOf(candidateB.edge),
+  );
+  return candidates;
+}
+
+// ---- phase 2: the obstacle registry ------------------------------------------
+
+/** What a side (east/west) approach to a node has to thread past. */
+interface EntryProbe {
+  target: SceneNode;
+  fromBelow: boolean;
+  xStart: number;
+  xEnd: number;
+  descentX: number;
+  edgeX: number;
+}
+
+/**
+ * Two risers may pass close if they barely overlap, but running alongside each
+ * other for any distance reads as a single line — same rule as for horizontals,
+ * applied to the shared vertical extent.
+ */
+function verticalConflict(
+  segment: { x: number; top: number; bottom: number },
+  x: number,
+  top: number,
+  bottom: number,
+): boolean {
+  const shared = Math.min(segment.bottom, bottom) - Math.max(segment.top, top);
+  if (shared <= 0) return false;
+  const gap = Math.abs(segment.x - x);
+  return gap < 7 || (gap < LINE_CLEARANCE && shared > MIN_PARALLEL_RUN);
+}
+
+/** A southbound riser is blocked by any leaf node below `top`. */
+const blockedBelowBy = (leafBoxes: SceneNode[], x: number, top: number): boolean =>
+  leafBoxes.some(
+    (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1,
   );
 
-  const maxNodeBottom = Math.max(...scene.nodes.map((node) => node.y + node.height));
-  const minNodeTop = Math.min(...scene.nodes.map((node) => node.y));
-  const contentLeft = Math.min(...scene.nodes.map((node) => node.x));
+/** A northbound one, by a leaf node or a title band above `bottom` in its corridor. */
+const blockedAboveBy = (
+  leafBoxes: SceneNode[],
+  titleBoxes: TitleBox[],
+  x: number,
+  bottom: number,
+): boolean =>
+  leafBoxes.some((node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1) ||
+  titleBoxes.some(
+    (box) =>
+      x >= box.x - TITLE_CLEARANCE && x <= box.x + box.width + TITLE_CLEARANCE && box.y < bottom - 1,
+  );
 
-  // A southbound riser is blocked when it would pierce a leaf node anywhere
-  // below `top`; a northbound riser when a leaf node or a container title band
-  // sits anywhere above `bottom` in its corridor.
-  // Registry of vertical segments already in the drawing. Rerouted risers and
-  // descents must keep clear of every other vertical with an overlapping span,
-  // so flows sharing a node attach at distinct points along its edge instead
-  // of merging at its center (each flow stays individually traceable).
-  const INF = 1e9;
+const horizontalBlocked = (leafBoxes: SceneNode[], y: number, probe: EntryProbe): boolean =>
+  leafBoxes.some(
+    (node) =>
+      node !== probe.target &&
+      node.y - 2 <= y &&
+      node.y + node.height + 2 >= y &&
+      node.x < probe.xEnd &&
+      node.x + node.width > probe.xStart,
+  );
+
+/**
+ * A container that (geometrically) holds the target may be pierced by its entry
+ * segment; crossing through any OTHER container's interior is not acceptable
+ * (e.g. a west entry threading between two actors of an unrelated group).
+ */
+const crossesForeignContainer = (
+  containerBoxes: SceneNode[],
+  y: number,
+  probe: EntryProbe,
+): boolean => {
+  const { target, xStart, xEnd } = probe;
+  return containerBoxes.some(
+    (box) =>
+      !(
+        box.x <= target.x &&
+        target.x + target.width <= box.x + box.width &&
+        box.y <= target.y &&
+        target.y + target.height <= box.y + box.height
+      ) &&
+      box.y < y &&
+      y < box.y + box.height &&
+      box.x < xEnd &&
+      box.x + box.width > xStart,
+  );
+};
+
+/**
+ * The verticals and horizontals already in the drawing, and the probes that ask
+ * whether a proposed riser or entry can join them. Mutable: every plan that
+ * lands registers its own segments, so the next candidate treats them as
+ * obstacles and flows sharing a node attach at distinct points along its edge
+ * instead of merging at its centre.
+ */
+interface Channel {
+  scene: Scene;
+  contentLeft: number;
+  maxNodeBottom: number;
+  minNodeTop: number;
+  usedVerticals: { x: number; top: number; bottom: number }[];
+  usedHorizontals: { y: number; left: number; right: number }[];
+  addEdgeVerticals: (edge: SceneEdge) => void;
+  riserConflicts: (x: number, top: number, bottom: number) => boolean;
+  /**
+   * Against the pre-plan snapshot: the redistribution pass validates slots for
+   * risers that are themselves being repositioned, so they must not count as
+   * their own obstacles.
+   */
+  baseRiserConflicts: (x: number, top: number, bottom: number) => boolean;
+  blockedBelow: (x: number, top: number) => boolean;
+  blockedAbove: (x: number, bottom: number) => boolean;
+  findRiserX: (node: SceneNode, side: "south" | "north") => number | null;
+  findEntryY: (probe: EntryProbe) => number | null;
+}
+
+function createChannel(scene: Scene, titleBoxes: TitleBox[], candidates: Candidate[]): Channel {
+  const leafBoxes = scene.nodes.filter((node) => !node.container);
+  const containerBoxes = scene.nodes.filter((node) => node.container);
+
   const usedVerticals: { x: number; top: number; bottom: number }[] = [];
   // Horizontal twin of the vertical registry: east/west entries must not ride
   // an existing horizontal segment (e.g. an elk-routed flow leaving the same
@@ -148,131 +279,57 @@ export function rerouteDetours(
         });
     }
   };
+
   const candidateIds = new Set(candidates.map((candidate) => candidate.edge.id));
   for (const edge of scene.edges) if (!candidateIds.has(edge.id)) addEdgeVerticals(edge);
   // Container vertical borders count as occupied verticals too — a riser or
   // descent running along a (dashed) box edge would make its arrow unreadable.
-  for (const node of scene.nodes)
-    if (node.container) {
-      usedVerticals.push({ x: node.x, top: node.y, bottom: node.y + node.height });
-      usedVerticals.push({ x: node.x + node.width, top: node.y, bottom: node.y + node.height });
-    }
-  // Two risers may pass close if they barely overlap, but running alongside
-  // each other for any distance reads as a single line — same rule as for
-  // horizontals, applied to the shared vertical extent.
-  const verticalConflict = (
-    segment: { x: number; top: number; bottom: number },
-    x: number,
-    top: number,
-    bottom: number,
-  ): boolean => {
-    const shared = Math.min(segment.bottom, bottom) - Math.max(segment.top, top);
-    if (shared <= 0) return false;
-    const gap = Math.abs(segment.x - x);
-    return gap < 7 || (gap < LINE_CLEARANCE && shared > MIN_PARALLEL_RUN);
-  };
-  const riserConflicts = (x: number, top: number, bottom: number): boolean =>
+  for (const node of containerBoxes) {
+    usedVerticals.push({ x: node.x, top: node.y, bottom: node.y + node.height });
+    usedVerticals.push({ x: node.x + node.width, top: node.y, bottom: node.y + node.height });
+  }
+  const baseVerticals = usedVerticals.slice();
+
+  const riserConflicts = (x: number, top: number, bottom: number) =>
     usedVerticals.some((segment) => verticalConflict(segment, x, top, bottom));
-  const horizontalConflicts = (y: number, left: number, right: number): boolean =>
+  const horizontalConflicts = (y: number, left: number, right: number) =>
     usedHorizontals.some(
       (segment) => Math.abs(segment.y - y) < 7 && segment.left < right && left < segment.right,
     );
-  // Snapshot of the pre-plan registry — the redistribution pass validates
-  // slots against it (plan risers are being repositioned, so they must not
-  // count as their own obstacles).
-  const baseVerticals = usedVerticals.slice();
-  const baseRiserConflicts = (x: number, top: number, bottom: number): boolean =>
-    baseVerticals.some((segment) => verticalConflict(segment, x, top, bottom));
+  const blockedBelow = (x: number, top: number) => blockedBelowBy(leafBoxes, x, top);
+  const blockedAbove = (x: number, bottom: number) =>
+    blockedAboveBy(leafBoxes, titleBoxes, x, bottom);
 
-  const riserBlockedBelow = (x: number, top: number): boolean =>
-    leafBoxes.some(
-      (node) =>
-        x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1,
-    );
-  const riserBlockedAbove = (x: number, bottom: number): boolean =>
-    leafBoxes.some(
-      (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1,
-    ) ||
-    titleBoxes.some(
-      (box) =>
-        x >= box.x - TITLE_CLEARANCE &&
-        x <= box.x + box.width + TITLE_CLEARANCE &&
-        box.y < bottom - 1,
-    );
   const findRiserX = (node: SceneNode, side: "south" | "north"): number | null => {
     const center = centerX(node);
     for (const delta of RISER_DELTAS) {
       const x = center + delta;
       if (x < node.x + 4 || x > node.x + node.width - 4) continue;
       if (side === "south") {
-        if (riserBlockedBelow(x, node.y + node.height)) continue;
+        if (blockedBelow(x, node.y + node.height)) continue;
         if (riserConflicts(x, node.y + node.height, INF)) continue;
       } else {
-        if (riserBlockedAbove(x, node.y)) continue;
+        if (blockedAbove(x, node.y)) continue;
         if (riserConflicts(x, -INF, node.y)) continue;
       }
       return x;
     }
     return null;
   };
-  const horizontalBlocked = (y: number, xStart: number, xEnd: number, ignore: SceneNode): boolean =>
-    leafBoxes.some(
-      (node) =>
-        node !== ignore &&
-        node.y - 2 <= y &&
-        node.y + node.height + 2 >= y &&
-        node.x < xEnd &&
-        node.x + node.width > xStart,
-    );
-  // Entry y for a side (east/west) approach: start at the target's center and
-  // shift away from existing horizontals on that side. Flows arriving from
-  // below prefer the lower half (inbound passes under outbound), flows
-  // arriving from above prefer the upper half.
-  const ENTRY_Y_DELTAS_DOWN = [0, 6, 12, 18, 24, -6, -12, -18, -24];
-  const ENTRY_Y_DELTAS_UP = [0, -6, -12, -18, -24, 6, 12, 18, 24];
-  // A container that (geometrically) holds the target may be pierced by its
-  // entry segment; crossing through any OTHER container's interior is not
-  // acceptable (e.g. a west entry threading between two actors of an
-  // unrelated group).
-  const containerBoxes = scene.nodes.filter((node) => node.container);
-  const crossesForeignContainer = (
-    y: number,
-    xStart: number,
-    xEnd: number,
-    target: SceneNode,
-  ): boolean =>
-    containerBoxes.some(
-      (box) =>
-        !(
-          box.x <= target.x &&
-          target.x + target.width <= box.x + box.width &&
-          box.y <= target.y &&
-          target.y + target.height <= box.y + box.height
-        ) &&
-        box.y < y &&
-        y < box.y + box.height &&
-        box.x < xEnd &&
-        box.x + box.width > xStart,
-    );
-  const findEntryY = (
-    target: SceneNode,
-    fromBelow: boolean,
-    xStart: number,
-    xEnd: number,
-    descentX: number,
-    edgeX: number,
-  ): number | null => {
+
+  const findEntryY = (probe: EntryProbe): number | null => {
+    const { target, fromBelow, xStart, xEnd, descentX, edgeX } = probe;
     for (const delta of fromBelow ? ENTRY_Y_DELTAS_DOWN : ENTRY_Y_DELTAS_UP) {
       const y = centerY(target) + delta;
       if (y < target.y + 4 || y > target.y + target.height - 4) continue;
       if (horizontalConflicts(y, xStart, xEnd)) continue;
-      if (horizontalBlocked(y, xStart, xEnd, target)) continue;
-      if (crossesForeignContainer(y, xStart, xEnd, target)) continue;
-      // The descent approaching this entry must not cross a horizontal
-      // ATTACHED to the same side of the target (inbound passes under
-      // outbound, or over it when arriving from above) — otherwise the two
-      // flows intersect right at the node's edge. Horizontals merely passing
-      // by are ordinary hopped crossings and don't count.
+      if (horizontalBlocked(leafBoxes, y, probe)) continue;
+      if (crossesForeignContainer(containerBoxes, y, probe)) continue;
+      // The descent approaching this entry must not cross a horizontal ATTACHED
+      // to the same side of the target (inbound passes under outbound, or over
+      // it when arriving from above) — otherwise the two flows intersect right
+      // at the node's edge. Horizontals merely passing by are ordinary hopped
+      // crossings and don't count.
       const descentCrosses = usedHorizontals.some(
         (segment) =>
           (Math.abs(segment.left - edgeX) < 3 || Math.abs(segment.right - edgeX) < 3) &&
@@ -288,330 +345,353 @@ export function rerouteDetours(
     return null;
   };
 
-  interface Plan {
-    edge: SceneEdge;
-    source: SceneNode;
-    target: SceneNode;
-    exitX: number;
-    /**
-     * Set when the source is boxed in on both channel sides and the flow has
-     * to leave sideways first: it departs the source's east edge at `y`, runs
-     * to `exitX`, and only then turns into the channel.
-     */
-    exitVia?: { y: number };
-    entry:
-      | { kind: "south"; x: number }
-      | { kind: "west"; x: number; y: number }
-      | { kind: "east"; x: number; y: number }
-      | { kind: "north"; x: number }
-      | { kind: "westTop"; x: number; y: number }
-      | { kind: "eastTop"; x: number; y: number };
-  }
-  const plans: Plan[] = [];
-  let westCount = 0;
-  for (const candidate of candidates) {
-    const { source, target } = candidate;
-    let planned: Plan | null = null;
-    // A source hemmed in on both channel sides can still leave sideways: out
-    // of its east edge, clear of whatever sits beside it, then down into the
-    // channel. This mirrors the east/west *entry* fallbacks — without it such
-    // a flow keeps elk's route, which is how `medium-page`'s
-    // INTERINSURER→FRAUD stayed a 2275px wander around the whole page.
-    let exitVia: { y: number } | undefined;
-    // Which channel to use is a choice, not a preference. Both ends have to
-    // reach the lane, so the cost of a side is the two risers it demands; the
-    // horizontal run is the same either way. Taking the near side spares a
-    // flow the trip out to the far edge and back — `medium-page`'s "Notify
-    // steps and decision" was travelling 346px right to a channel only to
-    // come 612px back left to a target sitting near the left edge.
-    // Only divert when the gain is clear and the other channel is certain to
-    // plan, so a diverted flow can never end up worse off than before.
-    const bottomRisers =
-      maxNodeBottom - (source.y + source.height) + (maxNodeBottom - (target.y + target.height));
-    const topRisers = source.y - minNodeTop + (target.y - minNodeTop);
-    const preferTop =
-      topRisers < bottomRisers * 0.75 &&
-      findRiserX(source, "north") !== null &&
-      findRiserX(target, "north") !== null;
-    let exitX = preferTop ? null : findRiserX(source, "south");
-    if (exitX === null && findRiserX(source, "north") === null) {
-      for (const delta of EAST_DESCENT_DELTAS) {
-        const turnX = source.x + source.width + delta;
-        const leaveY = findEntryY(
-          source,
-          true,
-          source.x + source.width,
-          turnX,
-          turnX,
-          source.x + source.width,
-        );
-        if (leaveY === null) continue;
-        if (riserBlockedBelow(turnX, leaveY)) continue;
-        if (riserConflicts(turnX, leaveY, INF)) continue;
-        exitVia = { y: leaveY };
-        exitX = turnX;
-        usedHorizontals.push({ y: leaveY, left: source.x + source.width, right: turnX });
-        break;
-      }
-    }
-    if (exitX !== null) {
-      const southX = findRiserX(target, "south");
-      if (southX !== null) {
-        planned = { ...candidate, exitX, exitVia, entry: { kind: "south", x: southX } };
-        usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-        usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
-      } else {
-        // Coming back up beside the target (east) keeps the lane short, and a
-        // short lane clears fewer nodes so it also sits higher; the far-left
-        // gutter instead sweeps past groups the flow never had business with.
-        // Neither wins always — take whichever leaves the lane higher, and
-        // keep the gutter on a tie so settled drawings don't churn.
-        let eastEntry: { x: number; y: number } | null = null;
-        for (const delta of EAST_DESCENT_DELTAS) {
-          const descentX = target.x + target.width + delta;
-          const entryY = findEntryY(
-            target,
-            true,
-            target.x + target.width,
-            descentX,
-            descentX,
-            target.x + target.width,
-          );
-          if (entryY === null) continue;
-          if (riserBlockedBelow(descentX, entryY)) continue;
-          if (riserConflicts(descentX, entryY, INF)) continue;
-          eastEntry = { x: descentX, y: entryY };
-          break;
-        }
-        const westX = Math.max(4, contentLeft - 12 - westCount * 8);
-        const westY = findEntryY(target, true, westX, target.x, westX, target.x);
-        const laneDepth = (descentX: number) => {
-          const spanLeftX = Math.min(exitX, descentX);
-          const spanRightX = Math.max(exitX, descentX);
-          const spanned = scene.nodes.filter(
-            (node) => node.x < spanRightX && node.x + node.width > spanLeftX,
-          );
-          return spanned.length
-            ? Math.max(...spanned.map((node) => node.y + node.height))
-            : maxNodeBottom;
-        };
-        // Only a real gain justifies the swap: turning up in the middle of the
-        // drawing buys a shorter lane at the price of crossing whatever sits
-        // between, so a few px of depth is not worth it.
-        if (
-          eastEntry &&
-          (westY === null || laneDepth(eastEntry.x) < laneDepth(westX) - MIN_DEPTH_GAIN)
-        ) {
-          planned = { ...candidate, exitX, exitVia, entry: { kind: "east", ...eastEntry } };
-          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-          usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
-          usedHorizontals.push({
-            y: eastEntry.y,
-            left: target.x + target.width,
-            right: eastEntry.x,
-          });
-        } else if (westY !== null) {
-          westCount++;
-          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: westX, y: westY } };
-          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-          usedVerticals.push({ x: westX, top: westY, bottom: INF });
-          usedHorizontals.push({ y: westY, left: westX, right: target.x });
-        }
-        // Last resort: come up in the gutter just left of the target and
-        // enter its west side (bottom-channel mirror of the westTop descent).
-        for (const delta of planned ? [] : WEST_DESCENT_DELTAS) {
-          const descentX = target.x + delta;
-          if (descentX < 4) continue;
-          const entryY = findEntryY(target, true, descentX, target.x, descentX, target.x);
-          if (entryY === null) continue;
-          if (riserBlockedBelow(descentX, entryY)) continue;
-          if (riserConflicts(descentX, entryY, INF)) continue;
-          planned = { ...candidate, exitX, exitVia, entry: { kind: "west", x: descentX, y: entryY } };
-          usedVerticals.push({ x: exitX, top: source.y + source.height, bottom: INF });
-          usedVerticals.push({ x: descentX, top: entryY, bottom: INF });
-          usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
-          break;
-        }
-      }
-    } else {
-      // South exit blocked — mirror the route through a top channel instead.
-      const exitXNorth = findRiserX(source, "north");
-      if (exitXNorth !== null) {
-        const entryXNorth = findRiserX(target, "north");
-        if (entryXNorth !== null) {
-          planned = { ...candidate, exitX: exitXNorth, entry: { kind: "north", x: entryXNorth } };
-          usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
-          usedVerticals.push({ x: entryXNorth, top: -INF, bottom: target.y });
-        } else {
-          // The target's own container title covers its whole top, so the
-          // flow comes down beside the node instead. Try the side facing the
-          // source first (east — these flows all travel leftward), which
-          // avoids running the lane past the target only to hook back.
-          for (const delta of EAST_DESCENT_DELTAS) {
-            const descentX = target.x + target.width + delta;
-            const entryY = findEntryY(
-              target,
-              false,
-              target.x + target.width,
-              descentX,
-              descentX,
-              target.x + target.width,
-            );
-            if (entryY === null) continue;
-            if (riserBlockedAbove(descentX, entryY)) continue;
-            if (riserConflicts(descentX, -INF, entryY)) continue;
-            planned = {
-              ...candidate,
-              exitX: exitXNorth,
-              entry: { kind: "eastTop", x: descentX, y: entryY },
-            };
-            usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
-            usedVerticals.push({ x: descentX, top: -INF, bottom: entryY });
-            usedHorizontals.push({ y: entryY, left: target.x + target.width, right: descentX });
-            break;
-          }
-          // Otherwise come down on the far side, clearing the container's own
-          // border and the title text that overflows it.
-          for (const delta of planned ? [] : WEST_DESCENT_DELTAS) {
-            const descentX = target.x + delta;
-            if (descentX < 4) continue;
-            const entryY = findEntryY(target, false, descentX, target.x, descentX, target.x);
-            if (entryY === null) continue;
-            if (riserBlockedAbove(descentX, entryY)) continue;
-            if (riserConflicts(descentX, -INF, entryY)) continue;
-            planned = {
-              ...candidate,
-              exitX: exitXNorth,
-              entry: { kind: "westTop", x: descentX, y: entryY },
-            };
-            usedVerticals.push({ x: exitXNorth, top: -INF, bottom: source.y });
-            usedVerticals.push({ x: descentX, top: -INF, bottom: entryY });
-            usedHorizontals.push({ y: entryY, left: descentX, right: target.x });
-            break;
-          }
-        }
-      }
-    }
-    // Failed candidates keep elk's route — their verticals stay obstacles.
-    if (planned) plans.push(planned);
-    else addEdgeVerticals(candidate.edge);
-  }
-  if (!plans.length) return;
+  return {
+    scene,
+    contentLeft: Math.min(...scene.nodes.map((node) => node.x)),
+    maxNodeBottom: Math.max(...scene.nodes.map((node) => node.y + node.height)),
+    minNodeTop: Math.min(...scene.nodes.map((node) => node.y)),
+    usedVerticals,
+    usedHorizontals,
+    addEdgeVerticals,
+    riserConflicts,
+    baseRiserConflicts: (x, top, bottom) =>
+      baseVerticals.some((segment) => verticalConflict(segment, x, top, bottom)),
+    blockedBelow,
+    blockedAbove,
+    findRiserX,
+    findEntryY,
+  };
+}
 
-  // Even attachment distribution: when several rerouted flows attach on the
-  // same side of a node, spread them evenly across that edge — the gap follows
-  // from the number of flows on that side instead of greedy center-first
-  // dodging. Slots are assigned left-to-right in current-x order (keeps risers
-  // from crossing each other); a slot that hits an obstacle keeps its greedy x.
-  {
-    interface Attachment {
-      plan: Plan;
-      role: "exit" | "entry";
-    }
-    const attachGroups = new Map<string, { node: SceneNode; members: Attachment[] }>();
-    const addAttachment = (plan: Plan, role: "exit" | "entry", node: SceneNode, side: string) => {
-      const key = `${node.id}|${side}`;
-      const group = attachGroups.get(key) ?? { node, members: [] };
-      group.members.push({ plan, role });
-      attachGroups.set(key, group);
-    };
-    for (const plan of plans) {
-      const topPlan = plan.entry.kind === "north" ||
-    plan.entry.kind === "westTop" ||
-    plan.entry.kind === "eastTop";
-      addAttachment(plan, "exit", plan.source, topPlan ? "north" : "south");
-      if (plan.entry.kind === "south") addAttachment(plan, "entry", plan.target, "south");
-      if (plan.entry.kind === "north") addAttachment(plan, "entry", plan.target, "north");
-    }
-    const setAttachmentX = (attachment: Attachment, x: number) => {
-      if (attachment.role === "exit") attachment.plan.exitX = x;
-      else (attachment.plan.entry as { x: number }).x = x;
-    };
-    // The far end of an attachment (the x its flow heads toward) — slots are
-    // assigned in far-end order so flows leave their shared side without
-    // crossing each other (left-going flow takes the left slot).
-    const farEndX = (attachment: Attachment): number => {
-      const { plan, role } = attachment;
-      if (role === "entry") return plan.exitX;
-      return plan.entry.x;
-    };
-    const flowNumber = (attachment: Attachment) =>
-      parseInt(attachment.plan.edge.id.slice(1), 10);
-    const sortedKeys = [...attachGroups.keys()].sort();
-    for (const key of sortedKeys) {
-      const { node, members } = attachGroups.get(key)!;
-      if (members.length < 2) continue;
-      const side = key.slice(key.indexOf("|") + 1);
-      // Free positions along the side, sampled at 2px — obstacles and title
-      // bands fragment the edge, so slots spread across what is usable.
-      const freePositions: number[] = [];
-      for (let x = node.x + 4; x <= node.x + node.width - 4; x += 2) {
-        const clear =
-          side === "south"
-            ? !riserBlockedBelow(x, node.y + node.height) &&
-              !baseRiserConflicts(x, node.y + node.height, INF)
-            : !riserBlockedAbove(x, node.y) && !baseRiserConflicts(x, -INF, node.y);
-        if (clear) freePositions.push(x);
-      }
-      if (freePositions.length < members.length) continue;
-      // Spreading is only an improvement if the side is wide enough to keep
-      // the flows apart. Where a title leaves a narrow strip, evenly spaced
-      // slots would sit a few px from each other and read as one line — the
-      // greedy positions chosen during planning already clear each other, so
-      // keep those and let the crowded-out flow take a side approach instead.
-      const usable = freePositions[freePositions.length - 1] - freePositions[0];
-      if (usable / (members.length + 1) < MIN_SLOT_GAP) continue;
-      // Slot order = travel direction, then reach descending. Flows heading
-      // left take the left slots and flows heading right the right ones, so
-      // opposite-direction flows diverge immediately. Among flows heading the
-      // SAME way the longest reach sits outermost, which makes their channel
-      // spans nest instead of interleave — nested spans can be lane-ordered
-      // with no crossing at all (see the lane allocation below), interleaved
-      // ones cannot.
-      const sideCenterX = node.x + node.width / 2;
-      const travelsLeft = (member: Attachment) => (farEndX(member) < sideCenterX ? 0 : 1);
-      members.sort(
-        (memberA, memberB) =>
-          travelsLeft(memberA) - travelsLeft(memberB) ||
-          farEndX(memberB) - farEndX(memberA) ||
-          flowNumber(memberA) - flowNumber(memberB),
-      );
-      members.forEach((member, index) => {
-        const pick =
-          freePositions[Math.round(((index + 1) * (freePositions.length - 1)) / (members.length + 1))];
-        setAttachmentX(member, pick);
-      });
-    }
+// ---- phase 3: planning each candidate into a channel -------------------------
+
+/** Carried across candidates: each west-gutter flow steps further left. */
+interface PlanState {
+  westCount: number;
+}
+
+/**
+ * A descent beside `node` — east or west of it, arriving from below or above —
+ * with an entry y that clears everything. The single gate for all five side
+ * approaches the planner tries: duplicating this test is what §3 warns about,
+ * and the five copies it replaces had already drifted in their `x < 4` guard.
+ */
+function findSideApproach(
+  ch: Channel,
+  node: SceneNode,
+  east: boolean,
+  fromBelow: boolean,
+): { x: number; y: number } | null {
+  const edgeX = east ? node.x + node.width : node.x;
+  for (const delta of east ? EAST_DESCENT_DELTAS : WEST_DESCENT_DELTAS) {
+    const x = edgeX + delta;
+    // West descents reach far enough left to run off the canvas; east ones,
+    // stepping outward from a positive edge, never can.
+    if (!east && x < 4) continue;
+    const y = ch.findEntryY({
+      target: node,
+      fromBelow,
+      xStart: east ? edgeX : x,
+      xEnd: east ? x : edgeX,
+      descentX: x,
+      edgeX,
+    });
+    if (y === null) continue;
+    if (fromBelow ? ch.blockedBelow(x, y) : ch.blockedAbove(x, y)) continue;
+    if (fromBelow ? ch.riserConflicts(x, y, INF) : ch.riserConflicts(x, -INF, y)) continue;
+    return { x, y };
+  }
+  return null;
+}
+
+/**
+ * Which channel to use is a choice, not a preference: both ends must reach the
+ * lane, so a side costs the two risers it demands and the horizontal run is the
+ * same either way. The near side spares the trip out to the far edge and back —
+ * `medium-page`'s "Notify steps and decision" travelled 346px right to a channel
+ * only to come 612px back left. Divert only when the gain is clear and the other
+ * channel is certain to plan, so a diverted flow can never end up worse off.
+ */
+function prefersTopChannel(ch: Channel, candidate: Candidate): boolean {
+  const { source, target } = candidate;
+  const bottomRisers =
+    ch.maxNodeBottom - (source.y + source.height) + (ch.maxNodeBottom - (target.y + target.height));
+  const topRisers = source.y - ch.minNodeTop + (target.y - ch.minNodeTop);
+  return (
+    topRisers < bottomRisers * 0.75 &&
+    ch.findRiserX(source, "north") !== null &&
+    ch.findRiserX(target, "north") !== null
+  );
+}
+
+/**
+ * A source hemmed in on both channel sides can still leave sideways: out of its
+ * east edge, clear of whatever sits beside it, then down into the channel. This
+ * mirrors the east/west *entry* fallbacks — without it such a flow keeps elk's
+ * route, which is how `medium-page`'s INTERINSURER→FRAUD stayed a 2275px wander
+ * around the whole page.
+ */
+function planSidewaysExit(ch: Channel, source: SceneNode): { x: number; y: number } | null {
+  const approach = findSideApproach(ch, source, true, true);
+  if (!approach) return null;
+  ch.usedHorizontals.push({ y: approach.y, left: source.x + source.width, right: approach.x });
+  return approach;
+}
+
+/** How far down the content spanned by a lane between these two risers reaches. */
+function laneDepth(ch: Channel, exitX: number, descentX: number): number {
+  const spanLeftX = Math.min(exitX, descentX);
+  const spanRightX = Math.max(exitX, descentX);
+  const spanned = ch.scene.nodes.filter(
+    (node) => node.x < spanRightX && node.x + node.width > spanLeftX,
+  );
+  return spanned.length
+    ? Math.max(...spanned.map((node) => node.y + node.height))
+    : ch.maxNodeBottom;
+}
+
+function planBottomChannel(
+  ch: Channel,
+  candidate: Candidate,
+  exit: { exitX: number; exitVia?: { y: number } },
+  state: PlanState,
+): Plan | null {
+  const { source, target } = candidate;
+  const { exitX, exitVia } = exit;
+  const base = { ...candidate, exitX, exitVia };
+  const sourceRiser = () => ({ x: exitX, top: source.y + source.height, bottom: INF });
+
+  const southX = ch.findRiserX(target, "south");
+  if (southX !== null) {
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: southX, top: target.y + target.height, bottom: INF });
+    return { ...base, entry: { kind: "south", x: southX } };
   }
 
-  const rerouted = new Set(plans.map((plan) => plan.edge.id));
-  // Channels hug the node content. Geometry elk left *outside* that content
-  // (its own wrap-around routes and their labels) is deliberately not an
-  // anchor — otherwise one stray wrap pushes the whole channel far off the
-  // drawing, wasting a band and forcing our flows to cross that wrap. Such
-  // geometry instead becomes a blocking band that nudges an individual lane
-  // only where their x-spans actually meet.
-  const contentBottom = maxNodeBottom;
-  const contentTop = Math.min(...scene.nodes.map((node) => node.y));
-  // `minOverlap`: how much shared x-span makes this band a real obstacle. A
-  // label overlapped at all is a collision; a horizontal segment only reads as
-  // a duplicate of our lane when they run alongside each other for a while.
-  const blockingBands: {
-    top: number;
-    bottom: number;
-    left: number;
-    right: number;
-    minOverlap: number;
-    /** Set for node boxes, so a lane can be exempted from its own container. */
-    nodeId?: string;
-  }[] = [];
+  // Coming back up beside the target (east) keeps the lane short, and a short
+  // lane clears fewer nodes so it also sits higher; the far-left gutter instead
+  // sweeps past groups the flow never had business with. Neither wins always —
+  // take whichever leaves the lane higher, and keep the gutter on a tie so
+  // settled drawings don't churn.
+  const eastEntry = findSideApproach(ch, target, true, true);
+  const westX = Math.max(4, ch.contentLeft - 12 - state.westCount * 8);
+  const westY = ch.findEntryY({
+    target,
+    fromBelow: true,
+    xStart: westX,
+    xEnd: target.x,
+    descentX: westX,
+    edgeX: target.x,
+  });
+
+  // Only a real gain justifies the swap: turning up in the middle of the drawing
+  // buys a shorter lane at the price of crossing whatever sits between, so a few
+  // px of depth is not worth it.
+  if (
+    eastEntry &&
+    (westY === null ||
+      laneDepth(ch, exitX, eastEntry.x) < laneDepth(ch, exitX, westX) - MIN_DEPTH_GAIN)
+  ) {
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: eastEntry.x, top: eastEntry.y, bottom: INF });
+    ch.usedHorizontals.push({
+      y: eastEntry.y,
+      left: target.x + target.width,
+      right: eastEntry.x,
+    });
+    return { ...base, entry: { kind: "east", ...eastEntry } };
+  }
+
+  if (westY !== null) {
+    state.westCount++;
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: westX, top: westY, bottom: INF });
+    ch.usedHorizontals.push({ y: westY, left: westX, right: target.x });
+    return { ...base, entry: { kind: "west", x: westX, y: westY } };
+  }
+
+  // Last resort: come up in the gutter just left of the target and enter its
+  // west side (bottom-channel mirror of the westTop descent).
+  const gutter = findSideApproach(ch, target, false, true);
+  if (!gutter) return null;
+  ch.usedVerticals.push(sourceRiser());
+  ch.usedVerticals.push({ x: gutter.x, top: gutter.y, bottom: INF });
+  ch.usedHorizontals.push({ y: gutter.y, left: gutter.x, right: target.x });
+  return { ...base, entry: { kind: "west", ...gutter } };
+}
+
+/** South exit blocked — mirror the route through a top channel instead. */
+function planTopChannel(ch: Channel, candidate: Candidate): Plan | null {
+  const { source, target } = candidate;
+  const exitX = ch.findRiserX(source, "north");
+  if (exitX === null) return null;
+  const sourceRiser = () => ({ x: exitX, top: -INF, bottom: source.y });
+
+  const entryX = ch.findRiserX(target, "north");
+  if (entryX !== null) {
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: entryX, top: -INF, bottom: target.y });
+    return { ...candidate, exitX, entry: { kind: "north", x: entryX } };
+  }
+
+  // The target's own container title covers its whole top, so the flow comes
+  // down beside the node instead. Try the side facing the source first (east —
+  // these flows all travel leftward), which avoids running the lane past the
+  // target only to hook back; otherwise come down on the far side, clearing the
+  // container's own border and the title text that overflows it.
+  for (const east of [true, false]) {
+    const approach = findSideApproach(ch, target, east, false);
+    if (!approach) continue;
+    ch.usedVerticals.push(sourceRiser());
+    ch.usedVerticals.push({ x: approach.x, top: -INF, bottom: approach.y });
+    ch.usedHorizontals.push(
+      east
+        ? { y: approach.y, left: target.x + target.width, right: approach.x }
+        : { y: approach.y, left: approach.x, right: target.x },
+    );
+    return { ...candidate, exitX, entry: { kind: east ? "eastTop" : "westTop", ...approach } };
+  }
+  return null;
+}
+
+function planCandidate(ch: Channel, candidate: Candidate, state: PlanState): Plan | null {
+  const { source } = candidate;
+  let exitVia: { y: number } | undefined;
+  let exitX = prefersTopChannel(ch, candidate) ? null : ch.findRiserX(source, "south");
+  if (exitX === null && ch.findRiserX(source, "north") === null) {
+    const sideways = planSidewaysExit(ch, source);
+    if (sideways) {
+      exitVia = { y: sideways.y };
+      exitX = sideways.x;
+    }
+  }
+  if (exitX === null) return planTopChannel(ch, candidate);
+  return planBottomChannel(ch, candidate, { exitX, exitVia }, state);
+}
+
+// Even attachment distribution: when several rerouted flows attach on the
+// same side of a node, spread them evenly across that edge — the gap follows
+// from the number of flows on that side instead of greedy center-first
+// dodging. Slots are assigned left-to-right in current-x order (keeps risers
+// from crossing each other); a slot that hits an obstacle keeps its greedy x.
+function redistributeAttachments(plans: Plan[], ch: Channel): void {
+  interface Attachment {
+    plan: Plan;
+    role: "exit" | "entry";
+  }
+  const attachGroups = new Map<string, { node: SceneNode; members: Attachment[] }>();
+  const addAttachment = (plan: Plan, role: "exit" | "entry", node: SceneNode, side: string) => {
+    const key = `${node.id}|${side}`;
+    const group = attachGroups.get(key) ?? { node, members: [] };
+    group.members.push({ plan, role });
+    attachGroups.set(key, group);
+  };
+  for (const plan of plans) {
+    addAttachment(plan, "exit", plan.source, isTop(plan) ? "north" : "south");
+    if (plan.entry.kind === "south") addAttachment(plan, "entry", plan.target, "south");
+    if (plan.entry.kind === "north") addAttachment(plan, "entry", plan.target, "north");
+  }
+  const setAttachmentX = (attachment: Attachment, x: number) => {
+    if (attachment.role === "exit") attachment.plan.exitX = x;
+    else (attachment.plan.entry as { x: number }).x = x;
+  };
+  // The far end of an attachment (the x its flow heads toward) — slots are
+  // assigned in far-end order so flows leave their shared side without
+  // crossing each other (left-going flow takes the left slot).
+  const farEndX = (attachment: Attachment): number => {
+    const { plan, role } = attachment;
+    if (role === "entry") return plan.exitX;
+    return plan.entry.x;
+  };
+  const flowNumber = (attachment: Attachment) => flowNumberOf(attachment.plan.edge);
+  const sortedKeys = [...attachGroups.keys()].sort();
+  for (const key of sortedKeys) {
+    const { node, members } = attachGroups.get(key)!;
+    if (members.length < 2) continue;
+    const side = key.slice(key.indexOf("|") + 1);
+    // Free positions along the side, sampled at 2px — obstacles and title
+    // bands fragment the edge, so slots spread across what is usable.
+    const freePositions: number[] = [];
+    for (let x = node.x + 4; x <= node.x + node.width - 4; x += 2) {
+      const clear =
+        side === "south"
+          ? !ch.blockedBelow(x, node.y + node.height) &&
+            !ch.baseRiserConflicts(x, node.y + node.height, INF)
+          : !ch.blockedAbove(x, node.y) && !ch.baseRiserConflicts(x, -INF, node.y);
+      if (clear) freePositions.push(x);
+    }
+    if (freePositions.length < members.length) continue;
+    // Spreading is only an improvement if the side is wide enough to keep
+    // the flows apart. Where a title leaves a narrow strip, evenly spaced
+    // slots would sit a few px from each other and read as one line — the
+    // greedy positions chosen during planning already clear each other, so
+    // keep those and let the crowded-out flow take a side approach instead.
+    const usable = freePositions[freePositions.length - 1] - freePositions[0];
+    if (usable / (members.length + 1) < MIN_ATTACH_GAP) continue;
+    // Slot order = travel direction, then reach descending. Left-bound flows
+    // take the left slots, so opposite directions diverge immediately; among
+    // flows heading the same way the longest reach sits outermost, so their
+    // channel spans nest instead of interleave. Nested spans can be
+    // lane-ordered with no crossing at all; interleaved ones cannot.
+    const sideCenterX = node.x + node.width / 2;
+    const travelsLeft = (member: Attachment) => (farEndX(member) < sideCenterX ? 0 : 1);
+    members.sort(
+      (memberA, memberB) =>
+        travelsLeft(memberA) - travelsLeft(memberB) ||
+        farEndX(memberB) - farEndX(memberA) ||
+        flowNumber(memberA) - flowNumber(memberB),
+    );
+    members.forEach((member, index) => {
+      const pick =
+        freePositions[
+          Math.round(((index + 1) * (freePositions.length - 1)) / (members.length + 1))
+        ];
+      setAttachmentX(member, pick);
+    });
+  }
+}
+
+// ---- phase 4: lane allocation ------------------------------------------------
+
+/**
+ * Geometry a lane must not run into. `minOverlap` is how much shared x-span
+ * makes this band a real obstacle: a label overlapped at all is a collision; a
+ * horizontal segment only reads as a duplicate of our lane when they run
+ * alongside each other for a while.
+ */
+interface Band {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+  minOverlap: number;
+  /** Set for node boxes, so a lane can be exempted from its own container. */
+  nodeId?: string;
+}
+
+interface Rect {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+/**
+ * Channels hug the node content. Geometry elk left *outside* it — its own
+ * wrap-around routes and their labels — is deliberately not an anchor, or one
+ * stray wrap pushes the whole channel off the drawing, wasting a band and
+ * forcing our flows across that wrap. It becomes a blocking band instead,
+ * nudging an individual lane only where their x-spans meet.
+ */
+function buildBlockingBands(scene: Scene, rerouted: Set<string>): Band[] {
+  const bands: Band[] = [];
   for (const edge of scene.edges) {
     if (rerouted.has(edge.id)) continue;
     for (let index = 0; index + 1 < edge.pts.length; index++) {
       const pointA = edge.pts[index];
       const pointB = edge.pts[index + 1];
       if (Math.abs(pointA.y - pointB.y) < 0.5 && Math.abs(pointA.x - pointB.x) >= 0.5)
-        blockingBands.push({
+        bands.push({
           // Padded: a lane running a few px from an elk horizontal over a long
           // shared span reads as one thick line, not two flows.
           top: pointA.y - LINE_CLEARANCE,
@@ -622,7 +702,7 @@ export function rerouteDetours(
         });
     }
     for (const label of edge.labels)
-      blockingBands.push({
+      bands.push({
         top: label.y,
         bottom: label.y + label.height,
         left: label.x,
@@ -633,7 +713,7 @@ export function rerouteDetours(
   // Node boxes block too, now that a lane may be raised alongside the content
   // instead of always sitting past all of it.
   for (const node of scene.nodes)
-    blockingBands.push({
+    bands.push({
       top: node.y,
       bottom: node.y + node.height,
       left: node.x,
@@ -641,320 +721,357 @@ export function rerouteDetours(
       minOverlap: 0,
       nodeId: node.id,
     });
-  const bandConflicts = (
-    top: number,
-    bottom: number,
-    left: number,
-    right: number,
-    exempt: Set<string> = new Set(),
-  ): boolean =>
-    blockingBands.some((band) => {
-      const shared = Math.min(band.right, right) - Math.max(band.left, left);
-      if (band.nodeId && exempt.has(band.nodeId)) {
-        // The inside of this container is open to the lane, but its borders
-        // are still lines: running alongside one reads as a doubled edge.
-        if (shared <= MIN_PARALLEL_RUN) return false;
-        return [band.top, band.bottom].some(
-          (border) => border - LINE_CLEARANCE < bottom && top < border + LINE_CLEARANCE,
-        );
-      }
-      return band.top < bottom && top < band.bottom && shared > band.minOverlap;
-    });
+  return bands;
+}
 
-  // Containers that geometrically hold a node. A flow whose two ends live in
-  // the same container has no business leaving it: that container is neither
-  // an anchor nor an obstacle for its lane, which belongs in the free space
-  // inside it. Without this a flow between two boxes of one data centre dives
-  // under the whole drawing and drags the canvas down with it.
-  const containerNodes = scene.nodes.filter((node) => node.container);
-  const enclosersOf = (node: SceneNode) =>
-    containerNodes.filter(
-      (box) =>
-        box.id !== node.id &&
-        box.x <= node.x &&
-        node.x + node.width <= box.x + box.width &&
-        box.y <= node.y &&
-        node.y + node.height <= box.y + box.height,
-    );
-  const sharedEnclosers = (plan: { source: SceneNode; target: SceneNode }): Set<string> => {
-    const around = new Set(enclosersOf(plan.source).map((box) => box.id));
-    return new Set(
-      enclosersOf(plan.target)
-        .filter((box) => around.has(box.id))
-        .map((box) => box.id),
-    );
-  };
-
-  const isTop = (plan: Plan) => plan.entry.kind === "north" ||
-    plan.entry.kind === "westTop" ||
-    plan.entry.kind === "eastTop";
-  const bottomPlans = plans.filter((plan) => !isTop(plan));
-  const topPlans = plans.filter(isTop);
-
-  // Lane allocation: non-overlapping x-intervals share a lane (first fit).
-  const makeAllocator = () => {
-    const lanes: { rangeStart: number; rangeEnd: number }[][] = [];
-    return (intervalStart: number, intervalEnd: number): number => {
-      const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
-      const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
-      for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
-        const hasOverlap = lanes[laneIndex].some(
-          (existing) => existing.rangeStart < rangeEnd && rangeStart < existing.rangeEnd,
-        );
-        if (hasOverlap) continue;
-        lanes[laneIndex].push({ rangeStart, rangeEnd });
-        return laneIndex;
-      }
-      lanes.push([{ rangeStart, rangeEnd }]);
-      return lanes.length - 1;
-    };
-  };
-
-  // Lanes are handed out innermost span first, so a span that *contains*
-  // another always ends up on a deeper lane. Combined with the nesting the
-  // slot order produces, a flow's riser can then never cross the lane of a
-  // flow it encloses — the crossings that remain are only the ones forced by
-  // genuinely interleaved spans. Containment is only a partial order, so this
-  // is a topological pass rather than a sort: flows that don't enclose one
-  // another keep plain flow-id order and their lanes don't move.
-  const spanLeft = (plan: Plan) => Math.min(plan.exitX, plan.entry.x);
-  const spanRight = (plan: Plan) => Math.max(plan.exitX, plan.entry.x);
-  const enclosedBy = (inner: Plan, outer: Plan) =>
-    spanLeft(outer) <= spanLeft(inner) &&
-    spanRight(inner) <= spanRight(outer) &&
-    spanRight(inner) - spanLeft(inner) < spanRight(outer) - spanLeft(outer);
-  const laneIndexOf = new Map<string, number>();
-  const assignLanes = (subset: Plan[], alloc: (start: number, end: number) => number) => {
-    const remaining = [...subset].sort(
-      (planA, planB) =>
-        parseInt(planA.edge.id.slice(1), 10) - parseInt(planB.edge.id.slice(1), 10),
-    );
-    while (remaining.length) {
-      const innermost = remaining.findIndex(
-        (plan) => !remaining.some((other) => other !== plan && enclosedBy(other, plan)),
+function bandConflicts(bands: Band[], rect: Rect, exempt: Set<string>): boolean {
+  return bands.some((band) => {
+    const shared = Math.min(band.right, rect.right) - Math.max(band.left, rect.left);
+    if (band.nodeId && exempt.has(band.nodeId)) {
+      // The inside of this container is open to the lane, but its borders
+      // are still lines: running alongside one reads as a doubled edge.
+      if (shared <= MIN_PARALLEL_RUN) return false;
+      return [band.top, band.bottom].some(
+        (border) => border - LINE_CLEARANCE < rect.bottom && rect.top < border + LINE_CLEARANCE,
       );
-      const [plan] = remaining.splice(innermost < 0 ? 0 : innermost, 1);
-      laneIndexOf.set(plan.edge.id, alloc(plan.exitX, plan.entry.x));
     }
-  };
-  assignLanes(bottomPlans, makeAllocator());
-  assignLanes(topPlans, makeAllocator());
+    return band.top < rect.bottom && rect.top < band.bottom && shared > band.minOverlap;
+  });
+}
 
-  // Lane offsets: each lane sits just outside the content it actually spans —
-  // anchoring on the drawing's full extent lets a node the lane never passes
-  // under (a tall actor group off to one side) push it far out, leaving a band
-  // of nothing between the lane and the boxes it serves. Spacing then uses the
-  // label heights that lane really carries, and the lane is pushed further out
-  // only if it would land on geometry sharing its x-span.
-  const laneOffsets = (subset: Plan[], direction: 1 | -1, anchor: number): number[] => {
-    const spanAnchor = (left: number, right: number, exempt: Set<string>): number => {
-      const spanned = scene.nodes.filter(
-        (node) => !exempt.has(node.id) && node.x < right && node.x + node.width > left,
+const enclosersOf = (containerNodes: SceneNode[], node: SceneNode) =>
+  containerNodes.filter(
+    (box) =>
+      box.id !== node.id &&
+      box.x <= node.x &&
+      node.x + node.width <= box.x + box.width &&
+      box.y <= node.y &&
+      node.y + node.height <= box.y + box.height,
+  );
+
+/**
+ * Containers that geometrically hold both ends. A flow whose two ends live in
+ * the same container has no business leaving it: that container is neither an
+ * anchor nor an obstacle for its lane, which belongs in the free space inside
+ * it. Without this a flow between two boxes of one data centre dives under the
+ * whole drawing and drags the canvas down with it.
+ */
+function sharedEnclosers(
+  containerNodes: SceneNode[],
+  plan: { source: SceneNode; target: SceneNode },
+): Set<string> {
+  const around = new Set(enclosersOf(containerNodes, plan.source).map((box) => box.id));
+  return new Set(
+    enclosersOf(containerNodes, plan.target)
+      .filter((box) => around.has(box.id))
+      .map((box) => box.id),
+  );
+}
+
+/** Lane allocation: non-overlapping x-intervals share a lane (first fit). */
+function makeAllocator() {
+  const lanes: { rangeStart: number; rangeEnd: number }[][] = [];
+  return (intervalStart: number, intervalEnd: number): number => {
+    const rangeStart = Math.min(intervalStart, intervalEnd) - 4;
+    const rangeEnd = Math.max(intervalStart, intervalEnd) + 4;
+    for (let laneIndex = 0; laneIndex < lanes.length; laneIndex++) {
+      const hasOverlap = lanes[laneIndex].some(
+        (existing) => existing.rangeStart < rangeEnd && rangeStart < existing.rangeEnd,
       );
-      if (!spanned.length) return anchor;
-      return direction > 0
-        ? Math.max(...spanned.map((node) => node.y + node.height))
-        : Math.min(...spanned.map((node) => node.y));
-    };
-    const byLane = new Map<number, Plan[]>();
-    for (const plan of subset) {
-      const lane = laneIndexOf.get(plan.edge.id)!;
-      byLane.set(lane, [...(byLane.get(lane) ?? []), plan]);
+      if (hasOverlap) continue;
+      lanes[laneIndex].push({ rangeStart, rangeEnd });
+      return laneIndex;
     }
-    const labelHeights: number[] = [];
-    const positions: number[] = [];
-    for (let lane = 0; lane < byLane.size; lane++) {
-      const members = byLane.get(lane) ?? [];
-      const labelHeight = Math.max(
-        0,
-        ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height)),
-      );
-      const left = Math.min(...members.map((plan) => Math.min(plan.exitX, plan.entry.x)));
-      const right = Math.max(...members.map((plan) => Math.max(plan.exitX, plan.entry.x)));
-      // Only a container holding *every* flow on this lane may be entered.
-      const exempt = new Set<string>();
-      if (members.length) {
-        const perMember = members.map(sharedEnclosers);
-        for (const id of perMember[0])
-          if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
-      }
-      const base = spanAnchor(left, right, exempt);
-      // Labels sit on the *outer* side of their lane, away from the drawing.
-      // The top channel always did; the bottom channel used to put them between
-      // the content and the lane, which pushed every bottom lane out by a whole
-      // label and left a conspicuous gap against the container it hugged on the
-      // other side.
-      const ownPosition = base + direction * CHANNEL_GAP;
-      // Lanes stay ordered: a deeper lane never rises above a shallower one,
-      // which is what keeps enclosing spans outside the ones they enclose.
-      let position =
-        lane === 0
-          ? ownPosition
-          : direction > 0
-            ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14)
-            : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
-      const fits = (candidate: number) =>
-        direction > 0
-          ? !bandConflicts(candidate - 1, candidate + labelHeight + 3, left, right, exempt)
-          : !bandConflicts(candidate - labelHeight - 3, candidate + 1, left, right, exempt);
-      // Before giving up on a spot, try tightening the approach gap. The room
-      // inside a container is finite, and a lane that fits there on a 6px gap
-      // is far better than one pushed out of the container for want of 2px.
-      if (!fits(position))
-        for (const gap of [8, 6, 4]) {
-          const tighter = position - direction * (CHANNEL_GAP - gap);
-          if (fits(tighter)) {
-            position = tighter;
-            break;
-          }
-        }
-      // Otherwise move outward until the lane and its label band are clear.
-      for (let guard = 0; guard < 80; guard++) {
-        if (fits(position)) break;
-        position += direction * 6;
-      }
-      labelHeights.push(labelHeight);
-      positions.push(position);
-    }
-    return positions;
+    lanes.push([{ rangeStart, rangeEnd }]);
+    return lanes.length - 1;
   };
-  const bottomLaneY = laneOffsets(bottomPlans, 1, contentBottom);
-  const topLaneY = laneOffsets(topPlans, -1, contentTop);
+}
 
-  const placeLaneLabels = (
-    edge: SceneEdge,
-    exitX: number,
-    farX: number,
-    laneY: number,
-    outward: 1 | -1,
-  ) => {
-    for (const label of edge.labels) {
-      const segmentStart = Math.min(exitX, farX);
-      const segmentEnd = Math.max(exitX, farX);
-      const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
-      label.x = Math.min(Math.max(midpoint, segmentStart + 4), segmentEnd - 4 - label.width);
-      // Away from the drawing, so the lane itself can hug the content.
-      label.y = outward > 0 ? laneY + 3 : laneY - label.height - 3;
-    }
+const spanLeft = (plan: Plan) => Math.min(plan.exitX, plan.entry.x);
+const spanRight = (plan: Plan) => Math.max(plan.exitX, plan.entry.x);
+const enclosedBy = (inner: Plan, outer: Plan) =>
+  spanLeft(outer) <= spanLeft(inner) &&
+  spanRight(inner) <= spanRight(outer) &&
+  spanRight(inner) - spanLeft(inner) < spanRight(outer) - spanLeft(outer);
+
+/**
+ * Lanes are handed out innermost span first, so a span that *contains* another
+ * lands on a deeper lane. With the nesting the slot order produces, a riser can
+ * never cross the lane of a flow it encloses, leaving only the crossings
+ * genuinely interleaved spans force. Containment is a partial order, so this is
+ * a topological pass, not a sort: flows that enclose nothing keep plain flow-id
+ * order and their lanes do not move.
+ */
+function assignLanes(
+  subset: Plan[],
+  laneIndexOf: Map<string, number>,
+  alloc: (start: number, end: number) => number,
+): void {
+  const remaining = [...subset].sort(
+    (planA, planB) => flowNumberOf(planA.edge) - flowNumberOf(planB.edge),
+  );
+  while (remaining.length) {
+    const innermost = remaining.findIndex(
+      (plan) => !remaining.some((other) => other !== plan && enclosedBy(other, plan)),
+    );
+    const [plan] = remaining.splice(innermost < 0 ? 0 : innermost, 1);
+    laneIndexOf.set(plan.edge.id, alloc(plan.exitX, plan.entry.x));
+  }
+}
+
+interface LaneContext {
+  scene: Scene;
+  bands: Band[];
+  containerNodes: SceneNode[];
+  laneIndexOf: Map<string, number>;
+}
+
+function createLaneContext(scene: Scene, rerouted: Set<string>): LaneContext {
+  return {
+    scene,
+    bands: buildBlockingBands(scene, rerouted),
+    containerNodes: scene.nodes.filter((node) => node.container),
+    laneIndexOf: new Map<string, number>(),
   };
+}
 
-  for (const plan of plans) {
-    const { edge, source, target, exitX, entry } = plan;
+/** What one lane occupies, once its members are known. */
+interface LaneSpan {
+  left: number;
+  right: number;
+  exempt: Set<string>;
+  labelHeight: number;
+  start: number;
+}
 
-    if (entry.kind === "north" || entry.kind === "westTop" || entry.kind === "eastTop") {
-      const laneY = topLaneY[laneIndexOf.get(edge.id)!];
-      edge.pts =
-        entry.kind === "north"
-          ? [
-              { x: exitX, y: source.y },
-              { x: exitX, y: laneY },
-              { x: entry.x, y: laneY },
-              { x: entry.x, y: target.y },
-            ]
-          : [
-              { x: exitX, y: source.y },
-              { x: exitX, y: laneY },
-              { x: entry.x, y: laneY },
-              { x: entry.x, y: entry.y },
-              {
-                x: entry.kind === "eastTop" ? target.x + target.width : target.x,
-                y: entry.y,
-              },
-            ];
-      if (numbered) {
-        for (const label of edge.labels) {
-          if (entry.kind === "north") {
-            label.x = entry.x + 6;
-            label.y = target.y - label.height - 6;
-          } else if (entry.kind === "eastTop") {
-            label.x = target.x + target.width + 6;
-            label.y = entry.y - label.height - 6;
-          } else {
-            label.x = target.x - label.width - 6;
-            label.y = entry.y - label.height - 6;
-          }
-        }
-      } else {
-        placeLaneLabels(edge, exitX, entry.x, laneY, -1);
+/**
+ * Each lane sits just outside the content it actually spans. Anchoring on the
+ * drawing's full extent lets a node the lane never passes under — a tall actor
+ * group off to one side — push it far out, leaving a band of nothing between the
+ * lane and the boxes it serves.
+ */
+function spanAnchor(
+  scene: Scene,
+  span: { left: number; right: number; exempt: Set<string> },
+  direction: 1 | -1,
+  anchor: number,
+): number {
+  const spanned = scene.nodes.filter(
+    (node) => !span.exempt.has(node.id) && node.x < span.right && node.x + node.width > span.left,
+  );
+  if (!spanned.length) return anchor;
+  return direction > 0
+    ? Math.max(...spanned.map((node) => node.y + node.height))
+    : Math.min(...spanned.map((node) => node.y));
+}
+
+/** Push a lane out from its preferred spot until it and its label band are clear. */
+function resolveLanePosition(lc: LaneContext, span: LaneSpan, direction: 1 | -1): number {
+  const { left, right, exempt, labelHeight } = span;
+  const fits = (candidate: number) =>
+    !bandConflicts(
+      lc.bands,
+      direction > 0
+        ? { top: candidate - 1, bottom: candidate + labelHeight + 3, left, right }
+        : { top: candidate - labelHeight - 3, bottom: candidate + 1, left, right },
+      exempt,
+    );
+  let position = span.start;
+  // Before giving up on a spot, try tightening the approach gap. The room
+  // inside a container is finite, and a lane that fits there on a 6px gap
+  // is far better than one pushed out of the container for want of 2px.
+  if (!fits(position))
+    for (const gap of [8, 6, 4]) {
+      const tighter = position - direction * (CHANNEL_GAP - gap);
+      if (fits(tighter)) {
+        position = tighter;
+        break;
       }
-      continue;
     }
+  // Otherwise move outward until the lane and its label band are clear.
+  for (let guard = 0; guard < 80; guard++) {
+    if (fits(position)) break;
+    position += direction * 6;
+  }
+  return position;
+}
 
-    const sourceBottom = source.y + source.height;
-    const farX = entry.x;
-    const laneY = bottomLaneY[laneIndexOf.get(edge.id)!];
-    // A boxed-in source leaves sideways and turns down; otherwise it drops
-    // straight out of the edge facing the channel.
-    const head = plan.exitVia
+/**
+ * Where each lane of `subset` sits. Spacing uses the label heights that lane
+ * carries, and it is pushed further only to clear geometry sharing its x-span.
+ */
+function laneOffsets(
+  lc: LaneContext,
+  subset: Plan[],
+  direction: 1 | -1,
+  anchor: number,
+): number[] {
+  const byLane = new Map<number, Plan[]>();
+  for (const plan of subset) {
+    const lane = lc.laneIndexOf.get(plan.edge.id)!;
+    byLane.set(lane, [...(byLane.get(lane) ?? []), plan]);
+  }
+  const labelHeights: number[] = [];
+  const positions: number[] = [];
+  for (let lane = 0; lane < byLane.size; lane++) {
+    const members = byLane.get(lane) ?? [];
+    const labelHeight = Math.max(
+      0,
+      ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height)),
+    );
+    const left = Math.min(...members.map(spanLeft));
+    const right = Math.max(...members.map(spanRight));
+    // Only a container holding *every* flow on this lane may be entered.
+    const exempt = new Set<string>();
+    if (members.length) {
+      const perMember = members.map((plan) => sharedEnclosers(lc.containerNodes, plan));
+      for (const id of perMember[0])
+        if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
+    }
+    // Labels sit on the *outer* side of their lane, away from the drawing. The
+    // top channel always did; the bottom channel used to put them between the
+    // content and the lane, which pushed every bottom lane out by a whole label
+    // and left a conspicuous gap against the container it hugged on the other
+    // side.
+    const ownPosition = spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) +
+      direction * CHANNEL_GAP;
+    // Lanes stay ordered: a deeper lane never rises above a shallower one,
+    // which is what keeps enclosing spans outside the ones they enclose.
+    const start =
+      lane === 0
+        ? ownPosition
+        : direction > 0
+          ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14)
+          : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
+    labelHeights.push(labelHeight);
+    positions.push(
+      resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction),
+    );
+  }
+  return positions;
+}
+
+// ---- phase 5: emitting the geometry ------------------------------------------
+
+function placeLaneLabels(
+  edge: SceneEdge,
+  span: { from: number; to: number },
+  laneY: number,
+  outward: 1 | -1,
+): void {
+  for (const label of edge.labels) {
+    const segmentStart = Math.min(span.from, span.to);
+    const segmentEnd = Math.max(span.from, span.to);
+    const midpoint = (segmentStart + segmentEnd) / 2 - label.width / 2;
+    label.x = Math.min(Math.max(midpoint, segmentStart + 4), segmentEnd - 4 - label.width);
+    // Away from the drawing, so the lane itself can hug the content.
+    label.y = outward > 0 ? laneY + 3 : laneY - label.height - 3;
+  }
+}
+
+/** Numbered views tag the flow at its arrival instead of along the lane. */
+function placeNumberedLabels(edge: SceneEdge, target: SceneNode, entry: Plan["entry"]): void {
+  for (const label of edge.labels) {
+    if (entry.kind === "north") {
+      label.x = entry.x + 6;
+      label.y = target.y - label.height - 6;
+    } else if (entry.kind === "south") {
+      label.x = entry.x + 6;
+      label.y = target.y + target.height + 6;
+    } else if (entry.kind === "east" || entry.kind === "eastTop") {
+      label.x = target.x + target.width + 6;
+      label.y = entry.y - label.height - 6;
+    } else {
+      label.x = target.x - label.width - 6;
+      label.y = entry.y - label.height - 6;
+    }
+  }
+}
+
+function emitTopRoute(plan: TopPlan, laneY: number, numbered: boolean): void {
+  const { edge, source, target, exitX, entry } = plan;
+  edge.pts =
+    entry.kind === "north"
       ? [
-          { x: source.x + source.width, y: plan.exitVia.y },
-          { x: exitX, y: plan.exitVia.y },
+          { x: exitX, y: source.y },
           { x: exitX, y: laneY },
+          { x: entry.x, y: laneY },
+          { x: entry.x, y: target.y },
         ]
       : [
-          { x: exitX, y: sourceBottom },
+          { x: exitX, y: source.y },
           { x: exitX, y: laneY },
+          { x: entry.x, y: laneY },
+          { x: entry.x, y: entry.y },
+          {
+            x: entry.kind === "eastTop" ? target.x + target.width : target.x,
+            y: entry.y,
+          },
         ];
+  if (numbered) placeNumberedLabels(edge, target, entry);
+  else placeLaneLabels(edge, { from: exitX, to: entry.x }, laneY, -1);
+}
 
-    edge.detour = true;
-    if (entry.kind === "south") {
-      edge.pts = [
-        ...head,
-        { x: farX, y: laneY },
-        { x: farX, y: target.y + target.height },
+function emitBottomRoute(plan: BottomPlan, laneY: number, numbered: boolean): void {
+  const { edge, source, target, exitX, entry } = plan;
+  const farX = entry.x;
+  // A boxed-in source leaves sideways and turns down; otherwise it drops
+  // straight out of the edge facing the channel.
+  const head = plan.exitVia
+    ? [
+        { x: source.x + source.width, y: plan.exitVia.y },
+        { x: exitX, y: plan.exitVia.y },
+        { x: exitX, y: laneY },
+      ]
+    : [
+        { x: exitX, y: source.y + source.height },
+        { x: exitX, y: laneY },
       ];
-    } else if (entry.kind === "east") {
-      edge.pts = [
-        ...head,
-        { x: farX, y: laneY },
-        { x: farX, y: entry.y },
-        { x: target.x + target.width, y: entry.y },
-      ];
-    } else {
-      edge.pts = [
-        ...head,
-        { x: farX, y: laneY },
-        { x: farX, y: entry.y },
-        { x: target.x, y: entry.y },
-      ];
-    }
 
-    if (numbered) {
-      for (const label of edge.labels) {
-        if (entry.kind === "south") {
-          label.x = entry.x + 6;
-          label.y = target.y + target.height + 6;
-        } else if (entry.kind === "east") {
-          label.x = target.x + target.width + 6;
-          label.y = entry.y - label.height - 6;
-        } else {
-          label.x = target.x - label.width - 6;
-          label.y = entry.y - label.height - 6;
-        }
-      }
-    } else {
-      placeLaneLabels(edge, exitX, farX, laneY, 1);
-    }
+  edge.detour = true;
+  if (entry.kind === "south") {
+    edge.pts = [...head, { x: farX, y: laneY }, { x: farX, y: target.y + target.height }];
+  } else if (entry.kind === "east") {
+    edge.pts = [
+      ...head,
+      { x: farX, y: laneY },
+      { x: farX, y: entry.y },
+      { x: target.x + target.width, y: entry.y },
+    ];
+  } else {
+    edge.pts = [
+      ...head,
+      { x: farX, y: laneY },
+      { x: farX, y: entry.y },
+      { x: target.x, y: entry.y },
+    ];
   }
 
-  // Top-channel lanes (and their labels) may extend above y=0 — shift the
-  // whole scene down so every coordinate stays positive. Guarded on top plans
-  // so bottom-only reroutes stay byte-identical.
+  if (numbered) placeNumberedLabels(edge, target, entry);
+  else placeLaneLabels(edge, { from: exitX, to: farX }, laneY, 1);
+}
+
+/**
+ * Top-channel lanes (and their labels) may extend above y=0 — shift the whole
+ * scene down so every coordinate stays positive. Callers guard on top plans
+ * existing, so bottom-only reroutes stay byte-identical.
+ */
+function shiftAboveOrigin(scene: Scene): void {
   let minY = 4;
-  if (topPlans.length)
-    for (const edge of scene.edges) {
-      for (const point of edge.pts) minY = Math.min(minY, point.y);
-      for (const label of edge.labels) minY = Math.min(minY, label.y);
-    }
-  if (minY < 4) {
-    const shift = 4 - minY;
-    for (const node of scene.nodes) node.y += shift;
-    for (const edge of scene.edges) {
-      for (const point of edge.pts) point.y += shift;
-      for (const label of edge.labels) label.y += shift;
-    }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) minY = Math.min(minY, point.y);
+    for (const label of edge.labels) minY = Math.min(minY, label.y);
   }
+  if (minY >= 4) return;
+  const shift = 4 - minY;
+  for (const node of scene.nodes) node.y += shift;
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) point.y += shift;
+    for (const label of edge.labels) label.y += shift;
+  }
+}
 
+function resizeScene(scene: Scene): void {
   let maxX = 0;
   let maxY = 0;
   for (const node of scene.nodes) {
@@ -973,4 +1090,45 @@ export function rerouteDetours(
   }
   scene.width = Math.ceil(maxX + 10);
   scene.height = Math.ceil(maxY + 10);
+}
+
+export function rerouteDetours(
+  scene: Scene,
+  model: Model,
+  numbered: boolean,
+  titleBoxes: TitleBox[] = [],
+): void {
+  const candidates = detourCandidates(scene, model);
+  if (!candidates.length) return;
+
+  const channel = createChannel(scene, titleBoxes, candidates);
+  const state: PlanState = { westCount: 0 };
+  const plans: Plan[] = [];
+  for (const candidate of candidates) {
+    const planned = planCandidate(channel, candidate, state);
+    // Failed candidates keep elk's route — their verticals stay obstacles.
+    if (planned) plans.push(planned);
+    else channel.addEdgeVerticals(candidate.edge);
+  }
+  if (!plans.length) return;
+
+  redistributeAttachments(plans, channel);
+
+  const lanes = createLaneContext(scene, new Set(plans.map((plan) => plan.edge.id)));
+  const bottomPlans = plans.filter(isBottom);
+  const topPlans = plans.filter(isTop);
+  assignLanes(bottomPlans, lanes.laneIndexOf, makeAllocator());
+  assignLanes(topPlans, lanes.laneIndexOf, makeAllocator());
+
+  const bottomLaneY = laneOffsets(lanes, bottomPlans, 1, channel.maxNodeBottom);
+  const topLaneY = laneOffsets(lanes, topPlans, -1, channel.minNodeTop);
+
+  for (const plan of plans) {
+    const lane = lanes.laneIndexOf.get(plan.edge.id)!;
+    if (isTop(plan)) emitTopRoute(plan, topLaneY[lane], numbered);
+    else if (isBottom(plan)) emitBottomRoute(plan, bottomLaneY[lane], numbered);
+  }
+
+  if (topPlans.length) shiftAboveOrigin(scene);
+  resizeScene(scene);
 }

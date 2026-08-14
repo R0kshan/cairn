@@ -16,7 +16,7 @@ import { views } from "./views.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { esc } from "./xml-escape.ts";
 
-export function errorPanelSvg(file: string, diagnostics: Diagnostic[]): string {
+function errorPanelSvg(file: string, diagnostics: Diagnostic[]): string {
   const errors = diagnostics.filter((diagnostic) => diagnostic.severity === "error").slice(0, 10);
   const more =
     diagnostics.filter((diagnostic) => diagnostic.severity === "error").length - errors.length;
