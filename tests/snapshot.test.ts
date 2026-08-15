@@ -13,7 +13,7 @@
  * Three paths are guarded:
  *   1. CANARIES — diagram rendering (parse → validate → layout → render)
  *   2. THEMES — one snapshot per built-in theme
- *   3. MATRIX — infrastructure flow-matrix exporters (csv/md/svg)
+ *   3. MATRIX — flow-matrix exporters (csv/md/svg), infrastructure + security
  */
 
 import { test } from "node:test";
@@ -25,7 +25,7 @@ import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
 import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
-import { matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
+import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -127,29 +127,41 @@ for (const theme of THEMES) {
   });
 }
 
-// ---------- 3. infrastructure flow-matrix exporters ----------
+// ---------- 3. flow-matrix exporters ----------
 // The matrix (csv/md/svg) is a separate code path from diagram rendering
-// (src/matrix.ts) — the DSL -> Model parsing is shared, but each exporter has
+// (src/flow-matrix.ts) — the DSL -> Model parsing is shared, but each exporter has
 // its own formatting logic, so each format gets its own snapshot.
 
+// Every view × every format. The column set is per-view data (`views.ts` →
+// `View.matrix`), so a change there that silently reshapes one view's table
+// would otherwise only show up in whichever view happened to be snapshotted.
 const MATRIX_SOURCE = "infrastructure-large.cairn";
+const MATRIX_SOURCES = [
+  "logical.cairn", // no technical tail at all
+  "application.cairn", // protocol, no port
+  MATRIX_SOURCE, // the reference shape: protocol + port
+  "security.cairn", // protocol only, trust-zone annotation
+];
 
-test("snapshot: matrix csv", () => {
-  const model = parseAndValidate(load(EX, MATRIX_SOURCE));
-  snapshotAssert("matrix-infrastructure-large.csv", matrixCsv(model, "en"));
-});
+for (const file of MATRIX_SOURCES) {
+  const stem = file.replace(/\.cairn$/, "");
+  const matrixOf = () => {
+    const model = parseAndValidate(load(EX, file));
+    return buildFlowMatrix(model, views[model.type!]);
+  };
 
-test("snapshot: matrix md", () => {
-  const model = parseAndValidate(load(EX, MATRIX_SOURCE));
-  const view = views[model.type!];
-  snapshotAssert("matrix-infrastructure-large.md", matrixMd(model, view, "en"));
-});
+  test(`snapshot: matrix csv — ${stem}`, () => {
+    snapshotAssert(`matrix-${stem}.csv`, matrixCsv(matrixOf()));
+  });
 
-test("snapshot: matrix svg", () => {
-  const model = parseAndValidate(load(EX, MATRIX_SOURCE));
-  const view = views[model.type!];
-  snapshotAssert("matrix-infrastructure-large.snap.svg", normalize(matrixSvg(model, view, "en")));
-});
+  test(`snapshot: matrix md — ${stem}`, () => {
+    snapshotAssert(`matrix-${stem}.md`, matrixMd(matrixOf()));
+  });
+
+  test(`snapshot: matrix svg — ${stem}`, () => {
+    snapshotAssert(`matrix-${stem}.snap.svg`, normalize(matrixSvg(matrixOf())));
+  });
+}
 
 // ---------- determinism invariants (never need acknowledging) ----------
 // If either of these ever fails, the snapshot gate itself is unsound (you'd
@@ -164,8 +176,8 @@ test("render is deterministic (same input → identical SVG)", async () => {
 
 test("matrix generation is deterministic (same input → identical output)", () => {
   const model = parseAndValidate(load(EX, MATRIX_SOURCE));
-  const view = views[model.type!];
-  assert.equal(matrixCsv(model, "en"), matrixCsv(model, "en"));
-  assert.equal(matrixMd(model, view, "en"), matrixMd(model, view, "en"));
-  assert.equal(matrixSvg(model, view, "en"), matrixSvg(model, view, "en"));
+  const build = () => buildFlowMatrix(model, views[model.type!]);
+  assert.equal(matrixCsv(build()), matrixCsv(build()));
+  assert.equal(matrixMd(build()), matrixMd(build()));
+  assert.equal(matrixSvg(build()), matrixSvg(build()));
 });

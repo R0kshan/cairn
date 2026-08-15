@@ -7,8 +7,8 @@ short; this document is where the detail it points to lives.
 ## 1. What cairn is and isn't
 
 A diagram-as-code CLI for enterprise-architecture views — `logical`,
-`application`, `infrastructure`, `security` — rendered to SVG, plus an
-infrastructure *flow matrix* export. It sells **dense
+`application`, `infrastructure` — rendered to SVG, plus a
+per-view *flow matrix* export. It sells **dense
 diagrams that stay readable**: overlap-free labels, typed views, deterministic
 output. It is not a general diagramming tool — for flowcharts, sequence, or
 ER diagrams, Mermaid or D2 remain the better fit ([README](../README.md#why-cairn)).

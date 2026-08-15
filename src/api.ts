@@ -23,10 +23,16 @@ import pkg from "../package.json" with { type: "json" };
 export { compile } from "./compile.ts";
 export { themeNames } from "./themes.ts";
 
+// The flow matrix `compile(source, { matrix: true })` returns is data, not text.
+// These turn it into the same CSV / Markdown / SVG `cairn matrix` writes — a
+// consumer rendering its own table can ignore them and read `matrix.rows`.
+export { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
+
 // Named explicitly rather than `export *`, so the surface can't widen by
 // accident when an internal module gains an export. Every type reachable from
 // `CompileResult` is listed, so a consumer never has to import an internal path.
-export type { CompileResult } from "./compile.ts";
+export type { CompileOptions, CompileResult } from "./compile.ts";
+export type { FlowMatrix, FlowMatrixRow, MatrixColumn, MatrixColumnId } from "./models/matrix.ts";
 export type { Diagnostic, Severity } from "./models/diagnostic.ts";
 export type { Span } from "./models/ast.ts";
 

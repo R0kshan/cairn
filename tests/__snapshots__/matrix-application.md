@@ -1,0 +1,17 @@
+# TECHNICAL FLOW MATRIX — Billing management — application view
+
+| No. | Source | Destination | Protocol | Flow |
+|---|---|---|---|---|
+| 1 | Sales administration | Contract management (CRM) |  |  |
+| 2 | Customer-account management (CRM) | Customer repository | API_REST |  |
+| 3 | Contract management (CRM) | Billing engine (Billing) | MQ |  |
+| 4 | Offer catalog | Billing engine (Billing) | JDBC |  |
+| 5 | Billing engine (Billing) | Billing event bus | MQ |  |
+| 6 | Invoice issuing and sending (Billing) | Billing event bus | MQ |  |
+| 7 | Invoice issuing and sending (Billing) | Partner EDI platform | AS4 |  |
+| 8 | Invoice issuing and sending (Billing) | Electronic-invoicing portal (PPF) | API_REST |  |
+| 9 | Invoice issuing and sending (Billing) | Accounts receivable (Accounting) | MQ |  |
+| 10 | Dunning and collection (Billing) | Customer-account management (CRM) | API_REST |  |
+| 11 | Accounts receivable (Accounting) | General ledger (Accounting) | batch |  |
+| 12 | Accountant | General ledger (Accounting) |  |  |
+| 13 | Accountant | Dunning and collection (Billing) |  |  |

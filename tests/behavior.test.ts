@@ -16,7 +16,7 @@ import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
 import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
-import { matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
+import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -565,7 +565,7 @@ test("lang: en (default) is unchanged — English chrome", async () => {
 
 test("matrix CSV: header, one row per flow, protocol/port split, zone annotation", () => {
   const { model } = check(load("infrastructure.cairn"));
-  const csv = matrixCsv(model, "en");
+  const csv = matrixCsv(buildFlowMatrix(model, views[model.type!]));
   const lines = csv.trim().split("\n");
   assert.equal(lines.length, model.flows.length + 1); // header + one row per flow
   assert.match(lines[0], /^No\.,Source,Destination,Protocol,Port,Flow$/);
@@ -621,17 +621,42 @@ test("security: trust zones are colored by sensitivity level + tag rendered", as
   assert.match(svg, />RESTRICTED</);
 });
 
-test("matrix respects lang: fr headers; md + svg render", () => {
-  const { model, view } = (() => {
-    const { model } = check(load("infrastructure.cairn"));
-    return { model, view: views[model.type!] };
-  })();
+// Each view declares its own columns in `views.ts` — the infrastructure table
+// is the reference shape, the others drop what their flows cannot carry.
+for (const [file, header] of [
+  ["application.cairn", "No.,Source,Destination,Protocol,Flow"],
+  ["security.cairn", "No.,Source,Destination,Protocol,Flow"],
+  ["logical.cairn", "No.,Source,Destination,Flow"],
+] as const) {
+  test(`matrix columns follow the view: ${file}`, () => {
+    const { model } = check(load(file));
+    const csv = matrixCsv(buildFlowMatrix(model, views[model.type!]));
+    assert.equal(csv.split("\n")[0], header);
+  });
+}
+
+test("matrix annotates an endpoint with the view's own container kind", () => {
+  // Infrastructure says `network-zone`/`site`; security says `trust-zone`.
+  const { model } = check(load("security.cairn"));
+  const csv = matrixCsv(buildFlowMatrix(model, views[model.type!]));
+  assert.ok(csv.includes("(Data zone)"));
+});
+
+test("matrix respects lang: fr headers; md renders the French title", () => {
+  // The locale is the diagram's own `style { lang }` — the exporters never take
+  // a language of their own, so CLI, API and playground cannot disagree.
+  const { model } = check(load("infrastructure-fr.cairn"));
+  const matrix = buildFlowMatrix(model, views[model.type!]);
   assert.match(
-    matrixCsv(model, "fr").split("\n")[0],
+    matrixCsv(matrix).split("\n")[0],
     /^N°,Source,Destination,Protocole,Port,Nature du flux$/,
   );
-  assert.match(matrixMd(model, view, "fr"), /MATRICE DES FLUX TECHNIQUES/);
-  const svg = matrixSvg(model, view, "en");
+  assert.match(matrixMd(matrix), /MATRICE DES FLUX TECHNIQUES/);
+});
+
+test("matrix svg renders a standalone document with the English title", () => {
+  const { model } = check(load("infrastructure.cairn"));
+  const svg = matrixSvg(buildFlowMatrix(model, views[model.type!]));
   assert.match(svg, /^<svg/);
   assert.match(svg, /TECHNICAL FLOW MATRIX/);
 });
@@ -676,7 +701,7 @@ test("security: a background colour cannot break out of the matrix SVG attribute
   );
   assert.equal(diags.filter((d) => d.severity === "error").length, 0, "fixture must build");
   model.style.background = 'x" onload="alert(1)';
-  const svg = matrixSvg(model, views[model.type!], "en");
+  const svg = matrixSvg(buildFlowMatrix(model, views[model.type!]));
   assert.ok(!/onload="alert/.test(svg), "attribute injection must not appear unescaped");
   assert.match(svg, /fill="x&quot; onload=&quot;alert\(1\)"/);
 });

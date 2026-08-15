@@ -167,11 +167,24 @@ Rules: styles never affect validation (semantics and cosmetics stay separate); v
 
 Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS MÉTIER`, `LÉGENDE`, French legend/kind names, and the flow-matrix headers). Only the rendered artifact changes — DSL keywords remain English (decision D2) so sources stay portable and diff-clean. Default `en` is byte-identical to prior output.
 
-## 2.1 Matrice des flux techniques
+## 2.1 Flow matrix
 
-> This is a standard French EA deliverable — the *matrice des flux techniques* — natively produced from a diagram-as-code DSL, which no other tool does.
+> This is a standard French EA deliverable — the *matrice des flux techniques* — natively produced from a diagram-as-code DSL
 
-`cairn matrix <file> --format csv|md|svg` tabulates the flows of a diagram (built for the `infrastructure` view). English columns: **No. · Source (zone) · Destination (zone) · Protocol · Port · Flow**; with `lang: fr` the headers switch to **N° · Source · Destination · Protocole · Port · Nature du flux**. The protocol/port pair is split from the infra tail `(HTTPS/443)`; each endpoint is annotated with its enclosing `network-zone`/`site`. `csv`/`md` produce an editable table for the architecture dossier; `svg` a theme-aware, paste-ready table image. Headers follow `style { lang }`. Output defaults to `<file>.flow.<ext>`.
+`cairn matrix <file> --format csv|md|svg` tabulates the flows of a diagram, one row per flow. **Every view exports one**, with the columns its flows can actually fill and its own container kind annotating each endpoint as `Name (Zone)`:
+
+| View | Columns (English) | Endpoint annotated with |
+|---|---|---|
+| `infrastructure` | No. · Source · Destination · Protocol · Port · Flow | `network-zone`, `site` |
+| `application` | No. · Source · Destination · Protocol · Flow | `application` |
+| `security` | No. · Source · Destination · Protocol · Flow | `trust-zone` |
+| `logical` | No. · Source · Destination · Flow | `layer`, `system` |
+
+Infrastructure is the reference shape — the deliverable the format was designed around. There the protocol/port pair is split from the infra tail `(HTTPS/443)`, and with `lang: fr` its headers read **N° · Source · Destination · Protocole · Port · Nature du flux**. Application takes the protocol half of the C4 tail `(API_REST, JSON)` and no port; logical flows carry no technical tail at all, so its table is who exchanges what with whom.
+
+`csv`/`md` produce an editable table for the architecture dossier; `svg` a theme-aware, paste-ready table image. Headers follow `style { lang }`. Output defaults to `<file>.flow.<ext>`.
+
+Which columns a view emits is view data, declared in `views.ts` — adding a view brings its own matrix shape with it, the exporter branches on nothing. The same table is available to embedders: `compile(source, { matrix: true })` returns it as data (`columns` + one `row` per flow), and the `matrixCsv` / `matrixMd` / `matrixSvg` exports format it exactly as the CLI does.
 
 ## 3. Diagnostics
 

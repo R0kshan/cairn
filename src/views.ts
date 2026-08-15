@@ -7,6 +7,7 @@
  */
 
 import type { StyleProps } from "./models/ast.ts";
+import type { MatrixSpec } from "./models/matrix.ts";
 
 interface NestingRule {
   code: string;
@@ -20,6 +21,8 @@ export interface View {
   name: string;
   kinds: string[];
   containerKinds: string[];
+  /** Which columns the flow matrix emits for this view, and what annotates an endpoint. */
+  matrix: MatrixSpec;
   legendNames: Record<string, string>;
   legendNamesFr: Record<string, string>;
   bandTitles: { flows: string; objects: string; legend: string };
@@ -85,6 +88,9 @@ const logicalView: View = {
   name: "logical",
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
   containerKinds: ["actor-group", "system", "layer", "external"],
+  // Logical flows carry no technical detail (flowTech* are null below), so the
+  // table is who exchanges what with whom.
+  matrix: { zoneKinds: ["layer", "system"], columns: ["num", "source", "dest", "nature"] },
   legendNames: {
     "actor-group": "Actor group",
     actor: "Actor",
@@ -205,6 +211,8 @@ const applicationView: View = {
   name: "application",
   kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
   containerKinds: ["actor-group", "application", "external"],
+  // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
+  matrix: { zoneKinds: ["application"], columns: ["num", "source", "dest", "proto", "nature"] },
   partitions: {
     "actor-group": 0,
     application: 1,
@@ -337,6 +345,11 @@ const infrastructureView: View = {
     "external",
   ],
   containerKinds: ["site", "network-zone", "server"],
+  // The reference shape: the matrice des flux techniques as an EA dossier expects it.
+  matrix: {
+    zoneKinds: ["network-zone", "site"],
+    columns: ["num", "source", "dest", "proto", "port", "nature"],
+  },
   partitions: { external: 2 },
   partitionByOrder: true,
   actorLegend: true,
@@ -493,6 +506,12 @@ const securityView: View = {
   name: "security",
   kinds: ["trust-zone", "security-node", "asset", "actor-group", "actor", "external"],
   containerKinds: ["trust-zone", "actor-group"],
+  // Security flows state their encryption (W0561) but no port; the trust zone
+  // an endpoint sits in is the point of the view, so it annotates every row.
+  matrix: {
+    zoneKinds: ["trust-zone"],
+    columns: ["num", "source", "dest", "proto", "nature"],
+  },
   legendNames: {
     "trust-zone": "Trust zone (sensitivity)",
     "security-node": "Filtering / security node",

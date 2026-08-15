@@ -53,6 +53,12 @@
   <button id="share">Copy share link</button>
   <button id="embed" title="A live SVG URL served by /api/svg — embed it in a README or docs">Copy embed URL</button>
   <button id="download">Download SVG</button>
+  <select id="matrix-format" title="Flow-matrix export format — same as `cairn matrix --format`">
+    <option value="csv">matrix: csv</option>
+    <option value="md">matrix: md</option>
+    <option value="svg">matrix: svg</option>
+  </select>
+  <button id="download-matrix" title="The flows of this diagram as a table — the matrice des flux techniques">Download matrix</button>
   <span class="note" id="note"></span>
 </header>
 <main>
@@ -69,7 +75,7 @@
 </main>
 
 <script type="module">
-import { compile, version, themeNames } from './cairn-engine.js';
+import { compile, version, themeNames, matrixCsv, matrixMd, matrixSvg } from './cairn-engine.js';
 
 // Minimal starter scaffolds — one per diagram type. Each is a clean base
 // that compiles with zero errors so you can build up from it.
@@ -122,7 +128,7 @@ const diagsEl = document.getElementById('diags');
 const stat    = document.getElementById('stat');
 const note    = document.getElementById('note');
 const themeSel = document.getElementById('theme');
-let lastSvg = null, zoom = 1, currentTheme = '';
+let lastSvg = null, lastMatrix = null, zoom = 1, currentTheme = '';
 
 // Populate the theme dropdown from the engine's theme list.
 for (const t of themeNames) {
@@ -154,7 +160,10 @@ async function run() {
   running = true;
   const src = editor.value;
   try {
-    const r = await compile(src, currentTheme ? { theme: currentTheme } : undefined);
+    // `matrix: true` costs a pass over the flows — no layout — so the export
+    // is ready the moment the button is clicked, without recompiling.
+    const r = await compile(src, { theme: currentTheme || undefined, matrix: true });
+    lastMatrix = r.matrix;
     diagsEl.innerHTML = r.diagnostics.map(d =>
       `<div class="diag" data-line="${d.span.line}"><b class="${d.severity === 'error' ? 'e' : 'w'}">${d.severity}[${d.code}]</b> line ${d.span.line}: ${escapeHtml(d.message)}${d.help ? `<span class="help">help: ${escapeHtml(d.help)}</span>` : ''}</div>`
     ).join('');
@@ -227,6 +236,23 @@ document.getElementById('download').addEventListener('click', () => {
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([lastSvg], { type: 'image/svg+xml' }));
   a.download = 'diagram.svg';
+  a.click();
+});
+
+const MATRIX_FORMATS = {
+  csv: { mime: 'text/csv',         format: matrixCsv },
+  md:  { mime: 'text/markdown',    format: matrixMd  },
+  svg: { mime: 'image/svg+xml',    format: matrixSvg },
+};
+
+document.getElementById('download-matrix').addEventListener('click', () => {
+  if (!lastMatrix || !lastMatrix.rows.length) { flash('no flows to tabulate'); return; }
+  const ext = document.getElementById('matrix-format').value;
+  const { mime, format } = MATRIX_FORMATS[ext];
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([format(lastMatrix)], { type: mime }));
+  // Same name the CLI writes: `cairn matrix <file>` → `<file>.flow.<ext>`.
+  a.download = 'diagram.flow.' + ext;
   a.click();
 });
 

@@ -21,9 +21,10 @@ to a class of bug that actually shipped.
 | Layer | File | Catches |
 |---|---|---|
 | Behaviour | `behavior.test.ts` | Parser, validator, diagnostics, CLI, matrix export — things with a right answer |
+| Public API | `api.test.ts` | `compile()` and the matrix formatters as an embedder calls them — the one-call surface no other layer touches |
 | Structural digest | `corpus.test.ts` → `__snapshots__/corpus.digest` | Any change to any example's geometry, colour or text |
 | SVG fidelity | `corpus.test.ts` → `examples/*.svg` | Committed example SVGs drifting from the code |
-| Detailed snapshots | `snapshot.test.ts` → `__snapshots__/*.snap.svg` | Full SVG for one fixture per view, every theme, matrix exports |
+| Detailed snapshots | `snapshot.test.ts` → `__snapshots__/*.snap.svg` | Full SVG for one fixture per view, every theme, and the matrix export for every view × every format (csv/md/svg) |
 | Readability | `scripts/sweep.ts` → `__snapshots__/readability.baseline` | The picture being *worse*, which every layer above passes |
 
 ### The digest is split three ways

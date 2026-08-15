@@ -16,5 +16,15 @@ import { setElkFactory } from "./elk-engine.ts";
 const ElkClass = ELKConstructor as unknown as new () => ELK;
 setElkFactory(() => new ElkClass());
 
-export { compile, themeNames, version } from "./api.ts";
-export type { CompileResult, Diagnostic, Severity, Span } from "./api.ts";
+export { compile, matrixCsv, matrixMd, matrixSvg, themeNames, version } from "./api.ts";
+export type {
+  CompileOptions,
+  CompileResult,
+  Diagnostic,
+  FlowMatrix,
+  FlowMatrixRow,
+  MatrixColumn,
+  MatrixColumnId,
+  Severity,
+  Span,
+} from "./api.ts";
