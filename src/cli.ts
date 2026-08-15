@@ -15,7 +15,7 @@ import { renderHuman, renderJson } from "./diagnostics.ts";
 import { layout } from "./scene-layout.ts";
 import type { Scene } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
-import { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
+import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
 import { views } from "./views.ts";
 import { explanations } from "./models/ast.ts";
 import type { Model, Span } from "./models/ast.ts";
@@ -360,7 +360,6 @@ if (command === "version" || command === "--version" || command === "-v") {
   }
   const { src, model, diagnostics } = loadAndCheck(file);
   exitIfErrors(file, src, diagnostics);
-  const view = views[model.type!];
   if (!model.flows.length) {
     console.error(`error: \`${file}\` declares no flows — nothing to tabulate`);
     process.exit(1);
@@ -368,12 +367,9 @@ if (command === "version" || command === "--version" || command === "-v") {
   const ext = format === "svg" ? "svg" : format === "md" ? "md" : "csv";
   const outFile = resolveOutputPath(file, ".flow." + ext);
   const lang = model.style.lang;
+  const matrix = buildFlowMatrix(model, views[model.type!]);
   const content =
-    format === "svg"
-      ? matrixSvg(model, view, lang)
-      : format === "md"
-        ? matrixMd(model, view, lang)
-        : matrixCsv(model, lang);
+    format === "svg" ? matrixSvg(matrix) : format === "md" ? matrixMd(matrix) : matrixCsv(matrix);
   writeFileSync(outFile, content);
   console.log(
     `\u2713 ${outFile} (matrice des flux — ${model.flows.length} flows, ${format}, lang: ${lang})`,

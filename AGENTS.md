@@ -16,8 +16,9 @@ the role for the phase you're in:
 ## What cairn is
 
 A diagram-as-code CLI for enterprise-architecture views — `logical`,
-`application`, `infrastructure`, `security` — rendered to SVG, plus an
-infrastructure *matrice des flux techniques* export. It sells **dense diagrams
+`application`, `infrastructure`, `security` — rendered to SVG, plus a
+*flow matrix* export per view (columns declared in `views.ts`),
+reachable from the CLI and from `compile()`. It sells **dense diagrams
 that stay readable**: overlap-free labels, typed views, deterministic output.
 Not a general diagramming tool.
 

@@ -92365,6 +92365,10 @@ var darkPalette = {
   chipStroke: "#b08d2a",
   chipText: "#e0c068"
 };
+var palettes = {
+  light: lightPalette,
+  dark: darkPalette
+};
 var flowPalette = {
   light: [
     "#1f77b4",
@@ -93492,6 +93496,9 @@ var logicalView = {
   name: "logical",
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
   containerKinds: ["actor-group", "system", "layer", "external"],
+  // Logical flows carry no technical detail (flowTech* are null below), so the
+  // table is who exchanges what with whom.
+  matrix: { zoneKinds: ["layer", "system"], columns: ["num", "source", "dest", "nature"] },
   legendNames: {
     "actor-group": "Actor group",
     actor: "Actor",
@@ -93611,6 +93618,8 @@ var applicationView = {
   name: "application",
   kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
   containerKinds: ["actor-group", "application", "external"],
+  // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
+  matrix: { zoneKinds: ["application"], columns: ["num", "source", "dest", "proto", "nature"] },
   partitions: {
     "actor-group": 0,
     application: 1,
@@ -93742,6 +93751,11 @@ var infrastructureView = {
     "external"
   ],
   containerKinds: ["site", "network-zone", "server"],
+  // The reference shape: the matrice des flux techniques as an EA dossier expects it.
+  matrix: {
+    zoneKinds: ["network-zone", "site"],
+    columns: ["num", "source", "dest", "proto", "port", "nature"]
+  },
   partitions: { external: 2 },
   partitionByOrder: true,
   actorLegend: true,
@@ -93896,6 +93910,12 @@ var securityView = {
   name: "security",
   kinds: ["trust-zone", "security-node", "asset", "actor-group", "actor", "external"],
   containerKinds: ["trust-zone", "actor-group"],
+  // Security flows state their encryption (W0561) but no port; the trust zone
+  // an endpoint sits in is the point of the view, so it annotates every row.
+  matrix: {
+    zoneKinds: ["trust-zone"],
+    columns: ["num", "source", "dest", "proto", "nature"]
+  },
   legendNames: {
     "trust-zone": "Trust zone (sensitivity)",
     "security-node": "Filtering / security node",
@@ -94253,20 +94273,20 @@ function checkElementAttributes(elements, view) {
 function checkTrustBoundaries(model, view) {
   if (!view.boundaryLint && !view.crossZoneTechRecommended) return [];
   const diagnostics = [];
-  const zoneOf = (id) => {
+  const zoneOf2 = (id) => {
     for (let ancestor = model.index.get(id)?.parent; ancestor; ancestor = ancestor.parent)
       if (ancestor.kind === "trust-zone") return ancestor;
     return void 0;
   };
   const trustLevelOf = (id) => {
-    const level = zoneOf(id)?.attr?.value;
+    const level = zoneOf2(id)?.attr?.value;
     return level && view.trustOrder?.[level] !== void 0 ? view.trustOrder[level] : -1;
   };
   const lint = view.boundaryLint;
   const isSecurityNode = (id) => lint !== void 0 && model.index.get(id)?.kind === lint.nodeKind;
   for (const flow of model.flows) {
     if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;
-    const crossesZone = zoneOf(flow.from) !== zoneOf(flow.to);
+    const crossesZone = zoneOf2(flow.from) !== zoneOf2(flow.to);
     const boundaryViolation = lint !== void 0 && trustLevelOf(flow.to) > trustLevelOf(flow.from) && !isSecurityNode(flow.from) && !isSecurityNode(flow.to);
     if (boundaryViolation) {
       diagnostics.push({
@@ -100121,6 +100141,164 @@ function render(model, view, scene) {
   return { svg, overlapsBefore, overlapsAfter };
 }
 
+// src/flow-matrix.ts
+var COLUMN_PRESENTATION = {
+  num: { align: "middle", maxWidth: 220 },
+  source: { align: "start", maxWidth: 420 },
+  dest: { align: "start", maxWidth: 420 },
+  proto: { align: "start", maxWidth: 220 },
+  port: { align: "middle", maxWidth: 220 },
+  nature: { align: "start", maxWidth: 360 }
+};
+var columnLabel = (id, lang) => {
+  const labels = UI[lang].matrix;
+  const byId = {
+    num: labels.n,
+    source: labels.source,
+    dest: labels.dest,
+    proto: labels.proto,
+    port: labels.port,
+    nature: labels.nature
+  };
+  return byId[id];
+};
+function zoneOf(model, id, zoneKinds) {
+  const element = model.index.get(id);
+  for (let ancestor = element?.parent; ancestor; ancestor = ancestor.parent) {
+    if (zoneKinds.includes(ancestor.kind)) return ancestor.label ?? ancestor.id;
+  }
+  return void 0;
+}
+var endpoint = (model, id, zoneKinds) => {
+  const element = model.index.get(id);
+  const name = element?.label?.replace(/\n/g, " ") ?? id;
+  const zone = zoneOf(model, id, zoneKinds);
+  return zone ? `${name} (${zone})` : name;
+};
+function splitProto(protocol) {
+  if (!protocol) return { proto: "", port: "" };
+  const slashIndex = protocol.lastIndexOf("/");
+  const tail = slashIndex >= 0 ? protocol.slice(slashIndex + 1) : "";
+  const hasNumericPort = slashIndex >= 0 && /^\d+$/.test(tail);
+  if (hasNumericPort) return { proto: protocol.slice(0, slashIndex), port: tail };
+  return { proto: protocol, port: "" };
+}
+function buildFlowMatrix(model, view) {
+  const lang = model.style.lang;
+  const matrixLabels = UI[lang].matrix;
+  const { zoneKinds, columns: columnIds } = view.matrix;
+  const columns = columnIds.map((id) => ({
+    id,
+    label: columnLabel(id, lang),
+    ...COLUMN_PRESENTATION[id]
+  }));
+  const rows = model.flows.map((flow) => {
+    const { proto, port } = splitProto(flow.tech?.protocol);
+    const byId = {
+      num: String(parseInt(flow.id.slice(1), 10)),
+      source: endpoint(model, flow.from, zoneKinds),
+      dest: endpoint(model, flow.to, zoneKinds),
+      proto,
+      port,
+      nature: (flow.label ?? "").replace(/\n/g, " ")
+    };
+    return { id: flow.id, cells: columns.map((column) => byId[column.id]) };
+  });
+  return {
+    view: model.type ?? "",
+    heading: model.title ? `${matrixLabels.title} \u2014 ${model.title}` : matrixLabels.title,
+    lang,
+    columns,
+    rows,
+    style: {
+      theme: model.style.theme,
+      background: model.style.background,
+      fontFamily: model.style.font.family
+    }
+  };
+}
+var csvCell = (text) => {
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+};
+function matrixCsv(matrix) {
+  const lines = [matrix.columns.map((column) => csvCell(column.label)).join(",")];
+  for (const row of matrix.rows) lines.push(row.cells.map(csvCell).join(","));
+  return lines.join("\n") + "\n";
+}
+var mdCell = (text) => text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n/g, " ");
+function matrixMd(matrix) {
+  const cols = matrix.columns.map((column) => column.label);
+  const outLines = [`# ${matrix.heading}`, ""];
+  outLines.push("| " + cols.join(" | ") + " |");
+  outLines.push("|" + cols.map(() => "---").join("|") + "|");
+  for (const row of matrix.rows) outLines.push("| " + row.cells.map(mdCell).join(" | ") + " |");
+  return outLines.join("\n") + "\n";
+}
+function matrixSvg(matrix) {
+  const pal = palettes[matrix.style.theme] ?? lightPalette;
+  const title = matrix.heading;
+  const headers = matrix.columns.map((column) => column.label);
+  const cells = matrix.rows.map((row) => row.cells);
+  const FONT_SIZE = 11, PADDING_X = 10, ROW_HEIGHT = 26, HEADER_HEIGHT = 30, TITLE_HEIGHT = 34;
+  const columnWidths = matrix.columns.map((column, colIndex) => {
+    const width = Math.max(
+      measure(column.label, FONT_SIZE).width,
+      ...cells.map((row) => measure(row[colIndex], FONT_SIZE).width)
+    );
+    return Math.min(width + 2 * PADDING_X, column.maxWidth);
+  });
+  const totalWidth = columnWidths.reduce((sum, value) => sum + value, 0);
+  const viewWidth = Math.max(totalWidth, measure(title, 13).width) + 2;
+  const viewHeight = TITLE_HEIGHT + HEADER_HEIGHT + matrix.rows.length * ROW_HEIGHT + 2;
+  const columnXPositions = [];
+  {
+    let columnX = 0;
+    for (const width of columnWidths) {
+      columnXPositions.push(columnX);
+      columnX += width;
+    }
+  }
+  const textXOf = (colIndex) => matrix.columns[colIndex].align === "middle" ? columnXPositions[colIndex] + columnWidths[colIndex] / 2 : columnXPositions[colIndex] + PADDING_X;
+  let svgOutput = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${viewHeight}" font-family="${escAttr(matrix.style.fontFamily)},Arial,sans-serif">
+`;
+  svgOutput += `<rect width="${viewWidth}" height="${viewHeight}" fill="${escAttr(matrix.style.background ?? pal.background)}"/>
+`;
+  svgOutput += `<text x="1" y="22" font-size="13" font-weight="bold" fill="${pal.bandTitle}">${esc(title)}</text>
+`;
+  const headerY = TITLE_HEIGHT;
+  svgOutput += `<rect x="0" y="${headerY}" width="${totalWidth}" height="${HEADER_HEIGHT}" fill="${pal.containerFill}" stroke="${pal.divider}"/>
+`;
+  headers.forEach((header, colIndex) => {
+    svgOutput += `<text x="${textXOf(colIndex)}" y="${headerY + 20}" font-size="${FONT_SIZE}" font-weight="bold" text-anchor="${matrix.columns[colIndex].align}" fill="${pal.bandTitle}">${esc(header)}</text>
+`;
+  });
+  cells.forEach((row, rowIndex) => {
+    const rowY = headerY + HEADER_HEIGHT + rowIndex * ROW_HEIGHT;
+    if (rowIndex % 2 === 1)
+      svgOutput += `<rect x="0" y="${rowY}" width="${totalWidth}" height="${ROW_HEIGHT}" fill="${pal.divider}" opacity="0.18"/>
+`;
+    row.forEach((cellText, colIndex) => {
+      let text = cellText;
+      const maxChars = Math.floor(
+        (columnWidths[colIndex] - 2 * PADDING_X) / (FONT_SIZE * CHAR_WIDTH)
+      );
+      if (text.length > maxChars) text = text.slice(0, Math.max(1, maxChars - 1)) + "\u2026";
+      svgOutput += `<text x="${textXOf(colIndex)}" y="${rowY + 17}" font-size="${FONT_SIZE}" text-anchor="${matrix.columns[colIndex].align}" fill="${pal.bandText}">${esc(text)}</text>
+`;
+    });
+  });
+  for (let colIndex = 1; colIndex < columnXPositions.length; colIndex++)
+    svgOutput += `<line x1="${columnXPositions[colIndex]}" y1="${headerY}" x2="${columnXPositions[colIndex]}" y2="${viewHeight - 2}" stroke="${pal.divider}" stroke-width="1"/>
+`;
+  svgOutput += `<line x1="0" y1="${viewHeight - 2}" x2="${totalWidth}" y2="${viewHeight - 2}" stroke="${pal.divider}"/>
+`;
+  svgOutput += `<rect x="0" y="${headerY}" width="${totalWidth}" height="${viewHeight - headerY - 2}" fill="none" stroke="${pal.divider}"/>
+`;
+  svgOutput += "</svg>\n";
+  return svgOutput;
+}
+
 // src/compile.ts
 async function compile(source, options) {
   const { model, diags } = parse(source);
@@ -100128,9 +100306,10 @@ async function compile(source, options) {
   diags.push(...validate(model));
   const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
-    return { svg: null, diagnostics: diags, metrics: null };
+    return { svg: null, diagnostics: diags, metrics: null, matrix: null };
   }
   const view = views[model.type];
+  const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
   const scene = await layout(model, view);
   const { svg, overlapsAfter } = render(model, view, scene);
   return {
@@ -100141,7 +100320,8 @@ async function compile(source, options) {
       height: scene.height,
       layoutMs: scene.layoutMs,
       overlaps: overlapsAfter
-    }
+    },
+    matrix
   };
 }
 
@@ -100153,6 +100333,9 @@ var ElkClass = import_elk_bundled.default;
 setElkFactory(() => new ElkClass());
 export {
   compile,
+  matrixCsv,
+  matrixMd,
+  matrixSvg,
   themeNames,
   version
 };

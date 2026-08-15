@@ -128,7 +128,7 @@ FIXTURE="$PWD/examples/application-medium.cairn"
     // Unfiltered on purpose: a stray `default` is exactly the kind of export
     // that appears by accident and cannot be withdrawn once published.
     const actual = Object.keys(engine).sort();
-    const expected = ["compile", "themeNames", "version"];
+    const expected = ["compile", "matrixCsv", "matrixMd", "matrixSvg", "themeNames", "version"];
     if (actual.join() !== expected.join()) {
       throw new Error(`published surface is [${actual}], expected [${expected}]`);
     }

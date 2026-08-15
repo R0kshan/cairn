@@ -540,6 +540,20 @@ The matrix (csv/md/svg) splits protocol from port, annotates each endpoint with
 its network zone (infrastructure), and localises headers via `style { lang: fr
 }`. Matrix output is byte-deterministic like SVG.
 
+Columns are view data, not exporter logic: `views.ts` declares each view's
+column list and zone kinds (`View.matrix`), and `flow-matrix.ts` never branches
+on a diagram type — the same rule the rest of the registry follows
+([ARCHITECTURE §4](./ARCHITECTURE.md#4-the-views-registry-as-the-extension-point)).
+The infrastructure table is the reference shape and may not change silently:
+`examples/infrastructure.flow.{csv,md,svg}` and the snapshots gate it.
+
+One table, two callers: `cairn matrix` and `compile(source, { matrix: true })`
+both go through `buildFlowMatrix` and the same formatters, so the CLI and an
+embedder can never produce different bytes for the same source. The locale comes
+from the model (`style { lang }`) and nowhere else — no exporter takes a language
+argument of its own. `tests/api.test.ts` holds the API output against the
+committed `examples/infrastructure.flow.csv` the CLI wrote.
+
 ## 16. Flow positioning is blind to the DSL
 
 Everything that moves a flow — `edge-tidy`, `route-detour`, `label-anchor`,
