@@ -231,12 +231,21 @@ document.getElementById('embed').addEventListener('click', async () => {
   flash('embed URL copied ✓  (served by /api/svg)');
 });
 
+// Hand the blob to the browser as a download, then release the object URL —
+// it stays allocated until the page unloads otherwise. Revoking on the next
+// tick rather than straight after click(), which can cancel the download.
+function download(content, mime, filename) {
+  const url = URL.createObjectURL(new Blob([content], { type: mime }));
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
 document.getElementById('download').addEventListener('click', () => {
   if (!lastSvg) return;
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([lastSvg], { type: 'image/svg+xml' }));
-  a.download = 'diagram.svg';
-  a.click();
+  download(lastSvg, 'image/svg+xml', 'diagram.svg');
 });
 
 const MATRIX_FORMATS = {
@@ -249,11 +258,8 @@ document.getElementById('download-matrix').addEventListener('click', () => {
   if (!lastMatrix || !lastMatrix.rows.length) { flash('no flows to tabulate'); return; }
   const ext = document.getElementById('matrix-format').value;
   const { mime, format } = MATRIX_FORMATS[ext];
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([format(lastMatrix)], { type: mime }));
   // Same name the CLI writes: `cairn matrix <file>` → `<file>.flow.<ext>`.
-  a.download = 'diagram.flow.' + ext;
-  a.click();
+  download(format(lastMatrix), mime, 'diagram.flow.' + ext);
 });
 
 document.getElementById('zoom').addEventListener('click', e => {

@@ -100217,7 +100217,10 @@ function buildFlowMatrix(model, view) {
     }
   };
 }
-var csvCell = (text) => /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+var csvCell = (text) => {
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+};
 function matrixCsv(matrix) {
   const lines = [matrix.columns.map((column) => csvCell(column.label)).join(",")];
   for (const row of matrix.rows) lines.push(row.cells.map(csvCell).join(","));
