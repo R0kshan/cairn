@@ -105,8 +105,14 @@ export function buildFlowMatrix(model: Model, view: View): FlowMatrix {
   };
 }
 
-const csvCell = (text: string): string =>
-  /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+const csvCell = (text: string): string => {
+  // A cell opening with `= + - @` (or a tab/CR before them) is executable formula
+  // text in Excel and Sheets, and element names come from the .cairn source. The
+  // leading apostrophe forces the spreadsheet to read the cell as literal text —
+  // the CSV counterpart of escaping user text before SVG emission.
+  const safe = /^[=+\-@\t\r]/.test(text) ? `'${text}` : text;
+  return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+};
 
 export function matrixCsv(matrix: FlowMatrix): string {
   const lines = [matrix.columns.map((column) => csvCell(column.label)).join(",")];

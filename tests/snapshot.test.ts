@@ -13,7 +13,7 @@
  * Three paths are guarded:
  *   1. CANARIES — diagram rendering (parse → validate → layout → render)
  *   2. THEMES — one snapshot per built-in theme
- *   3. MATRIX — flow-matrix exporters (csv/md/svg), infrastructure + security
+ *   3. MATRIX — flow-matrix exporters (csv/md/svg), every view × every format
  */
 
 import { test } from "node:test";

@@ -171,7 +171,7 @@ Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS 
 
 > This is a standard French EA deliverable — the *matrice des flux techniques* — natively produced from a diagram-as-code DSL
 
-`cairn matrix <file> --format csv|md|svg` tabulates the flows of a diagram, one row per flow. **Every view exports one**, with the columns its flows can actually fill and its own container kind annotating each endpoint as `Name (Zone)`:
+`cairn matrix <file> --format csv|md|svg` tabulates the flows of a diagram, one row per flow. **Every view exports one**, with the columns its flows can actually fill and its own container kind annotating the endpoints that sit in one, as `Name (Zone)` — an endpoint declared outside any of them (an `external`, a root-level actor) is listed by name alone:
 
 | View | Columns (English) | Endpoint annotated with |
 |---|---|---|
