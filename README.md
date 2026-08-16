@@ -56,14 +56,9 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
     </tr>
     <tr>
       <td>I encountered overlapping issues for which I couldn't find a workaround</td>
-      <td>The overlapping issues have been addressed. A caveat remains: the long-distance arrow can affect readability (still working on improvements)</td>
+      <td>The overlapping labels have been addressed.</td>
     </tr>
     </table>
-
-## Known limitations I'm working on
-
-* While Cairn ensures 0 label overlap, flows on large diagrams still take a longer than neccessary route to the target element - issue [#26](https://github.com/R0kshan/cairn/issues/26) created to adress this
-* At the moment Cairn doesn't give the user the possibility to control positioning - issue [#8](https://github.com/R0kshan/cairn/issues/8) created to adress this
 
 ## Usage
 

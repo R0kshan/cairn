@@ -116,7 +116,7 @@ those separately as accepted trades. Tier 0 has nothing above it, so nothing
 ever buys a tier 0 regression — metrics in MUST_BE_ZERO are checked unconditionally,
 while tier-0 ratchets (throughContainer, titleStruck, labelPierced) are gated by their ceilings.
 [`internals/ROUTING.md`](internals/ROUTING.md) explains the
-ladder and [`LADDER.md`](LADDER.md) documents its
+ladder and [`READABILITY_METRICS.md`](READABILITY_METRICS.md) documents its
 implementation — what every metric measures, its tier, and which of the three
 gates holds it; [`../tests/README.md`](../tests/README.md) explains how the gates fit
 together.

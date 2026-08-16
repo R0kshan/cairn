@@ -132,7 +132,7 @@ separately; run them locally when touching bundling or the elkjs worker.
 | This file | You need the system shape, not just a rule |
 | [`DSL_SPEC.md`](./DSL_SPEC.md) | Writing or changing `.cairn` syntax |
 | [`DIAGNOSTICS.md`](./DIAGNOSTICS.md) | Adding or looking up a diagnostic code |
-| [`READABILITY_METRICS.md`](./READABILITY_METRICS.md) | You want to know what the sweep gate measures and why |
+| [`READABILITY_METRICS.md`](./READABILITY_METRICS.md) | You want to know what the sweep gate measures, how severe each defect is, and why |
 | [`internals/ROUTING.md`](./internals/ROUTING.md) | You want to understand flow routing conceptually |
 | [`internals/ROUTING_IMPLEMENTATION.md`](./internals/ROUTING_IMPLEMENTATION.md) | Touching `route-detour.ts` or `edge-tidy.ts` |
 | [`.agents/reference/WORKING_METHODOLOGY.md`](../.agents/reference/WORKING_METHODOLOGY.md) | You need the working method, not just the facts |
