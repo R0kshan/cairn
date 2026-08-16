@@ -270,8 +270,12 @@ sweep will find trades that look free to it and read as regressions to the gate.
 ### `turnHeavy` · ratchet
 **What you see:** a flow that weaves.
 More than two turns. Two nodes are always joinable by a straight run, an L or a
-Z, so a third corner cannot be explained by geometry — it means the flow left
-through a side that did not face where it was going.
+Z, so a third corner is never forced by the *endpoints* alone — usually it means
+the flow left through a side that did not face where it was going. It is charged
+as debt rather than a bug because the rest of the drawing can still justify it:
+the straighter route may cross another flow or cut through a box, and the
+reroute refuses to buy turns with tangles. What remains under the ceiling is
+mostly that case.
 
 ### `jog<=6` · ratchet
 **What you see:** a tiny step in an otherwise straight run.
@@ -319,9 +323,13 @@ flow-instance*, not a raw count — so adding fixtures cannot spuriously fail th
 gate. Rates may only fall.
 
 **3. The per-drawing baseline.** `tests/__snapshots__/readability.baseline`
-records the accepted count for every drawing × metric. The rates alone have a
-blind spot: a change can improve sixty drawings, quietly make one worse, and
-every total still falls. This catches that — and applies the same tier rule:
+records the accepted count per drawing × metric. It is **sparse** — only
+non-zero counts are written, and an absent entry means an accepted count of 0,
+which the check reads as `floor.get(kind) ?? 0`. A drawing with no entry at all
+is a new fixture: reported, not gated, until `--update-baseline` records it. The
+rates alone have a blind spot: a change can improve sixty drawings, quietly make
+one worse, and every total still falls. This catches that — and applies the same
+tier rule:
 
 ```js
 if (bestGain < item.tier) trades.push(...)   // accepted: paid for by a better tier
@@ -377,9 +385,14 @@ forbid is one the ladder should never even be offered.
 
 1. **A move may never drag a run through a node's interior.** Unconditional —
    checked regardless of what the move would otherwise fix.
-2. **A move may never create a merge with another flow** — the same thresholds as
-   the `coincident`/`nearParallel` metrics above (`gap < 4px` & `shared > 6px`,
-   or `gap < 11px` & `shared > 36px`). This wins even over fixing a jog or a
+2. **A move may never create a merge with another flow** — `wouldMerge` in
+   `edge-tidy.ts`: `gap < 4px` & `shared > 6px`, or `gap < 11px` & `shared >
+   36px`. **Wider than the metrics they protect** (`coincident` is `gap < 3px` &
+   `shared > 8px`; `nearParallel` is `gap < 10px` & `shared > 40px`), so the
+   guard refuses some moves the gate would have tolerated — safe in that
+   direction, but the reason for the specific margins is not recorded anywhere,
+   and INVARIANTS §3 asks that a guard differing from its metric say why next to
+   both. This wins even over fixing a jog or a
    shared attachment point: **a jog or a shared attachment point is deliberately
    left in place rather than traded for a merged line** — two flows that are
    individually a little untidy beats two flows that read as one.
@@ -413,9 +426,21 @@ Running it earlier cost 36 per-drawing regressions.
 
 Its candidates per edge: four sides × four sides, seat offsets `[0, -18, 18]` at
 each end, giving **one** L when the sides are perpendicular, three Zs when they
-oppose, and nothing when they face the same way. Ordered fewest-turns-then-
-shortest, and **the first candidate the ladder accepts wins** — the ladder decides
-what is *allowed*, never which of two allowed routes is better.
+oppose, and the U shapes `channelU` derives when they face the same way — lanes
+cleared of the runs already in the drawing (§4j), so this branch produces
+candidates rather than none.
+
+Ordering is fewest-turns-then-shortest, but that ranking only decides what to
+*try* first. **The best accepted candidate wins, not the first**
+(`bestSingleRoute`): every candidate is weighed, and `lessDamaged` keeps the one
+with the least remaining damage, stopping early only on a candidate with nothing
+left to repair. Taking the first meant the ranking silently decided outcomes the
+ladder was supposed to own — a 1-turn L clearing a struck title beat a 2-turn U
+clearing the title *and* a run through a container, purely because it was tried
+earlier. `lessDamaged` is strict, so ordering still breaks genuine ties. The
+ladder remains the authority on what is *allowed*; `lessDamaged` picks among
+what it allowed, and `repairToFixpoint` reiterates because one accepted move can
+unblock another.
 
 One thing the ladder cannot see: moving a route can cost a *neighbouring* flow
 its label seat, and which label the settler lifts is not a fact until settling has
