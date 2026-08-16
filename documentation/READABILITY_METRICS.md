@@ -10,22 +10,6 @@ scores or gates a drawing.
 
 ---
 
-## Three questions, not one
-
-Almost every confusion about this system comes from running three separate
-questions together. Keep them apart and the rest follows.
-
-| Question | Answered by | Example |
-|---|---|---|
-| **What went wrong?** | the **metric** | `nearParallel` — two runs 8px apart for 60px |
-| **How much does it matter?** | the **tier** | tier 2 — you can attribute both lines, but following one takes effort |
-| **Is this output allowed to ship?** | the **gate** | ratchet — 73 of them are tolerated corpus-wide today |
-
-A metric is a measurement. A tier is a *ranking*, used when deciding whether a
-change is an improvement. A gate is a *policy*, deciding what the build tolerates
-right now. They move independently: a tier-0 defect can be tolerated debt, and a
-tier-4 defect could in principle be forbidden outright.
-
 ## The ladder
 
 The tier ranking plus its one acceptance rule is called **the ladder** throughout
