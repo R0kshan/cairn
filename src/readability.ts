@@ -1,6 +1,7 @@
 /**
  * The readability ladder: one ranking and one acceptance rule, shared by every
- * pass that moves geometry. Tiers and their defects: `documentation/LADDER.md`.
+ * pass that moves geometry. Tiers and their defects:
+ * `documentation/READABILITY_METRICS.md`.
  *
  * A profile is keyed by defect *identity*, never tallied — a count cannot see a
  * defect move: reordering four risers once lowered a drawing's crossing count
