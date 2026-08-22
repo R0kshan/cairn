@@ -14,11 +14,17 @@ actor-group VENTES "Acteurs des ventes" {
 
 system COMMANDES "Plateforme de commandes" {
   application APP_CMD "Gestion des commandes" {
+    order: 1
     module SAISIE "Saisie des\ncommandes"
     module CONTROLE "Contrôle des\ncommandes"
   }
-  queue EVENEMENTS "Bus d'événements\ncommandes"
-  datastore REF_CMD "Référentiel\ndes commandes"
+  # `order:` reste un mot-clé anglais même avec `lang: fr` (décision D2).
+  queue EVENEMENTS "Bus d'événements\ncommandes" {
+    order: 2
+  }
+  datastore REF_CMD "Référentiel\ndes commandes" {
+    order: 3
+  }
 }
 
 external TRANSPORTEUR "Suivi transporteur\n(tiers)"

@@ -84,13 +84,17 @@ export interface SceneEdge {
    */
   detour?: boolean;
   /**
-   * The author pinned at least one of this flow's terminals to a node side
+   * Which of this flow's terminals the author pinned to a node side
    * (`APP.right -> DB.left`). A pinned terminal is intent, not a metric win, so
-   * the re-siding pass leaves it alone and `attachAway` exempts it — the same
-   * mechanism as `detour`, and a plain boolean on geometry, so no positioning
-   * pass has to know an element kind to honor it (invariant §16).
+   * the passes that would move it stand down: re-siding skips the edge,
+   * `route-detour` never channels it, `attachAway` exempts it, and the route
+   * repair may only offer it candidates that keep the pinned end on its side.
+   *
+   * Per end, so a half-pinned flow keeps its free end free. Geometry only —
+   * which end, never which DSL side — so no positioning pass has to know an
+   * element kind to honor it (invariant §16).
    */
-  pinned?: boolean;
+  pinned?: { start?: boolean; end?: boolean };
   /**
    * The route this flow had before `optimiseRoutes` moved it. Kept so the
    * renderer can undo a repair that cost some label its seat — that verdict is
@@ -958,10 +962,15 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const edges = collectSceneEdges(result, origins, numbered, edgeFontSize);
     // Before any geometry pass runs: `pinned` is what tells them the terminal
     // side is the author's, not elk's guess.
-    const pinnedFlows = new Set(
-      model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => flow.id),
+    const pinnedFlows = new Map(
+      model.flows
+        .filter((flow) => flow.fromSide || flow.toSide)
+        .map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }] as const),
     );
-    for (const edge of edges) if (pinnedFlows.has(edge.id)) edge.pinned = true;
+    for (const edge of edges) {
+      const pinned = pinnedFlows.get(edge.id);
+      if (pinned) edge.pinned = { ...pinned };
+    }
 
     const scene: Scene = {
       width: Math.ceil(result.width),

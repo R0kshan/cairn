@@ -971,10 +971,27 @@ test("`ID.side` pins where a flow leaves and arrives, and marks the edge pinned"
   assert.equal(pinned.toSide?.value, "top");
   assert.equal(sideOfTerminal(scene, pinned.id, "M1", "start"), "bottom");
   assert.equal(sideOfTerminal(scene, pinned.id, "DB", "finish"), "top");
-  assert.equal(scene.edges.find((edge) => edge.id === pinned.id)!.pinned, true);
+  // Both ends pinned, recorded per end so a half-pinned flow keeps its free end.
+  assert.deepEqual(scene.edges.find((edge) => edge.id === pinned.id)!.pinned, {
+    start: true,
+    end: true,
+  });
   // An unpinned flow in the same drawing carries no flag — the exemption is opt-in.
   const free = model.flows.find((flow) => flow.from === "U1")!;
   assert.equal(scene.edges.find((edge) => edge.id === free.id)!.pinned, undefined);
+});
+
+test("a half-pinned flow records only the end the author named", async () => {
+  const { scene, model } = await build(
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\ndatastore DB "Store"\nU1 -> M1 (API_REST, JSON)\nM1 -> DB.left (JDBC)\n',
+  );
+  const half = model.flows.find((flow) => flow.from === "M1")!;
+  assert.equal(half.fromSide, undefined);
+  assert.equal(half.toSide?.value, "left");
+  assert.deepEqual(scene.edges.find((edge) => edge.id === half.id)!.pinned, {
+    start: false,
+    end: true,
+  });
 });
 
 test("a declared id beats the `ID.side` reading (W0571), and an unknown side is E0223 alone", () => {

@@ -3222,6 +3222,9 @@ function unweaveAndClearContainers(ctx: TidyContext): void {
   for (const edge of [...scene.edges].sort(
     (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0),
   )) {
+    // Unweaving re-sides a terminal, which is the one thing a pinned end is not
+    // available for — the author chose that side and elk delivered it.
+    if (edge.pinned) continue;
     unweaveEdge(uctx, edge);
   }
 }
@@ -3660,6 +3663,8 @@ function repairToFixpoint(o: RouteOptimiser): void {
 interface LaneModel {
   channelU: (a: Point, b: Point, side: Side, subject: RouteSubject) => Point[][];
   isChannelU: (pts: Point[]) => boolean;
+  /** The nearest lane past `search.start` that clears every obstacle, or null. */
+  laneBeyond: (search: LaneSearch, subject: RouteSubject, clearRuns: boolean) => number | null;
 }
 
 /** Clear of the outermost border without leaving the canvas. */
@@ -3895,7 +3900,7 @@ function createLaneModel(deps: {
     return fromA * fromB > 0;
   };
 
-  return { channelU, isChannelU };
+  return { channelU, isChannelU, laneBeyond };
 }
 
 export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded = false): void {
@@ -3921,7 +3926,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
 
     /** Bumped by every accepted move; invalidates every cache keyed on the scene's geometry. */
     const clock: RepairClock = { generation: 0 };
-    const { channelU, isChannelU } = createLaneModel({
+    const { channelU, isChannelU, laneBeyond } = createLaneModel({
       scene,
       inspector,
       titleBoxes,
@@ -3938,7 +3943,10 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     ): Point[][] => {
       const aH = horizontalSide(sides.a);
       const bH = horizontalSide(sides.b);
-      if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
+      if (aH !== bH) {
+        const plainL = [a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b];
+        return [plainL, ...approachLanes(a, b, sides, subject)];
+      }
       if (outward(sides.a) === outward(sides.b)) return channelU(a, b, sides.a, subject);
       if (aH)
         return [
@@ -3951,6 +3959,71 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
         Math.min(a.y, b.y) + CHANNEL_INSET,
         Math.max(a.y, b.y) - CHANNEL_INSET,
       ].map((mid) => [a, { x: a.x, y: mid }, { x: b.x, y: mid }, b]);
+    };
+
+    /**
+     * The way into a side the plain L cannot reach cleanly.
+     *
+     * A mixed-orientation pair (leave north, arrive east) has exactly one shape:
+     * the L that turns at one seat's own coordinate, which from a north seat
+     * runs along the node's top edge and is thrown out as a side hug. An
+     * unpinned flow simply takes another side pair; a pinned one may not, so
+     * without an alternative it keeps whatever elk drew, detours and all.
+     *
+     * So offer the approach: step clear of `a`, cross in a lane past `b`'s open
+     * side, then come in. The lane comes from `laneBeyond`, the same search the
+     * channel U uses — a fixed inset lands in whatever corridor is already
+     * there, which is exactly the crossing the detour was avoiding. Both lanes
+     * are offered: the obstacle-derived one, and the one that also clears
+     * parallel runs (§4j).
+     *
+     * Pinned edges only. Unpinned ones have the whole side matrix to search, and
+     * widening it for them costs build time the ladder does not pay back.
+     */
+    const approachLanes = (
+      a: Point,
+      b: Point,
+      sides: { a: Side; b: Side },
+      subject: RouteSubject,
+    ): Point[][] => {
+      if (!subject.edge.pinned) return [];
+      const aH = horizontalSide(sides.a);
+      const bH = horizontalSide(sides.b);
+      // Both legs get a searched lane, not a fixed step: the leg leaving `a` has
+      // to clear whatever sits beyond that side — a container's name band, most
+      // often — and a fixed 24px offset lands straight in it, which is a tier-0
+      // defect and an instant rejection.
+      const beforeA = sides.a === "west" || sides.a === "north";
+      const crossLane = laneBeyond(
+        {
+          spanLo: Math.min(a.x, b.x),
+          spanHi: Math.max(a.x, b.x),
+          start: (aH ? a.x : a.y) + (beforeA ? -CHANNEL_STEP : CHANNEL_STEP),
+          vertical: !aH,
+          before: beforeA,
+        },
+        subject,
+        true,
+      );
+      if (crossLane === null) return [];
+      const beforeB = sides.b === "west" || sides.b === "north";
+      const search: LaneSearch = {
+        spanLo: bH ? Math.min(crossLane, b.y) : Math.min(crossLane, b.x),
+        spanHi: bH ? Math.max(crossLane, b.y) : Math.max(crossLane, b.x),
+        start: (bH ? b.x : b.y) + (beforeB ? -CHANNEL_STEP : CHANNEL_STEP),
+        // `laneBeyond` names the axis after the terminal legs: a lane at a
+        // constant x is the `vertical: false` search.
+        vertical: !bH,
+        before: beforeB,
+      };
+      const lanes = [laneBeyond(search, subject, false), laneBeyond(search, subject, true)].filter(
+        (lane, index, all): lane is number => lane !== null && all.indexOf(lane) === index,
+      );
+      return lanes.map((lane) =>
+        bH
+          ? [a, { x: a.x, y: crossLane }, { x: lane, y: crossLane }, { x: lane, y: b.y }, b]
+          : [a, { x: crossLane, y: a.y }, { x: crossLane, y: lane }, { x: b.x, y: lane }, b],
+      );
     };
 
     /** Candidate routes for one edge, cheapest-looking first, de-duplicated. */
@@ -3970,8 +4043,13 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       const subject: RouteSubject = { ends, edge };
       const out: Point[][] = [];
       const seen = new Set<string>();
-      for (const aSide of SIDES)
-        for (const bSide of SIDES) {
+      // A pinned end is only ever offered the side it already sits on: the
+      // repair may straighten a pinned flow's body, never move the terminal the
+      // author placed. The free end of a half-pinned flow keeps the full search.
+      const aSides: Side[] = edge.pinned?.start ? [ends[0].side] : SIDES;
+      const bSides: Side[] = edge.pinned?.end ? [ends[1].side] : SIDES;
+      for (const aSide of aSides)
+        for (const bSide of bSides) {
           const sides = { a: aSide, b: bSide };
           for (const aOff of seatOffsetsFor(ends[0].node, aSide))
             for (const bOff of seatOffsetsFor(ends[1].node, bSide))
@@ -4011,12 +4089,7 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     };
 
     const rank = (edge: SceneEdge) => Number.parseInt(edge.id.slice(1), 10) || 0;
-    // Pinned edges are excluded, not merely ranked last: every candidate route
-    // this pass builds reseats both terminals, so any move it made would land
-    // the flow somewhere other than the side the author pinned it to.
-    const ordered = [...scene.edges]
-      .filter((edge) => !edge.pinned)
-      .sort((a, b) => rank(a) - rank(b));
+    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
 
     /** Flows sharing a node with this one — the ones a joint move can help. */
     const neighboursOf = (edge: SceneEdge): SceneEdge[] => {

@@ -141,13 +141,14 @@ Same file:
 
 ```
 FORM.right -> TRIAGE.left (API_REST, JSON)   # both ends pinned
-TRIAGE -> TASKS.left (MQ, JSON)              # only the arrival pinned
+TRIAGE -> TASKS.bottom (MQ, JSON)            # only the arrival pinned
 SCORING.top -> TRIAGE.right (API_REST, JSON) # a backward flow, pinned both ends
 ```
 
-A pinned flow keeps its sides through the routing passes that own every other
-flow — including the channel rerouting that would otherwise take over a backward
-flow like the third one. A side the layout genuinely cannot reach is dropped
+A pin fixes the two ends, not the path between them. The passes that would move a
+terminal stand down — including the channel rerouting that would otherwise take
+over a backward flow like the third one — while the route itself is still tidied,
+along shapes that leave the pinned ends where you put them. A side the layout genuinely cannot reach is dropped
 rather than forced into an unreadable route, and reported as `W0570` — never
 silently ignored. Note that `A.right` loses to an element actually *named*
 `A.right` (`W0571`), and an unknown side name is `E0223`.
@@ -172,8 +173,11 @@ actor-group STAFF "Payment actors" {
 
 Values need not be contiguous, siblings without an `order` stay wherever the
 engine puts them, and the hint never moves an element into another band. The
-same file orders the queue and the datastore inside their system boundary, and
-pins `POSTING.bottom -> LEDGER_DB.top`:
+attachment-sides file above orders its containers, its modules and its leaves
+too, and ships as `wide`, `tall`, `slide` and `page` variants in
+[`examples/dispositions/`](examples/dispositions/) — same ordering and the same
+pins, four layouts. The file below orders the queue and the datastore inside
+their system boundary and pins `POSTING.bottom -> LEDGER_DB.top`:
 
 <p align="center"><img src="examples/positioning.svg" alt="Element ordering, pinned sides and arrow glyphs" width="760"></p>
 

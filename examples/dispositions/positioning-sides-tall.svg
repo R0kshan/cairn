@@ -1,77 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 636 1005" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 664 1013" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="636" height="1005" fill="#ffffff"/>
-<rect x="62" y="22" width="119" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="72" y="40" font-size="13" font-weight="bold" fill="#17202c">Claims actors</text>
-<rect x="50" y="126" width="575.5833333333333" height="643" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="60" y="144" font-size="13" font-weight="bold" fill="#17202c">Claims platform</text>
-<rect x="59" y="178" width="326" height="180.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="69" y="196" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
-<rect x="357.5833333333333" y="543.5" width="136" height="105" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="367.5833333333333" y="561.5" font-size="13" font-weight="bold" fill="#17202c">Assessment</text>
-<circle cx="121.5" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 110.5 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="121.5" y="93" font-size="11" text-anchor="middle" fill="#20364c">Claims handler</text>
-<rect x="68" y="205" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="122" y="225.25" font-size="12.5" text-anchor="middle" fill="#17202c">Claim</text>
-<text x="122" y="239.75" font-size="12.5" text-anchor="middle" fill="#17202c">form</text>
-<rect x="256" y="310.5" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="310" y="333.5" font-size="12.5" text-anchor="middle" fill="#17202c">Triage</text>
-<rect x="366.5833333333333" y="591.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="420.5833333333333" y="611.75" font-size="12.5" text-anchor="middle" fill="#17202c">Risk</text>
-<text x="420.5833333333333" y="626.25" font-size="12.5" text-anchor="middle" fill="#17202c">scoring</text>
-<path d="M 356.25 433 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="356.25" cy="456.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="406.25" y="453.25" font-size="12.5" text-anchor="middle" fill="#17202c">Task</text>
-<text x="406.25" y="467.75" font-size="12.5" text-anchor="middle" fill="#17202c">queue</text>
-<path d="M 135.25 440 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="189.25" cy="440" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="189.25" y="456.75" font-size="12.5" text-anchor="middle" fill="#17202c">Claim</text>
-<text x="189.25" y="471.25" font-size="12.5" text-anchor="middle" fill="#17202c">store</text>
-<path d="M 135.25 720 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="189.25" cy="720" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="189.25" y="736.75" font-size="12.5" text-anchor="middle" fill="#17202c">Audit</text>
-<text x="189.25" y="751.25" font-size="12.5" text-anchor="middle" fill="#17202c">log</text>
-<rect x="217" y="800" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="271" y="820.25" font-size="12.5" text-anchor="middle" fill="#17202c">Reinsurer</text>
-<text x="271" y="834.75" font-size="12.5" text-anchor="middle" fill="#17202c">(external)</text>
-<path d="M 172 94 L 302 94 L 302 228.5 L 176 228.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 177 246 L 245 246 L 245 329.5 L 255 329.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 283.25 349.5 L 283.25 373.5 L 189.25 373.5 L 189.25 432" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 337.25 348.5 L 337.25 456.5 L 347.25 456.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 348.25 474 L 324.25 474 L 324.25 597.5 L 366.5833333333333 597.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 402.75 639.5 L 402.74999999999994 663.5 L 258.25 663.5 A 5 5 0 0 0 248.25 663.5 L 207.08333333333326 663.5 L 207.08333333333326 712" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 438.91666666666663 638.5 L 439 784 L 289 784 L 289 800" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arr)"/>
-<path d="M 310.5 348.5 L 310.5 383.5 L 253.25 383.5 L 253 800" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
-<path d="M 104 252 L 104 719 L 135.25 719" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 438.41666666666663 590.5 L 438.41666666666663 580.5 L 503.58333333333326 580.5 L 503.58333333333326 163 L 374.99999999999994 163 L 375 329.5 L 365 329.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="237" y="97.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="245" y="291" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="189.25" y="406" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="337.25" y="405.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="324.25" y="539" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="207.08333333333326" y="691" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="438.9583333333333" y="714.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
-<text x="253.125" y="595" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="104" y="488.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="503.58333333333326" y="375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<line x1="20" y1="867" x2="616" y2="867" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="889" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="879" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="890" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="879" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="304" y="890" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="879" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
-<text x="400" y="890" font-size="10" fill="#17202c">Application</text>
-<rect x="150" y="901" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="182" y="912" font-size="10" fill="#17202c">Application module</text>
-<rect x="308" y="901" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="340" y="912" font-size="10" fill="#17202c">Message queue / broker</text>
-<rect x="150" y="923" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="182" y="934" font-size="10" fill="#17202c">Datastore / registry</text>
-<rect x="318" y="923" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="350" y="934" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="975" x2="176" y2="975" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="979" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+<rect width="664" height="1013" fill="#ffffff"/>
+<rect x="118" y="22" width="119" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="128" y="40" font-size="13" font-weight="bold" fill="#17202c">Claims actors</text>
+<rect x="106" y="126" width="547.75" height="651" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="116" y="144" font-size="13" font-weight="bold" fill="#17202c">Claims platform</text>
+<rect x="115" y="178" width="326" height="200.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="125" y="196" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
+<rect x="265.75" y="572.5" width="137" height="84" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="275.75" y="590.5" font-size="13" font-weight="bold" fill="#17202c">Assessment</text>
+<circle cx="177.5" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 166.5 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="177.5" y="93" font-size="11" text-anchor="middle" fill="#20364c">Claims handler</text>
+<rect x="124" y="205" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="178" y="225.25" font-size="12.5" text-anchor="middle" fill="#17202c">Claim</text>
+<text x="178" y="239.75" font-size="12.5" text-anchor="middle" fill="#17202c">form</text>
+<rect x="312" y="310.5" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="366" y="333.5" font-size="12.5" text-anchor="middle" fill="#17202c">Triage</text>
+<rect x="274.75" y="599.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="328.75" y="619.75" font-size="12.5" text-anchor="middle" fill="#17202c">Risk</text>
+<text x="328.75" y="634.25" font-size="12.5" text-anchor="middle" fill="#17202c">scoring</text>
+<path d="M 282.75 462 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="282.75" cy="485.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="332.75" y="482.25" font-size="12.5" text-anchor="middle" fill="#17202c">Task</text>
+<text x="332.75" y="496.75" font-size="12.5" text-anchor="middle" fill="#17202c">queue</text>
+<path d="M 403.75 469 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="457.75" cy="469" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="457.75" y="485.75" font-size="12.5" text-anchor="middle" fill="#17202c">Claim</text>
+<text x="457.75" y="500.25" font-size="12.5" text-anchor="middle" fill="#17202c">store</text>
+<path d="M 229.08333333333337 728 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="283.08333333333337" cy="728" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="283.08333333333337" y="744.75" font-size="12.5" text-anchor="middle" fill="#17202c">Audit</text>
+<text x="283.08333333333337" y="759.25" font-size="12.5" text-anchor="middle" fill="#17202c">log</text>
+<rect x="86" y="808" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="140" y="828.25" font-size="12.5" text-anchor="middle" fill="#17202c">Reinsurer</text>
+<text x="140" y="842.75" font-size="12.5" text-anchor="middle" fill="#17202c">(external)</text>
+<path d="M 228 94 L 358 94 L 358 228.5 L 232 228.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 232 246 L 288 246 L 288 342.5 L 312 342.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 384 348.5 L 384 468 L 403.75 468" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 348 348.5 L 348 372.5 L 250.75 372.5 L 250.75 468 L 274.75 468" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 280.75 509 L 280.75 554.25 L 374.75 554.25 L 374.75 599.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 310.75 646.5 L 310.75 670.5 L 331.08333333333337 670.5 L 331.08333333333337 721" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 347.08333333333337 646.5 L 347 792 L 158 792 L 158 808" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#arr)"/>
+<path d="M 384 310.5 L 384 12 L 96 12 L 96 808" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
+<path d="M 196 252 L 196 727 L 229.08333333333337 727" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 382.75 605.5 L 521.75 605.5 L 521.75 342.5 L 420 342.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="293" y="97.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="288" y="297.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="384" y="411.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<text x="250.75" y="423.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="327.75" y="557.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="310.75" y="661.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<text x="347.0416666666667" y="786" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
+<text x="384" y="24.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="196" y="492.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<text x="521.75" y="416.125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<line x1="20" y1="875" x2="644" y2="875" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="897" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="887" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="898" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="887" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="898" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="887" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="400" y="898" font-size="10" fill="#17202c">Application</text>
+<rect x="150" y="909" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="182" y="920" font-size="10" fill="#17202c">Application module</text>
+<rect x="308" y="909" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="340" y="920" font-size="10" fill="#17202c">Message queue / broker</text>
+<rect x="150" y="931" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="182" y="942" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="318" y="931" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="350" y="942" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="983" x2="176" y2="983" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="987" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
 </svg>

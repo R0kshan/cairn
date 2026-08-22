@@ -151,9 +151,10 @@ Because `.` is a legal id character, `API.right` is ambiguous with an element
 *named* `API.right`. A declared id always wins, and the dropped side reading is
 reported as **W0571**. An unknown side name is **E0223**. A pin is a request,
 not a guarantee: one the layout cannot reach is dropped rather than forced into
-an unreadable route, and reported as **W0570**. A pinned flow is exempt from the
-automatic re-siding and route repair that own every other flow — the author's
-side wins over the readability heuristics.
+an unreadable route, and reported as **W0570**. A pin fixes the two ends, not the
+path between them: the passes that would move a terminal stand down, while the
+route itself is still tidied along shapes that leave the pinned ends where the
+author put them.
 
 **Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
 `..>` dotted. Whitespace before the arrow is required, as it always has been

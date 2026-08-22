@@ -98263,6 +98263,7 @@ function unweaveAndClearContainers(ctx) {
   for (const edge of [...scene.edges].sort(
     (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0)
   )) {
+    if (edge.pinned) continue;
     unweaveEdge(uctx, edge);
   }
 }
@@ -98568,7 +98569,7 @@ function createLaneModel(deps) {
     const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
     return fromA * fromB > 0;
   };
-  return { channelU, isChannelU };
+  return { channelU, isChannelU, laneBeyond };
 }
 function optimiseRoutes(scene, titleBoxes = [], folded = false) {
   const leaves = scene.nodes.filter((node) => !node.container);
@@ -98578,7 +98579,7 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
     const preRouted = new Set(scene.edges.filter((edge) => edge.detour).map((edge) => edge.id));
     const { SIDES, seatOffsetsFor, seatOn, outward, horizontalSide } = createSeatModel(titleBoxes);
     const clock = { generation: 0 };
-    const { channelU, isChannelU } = createLaneModel({
+    const { channelU, isChannelU, laneBeyond } = createLaneModel({
       scene,
       inspector,
       titleBoxes,
@@ -98588,7 +98589,10 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
     const shapesFor = (a, b, sides, subject) => {
       const aH = horizontalSide(sides.a);
       const bH = horizontalSide(sides.b);
-      if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
+      if (aH !== bH) {
+        const plainL = [a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b];
+        return [plainL, ...approachLanes(a, b, sides, subject)];
+      }
       if (outward(sides.a) === outward(sides.b)) return channelU(a, b, sides.a, subject);
       if (aH)
         return [
@@ -98602,6 +98606,40 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
         Math.max(a.y, b.y) - CHANNEL_INSET
       ].map((mid) => [a, { x: a.x, y: mid }, { x: b.x, y: mid }, b]);
     };
+    const approachLanes = (a, b, sides, subject) => {
+      if (!subject.edge.pinned) return [];
+      const aH = horizontalSide(sides.a);
+      const bH = horizontalSide(sides.b);
+      const beforeA = sides.a === "west" || sides.a === "north";
+      const crossLane = laneBeyond(
+        {
+          spanLo: Math.min(a.x, b.x),
+          spanHi: Math.max(a.x, b.x),
+          start: (aH ? a.x : a.y) + (beforeA ? -CHANNEL_STEP : CHANNEL_STEP),
+          vertical: !aH,
+          before: beforeA
+        },
+        subject,
+        true
+      );
+      if (crossLane === null) return [];
+      const beforeB = sides.b === "west" || sides.b === "north";
+      const search = {
+        spanLo: bH ? Math.min(crossLane, b.y) : Math.min(crossLane, b.x),
+        spanHi: bH ? Math.max(crossLane, b.y) : Math.max(crossLane, b.x),
+        start: (bH ? b.x : b.y) + (beforeB ? -CHANNEL_STEP : CHANNEL_STEP),
+        // `laneBeyond` names the axis after the terminal legs: a lane at a
+        // constant x is the `vertical: false` search.
+        vertical: !bH,
+        before: beforeB
+      };
+      const lanes = [laneBeyond(search, subject, false), laneBeyond(search, subject, true)].filter(
+        (lane, index, all) => lane !== null && all.indexOf(lane) === index
+      );
+      return lanes.map(
+        (lane) => bH ? [a, { x: a.x, y: crossLane }, { x: lane, y: crossLane }, { x: lane, y: b.y }, b] : [a, { x: crossLane, y: a.y }, { x: crossLane, y: lane }, { x: b.x, y: lane }, b]
+      );
+    };
     const routeCache = /* @__PURE__ */ new Map();
     const routesFor = (edge) => {
       const cacheKey = `${clock.generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
@@ -98612,8 +98650,10 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
       const subject = { ends, edge };
       const out = [];
       const seen = /* @__PURE__ */ new Set();
-      for (const aSide of SIDES)
-        for (const bSide of SIDES) {
+      const aSides = edge.pinned?.start ? [ends[0].side] : SIDES;
+      const bSides = edge.pinned?.end ? [ends[1].side] : SIDES;
+      for (const aSide of aSides)
+        for (const bSide of bSides) {
           const sides = { a: aSide, b: bSide };
           for (const aOff of seatOffsetsFor(ends[0].node, aSide))
             for (const bOff of seatOffsetsFor(ends[1].node, bSide))
@@ -98643,7 +98683,7 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
       return squared;
     };
     const rank = (edge) => Number.parseInt(edge.id.slice(1), 10) || 0;
-    const ordered = [...scene.edges].filter((edge) => !edge.pinned).sort((a, b) => rank(a) - rank(b));
+    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
     const neighboursOf = (edge) => {
       const mine = inspector.endsOf(edge.pts).map((end) => end?.node);
       return ordered.filter((other) => {
@@ -99458,10 +99498,13 @@ async function layout(model, view) {
     const nodes = walkedNodes.map((walked) => walked.node);
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
     const edges = collectSceneEdges(result2, origins, numbered, edgeFontSize);
-    const pinnedFlows = new Set(
-      model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => flow.id)
+    const pinnedFlows = new Map(
+      model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }])
     );
-    for (const edge of edges) if (pinnedFlows.has(edge.id)) edge.pinned = true;
+    for (const edge of edges) {
+      const pinned = pinnedFlows.get(edge.id);
+      if (pinned) edge.pinned = { ...pinned };
+    }
     const scene2 = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),

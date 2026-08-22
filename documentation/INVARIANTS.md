@@ -623,10 +623,19 @@ render exactly as it did before the feature existed — the elk options that
 implement them are emitted only where an author asked. `tests/corpus.test.ts`
 and the committed `examples/*.svg` are the gate.
 
-**A pin outranks the readability heuristics.** Where the author pinned a
-terminal, the passes that would move it stand down: `route-detour` never sends it
-through a channel (§11), `edge-tidy`'s re-siding (§4c) skips the edge,
-`optimiseRoutes` never picks it as a candidate, and `attachAway` exempts it in
-both the layout's own count and `scripts/sweep.ts`.
+**A pin fixes the ends, not the path.** Where the author pinned a terminal, the
+passes that would *move* that terminal stand down: `route-detour` never sends the
+flow through a channel (§11), `edge-tidy`'s re-siding (§4c) skips it, and
+`attachAway` exempts it in both the layout's own count and `scripts/sweep.ts`.
+
+The route between those ends stays the repair's business. `optimiseRoutes` keeps
+a pinned edge as a candidate but generates only routes that leave the pinned end
+on its declared side (the free end of a half-pinned flow keeps the full search),
+and offers it one shape an unpinned flow never needs: the two-lane approach into
+a side the plain L cannot reach without hugging a node border. Both lanes come
+from `laneBeyond`, so the approach clears the corridors already in the drawing
+instead of ploughing through them. Without it a pinned flow would keep whatever
+the layout engine drew — measured at 5 turns and a 334px climb over a sibling
+container on `positioning-sides`, against 3 turns after.
 What the layout genuinely cannot deliver is dropped and reported as `W0570` —
 never forced into an unreadable route, and never silently ignored.
