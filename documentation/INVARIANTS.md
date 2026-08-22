@@ -32,6 +32,7 @@ These invariants must never be broken. Every change is verified against them.
 - [14. Snapshot & corpus gates](#14-snapshot--corpus-gates)
 - [15. Flow matrix export invariants](#15-flow-matrix-export-invariants)
 - [16. Flow positioning is blind to the DSL](#16-flow-positioning-is-blind-to-the-dsl)
+- [17. Author positioning hints are honored, not negotiated](#17-author-positioning-hints-are-honored-not-negotiated)
 
 ## At a glance
 
@@ -64,6 +65,7 @@ you what a violation looks like when you cause one.
 | 14 | Snapshot & corpus gates | `tests/corpus.ts` | reference |
 | 15 | Flow matrix export | `flow-matrix` | reference + test |
 | 16 | Flow positioning is blind to the DSL | `edge-tidy`, `route-detour`, `label-anchor`, `compact`, `readability` | structural + test |
+| 17 | Author positioning hints honored, not negotiated | `parser`, `scene-layout`, `edge-tidy` | reference + test |
 
 Two rules cut across all of them:
 
@@ -212,7 +214,9 @@ arrive from beyond it, when the two nodes are genuinely offset (>24px) on that
 axis — a flow that leaves eastward for a target up-and-left sends the reader's
 eye the wrong way before doubling back (`attachAway`, ratchet). Edges routed
 through §11 channels that keep their channel are exempt: their wrap is the
-design.
+design. So are edges the author pinned to a node side in the DSL
+(`APP.right -> DB.left`, §17): a pinned terminal is intent, and this rule exists
+to overrule elk, not the author.
 
 The same pass also re-sides a flow that **crosses its own return leg** — the
 other flow joining the same two nodes the opposite way. A round trip is the one
@@ -496,6 +500,10 @@ placed on the left; external systems stay on the right. For `tall`/`page`
 dispositions, they go on the top and bottom respectively. The infrastructure
 view models users as actors (person glyph) on the entry side.
 
+Within a partition, order is the layout engine's to choose — unless the author
+declares one (`order: 2`, §17), which is honored as a preference and never moves
+an element into a different partition.
+
 ## 10. Slide / page orientation
 
 `slide` must be landscape (width ≥ height). `page` must be portrait (height ≥
@@ -515,8 +523,10 @@ elk wrap. Rerouting applies to every disposition. Deterministic: no-op
 
 Element kinds are restricted by view. Examples: `queue` is valid only in
 application & infrastructure; `gateway`, `auth`, `idp` only in infrastructure;
-`trust-zone`, `security-node`, `asset` only in security; `datastore` renders as
-cylinder; business objects are logical-view only. Unknown element kinds for the
+`trust-zone`, `security-node`, `asset` only in security; `system` in logical and
+application (a C4 system boundary there, grouping applications, queues and
+datastores); `datastore` renders as cylinder; business objects are logical-view
+only. Unknown element kinds for the
 active view are rejected (`E0201`).
 
 ## 13. `cairn new` must not overwrite files
@@ -585,7 +595,32 @@ Enforced structurally and by test:
 - `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
   registry appears in those sources, so the check covers kinds added later.
 
+Two DSL-declared positioning hints exist (§17), and neither breaches this: an
+`order:` becomes an elk layout option before any `Scene` exists, and a pinned
+attachment side becomes an elk port plus a plain `pinned` boolean on the
+`SceneEdge`. The passes that read `pinned` read a boolean on geometry, exactly
+as they already read `detour` — no kind, no view name, so a new view inherits
+the behavior for free.
+
 Not to be confused with declaration-order independence, which does **not**
 hold: reversing the flow declarations in `logical-archi.cairn` moves 48 path
 segments and 60 node boxes, because elk orders its layers by edge insertion.
 That is a known limitation, not a guarantee.
+
+## 17. Author positioning hints are honored, not negotiated
+
+Three opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
+override layout: `order:` on an element, `ID.side` on a flow endpoint, and the
+arrow glyph's line style. Two rules hold for all of them.
+
+**Opt-in means byte-identical.** A diagram that declares none of them must
+render exactly as it did before the feature existed — the elk options that
+implement them are emitted only where an author asked. `tests/corpus.test.ts`
+and the committed `examples/*.svg` are the gate.
+
+**A pin outranks the readability heuristics.** Where the author pinned a
+terminal, the passes that would move it stand down: `edge-tidy`'s re-siding
+(§4c) skips the edge, `optimiseRoutes` never picks it as a candidate, and
+`attachAway` exempts it in both the layout's own count and `scripts/sweep.ts`.
+What the layout genuinely cannot deliver is dropped and reported as `W0570` —
+never forced into an unreadable route, and never silently ignored.

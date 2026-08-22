@@ -1,0 +1,43 @@
+diagram application "Payments platform — positioning controls"
+
+# Three DSL controls over layout, all opt-in:
+#   order:            places an element inside its layout partition
+#   ID.side           pins which side of an element a flow leaves or arrives on
+#   ->  -->  ..>      arrow glyph carries the line style (solid, dashed, dotted)
+
+actor-group STAFF "Payment actors" {
+  actor OPERATOR "Payment operator" {
+    order: 1
+  }
+  actor AUDITOR "Compliance auditor" {
+    order: 2
+  }
+}
+
+system PAYMENTS "Payment platform" {
+  application GATEWAY "Payment gateway" {
+    order: 1
+    module INTAKE "Payment\nintake"
+    module ROUTING "Scheme\nrouting"
+  }
+  application LEDGER_APP "Ledger" {
+    order: 2
+    module POSTING "Posting"
+  }
+  queue SETTLE "Settlement\nqueue" {
+    order: 3
+  }
+  datastore LEDGER_DB "Ledger\nstore" {
+    order: 4
+  }
+}
+
+external SCHEME "Card scheme\n(external)"
+
+OPERATOR -> INTAKE (API_REST, JSON)
+AUDITOR -> POSTING (API_REST, JSON)
+INTAKE -> ROUTING (API_REST, JSON)
+ROUTING --> SETTLE (MQ, JSON)
+SETTLE --> POSTING (MQ, JSON)
+POSTING.bottom -> LEDGER_DB.top (JDBC)
+ROUTING ..> SCHEME (ISO8583)

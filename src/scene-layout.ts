@@ -7,7 +7,7 @@
  * ELK result after layout (coordinates populated) and are shared with slide-fold.
  */
 
-import type { Model, Element } from "./models/ast.ts";
+import type { Model, Element, AttachSide } from "./models/ast.ts";
 import type { ElkNode, ElkEdgeSection } from "elkjs/lib/elk.bundled.js";
 import type { View } from "./views.ts";
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
@@ -15,6 +15,7 @@ import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
 import type { Box, Point, TitleBox } from "./geometry.ts";
+import type { Diagnostic } from "./models/diagnostic.ts";
 import { compactVertical } from "./compact.ts";
 import {
   optimiseRoutes,
@@ -83,6 +84,14 @@ export interface SceneEdge {
    */
   detour?: boolean;
   /**
+   * The author pinned at least one of this flow's terminals to a node side
+   * (`APP.right -> DB.left`). A pinned terminal is intent, not a metric win, so
+   * the re-siding pass leaves it alone and `attachAway` exempts it — the same
+   * mechanism as `detour`, and a plain boolean on geometry, so no positioning
+   * pass has to know an element kind to honor it (invariant §16).
+   */
+  pinned?: boolean;
+  /**
    * The route this flow had before `optimiseRoutes` moved it. Kept so the
    * renderer can undo a repair that cost some label its seat — that verdict is
    * only reachable after label settling, which happens during rendering.
@@ -128,6 +137,28 @@ function computeIngressExternalElements(model: Model): Set<string> {
   return ingressExternalElements;
 }
 
+/**
+ * The author's `order: n` as an elk position hint. elk reads the vector's
+ * *second* component as the index within the layer, and honors it only under
+ * `crossingMinimization.semiInteractive` (set on the graph in `buildElkGraph`
+ * when any element declares an order). Absent for an element without one, which
+ * is what keeps an order-free diagram byte-identical.
+ */
+const orderOption = (element: Element): Record<string, string> =>
+  element.order ? { "elk.position": `(0,${element.order.value})` } : {};
+
+/**
+ * The switch that makes elk read `elk.position` at all. It belongs on the node
+ * whose *children* carry the positions — set only on the root, a `order:` inside
+ * a container was measured to be ignored — and only when at least one of them
+ * declares an order, so an order-free diagram gets no new option and renders
+ * byte-identically.
+ */
+const semiInteractiveOption = (children: Element[]): Record<string, string> =>
+  children.some((child) => child.order)
+    ? { "elk.layered.crossingMinimization.semiInteractive": "true" }
+    : {};
+
 /** Converts an `Element` (and its children, recursively) into elk's input node shape. */
 function toElkNode(
   element: Element,
@@ -141,6 +172,8 @@ function toElkNode(
       id: element.id,
       layoutOptions: {
         "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
+        ...orderOption(element),
+        ...semiInteractiveOption(element.children),
       },
       labels: [
         {
@@ -157,6 +190,7 @@ function toElkNode(
   const isActor = element.kind === "actor";
   return {
     id: element.id,
+    ...(element.order ? { layoutOptions: orderOption(element) } : {}),
     width: isActor
       ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8)
       : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
@@ -301,7 +335,9 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
   const byId = new Map(scene.nodes.map((node) => [node.id, node]));
   const flagged = new Set<string>();
   for (const e of scene.edges) {
-    if (e.pts.length < 2 || e.detour) continue;
+    // A pinned terminal departs where the author said to, which is exactly what
+    // this predicate calls "away" — exempt, like a channel route.
+    if (e.pts.length < 2 || e.detour || e.pinned) continue;
     const flow = model.flows.find((f) => f.id === e.id);
     const from = byId.get(flow?.from ?? "");
     const to = byId.get(flow?.to ?? "");
@@ -487,6 +523,10 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
         if (actual) side = actual;
       }
       const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      // The author already pinned this terminal, and `applyDeclaredPorts` put
+      // the port on the node when the graph was built: leave it exactly as
+      // declared instead of adding a second port under the same id.
+      if ((elkNode.ports ?? []).some((port) => port.id === portId)) continue;
       // 1x1, not 0x0: a zero-size port breaks the scanline constraint's
       // hitbox math inside elk ("Invalid hitboxes for scanline constraint
       // calculation") on hierarchical graphs — measured on every themes/*
@@ -578,6 +618,110 @@ function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, labelWrap?
   };
 }
 
+/** The author's side names, as the diagram is read, in elk's compass terms. */
+const SIDE_TO_ELK: Record<AttachSide, "NORTH" | "SOUTH" | "EAST" | "WEST"> = {
+  left: "WEST",
+  right: "EAST",
+  top: "NORTH",
+  bottom: "SOUTH",
+};
+
+/**
+ * Gives every author-pinned flow terminal an elk port on the requested side.
+ *
+ * Only the pinned terminals get a port: the node goes to `FIXED_SIDE`, but its
+ * other edges stay portless and elk keeps choosing their sides, which measured
+ * identical to the unpinned layout. The 1×1 size is deliberate — a 0×0 port
+ * breaks elk's scanline constraint on hierarchical graphs (see `constrainPorts`).
+ *
+ * A DOWN layout is not transposed on the way out (`runGeometryPasses` mirrors in
+ * and back), so elk's compass is the rendered side in every disposition.
+ */
+function applyDeclaredPorts(graph: ElkNode, model: Model): void {
+  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide);
+  if (!pinned.length) return;
+  const elkById = new Map<string, ElkNode>();
+  const register = (node: ElkNode) => {
+    elkById.set(node.id, node);
+    for (const child of node.children ?? []) register(child);
+  };
+  register(graph);
+  for (const flow of pinned) {
+    const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
+    if (!elkEdge) continue;
+    for (const [role, declared, nodeId] of [
+      ["out", flow.fromSide, flow.from],
+      ["in", flow.toSide, flow.to],
+    ] as const) {
+      if (!declared) continue;
+      const elkNode = elkById.get(nodeId);
+      if (!elkNode) continue;
+      const portId = `${flow.id}#${role}`;
+      elkNode.ports = [
+        ...(elkNode.ports ?? []),
+        {
+          id: portId,
+          width: 1,
+          height: 1,
+          layoutOptions: { "elk.port.side": SIDE_TO_ELK[declared.value] },
+        },
+      ];
+      elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
+      if (role === "out") elkEdge.sources = [portId];
+      else elkEdge.targets = [portId];
+    }
+  }
+}
+
+/** Which side of `node` the point `p` sits on, or null when it is on none. */
+function terminalSide(p: Point, node: SceneNode): AttachSide | null {
+  if (p.x > node.x - 2 && p.x < node.x + node.width + 2) {
+    if (Math.abs(p.y - node.y) < 2) return "top";
+    if (Math.abs(p.y - (node.y + node.height)) < 2) return "bottom";
+  }
+  if (p.y > node.y - 2 && p.y < node.y + node.height + 2) {
+    if (Math.abs(p.x - node.x) < 2) return "left";
+    if (Math.abs(p.x - (node.x + node.width)) < 2) return "right";
+  }
+  return null;
+}
+
+/**
+ * W0570 for every declared attachment side the finished drawing does not show.
+ * Layout-derived, like W0520: elk honors a port side in the graph, but the
+ * geometry passes that follow may still move a terminal, and a pin that silently
+ * did nothing is worth telling the author about. Runs after every pass.
+ */
+export function attachSideDiagnostics(scene: Scene, model: Model): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  for (const flow of model.flows) {
+    if (!flow.fromSide && !flow.toSide) continue;
+    const edge = scene.edges.find((candidate) => candidate.id === flow.id);
+    if (!edge || edge.pts.length < 2) continue;
+    for (const [declared, nodeId, point, role] of [
+      [flow.fromSide, flow.from, edge.pts[0], "leaves"],
+      [flow.toSide, flow.to, edge.pts[edge.pts.length - 1], "arrives on"],
+    ] as const) {
+      const node = declared ? nodeById.get(nodeId) : undefined;
+      if (!declared || !node) continue;
+      const actual = terminalSide(point, node);
+      if (actual === declared.value) continue;
+      diagnostics.push({
+        code: "W0570",
+        severity: "warning",
+        message: `attachment side \`${declared.value}\` could not be honored`,
+        span: declared.span,
+        note: actual
+          ? `the flow ${role} the ${actual} side of \`${nodeId}\``
+          : `the flow does not ${role} a side of \`${nodeId}\` cleanly`,
+        help: "a side the layout cannot reach is dropped rather than forced — try the opposite endpoint, or `order:` to move the element instead",
+      });
+    }
+  }
+  return diagnostics;
+}
+
 /** The whole model as one elk graph, in the given direction. */
 function buildElkGraph(
   ctx: GraphContext,
@@ -585,7 +729,7 @@ function buildElkGraph(
   options?: GraphOptions,
 ): ElkNode {
   const { model, view, ingressExternal, compact, numbered, fonts } = ctx;
-  return {
+  const graph: ElkNode = {
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
@@ -615,6 +759,9 @@ function buildElkGraph(
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
+      // Only switched on when a top-level element declares an order; a nested
+      // one arms its own container in `toElkNode`.
+      ...semiInteractiveOption(model.elements),
       ...(numbered && !options?.tight
         ? {
             "elk.spacing.nodeNode": "26",
@@ -638,6 +785,8 @@ function buildElkGraph(
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap)),
   };
+  applyDeclaredPorts(graph, model);
+  return graph;
 }
 
 /**
@@ -793,6 +942,12 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
 
     const edges = collectSceneEdges(result, origins, numbered, edgeFontSize);
+    // Before any geometry pass runs: `pinned` is what tells them the terminal
+    // side is the author's, not elk's guess.
+    const pinnedFlows = new Set(
+      model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => flow.id),
+    );
+    for (const edge of edges) if (pinnedFlows.has(edge.id)) edge.pinned = true;
 
     const scene: Scene = {
       width: Math.ceil(result.width),

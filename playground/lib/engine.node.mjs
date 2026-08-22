@@ -92256,10 +92256,13 @@ function lex(src, diagnostics) {
       col++;
       continue;
     }
-    if (char === "-" && src[position + 1] === ">") {
-      push("arrow", "->", line, col);
-      position += 2;
-      col += 2;
+    const arrowGlyph = ["-->", "..>", "->"].find(
+      (glyph) => src.startsWith(glyph, position) && glyph[0] === char
+    );
+    if (arrowGlyph) {
+      push("arrow", arrowGlyph, line, col);
+      position += arrowGlyph.length;
+      col += arrowGlyph.length;
       continue;
     }
     const singleCharKind = SINGLE_CHAR_TOKENS[char];
@@ -92299,6 +92302,7 @@ function lex(src, diagnostics) {
 }
 
 // src/models/ast.ts
+var ATTACH_SIDES = ["left", "right", "top", "bottom"];
 var defaultDiagramStyle = () => ({
   crossingHops: true,
   compact: false,
@@ -92935,7 +92939,7 @@ function indexElementsById(elements) {
 // src/parser.ts
 function parseFlow(p, sourceToken) {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
-  advance();
+  const arrowToken = advance();
   if (!matchToken("id")) {
     reportError("target identifier expected after `->`", lookAhead().span);
     syncToNextLine();
@@ -92954,6 +92958,8 @@ function parseFlow(p, sourceToken) {
       len: targetToken.span.col + targetToken.span.len - sourceToken.span.col
     }
   };
+  if (arrowToken.text === "-->") flow.lineStyle = "dashed";
+  else if (arrowToken.text === "..>") flow.lineStyle = "dotted";
   if (matchToken("colon")) {
     advance();
     if (matchToken("str")) flow.label = advance().text;
@@ -93006,6 +93012,11 @@ function parseFlow(p, sourceToken) {
     flow.style = {};
     p.parseStyleEntries(null, flow.style);
   }
+  for (const split of [
+    splitEndpoint(sourceToken, flow, "from"),
+    splitEndpoint(targetToken, flow, "to")
+  ])
+    if (split) p.endpointSplits.push(split);
   model.flows.push(flow);
 }
 function parseElement(p, sourceToken, parent) {
@@ -93056,6 +93067,84 @@ function parseElement(p, sourceToken, parent) {
     p.parseElementBody(element);
   }
   (parent ? parent.children : model.elements).push(element);
+}
+function splitEndpoint(token, flow, role) {
+  const dot = token.text.lastIndexOf(".");
+  if (dot <= 0 || dot === token.text.length - 1) return null;
+  const base = token.text.slice(0, dot);
+  const side = token.text.slice(dot + 1);
+  return {
+    flow,
+    role,
+    raw: token.text,
+    rawSpan: token.span,
+    base,
+    baseSpan: { line: token.span.line, col: token.span.col, len: base.length },
+    side,
+    sideSpan: { line: token.span.line, col: token.span.col + dot + 1, len: side.length }
+  };
+}
+function resolveAttachSides(splits, model, diagnostics) {
+  for (const split of splits) {
+    if (model.index.has(split.raw)) {
+      if (ATTACH_SIDES.includes(split.side))
+        diagnostics.push({
+          code: "W0571",
+          severity: "warning",
+          message: `\`${split.raw}\` is a declared element, so \`.${split.side}\` is not read as an attachment side`,
+          span: split.rawSpan,
+          note: "a declared id always wins over the `ID.side` reading",
+          help: `rename the element if you meant to attach the flow to the ${split.side} side of \`${split.base}\``
+        });
+      continue;
+    }
+    if (!model.index.has(split.base)) continue;
+    const known = ATTACH_SIDES.includes(split.side);
+    if (!known)
+      diagnostics.push({
+        code: "E0223",
+        severity: "error",
+        message: `unknown attachment side \`${split.side}\``,
+        span: split.sideSpan,
+        note: "sides are named as the diagram is read",
+        help: "use `left`, `right`, `top` or `bottom`, e.g. `APP.right -> DB.left`"
+      });
+    const side = known ? { value: split.side, span: split.sideSpan } : void 0;
+    if (split.role === "from") {
+      split.flow.from = split.base;
+      split.flow.fromSpan = split.baseSpan;
+      split.flow.fromSide = side;
+    } else {
+      split.flow.to = split.base;
+      split.flow.toSpan = split.baseSpan;
+      split.flow.toSide = side;
+    }
+  }
+}
+function tryOrderEntry(p, parent) {
+  const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
+  if (!parent || !matchToken("id", "order")) return false;
+  const mark = save();
+  const keyToken = advance();
+  if (!matchToken("colon")) {
+    restore(mark);
+    return false;
+  }
+  advance();
+  const valueToken = matchToken("num") ? advance() : null;
+  const value = valueToken ? Number(valueToken.text) : Number.NaN;
+  if (!Number.isInteger(value) || value < 0) {
+    reportCoded(
+      "E0106",
+      "`order` expects a whole number \u2265 0",
+      (valueToken ?? keyToken).span,
+      "e.g. `order: 1` \u2014 lower comes first in reading order"
+    );
+    syncToNextLine();
+    return true;
+  }
+  parent.order = { value, span: valueToken.span };
+  return true;
 }
 function tryLegendBlock(p) {
   const { matchToken, advance, reportError, lookAhead, skipNewlines, syncToNextLine, model } = p;
@@ -93134,13 +93223,14 @@ function parse(src) {
   const skipNewlines = () => {
     while (matchToken("nl")) advance();
   };
-  const reportError = (message, span, help) => diagnostics.push({
-    code: "E0101",
+  const reportCoded = (code, message, span, help) => diagnostics.push({
+    code,
     severity: "error",
     message,
     span,
     help
   });
+  const reportError = (message, span, help) => reportCoded("E0101", message, span, help);
   const syncToNextLine = () => {
     while (!matchToken("nl") && !matchToken("eof")) advance();
   };
@@ -93153,6 +93243,7 @@ function parse(src) {
     index: /* @__PURE__ */ new Map()
   };
   const flowSequence = { next: 0 };
+  const endpointSplits = [];
   skipNewlines();
   if (matchToken("id", "diagram")) {
     advance();
@@ -93244,12 +93335,14 @@ function parse(src) {
     advance,
     skipNewlines,
     reportError,
+    reportCoded,
     syncToNextLine,
     save: () => position,
     restore: (mark) => {
       position = mark;
     },
     flowSequence,
+    endpointSplits,
     parseStyleEntries,
     parseElementBody
   };
@@ -93259,6 +93352,7 @@ function parse(src) {
       return;
     }
     if (tryStyleBlock(parent)) return;
+    if (tryOrderEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
     parseFlowOrElement(parser, parent);
@@ -93271,6 +93365,7 @@ function parse(src) {
   for (const [id, element] of indexElementsById(model.elements)) {
     if (!model.index.has(id)) model.index.set(id, element);
   }
+  resolveAttachSides(endpointSplits, model, diagnostics);
   return { model, diags: diagnostics };
 }
 var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
@@ -93616,12 +93711,27 @@ var logicalView = {
 };
 var applicationView = {
   name: "application",
-  kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
-  containerKinds: ["actor-group", "application", "external"],
+  kinds: [
+    "actor-group",
+    "actor",
+    "system",
+    "application",
+    "module",
+    "queue",
+    "datastore",
+    "external"
+  ],
+  containerKinds: ["actor-group", "system", "application", "external"],
   // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
-  matrix: { zoneKinds: ["application"], columns: ["num", "source", "dest", "proto", "nature"] },
+  // `zoneOf` walks ancestors nearest-first, so an endpoint inside an application
+  // still reads `Name (App)`; the system only annotates what sits directly in it.
+  matrix: {
+    zoneKinds: ["application", "system"],
+    columns: ["num", "source", "dest", "proto", "nature"]
+  },
   partitions: {
     "actor-group": 0,
+    system: 1,
     application: 1,
     queue: 1,
     datastore: 1,
@@ -93630,6 +93740,7 @@ var applicationView = {
   legendNames: {
     "actor-group": "Actor group",
     actor: "Actor",
+    system: "System",
     application: "Application",
     module: "Application module",
     queue: "Message queue / broker",
@@ -93639,6 +93750,7 @@ var applicationView = {
   legendNamesFr: {
     "actor-group": "Groupe d'acteurs",
     actor: "Acteur",
+    system: "Syst\xE8me",
     application: "Application",
     module: "Module applicatif",
     queue: "File de messages / broker",
@@ -93686,6 +93798,12 @@ var applicationView = {
       fill: "#eef4fb",
       stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 }
     },
+    // Same palette as the logical view's `system`, so a system boundary reads
+    // the same in both views.
+    system: {
+      fill: "#f6f2ea",
+      stroke: { color: "#b09a6d", style: "solid", width: 1.2 }
+    },
     application: {
       fill: "#e8f1f8",
       stroke: { color: "#5b8db8", style: "solid", width: 1.2 }
@@ -93712,6 +93830,10 @@ var applicationView = {
     "actor-group": {
       fill: "#232a33",
       stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 }
+    },
+    system: {
+      fill: "#2b2822",
+      stroke: { color: "#9c8558", style: "solid", width: 1.2 }
     },
     application: {
       fill: "#1f2a33",
@@ -97640,7 +97762,7 @@ function reaimEdge(rctx, edge) {
 function reaimWrapAroundTerminals(ctx) {
   const { scene } = ctx;
   const rctx = createReaimContext(ctx);
-  for (const edge of scene.edges) reaimEdge(rctx, edge);
+  for (const edge of scene.edges) if (!edge.pinned) reaimEdge(rctx, edge);
 }
 function shiftCoincidentRun(leaves, pts, b, newAt) {
   if (b.vert) {
@@ -98520,7 +98642,7 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
       return squared;
     };
     const rank = (edge) => Number.parseInt(edge.id.slice(1), 10) || 0;
-    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
+    const ordered = [...scene.edges].filter((edge) => !edge.pinned).sort((a, b) => rank(a) - rank(b));
     const neighboursOf = (edge) => {
       const mine = inspector.endsOf(edge.pts).map((end) => end?.node);
       return ordered.filter((other) => {
@@ -98822,13 +98944,17 @@ function computeIngressExternalElements(model) {
   }
   return ingressExternalElements;
 }
+var orderOption = (element) => element.order ? { "elk.position": `(0,${element.order.value})` } : {};
+var semiInteractiveOption = (children) => children.some((child) => child.order) ? { "elk.layered.crossingMinimization.semiInteractive": "true" } : {};
 function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
     return {
       id: element.id,
       layoutOptions: {
-        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`
+        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
+        ...orderOption(element),
+        ...semiInteractiveOption(element.children)
       },
       labels: [
         {
@@ -98845,6 +98971,7 @@ function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
   const isActor = element.kind === "actor";
   return {
     id: element.id,
+    ...element.order ? { layoutOptions: orderOption(element) } : {},
     width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
     height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
   };
@@ -98936,7 +99063,7 @@ function attachAwayOf(scene, model) {
   const byId = new Map(scene.nodes.map((node) => [node.id, node]));
   const flagged = /* @__PURE__ */ new Set();
   for (const e of scene.edges) {
-    if (e.pts.length < 2 || e.detour) continue;
+    if (e.pts.length < 2 || e.detour || e.pinned) continue;
     const flow = model.flows.find((f) => f.id === e.id);
     const from = byId.get(flow?.from ?? "");
     const to = byId.get(flow?.to ?? "");
@@ -99062,6 +99189,7 @@ function constrainPorts(graph, scene, flagged, model) {
         if (actual) side = actual;
       }
       const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      if ((elkNode.ports ?? []).some((port) => port.id === portId)) continue;
       ports.push({ id: portId, width: 1, height: 1, layoutOptions: { "elk.port.side": side } });
       const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
       if (elkEdge) {
@@ -99121,9 +99249,88 @@ function elkFlowEdge(flow, ctx, labelWrap) {
     labels: text || chips.length ? [{ text, ...labelBox }] : []
   };
 }
+var SIDE_TO_ELK = {
+  left: "WEST",
+  right: "EAST",
+  top: "NORTH",
+  bottom: "SOUTH"
+};
+function applyDeclaredPorts(graph, model) {
+  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide);
+  if (!pinned.length) return;
+  const elkById = /* @__PURE__ */ new Map();
+  const register = (node) => {
+    elkById.set(node.id, node);
+    for (const child of node.children ?? []) register(child);
+  };
+  register(graph);
+  for (const flow of pinned) {
+    const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
+    if (!elkEdge) continue;
+    for (const [role, declared, nodeId] of [
+      ["out", flow.fromSide, flow.from],
+      ["in", flow.toSide, flow.to]
+    ]) {
+      if (!declared) continue;
+      const elkNode = elkById.get(nodeId);
+      if (!elkNode) continue;
+      const portId = `${flow.id}#${role}`;
+      elkNode.ports = [
+        ...elkNode.ports ?? [],
+        {
+          id: portId,
+          width: 1,
+          height: 1,
+          layoutOptions: { "elk.port.side": SIDE_TO_ELK[declared.value] }
+        }
+      ];
+      elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
+      if (role === "out") elkEdge.sources = [portId];
+      else elkEdge.targets = [portId];
+    }
+  }
+}
+function terminalSide(p, node) {
+  if (p.x > node.x - 2 && p.x < node.x + node.width + 2) {
+    if (Math.abs(p.y - node.y) < 2) return "top";
+    if (Math.abs(p.y - (node.y + node.height)) < 2) return "bottom";
+  }
+  if (p.y > node.y - 2 && p.y < node.y + node.height + 2) {
+    if (Math.abs(p.x - node.x) < 2) return "left";
+    if (Math.abs(p.x - (node.x + node.width)) < 2) return "right";
+  }
+  return null;
+}
+function attachSideDiagnostics(scene, model) {
+  const diagnostics = [];
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  for (const flow of model.flows) {
+    if (!flow.fromSide && !flow.toSide) continue;
+    const edge = scene.edges.find((candidate) => candidate.id === flow.id);
+    if (!edge || edge.pts.length < 2) continue;
+    for (const [declared, nodeId, point, role] of [
+      [flow.fromSide, flow.from, edge.pts[0], "leaves"],
+      [flow.toSide, flow.to, edge.pts[edge.pts.length - 1], "arrives on"]
+    ]) {
+      const node = declared ? nodeById.get(nodeId) : void 0;
+      if (!declared || !node) continue;
+      const actual = terminalSide(point, node);
+      if (actual === declared.value) continue;
+      diagnostics.push({
+        code: "W0570",
+        severity: "warning",
+        message: `attachment side \`${declared.value}\` could not be honored`,
+        span: declared.span,
+        note: actual ? `the flow ${role} the ${actual} side of \`${nodeId}\`` : `the flow does not ${role} a side of \`${nodeId}\` cleanly`,
+        help: "a side the layout cannot reach is dropped rather than forced \u2014 try the opposite endpoint, or `order:` to move the element instead"
+      });
+    }
+  }
+  return diagnostics;
+}
 function buildElkGraph(ctx, direction, options) {
   const { model, view, ingressExternal, compact, numbered, fonts } = ctx;
-  return {
+  const graph = {
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
@@ -99151,6 +99358,9 @@ function buildElkGraph(ctx, direction, options) {
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
+      // Only switched on when a top-level element declares an order; a nested
+      // one arms its own container in `toElkNode`.
+      ...semiInteractiveOption(model.elements),
       ...numbered && !options?.tight ? {
         "elk.spacing.nodeNode": "26",
         "elk.layered.spacing.nodeNodeBetweenLayers": "64",
@@ -99172,6 +99382,8 @@ function buildElkGraph(ctx, direction, options) {
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap))
   };
+  applyDeclaredPorts(graph, model);
+  return graph;
 }
 function recordRepairs(scene, routesBefore) {
   for (const edge of scene.edges) {
@@ -99246,6 +99458,10 @@ async function layout(model, view) {
     const nodes = walkedNodes.map((walked) => walked.node);
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
     const edges = collectSceneEdges(result2, origins, numbered, edgeFontSize);
+    const pinnedFlows = new Set(
+      model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => flow.id)
+    );
+    for (const edge of edges) if (pinnedFlows.has(edge.id)) edge.pinned = true;
     const scene2 = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),
@@ -99980,7 +100196,7 @@ function createEdgePainter(paint) {
     const flowStyle = flow?.style;
     const color = flowColorOf(flow);
     const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
-    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
+    const dash = dashArray(flowStyle?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style);
     const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
     return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
 `;
@@ -100311,6 +100527,7 @@ async function compile(source, options) {
   const view = views[model.type];
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
   const scene = await layout(model, view);
+  diags.push(...attachSideDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene);
   return {
     svg,

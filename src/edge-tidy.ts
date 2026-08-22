@@ -2464,7 +2464,9 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge): void {
 function reaimWrapAroundTerminals(ctx: TidyContext): void {
   const { scene } = ctx;
   const rctx = createReaimContext(ctx);
-  for (const edge of scene.edges) reaimEdge(rctx, edge);
+  // A pinned edge attaches where the author asked; re-aiming it would silently
+  // overrule that, so it is skipped here the way a channel route is elsewhere.
+  for (const edge of scene.edges) if (!edge.pinned) reaimEdge(rctx, edge);
 }
 
 /** Shifts one coincident run's shared axis to `newAt`, reconnecting any
@@ -4009,7 +4011,12 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     };
 
     const rank = (edge: SceneEdge) => Number.parseInt(edge.id.slice(1), 10) || 0;
-    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
+    // Pinned edges are excluded, not merely ranked last: every candidate route
+    // this pass builds reseats both terminals, so any move it made would land
+    // the flow somewhere other than the side the author pinned it to.
+    const ordered = [...scene.edges]
+      .filter((edge) => !edge.pinned)
+      .sort((a, b) => rank(a) - rank(b));
 
     /** Flows sharing a node with this one — the ones a joint move can help. */
     const neighboursOf = (edge: SceneEdge): SceneEdge[] => {

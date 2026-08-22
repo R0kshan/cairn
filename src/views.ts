@@ -209,12 +209,27 @@ const logicalView: View = {
 
 const applicationView: View = {
   name: "application",
-  kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
-  containerKinds: ["actor-group", "application", "external"],
+  kinds: [
+    "actor-group",
+    "actor",
+    "system",
+    "application",
+    "module",
+    "queue",
+    "datastore",
+    "external",
+  ],
+  containerKinds: ["actor-group", "system", "application", "external"],
   // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
-  matrix: { zoneKinds: ["application"], columns: ["num", "source", "dest", "proto", "nature"] },
+  // `zoneOf` walks ancestors nearest-first, so an endpoint inside an application
+  // still reads `Name (App)`; the system only annotates what sits directly in it.
+  matrix: {
+    zoneKinds: ["application", "system"],
+    columns: ["num", "source", "dest", "proto", "nature"],
+  },
   partitions: {
     "actor-group": 0,
+    system: 1,
     application: 1,
     queue: 1,
     datastore: 1,
@@ -223,6 +238,7 @@ const applicationView: View = {
   legendNames: {
     "actor-group": "Actor group",
     actor: "Actor",
+    system: "System",
     application: "Application",
     module: "Application module",
     queue: "Message queue / broker",
@@ -232,6 +248,7 @@ const applicationView: View = {
   legendNamesFr: {
     "actor-group": "Groupe d'acteurs",
     actor: "Acteur",
+    system: "Syst\u00e8me",
     application: "Application",
     module: "Module applicatif",
     queue: "File de messages / broker",
@@ -279,6 +296,12 @@ const applicationView: View = {
       fill: "#eef4fb",
       stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 },
     },
+    // Same palette as the logical view's `system`, so a system boundary reads
+    // the same in both views.
+    system: {
+      fill: "#f6f2ea",
+      stroke: { color: "#b09a6d", style: "solid", width: 1.2 },
+    },
     application: {
       fill: "#e8f1f8",
       stroke: { color: "#5b8db8", style: "solid", width: 1.2 },
@@ -305,6 +328,10 @@ const applicationView: View = {
     "actor-group": {
       fill: "#232a33",
       stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 },
+    },
+    system: {
+      fill: "#2b2822",
+      stroke: { color: "#9c8558", style: "solid", width: 1.2 },
     },
     application: {
       fill: "#1f2a33",

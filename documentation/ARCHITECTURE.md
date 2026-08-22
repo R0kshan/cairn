@@ -80,6 +80,12 @@ Adding a view, a diagnostic, a theme, or a style property starts here (or in
 `themes.ts` / `models/ast.ts`'s `DiagramStyle` for the latter two) — see
 [`AGENTS.md`](../AGENTS.md#extending-the-tool).
 
+The author's own positioning hints (`order:` on an element, `ID.side` on a flow
+endpoint — [`DSL_SPEC.md`](./DSL_SPEC.md)) enter at `scene-layout.ts` and nowhere
+else: they become elk layout options and ports before a `Scene` exists. Past that
+point a pinned flow is only a `pinned` boolean on its `SceneEdge`, which is what
+keeps §16 intact (INVARIANTS §17).
+
 ## 5. Where each invariant is enforced
 
 | Invariant ([`AGENTS.md`](../AGENTS.md#non-negotiable-invariants)) | Enforced by | Proven by |

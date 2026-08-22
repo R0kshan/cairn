@@ -10,7 +10,7 @@ import { dirname, basename } from "node:path";
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
 import { renderHuman } from "./diagnostics.ts";
-import { layout } from "./scene-layout.ts";
+import { layout, attachSideDiagnostics } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { views } from "./views.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
@@ -75,6 +75,7 @@ export function watchCommand(file: string, outFile: string) {
       try {
         const view = views[model.type!];
         const scene = await layout(model, view);
+        diags.push(...attachSideDiagnostics(scene, model));
         const { svg, overlapsAfter } = render(model, view, scene);
         writeFileSync(outFile, svg);
         if (diags.length)

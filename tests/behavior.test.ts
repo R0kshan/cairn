@@ -1,7 +1,7 @@
 /**
  * Behavior suite: direct, deep assertions on parsing, validation, layout, rendering,
  * matrix export, i18n, theming, and CLI behavior — including exact SVG geometry,
- * diagnostic codes and determinism. 
+ * diagnostic codes and determinism.
  * Run via `npm test`.
  */
 
@@ -14,7 +14,7 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
-import { layout } from "../src/scene-layout.ts";
+import { layout, attachSideDiagnostics } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
@@ -171,10 +171,7 @@ test("flows are orthogonal and never share an attachment point", async () => {
           if (!side) continue;
           const vertical = side === "east" || side === "west";
           const key = `${n.id}|${side}|${vertical ? n.height : n.width}`;
-          seats.set(key, [
-            ...(seats.get(key) ?? []),
-            { along: vertical ? p.y : p.x, id: e.id },
-          ]);
+          seats.set(key, [...(seats.get(key) ?? []), { along: vertical ? p.y : p.x, id: e.id }]);
           break;
         }
       }
@@ -238,8 +235,7 @@ test("no dead horizontal band survives in any disposition", async () => {
       const base = load(file);
       const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
       const pinned: [number, number][] = scene.nodes.map((n) => [n.y, n.y + n.height]);
-      for (const e of scene.edges)
-        for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
+      for (const e of scene.edges) for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
       for (const s of segmentsOf(scene).horizontal) pinned.push([s.y - 1, s.y + 1]);
       pinned.sort((a, b) => a[0] - b[0]);
       let reach = 0;
@@ -901,4 +897,140 @@ test("auth renders with a lock icon badge (path + rect), overlaps 0", async () =
   // lock shackle arc + body rect
   assert.match(svg, /v -4 a 5 5 0 0 1 10 0 v 4/);
   assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
+});
+
+// ---------- positioning controls (issue #8) ----------
+
+/** Y of the node with this id, for order assertions. */
+const yOf = (scene: { nodes: { id: string; y: number }[] }, id: string) =>
+  scene.nodes.find((node) => node.id === id)!.y;
+
+const ORDER_SRC = (first: string, second: string) =>
+  `diagram application "t"
+actor-group G "Actors" {
+  actor A_ONE "Alpha person" {
+    order: ${first}
+  }
+  actor B_TWO "Bravo person" {
+    order: ${second}
+  }
+}
+application APP "App" {
+  module M1 "Mod one"
+}
+A_ONE -> M1 (API_REST, JSON)
+B_TWO -> M1 (API_REST, JSON)
+`;
+
+test("`order:` places siblings in the declared reading order, both ways", async () => {
+  const ascending = await build(ORDER_SRC("1", "2"));
+  assert.ok(yOf(ascending.scene, "A_ONE") < yOf(ascending.scene, "B_TWO"));
+  const descending = await build(ORDER_SRC("2", "1"));
+  assert.ok(yOf(descending.scene, "B_TWO") < yOf(descending.scene, "A_ONE"));
+});
+
+test("`order:` rejects a non-integer or negative value (E0106), and stays usable as an id", () => {
+  const { codes } = check(
+    'diagram application "t"\napplication APP "a" {\n  order: two\n  module M1 "m"\n}\n',
+  );
+  assert.ok(codes.includes("E0106"));
+  // `order` is only a keyword before a `:` — as an id it still parses as a flow.
+  const asId = check(
+    'diagram application "t"\napplication APP "a" {\n  module order "Named order"\n  module M1 "m"\n}\norder -> M1 (API_REST, JSON)\n',
+  );
+  assert.equal(asId.diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(asId.model.flows[0].from, "order");
+});
+
+/** Which side of `nodeId` the flow's terminal sits on. */
+const sideOfTerminal = (
+  scene: {
+    nodes: { id: string; x: number; y: number; width: number; height: number }[];
+    edges: { id: string; pts: { x: number; y: number }[] }[];
+  },
+  flowId: string,
+  nodeId: string,
+  end: "start" | "finish",
+) => {
+  const edge = scene.edges.find((candidate) => candidate.id === flowId)!;
+  const node = scene.nodes.find((candidate) => candidate.id === nodeId)!;
+  const p = end === "start" ? edge.pts[0] : edge.pts[edge.pts.length - 1];
+  if (Math.abs(p.y - node.y) < 2) return "top";
+  if (Math.abs(p.y - (node.y + node.height)) < 2) return "bottom";
+  if (Math.abs(p.x - node.x) < 2) return "left";
+  if (Math.abs(p.x - (node.x + node.width)) < 2) return "right";
+  return "none";
+};
+
+test("`ID.side` pins where a flow leaves and arrives, and marks the edge pinned", async () => {
+  const { scene, model } = await build(
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\ndatastore DB "Store"\nU1 -> M1 (API_REST, JSON)\nM1.bottom -> DB.top (JDBC)\n',
+  );
+  const pinned = model.flows.find((flow) => flow.from === "M1")!;
+  assert.equal(pinned.fromSide?.value, "bottom");
+  assert.equal(pinned.toSide?.value, "top");
+  assert.equal(sideOfTerminal(scene, pinned.id, "M1", "start"), "bottom");
+  assert.equal(sideOfTerminal(scene, pinned.id, "DB", "finish"), "top");
+  assert.equal(scene.edges.find((edge) => edge.id === pinned.id)!.pinned, true);
+  // An unpinned flow in the same drawing carries no flag — the exemption is opt-in.
+  const free = model.flows.find((flow) => flow.from === "U1")!;
+  assert.equal(scene.edges.find((edge) => edge.id === free.id)!.pinned, undefined);
+});
+
+test("a declared id beats the `ID.side` reading (W0571), and an unknown side is E0223 alone", () => {
+  const shadowed = check(
+    'diagram application "t"\napplication APP "a" {\n  module M1 "m"\n  module M1.right "literal"\n}\ndatastore DB "d"\nM1.right -> DB (JDBC)\n',
+  );
+  assert.ok(shadowed.codes.includes("W0571"));
+  assert.equal(shadowed.model.flows[0].from, "M1.right");
+  assert.equal(shadowed.model.flows[0].fromSide, undefined);
+
+  const unknownSide = check(
+    'diagram application "t"\napplication APP "a" {\n  module M1 "m"\n}\ndatastore DB "d"\nM1.middle -> DB (JDBC)\n',
+  );
+  assert.ok(unknownSide.codes.includes("E0223"));
+  // The element is still identified, so no `unknown reference` piles on top.
+  assert.ok(!unknownSide.codes.includes("E0220"));
+});
+
+test("W0570 reports a pin the layout could not honor", async () => {
+  const src =
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\nU1.left -> M1 (API_REST, JSON)\n';
+  const { model, view, scene } = await build(src);
+  const diags = attachSideDiagnostics(scene, model);
+  assert.equal(view.name, "application");
+  // U1 is the leftmost node: leaving by its left side means crossing the whole
+  // drawing, which the layout declines — the pin is dropped, not forced.
+  if (sideOfTerminal(scene, model.flows[0].id, "U1", "start") !== "left") {
+    assert.equal(diags.length, 1);
+    assert.equal(diags[0].code, "W0570");
+  } else assert.equal(diags.length, 0);
+});
+
+test("arrow glyphs carry the line style, inline `{ stroke: … }` overrides them", async () => {
+  const { svg } = await build(
+    'diagram application "t"\napplication APP "a" {\n  module M1 "one"\n  module M2 "two"\n  module M3 "three"\n  module M4 "four"\n}\nM1 -> M2 (API_REST, JSON)\nM1 --> M3 (MQ, JSON)\nM1 ..> M4 (MQ, JSON)\nM2 --> M4 (MQ, JSON) { stroke: solid }\n',
+  );
+  const flowPaths = [...svg.matchAll(/<path[^>]*marker-end[^>]*>/g)].map((match) => match[0]);
+  assert.equal(flowPaths.length, 4);
+  assert.equal(flowPaths.filter((path) => path.includes('stroke-dasharray="5 3"')).length, 1);
+  assert.equal(flowPaths.filter((path) => path.includes('stroke-dasharray="2 2.5"')).length, 1);
+  assert.equal(flowPaths.filter((path) => !path.includes("stroke-dasharray")).length, 2);
+});
+
+test("`system` is a container kind in the application view and annotates the matrix", () => {
+  const src =
+    'diagram application "t"\nsystem PLAT "Platform" {\n  application APP "App" {\n    module M1 "Mod one"\n  }\n  datastore DB "Store"\n}\nM1 -> DB (JDBC)\n';
+  const { model, diags } = check(src);
+  assert.equal(diags.filter((d) => d.severity === "error").length, 0);
+  assert.ok(views.application.containerKinds.includes("system"));
+  const matrix = buildFlowMatrix(model, views.application);
+  const cellOf = (column: string) =>
+    matrix.rows[0].cells[matrix.columns.findIndex((c) => c.id === column)];
+  // Nearest container wins: the module reads as its application, the datastore
+  // as the system that directly holds it.
+  assert.match(cellOf("source"), /\(App\)$/);
+  assert.match(cellOf("dest"), /\(Platform\)$/);
+  // …and `system` stays unknown in a view that does not declare it.
+  assert.ok(check('diagram infrastructure "t"\nsystem S "s"\n').codes.includes("E0201"));
 });

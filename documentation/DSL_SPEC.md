@@ -22,7 +22,7 @@ Keywords are English; labels are free text. Built-in diagram types: `logical`, `
 | View | Element kinds | Flow specifics |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label required; business objects via `[REFS]` (**logical-view only** — a `business-object` in any other view is **E0222**) |
-| `application` | actor-group, actor, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540, actor flows exempt — C4 container-diagram practice)**; no business objects |
+| `application` | actor-group, actor, system, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540, actor flows exempt — C4 container-diagram practice)**; no business objects |
 | `infrastructure` | site, network-zone, server, app-instance, queue (horizontal cylinder), gateway (shield hexagon), auth (lock badge), idp, external | label **optional**; protocol still required (**E0240**): `(HTTPS/443)`; zones band left→right in declaration order |
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a sensitivity level `(public\|internal\|restricted\|secret)` (**E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**); zones band exposed→protected in declaration order |
 
@@ -33,7 +33,7 @@ Each view defines which element kinds are valid and how they can nest. Violation
 | View | Allowed nesting (child → parent) |
 |---|---|
 | `logical` | `block` → `layer` / `system` / `external`; `actor` → `actor-group`; `layer` → `system` |
-| `application` | `module` → `application`; `datastore` → root; `actor` → `actor-group` |
+| `application` | `module` → `application`; `datastore` → root; `actor` → `actor-group`; `application` / `queue` / `datastore` → `system` (optional — a `system` is a C4 system boundary, never required) |
 | `infrastructure` | `server` → `network-zone` / `site`; `app-instance` → `server` / `network-zone`; `network-zone` → `site` / `network-zone`; `gateway` / `auth` / `idp` → `network-zone` / `site` (convention, not enforced) |
 | `security` | `asset` → `trust-zone`; `security-node` → `trust-zone`; `actor` → `actor-group` |
 
@@ -44,11 +44,11 @@ The layout engine assigns each element a semantic horizontal band (ELK partition
 | View | Partitions (left → right) |
 |---|---|
 | `logical` | actor-groups (0) | systems (1) | externals (2) |
-| `application` | actors (0) | applications / datastores (1) | externals (2) |
+| `application` | actors (0) | systems / applications / datastores (1) | externals (2) |
 | `infrastructure` | sites / zones in declaration order (0) | externals (1) |
 | `security` | zones in declaration order (exposed → protected) |
 
-Flow syntax, full form: `A -> B : "label" (PROTOCOL, FORMAT) [BO_REFS] { inline style }` — every segment after the arrow is optional (subject to view rules). The `[BO_REFS]` segment is **logical-view only**. When a prose label is present the technical tail renders as a smaller gray sub-line under it; when the label is omitted the technical tail is promoted to the primary arrow label. In `flow-text: numbered` mode the tail joins the flow table entry.
+Flow syntax, full form: `A -> B : "label" (PROTOCOL, FORMAT) [BO_REFS] { inline style }` — every segment after the arrow is optional (subject to view rules). The arrow itself has three forms — `->` solid, `-->` dashed, `..>` dotted — and either endpoint may name the side it attaches to (`A.right -> B.left`); see [Positioning controls](#positioning-controls) below. The `[BO_REFS]` segment is **logical-view only**. When a prose label is present the technical tail renders as a smaller gray sub-line under it; when the label is omitted the technical tail is promoted to the primary arrow label. In `flow-text: numbered` mode the tail joins the flow table entry.
 
 ```
 diagram logical "Display system — logical view"
@@ -117,6 +117,56 @@ General form: `<kind> <ID> "<Label>" (<attr>)? { …children… }` for elements,
 
 **Inline style restriction:** Per-element and per-flow `{ style { … } }` blocks only support four properties: `fill`, `stroke`, `text`, `label`. Diagram-level `style { … }` blocks support the full 13-property set (themes, disposition, flow-text, etc.). An unknown property inside an inline block produces diagnostic **E0104**.
 
+### Positioning controls
+
+Layout is automatic. These three controls exist for the cases where it gets a
+diagram wrong; each is opt-in, and a file that uses none of them renders exactly
+as it did before they existed.
+
+**`order: <n>` — where an element sits inside its band.** A statement in the
+element's body, not a style property (placement is layout, not cosmetics).
+Lower comes first in reading order: left to right for `wide`/`slide`, top to
+bottom for `tall`/`page`. Values need not be contiguous, siblings without an
+`order` stay wherever the engine puts them, and the hint never moves an element
+into another partition. A value that is not a whole number ≥ 0 is **E0106**.
+
+```
+actor-group STAFF "Payment actors" {
+  actor OPERATOR "Payment operator" { order: 1 }
+  actor AUDITOR  "Compliance auditor" { order: 2 }
+}
+```
+
+**`ID.side` — which side of an element a flow attaches to.** Written on either
+endpoint, independently: `A.right -> B`, `A -> B.top`, or both. Sides are named
+as the diagram is *read* — `left`, `right`, `top`, `bottom` — not relative to the
+flow's direction, so a diagram authored for `wide` may want different pins after
+switching to `tall`.
+
+```
+POSTING.bottom -> LEDGER_DB.top (JDBC)
+```
+
+Because `.` is a legal id character, `API.right` is ambiguous with an element
+*named* `API.right`. A declared id always wins, and the dropped side reading is
+reported as **W0571**. An unknown side name is **E0223**. A pin is a request,
+not a guarantee: one the layout cannot reach is dropped rather than forced into
+an unreadable route, and reported as **W0570**. A pinned flow is exempt from the
+automatic re-siding and route repair that own every other flow — the author's
+side wins over the readability heuristics.
+
+**Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
+`..>` dotted. Whitespace before the arrow is required, as it always has been
+(`A->B` does not parse: `-` is a legal id character). Precedence follows the
+style model: an inline `{ stroke: dashed }` beats the glyph, which beats the
+diagram-level `flow-stroke`.
+
+```
+ROUTING --> SETTLE (MQ, JSON)          # dashed
+ROUTING ..> SCHEME (ISO8583)           # dotted
+M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
+```
+
 ## 2. Styling — three levels, most specific wins
 
 View defaults → diagram-level `style` block → inline per-element/per-flow. Terse shorthand: the parser disambiguates values by shape (`#hex` = color, keyword = line style, number = width). Conflicting same-type values (e.g. `dashed dotted`) → diagnostic.
@@ -176,7 +226,7 @@ Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS 
 | View | Columns (English) | Endpoint annotated with |
 |---|---|---|
 | `infrastructure` | No. · Source · Destination · Protocol · Port · Flow | `network-zone`, `site` |
-| `application` | No. · Source · Destination · Protocol · Flow | `application` |
+| `application` | No. · Source · Destination · Protocol · Flow | `application`, `system` |
 | `security` | No. · Source · Destination · Protocol · Flow | `trust-zone` |
 | `logical` | No. · Source · Destination · Flow | `layer`, `system` |
 
@@ -192,4 +242,4 @@ Every issue cairn reports carries a stable code (`E01xx` syntax, `E02xx` semanti
 
 ## 4. Deferred (not v0.1)
 
-Imports/includes across files, variables/themes, ports/anchors on element sides, icons, longhand style properties (`stroke-color:` …) as an additive alternative.
+Imports/includes across files, variables/themes, icons, longhand style properties (`stroke-color:` …) as an additive alternative.

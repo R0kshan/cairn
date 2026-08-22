@@ -59,14 +59,38 @@ export interface Element {
   parent?: Element;
   children: Element[];
   style?: StyleProps;
+  /**
+   * Author-declared placement preference inside the element's layout partition
+   * (`order: 2`). Opt-in: an element without one stays wherever the layout
+   * engine puts it, so a diagram that declares no order renders unchanged.
+   */
+  order?: { value: number; span: Span };
 }
+
+/**
+ * Which side of an element a flow attaches to, named as the diagram is *read*
+ * (`APP.right -> DB.left`). Absolute, not relative to the flow's direction.
+ */
+export type AttachSide = "left" | "right" | "top" | "bottom";
+
+export const ATTACH_SIDES: AttachSide[] = ["left", "right", "top", "bottom"];
 
 export interface Flow {
   id: string;
   from: string;
   fromSpan: Span;
+  /** Author-declared attachment side on the source element, if any. */
+  fromSide?: { value: AttachSide; span: Span };
   to: string;
   toSpan: Span;
+  /** Author-declared attachment side on the target element, if any. */
+  toSide?: { value: AttachSide; span: Span };
+  /**
+   * Line style carried by the arrow glyph: `->` leaves it unset (solid, the
+   * default), `-->` is dashed, `..>` dotted. An inline `{ stroke: … }` is more
+   * specific and wins; the glyph in turn beats the diagram's `flow-stroke`.
+   */
+  lineStyle?: "dashed" | "dotted";
   label?: string;
   tech?: { protocol?: string; format?: string; span: Span };
   objects?: { id: string; span: Span }[];
@@ -112,6 +136,8 @@ export const defaultDiagramStyle = (): DiagramStyle => ({
 
 export const explanations: Record<string, string> = {
   E0101: "Syntax error: the file does not follow the DSL grammar.",
+  E0106:
+    "`order:` takes a whole number ≥ 0. It is a placement preference inside the element's layout partition — lower comes first in reading order (left to right for `wide`/`slide`, top to bottom for `tall`/`page`). Values need not be contiguous, and elements without an `order` stay wherever the layout engine puts them.",
   E0201:
     "Unknown element kind for the active view. Each view defines its own kinds (e.g. logical: actor-group, actor, system, layer, block, external).",
   E0202:
@@ -142,6 +168,8 @@ export const explanations: Record<string, string> = {
     "Network zones belong to a site (or nest inside a larger zone): DMZ and LAN only mean something relative to a perimeter.",
   W0540:
     'C4 container-diagram practice: inter-process relationships should be labelled with their technology/protocol ("the how, not just the what"). Human/actor interactions are exempt. Add `(API_REST, JSON)` after the label, or ignore if the diagram is intentionally functional-only.',
+  E0223:
+    "Unknown attachment side. A flow endpoint may name the side it attaches to — `APP.right -> DB.left` — using the diagram as it is read: `left`, `right`, `top`, `bottom`. The side is a hint, not a guarantee: a side the layout cannot reach is dropped with a W0570 warning rather than forced.",
   E0240:
     "The infrastructure view requires every flow to carry its protocol (and port if relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)` after the label.",
   E0221:
@@ -156,6 +184,10 @@ export const explanations: Record<string, string> = {
     "A security node (firewall, WAF, bastion, reverse proxy) lives inside a trust zone — typically the exposed zone whose traffic it filters.",
   E0250:
     'The security view requires each trust zone to declare a sensitivity level in parentheses after the label: `trust-zone DMZ "DMZ" (public)`. Levels, least \u2192 most trusted: public, internal, restricted, secret. The level drives the zone color and the trust-boundary crossing checks.',
+  W0570:
+    "A declared attachment side (`APP.right -> DB.left`) did not survive layout: the flow ended up on another side of the element. Pins are honored where the layout can reach them and dropped where it cannot, rather than forced into an unreadable route. Move the element instead (`order:`), pin the other endpoint, or drop the pin.",
+  W0571:
+    "An endpoint reads `ID.side`, but `ID.side` is itself a declared element, and a declared id always wins — so the flow attaches to that element and no side is pinned. Rename the element if you meant the side.",
   W0560:
     "Security check: this flow enters a more-trusted zone from a less-trusted one without passing through a security-node (firewall/WAF/bastion). Route it through a filtering point, or confirm the direct path is deliberate. This is the diagram equivalent of a missing firewall rule review.",
   W0561:

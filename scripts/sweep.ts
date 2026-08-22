@@ -801,11 +801,12 @@ async function sweepShard(shardIndex: number, shardCount: number): Promise<void>
       // target up-and-left). Judged per axis with a tolerance: when the two nodes
       // roughly align on an axis (within `ATTACH_AWAY_TOL`), moving either way on
       // it is positioning, not wandering. Edges rerouted through detour channels
-      // wrap by design (invariant §11) and are exempt.
+      // wrap by design (invariant §11) and are exempt, as are edges whose
+      // terminal side the author pinned in the DSL (`APP.right -> DB.left`).
       const ATTACH_AWAY_TOL = 24;
       const byId = new Map(scene.nodes.map((n) => [n.id, n]));
       for (const e of scene.edges) {
-        if (e.pts.length < 2 || e.detour) continue;
+        if (e.pts.length < 2 || e.detour || e.pinned) continue;
         const flow = model.flows.find((f) => f.id === e.id);
         const from = byId.get(flow?.from ?? "");
         const to = byId.get(flow?.to ?? "");
