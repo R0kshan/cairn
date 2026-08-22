@@ -519,6 +519,11 @@ routes, so this is the only path to one. Priority: direct beats channel beats
 elk wrap. Rerouting applies to every disposition. Deterministic: no-op
 (byte-identical scene) when nothing qualifies.
 
+One exception: a flow whose terminals the author pinned (`A.top -> B.right`,
+§17) is never sent through a channel. A channel replaces both terminals with the
+lane's own entry and exit, so routing one would silently overrule the pin — and a
+backward flow is the case an author is most likely to be pinning.
+
 ## 12. Element kind validity per view
 
 Element kinds are restricted by view. Examples: `queue` is valid only in
@@ -619,8 +624,9 @@ implement them are emitted only where an author asked. `tests/corpus.test.ts`
 and the committed `examples/*.svg` are the gate.
 
 **A pin outranks the readability heuristics.** Where the author pinned a
-terminal, the passes that would move it stand down: `edge-tidy`'s re-siding
-(§4c) skips the edge, `optimiseRoutes` never picks it as a candidate, and
-`attachAway` exempts it in both the layout's own count and `scripts/sweep.ts`.
+terminal, the passes that would move it stand down: `route-detour` never sends it
+through a channel (§11), `edge-tidy`'s re-siding (§4c) skips the edge,
+`optimiseRoutes` never picks it as a candidate, and `attachAway` exempts it in
+both the layout's own count and `scripts/sweep.ts`.
 What the layout genuinely cannot deliver is dropped and reported as `W0570` —
 never forced into an unreadable route, and never silently ignored.

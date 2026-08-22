@@ -121,6 +121,86 @@ See [`examples/colors-custom.cairn`](examples/colors-custom.cairn) for a full ex
 
 <p align="center"><img src="examples/colors-custom.svg" alt="Custom colours" width="620"></p>
 
+### Positioning and flow line styles
+
+Layout is automatic. When it gets a diagram wrong, three opt-in controls take
+it back — a file that uses none of them renders exactly as before.
+
+**Dashed and dotted flows.** The arrow glyph carries the line style. From
+[`examples/positioning-sides.cairn`](examples/positioning-sides.cairn):
+
+```
+TASKS -> SCORING (MQ, JSON)                # solid — the default
+SCORING --> REINSURER (SFTP, CSV)          # dashed
+TRIAGE ..> REINSURER (API_REST, JSON)      # dotted
+```
+
+**Which side a flow leaves and arrives on.** Name the side on either endpoint,
+or both. Sides read as the diagram is drawn — `left`, `right`, `top`, `bottom`.
+Same file:
+
+```
+FORM.right -> TRIAGE.left (API_REST, JSON)   # both ends pinned
+TRIAGE -> TASKS.left (MQ, JSON)              # only the arrival pinned
+SCORING.top -> TRIAGE.right (API_REST, JSON) # a backward flow, pinned both ends
+```
+
+A pinned flow keeps its sides through the routing passes that own every other
+flow — including the channel rerouting that would otherwise take over a backward
+flow like the third one. A side the layout genuinely cannot reach is dropped
+rather than forced into an unreadable route, and reported as `W0570` — never
+silently ignored. Note that `A.right` loses to an element actually *named*
+`A.right` (`W0571`), and an unknown side name is `E0223`.
+
+<p align="center"><img src="examples/positioning-sides.svg" alt="Flow attachment sides" width="760"></p>
+
+**Element ordering.** `order:` is a statement in the element's own body — layout,
+not style, so it does not go in a `style` block. Lower comes first in reading
+order: left to right for `wide`/`slide`, top to bottom for `tall`/`page`. From
+[`examples/positioning.cairn`](examples/positioning.cairn):
+
+```
+actor-group STAFF "Payment actors" {
+  actor OPERATOR "Payment operator" {
+    order: 1
+  }
+  actor AUDITOR "Compliance auditor" {
+    order: 2
+  }
+}
+```
+
+Values need not be contiguous, siblings without an `order` stay wherever the
+engine puts them, and the hint never moves an element into another band. The
+same file orders the queue and the datastore inside their system boundary, and
+pins `POSTING.bottom -> LEDGER_DB.top`:
+
+<p align="center"><img src="examples/positioning.svg" alt="Element ordering, pinned sides and arrow glyphs" width="760"></p>
+
+**Where the label sits on its flow.** This one *is* style (decision D4), so it
+lives in the `style` block and resolves at the usual three levels — view default,
+then diagram, then inline per flow:
+
+```
+style {
+  flow-label: above     # on-line (default) | above | below
+}
+
+INTAKE -> ROUTING (API_REST, JSON)                     # above, from the style block
+ROUTING --> SETTLE (MQ, JSON) { label: below }         # this one flow overrides it
+```
+
+- `on-line` — the default. The text is centred **on** the run, with a halo
+  stroked behind it so the line does not cut through the words.
+- `above` / `below` — lift the text clear of the run by a fixed offset before it
+  is settled. Useful on a dense diagram where several runs share a corridor and
+  the halos start eating each other.
+
+The offset is applied first and the label is settled afterwards, so a placement
+that would collide with another label still ends up somewhere readable — the
+zero-overlap gate holds whichever value you pick. No shipped example sets it, so
+every diagram above shows the `on-line` default.
+
 ### Dispositions
 
 Same diagram different disposition : 

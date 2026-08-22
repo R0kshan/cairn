@@ -95295,6 +95295,7 @@ function detourCandidates(scene, model) {
   for (const edge of scene.edges) {
     const flow = flowById.get(edge.id);
     if (!flow || edge.pts.length < 2) continue;
+    if (edge.pinned) continue;
     const source = nodeById.get(flow.from);
     const target = nodeById.get(flow.to);
     if (!source || !target) continue;
@@ -99068,14 +99069,14 @@ function attachAwayOf(scene, model) {
     const from = byId.get(flow?.from ?? "");
     const to = byId.get(flow?.to ?? "");
     if (!from || !to) continue;
-    const centerOf = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+    const centerOf2 = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
     const away = (seg, target) => Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > ATTACH_AWAY_TOL && seg.x * target.x < 0 || Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > ATTACH_AWAY_TOL && seg.y * target.y < 0;
     const p0 = e.pts[0];
     const p1 = e.pts[1];
     const pn = e.pts[e.pts.length - 1];
     const pm = e.pts[e.pts.length - 2];
-    const toCenter = centerOf(to);
-    const fromCenter = centerOf(from);
+    const toCenter = centerOf2(to);
+    const fromCenter = centerOf2(from);
     if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
       flagged.add(e.id);
     if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
@@ -99140,6 +99141,28 @@ function relayoutVerdict(before, after) {
   }
   return -1;
 }
+var centerOf = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+function sideToward(from, to) {
+  const dx = centerOf(to).x - centerOf(from).x;
+  const dy = centerOf(to).y - centerOf(from).y;
+  return Math.abs(dx) >= Math.abs(dy) ? dx < 0 ? "WEST" : "EAST" : dy < 0 ? "NORTH" : "SOUTH";
+}
+function sideOn(p, n) {
+  if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
+    if (Math.abs(p.y - n.y) < 2) return "NORTH";
+    if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
+  }
+  if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
+    if (Math.abs(p.x - n.x) < 2) return "WEST";
+    if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
+  }
+  return null;
+}
+function firstPassSide(scene, flowId, role, sceneNode) {
+  const edge = scene.edges.find((candidate) => candidate.id === flowId);
+  if (!edge || edge.pts.length < 2) return null;
+  return sideOn(role === "src" ? edge.pts[0] : edge.pts[edge.pts.length - 1], sceneNode);
+}
 function constrainPorts(graph, scene, flagged, model) {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const elkById = /* @__PURE__ */ new Map();
@@ -99148,23 +99171,6 @@ function constrainPorts(graph, scene, flagged, model) {
     for (const child of node.children ?? []) register(child);
   };
   register(graph);
-  const centerOf = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
-  const sideToward = (from, to) => {
-    const dx = centerOf(to).x - centerOf(from).x;
-    const dy = centerOf(to).y - centerOf(from).y;
-    return Math.abs(dx) >= Math.abs(dy) ? dx < 0 ? "WEST" : "EAST" : dy < 0 ? "NORTH" : "SOUTH";
-  };
-  const sideOn = (p, n) => {
-    if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
-      if (Math.abs(p.y - n.y) < 2) return "NORTH";
-      if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
-    }
-    if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
-      if (Math.abs(p.x - n.x) < 2) return "WEST";
-      if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
-    }
-    return null;
-  };
   const flaggedNodes = /* @__PURE__ */ new Set();
   for (const flow of model.flows)
     if (flagged.has(flow.id)) {
@@ -99181,13 +99187,7 @@ function constrainPorts(graph, scene, flagged, model) {
       const role = flow.from === nodeId ? "src" : "dst";
       const other = nodeById.get(role === "src" ? flow.to : flow.from);
       if (!other) continue;
-      let side = sideToward(sceneNode, other);
-      if (!flagged.has(flow.id)) {
-        const edge = scene.edges.find((e) => e.id === flow.id);
-        const terminal = edge && edge.pts.length >= 2 ? role === "src" ? edge.pts[0] : edge.pts[edge.pts.length - 1] : null;
-        const actual = terminal ? sideOn(terminal, sceneNode) : null;
-        if (actual) side = actual;
-      }
+      const side = flagged.has(flow.id) ? sideToward(sceneNode, other) : firstPassSide(scene, flow.id, role, sceneNode) ?? sideToward(sceneNode, other);
       const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
       if ((elkNode.ports ?? []).some((port) => port.id === portId)) continue;
       ports.push({ id: portId, width: 1, height: 1, layoutOptions: { "elk.port.side": side } });

@@ -116,6 +116,11 @@ interface Candidate {
 /**
  * Right-to-left flows elk sent the long way round: those whose drawn length so
  * exceeds the direct distance that the detour is the route, not a detail.
+ *
+ * Pinned edges are never candidates. A channel replaces both terminals with the
+ * lane's own entry and exit, which is precisely what the author fixed when they
+ * wrote `A.top -> B.right` — and a backward flow is the case they are most
+ * likely to be fixing. Documented as the one exception to invariant §11.
  */
 function detourCandidates(scene: Scene, model: Model): Candidate[] {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
@@ -124,6 +129,7 @@ function detourCandidates(scene: Scene, model: Model): Candidate[] {
   for (const edge of scene.edges) {
     const flow = flowById.get(edge.id);
     if (!flow || edge.pts.length < 2) continue;
+    if (edge.pinned) continue;
     const source = nodeById.get(flow.from);
     const target = nodeById.get(flow.to);
     if (!source || !target) continue;

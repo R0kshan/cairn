@@ -453,6 +453,47 @@ function relayoutVerdict(before: Profile, after: Profile): number {
   return -1;
 }
 
+type ElkSide = "NORTH" | "SOUTH" | "EAST" | "WEST";
+
+const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+
+/** The side of `from` that faces `to` — where a flow between them should leave. */
+function sideToward(from: SceneNode, to: SceneNode): ElkSide {
+  const dx = centerOf(to).x - centerOf(from).x;
+  const dy = centerOf(to).y - centerOf(from).y;
+  return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? "WEST" : "EAST") : dy < 0 ? "NORTH" : "SOUTH";
+}
+
+/** The side of `n` the point `p` sits on, in elk's compass, or null for none. */
+function sideOn(p: { x: number; y: number }, n: SceneNode): ElkSide | null {
+  if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
+    if (Math.abs(p.y - n.y) < 2) return "NORTH";
+    if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
+  }
+  if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
+    if (Math.abs(p.x - n.x) < 2) return "WEST";
+    if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
+  }
+  return null;
+}
+
+/**
+ * Which side of `sceneNode` this flow's terminal already sits on in the
+ * first-pass scene — the side an unflagged edge keeps, so fixing one bad route
+ * does not disturb the good ones around it. Null when the terminal is not on a
+ * side of the node (or the edge has no route yet).
+ */
+function firstPassSide(
+  scene: Scene,
+  flowId: string,
+  role: "src" | "dst",
+  sceneNode: SceneNode,
+): ElkSide | null {
+  const edge = scene.edges.find((candidate) => candidate.id === flowId);
+  if (!edge || edge.pts.length < 2) return null;
+  return sideOn(role === "src" ? edge.pts[0] : edge.pts[edge.pts.length - 1], sceneNode);
+}
+
 /**
  * Rebuild `graph` with explicit ports on the nodes `flagged` flows touch, so elk
  * routes them out the side *facing* the counterpart. elk's default for a
@@ -465,7 +506,6 @@ function relayoutVerdict(before: Profile, after: Profile): number {
  * side elk already chose, so a good route is not disturbed to fix a bad one.
  */
 function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, model: Model): void {
-  type Side = "NORTH" | "SOUTH" | "EAST" | "WEST";
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const elkById = new Map<string, ElkNode>();
   const register = (node: ElkNode) => {
@@ -473,23 +513,6 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
     for (const child of node.children ?? []) register(child);
   };
   register(graph);
-  const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
-  const sideToward = (from: SceneNode, to: SceneNode): Side => {
-    const dx = centerOf(to).x - centerOf(from).x;
-    const dy = centerOf(to).y - centerOf(from).y;
-    return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? "WEST" : "EAST") : dy < 0 ? "NORTH" : "SOUTH";
-  };
-  const sideOn = (p: { x: number; y: number }, n: SceneNode): Side | null => {
-    if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
-      if (Math.abs(p.y - n.y) < 2) return "NORTH";
-      if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
-    }
-    if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
-      if (Math.abs(p.x - n.x) < 2) return "WEST";
-      if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
-    }
-    return null;
-  };
   // Only the flagged flows' nodes are pinned. Pinning *every* flow to its
   // first-pass side was measured worse (attachAway 303 -> 304, nearParallel
   // 63 -> 66, the application-compact regressions back): with no freedom left
@@ -510,18 +533,9 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
       const role = flow.from === nodeId ? "src" : "dst";
       const other = nodeById.get(role === "src" ? flow.to : flow.from);
       if (!other) continue;
-      let side = sideToward(sceneNode, other);
-      if (!flagged.has(flow.id)) {
-        const edge = scene.edges.find((e) => e.id === flow.id);
-        const terminal =
-          edge && edge.pts.length >= 2
-            ? role === "src"
-              ? edge.pts[0]
-              : edge.pts[edge.pts.length - 1]
-            : null;
-        const actual = terminal ? sideOn(terminal, sceneNode) : null;
-        if (actual) side = actual;
-      }
+      const side = flagged.has(flow.id)
+        ? sideToward(sceneNode, other)
+        : (firstPassSide(scene, flow.id, role, sceneNode) ?? sideToward(sceneNode, other));
       const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
       // The author already pinned this terminal, and `applyDeclaredPorts` put
       // the port on the node when the graph was built: leave it exactly as
