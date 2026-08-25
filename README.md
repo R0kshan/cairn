@@ -32,7 +32,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Spacial optimization** | Cairn aims to optimize space as much as possible (Still working on improving this functionnality) |
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
 | **Flow matrix.** | `cairn matrix` exports the flow matrix as CSV, Markdown, or SVG — from any view, with the columns that view can fill. In infrastructure it splits protocol from port and annotates endpoints that sit in a network zone; headers localise via `style { lang: fr }`. The same table is available to embedders through `compile(source, { matrix: true })`. |
-| **Author-controlled positioning.** | Layout is automatic, with four opt-in overrides for when it gets a diagram wrong: `order: 2` places an element among the siblings drawn beside it, a `layout { … }` block states the same thing as relations (`first`, `last`, `before`, `after`, `same-rank`), `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). A pin the layout cannot honor is reported (`W0570`), never silently dropped. |
+| **Author-controlled positioning.** | Layout is automatic, with four opt-in overrides for when it gets a diagram wrong: `order: 2` sequences a top-level element along the disposition's own reading direction (left to right in `wide`, top to bottom in `tall`), a `layout { … }` block arranges what shares a step of it (`first`, `last`, `before`, `after`, `same-rank`), `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). A pin the layout cannot honor is reported (`W0570`), never silently dropped. |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
 | **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
@@ -156,9 +156,29 @@ silently ignored. Note that `A.right` loses to an element actually *named*
 <p align="center"><img src="examples/positioning-sides.svg" alt="Flow attachment sides" width="760"></p>
 
 **Element ordering.** `order:` is a statement in the element's own body — layout,
-not style, so it does not go in a `style` block. Lower comes first along the axis
-*across* the flow direction: top to bottom for `wide`/`slide`, left to right for
-`tall`/`page`. From [`examples/positioning.cairn`](examples/positioning.cairn):
+not style, so it does not go in a `style` block. Lower comes first in the reading
+order the disposition defines: left to right for `wide`/`slide`, top to bottom
+for `tall`/`page`. From
+[`examples/placement/reading-order.cairn`](examples/placement/reading-order.cairn),
+where two backends publishing to the same queue would otherwise be stacked:
+
+```
+application BACKEND_L1 "Line 1 backend" {
+  order: 1
+  module MSG_L1 "Messaging\nhandler"
+}
+application BACKEND_L2 "Line 2 backend" {
+  order: 2
+  module MSG_L2 "Messaging\nhandler"
+}
+```
+
+<p align="center"><img src="examples/placement/reading-order.svg" alt="Top-level elements sequenced by order:" width="620"></p>
+
+Inside a container the axis flips, because a child's layer belongs to the flows
+and elk honors no constraint that would change it: there `order:` sorts the
+siblings sharing a layer — top to bottom in `wide`, left to right in `tall`. From
+[`examples/positioning.cairn`](examples/positioning.cairn):
 
 ```
 actor-group STAFF "Payment actors" {
@@ -171,12 +191,12 @@ actor-group STAFF "Payment actors" {
 }
 ```
 
-Values need not be contiguous, siblings without an `order` stay wherever the
-engine puts them, and the hint never moves an element into another band. It also
-never moves one *along* the flow: the engine reads `order:` as an index inside a
-layer, and layers come from the flows, so `A -> B` keeps B past A whatever the
-two orders say. `order:` separates elements already drawn side by side; the flows
-and the `disposition` decide the rest. The
+Values need not be contiguous, and the hint never moves an element into another
+band — an ordered actor-group stays on the entry side, ahead of the applications.
+A top-level element nobody ordered follows the flows into the band of the latest
+ordered element that reaches it, so a hint never drags a consumer ahead of its
+own source; where a declared order does contradict a flow, the order wins and the
+flow is drawn running backwards. The
 attachment-sides file above orders its containers, its modules and its leaves
 too, and ships as `wide`, `tall`, `slide` and `page` variants in
 [`examples/dispositions/`](examples/dispositions/) — same ordering and the same
@@ -205,10 +225,10 @@ elements the engine draws side by side, and leaves alone any pair a flow chain
 has already sequenced. An entry naming an element inside a container is refused
 (`E0234`), as is an unknown id (`E0230`), operands from two different parents
 (`E0231`), and a contradiction such as a `before` cycle (`E0232`, which drops the
-whole block rather than half-applying it). The five files in
+whole block rather than half-applying it). Five files in
 [`examples/placement/`](examples/placement/) are one shape drawn five ways:
 `baseline.cairn` with no block at all, then one file per entry kind, plus
-`sides.cairn` for the pins above.
+`sides.cairn` for the pins above; `reading-order.cairn` shows the other axis.
 
 **Where the label sits on its flow.** This one *is* style (decision D4), so it
 lives in the `style` block and resolves at the usual three levels — view default,

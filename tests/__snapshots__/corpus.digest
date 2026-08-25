@@ -57,6 +57,7 @@ medium.cairn  dim:2392x584 n:24 e:20 ov:0  geom:aef99213619d color:2ed23f4211da 
 placement/baseline.cairn  dim:1112x276 n:14 e:6 ov:0  geom:c7ac4d910060 color:4d06ef3531ab text:fa3340e6308b
 placement/before-after.cairn  dim:1112x276 n:14 e:6 ov:0  geom:916e732db330 color:4d06ef3531ab text:fa3340e6308b
 placement/first-last.cairn  dim:1165x286 n:14 e:6 ov:0  geom:e845a21ef873 color:4d06ef3531ab text:fa3340e6308b
+placement/reading-order.cairn  dim:491x203 n:6 e:4 ov:0  geom:52b4e6a8e780 color:60851c0ca209 text:3d0eff13230c
 placement/same-rank.cairn  dim:1165x286 n:14 e:6 ov:0  geom:4466e543ee8b color:4d06ef3531ab text:fa3340e6308b
 placement/sides.cairn  dim:1113x347 n:14 e:6 ov:0  geom:20c2a039644f color:4d06ef3531ab text:fa3340e6308b
 positioning-sides.cairn  dim:1682x301 n:12 e:10 ov:0  geom:ed091d8c4e5e color:d029d0fcbc88 text:6d35fb19dfd0

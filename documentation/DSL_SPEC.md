@@ -123,22 +123,42 @@ Layout is automatic. These three controls exist for the cases where it gets a
 diagram wrong; each is opt-in, and a file that uses none of them renders exactly
 as it did before they existed.
 
-**`order: <n>` — where an element sits among the siblings drawn beside it.** A
-statement in the element's body, not a style property (placement is layout, not
-cosmetics). Lower comes first along the axis *across* the flow direction: top to
-bottom for `wide`/`slide`, left to right for `tall`/`page`. Values need not be
-contiguous, siblings without an `order` stay wherever the engine puts them, and
-the hint never moves an element into another partition. A value that is not a
-whole number ≥ 0 is **E0106**.
+**`order: <n>` — where an element sits in the reading order.** A statement in the
+element's body, not a style property (placement is layout, not cosmetics). Lower
+comes first, and *first* is defined by the active disposition: left to right for
+`wide`/`slide`, top to bottom for `tall`/`page`. Values need not be contiguous,
+and a value that is not a whole number ≥ 0 is **E0106**.
 
-**What `order:` cannot do — move an element along the flow.** The layout engine
-reads it as an index inside a *layer*, and layers come from the flows: `A -> B`
-puts B one layer past A, and no order value changes that. So `order:` separates
-elements the engine already draws side by side, and is a no-op between two
-elements a flow chain has already sequenced. It is reported by neither an error
-nor a warning — the hint is a preference among siblings, not an assertion about
-the whole drawing. When the reading order along the flow is wrong, the fix is
-the flows or the `disposition`, not a positioning hint.
+```
+application BACKEND_L1 "Line 1 backend" {
+  order: 1
+  module MSG_L1 "Messaging handler"
+}
+application BACKEND_L2 "Line 2 backend" {
+  order: 2
+  module MSG_L2 "Messaging handler"
+}
+```
+
+At the diagram root the hint becomes a band of the element's own layout
+partition, which is why it reads along the length: two elements the flows give
+the same depth — the two backends above, both publishing to the same queue —
+would otherwise be drawn side by side across the axis. Three rules bound it.
+
+- **It never crosses a view partition** (§9). An `order:` on an actor-group
+  orders it among the other actor-groups; it cannot push it past the
+  applications.
+- **An element without an `order:` follows the flows.** It joins the band of the
+  latest ordered element that flows into it, so a hint never drags a consumer
+  ahead of its own source; when nothing flows into it, it sits in the first band.
+- **A flow may end up running backwards.** Where the declared order contradicts
+  the flow direction, the order wins and the flow is drawn as a backward edge.
+
+**Inside a container `order:` sorts across the axis instead** — top to bottom in
+`wide`/`slide`, left to right in `tall`/`page`. A child's layer is fixed by the
+flows there and every layer constraint elk offers was measured to be a no-op
+under its `INCLUDE_CHILDREN` hierarchy handling, so the hint orders the siblings
+that share a layer and nothing more:
 
 ```
 actor-group STAFF "Payment actors" {
@@ -196,10 +216,13 @@ layout {
 }
 ```
 
-Reading order is the same axis `order:` uses, with the same limit: top to bottom
-for `wide`/`slide`, left to right for `tall`/`page`, and among siblings the
-engine draws side by side. An entry naming two elements a flow chain has already
-sequenced into different layers leaves them where they are.
+The block orders *across* the reading direction — top to bottom for
+`wide`/`slide`, left to right for `tall`/`page` — among the elements the engine
+draws side by side. It is an index inside a layer, so unlike a root-level
+`order:` it never moves an element along the length: an entry naming two
+elements a flow chain has already sequenced into different layers leaves them
+where they are. Reach for `order:` to sequence the drawing, and for the block to
+arrange what shares a step of it.
 
 Five rules make the block predictable.
 
@@ -219,19 +242,17 @@ Five rules make the block predictable.
   elements a `same-rank` already ties together. The block is then ignored for
   that container and the engine's own order stands.
 
-`order:` is the more specific statement, so an element carrying one keeps its own
-value and the block's rank is dropped for that element alone. The two are
-independent scales, though — a rank counts steps of the block's own reading
-order, an `order:` is the author's number — so an element carrying an `order:`
-is not placed *relative* to the ranked ones in any defined way. Pick one control
-per container: `order:` when the positions are known, the block when only the
-relations are. Like the other two controls, the block never
+The two controls act on different axes, so they compose rather than compete: an
+element carrying an `order:` is banded along the length by it and drops the
+block's rank, while the block arranges the rest across the axis. Like the other
+two controls, the block never
 moves an element into another partition (§9 of `INVARIANTS.md`), and a file that
 declares none renders exactly as it did before the block existed.
 
-The five files in [`examples/placement/`](../examples/placement) are one shape
-drawn five ways: `baseline.cairn` with no block at all, then one file per entry
-kind, plus `sides.cairn` for the `ID.side` pins above.
+Five files in [`examples/placement/`](../examples/placement) are one shape drawn
+five ways: `baseline.cairn` with no block at all, then one file per entry kind,
+plus `sides.cairn` for the `ID.side` pins above. `reading-order.cairn` is the
+other axis — two backends sequenced along the length by `order:`.
 
 ## 2. Styling — three levels, most specific wins
 

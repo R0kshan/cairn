@@ -938,9 +938,13 @@ test("auth renders with a lock icon badge (path + rect), overlaps 0", async () =
 
 // ---------- positioning controls (issue #8) ----------
 
-/** Y of the node with this id, for order assertions. */
+/** Y of the node with this id, for order assertions across a `wide` drawing. */
 const yOf = (scene: { nodes: { id: string; y: number }[] }, id: string) =>
   scene.nodes.find((node) => node.id === id)!.y;
+
+/** X of the node with this id, for order assertions along a `wide` drawing. */
+const xOf = (scene: { nodes: { id: string; x: number }[] }, id: string) =>
+  scene.nodes.find((node) => node.id === id)!.x;
 
 const ORDER_SRC = (first: string, second: string) =>
   `diagram application "t"
@@ -959,11 +963,79 @@ A_ONE -> M1 (API_REST, JSON)
 B_TWO -> M1 (API_REST, JSON)
 `;
 
-test("`order:` places siblings in the declared reading order, both ways", async () => {
+test("inside a container, `order:` sorts siblings across the axis, both ways", async () => {
+  // The two actors share their actor-group's layer, and elk honors nothing else
+  // for a nested element — so `wide` orders them top to bottom.
   const ascending = await build(ORDER_SRC("1", "2"));
   assert.ok(yOf(ascending.scene, "A_ONE") < yOf(ascending.scene, "B_TWO"));
   const descending = await build(ORDER_SRC("2", "1"));
   assert.ok(yOf(descending.scene, "B_TWO") < yOf(descending.scene, "A_ONE"));
+});
+
+const READING_SRC = (disposition: string, first: string, second: string) =>
+  `diagram application "t"
+style { disposition: ${disposition} }
+application BACK_ONE "Backend one" {
+  order: ${first}
+  module MSG_ONE "Messaging one"
+}
+application BACK_TWO "Backend two" {
+  order: ${second}
+  module MSG_TWO "Messaging two"
+}
+queue Q_ONE "Queue one"
+MSG_ONE -> Q_ONE (AMQP)
+MSG_TWO -> Q_ONE (AMQP)
+`;
+
+test("at the diagram root, `order:` reads along the disposition's own direction", async () => {
+  // Both backends feed the same queue, so the flows give them equal depth and
+  // the engine would draw them side by side. `order:` sequences them instead.
+  const wide = await build(READING_SRC("wide", "1", "2"));
+  assert.ok(xOf(wide.scene, "BACK_ONE") < xOf(wide.scene, "BACK_TWO"), "wide: left to right");
+  const wideReversed = await build(READING_SRC("wide", "2", "1"));
+  assert.ok(
+    xOf(wideReversed.scene, "BACK_TWO") < xOf(wideReversed.scene, "BACK_ONE"),
+    "wide: and the other way round",
+  );
+
+  const tall = await build(READING_SRC("tall", "1", "2"));
+  assert.ok(yOf(tall.scene, "BACK_ONE") < yOf(tall.scene, "BACK_TWO"), "tall: top to bottom");
+  const tallReversed = await build(READING_SRC("tall", "2", "1"));
+  assert.ok(
+    yOf(tallReversed.scene, "BACK_TWO") < yOf(tallReversed.scene, "BACK_ONE"),
+    "tall: and the other way round",
+  );
+});
+
+test("`order:` never moves an element out of its view partition", async () => {
+  // The actor-group is banded ahead of the applications (§9). An order that says
+  // otherwise orders it among its own band's members, and nothing more.
+  const { scene } = await build(`diagram application "t"
+actor-group G "Actors" {
+  order: 9
+  actor U1 "User one"
+}
+application APP_ONE "App one" {
+  order: 1
+  module M1 "Mod one"
+}
+application APP_TWO "App two" {
+  order: 2
+  module M2 "Mod two"
+}
+U1 -> M1 (API_REST, JSON)
+M1 -> M2 (API_REST, JSON)
+`);
+  assert.ok(xOf(scene, "G") < xOf(scene, "APP_ONE"), "actors stay on the entry side");
+  assert.ok(xOf(scene, "APP_ONE") < xOf(scene, "APP_TWO"), "…and the applications still order");
+});
+
+test("an unordered element follows the flows into a band, not to the front", async () => {
+  // Nothing orders the queue; it is fed by the later backend, so it lands with
+  // it rather than being dragged into the first band ahead of its own source.
+  const { scene } = await build(READING_SRC("wide", "1", "2"));
+  assert.ok(xOf(scene, "Q_ONE") >= xOf(scene, "BACK_TWO"), "no backward flow into the queue");
 });
 
 test("`order:` rejects a non-integer or negative value (E0106), and stays usable as an id", () => {
@@ -1086,10 +1158,6 @@ layout -> M1 (API_REST, JSON)
   assert.equal(asId.diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(asId.model.flows[0].from, "layout");
 });
-/** X of the node with this id, for the layer assertions the ordering hints cannot cross. */
-const xOf = (scene: { nodes: { id: string; x: number }[] }, id: string) =>
-  scene.nodes.find((node) => node.id === id)!.x;
-
 const RANKED_SRC = (order: string, block: string) =>
   `diagram logical "t"
 actor-group G "Actors" {
@@ -1119,10 +1187,11 @@ test("`order:` beats a `layout` rank on the same element", async () => {
   assert.ok(yOf(ordered.scene, "S2") > yOf(ordered.scene, "S3"), "…behind the ranked siblings");
 });
 
-test("an ordering hint places siblings, never layers", async () => {
+test("a `layout` entry places siblings, never layers", async () => {
   // The flows sequence the three systems, so the layout draws them one per
-  // layer. A `layout` entry orders *inside* a layer, so it has nothing to say
-  // here — and says it by changing nothing (DSL_SPEC § Positioning controls).
+  // layer. A `layout` entry orders *inside* a layer — unlike a top-level
+  // `order:`, which bands them — so it has nothing to say here, and says it by
+  // changing nothing (DSL_SPEC § 1.3).
   const chained = (block: string) => `diagram logical "t"
 actor-group G "Actors" {
   actor A_ONE "Alpha person"

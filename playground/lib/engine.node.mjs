@@ -99244,14 +99244,15 @@ var rankOption = (element, rankOf) => {
   const rank = rankOf.get(element.id);
   return rank === void 0 ? {} : { "elk.position": `(0,${rank})` };
 };
-function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
+function toElkNode2(element, compact, fonts, root = false) {
+  const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
     return {
       id: element.id,
       layoutOptions: {
         "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
-        ...orderOption(element),
+        ...root ? {} : orderOption(element),
         ...semiInteractiveOption(element.children)
       },
       labels: [
@@ -99261,7 +99262,7 @@ function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
         }
       ],
       children: element.children.map(
-        (child) => toElkNode2(child, compact, containerFontSize, nodeFontSize)
+        (child) => toElkNode2(child, compact, fonts)
       )
     };
   }
@@ -99269,7 +99270,7 @@ function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
   const isActor = element.kind === "actor";
   return {
     id: element.id,
-    ...element.order ? { layoutOptions: orderOption(element) } : {},
+    ...element.order && !root ? { layoutOptions: orderOption(element) } : {},
     width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
     height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
   };
@@ -99522,6 +99523,7 @@ function constrainPorts(graph, scene, flagged, model) {
 var INGRESS_PARTITION = -1;
 var EGRESS_PARTITION = 900;
 var COMPACT_WRAP = 10;
+var SLOT_SCALE = 1e3;
 function elkPartitionOf(element, index, view, ingressExternal) {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
   if (element.kind === "actor" || element.kind === "actor-group") return INGRESS_PARTITION;
@@ -99529,6 +99531,52 @@ function elkPartitionOf(element, index, view, ingressExternal) {
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== void 0) return 90 + view.partitions[element.kind];
   return index;
+}
+function rootAncestorOf(model, id) {
+  let element = model.index.get(id);
+  if (!element) return void 0;
+  while (element.parent) element = element.parent;
+  return element.id;
+}
+function readingSlots(model, view, ingressExternal) {
+  const slotOf = /* @__PURE__ */ new Map();
+  if (!model.elements.some((element) => element.order)) return slotOf;
+  const bandOf = new Map(
+    model.elements.map((element, index) => [
+      element.id,
+      elkPartitionOf(element, index, view, ingressExternal)
+    ])
+  );
+  const lowestOf = /* @__PURE__ */ new Map();
+  for (const band of new Set(bandOf.values())) {
+    const members = model.elements.filter((element) => bandOf.get(element.id) === band);
+    const declared = [
+      ...new Set(members.filter((m) => m.order).map((m) => m.order.value))
+    ].sort((a, b) => a - b);
+    const lowest = declared.length ? 1 : 0;
+    lowestOf.set(band, lowest);
+    for (const member of members)
+      slotOf.set(
+        member.id,
+        member.order ? declared.indexOf(member.order.value) + 1 : lowest
+      );
+  }
+  const ordered = new Set(model.elements.filter((element) => element.order).map((e) => e.id));
+  for (let pass = 0; pass < model.elements.length; pass++) {
+    let moved = false;
+    for (const flow of model.flows) {
+      const from = rootAncestorOf(model, flow.from);
+      const to = rootAncestorOf(model, flow.to);
+      if (!from || !to || from === to || ordered.has(to)) continue;
+      if (bandOf.get(from) !== bandOf.get(to)) continue;
+      const candidate = slotOf.get(from);
+      if (candidate <= slotOf.get(to)) continue;
+      slotOf.set(to, candidate);
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return slotOf;
 }
 function elkFlowEdge(flow, ctx, labelWrap) {
   const { compact, numbered, fonts, businessObjectName } = ctx;
@@ -99646,7 +99694,7 @@ function attachSideDiagnostics(scene, model) {
   return diagnostics;
 }
 function buildElkGraph(ctx, direction, options) {
-  const { model, view, ingressExternal, rankOf, compact, numbered, fonts } = ctx;
+  const { model, view, ingressExternal, rankOf, slotOf, compact, numbered, fonts } = ctx;
   const graph = {
     id: "root",
     layoutOptions: {
@@ -99675,9 +99723,10 @@ function buildElkGraph(ctx, direction, options) {
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
-      // Only switched on when a top-level element declares an order; a nested
-      // one arms its own container in `toElkNode`.
-      ...semiInteractiveOption(model.elements, rankOf.size > 0),
+      // Only switched on for a `layout { … }` rank, the one top-level hint still
+      // expressed as an index inside a layer; a top-level `order:` is a partition
+      // band, and a nested one arms its own container in `toElkNode`.
+      ...semiInteractiveOption([], rankOf.size > 0),
       ...numbered && !options?.tight ? {
         "elk.spacing.nodeNode": "26",
         "elk.layered.spacing.nodeNodeBetweenLayers": "64",
@@ -99688,12 +99737,16 @@ function buildElkGraph(ctx, direction, options) {
       } : {}
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode2(element, compact, fonts.cont, fonts.node);
+      const elkNode = toElkNode2(element, compact, fonts, true);
+      const band = elkPartitionOf(element, index, view, ingressExternal);
+      const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
         ...rankOption(element, rankOf),
+        // Without an `order:` anywhere the band is emitted as it always was, so
+        // the drawing is byte-identical to one from before the hint existed.
         "elk.partitioning.partition": String(
-          elkPartitionOf(element, index, view, ingressExternal)
+          slot === void 0 ? band : band * SLOT_SCALE + slot
         )
       };
       return elkNode;
@@ -99759,6 +99812,7 @@ async function layout(model, view) {
     // The validator resolved the same constraints to report them; this reads the
     // ranks and ignores the problems (`layout-constraints.ts`).
     rankOf: resolveLayoutConstraints(model).rankOf,
+    slotOf: readingSlots(model, view, ingressExternalElements),
     compact,
     numbered,
     fonts: {

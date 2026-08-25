@@ -83,7 +83,10 @@ Adding a view, a diagnostic, a theme, or a style property starts here (or in
 The author's own positioning hints (`order:` on an element, a `layout { … }`
 entry, `ID.side` on a flow endpoint — [`DSL_SPEC.md`](./DSL_SPEC.md)) enter at
 `scene-layout.ts` and nowhere else: they become elk layout options and ports
-before a `Scene` exists. Past that point a pinned flow is only a `pinned` boolean
+before a `Scene` exists. A top-level `order:` is the one that changes the graph's
+shape rather than an option on a node — `readingSlots` resolves it into a band of
+the element's view partition, which is what makes it read along `elk.direction`
+(INVARIANTS §9, §17). Past that point a pinned flow is only a `pinned` boolean
 on its `SceneEdge`, which is what keeps §16 intact (INVARIANTS §17).
 
 The `layout` block is the one hint with a resolution step of its own:

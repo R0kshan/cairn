@@ -143,21 +143,19 @@ function computeIngressExternalElements(model: Model): Set<string> {
 }
 
 /**
- * The author's `order: n` as an elk position hint. elk reads the vector's
- * *second* component as the index **within a layer**, and honors it only under
- * `crossingMinimization.semiInteractive` (set on the graph in `buildElkGraph`
- * when any element declares an order). Absent for an element without one, which
- * is what keeps an order-free diagram byte-identical.
+ * The author's `order: n` on an element **inside a container**, as an elk
+ * position hint. elk reads the vector's *second* component as the index within a
+ * layer, and honors it only under `crossingMinimization.semiInteractive` (armed
+ * by the container in `toElkNode`). Absent for an element without one, which is
+ * what keeps an order-free diagram byte-identical.
  *
- * Two consequences the hint's documentation states and this comment repeats,
- * because both were measured rather than assumed:
- *
- * - The axis is the one *across* the flow direction — top to bottom under
- *   `elk.direction: RIGHT` (`wide`/`slide`), left to right under `DOWN`
- *   (`tall`/`page`).
- * - Layer membership comes from the flows, and no position hint changes it. Two
- *   elements a flow chain puts in different layers keep that relation whatever
- *   their orders say (`DSL_SPEC.md` § Positioning controls).
+ * A top-level element does not come through here: its `order:` sequences it
+ * along the reading direction, which is a partition band (`readingSlots`), not
+ * an index inside a layer. Inside a container elk offers nothing equivalent —
+ * every layer constraint was measured to be a no-op under
+ * `hierarchyHandling: INCLUDE_CHILDREN` — so there the hint sorts the siblings
+ * that share a layer, across the flow direction (`DSL_SPEC.md` § Positioning
+ * controls).
  */
 const orderOption = (element: Element): Record<string, string> =>
   element.order ? { "elk.position": `(0,${element.order.value})` } : {};
@@ -187,20 +185,25 @@ const rankOption = (element: Element, rankOf: Map<string, number>): Record<strin
   return rank === undefined ? {} : { "elk.position": `(0,${rank})` };
 };
 
-/** Converts an `Element` (and its children, recursively) into elk's input node shape. */
+/**
+ * Converts an `Element` (and its children, recursively) into elk's input node
+ * shape. `root` marks a top-level element, whose own `order:` is a partition
+ * band rather than an index inside a layer — its children still carry theirs.
+ */
 function toElkNode(
   element: Element,
   compact: boolean,
-  containerFontSize: number,
-  nodeFontSize: number,
+  fonts: { cont: number; node: number },
+  root = false,
 ): ElkNode {
+  const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
     return {
       id: element.id,
       layoutOptions: {
         "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
-        ...orderOption(element),
+        ...(root ? {} : orderOption(element)),
         ...semiInteractiveOption(element.children),
       },
       labels: [
@@ -210,7 +213,7 @@ function toElkNode(
         },
       ],
       children: element.children.map((child) =>
-        toElkNode(child, compact, containerFontSize, nodeFontSize),
+        toElkNode(child, compact, fonts),
       ),
     };
   }
@@ -218,7 +221,7 @@ function toElkNode(
   const isActor = element.kind === "actor";
   return {
     id: element.id,
-    ...(element.order ? { layoutOptions: orderOption(element) } : {}),
+    ...(element.order && !root ? { layoutOptions: orderOption(element) } : {}),
     width: isActor
       ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8)
       : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
@@ -667,6 +670,12 @@ interface GraphContext {
    * option at all, which is what keeps such a diagram byte-identical (§17).
    */
   rankOf: Map<string, number>;
+  /**
+   * Reading-order slot per top-level element, resolved from the `order:` hints
+   * (`readingSlots`). Empty for a diagram that declares none, and an empty map
+   * leaves the view's partitions untouched (§17).
+   */
+  slotOf: Map<string, number>;
   compact: boolean;
   numbered: boolean;
   fonts: { edge: number; node: number; cont: number; scale: number };
@@ -683,7 +692,17 @@ const INGRESS_PARTITION = -1;
 const EGRESS_PARTITION = 900;
 const COMPACT_WRAP = 10;
 
-/** Which elk partition an element belongs to. */
+/**
+ * How many reading-order slots one view partition is split into. A partition
+ * band becomes `partition * SLOT_SCALE + slot`, so the view's own bands (§9)
+ * keep their relative order — every slot of band *n* stays ahead of every slot
+ * of band *n+1* — and an `order:` can only move an element inside its own band.
+ * Slots are normalised ranks bounded by the number of top-level elements, so no
+ * author value can overflow into the next band.
+ */
+const SLOT_SCALE = 1000;
+
+/** Which elk partition an element belongs to, before its reading-order slot. */
 function elkPartitionOf(
   element: Element,
   index: number,
@@ -696,6 +715,90 @@ function elkPartitionOf(
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== undefined) return 90 + view.partitions[element.kind];
   return index;
+}
+
+/** The top-level ancestor of `id` — the element a flow endpoint is banded with. */
+function rootAncestorOf(model: Model, id: string): string | undefined {
+  let element = model.index.get(id);
+  if (!element) return undefined;
+  while (element.parent) element = element.parent;
+  return element.id;
+}
+
+/**
+ * The author's `order:` on a top-level element, resolved into a slot inside that
+ * element's view partition — which is what makes it read along the *direction*
+ * axis: left to right under `elk.direction: RIGHT` (`wide`/`slide`), top to
+ * bottom under `DOWN` (`tall`/`page`). A partition band is a contiguous run of
+ * layers, so this is the one lever that sequences elements the flows would
+ * otherwise put side by side. elk's own layer constraints do not do it:
+ * `layerChoiceConstraint`, `layering.strategy: INTERACTIVE` and
+ * `elk.interactiveLayout` were all measured to be no-ops here.
+ *
+ * Three rules keep it predictable.
+ *
+ * - **Slots are per view partition.** Ordering happens among the siblings that
+ *   share a band, never across bands, so `order:` cannot move an actor-group
+ *   past the applications (§9).
+ * - **Declared values become ranks.** The distinct `order:` values of a band,
+ *   ascending, become slots `1…k`. Gaps in the author's numbering cost nothing,
+ *   and no value can reach the next band.
+ * - **An element without an `order:` follows the flows into a slot.** elk needs
+ *   a partition for every node — one left unpartitioned was measured to drift to
+ *   the end of the drawing — so an unordered element takes the highest slot
+ *   among the elements that flow *into* it, and the lowest declared slot when
+ *   nothing does. That is a monotone fixed point: it terminates on a cyclic
+ *   graph and does not depend on the order the flows are visited (§2).
+ *
+ * Empty unless some top-level element declares an `order:`, and an empty map
+ * leaves every partition exactly as it was — which is what keeps a diagram that
+ * declares none byte-identical (§17).
+ */
+function readingSlots(model: Model, view: View, ingressExternal: Set<string>): Map<string, number> {
+  const slotOf = new Map<string, number>();
+  if (!model.elements.some((element) => element.order)) return slotOf;
+
+  const bandOf = new Map(
+    model.elements.map((element, index) => [
+      element.id,
+      elkPartitionOf(element, index, view, ingressExternal),
+    ]),
+  );
+  const lowestOf = new Map<number, number>();
+  for (const band of new Set(bandOf.values())) {
+    const members = model.elements.filter((element) => bandOf.get(element.id) === band);
+    const declared = [
+      ...new Set(members.filter((m) => m.order).map((m) => m.order!.value)),
+    ].sort((a, b) => a - b);
+    // A band nobody ordered keeps one slot, so its members stay as free as they
+    // were; `lowest` is then that slot, and the propagation below is a no-op.
+    const lowest = declared.length ? 1 : 0;
+    lowestOf.set(band, lowest);
+    for (const member of members)
+      slotOf.set(
+        member.id,
+        member.order ? declared.indexOf(member.order.value) + 1 : lowest,
+      );
+  }
+
+  // Pull every unordered element forward to the last slot that reaches it, so a
+  // flow never has to run backwards into a band it was not placed in.
+  const ordered = new Set(model.elements.filter((element) => element.order).map((e) => e.id));
+  for (let pass = 0; pass < model.elements.length; pass++) {
+    let moved = false;
+    for (const flow of model.flows) {
+      const from = rootAncestorOf(model, flow.from);
+      const to = rootAncestorOf(model, flow.to);
+      if (!from || !to || from === to || ordered.has(to)) continue;
+      if (bandOf.get(from) !== bandOf.get(to)) continue;
+      const candidate = slotOf.get(from)!;
+      if (candidate <= slotOf.get(to)!) continue;
+      slotOf.set(to, candidate);
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return slotOf;
 }
 
 /** The elk edge for one flow, with the label it carries already measured. */
@@ -846,7 +949,7 @@ function buildElkGraph(
   direction: "RIGHT" | "DOWN",
   options?: GraphOptions,
 ): ElkNode {
-  const { model, view, ingressExternal, rankOf, compact, numbered, fonts } = ctx;
+  const { model, view, ingressExternal, rankOf, slotOf, compact, numbered, fonts } = ctx;
   const graph: ElkNode = {
     id: "root",
     layoutOptions: {
@@ -877,9 +980,10 @@ function buildElkGraph(
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
-      // Only switched on when a top-level element declares an order; a nested
-      // one arms its own container in `toElkNode`.
-      ...semiInteractiveOption(model.elements, rankOf.size > 0),
+      // Only switched on for a `layout { … }` rank, the one top-level hint still
+      // expressed as an index inside a layer; a top-level `order:` is a partition
+      // band, and a nested one arms its own container in `toElkNode`.
+      ...semiInteractiveOption([], rankOf.size > 0),
       ...(numbered && !options?.tight
         ? {
             "elk.spacing.nodeNode": "26",
@@ -892,12 +996,16 @@ function buildElkGraph(
         : {}),
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode(element, compact, fonts.cont, fonts.node);
+      const elkNode = toElkNode(element, compact, fonts, true);
+      const band = elkPartitionOf(element, index, view, ingressExternal);
+      const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
         ...rankOption(element, rankOf),
+        // Without an `order:` anywhere the band is emitted as it always was, so
+        // the drawing is byte-identical to one from before the hint existed.
         "elk.partitioning.partition": String(
-          elkPartitionOf(element, index, view, ingressExternal),
+          slot === undefined ? band : band * SLOT_SCALE + slot,
         ),
       };
       return elkNode;
@@ -1038,6 +1146,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // The validator resolved the same constraints to report them; this reads the
     // ranks and ignores the problems (`layout-constraints.ts`).
     rankOf: resolveLayoutConstraints(model).rankOf,
+    slotOf: readingSlots(model, view, ingressExternalElements),
     compact,
     numbered,
     fonts: {
