@@ -529,8 +529,8 @@ dispositions, they go on the top and bottom respectively. The infrastructure
 view models users as actors (person glyph) on the entry side.
 
 Within a partition, order is the layout engine's to choose — unless the author
-declares one (`order: 2`, §17), which is honored as a preference and never moves
-an element into a different partition.
+declares one (`order: 2` or a `layout { … }` entry, §17), which is honored as a
+preference among siblings and never moves an element into a different partition.
 
 ## 10. Slide / page orientation
 
@@ -628,8 +628,9 @@ Enforced structurally and by test:
 - `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
   registry appears in those sources, so the check covers kinds added later.
 
-Two DSL-declared positioning hints exist (§17), and neither breaches this: an
-`order:` becomes an elk layout option before any `Scene` exists, and a pinned
+Three DSL-declared positioning hints exist (§17), and none breaches this: an
+`order:` and a `layout` rank become elk layout options before any `Scene`
+exists, and a pinned
 attachment side becomes an elk port plus a plain `pinned` boolean on the
 `SceneEdge`. The passes that read `pinned` read a boolean on geometry, exactly
 as they already read `detour` — no kind, no view name, so a new view inherits
@@ -642,9 +643,24 @@ That is a known limitation, not a guarantee.
 
 ## 17. Author positioning hints are honored, not negotiated
 
-Three opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
-override layout: `order:` on an element, `ID.side` on a flow endpoint, and the
-arrow glyph's line style. Two rules hold for all of them.
+Four opt-in DSL controls (`DSL_SPEC.md` § Positioning controls and § 1.3) let the
+author override layout: `order:` on an element, the `layout { … }` block on
+top-level elements, `ID.side` on a flow endpoint, and the arrow glyph's line
+style. Three rules hold for them.
+
+**An ordering hint places siblings, never layers.** `order:` and a `layout` rank
+are both emitted as `elk.position`, which elk reads as an index *inside a layer*
+under `crossingMinimization.semiInteractive`. Layer membership comes from the
+flows, so the hints order elements the engine already draws side by side — top to
+bottom under `elk.direction: RIGHT` (`wide`/`slide`), left to right under `DOWN`
+(`tall`/`page`) — and are a no-op between two elements a flow chain has already
+sequenced. That boundary is the reason no diagnostic reports an unapplied
+ordering hint: unlike a pin, which asks for one specific side and can be checked
+against the geometry that came back, a hint is a preference among siblings whose
+layer the flows already decided. The `layout` block reports what it can decide
+before layout instead — `E0230`–`E0232` and `E0234`, resolved by
+`layout-constraints.ts` and shared with `validator.ts` so the diagnostics and the
+ranks can never disagree.
 
 **Opt-in means byte-identical.** A diagram that declares none of them must
 render exactly as it did before the feature existed — the elk options that

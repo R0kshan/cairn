@@ -1086,6 +1086,61 @@ layout -> M1 (API_REST, JSON)
   assert.equal(asId.diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(asId.model.flows[0].from, "layout");
 });
+/** X of the node with this id, for the layer assertions the ordering hints cannot cross. */
+const xOf = (scene: { nodes: { id: string; x: number }[] }, id: string) =>
+  scene.nodes.find((node) => node.id === id)!.x;
+
+const RANKED_SRC = (order: string, block: string) =>
+  `diagram logical "t"
+actor-group G "Actors" {
+  actor A_ONE "Alpha person"
+}
+system S1 "One" { block B1 "Block one" }
+system S2 "Two" {${order} block B2 "Block two" }
+system S3 "Three" { block B3 "Block three" }
+${block}
+A_ONE -> B1 : "one"
+A_ONE -> B2 : "two"
+A_ONE -> B3 : "three"
+`;
+
+test("`order:` beats a `layout` rank on the same element", async () => {
+  // Three siblings the actor fans out to, so nothing but the hints orders them.
+  const plain = await build(RANKED_SRC("", ""));
+  assert.ok(yOf(plain.scene, "S2") > yOf(plain.scene, "S1"), "S2 is not first on its own");
+
+  const ranked = await build(RANKED_SRC("", "layout {\n  first S2\n}"));
+  assert.ok(yOf(ranked.scene, "S2") < yOf(ranked.scene, "S1"), "`first S2` moves it");
+
+  // The same block, on an element that states its own number: the rank is
+  // dropped for that element alone and its `order:` decides (DSL_SPEC § 1.3).
+  const ordered = await build(RANKED_SRC("\n  order: 9\n", "layout {\n  first S2\n}"));
+  assert.ok(yOf(ordered.scene, "S2") > yOf(ordered.scene, "S1"), "`order: 9` keeps S2 late");
+  assert.ok(yOf(ordered.scene, "S2") > yOf(ordered.scene, "S3"), "…behind the ranked siblings");
+});
+
+test("an ordering hint places siblings, never layers", async () => {
+  // The flows sequence the three systems, so the layout draws them one per
+  // layer. A `layout` entry orders *inside* a layer, so it has nothing to say
+  // here — and says it by changing nothing (DSL_SPEC § Positioning controls).
+  const chained = (block: string) => `diagram logical "t"
+actor-group G "Actors" {
+  actor A_ONE "Alpha person"
+}
+system S1 "One" { block B1 "Block one" }
+system S2 "Two" { block B2 "Block two" }
+system S3 "Three" { block B3 "Block three" }
+${block}
+A_ONE -> B1 : "one"
+B1 -> B2 : "two"
+B2 -> B3 : "three"
+`;
+  const free = await build(chained(""));
+  const pinned = await build(chained("layout {\n  first S3\n}"));
+  assert.ok(xOf(free.scene, "S1") < xOf(free.scene, "S3"), "the flows put S3 last");
+  assert.equal(pinned.svg, free.svg, "`first S3` cannot pull it across a layer");
+});
+
 /** Which side of `nodeId` the flow's terminal sits on. */
 const sideOfTerminal = (
   scene: {
@@ -1154,18 +1209,38 @@ test("a declared id beats the `ID.side` reading (W0571), and an unknown side is 
   assert.ok(!unknownSide.codes.includes("E0220"));
 });
 
-test("W0570 reports a pin the layout could not honor", async () => {
+test("a pin the drawing does show is reported by nothing", async () => {
+  // U1 is the leftmost node, so leaving by its left side is the least convenient
+  // pin in the drawing — and it is still honored, which is what the silence means.
   const src =
     'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\nU1.left -> M1 (API_REST, JSON)\n';
   const { model, view, scene } = await build(src);
-  const diags = attachSideDiagnostics(scene, model);
   assert.equal(view.name, "application");
-  // U1 is the leftmost node: leaving by its left side means crossing the whole
-  // drawing, which the layout declines — the pin is dropped, not forced.
-  if (sideOfTerminal(scene, model.flows[0].id, "U1", "start") !== "left") {
-    assert.equal(diags.length, 1);
-    assert.equal(diags[0].code, "W0570");
-  } else assert.equal(diags.length, 0);
+  assert.equal(sideOfTerminal(scene, model.flows[0].id, "U1", "start"), "left");
+  assert.deepEqual(attachSideDiagnostics(scene, model), []);
+});
+
+test("W0570 reports a pin the finished drawing does not show", async () => {
+  // Driven off a scene rather than a source file: the point under test is that
+  // a terminal sitting on another side is *reported*, and pinning a real layout
+  // into that state would tie the test to whichever geometry pass moved it.
+  const src =
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\nU1.left -> M1.top (API_REST, JSON)\n';
+  const { model, scene } = await build(src);
+  const flow = model.flows[0];
+  const node = scene.nodes.find((candidate) => candidate.id === "U1")!;
+  const edge = scene.edges.find((candidate) => candidate.id === flow.id)!;
+  // Move the pinned start onto the right side, leaving the arrival untouched.
+  edge.pts[0] = { x: node.x + node.width, y: node.y + node.height / 2 };
+
+  const diags = attachSideDiagnostics(scene, model);
+  assert.equal(diags.length, 1);
+  assert.equal(diags[0].code, "W0570");
+  assert.equal(diags[0].severity, "warning");
+  assert.match(diags[0].message, /`left` could not be honored/);
+  assert.match(diags[0].note!, /leaves the right side of `U1`/);
+  // The span points at the pin the author wrote, not at the whole flow.
+  assert.deepEqual(diags[0].span, flow.fromSide!.span);
 });
 
 test("arrow glyphs carry the line style, inline `{ stroke: … }` overrides them", async () => {

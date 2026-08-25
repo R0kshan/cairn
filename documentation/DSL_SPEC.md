@@ -123,12 +123,22 @@ Layout is automatic. These three controls exist for the cases where it gets a
 diagram wrong; each is opt-in, and a file that uses none of them renders exactly
 as it did before they existed.
 
-**`order: <n>` — where an element sits inside its band.** A statement in the
-element's body, not a style property (placement is layout, not cosmetics).
-Lower comes first in reading order: left to right for `wide`/`slide`, top to
-bottom for `tall`/`page`. Values need not be contiguous, siblings without an
-`order` stay wherever the engine puts them, and the hint never moves an element
-into another partition. A value that is not a whole number ≥ 0 is **E0106**.
+**`order: <n>` — where an element sits among the siblings drawn beside it.** A
+statement in the element's body, not a style property (placement is layout, not
+cosmetics). Lower comes first along the axis *across* the flow direction: top to
+bottom for `wide`/`slide`, left to right for `tall`/`page`. Values need not be
+contiguous, siblings without an `order` stay wherever the engine puts them, and
+the hint never moves an element into another partition. A value that is not a
+whole number ≥ 0 is **E0106**.
+
+**What `order:` cannot do — move an element along the flow.** The layout engine
+reads it as an index inside a *layer*, and layers come from the flows: `A -> B`
+puts B one layer past A, and no order value changes that. So `order:` separates
+elements the engine already draws side by side, and is a no-op between two
+elements a flow chain has already sequenced. It is reported by neither an error
+nor a warning — the hint is a preference among siblings, not an assertion about
+the whole drawing. When the reading order along the flow is wrong, the fix is
+the flows or the `disposition`, not a positioning hint.
 
 ```
 actor-group STAFF "Payment actors" {
@@ -186,8 +196,10 @@ layout {
 }
 ```
 
-Reading order is the same axis `order:` uses: left to right for `wide`/`slide`,
-top to bottom for `tall`/`page`.
+Reading order is the same axis `order:` uses, with the same limit: top to bottom
+for `wide`/`slide`, left to right for `tall`/`page`, and among siblings the
+engine draws side by side. An entry naming two elements a flow chain has already
+sequenced into different layers leaves them where they are.
 
 Five rules make the block predictable.
 
@@ -207,8 +219,13 @@ Five rules make the block predictable.
   elements a `same-rank` already ties together. The block is then ignored for
   that container and the engine's own order stands.
 
-`order:` is the more specific statement, so an element carrying one keeps it and
-the block orders the rest around it. Like the other two controls, the block never
+`order:` is the more specific statement, so an element carrying one keeps its own
+value and the block's rank is dropped for that element alone. The two are
+independent scales, though — a rank counts steps of the block's own reading
+order, an `order:` is the author's number — so an element carrying an `order:`
+is not placed *relative* to the ranked ones in any defined way. Pick one control
+per container: `order:` when the positions are known, the block when only the
+relations are. Like the other two controls, the block never
 moves an element into another partition (§9 of `INVARIANTS.md`), and a file that
 declares none renders exactly as it did before the block existed.
 

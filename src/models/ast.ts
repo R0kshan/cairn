@@ -158,7 +158,7 @@ export const defaultDiagramStyle = (): DiagramStyle => ({
 export const explanations: Record<string, string> = {
   E0101: "Syntax error: the file does not follow the DSL grammar.",
   E0106:
-    "`order:` takes a whole number ≥ 0. It is a placement preference inside the element's layout partition — lower comes first in reading order (left to right for `wide`/`slide`, top to bottom for `tall`/`page`). Values need not be contiguous, and elements without an `order` stay wherever the layout engine puts them.",
+    "`order:` takes a whole number ≥ 0. It is a placement preference among the siblings the layout draws beside the element — lower comes first along the axis across the flow direction (top to bottom for `wide`/`slide`, left to right for `tall`/`page`). Values need not be contiguous, elements without an `order` stay wherever the layout engine puts them, and the hint cannot move an element along the flow: layers come from the flows, so `order:` is a no-op between two elements a flow chain has already sequenced.",
   E0201:
     "Unknown element kind for the active view. Each view defines its own kinds (e.g. logical: actor-group, actor, system, layer, block, external).",
   E0202:

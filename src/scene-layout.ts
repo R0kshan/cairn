@@ -144,20 +144,30 @@ function computeIngressExternalElements(model: Model): Set<string> {
 
 /**
  * The author's `order: n` as an elk position hint. elk reads the vector's
- * *second* component as the index within the layer, and honors it only under
+ * *second* component as the index **within a layer**, and honors it only under
  * `crossingMinimization.semiInteractive` (set on the graph in `buildElkGraph`
  * when any element declares an order). Absent for an element without one, which
  * is what keeps an order-free diagram byte-identical.
+ *
+ * Two consequences the hint's documentation states and this comment repeats,
+ * because both were measured rather than assumed:
+ *
+ * - The axis is the one *across* the flow direction — top to bottom under
+ *   `elk.direction: RIGHT` (`wide`/`slide`), left to right under `DOWN`
+ *   (`tall`/`page`).
+ * - Layer membership comes from the flows, and no position hint changes it. Two
+ *   elements a flow chain puts in different layers keep that relation whatever
+ *   their orders say (`DSL_SPEC.md` § Positioning controls).
  */
 const orderOption = (element: Element): Record<string, string> =>
   element.order ? { "elk.position": `(0,${element.order.value})` } : {};
 
 /**
  * The switch that makes elk read `elk.position` at all. It belongs on the node
- * whose *children* carry the positions — set only on the root, a `order:` inside
- * a container was measured to be ignored — and only when at least one of them
- * declares an order, so an order-free diagram gets no new option and renders
- * byte-identically.
+ * whose *children* carry the positions — the root for top-level elements, and
+ * every container for its own children, which is why `toElkNode` arms it too —
+ * and only when at least one of those children declares an order, so an
+ * order-free diagram gets no new option and renders byte-identically.
  */
 const semiInteractiveOption = (children: Element[], ranked = false): Record<string, string> =>
   ranked || children.some((child) => child.order)

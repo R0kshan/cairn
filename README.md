@@ -32,7 +32,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Spacial optimization** | Cairn aims to optimize space as much as possible (Still working on improving this functionnality) |
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
 | **Flow matrix.** | `cairn matrix` exports the flow matrix as CSV, Markdown, or SVG — from any view, with the columns that view can fill. In infrastructure it splits protocol from port and annotates endpoints that sit in a network zone; headers localise via `style { lang: fr }`. The same table is available to embedders through `compile(source, { matrix: true })`. |
-| **Author-controlled positioning.** | Layout is automatic, with three opt-in overrides for when it gets a diagram wrong: `order: 2` places an element inside its band, `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). A pin the layout cannot honor is reported (`W0570`), never silently dropped. |
+| **Author-controlled positioning.** | Layout is automatic, with four opt-in overrides for when it gets a diagram wrong: `order: 2` places an element among the siblings drawn beside it, a `layout { … }` block states the same thing as relations (`first`, `last`, `before`, `after`, `same-rank`), `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). A pin the layout cannot honor is reported (`W0570`), never silently dropped. |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
 | **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
@@ -123,7 +123,7 @@ See [`examples/colors-custom.cairn`](examples/colors-custom.cairn) for a full ex
 
 ### Positioning and flow line styles
 
-Layout is automatic. When it gets a diagram wrong, three opt-in controls take
+Layout is automatic. When it gets a diagram wrong, four opt-in controls take
 it back — a file that uses none of them renders exactly as before.
 
 **Dashed and dotted flows.** The arrow glyph carries the line style. From
@@ -156,9 +156,9 @@ silently ignored. Note that `A.right` loses to an element actually *named*
 <p align="center"><img src="examples/positioning-sides.svg" alt="Flow attachment sides" width="760"></p>
 
 **Element ordering.** `order:` is a statement in the element's own body — layout,
-not style, so it does not go in a `style` block. Lower comes first in reading
-order: left to right for `wide`/`slide`, top to bottom for `tall`/`page`. From
-[`examples/positioning.cairn`](examples/positioning.cairn):
+not style, so it does not go in a `style` block. Lower comes first along the axis
+*across* the flow direction: top to bottom for `wide`/`slide`, left to right for
+`tall`/`page`. From [`examples/positioning.cairn`](examples/positioning.cairn):
 
 ```
 actor-group STAFF "Payment actors" {
@@ -172,7 +172,11 @@ actor-group STAFF "Payment actors" {
 ```
 
 Values need not be contiguous, siblings without an `order` stay wherever the
-engine puts them, and the hint never moves an element into another band. The
+engine puts them, and the hint never moves an element into another band. It also
+never moves one *along* the flow: the engine reads `order:` as an index inside a
+layer, and layers come from the flows, so `A -> B` keeps B past A whatever the
+two orders say. `order:` separates elements already drawn side by side; the flows
+and the `disposition` decide the rest. The
 attachment-sides file above orders its containers, its modules and its leaves
 too, and ships as `wide`, `tall`, `slide` and `page` variants in
 [`examples/dispositions/`](examples/dispositions/) — same ordering and the same
@@ -180,6 +184,31 @@ pins, four layouts. The file below orders the queue and the datastore inside
 their system boundary and pins `POSTING.bottom -> LEDGER_DB.top`:
 
 <p align="center"><img src="examples/positioning.svg" alt="Element ordering, pinned sides and arrow glyphs" width="760"></p>
+
+**Ordering elements against each other.** `order:` states one element's own
+number. The `layout { … }` block states relations instead — one entry per line,
+top-level elements only, no coordinate anywhere:
+
+```
+layout {
+  first     AUDIT            # ahead of everything the other entries leave free
+  last      REPORT           # behind it
+  before    AUDIT INTAKE     # AUDIT reads earlier than INTAKE
+  after     ROUTING ARCHIVE  # the same relation written the other way round
+  same-rank REPORT AUDIT     # one step of the reading order, so a constraint
+                             # on either moves both
+}
+```
+
+It runs on the same axis as `order:` and carries the same limit — it separates
+elements the engine draws side by side, and leaves alone any pair a flow chain
+has already sequenced. An entry naming an element inside a container is refused
+(`E0234`), as is an unknown id (`E0230`), operands from two different parents
+(`E0231`), and a contradiction such as a `before` cycle (`E0232`, which drops the
+whole block rather than half-applying it). The five files in
+[`examples/placement/`](examples/placement/) are one shape drawn five ways:
+`baseline.cairn` with no block at all, then one file per entry kind, plus
+`sides.cairn` for the pins above.
 
 **Where the label sits on its flow.** This one *is* style (decision D4), so it
 lives in the `style` block and resolves at the usual three levels — view default,

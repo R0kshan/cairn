@@ -42,6 +42,10 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0220 / E0221 | error | Unknown flow reference / unknown business-object reference |
 | E0222 | error | Business object used outside the logical view (business objects are logical-view only) |
 | E0223 | error | Unknown attachment side on a flow endpoint (`A.middle -> B`) |
+| E0230 | error | `layout` block entry naming an element no declaration defines |
+| E0231 | error | `layout` block entry mixing elements from different containers |
+| E0232 | error | `layout` block contradicts itself (cycle, or one element pinned both ways) — the whole block is dropped |
+| E0234 | error | `layout` block entry naming an element inside a container (top-level elements only) |
 | E0240 | error | Infrastructure flow without a protocol (required in this view, even when the label is omitted) |
 | E0250 | error | Trust zone without a valid sensitivity level (security view) |
 | W0501 | warning | No actor declared (logical) |
