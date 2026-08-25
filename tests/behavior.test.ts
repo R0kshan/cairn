@@ -972,13 +972,120 @@ test("`order:` rejects a non-integer or negative value (E0106), and stays usable
   );
   assert.ok(codes.includes("E0106"));
   // `order` is only a keyword before a `:` — as an id it still parses as a flow.
-  const asId = check(
-    'diagram application "t"\napplication APP "a" {\n  module order "Named order"\n  module M1 "m"\n}\norder -> M1 (API_REST, JSON)\n',
-  );
+  const asId = check(`diagram application "t"
+application APP "a" {
+  module order "Named order"
+  module M1 "m"
+}
+order -> M1 (API_REST, JSON)
+`);
   assert.equal(asId.diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(asId.model.flows[0].from, "order");
 });
 
+const LAYOUT_SRC = (block: string) =>
+  `diagram logical "t"
+actor-group G "Actors" {
+  actor A_ONE "Alpha person"
+}
+system FIRST_SYS "First" {
+  block B1 "Block one"
+  block B1_BIS "Block one bis"
+}
+system SECOND_SYS "Second" { block B2 "Block two" }
+system THIRD_SYS "Third" { block B3 "Block three" }
+${block}
+A_ONE -> B1 : "one"
+B1 -> B2 : "two"
+A_ONE -> B3 : "three"
+`;
+
+test("`layout` orders top-level elements: first/last, before/after, same-rank", async () => {
+  // The fixtures in `examples/placement/` are one shape drawn five ways, so the
+  // block is the only difference between the baseline and each of the others.
+  const baseline = await build(load("placement/baseline.cairn"));
+  assert.ok(
+    yOf(baseline.scene, "AUDIT") > yOf(baseline.scene, "REPORT"),
+    "baseline: the engine's own order is what the entries below have to change",
+  );
+
+  const pinned = await build(load("placement/first-last.cairn"));
+  assert.ok(yOf(pinned.scene, "AUDIT") < yOf(pinned.scene, "INTAKE"), "`first AUDIT`");
+  assert.ok(yOf(pinned.scene, "REPORT") > yOf(pinned.scene, "INTAKE"), "`last REPORT`");
+
+  const chained = await build(load("placement/before-after.cairn"));
+  assert.ok(
+    yOf(chained.scene, "AUDIT") < yOf(chained.scene, "INTAKE"),
+    "`before AUDIT INTAKE` reads AUDIT earlier",
+  );
+  assert.ok(
+    yOf(chained.scene, "ARCHIVE") < yOf(chained.scene, "ROUTING"),
+    "`after ROUTING ARCHIVE` is the same relation the other way round",
+  );
+
+  // `same-rank` alone says nothing; alongside a pin it carries its partner.
+  const tied = await build(load("placement/same-rank.cairn"));
+  assert.ok(yOf(tied.scene, "REPORT") < yOf(tied.scene, "INTAKE"), "`first REPORT`");
+  assert.ok(
+    yOf(tied.scene, "AUDIT") < yOf(tied.scene, "INTAKE"),
+    "AUDIT shares REPORT's rank, so the pin moves it too",
+  );
+});
+
+test("a diagram with no `layout` block renders exactly as it did without the feature", async () => {
+  const withoutBlock = await build(LAYOUT_SRC(""));
+  const empty = await build(LAYOUT_SRC("layout {}"));
+  assert.equal(empty.svg, withoutBlock.svg, "an empty block must not move anything either");
+});
+
+test("`layout` rejects unknown, non-sibling, nested and contradictory entries", () => {
+  const entry = (text: string) => LAYOUT_SRC(`layout {
+  ${text}
+}`);
+
+  assert.ok(check(entry("first NOPE")).codes.includes("E0230"), "unknown id");
+  assert.ok(
+    check(entry("before B1 B1_BIS")).codes.includes("E0234"),
+    "siblings inside a container still cannot be ordered",
+  );
+  assert.ok(
+    check(entry("before B1 SECOND_SYS")).codes.includes("E0231"),
+    "operands under two different parents",
+  );
+  assert.equal(
+    check(entry("before FIRST_SYS SECOND_SYS")).diags.filter((d) => d.severity === "error").length,
+    0,
+    "a well-formed entry raises nothing",
+  );
+
+  const cycle = check(
+    LAYOUT_SRC(`layout {
+  before FIRST_SYS SECOND_SYS
+  before SECOND_SYS FIRST_SYS
+}`),
+  );
+  assert.ok(cycle.codes.includes("E0232"), "a cycle is a contradiction");
+
+  const bothWays = check(
+    LAYOUT_SRC(`layout {
+  first FIRST_SYS
+  last FIRST_SYS
+}`),
+  );
+  assert.ok(bothWays.codes.includes("E0232"), "pinned both ways");
+
+  // A malformed entry is a syntax error, and `layout` stays usable as an id.
+  assert.ok(check(entry("sideways FIRST_SYS")).codes.includes("E0101"));
+  const asId = check(`diagram application "t"
+application APP "a" {
+  module layout "Named layout"
+  module M1 "m"
+}
+layout -> M1 (API_REST, JSON)
+`);
+  assert.equal(asId.diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(asId.model.flows[0].from, "layout");
+});
 /** Which side of `nodeId` the flow's terminal sits on. */
 const sideOfTerminal = (
   scene: {

@@ -27,6 +27,7 @@ import {
 import { inspect, type Profile } from "./readability.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
+import { resolveLayoutConstraints } from "./layout-constraints.ts";
 
 /**
  * A node/edge as returned by elk *after* layout: every coordinate is populated,
@@ -158,10 +159,23 @@ const orderOption = (element: Element): Record<string, string> =>
  * declares an order, so an order-free diagram gets no new option and renders
  * byte-identically.
  */
-const semiInteractiveOption = (children: Element[]): Record<string, string> =>
-  children.some((child) => child.order)
+const semiInteractiveOption = (children: Element[], ranked = false): Record<string, string> =>
+  ranked || children.some((child) => child.order)
     ? { "elk.layered.crossingMinimization.semiInteractive": "true" }
     : {};
+
+/**
+ * A `layout { … }` rank as the same elk position hint an `order:` becomes. The
+ * block orders top-level elements against each other; `order:` states one
+ * element's own preference, so it is the more specific of the two and wins where
+ * both apply. Neither can move an element out of its partition — the partitions
+ * are assigned separately and elk honours them first (§9).
+ */
+const rankOption = (element: Element, rankOf: Map<string, number>): Record<string, string> => {
+  if (element.order) return {};
+  const rank = rankOf.get(element.id);
+  return rank === undefined ? {} : { "elk.position": `(0,${rank})` };
+};
 
 /** Converts an `Element` (and its children, recursively) into elk's input node shape. */
 function toElkNode(
@@ -637,6 +651,12 @@ interface GraphContext {
   model: Model;
   view: View;
   ingressExternal: Set<string>;
+  /**
+   * Reading-order rank per top-level element, resolved from the `layout { … }`
+   * block. Empty for a diagram that declares none — and an empty map emits no
+   * option at all, which is what keeps such a diagram byte-identical (§17).
+   */
+  rankOf: Map<string, number>;
   compact: boolean;
   numbered: boolean;
   fonts: { edge: number; node: number; cont: number; scale: number };
@@ -816,7 +836,7 @@ function buildElkGraph(
   direction: "RIGHT" | "DOWN",
   options?: GraphOptions,
 ): ElkNode {
-  const { model, view, ingressExternal, compact, numbered, fonts } = ctx;
+  const { model, view, ingressExternal, rankOf, compact, numbered, fonts } = ctx;
   const graph: ElkNode = {
     id: "root",
     layoutOptions: {
@@ -849,7 +869,7 @@ function buildElkGraph(
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
       // Only switched on when a top-level element declares an order; a nested
       // one arms its own container in `toElkNode`.
-      ...semiInteractiveOption(model.elements),
+      ...semiInteractiveOption(model.elements, rankOf.size > 0),
       ...(numbered && !options?.tight
         ? {
             "elk.spacing.nodeNode": "26",
@@ -865,6 +885,7 @@ function buildElkGraph(
       const elkNode = toElkNode(element, compact, fonts.cont, fonts.node);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
+        ...rankOption(element, rankOf),
         "elk.partitioning.partition": String(
           elkPartitionOf(element, index, view, ingressExternal),
         ),
@@ -1004,6 +1025,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     model,
     view,
     ingressExternal: ingressExternalElements,
+    // The validator resolved the same constraints to report them; this reads the
+    // ranks and ignores the problems (`layout-constraints.ts`).
+    rankOf: resolveLayoutConstraints(model).rankOf,
     compact,
     numbered,
     fonts: {

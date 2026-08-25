@@ -119,6 +119,21 @@ for (const file of CANARIES) {
   });
 }
 
+// ---------- 1b. placement ----------
+// One shape drawn five ways (`examples/placement/`): no block, then one file per
+// `layout` entry kind, plus the `ID.side` pins. Snapshotted together because the
+// point of the set is the *difference* between them — a change that moves the
+// baseline and every variant identically is a layout change, one that moves a
+// single variant is a placement bug.
+const PLACEMENT = ["baseline", "before-after", "first-last", "same-rank", "sides"];
+
+for (const name of PLACEMENT) {
+  test(`snapshot: placement/${name}`, async () => {
+    const actual = normalize(await buildSvg(join(EX, "placement"), `${name}.cairn`));
+    snapshotAssert(`placement-${name}.snap.svg`, actual);
+  });
+}
+
 // ---------- 2. themes ----------
 
 const THEMES_DIR = join(EX, "themes");

@@ -168,6 +168,54 @@ ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
 
+## 1.3 Influencing placement
+
+`order:` and `ID.side` speak for one element or one flow. The **`layout { … }`
+block** speaks about elements *relative to each other* — a top-level block, one
+entry per line, ordering the diagram's reading order without naming a single
+coordinate.
+
+```
+layout {
+  first     AUDIT            # ahead of everything the other entries leave free
+  last      REPORT           # behind it
+  before    AUDIT INTAKE     # AUDIT reads earlier than INTAKE
+  after     ROUTING ARCHIVE  # the same relation written the other way round
+  same-rank REPORT AUDIT     # one step of the reading order, so a constraint
+                             # on either moves both
+}
+```
+
+Reading order is the same axis `order:` uses: left to right for `wide`/`slide`,
+top to bottom for `tall`/`page`.
+
+Five rules make the block predictable.
+
+- **It orders top-level elements only.** An element inside a container cannot be
+  ordered at all (**E0234**) — under elk's `INCLUDE_CHILDREN` hierarchy handling
+  a child's position comes from the edge declaration order, and every option that
+  claims otherwise was measured and is a no-op there. Order the container.
+- **Operands are siblings.** An entry naming elements from two different parents
+  is **E0231**; an unknown id is **E0230**.
+- **An entry does only what it says.** Elements no entry separates share a step,
+  so `before A B` moves B behind A and leaves C exactly where the engine had it.
+- **`first`/`last` outrank the middle.** They move a whole step clear of the
+  unpinned elements, far enough that no `before` chain reaches across — while the
+  chains *inside* a tier stay intact.
+- **A contradiction is refused whole, never half-applied** (**E0232**): a cycle
+  of `before` entries, an element pinned both ways, or a `before` between two
+  elements a `same-rank` already ties together. The block is then ignored for
+  that container and the engine's own order stands.
+
+`order:` is the more specific statement, so an element carrying one keeps it and
+the block orders the rest around it. Like the other two controls, the block never
+moves an element into another partition (§9 of `INVARIANTS.md`), and a file that
+declares none renders exactly as it did before the block existed.
+
+The five files in [`examples/placement/`](../examples/placement) are one shape
+drawn five ways: `baseline.cairn` with no block at all, then one file per entry
+kind, plus `sides.cairn` for the `ID.side` pins above.
+
 ## 2. Styling — three levels, most specific wins
 
 View defaults → diagram-level `style` block → inline per-element/per-flow. Terse shorthand: the parser disambiguates values by shape (`#hex` = color, keyword = line style, number = width). Conflicting same-type values (e.g. `dashed dotted`) → diagnostic.

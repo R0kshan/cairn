@@ -341,6 +341,80 @@ function tryLegendBlock(p: Parser): boolean {
   return true;
 }
 
+/** How many ids each `layout` entry takes: `first`/`last` accept a list, the
+ *  two-place relations take exactly two, `same-rank` needs at least two to say
+ *  anything. */
+const LAYOUT_ENTRIES: Record<string, { min: number; max: number; form: string }> = {
+  first: { min: 1, max: Number.POSITIVE_INFINITY, form: "`first ID [ID …]`" },
+  last: { min: 1, max: Number.POSITIVE_INFINITY, form: "`last ID [ID …]`" },
+  before: { min: 2, max: 2, form: "`before ID ID`" },
+  after: { min: 2, max: 2, form: "`after ID ID`" },
+  "same-rank": { min: 2, max: Number.POSITIVE_INFINITY, form: "`same-rank ID ID [ID …]`" },
+};
+
+/**
+ * Top-level `layout { first A  before B C  same-rank D E }`. Backtracks when
+ * `layout` is not followed by a brace, so an element may still be called
+ * `layout` — the same rule `legend` and `style` follow.
+ *
+ * Nothing here checks that the ids exist or that the entries agree: that needs
+ * the finished element index and is `layout-constraints.ts`'s job, reported
+ * through the validator so one implementation produces both the diagnostics and
+ * the order the layout applies.
+ */
+function tryLayoutBlock(p: Parser): boolean {
+  const { matchToken, advance, reportError, lookAhead, skipNewlines, syncToNextLine, model } = p;
+  if (!matchToken("id", "layout")) return false;
+  const mark = p.save();
+  advance();
+  if (!matchToken("lbrace")) {
+    p.restore(mark);
+    return false;
+  }
+  advance();
+  skipNewlines();
+  while (!matchToken("rbrace") && !matchToken("eof")) {
+    if (!matchToken("id") || !LAYOUT_ENTRIES[lookAhead().text]) {
+      reportError(
+        "placement entry expected",
+        lookAhead().span,
+        "entries are `first`, `last`, `before`, `after` and `same-rank`",
+      );
+      syncToNextLine();
+      skipNewlines();
+      continue;
+    }
+    const keyToken = advance();
+    const entry = LAYOUT_ENTRIES[keyToken.text];
+    const operands: { id: string; span: Span }[] = [];
+    while (matchToken("id")) {
+      const token = advance();
+      operands.push({ id: token.text, span: token.span });
+    }
+    if (operands.length < entry.min || operands.length > entry.max) {
+      reportError(
+        `\`${keyToken.text}\` takes ${entry.max === entry.min ? entry.min : `at least ${entry.min}`} identifier${entry.min > 1 ? "s" : ""}`,
+        keyToken.span,
+        `e.g. ${entry.form}`,
+      );
+      syncToNextLine();
+      skipNewlines();
+      continue;
+    }
+    // `after A B` is `before B A` written the other way round (ast.ts).
+    const reversed = keyToken.text === "after";
+    model.layout.push({
+      kind: reversed ? "before" : (keyToken.text as "first" | "last" | "before" | "same-rank"),
+      operands: reversed ? [...operands].reverse() : operands,
+      span: keyToken.span,
+    });
+    skipNewlines();
+  }
+  if (matchToken("rbrace")) advance();
+  else reportError("`}` expected to close the layout block", lookAhead().span);
+  return true;
+}
+
 /** Top-level `business-object ID "name" "description"`. No backtrack: once the
  *  keyword matches, the line commits to this shape. */
 function tryBusinessObject(p: Parser): boolean {
@@ -415,6 +489,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     flows: [],
     businessObjects: [],
     legendNotes: [],
+    layout: [],
     style: defaultDiagramStyle(),
     index: new Map(),
   };
@@ -544,6 +619,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     if (tryStyleBlock(parent)) return;
     if (tryOrderEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
+    if (!parent && tryLayoutBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
     parseFlowOrElement(parser, parent);
   }
