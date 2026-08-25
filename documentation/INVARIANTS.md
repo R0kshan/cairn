@@ -241,6 +241,34 @@ occupied side, the edge's own labels re-seatable, and strictly shorter. If any
 check fails, the wrap stays — a wrap is a blemish, each of those is worse. Do
 not weaken a check to reroute more; the remainder needs elk port constraints.
 
+**The port-constrained relayout is where that remainder goes**
+(`constrainPorts` in `scene-layout`): the flows this rule flags are given elk
+ports on the side facing their counterpart and the winning configuration is laid
+out again. Three things about it are load-bearing.
+
+- **It also takes flows nothing else can see.** A route can measure far longer
+  than the distance it covers with both terminals pointing the right way — a
+  backward flow whose channel plan fell through to a lane over the top of the
+  drawing leaves north and arrives north, and when its two nodes sit at the same
+  height neither offset clears the 24px tolerance. `scripts/sweep.ts` counts that
+  as `longDetour`; the flagged population is `attachAway` **plus** `isLongDetour`
+  (`geometry.ts`, the sweep's own predicate — §3a), because no post-pass can
+  repair it: the corridor between the two nodes is one lane wide and already
+  carries the answering flow, so the §4c reroute is refused for merging with it.
+- **It is re-entered, at most twice.** Constraining one pair's ports moves every
+  layer around it, and the layout that comes back can wrap a flow that was
+  straight before. The second round measures that layout and repairs it in turn.
+- **Every round is judged against the layout elk drew unaided**, never against
+  the round before it. Chaining the verdicts refuses strictly better candidates:
+  a second round measured on `logical`-shaped input removed two wrap-arounds and
+  sixteen net crossings and was rejected for gaining eight of them. Among rounds
+  that beat that base, the one paying at the better tier wins; ties go to the one
+  carrying fewer `longDetour` routes — `relayoutVerdict` refuses on any per-key
+  gain, so it cannot weigh two whole layouts that both clear a tier-0 defect,
+  even when one leaves flows wrapped around the drawing and the other does not
+  (`beatsRelayout`). An exact tie keeps the earlier round, so the choice does not
+  depend on iteration order (§2).
+
 ### 4d. Labels sit **on** their flow, never beside it
 
 A flow label's **text** is centred on its own run — not above, below, left or

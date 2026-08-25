@@ -14,7 +14,7 @@ import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-met
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
-import type { Box, Point, TitleBox } from "./geometry.ts";
+import { type Box, type Point, type TitleBox, isLongDetour } from "./geometry.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { compactVertical } from "./compact.ts";
 import {
@@ -328,6 +328,41 @@ function transpose(scene: Scene, titleBoxes: TitleBox[]): void {
 }
 
 /**
+ * How many times the port-constrained relayout may be re-entered. Two: the first
+ * round repairs what elk drew unaided, the second repairs what the first round's
+ * new layer assignment introduced. Every round costs a full elk layout, and a
+ * third has not been observed to beat the two before it.
+ */
+const PORT_PASS_ROUNDS = 2;
+
+/** One round of the port-constrained relayout, scored against the layout elk drew unaided. */
+export interface RelayoutRound<T> {
+  scene: T;
+  /** The ladder tier this round pays off at against the base layout. Lower is better. */
+  tier: number;
+  /** How many of its flows measure as `longDetour` — the tie-break, see `beatsRelayout`. */
+  detours: number;
+}
+
+/**
+ * Does this round beat the best one so far? The ladder decides first: a round
+ * that pays at a better tier wins outright, and one that pays at a worse tier
+ * never does.
+ *
+ * The tie-break is what the ladder cannot supply. `relayoutVerdict` refuses on
+ * any per-key gain, so two rounds that both clear a tier-0 defect are simply
+ * incomparable to it — even when one of them leaves two flows wrapped around the
+ * whole drawing and the other does not. Fewer over-long routes therefore breaks
+ * the tie, and an exact tie keeps the earlier round, so the choice never depends
+ * on iteration order (INVARIANTS §2).
+ */
+export function beatsRelayout<T>(round: RelayoutRound<T>, best: RelayoutRound<T> | null): boolean {
+  if (!best) return true;
+  if (round.tier !== best.tier) return round.tier < best.tier;
+  return round.detours < best.detours;
+}
+
+/**
  * The flows whose terminal segment departs *away* from their counterpart or
  * arrives from beyond it — the sweep's `attachAway` predicate, on the final
  * scene (channel reroutes are exempt, they wrap by design). Drives the
@@ -362,8 +397,43 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
       away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y })
     )
       flagged.add(e.id);
+    // The other shape this pass repairs, and the one `away` cannot see. A
+    // backward flow whose channel plan fell through to a lane over the top of
+    // the drawing leaves north and arrives north; when its two nodes sit at
+    // roughly the same height, neither offset clears `ATTACH_AWAY_TOL`, so the
+    // route is called clean while measuring twice the distance it covers. No
+    // post-pass can repair it either — the corridor between the two nodes is
+    // usually one lane wide and already carries the answering flow, so the
+    // reroute is refused for merging with it. Ports facing the counterpart are
+    // the repair, which is what an author gets today by pinning both ends by
+    // hand (`SIPRE.left -> MESSAGING.right`).
+    if (isLongDetour(e.pts, from, to)) flagged.add(e.id);
   }
   return flagged;
+}
+
+/**
+ * How many of this layout's flows measure far longer than the distance they
+ * cover — `scripts/sweep.ts`'s `longDetour`, counted per layout.
+ *
+ * `relayoutVerdict` cannot weigh this between two whole layouts: it refuses on
+ * any per-key gain, so a candidate that removes two wrap-arounds and eight
+ * crossings while adding four crossings elsewhere reads exactly like one that
+ * only added them. Counting the defect the ladder is blind to lets the pass
+ * break that tie instead of taking whichever candidate came first.
+ */
+function longDetourCount(scene: Scene, model: Model): number {
+  const byId = new Map(scene.nodes.map((node) => [node.id, node]));
+  let count = 0;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const flow = model.flows.find((f) => f.id === edge.id);
+    const from = byId.get(flow?.from ?? "");
+    const to = byId.get(flow?.to ?? "");
+    if (!from || !to) continue;
+    if (isLongDetour(edge.pts, from, to)) count++;
+  }
+  return count;
 }
 
 /**
@@ -1051,37 +1121,62 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     result = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
   }
   const layoutMs = Date.now() - startTime;
-  const scene = sceneFromResult(result, layoutMs);
-  const away = attachAwayOf(scene, model);
+  const base = sceneFromResult(result, layoutMs);
   // The playground bundles this module for the browser, where `process` does
   // not exist; reach it through `globalThis` so the switch is simply absent
   // there instead of a ReferenceError. CLI-only debug aid — see CONTRIBUTING.md.
   const skipPortPass = !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
     .process?.env?.CAIRN_NO_PORT_PASS;
-  if (!away.size || skipPortPass) return scene;
+  if (skipPortPass) return base;
+  /** What a whole-layout choice is judged on: the ladder plus the gate's blind spots. */
+  const layoutProfile = (candidate: Scene): Profile => {
+    const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
+    const profile = inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, new Map());
+    for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
+    return profile;
+  };
+  const baseProfile = layoutProfile(base);
   // `route-detour` only claims the wrap-arounds wasteful enough to deserve a
   // channel, leaving the merely-bad wrapped. Re-run the winning config with
   // those flows pinned to ports facing their counterpart, judged by the house
   // ladder rather than the metric being fixed: a relayout that clears wrong-side
   // departures but strikes a title or merges a run is refused. Opportunistic —
   // port constraints hit an elk scanline bug on some models, so a crash here
-  // just keeps the first pass.
-  try {
-    const constrained = makeGraph(winnerDirection, winnerOptions);
-    constrainPorts(constrained, scene, away, model);
-    const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
-    const rescene = sceneFromResult(reresult, Date.now() - startTime);
-    const allEdges = (s: Scene) => new Set(s.edges.map((edge) => edge.id));
-    const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), new Map());
-    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(
-      allEdges(rescene),
-      new Map(),
-    );
-    for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
-    for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
-    const verdict = relayoutVerdict(before, after);
-    return verdict >= 0 ? rescene : scene;
-  } catch {
-    return scene;
+  // just keeps what has been accepted so far.
+  //
+  // Two things this loop does that a single round cannot.
+  //
+  // It **re-enters**: constraining one pair's ports moves every layer around it,
+  // and the layout that comes back can wrap a flow that was straight before. The
+  // next round measures that layout and repairs it in turn.
+  //
+  // And every round is judged against **the layout elk drew unaided**, never
+  // against the round before it, because that is the promise the pass makes —
+  // and because chaining the verdicts refuses a strictly better candidate: the
+  // second round here removed two wrap-arounds and sixteen net crossings, and
+  // was rejected for gaining eight of them. Candidates that beat the base are
+  // collected, and the one that pays at the best tier wins; ties go to the
+  // candidate carrying fewer over-long routes, the defect the verdict is blind
+  // to, and then to the earlier round so the choice stays deterministic.
+  let current = base;
+  let best: RelayoutRound<Scene> | null = null;
+  for (let round = 0; round < PORT_PASS_ROUNDS; round++) {
+    const flagged = attachAwayOf(current, model);
+    if (!flagged.size) break;
+    let candidate: Scene;
+    try {
+      const constrained = makeGraph(winnerDirection, winnerOptions);
+      constrainPorts(constrained, current, flagged, model);
+      const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
+      candidate = sceneFromResult(reresult, Date.now() - startTime);
+    } catch {
+      break;
+    }
+    const tier = relayoutVerdict(baseProfile, layoutProfile(candidate));
+    if (tier < 0) break;
+    const scored = { scene: candidate, tier, detours: longDetourCount(candidate, model) };
+    if (beatsRelayout(scored, best)) best = scored;
+    current = candidate;
   }
+  return best?.scene ?? base;
 }

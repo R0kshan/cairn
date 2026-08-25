@@ -85,6 +85,37 @@ export const pathLength = (points: Point[]) => {
   return length;
 };
 
+/**
+ * How much longer than the distance it covers a route may be before it reads as
+ * a detour rather than a route. The ratio alone would flag a short flow that
+ * turns twice; the absolute waste alone would flag a long flow that had no
+ * choice. Both together are `scripts/sweep.ts`'s `longDetour` predicate, and
+ * `isLongDetour` below is that predicate — one expression, so a pass that
+ * repairs the defect and the gate that counts it can never disagree
+ * (INVARIANTS §3a).
+ */
+const DETOUR_RATIO = 2.2;
+const DETOUR_WASTE = 400;
+
+/**
+ * Is this route far longer than the straight line between the two boxes it
+ * joins? Geometry only: the caller supplies the boxes, so nothing here knows
+ * what kind of element they are (INVARIANTS §16).
+ *
+ * Distinct from a wrap-around (`attachAway`), which asks where the *terminals*
+ * point: two boxes at the same height joined by a lane over the top of the
+ * drawing have terminals that point nowhere in particular and a route twice the
+ * length it needs.
+ */
+export const isLongDetour = (points: Point[], boxA: Box, boxB: Box) => {
+  const direct =
+    Math.abs(boxA.x + boxA.width / 2 - (boxB.x + boxB.width / 2)) +
+    Math.abs(boxA.y + boxA.height / 2 - (boxB.y + boxB.height / 2));
+  if (direct <= 0) return false;
+  const length = pathLength(points);
+  return length > DETOUR_RATIO * direct && length - direct > DETOUR_WASTE;
+};
+
 export const boxToPolylineSq = (box: Box, points: Point[]) => {
   let best = Number.POSITIVE_INFINITY;
   for (let index = 0; index + 1 < points.length; index++) {

@@ -1,0 +1,32 @@
+diagram logical "Claims handling — first / last"
+
+# Baseline shape, shared by every file in this directory so the effect of a
+# `layout` block is the only thing that differs between them.
+# See documentation/DSL_SPEC.md #13-influencing-placement
+
+actor-group TEAM "Operations team" {
+  actor AGENT "Claims agent"
+}
+
+system INTAKE  "Claim intake"         { block RECEIVE "Claim reception module" }
+system ROUTING "Claim routing"        { block ASSIGN  "Assignment module" }
+system AUDIT   "Audit trail"          { block TRACE   "Traceability module" }
+system ARCHIVE "Claim archive"        { block STORE   "Document storage module" }
+system REPORT  "Management reporting" { block DASH    "Reporting dashboard" }
+
+external PARTNER "Partner network" { block SETTLE "Settlement service" }
+
+# `first` / `last` pin an element to one end of the reading order, ahead of
+# or behind everything the constraints leave unpinned.
+
+layout {
+  first AUDIT
+  last  REPORT
+}
+
+AGENT   -> RECEIVE : "File a claim"
+RECEIVE -> ASSIGN  : "Route for assignment"
+ASSIGN  -> SETTLE  : "Request settlement"
+AGENT   -> TRACE   : "Consult the audit trail"
+TRACE   -> STORE   : "Archive the trace"
+AGENT   -> DASH    : "Open the dashboard"

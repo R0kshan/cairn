@@ -14,7 +14,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
-import { layout, attachSideDiagnostics } from "../src/scene-layout.ts";
+import { layout, attachSideDiagnostics, beatsRelayout } from "../src/scene-layout.ts";
+import { isLongDetour } from "../src/geometry.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
@@ -307,6 +308,42 @@ test("south-blocked backward flows use the top channel instead (logical-archi)",
     len < 2.2 * direct,
     `COORD→OPE must route via the top channel (len ${Math.round(len)} vs direct ${Math.round(direct)})`,
   );
+});
+
+test("no flow in the corpus wraps around a whole drawing (longDetour is 0 per drawing)", async () => {
+  // The sweep ratchets `longDetour` corpus-wide; this checks the two logical
+  // fixtures whose backward flows leave a container for a target inside another
+  // one, which is the shape the port-constrained relayout exists to keep clean.
+  for (const name of ["logical.cairn", "logical-archi.cairn"]) {
+    const { model, scene } = await build(load(name));
+    const nodeById = new Map(scene.nodes.map((n) => [n.id, n]));
+    for (const edge of scene.edges) {
+      const flow = model.flows.find((f) => f.id === edge.id);
+      const from = nodeById.get(flow?.from ?? "");
+      const to = nodeById.get(flow?.to ?? "");
+      if (!from || !to) continue;
+      assert.equal(
+        isLongDetour(edge.pts, from, to),
+        false,
+        `${name}: ${flow!.from}→${flow!.to} measures far longer than the distance it covers`,
+      );
+    }
+  }
+});
+
+test("a relayout round is chosen by tier first, then by the wraps the verdict cannot weigh", () => {
+  const round = (tier: number, detours: number) => ({ scene: `${tier}/${detours}`, tier, detours });
+  // Nothing accepted yet: any round that got this far beats nothing.
+  assert.equal(beatsRelayout(round(3, 9), null), true);
+  // The ladder decides first, in both directions.
+  assert.equal(beatsRelayout(round(0, 9), round(2, 0)), true);
+  assert.equal(beatsRelayout(round(2, 0), round(0, 9)), false);
+  // Same tier: the round leaving fewer flows wrapped around the drawing wins.
+  assert.equal(beatsRelayout(round(0, 0), round(0, 2)), true);
+  assert.equal(beatsRelayout(round(0, 2), round(0, 0)), false);
+  // A dead heat keeps the round already accepted, so the choice cannot depend
+  // on how many rounds ran (§2, byte-deterministic output).
+  assert.equal(beatsRelayout(round(1, 1), round(1, 1)), false);
 });
 
 // ---------- dispositions ----------

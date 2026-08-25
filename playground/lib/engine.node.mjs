@@ -95230,6 +95230,14 @@ var pathLength = (points) => {
     length += Math.abs(points[index + 1].x - points[index].x) + Math.abs(points[index + 1].y - points[index].y);
   return length;
 };
+var DETOUR_RATIO = 2.2;
+var DETOUR_WASTE = 400;
+var isLongDetour = (points, boxA, boxB) => {
+  const direct = Math.abs(boxA.x + boxA.width / 2 - (boxB.x + boxB.width / 2)) + Math.abs(boxA.y + boxA.height / 2 - (boxB.y + boxB.height / 2));
+  if (direct <= 0) return false;
+  const length = pathLength(points);
+  return length > DETOUR_RATIO * direct && length - direct > DETOUR_WASTE;
+};
 var boxToPolylineSq = (box, points) => {
   let best = Number.POSITIVE_INFINITY;
   for (let index = 0; index + 1 < points.length; index++) {
@@ -99099,6 +99107,12 @@ function transpose(scene, titleBoxes) {
   }
   [scene.width, scene.height] = [scene.height, scene.width];
 }
+var PORT_PASS_ROUNDS = 2;
+function beatsRelayout(round, best) {
+  if (!best) return true;
+  if (round.tier !== best.tier) return round.tier < best.tier;
+  return round.detours < best.detours;
+}
 function attachAwayOf(scene, model) {
   const ATTACH_AWAY_TOL = 24;
   const byId = new Map(scene.nodes.map((node) => [node.id, node]));
@@ -99121,8 +99135,22 @@ function attachAwayOf(scene, model) {
       flagged.add(e.id);
     if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
       flagged.add(e.id);
+    if (isLongDetour(e.pts, from, to)) flagged.add(e.id);
   }
   return flagged;
+}
+function longDetourCount(scene, model) {
+  const byId = new Map(scene.nodes.map((node) => [node.id, node]));
+  let count = 0;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const flow = model.flows.find((f) => f.id === edge.id);
+    const from = byId.get(flow?.from ?? "");
+    const to = byId.get(flow?.to ?? "");
+    if (!from || !to) continue;
+    if (isLongDetour(edge.pts, from, to)) count++;
+  }
+  return count;
 }
 function selectionExtras(scene, model) {
   const extra = /* @__PURE__ */ new Map();
@@ -99505,18 +99533,18 @@ async function layout(model, view) {
       const pinned = pinnedFlows.get(edge.id);
       if (pinned) edge.pinned = { ...pinned };
     }
-    const scene2 = {
+    const scene = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),
       nodes,
       edges,
       layoutMs: layoutMs2
     };
-    runGeometryPasses(scene2, model, {
+    runGeometryPasses(scene, model, {
       numbered,
       sideways: disposition === "page" || disposition === "tall"
     });
-    return scene2;
+    return scene;
   };
   const startTime = Date.now();
   let result;
@@ -99562,28 +99590,37 @@ async function layout(model, view) {
     result = await elk.layout(makeGraph(winnerDirection));
   }
   const layoutMs = Date.now() - startTime;
-  const scene = sceneFromResult(result, layoutMs);
-  const away = attachAwayOf(scene, model);
+  const base = sceneFromResult(result, layoutMs);
   const skipPortPass = !!globalThis.process?.env?.CAIRN_NO_PORT_PASS;
-  if (!away.size || skipPortPass) return scene;
-  try {
-    const constrained = makeGraph(winnerDirection, winnerOptions);
-    constrainPorts(constrained, scene, away, model);
-    const reresult = await elk.layout(constrained);
-    const rescene = sceneFromResult(reresult, Date.now() - startTime);
-    const allEdges = (s) => new Set(s.edges.map((edge) => edge.id));
-    const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), /* @__PURE__ */ new Map());
-    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(
-      allEdges(rescene),
-      /* @__PURE__ */ new Map()
-    );
-    for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
-    for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
-    const verdict = relayoutVerdict(before, after);
-    return verdict >= 0 ? rescene : scene;
-  } catch {
-    return scene;
+  if (skipPortPass) return base;
+  const layoutProfile = (candidate) => {
+    const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
+    const profile = inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, /* @__PURE__ */ new Map());
+    for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
+    return profile;
+  };
+  const baseProfile = layoutProfile(base);
+  let current = base;
+  let best = null;
+  for (let round = 0; round < PORT_PASS_ROUNDS; round++) {
+    const flagged = attachAwayOf(current, model);
+    if (!flagged.size) break;
+    let candidate;
+    try {
+      const constrained = makeGraph(winnerDirection, winnerOptions);
+      constrainPorts(constrained, current, flagged, model);
+      const reresult = await elk.layout(constrained);
+      candidate = sceneFromResult(reresult, Date.now() - startTime);
+    } catch {
+      break;
+    }
+    const tier = relayoutVerdict(baseProfile, layoutProfile(candidate));
+    if (tier < 0) break;
+    const scored = { scene: candidate, tier, detours: longDetourCount(candidate, model) };
+    if (beatsRelayout(scored, best)) best = scored;
+    current = candidate;
   }
+  return best?.scene ?? base;
 }
 
 // src/localization.ts
