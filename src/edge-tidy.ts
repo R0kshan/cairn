@@ -1486,6 +1486,7 @@ function clearEdgeHugs(ctx: HugContext, edge: SceneEdge): void {
   }
 }
 
+/** Clears routes that hug node borders too closely (readability tier 2 defect). */
 export function clearSideHugs(scene: Scene, titleBoxes: TitleBox[] = []): void {
   const ctx = createHugContext(scene, titleBoxes);
   for (const edge of scene.edges) clearEdgeHugs(ctx, edge);
@@ -1669,6 +1670,7 @@ function trySwapSeats(
   B.pts = bCandidate;
 }
 
+/** Swaps attachment seats for sibling flows when it reduces crossings. */
 export function swapCrossingSiblingSeats(scene: Scene): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   const endsOf = (edge: SceneEdge) => [
@@ -3903,6 +3905,7 @@ function createLaneModel(deps: {
   return { channelU, isChannelU, laneBeyond };
 }
 
+/** Optimises edge routes by attempting local improvements that pass the readability ladder. */
 export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded = false): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);

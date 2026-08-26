@@ -23,6 +23,7 @@ interface UIStrings {
   };
 }
 
+/** Localized UI strings for English and French (band titles, legend labels, matrix headers). */
 export const UI: Record<"en" | "fr", UIStrings> = {
   en: {
     flows: "FLOWS",

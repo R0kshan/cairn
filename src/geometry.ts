@@ -30,6 +30,7 @@ export interface Point {
   y: number;
 }
 
+/** Tests whether two boxes overlap (returns true if they intersect). */
 export const boxesOverlap = (boxA: Box, boxB: Box) =>
   !(
     boxA.x + boxA.width <= boxB.x ||
@@ -63,6 +64,7 @@ export const boxGapSq = (boxA: Box, boxB: Box) => {
   return dx * dx + dy * dy;
 };
 
+/** Computes the bounding box that encloses all given points. */
 export const boundsOf = (points: Point[]): Box => {
   let minX = points[0].x;
   let maxX = points[0].x;
@@ -81,7 +83,9 @@ export const boundsOf = (points: Point[]): Box => {
 export const pathLength = (points: Point[]) => {
   let length = 0;
   for (let index = 0; index + 1 < points.length; index++)
-    length += Math.abs(points[index + 1].x - points[index].x) + Math.abs(points[index + 1].y - points[index].y);
+    length +=
+      Math.abs(points[index + 1].x - points[index].x) +
+      Math.abs(points[index + 1].y - points[index].y);
   return length;
 };
 
@@ -116,6 +120,7 @@ export const isLongDetour = (points: Point[], boxA: Box, boxB: Box) => {
   return length > DETOUR_RATIO * direct && length - direct > DETOUR_WASTE;
 };
 
+/** Computes the squared minimum distance from a box to a polyline (checks all segments). */
 export const boxToPolylineSq = (box: Box, points: Point[]) => {
   let best = Number.POSITIVE_INFINITY;
   for (let index = 0; index + 1 < points.length; index++) {

@@ -384,6 +384,7 @@ function parseFlowOrElement(p: Parser, parent: Element | null): void {
   else parseElement(p, sourceToken, parent);
 }
 
+/** Parses Cairn DSL source into a Model and returns any diagnostic messages. */
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
   const tokens = lex(src, diagnostics);

@@ -73,6 +73,7 @@ export interface Element {
  */
 export type AttachSide = "left" | "right" | "top" | "bottom";
 
+/** All possible attachment sides for flow endpoints. */
 export const ATTACH_SIDES: AttachSide[] = ["left", "right", "top", "bottom"];
 
 export interface Flow {
@@ -117,6 +118,7 @@ export interface Model {
   index: Map<string, Element>;
 }
 
+/** Creates a default diagram style with standard settings. */
 export const defaultDiagramStyle = (): DiagramStyle => ({
   crossingHops: true,
   compact: false,
@@ -134,6 +136,7 @@ export const defaultDiagramStyle = (): DiagramStyle => ({
   font: { family: "Helvetica", size: 12.5 },
 });
 
+/** Registry of diagnostic code explanations for the `cairn explain` command. */
 export const explanations: Record<string, string> = {
   E0101: "Syntax error: the file does not follow the DSL grammar.",
   E0106:

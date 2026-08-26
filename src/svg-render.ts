@@ -1057,6 +1057,7 @@ function createEdgePainter(paint: EdgePaint) {
   return { renderEdgePath, renderEdgeLabels };
 }
 
+/** Renders the final SVG diagram from the model, view, and positioned scene geometry. */
 export function render(model: Model, view: View, scene: Scene): RenderResult {
   const style = model.style;
   const fonts = fontSizes(style.font.size);

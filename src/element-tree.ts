@@ -6,6 +6,7 @@
 
 import type { Element } from "./models/ast.ts";
 
+/** Returns all element IDs in the subtree rooted at the given element (pre-order traversal). */
 export function subtreeIds(element: Element): string[] {
   const ids: string[] = [];
   const stack: Element[] = [element];
@@ -17,6 +18,7 @@ export function subtreeIds(element: Element): string[] {
   return ids;
 }
 
+/** Returns all elements in the subtree rooted at the given element (pre-order traversal). */
 export function subtreeElements(element: Element): Element[] {
   const elements: Element[] = [];
   const stack: Element[] = [element];
@@ -28,6 +30,7 @@ export function subtreeElements(element: Element): Element[] {
   return elements;
 }
 
+/** Creates an index mapping element IDs to elements for all elements and their descendants. */
 export function indexElementsById(elements: Element[]): [string, Element][] {
   const result: [string, Element][] = [];
   for (const element of elements) {

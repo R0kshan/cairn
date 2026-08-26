@@ -704,6 +704,7 @@ const securityView: View = {
   },
 };
 
+/** Registry of available diagram views (logical, application, infrastructure, security). */
 export const views: Record<string, View> = {
   logical: logicalView,
   application: applicationView,

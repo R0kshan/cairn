@@ -471,6 +471,7 @@ function resolveLabelCollision(seated: SeatedLabel[], a: SeatedLabel, b: SeatedL
   return true;
 }
 
+/** Positions flow labels on their routes, avoiding overlaps with nodes and other labels. */
 export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): void {
   const ctx = createLabelSeatContext(scene, titleBoxes);
   const seated: SeatedLabel[] = [];

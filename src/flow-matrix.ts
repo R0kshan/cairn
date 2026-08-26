@@ -70,6 +70,7 @@ function splitProto(protocol?: string): { proto: string; port: string } {
   return { proto: protocol, port: "" };
 }
 
+/** Builds a flow matrix from the model, with localized headers and annotated endpoints. */
 export function buildFlowMatrix(model: Model, view: View): FlowMatrix {
   const lang = model.style.lang;
   const matrixLabels = UI[lang].matrix;
@@ -114,6 +115,7 @@ const csvCell = (text: string): string => {
   return /[",\n]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
 };
 
+/** Exports a flow matrix as CSV (comma-separated values). */
 export function matrixCsv(matrix: FlowMatrix): string {
   const lines = [matrix.columns.map((column) => csvCell(column.label)).join(",")];
   for (const row of matrix.rows) lines.push(row.cells.map(csvCell).join(","));
@@ -123,6 +125,7 @@ export function matrixCsv(matrix: FlowMatrix): string {
 const mdCell = (text: string): string =>
   text.replace(/\\/g, "\\\\").replace(/\|/g, "\\|").replace(/\n/g, " ");
 
+/** Exports a flow matrix as GitHub-Flavored Markdown. */
 export function matrixMd(matrix: FlowMatrix): string {
   const cols = matrix.columns.map((column) => column.label);
   const outLines: string[] = [`# ${matrix.heading}`, ""];
@@ -132,6 +135,7 @@ export function matrixMd(matrix: FlowMatrix): string {
   return outLines.join("\n") + "\n";
 }
 
+/** Exports a flow matrix as a standalone themed SVG table. */
 export function matrixSvg(matrix: FlowMatrix): string {
   const pal = palettes[matrix.style.theme] ?? lightPalette;
   const title = matrix.heading;

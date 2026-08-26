@@ -24,6 +24,7 @@ const SINGLE_CHAR_TOKENS: Record<string, TokenKind> = {
   ",": "comma",
 };
 
+/** Lexes source text into a token stream and reports any lexical errors as diagnostics. */
 export function lex(src: string, diagnostics: Diagnostic[]): Token[] {
   const tokens: Token[] = [];
   let position = 0,

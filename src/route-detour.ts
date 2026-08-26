@@ -188,10 +188,14 @@ const blockedAboveBy = (
   x: number,
   bottom: number,
 ): boolean =>
-  leafBoxes.some((node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1) ||
+  leafBoxes.some(
+    (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1,
+  ) ||
   titleBoxes.some(
     (box) =>
-      x >= box.x - TITLE_CLEARANCE && x <= box.x + box.width + TITLE_CLEARANCE && box.y < bottom - 1,
+      x >= box.x - TITLE_CLEARANCE &&
+      x <= box.x + box.width + TITLE_CLEARANCE &&
+      box.y < bottom - 1,
   );
 
 const horizontalBlocked = (leafBoxes: SceneNode[], y: number, probe: EntryProbe): boolean =>
@@ -906,12 +910,7 @@ function resolveLanePosition(lc: LaneContext, span: LaneSpan, direction: 1 | -1)
  * Where each lane of `subset` sits. Spacing uses the label heights that lane
  * carries, and it is pushed further only to clear geometry sharing its x-span.
  */
-function laneOffsets(
-  lc: LaneContext,
-  subset: Plan[],
-  direction: 1 | -1,
-  anchor: number,
-): number[] {
+function laneOffsets(lc: LaneContext, subset: Plan[], direction: 1 | -1, anchor: number): number[] {
   const byLane = new Map<number, Plan[]>();
   for (const plan of subset) {
     const lane = lc.laneIndexOf.get(plan.edge.id)!;
@@ -939,8 +938,8 @@ function laneOffsets(
     // content and the lane, which pushed every bottom lane out by a whole label
     // and left a conspicuous gap against the container it hugged on the other
     // side.
-    const ownPosition = spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) +
-      direction * CHANNEL_GAP;
+    const ownPosition =
+      spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
     // Lanes stay ordered: a deeper lane never rises above a shallower one,
     // which is what keeps enclosing spans outside the ones they enclose.
     const start =
@@ -950,9 +949,7 @@ function laneOffsets(
           ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14)
           : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
     labelHeights.push(labelHeight);
-    positions.push(
-      resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction),
-    );
+    positions.push(resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction));
   }
   return positions;
 }
@@ -1098,6 +1095,7 @@ function resizeScene(scene: Scene): void {
   scene.height = Math.ceil(maxY + 10);
 }
 
+/** Detects and fixes long detour routes by finding shorter paths around obstacles. */
 export function rerouteDetours(
   scene: Scene,
   model: Model,

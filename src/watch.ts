@@ -38,6 +38,7 @@ function errorPanelSvg(file: string, diagnostics: Diagnostic[]): string {
   return out + "</svg>\n";
 }
 
+/** Watches a Cairn source file and rebuilds the SVG output on changes (debounced). */
 export function watchCommand(file: string, outFile: string) {
   if (!existsSync(file)) {
     console.error(`error: file not found \`${file}\``);
