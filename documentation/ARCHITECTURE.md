@@ -31,7 +31,7 @@ pipeline — see §5.
 |---|---|---|---|
 | 1. Lex | [`lexer.ts`](../src/lexer.ts) | `.cairn` source → `Token[]` | Every token carries a `Span`; scanning always completes, even on malformed input (errors become `E0101` diagnostics, not exceptions) |
 | 2. Parse | [`parser.ts`](../src/parser.ts) | `Token[]` → `Model` | Recovers from a syntax error via `syncToNextLine` — a broken file still yields a partial `Model`; rejects `__proto__`/`constructor`/`prototype` as element IDs |
-| 3. Validate | [`validator.ts`](../src/validator.ts) | `Model` (+ active `View`) → `Diagnostic[]` | Purely diagnostic — never mutates the model; drives every check off the `views` registry, not hardcoded per-view logic. Defers the `layout { … }` block's own rules to [`layout-constraints.ts`](../src/layout-constraints.ts), the resolver it shares with stage 4 |
+| 3. Validate | [`validator.ts`](../src/validator.ts) | `Model` (+ active `View`) → `Diagnostic[]` | Purely diagnostic — never mutates the model; drives every check off the `views` registry, not hardcoded per-view logic. |
 | 4. Layout | [`scene-layout.ts`](../src/scene-layout.ts) | `Model` → `Scene` | Delegates to elkjs; tries multiple candidate layouts for `slide`/`page` and keeps the best fit; transposes the scene for DOWN layouts around stage 4a (§3). Orchestrates sub-passes 4a–4c below internally — the CLI calls `layout()` once, not each sub-pass separately |
 | 4a. Reroute | [`route-detour.ts`](../src/route-detour.ts) | `Scene` → `Scene` | No-op (byte-identical) when no edge qualifies as a wrap-around detour |
 | 4b. Tidy | [`edge-tidy.ts`](../src/edge-tidy.ts) | `Scene` → `Scene` | Every flow individually traceable: collapses sub-pixel jogs, separates flows sharing a node side to `MIN_ATTACH_GAP` |
@@ -80,22 +80,14 @@ Adding a view, a diagnostic, a theme, or a style property starts here (or in
 `themes.ts` / `models/ast.ts`'s `DiagramStyle` for the latter two) — see
 [`AGENTS.md`](../AGENTS.md#extending-the-tool).
 
-The author's own positioning hints (`order:` on an element, a `layout { … }`
-entry, `ID.side` on a flow endpoint — [`DSL_SPEC.md`](./DSL_SPEC.md)) enter at
+The author's own positioning hints (`order:` on an element, `ID.side` on a flow
+endpoint — [`DSL_SPEC.md`](./DSL_SPEC.md)) enter at
 `scene-layout.ts` and nowhere else: they become elk layout options and ports
 before a `Scene` exists. A top-level `order:` is the one that changes the graph's
 shape rather than an option on a node — `readingSlots` resolves it into a band of
 the element's view partition, which is what makes it read along `elk.direction`
 (INVARIANTS §9, §17). Past that point a pinned flow is only a `pinned` boolean
 on its `SceneEdge`, which is what keeps §16 intact (INVARIANTS §17).
-
-The `layout` block is the one hint with a resolution step of its own:
-[`layout-constraints.ts`](../src/layout-constraints.ts) turns its entries into a
-rank per top-level element plus the problems (`E0230`–`E0232`, `E0234`) that
-sink them. It is deliberately shared rather than duplicated —
-`validator.ts` reads the problems and ignores the ranks, `scene-layout.ts` reads
-the ranks and ignores the problems — so the diagnostics a user sees and the order
-the layout applies come from one evaluation and cannot disagree.
 
 ## 5. Where each invariant is enforced
 

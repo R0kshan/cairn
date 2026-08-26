@@ -13,7 +13,6 @@ import type { Diagnostic } from "./models/diagnostic.ts";
 import type { View } from "./views.ts";
 import { views } from "./views.ts";
 import { subtreeIds, subtreeElements } from "./element-tree.ts";
-import { resolveLayoutConstraints } from "./layout-constraints.ts";
 
 export function validate(model: Model): Diagnostic[] {
   const view = model.type ? views[model.type] : undefined;
@@ -43,26 +42,7 @@ export function validate(model: Model): Diagnostic[] {
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
     ...checkIsolatedElements(model, view, elements),
-    ...checkLayoutConstraints(model),
   ];
-}
-
-/**
- * The `layout { … }` block's own defects (E0230–E0232, E0234). The rules live in
- * `layout-constraints.ts` with the resolution they gate, so the diagnostics a
- * user reads and the order the layout applies can never disagree: this function
- * only turns the resolver's problems into `Diagnostic`s and throws its ranks
- * away, exactly as `scene-layout` does the reverse.
- */
-function checkLayoutConstraints(model: Model): Diagnostic[] {
-  return resolveLayoutConstraints(model).problems.map((problem) => ({
-    code: problem.code,
-    severity: "error" as const,
-    message: problem.message,
-    span: problem.span,
-    note: problem.note,
-    help: problem.help,
-  }));
 }
 
 function checkDuplicateIds(elements: Element[]): Diagnostic[] {

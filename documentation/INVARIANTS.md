@@ -529,7 +529,7 @@ dispositions, they go on the top and bottom respectively. The infrastructure
 view models users as actors (person glyph) on the entry side.
 
 Within a partition, order is the layout engine's to choose — unless the author
-declares one (`order: 2` or a `layout { … }` entry, §17). A top-level `order:`
+declares one (`order: 2`, §17). A top-level `order:`
 splits its partition into bands (`readingSlots` in `scene-layout`, emitted as
 `partition * SLOT_SCALE + slot`), so the author sequences elements *inside* the
 partition the view gave them and can never move one into a different partition:
@@ -646,23 +646,21 @@ That is a known limitation, not a guarantee.
 
 ## 17. Author positioning hints are honored, not negotiated
 
-Four opt-in DSL controls (`DSL_SPEC.md` § Positioning controls and § 1.3) let the
-author override layout: `order:` on an element, the `layout { … }` block on
-top-level elements, `ID.side` on a flow endpoint, and the arrow glyph's line
-style. Three rules hold for them.
+Three opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
+override layout: `order:` on an element, `ID.side` on a flow endpoint, and the
+arrow glyph's line style. Three rules hold for them.
 
-**`order:` reads along the drawing, the `layout` block across it.** A top-level
-`order:` becomes a partition band (§9), and a band is a contiguous run of layers,
-so it sequences elements along `elk.direction` — left to right for `wide`/`slide`,
-top to bottom for `tall`/`page`. That is the only lever that does: elk's own
+**`order:` reads along the drawing at the root, across it inside a container.**
+A top-level `order:` becomes a partition band (§9), and a band is a contiguous
+run of layers, so it sequences elements along `elk.direction` — left to right for
+`wide`/`slide`, top to bottom for `tall`/`page`. That is the only lever that does: elk's own
 `layerChoiceConstraint`, `layering.strategy: INTERACTIVE` and
-`elk.interactiveLayout` were each measured to be no-ops on these graphs. A
-`layout` rank, and an `order:` on an element *inside a container*, stay
-`elk.position` under `crossingMinimization.semiInteractive` — an index inside a
-layer, which orders what the engine already draws side by side. Nested elements
-get no choice about it: under `hierarchyHandling: INCLUDE_CHILDREN` every layer
-constraint elk offers, partitioning included, is ignored for a container's
-children.
+`elk.interactiveLayout` were each measured to be no-ops on these graphs. An
+`order:` on an element *inside a container* stays `elk.position` under
+`crossingMinimization.semiInteractive` — an index inside a layer, which orders
+what the engine already draws side by side. Nested elements get no choice about
+it: under `hierarchyHandling: INCLUDE_CHILDREN` every layer constraint elk
+offers, partitioning included, is ignored for a container's children.
 
 An element nobody ordered still needs a band, because a node left unpartitioned
 was measured to drift to the end of the drawing. It takes the highest band that
@@ -671,10 +669,6 @@ order the flows are visited — §2), so a hint never drags a consumer ahead of 
 own source. Where an author's order does contradict a flow, the order wins and
 the flow is drawn backwards; nothing is reported, because the hint is a statement
 about reading order, not about the flows.
-
-The `layout` block reports what it can decide before layout — `E0230`–`E0232`
-and `E0234`, resolved by `layout-constraints.ts` and shared with `validator.ts`
-so the diagnostics and the ranks can never disagree.
 
 **Opt-in means byte-identical.** A diagram that declares none of them must
 render exactly as it did before the feature existed — the elk options that

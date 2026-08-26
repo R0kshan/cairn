@@ -1,8 +1,8 @@
 diagram logical "Claims handling — flow attachment sides"
 
-# Baseline shape, shared by every file in this directory so the effect of a
-# `layout` block is the only thing that differs between them.
-# See documentation/DSL_SPEC.md § 1.3 Influencing placement
+# Baseline shape, shared with `sides.cairn` so the flow attachment pins are the
+# only thing that differs between them.
+# See documentation/DSL_SPEC.md § Positioning controls
 
 actor-group TEAM "Operations team" {
   actor AGENT "Claims agent"

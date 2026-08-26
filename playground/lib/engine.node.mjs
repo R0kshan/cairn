@@ -93177,64 +93177,6 @@ function tryLegendBlock(p) {
   else reportError("`}` expected to close the legend block", lookAhead().span);
   return true;
 }
-var LAYOUT_ENTRIES = {
-  first: { min: 1, max: Number.POSITIVE_INFINITY, form: "`first ID [ID \u2026]`" },
-  last: { min: 1, max: Number.POSITIVE_INFINITY, form: "`last ID [ID \u2026]`" },
-  before: { min: 2, max: 2, form: "`before ID ID`" },
-  after: { min: 2, max: 2, form: "`after ID ID`" },
-  "same-rank": { min: 2, max: Number.POSITIVE_INFINITY, form: "`same-rank ID ID [ID \u2026]`" }
-};
-function tryLayoutBlock(p) {
-  const { matchToken, advance, reportError, lookAhead, skipNewlines, syncToNextLine, model } = p;
-  if (!matchToken("id", "layout")) return false;
-  const mark = p.save();
-  advance();
-  if (!matchToken("lbrace")) {
-    p.restore(mark);
-    return false;
-  }
-  advance();
-  skipNewlines();
-  while (!matchToken("rbrace") && !matchToken("eof")) {
-    if (!matchToken("id") || !LAYOUT_ENTRIES[lookAhead().text]) {
-      reportError(
-        "placement entry expected",
-        lookAhead().span,
-        "entries are `first`, `last`, `before`, `after` and `same-rank`"
-      );
-      syncToNextLine();
-      skipNewlines();
-      continue;
-    }
-    const keyToken = advance();
-    const entry = LAYOUT_ENTRIES[keyToken.text];
-    const operands = [];
-    while (matchToken("id")) {
-      const token = advance();
-      operands.push({ id: token.text, span: token.span });
-    }
-    if (operands.length < entry.min || operands.length > entry.max) {
-      reportError(
-        `\`${keyToken.text}\` takes ${entry.max === entry.min ? entry.min : `at least ${entry.min}`} identifier${entry.min > 1 ? "s" : ""}`,
-        keyToken.span,
-        `e.g. ${entry.form}`
-      );
-      syncToNextLine();
-      skipNewlines();
-      continue;
-    }
-    const reversed = keyToken.text === "after";
-    model.layout.push({
-      kind: reversed ? "before" : keyToken.text,
-      operands: reversed ? [...operands].reverse() : operands,
-      span: keyToken.span
-    });
-    skipNewlines();
-  }
-  if (matchToken("rbrace")) advance();
-  else reportError("`}` expected to close the layout block", lookAhead().span);
-  return true;
-}
 function tryBusinessObject(p) {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
   if (!matchToken("id", "business-object")) return false;
@@ -93297,7 +93239,6 @@ function parse(src) {
     flows: [],
     businessObjects: [],
     legendNotes: [],
-    layout: [],
     style: defaultDiagramStyle(),
     index: /* @__PURE__ */ new Map()
   };
@@ -93413,7 +93354,6 @@ function parse(src) {
     if (tryStyleBlock(parent)) return;
     if (tryOrderEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
-    if (!parent && tryLayoutBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
     parseFlowOrElement(parser, parent);
   }
@@ -94268,179 +94208,6 @@ var views = {
   security: securityView
 };
 
-// src/layout-constraints.ts
-var ROOT_SCOPE = "";
-var TIER = { first: 0, normal: 1, last: 2 };
-function scopeOf(model, id) {
-  const element = model.index.get(id);
-  return element ? element.parent?.id ?? ROOT_SCOPE : void 0;
-}
-function rootConstraints(model, problems) {
-  const applicable = [];
-  for (const constraint of model.layout) {
-    let scope;
-    let rejected = false;
-    for (const operand of constraint.operands) {
-      const operandScope = scopeOf(model, operand.id);
-      if (operandScope === void 0) {
-        problems.push({
-          code: "E0230",
-          span: operand.span,
-          message: `unknown reference \`${operand.id}\` in the layout block`,
-          help: "placement constraints order elements that exist \u2014 declare it first"
-        });
-        rejected = true;
-        continue;
-      }
-      if (scope === void 0) scope = operandScope;
-      else if (scope !== operandScope) {
-        problems.push({
-          code: "E0231",
-          span: operand.span,
-          message: `\`${operand.id}\` is not a sibling of the other operands`,
-          note: `it sits ${describeScope(operandScope)}; the others sit ${describeScope(scope)}`,
-          help: "a placement constraint orders an element against its own siblings \u2014 split it into one entry per container"
-        });
-        rejected = true;
-      }
-    }
-    if (rejected || scope === void 0) continue;
-    if (scope !== ROOT_SCOPE) {
-      problems.push({
-        code: "E0234",
-        span: constraint.span,
-        message: `\`${constraint.operands[0].id}\` sits inside \`${scope}\`, so its position cannot be constrained`,
-        note: "placement constraints apply to top-level elements only",
-        help: "order the container itself, or promote these elements to the diagram root"
-      });
-      continue;
-    }
-    applicable.push(constraint);
-  }
-  return applicable;
-}
-var describeScope = (scope) => scope === ROOT_SCOPE ? "at the diagram root" : `inside \`${scope}\``;
-function mergeSameRankGroups(constraints, members) {
-  const parent = new Map(members.map((id) => [id, id]));
-  const find = (id) => {
-    let root = id;
-    while (parent.get(root) !== root) root = parent.get(root);
-    for (let step = id; step !== root; ) {
-      const next = parent.get(step);
-      parent.set(step, root);
-      step = next;
-    }
-    return root;
-  };
-  for (const constraint of constraints) {
-    if (constraint.kind !== "same-rank") continue;
-    const [head, ...rest] = constraint.operands;
-    for (const operand of rest) parent.set(find(operand.id), find(head.id));
-  }
-  return new Map(members.map((id) => [id, find(id)]));
-}
-function tierPinsOf(constraints) {
-  const pins = [];
-  for (const constraint of constraints) {
-    if (constraint.kind !== "first" && constraint.kind !== "last") continue;
-    const tier = constraint.kind === "first" ? TIER.first : TIER.last;
-    for (const operand of constraint.operands)
-      pins.push({ id: operand.id, tier, span: constraint.span });
-  }
-  return pins;
-}
-function levelGroups(constraints, members, groupOf, problems) {
-  const declarationIndex = new Map(members.map((id, index) => [id, index]));
-  const groups = members.filter((id) => groupOf.get(id) === id);
-  const contradiction = (span, message, note) => {
-    problems.push({
-      code: "E0232",
-      span,
-      message,
-      note,
-      help: "remove one of the conflicting entries \u2014 the whole layout block is ignored for this container until they agree"
-    });
-    return void 0;
-  };
-  const tierByGroup = new Map(groups.map((group) => [group, TIER.normal]));
-  const pinnedBy = /* @__PURE__ */ new Map();
-  for (const pin of tierPinsOf(constraints)) {
-    const group = groupOf.get(pin.id);
-    if (group === void 0) continue;
-    const current = tierByGroup.get(group);
-    if (current !== TIER.normal && current !== pin.tier)
-      return contradiction(
-        pin.span,
-        `\`${pin.id}\` cannot be placed ${pin.tier === TIER.first ? "first" : "last"}`,
-        `\`${pinnedBy.get(group)}\` is already pinned the other way, and they share a rank`
-      );
-    tierByGroup.set(group, pin.tier);
-    pinnedBy.set(group, pin.id);
-  }
-  const successors = new Map(groups.map((group) => [group, []]));
-  const incoming = new Map(groups.map((group) => [group, 0]));
-  for (const constraint of constraints) {
-    if (constraint.kind !== "before") continue;
-    const [earlier, later] = constraint.operands;
-    const earlierGroup = groupOf.get(earlier.id);
-    const laterGroup = groupOf.get(later.id);
-    if (earlierGroup === laterGroup)
-      return contradiction(
-        constraint.span,
-        `\`${earlier.id}\` cannot come before \`${later.id}\``,
-        "a `same-rank` entry already places them together"
-      );
-    if (tierByGroup.get(earlierGroup) > tierByGroup.get(laterGroup))
-      return contradiction(
-        constraint.span,
-        `\`${earlier.id}\` cannot come before \`${later.id}\``,
-        "a `first`/`last` entry already places them the other way round"
-      );
-    successors.get(earlierGroup).push(laterGroup);
-    incoming.set(laterGroup, incoming.get(laterGroup) + 1);
-  }
-  const level = new Map(groups.map((group) => [group, 0]));
-  const ready = groups.filter((group) => incoming.get(group) === 0);
-  let settled = 0;
-  while (ready.length) {
-    ready.sort((a, b) => declarationIndex.get(a) - declarationIndex.get(b));
-    const group = ready.shift();
-    settled++;
-    for (const successor of successors.get(group)) {
-      level.set(successor, Math.max(level.get(successor), level.get(group) + 1));
-      const remaining = incoming.get(successor) - 1;
-      incoming.set(successor, remaining);
-      if (remaining === 0) ready.push(successor);
-    }
-  }
-  if (settled !== groups.length) {
-    const cycle = groups.filter((group) => incoming.get(group) > 0);
-    return contradiction(
-      constraints.find((constraint) => constraint.kind === "before").span,
-      "placement constraints contradict each other",
-      `following them leads back to the start: ${cycle.join(", ")}`
-    );
-  }
-  const tierShift = groups.length + 1;
-  for (const group of groups)
-    level.set(group, level.get(group) + (tierByGroup.get(group) - TIER.normal) * tierShift);
-  const lowest = Math.min(...level.values());
-  return new Map([...level].map(([group, value]) => [group, value - lowest]));
-}
-function resolveLayoutConstraints(model) {
-  const problems = [];
-  const rankOf = /* @__PURE__ */ new Map();
-  if (!model.layout.length) return { rankOf, problems };
-  const constraints = rootConstraints(model, problems);
-  if (!constraints.length) return { rankOf, problems };
-  const members = model.elements.map((element) => element.id);
-  const groupOf = mergeSameRankGroups(constraints, members);
-  const levels = levelGroups(constraints, members, groupOf, problems);
-  if (!levels) return { rankOf, problems };
-  for (const id of members) rankOf.set(id, levels.get(groupOf.get(id)));
-  return { rankOf, problems };
-}
-
 // src/validator.ts
 function validate(model) {
   const view = model.type ? views[model.type] : void 0;
@@ -94467,19 +94234,8 @@ function validate(model) {
     ...checkTrustBoundaries(model, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
-    ...checkIsolatedElements(model, view, elements),
-    ...checkLayoutConstraints(model)
+    ...checkIsolatedElements(model, view, elements)
   ];
-}
-function checkLayoutConstraints(model) {
-  return resolveLayoutConstraints(model).problems.map((problem) => ({
-    code: problem.code,
-    severity: "error",
-    message: problem.message,
-    span: problem.span,
-    note: problem.note,
-    help: problem.help
-  }));
 }
 function checkDuplicateIds(elements) {
   const diagnostics = [];
@@ -99238,12 +98994,7 @@ function computeIngressExternalElements(model) {
   return ingressExternalElements;
 }
 var orderOption = (element) => element.order ? { "elk.position": `(0,${element.order.value})` } : {};
-var semiInteractiveOption = (children, ranked = false) => ranked || children.some((child) => child.order) ? { "elk.layered.crossingMinimization.semiInteractive": "true" } : {};
-var rankOption = (element, rankOf) => {
-  if (element.order) return {};
-  const rank = rankOf.get(element.id);
-  return rank === void 0 ? {} : { "elk.position": `(0,${rank})` };
-};
+var semiInteractiveOption = (children) => children.some((child) => child.order) ? { "elk.layered.crossingMinimization.semiInteractive": "true" } : {};
 function toElkNode2(element, compact, fonts, root = false) {
   const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
@@ -99694,7 +99445,7 @@ function attachSideDiagnostics(scene, model) {
   return diagnostics;
 }
 function buildElkGraph(ctx, direction, options) {
-  const { model, view, ingressExternal, rankOf, slotOf, compact, numbered, fonts } = ctx;
+  const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
   const graph = {
     id: "root",
     layoutOptions: {
@@ -99723,10 +99474,6 @@ function buildElkGraph(ctx, direction, options) {
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
-      // Only switched on for a `layout { … }` rank, the one top-level hint still
-      // expressed as an index inside a layer; a top-level `order:` is a partition
-      // band, and a nested one arms its own container in `toElkNode`.
-      ...semiInteractiveOption([], rankOf.size > 0),
       ...numbered && !options?.tight ? {
         "elk.spacing.nodeNode": "26",
         "elk.layered.spacing.nodeNodeBetweenLayers": "64",
@@ -99742,7 +99489,6 @@ function buildElkGraph(ctx, direction, options) {
       const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
-        ...rankOption(element, rankOf),
         // Without an `order:` anywhere the band is emitted as it always was, so
         // the drawing is byte-identical to one from before the hint existed.
         "elk.partitioning.partition": String(
@@ -99809,9 +99555,6 @@ async function layout(model, view) {
     model,
     view,
     ingressExternal: ingressExternalElements,
-    // The validator resolved the same constraints to report them; this reads the
-    // ranks and ignores the problems (`layout-constraints.ts`).
-    rankOf: resolveLayoutConstraints(model).rankOf,
     slotOf: readingSlots(model, view, ingressExternalElements),
     compact,
     numbered,

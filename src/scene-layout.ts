@@ -27,7 +27,6 @@ import {
 import { inspect, type Profile } from "./readability.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
-import { resolveLayoutConstraints } from "./layout-constraints.ts";
 
 /**
  * A node/edge as returned by elk *after* layout: every coordinate is populated,
@@ -167,23 +166,10 @@ const orderOption = (element: Element): Record<string, string> =>
  * and only when at least one of those children declares an order, so an
  * order-free diagram gets no new option and renders byte-identically.
  */
-const semiInteractiveOption = (children: Element[], ranked = false): Record<string, string> =>
-  ranked || children.some((child) => child.order)
+const semiInteractiveOption = (children: Element[]): Record<string, string> =>
+  children.some((child) => child.order)
     ? { "elk.layered.crossingMinimization.semiInteractive": "true" }
     : {};
-
-/**
- * A `layout { … }` rank as the same elk position hint an `order:` becomes. The
- * block orders top-level elements against each other; `order:` states one
- * element's own preference, so it is the more specific of the two and wins where
- * both apply. Neither can move an element out of its partition — the partitions
- * are assigned separately and elk honours them first (§9).
- */
-const rankOption = (element: Element, rankOf: Map<string, number>): Record<string, string> => {
-  if (element.order) return {};
-  const rank = rankOf.get(element.id);
-  return rank === undefined ? {} : { "elk.position": `(0,${rank})` };
-};
 
 /**
  * Converts an `Element` (and its children, recursively) into elk's input node
@@ -665,12 +651,6 @@ interface GraphContext {
   view: View;
   ingressExternal: Set<string>;
   /**
-   * Reading-order rank per top-level element, resolved from the `layout { … }`
-   * block. Empty for a diagram that declares none — and an empty map emits no
-   * option at all, which is what keeps such a diagram byte-identical (§17).
-   */
-  rankOf: Map<string, number>;
-  /**
    * Reading-order slot per top-level element, resolved from the `order:` hints
    * (`readingSlots`). Empty for a diagram that declares none, and an empty map
    * leaves the view's partitions untouched (§17).
@@ -949,7 +929,7 @@ function buildElkGraph(
   direction: "RIGHT" | "DOWN",
   options?: GraphOptions,
 ): ElkNode {
-  const { model, view, ingressExternal, rankOf, slotOf, compact, numbered, fonts } = ctx;
+  const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
   const graph: ElkNode = {
     id: "root",
     layoutOptions: {
@@ -980,10 +960,6 @@ function buildElkGraph(
       "elk.layered.edgeLabels.sideSelection": "SMART_DOWN",
       "elk.edgeLabels.placement": "CENTER",
       "elk.padding": "[top=22,left=10,bottom=10,right=10]",
-      // Only switched on for a `layout { … }` rank, the one top-level hint still
-      // expressed as an index inside a layer; a top-level `order:` is a partition
-      // band, and a nested one arms its own container in `toElkNode`.
-      ...semiInteractiveOption([], rankOf.size > 0),
       ...(numbered && !options?.tight
         ? {
             "elk.spacing.nodeNode": "26",
@@ -1001,7 +977,6 @@ function buildElkGraph(
       const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
-        ...rankOption(element, rankOf),
         // Without an `order:` anywhere the band is emitted as it always was, so
         // the drawing is byte-identical to one from before the hint existed.
         "elk.partitioning.partition": String(
@@ -1143,9 +1118,6 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     model,
     view,
     ingressExternal: ingressExternalElements,
-    // The validator resolved the same constraints to report them; this reads the
-    // ranks and ignores the problems (`layout-constraints.ts`).
-    rankOf: resolveLayoutConstraints(model).rankOf,
     slotOf: readingSlots(model, view, ingressExternalElements),
     compact,
     numbered,

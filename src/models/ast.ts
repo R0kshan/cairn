@@ -105,21 +105,6 @@ export interface BusinessObject {
   description?: string;
 }
 
-/**
- * One entry of the `layout { … }` block — an author's statement about reading
- * order, not about coordinates.
- *
- * `after A B` is parsed as `before B A`: the two say the same thing, and keeping
- * one kind means the resolver has one edge direction to reason about rather than
- * two that must agree.
- */
-export interface LayoutConstraint {
-  kind: "first" | "last" | "before" | "same-rank";
-  operands: { id: string; span: Span }[];
-  /** The whole entry, for the diagnostic that rejects it as a contradiction. */
-  span: Span;
-}
-
 export interface Model {
   type?: string;
   typeSpan?: Span;
@@ -128,12 +113,6 @@ export interface Model {
   flows: Flow[];
   businessObjects: BusinessObject[];
   legendNotes: string[];
-  /**
-   * The `layout { … }` block's entries, in source order. Empty for a diagram
-   * that declares none, which is what keeps such a diagram rendering exactly as
-   * it did before the block existed (INVARIANTS §17).
-   */
-  layout: LayoutConstraint[];
   style: DiagramStyle;
   index: Map<string, Element>;
 }
@@ -209,14 +188,6 @@ export const explanations: Record<string, string> = {
     "A declared attachment side (`APP.right -> DB.left`) did not survive layout: the flow ended up on another side of the element. Pins are honored where the layout can reach them and dropped where it cannot, rather than forced into an unreadable route. Move the element instead (`order:`), pin the other endpoint, or drop the pin.",
   W0571:
     "An endpoint reads `ID.side`, but `ID.side` is itself a declared element, and a declared id always wins — so the flow attaches to that element and no side is pinned. Rename the element if you meant the side.",
-  E0230:
-    "Unknown reference in the `layout` block: a placement constraint names an element that no declaration defines. Declare the element first — the constraint orders elements that exist.",
-  E0231:
-    "A placement constraint mixes elements from different containers. Reading order is decided among siblings, so an entry may only name elements that share a parent — split it into one entry per container.",
-  E0232:
-    "The `layout` block contradicts itself: following its entries leads back to the start, or pins one element both first and last. There is no order satisfying all of them, so the whole block is ignored for that container until they agree — remove one of the conflicting entries.",
-  E0234:
-    "A placement constraint names an element inside a container. Only top-level elements can be ordered: under elk's `INCLUDE_CHILDREN` hierarchy handling, a child's position comes from the edge declaration order, and every option that claims otherwise is a no-op there. Order the container itself, or promote the elements to the diagram root.",
   W0560:
     "Security check: this flow enters a more-trusted zone from a less-trusted one without passing through a security-node (firewall/WAF/bastion). Route it through a filtering point, or confirm the direct path is deliberate. This is the diagram equivalent of a missing firewall rule review.",
   W0561:

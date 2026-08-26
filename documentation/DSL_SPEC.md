@@ -198,61 +198,10 @@ ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
 
-## 1.3 Influencing placement
-
-`order:` and `ID.side` speak for one element or one flow. The **`layout { … }`
-block** speaks about elements *relative to each other* — a top-level block, one
-entry per line, ordering the diagram's reading order without naming a single
-coordinate.
-
-```
-layout {
-  first     AUDIT            # ahead of everything the other entries leave free
-  last      REPORT           # behind it
-  before    AUDIT INTAKE     # AUDIT reads earlier than INTAKE
-  after     ROUTING ARCHIVE  # the same relation written the other way round
-  same-rank REPORT AUDIT     # one step of the reading order, so a constraint
-                             # on either moves both
-}
-```
-
-The block orders *across* the reading direction — top to bottom for
-`wide`/`slide`, left to right for `tall`/`page` — among the elements the engine
-draws side by side. It is an index inside a layer, so unlike a root-level
-`order:` it never moves an element along the length: an entry naming two
-elements a flow chain has already sequenced into different layers leaves them
-where they are. Reach for `order:` to sequence the drawing, and for the block to
-arrange what shares a step of it.
-
-Five rules make the block predictable.
-
-- **It orders top-level elements only.** An element inside a container cannot be
-  ordered at all (**E0234**) — under elk's `INCLUDE_CHILDREN` hierarchy handling
-  a child's position comes from the edge declaration order, and every option that
-  claims otherwise was measured and is a no-op there. Order the container.
-- **Operands are siblings.** An entry naming elements from two different parents
-  is **E0231**; an unknown id is **E0230**.
-- **An entry does only what it says.** Elements no entry separates share a step,
-  so `before A B` moves B behind A and leaves C exactly where the engine had it.
-- **`first`/`last` outrank the middle.** They move a whole step clear of the
-  unpinned elements, far enough that no `before` chain reaches across — while the
-  chains *inside* a tier stay intact.
-- **A contradiction is refused whole, never half-applied** (**E0232**): a cycle
-  of `before` entries, an element pinned both ways, or a `before` between two
-  elements a `same-rank` already ties together. The block is then ignored for
-  that container and the engine's own order stands.
-
-The two controls act on different axes, so they compose rather than compete: an
-element carrying an `order:` is banded along the length by it and drops the
-block's rank, while the block arranges the rest across the axis. Like the other
-two controls, the block never
-moves an element into another partition (§9 of `INVARIANTS.md`), and a file that
-declares none renders exactly as it did before the block existed.
-
-Five files in [`examples/placement/`](../examples/placement) are one shape drawn
-five ways: `baseline.cairn` with no block at all, then one file per entry kind,
-plus `sides.cairn` for the `ID.side` pins above. `reading-order.cairn` is the
-other axis — two backends sequenced along the length by `order:`.
+Three files in [`examples/placement/`](../examples/placement) show the two
+controls: `baseline.cairn` declares neither, `sides.cairn` is the same shape with
+`ID.side` pins on its flows, and `reading-order.cairn` sequences two backends
+along the length with `order:`.
 
 ## 2. Styling — three levels, most specific wins
 
