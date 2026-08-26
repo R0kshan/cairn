@@ -3,6 +3,7 @@ application-fr.cairn  dim:1202x426 n:18 e:13 ov:0  geom:ca74a99ada81 color:1b036
 application-large-fr.cairn  dim:2314x543 n:29 e:27 ov:0  geom:ef0ca4595e68 color:d27d027a1ba0 text:7b730e88cea4
 application-large.cairn  dim:2314x543 n:29 e:27 ov:0  geom:512073a3877f color:d27d027a1ba0 text:e7b5efed635e
 application-medium.cairn  dim:1646x410 n:19 e:15 ov:0  geom:f405113fc8b8 color:ed4e73048740 text:8a751a12523a
+application-queue-messaging.cairn  dim:640x182 n:6 e:4 ov:0  geom:c9ad91aadb90 color:0b11e869c427 text:0a2656ec2bdb
 application-small.cairn  dim:860x199 n:9 e:7 ov:0  geom:e505fa510095 color:1e6ae0ee1ab5 text:f14f67eb325b
 application-system-fr.cairn  dim:1235x184 n:9 e:5 ov:0  geom:9e6f6d759055 color:290b6837be77 text:3ebb09b9e467
 application-system.cairn  dim:1560x203 n:14 e:8 ov:0  geom:6fa82aca5eb6 color:6bfdd34567b0 text:2844f4ed0eb7

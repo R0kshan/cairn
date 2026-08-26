@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 286" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="640" height="286" fill="#ffffff"/>
+<rect x="10" y="58" width="127" height="97" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="20" y="76" font-size="13" font-weight="bold" fill="#17202c">Order backend</text>
+<text x="20" y="90" font-size="13" font-weight="bold" fill="#17202c">Region A</text>
+<rect x="478" y="22" width="137" height="117" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="488" y="40" font-size="13" font-weight="bold" fill="#17202c">Order backend</text>
+<text x="488" y="54" font-size="13" font-weight="bold" fill="#17202c">Region B</text>
+<rect x="19" y="99" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="73" y="119.25" font-size="12.5" text-anchor="middle" fill="#17202c">Message</text>
+<text x="73" y="133.75" font-size="12.5" text-anchor="middle" fill="#17202c">handling</text>
+<rect x="498" y="73" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="552" y="93.25" font-size="12.5" text-anchor="middle" fill="#17202c">Message</text>
+<text x="552" y="107.75" font-size="12.5" text-anchor="middle" fill="#17202c">handling</text>
+<path d="M 231 125 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="231" cy="148.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="281" y="145.25" font-size="12.5" text-anchor="middle" fill="#17202c">Region A</text>
+<text x="281" y="159.75" font-size="12.5" text-anchor="middle" fill="#17202c">messages</text>
+<path d="M 357 90 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="357" cy="113.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="407" y="110.25" font-size="12.5" text-anchor="middle" fill="#17202c">Region B</text>
+<text x="407" y="124.75" font-size="12.5" text-anchor="middle" fill="#17202c">messages</text>
+<path d="M 127 140 L 175 140 L 175 166 L 223 166" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 498 114 L 474 114 L 474 148.5 L 331 148.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 498 79 L 470 79 L 470 113.5 L 457 113.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 127 114.33333333333334 L 348 114" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="151" y="143.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
+<text x="402.5" y="151.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
+<text x="470" y="79.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
+<text x="237.5" y="117.41666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
+<line x1="20" y1="192" x2="620" y2="192" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="214" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="204" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="182" y="215" font-size="10" fill="#17202c">Application</text>
+<rect x="272" y="204" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="304" y="215" font-size="10" fill="#17202c">Application module</text>
+<rect x="150" y="226" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="182" y="237" font-size="10" fill="#17202c">Message queue / broker</text>
+<line x1="150" y1="256" x2="176" y2="256" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="260" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+</svg>
