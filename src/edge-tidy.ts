@@ -1466,6 +1466,10 @@ function clearRunHug(ctx: HugContext, edge: SceneEdge, run: HugRun, own: Set<Sce
   // Translation blocked (corner landings, crossings, stub walls): re-side the
   // terminal on its own node to an adjacent perpendicular side.
   if (run.i !== 0 && run.i + 1 !== edge.pts.length - 1) return false;
+  // Only this fallback changes a side, and only for the terminal this run
+  // touches — a pinned one is not available for it (§17). The translation above
+  // stays open to it: `slideClamp` moves a seat along its own side, never off it.
+  if (edge.pinned?.[run.i === 0 ? "start" : "end"]) return false;
   if (!sideOf(edge.pts[run.i === 0 ? 0 : edge.pts.length - 1], leaves)) return false;
   return resideAtSide(ctx, edge, run, own);
 }

@@ -97161,6 +97161,7 @@ function clearRunHug(ctx, edge, run, own) {
     if (attemptHugFix(ctx, edge, { run, axis, target }, own)) return true;
   }
   if (run.i !== 0 && run.i + 1 !== edge.pts.length - 1) return false;
+  if (edge.pinned?.[run.i === 0 ? "start" : "end"]) return false;
   if (!sideOf(edge.pts[run.i === 0 ? 0 : edge.pts.length - 1], leaves)) return false;
   return resideAtSide(ctx, edge, run, own);
 }

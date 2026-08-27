@@ -678,8 +678,10 @@ and the committed `examples/*.svg` are the gate.
 **A pin fixes the ends, not the path.** Where the author pinned a terminal, the
 passes that would *move* that terminal stand down: `route-detour` never sends the
 flow through a channel (§11), `edge-tidy`'s re-siding (§4c) offers that terminal
-only the side it already sits on, and `attachAway` exempts it in both the
-layout's own count and `scripts/sweep.ts`.
+only the side it already sits on, `clearSideHugs` gives up on the run rather
+than take its one fallback that lands the terminal elsewhere, and `attachAway`
+exempts it in both the layout's own count and `scripts/sweep.ts`. Sliding a seat
+*along* the side it is already on is not moving it, so every pass keeps that.
 
 The exemption is **per terminal**, because `SceneEdge.pinned` records the two
 ends separately. Pin one end and the other stays the layout's to answer for: it
