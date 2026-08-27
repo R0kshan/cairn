@@ -99,7 +99,7 @@ Colours are resolved at three levels — most specific wins. From lowest to high
 
 1. **Theme defaults** — per-kind colours defined by the selected theme (fill, stroke, text for each element kind).
 2. **Diagram-level per-kind overrides** — override colours for all elements of a given kind in the `style` block:
-   ```
+   ```cairn
    style {
      fill actor-group: #eef4fb
      stroke actor-group: #7a9cc4 dashed
@@ -108,12 +108,12 @@ Colours are resolved at three levels — most specific wins. From lowest to high
    }
    ```
 3. **Inline per-element styles** — override colour for a single element:
-   ```
+   ```cairn
    block API "API gateway" { style { fill: #e8f5e9  stroke: #2e7d32  text: #1b5e20 } }
    ```
 
 Flows can also be coloured inline:
-```
+```cairn
 COM_CTR -> OBS : "Alerts…" { label: above  stroke: dashed #a33  text: #a33 }
 ```
 
@@ -129,7 +129,7 @@ it back — a file that uses none of them renders exactly as before.
 **Dashed and dotted flows.** The arrow glyph carries the line style. From
 [`examples/positioning-sides.cairn`](examples/positioning-sides.cairn):
 
-```
+```cairn
 TASKS -> SCORING (MQ, JSON)                # solid — the default
 SCORING --> REINSURER (SFTP, CSV)          # dashed
 TRIAGE ..> REINSURER (API_REST, JSON)      # dotted
@@ -139,7 +139,7 @@ TRIAGE ..> REINSURER (API_REST, JSON)      # dotted
 or both. Sides read as the diagram is drawn — `left`, `right`, `top`, `bottom`.
 Same file:
 
-```
+```cairn
 FORM.right -> TRIAGE.left (API_REST, JSON)   # both ends pinned
 TRIAGE -> TASKS.bottom (MQ, JSON)            # only the arrival pinned
 SCORING.top -> TRIAGE.right (API_REST, JSON) # a backward flow, pinned both ends
@@ -162,7 +162,7 @@ for `tall`/`page`. From
 [`examples/placement/reading-order.cairn`](examples/placement/reading-order.cairn),
 where two backends publishing to the same queue would otherwise be stacked:
 
-```
+```cairn
 application BACKEND_L1 "Line 1 backend" {
   order: 1
   module MSG_L1 "Messaging\nhandler"
@@ -180,7 +180,7 @@ and elk honors no constraint that would change it: there `order:` sorts the
 siblings sharing a layer — top to bottom in `wide`, left to right in `tall`. From
 [`examples/positioning.cairn`](examples/positioning.cairn):
 
-```
+```cairn
 actor-group STAFF "Payment actors" {
   actor OPERATOR "Payment operator" {
     order: 1
@@ -213,7 +213,7 @@ and `reading-order.cairn` sequences two backends with `order:`.
 lives in the `style` block and resolves at the usual three levels — view default,
 then diagram, then inline per flow:
 
-```
+```cairn
 style {
   flow-label: above     # on-line (default) | above | below
 }

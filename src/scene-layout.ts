@@ -388,8 +388,9 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
   const flagged = new Set<string>();
   for (const e of scene.edges) {
     // A pinned terminal departs where the author said to, which is exactly what
-    // this predicate calls "away" — exempt, like a channel route.
-    if (e.pts.length < 2 || e.detour || e.pinned) continue;
+    // this predicate calls "away" — exempt, like a channel route. Per end: the
+    // free end of a half-pinned flow is still the layout's to answer for.
+    if (e.pts.length < 2 || e.detour) continue;
     const flow = model.flows.find((f) => f.id === e.id);
     const from = byId.get(flow?.from ?? "");
     const to = byId.get(flow?.to ?? "");
@@ -404,9 +405,13 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
     const pm = e.pts[e.pts.length - 2];
     const toCenter = centerOf(to);
     const fromCenter = centerOf(from);
-    if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
+    if (
+      !e.pinned?.start &&
+      away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y })
+    )
       flagged.add(e.id);
     if (
+      !e.pinned?.end &&
       away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y })
     )
       flagged.add(e.id);
@@ -420,7 +425,9 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
     // reroute is refused for merging with it. Ports facing the counterpart are
     // the repair, which is what an author gets today by pinning both ends by
     // hand (`SIPRE.left -> MESSAGING.right`).
-    if (isLongDetour(e.pts, from, to)) flagged.add(e.id);
+    // Whole-route shape, not a terminal: a flow with either end pinned keeps the
+    // route the author's pin bought it.
+    if (!e.pinned && isLongDetour(e.pts, from, to)) flagged.add(e.id);
   }
   return flagged;
 }

@@ -92941,7 +92941,7 @@ function parseFlow(p, sourceToken) {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
   const arrowToken = advance();
   if (!matchToken("id")) {
-    reportError("target identifier expected after `->`", lookAhead().span);
+    reportError(`target identifier expected after \`${arrowToken.text}\``, lookAhead().span);
     syncToNextLine();
     return;
   }
@@ -95327,7 +95327,9 @@ function verticalConflict(segment, x, top, bottom) {
 var blockedBelowBy = (leafBoxes, x, top) => leafBoxes.some(
   (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1
 );
-var blockedAboveBy = (leafBoxes, titleBoxes, x, bottom) => leafBoxes.some((node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1) || titleBoxes.some(
+var blockedAboveBy = (leafBoxes, titleBoxes, x, bottom) => leafBoxes.some(
+  (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1
+) || titleBoxes.some(
   (box) => x >= box.x - TITLE_CLEARANCE && x <= box.x + box.width + TITLE_CLEARANCE && box.y < bottom - 1
 );
 var horizontalBlocked = (leafBoxes, y, probe) => leafBoxes.some(
@@ -95745,9 +95747,7 @@ function laneOffsets(lc, subset, direction, anchor) {
     const ownPosition = spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
     const start = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
     labelHeights.push(labelHeight);
-    positions.push(
-      resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction)
-    );
+    positions.push(resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction));
   }
   return positions;
 }
@@ -97593,8 +97593,10 @@ function generateReaimCandidates(AWAY_TOL2, from, to) {
   };
   const normalOf = (side) => side === "north" ? { x: 0, y: -1 } : side === "south" ? { x: 0, y: 1 } : side === "west" ? { x: -1, y: 0 } : { x: 1, y: 0 };
   const candidates = [];
-  for (const srcSide of facingSides(src, dstC))
-    for (const dstSide of facingSides(dst, srcC)) {
+  const srcSides = from.keepSide ? [from.keepSide] : facingSides(src, dstC);
+  const dstSides = to.keepSide ? [to.keepSide] : facingSides(dst, srcC);
+  for (const srcSide of srcSides)
+    for (const dstSide of dstSides) {
       const na = normalOf(srcSide);
       const nb = normalOf(dstSide);
       const horizontalA = na.x !== 0;
@@ -97738,8 +97740,8 @@ function reaimEdge(rctx, edge) {
   const dstC = { x: dst.x + dst.width / 2, y: dst.y + dst.height / 2 };
   const candidates = generateReaimCandidates(
     AWAY_TOL2,
-    { node: src, centre: srcC },
-    { node: dst, centre: dstC }
+    { node: src, centre: srcC, keepSide: edge.pinned?.start ? srcSeat.side : null },
+    { node: dst, centre: dstC, keepSide: edge.pinned?.end ? dstSeat.side : null }
   );
   const outside = runsExcept(edge.id);
   const labelBoxes = seatedLabelBoxes(edge);
@@ -97771,7 +97773,8 @@ function reaimEdge(rctx, edge) {
 function reaimWrapAroundTerminals(ctx) {
   const { scene } = ctx;
   const rctx = createReaimContext(ctx);
-  for (const edge of scene.edges) if (!edge.pinned) reaimEdge(rctx, edge);
+  for (const edge of scene.edges)
+    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge);
 }
 function shiftCoincidentRun(leaves, pts, b, newAt) {
   if (b.vert) {
@@ -98217,8 +98220,10 @@ function bestUnweaveRoute(uctx, job) {
   const { edge, srcSeat, dstSeat } = job;
   let best = null;
   let bestLength = Number.POSITIVE_INFINITY;
-  for (const srcSide of ALL_SIDES)
-    for (const dstSide of ALL_SIDES)
+  const srcSides = edge.pinned?.start ? [srcSeat.side] : ALL_SIDES;
+  const dstSides = edge.pinned?.end ? [dstSeat.side] : ALL_SIDES;
+  for (const srcSide of srcSides)
+    for (const dstSide of dstSides)
       for (const srcOffset of SEAT_OFFSETS)
         for (const dstOffset of SEAT_OFFSETS) {
           const a = unweaveSeat(srcSeat.node, srcSide, srcOffset);
@@ -98271,7 +98276,7 @@ function unweaveAndClearContainers(ctx) {
   for (const edge of [...scene.edges].sort(
     (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0)
   )) {
-    if (edge.pinned) continue;
+    if (edge.pinned?.start && edge.pinned?.end) continue;
     unweaveEdge(uctx, edge);
   }
 }
@@ -99119,7 +99124,7 @@ function attachAwayOf(scene, model) {
   const byId = new Map(scene.nodes.map((node) => [node.id, node]));
   const flagged = /* @__PURE__ */ new Set();
   for (const e of scene.edges) {
-    if (e.pts.length < 2 || e.detour || e.pinned) continue;
+    if (e.pts.length < 2 || e.detour) continue;
     const flow = model.flows.find((f) => f.id === e.id);
     const from = byId.get(flow?.from ?? "");
     const to = byId.get(flow?.to ?? "");
@@ -99132,11 +99137,11 @@ function attachAwayOf(scene, model) {
     const pm = e.pts[e.pts.length - 2];
     const toCenter = centerOf2(to);
     const fromCenter = centerOf2(from);
-    if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
+    if (!e.pinned?.start && away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
       flagged.add(e.id);
-    if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
+    if (!e.pinned?.end && away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
       flagged.add(e.id);
-    if (isLongDetour(e.pts, from, to)) flagged.add(e.id);
+    if (!e.pinned && isLongDetour(e.pts, from, to)) flagged.add(e.id);
   }
   return flagged;
 }

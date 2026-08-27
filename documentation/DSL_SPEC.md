@@ -43,9 +43,9 @@ The layout engine assigns each element a semantic horizontal band (ELK partition
 
 | View | Partitions (left → right) |
 |---|---|
-| `logical` | actor-groups (0) | systems (1) | externals (2) |
-| `application` | actors (0) | systems / applications / datastores (1) | externals (2) |
-| `infrastructure` | sites / zones in declaration order (0) | externals (1) |
+| `logical` | actor-groups (0) · systems (1) · externals (2) |
+| `application` | actors (0) · systems / applications / datastores (1) · externals (2) |
+| `infrastructure` | sites / zones in declaration order (0) · externals (1) |
 | `security` | zones in declaration order (exposed → protected) |
 
 Flow syntax, full form: `A -> B : "label" (PROTOCOL, FORMAT) [BO_REFS] { inline style }` — every segment after the arrow is optional (subject to view rules). The arrow itself has three forms — `->` solid, `-->` dashed, `..>` dotted — and either endpoint may name the side it attaches to (`A.right -> B.left`); see [Positioning controls](#positioning-controls) below. The `[BO_REFS]` segment is **logical-view only**. When a prose label is present the technical tail renders as a smaller gray sub-line under it; when the label is omitted the technical tail is promoted to the primary arrow label. In `flow-text: numbered` mode the tail joins the flow table entry.
@@ -182,9 +182,10 @@ Because `.` is a legal id character, `API.right` is ambiguous with an element
 reported as **W0571**. An unknown side name is **E0223**. A pin is a request,
 not a guarantee: one the layout cannot reach is dropped rather than forced into
 an unreadable route, and reported as **W0570**. A pin fixes the two ends, not the
-path between them: the passes that would move a terminal stand down, while the
-route itself is still tidied along shapes that leave the pinned ends where the
-author put them.
+path between them: the passes that would move a terminal stand down for *that*
+terminal — pin one end and the other is still re-aimed, unwoven and measured as
+usual — while the route itself is still tidied along shapes that leave the
+pinned ends where the author put them.
 
 **Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
 `..>` dotted. Whitespace before the arrow is required, as it always has been

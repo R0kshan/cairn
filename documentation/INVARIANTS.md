@@ -677,8 +677,16 @@ and the committed `examples/*.svg` are the gate.
 
 **A pin fixes the ends, not the path.** Where the author pinned a terminal, the
 passes that would *move* that terminal stand down: `route-detour` never sends the
-flow through a channel (§11), `edge-tidy`'s re-siding (§4c) skips it, and
-`attachAway` exempts it in both the layout's own count and `scripts/sweep.ts`.
+flow through a channel (§11), `edge-tidy`'s re-siding (§4c) offers that terminal
+only the side it already sits on, and `attachAway` exempts it in both the
+layout's own count and `scripts/sweep.ts`.
+
+The exemption is **per terminal**, because `SceneEdge.pinned` records the two
+ends separately. Pin one end and the other stays the layout's to answer for: it
+is still re-aimed, still unwoven, and still counted by `attachAway`. Only a flow
+pinned at both ends has no terminal left to choose, and `route-detour` is the
+one whole-edge exception — a channel replaces *both* terminals, so a single pin
+takes the flow out of the running.
 
 The route between those ends stays the repair's business. `optimiseRoutes` keeps
 a pinned edge as a candidate but generates only routes that leave the pinned end

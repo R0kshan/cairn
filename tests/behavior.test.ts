@@ -51,6 +51,13 @@ test("broken.cairn raises exactly the seeded diagnostic codes", () => {
   assert.equal(codes.filter((c) => c === "W0510").length, 2);
 });
 
+test("a missing flow target names the arrow the author actually wrote", () => {
+  const dashed = check('diagram logical "t"\nsystem S "s"\nS -->\n');
+  assert.match(dashed.diags.find((d) => d.severity === "error")!.message, /after `-->`/);
+  const dotted = check('diagram logical "t"\nsystem S "s"\nS ..>\n');
+  assert.match(dotted.diags.find((d) => d.severity === "error")!.message, /after `\.\.>`/);
+});
+
 test("unknown kind suggests the nearest valid kind", () => {
   const { diags } = check('diagram logical "t"\nsytem S "x"\n');
   const d = diags.find((d) => d.code === "E0201")!;

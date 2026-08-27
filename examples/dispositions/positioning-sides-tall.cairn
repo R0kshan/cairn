@@ -46,5 +46,5 @@ SCORING.bottom -> AUDIT_DB.top (JDBC)
 SCORING --> REINSURER (SFTP, CSV)
 TRIAGE ..> REINSURER (API_REST, JSON)
 FORM --> AUDIT_DB (JDBC) { stroke: solid }
-# A backward flow, pinned on both ends: top on the source, right on the target.
+# A backward flow, pinned on both ends: right on the source, right on the target.
 SCORING.right -> TRIAGE.right (API_REST, JSON)

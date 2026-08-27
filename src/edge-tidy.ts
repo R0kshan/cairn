@@ -2151,8 +2151,8 @@ function segmentsAreClean(
 // afterwards, so seats need not anticipate neighbours.
 function generateReaimCandidates(
   AWAY_TOL: number,
-  from: { node: SceneNode; centre: Point },
-  to: { node: SceneNode; centre: Point },
+  from: { node: SceneNode; centre: Point; keepSide: Side | null },
+  to: { node: SceneNode; centre: Point; keepSide: Side | null },
 ): Point[][] {
   const { node: src, centre: srcC } = from;
   const { node: dst, centre: dstC } = to;
@@ -2198,8 +2198,13 @@ function generateReaimCandidates(
           : { x: 1, y: 0 };
 
   const candidates: Point[][] = [];
-  for (const srcSide of facingSides(src, dstC))
-    for (const dstSide of facingSides(dst, srcC)) {
+  // A pinned end is only ever offered the side it already sits on, the way
+  // `optimiseRoutes` treats one: the free end of a half-pinned flow keeps the
+  // full search, the pinned end does not move.
+  const srcSides = from.keepSide ? [from.keepSide] : facingSides(src, dstC);
+  const dstSides = to.keepSide ? [to.keepSide] : facingSides(dst, srcC);
+  for (const srcSide of srcSides)
+    for (const dstSide of dstSides) {
       const na = normalOf(srcSide);
       const nb = normalOf(dstSide);
       const horizontalA = na.x !== 0;
@@ -2417,8 +2422,8 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge): void {
 
   const candidates = generateReaimCandidates(
     AWAY_TOL,
-    { node: src, centre: srcC },
-    { node: dst, centre: dstC },
+    { node: src, centre: srcC, keepSide: edge.pinned?.start ? srcSeat.side : null },
+    { node: dst, centre: dstC, keepSide: edge.pinned?.end ? dstSeat.side : null },
   );
 
   const outside = runsExcept(edge.id);
@@ -2466,9 +2471,13 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge): void {
 function reaimWrapAroundTerminals(ctx: TidyContext): void {
   const { scene } = ctx;
   const rctx = createReaimContext(ctx);
-  // A pinned edge attaches where the author asked; re-aiming it would silently
-  // overrule that, so it is skipped here the way a channel route is elsewhere.
-  for (const edge of scene.edges) if (!edge.pinned) reaimEdge(rctx, edge);
+  // A pinned terminal attaches where the author asked; re-aiming it would
+  // silently overrule that, so it is held in place the way a channel route is
+  // elsewhere. Per end: a flow with one end pinned still has a free end to
+  // re-aim, and `generateReaimCandidates` offers the pinned end its own side
+  // alone. A flow pinned at both ends has nothing left to choose.
+  for (const edge of scene.edges)
+    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge);
 }
 
 /** Shifts one coincident run's shared axis to `newAt`, reconnecting any
@@ -3160,8 +3169,11 @@ function bestUnweaveRoute(uctx: UnweaveContext, job: UnweaveJob): Point[] | null
   const { edge, srcSeat, dstSeat } = job;
   let best: Point[] | null = null;
   let bestLength = Number.POSITIVE_INFINITY;
-  for (const srcSide of ALL_SIDES)
-    for (const dstSide of ALL_SIDES)
+  // Same rule as the re-aim: a pinned end is searched on its own side only.
+  const srcSides = edge.pinned?.start ? [srcSeat.side] : ALL_SIDES;
+  const dstSides = edge.pinned?.end ? [dstSeat.side] : ALL_SIDES;
+  for (const srcSide of srcSides)
+    for (const dstSide of dstSides)
       for (const srcOffset of SEAT_OFFSETS)
         for (const dstOffset of SEAT_OFFSETS) {
           const a = unweaveSeat(srcSeat.node, srcSide, srcOffset);
@@ -3225,8 +3237,9 @@ function unweaveAndClearContainers(ctx: TidyContext): void {
     (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0),
   )) {
     // Unweaving re-sides a terminal, which is the one thing a pinned end is not
-    // available for — the author chose that side and elk delivered it.
-    if (edge.pinned) continue;
+    // available for — the author chose that side and elk delivered it. Per end,
+    // like the re-aim: only a flow pinned at both ends has nothing to re-side.
+    if (edge.pinned?.start && edge.pinned?.end) continue;
     unweaveEdge(uctx, edge);
   }
 }

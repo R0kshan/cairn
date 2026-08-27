@@ -55,7 +55,7 @@ function parseFlow(p: Parser, sourceToken: Token): void {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
   const arrowToken = advance();
   if (!matchToken("id")) {
-    reportError("target identifier expected after `->`", lookAhead().span);
+    reportError(`target identifier expected after \`${arrowToken.text}\``, lookAhead().span);
     syncToNextLine();
     return;
   }

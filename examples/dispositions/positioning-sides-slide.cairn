@@ -37,7 +37,7 @@ system CLAIMS "Claims platform" {
 
 external REINSURER "Reinsurer\n(external)"
 
-HANDLER -> FORM (API_REST, JSON)
+HANDLER.right -> FORM (API_REST, JSON)
 FORM.right -> TRIAGE.left (API_REST, JSON)
 TRIAGE.right -> CLAIM_DB.left (JDBC)
 TRIAGE.bottom -> TASKS.left (MQ, JSON)

@@ -793,12 +793,10 @@ placement/sides/tall	turnHeavy	2
 placement/sides/wide	titleStruck	1
 positioning-sides/page	turnHeavy	2
 positioning-sides/slide	crossings	1
-positioning-sides/slide	jog<=6	1
-positioning-sides/slide	turnHeavy	3
+positioning-sides/slide	turnHeavy	2
 positioning-sides/tall	turnHeavy	2
 positioning-sides/wide	crossings	1
-positioning-sides/wide	jog<=6	1
-positioning-sides/wide	turnHeavy	3
+positioning-sides/wide	turnHeavy	2
 security-fr/page	attachAway	1
 security-fr/page	crossings	1
 security-fr/page	labelStraddled	1
