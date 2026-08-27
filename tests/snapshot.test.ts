@@ -47,6 +47,9 @@ const CANARIES = [
   "large-numbered.cairn", // numbered flows (exercises the hypot path)
   "colors-custom.cairn", // per-element fill/stroke/text rendering
   "infrastructure-fr.cairn", // lang: fr on a smaller diagram
+  "positioning.cairn", // `order:` on containers and leaves, pins, arrow glyphs
+  "positioning-sides.cairn", // every attachment side, incl. a pinned backward flow
+  "application-system-fr.cairn", // `system` boundary — fr legend on the dark theme
 ];
 
 // One example per built-in theme — guards every palette against shared-code changes that only show up on non-default themes.
@@ -116,6 +119,21 @@ for (const file of CANARIES) {
   });
 }
 
+// ---------- 1b. placement ----------
+// One shape drawn twice (`examples/placement/`): the engine's own placement, and
+// the same shape with `ID.side` pins on its flows. Snapshotted together because
+// the point of the pair is the *difference* between them — a change that moves
+// both identically is a layout change, one that moves a single file is a
+// placement bug.
+const PLACEMENT = ["baseline", "sides"];
+
+for (const name of PLACEMENT) {
+  test(`snapshot: placement/${name}`, async () => {
+    const actual = normalize(await buildSvg(join(EX, "placement"), `${name}.cairn`));
+    snapshotAssert(`placement-${name}.snap.svg`, actual);
+  });
+}
+
 // ---------- 2. themes ----------
 
 const THEMES_DIR = join(EX, "themes");
@@ -141,6 +159,7 @@ const MATRIX_SOURCES = [
   "application.cairn", // protocol, no port
   MATRIX_SOURCE, // the reference shape: protocol + port
   "security.cairn", // protocol only, trust-zone annotation
+  "application-system.cairn", // nearest-container annotation: application vs system
 ];
 
 for (const file of MATRIX_SOURCES) {

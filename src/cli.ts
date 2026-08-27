@@ -12,7 +12,7 @@ import pkg from "../package.json" with { type: "json" };
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
 import { renderHuman, renderJson } from "./diagnostics.ts";
-import { layout } from "./scene-layout.ts";
+import { layout, attachSideDiagnostics } from "./scene-layout.ts";
 import type { Scene } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
@@ -337,6 +337,7 @@ if (command === "version" || command === "--version" || command === "-v") {
         model.typeSpan ?? { line: 1, col: 1, len: 7 },
       );
       if (diagnostic) diagnostics.push(diagnostic);
+      diagnostics.push(...attachSideDiagnostics(scene, model));
       const warnings = diagnostics.filter((d) => d.severity === "warning");
       if (warnings.length)
         console.error(renderHuman(file, src, warnings, process.stderr.isTTY ?? false));

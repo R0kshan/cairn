@@ -33,6 +33,7 @@ interface Palette {
   chipText: string;
 }
 
+/** Light theme color palette. */
 export const lightPalette: Palette = {
   background: "white",
   containerLabel: "#333",
@@ -58,6 +59,7 @@ export const lightPalette: Palette = {
   chipText: "#7a6216",
 };
 
+/** Dark theme color palette. */
 const darkPalette: Palette = {
   background: "#1e2227",
   containerLabel: "#e6edf3",
@@ -83,11 +85,13 @@ const darkPalette: Palette = {
   chipText: "#e0c068",
 };
 
+/** Available color palettes (light and dark). */
 export const palettes: Record<string, Palette> = {
   light: lightPalette,
   dark: darkPalette,
 };
 
+/** Flow color palettes for light and dark themes (used for flow lines). */
 export const flowPalette: Record<"light" | "dark", string[]> = {
   light: [
     "#1f77b4",
@@ -235,6 +239,7 @@ const buildTheme = (spec: ThemeSpec): Theme => {
   };
 };
 
+/** Built-in themes with full color schemes and element styling. */
 export const themes: Record<string, Theme> = {
   light: buildTheme({
     pal: {
@@ -637,8 +642,10 @@ export const themes: Record<string, Theme> = {
   }),
 };
 
+/** List of available theme names (includes built-in themes and classic variants). */
 export const themeNames: string[] = [...Object.keys(themes), "classic", "classic-dark"];
 
+/** Resolves a theme by name for the given view, returning palette and element styles. */
 export function themeFor(
   name: string,
   view: View,

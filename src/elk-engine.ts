@@ -10,6 +10,7 @@ import type { ELK } from "elkjs/lib/elk.bundled.js";
 let factory: (() => ELK) | null = null;
 let instance: ELK | null = null;
 
+/** Sets a custom ELK factory (used by the browser playground to inject its implementation). */
 export function setElkFactory(elkFactory: () => ELK) {
   factory = elkFactory;
   instance = null;

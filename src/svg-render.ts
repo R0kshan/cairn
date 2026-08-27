@@ -1036,7 +1036,10 @@ function createEdgePainter(paint: EdgePaint) {
     const flowStyle = flow?.style;
     const color = flowColorOf(flow);
     const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
-    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
+    // Most specific wins, as everywhere else in the style model: an inline
+    // `{ stroke: dashed }` overrides the arrow glyph, which overrides the
+    // diagram-level `flow-stroke`.
+    const dash = dashArray(flowStyle?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style);
     const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
     return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>\n`;
   };
@@ -1054,6 +1057,7 @@ function createEdgePainter(paint: EdgePaint) {
   return { renderEdgePath, renderEdgeLabels };
 }
 
+/** Renders the final SVG diagram from the model, view, and positioned scene geometry. */
 export function render(model: Model, view: View, scene: Scene): RenderResult {
   const style = model.style;
   const fonts = fontSizes(style.font.size);

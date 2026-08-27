@@ -7,14 +7,15 @@
  * ELK result after layout (coordinates populated) and are shared with slide-fold.
  */
 
-import type { Model, Element } from "./models/ast.ts";
+import type { Model, Element, AttachSide } from "./models/ast.ts";
 import type { ElkNode, ElkEdgeSection } from "elkjs/lib/elk.bundled.js";
 import type { View } from "./views.ts";
 import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
-import type { Box, Point, TitleBox } from "./geometry.ts";
+import { type Box, type Point, type TitleBox, isLongDetour } from "./geometry.ts";
+import type { Diagnostic } from "./models/diagnostic.ts";
 import { compactVertical } from "./compact.ts";
 import {
   optimiseRoutes,
@@ -83,6 +84,18 @@ export interface SceneEdge {
    */
   detour?: boolean;
   /**
+   * Which of this flow's terminals the author pinned to a node side
+   * (`APP.right -> DB.left`). A pinned terminal is intent, not a metric win, so
+   * the passes that would move it stand down: re-siding skips the edge,
+   * `route-detour` never channels it, `attachAway` exempts it, and the route
+   * repair may only offer it candidates that keep the pinned end on its side.
+   *
+   * Per end, so a half-pinned flow keeps its free end free. Geometry only —
+   * which end, never which DSL side — so no positioning pass has to know an
+   * element kind to honor it (invariant §16).
+   */
+  pinned?: { start?: boolean; end?: boolean };
+  /**
    * The route this flow had before `optimiseRoutes` moved it. Kept so the
    * renderer can undo a repair that cost some label its seat — that verdict is
    * only reachable after label settling, which happens during rendering.
@@ -128,19 +141,56 @@ function computeIngressExternalElements(model: Model): Set<string> {
   return ingressExternalElements;
 }
 
-/** Converts an `Element` (and its children, recursively) into elk's input node shape. */
+/**
+ * The author's `order: n` on an element **inside a container**, as an elk
+ * position hint. elk reads the vector's *second* component as the index within a
+ * layer, and honors it only under `crossingMinimization.semiInteractive` (armed
+ * by the container in `toElkNode`). Absent for an element without one, which is
+ * what keeps an order-free diagram byte-identical.
+ *
+ * A top-level element does not come through here: its `order:` sequences it
+ * along the reading direction, which is a partition band (`readingSlots`), not
+ * an index inside a layer. Inside a container elk offers nothing equivalent —
+ * every layer constraint was measured to be a no-op under
+ * `hierarchyHandling: INCLUDE_CHILDREN` — so there the hint sorts the siblings
+ * that share a layer, across the flow direction (`DSL_SPEC.md` § Positioning
+ * controls).
+ */
+const orderOption = (element: Element): Record<string, string> =>
+  element.order ? { "elk.position": `(0,${element.order.value})` } : {};
+
+/**
+ * The switch that makes elk read `elk.position` at all. It belongs on the node
+ * whose *children* carry the positions — the root for top-level elements, and
+ * every container for its own children, which is why `toElkNode` arms it too —
+ * and only when at least one of those children declares an order, so an
+ * order-free diagram gets no new option and renders byte-identically.
+ */
+const semiInteractiveOption = (children: Element[]): Record<string, string> =>
+  children.some((child) => child.order)
+    ? { "elk.layered.crossingMinimization.semiInteractive": "true" }
+    : {};
+
+/**
+ * Converts an `Element` (and its children, recursively) into elk's input node
+ * shape. `root` marks a top-level element, whose own `order:` is a partition
+ * band rather than an index inside a layer — its children still carry theirs.
+ */
 function toElkNode(
   element: Element,
   compact: boolean,
-  containerFontSize: number,
-  nodeFontSize: number,
+  fonts: { cont: number; node: number },
+  root = false,
 ): ElkNode {
+  const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
     return {
       id: element.id,
       layoutOptions: {
         "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
+        ...(root ? {} : orderOption(element)),
+        ...semiInteractiveOption(element.children),
       },
       labels: [
         {
@@ -149,7 +199,7 @@ function toElkNode(
         },
       ],
       children: element.children.map((child) =>
-        toElkNode(child, compact, containerFontSize, nodeFontSize),
+        toElkNode(child, compact, fonts),
       ),
     };
   }
@@ -157,6 +207,7 @@ function toElkNode(
   const isActor = element.kind === "actor";
   return {
     id: element.id,
+    ...(element.order && !root ? { layoutOptions: orderOption(element) } : {}),
     width: isActor
       ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8)
       : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
@@ -290,6 +341,41 @@ function transpose(scene: Scene, titleBoxes: TitleBox[]): void {
 }
 
 /**
+ * How many times the port-constrained relayout may be re-entered. Two: the first
+ * round repairs what elk drew unaided, the second repairs what the first round's
+ * new layer assignment introduced. Every round costs a full elk layout, and a
+ * third has not been observed to beat the two before it.
+ */
+const PORT_PASS_ROUNDS = 2;
+
+/** One round of the port-constrained relayout, scored against the layout elk drew unaided. */
+export interface RelayoutRound<T> {
+  scene: T;
+  /** The ladder tier this round pays off at against the base layout. Lower is better. */
+  tier: number;
+  /** How many of its flows measure as `longDetour` — the tie-break, see `beatsRelayout`. */
+  detours: number;
+}
+
+/**
+ * Does this round beat the best one so far? The ladder decides first: a round
+ * that pays at a better tier wins outright, and one that pays at a worse tier
+ * never does.
+ *
+ * The tie-break is what the ladder cannot supply. `relayoutVerdict` refuses on
+ * any per-key gain, so two rounds that both clear a tier-0 defect are simply
+ * incomparable to it — even when one of them leaves two flows wrapped around the
+ * whole drawing and the other does not. Fewer over-long routes therefore breaks
+ * the tie, and an exact tie keeps the earlier round, so the choice never depends
+ * on iteration order (INVARIANTS §2).
+ */
+export function beatsRelayout<T>(round: RelayoutRound<T>, best: RelayoutRound<T> | null): boolean {
+  if (!best) return true;
+  if (round.tier !== best.tier) return round.tier < best.tier;
+  return round.detours < best.detours;
+}
+
+/**
  * The flows whose terminal segment departs *away* from their counterpart or
  * arrives from beyond it — the sweep's `attachAway` predicate, on the final
  * scene (channel reroutes are exempt, they wrap by design). Drives the
@@ -301,6 +387,9 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
   const byId = new Map(scene.nodes.map((node) => [node.id, node]));
   const flagged = new Set<string>();
   for (const e of scene.edges) {
+    // A pinned terminal departs where the author said to, which is exactly what
+    // this predicate calls "away" — exempt, like a channel route. Per end: the
+    // free end of a half-pinned flow is still the layout's to answer for.
     if (e.pts.length < 2 || e.detour) continue;
     const flow = model.flows.find((f) => f.id === e.id);
     const from = byId.get(flow?.from ?? "");
@@ -316,14 +405,55 @@ function attachAwayOf(scene: Scene, model: Model): Set<string> {
     const pm = e.pts[e.pts.length - 2];
     const toCenter = centerOf(to);
     const fromCenter = centerOf(from);
-    if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
+    if (
+      !e.pinned?.start &&
+      away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y })
+    )
       flagged.add(e.id);
     if (
+      !e.pinned?.end &&
       away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y })
     )
       flagged.add(e.id);
+    // The other shape this pass repairs, and the one `away` cannot see. A
+    // backward flow whose channel plan fell through to a lane over the top of
+    // the drawing leaves north and arrives north; when its two nodes sit at
+    // roughly the same height, neither offset clears `ATTACH_AWAY_TOL`, so the
+    // route is called clean while measuring twice the distance it covers. No
+    // post-pass can repair it either — the corridor between the two nodes is
+    // usually one lane wide and already carries the answering flow, so the
+    // reroute is refused for merging with it. Ports facing the counterpart are
+    // the repair, which is what an author gets today by pinning both ends by
+    // hand (`SIPRE.left -> MESSAGING.right`).
+    // Whole-route shape, not a terminal: a flow with either end pinned keeps the
+    // route the author's pin bought it.
+    if (!e.pinned && isLongDetour(e.pts, from, to)) flagged.add(e.id);
   }
   return flagged;
+}
+
+/**
+ * How many of this layout's flows measure far longer than the distance they
+ * cover — `scripts/sweep.ts`'s `longDetour`, counted per layout.
+ *
+ * `relayoutVerdict` cannot weigh this between two whole layouts: it refuses on
+ * any per-key gain, so a candidate that removes two wrap-arounds and eight
+ * crossings while adding four crossings elsewhere reads exactly like one that
+ * only added them. Counting the defect the ladder is blind to lets the pass
+ * break that tie instead of taking whichever candidate came first.
+ */
+function longDetourCount(scene: Scene, model: Model): number {
+  const byId = new Map(scene.nodes.map((node) => [node.id, node]));
+  let count = 0;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const flow = model.flows.find((f) => f.id === edge.id);
+    const from = byId.get(flow?.from ?? "");
+    const to = byId.get(flow?.to ?? "");
+    if (!from || !to) continue;
+    if (isLongDetour(edge.pts, from, to)) count++;
+  }
+  return count;
 }
 
 /**
@@ -417,6 +547,47 @@ function relayoutVerdict(before: Profile, after: Profile): number {
   return -1;
 }
 
+type ElkSide = "NORTH" | "SOUTH" | "EAST" | "WEST";
+
+const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+
+/** The side of `from` that faces `to` — where a flow between them should leave. */
+function sideToward(from: SceneNode, to: SceneNode): ElkSide {
+  const dx = centerOf(to).x - centerOf(from).x;
+  const dy = centerOf(to).y - centerOf(from).y;
+  return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? "WEST" : "EAST") : dy < 0 ? "NORTH" : "SOUTH";
+}
+
+/** The side of `n` the point `p` sits on, in elk's compass, or null for none. */
+function sideOn(p: { x: number; y: number }, n: SceneNode): ElkSide | null {
+  if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
+    if (Math.abs(p.y - n.y) < 2) return "NORTH";
+    if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
+  }
+  if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
+    if (Math.abs(p.x - n.x) < 2) return "WEST";
+    if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
+  }
+  return null;
+}
+
+/**
+ * Which side of `sceneNode` this flow's terminal already sits on in the
+ * first-pass scene — the side an unflagged edge keeps, so fixing one bad route
+ * does not disturb the good ones around it. Null when the terminal is not on a
+ * side of the node (or the edge has no route yet).
+ */
+function firstPassSide(
+  scene: Scene,
+  flowId: string,
+  role: "src" | "dst",
+  sceneNode: SceneNode,
+): ElkSide | null {
+  const edge = scene.edges.find((candidate) => candidate.id === flowId);
+  if (!edge || edge.pts.length < 2) return null;
+  return sideOn(role === "src" ? edge.pts[0] : edge.pts[edge.pts.length - 1], sceneNode);
+}
+
 /**
  * Rebuild `graph` with explicit ports on the nodes `flagged` flows touch, so elk
  * routes them out the side *facing* the counterpart. elk's default for a
@@ -429,7 +600,6 @@ function relayoutVerdict(before: Profile, after: Profile): number {
  * side elk already chose, so a good route is not disturbed to fix a bad one.
  */
 function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, model: Model): void {
-  type Side = "NORTH" | "SOUTH" | "EAST" | "WEST";
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const elkById = new Map<string, ElkNode>();
   const register = (node: ElkNode) => {
@@ -437,23 +607,6 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
     for (const child of node.children ?? []) register(child);
   };
   register(graph);
-  const centerOf = (n: SceneNode) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
-  const sideToward = (from: SceneNode, to: SceneNode): Side => {
-    const dx = centerOf(to).x - centerOf(from).x;
-    const dy = centerOf(to).y - centerOf(from).y;
-    return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? "WEST" : "EAST") : dy < 0 ? "NORTH" : "SOUTH";
-  };
-  const sideOn = (p: { x: number; y: number }, n: SceneNode): Side | null => {
-    if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
-      if (Math.abs(p.y - n.y) < 2) return "NORTH";
-      if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
-    }
-    if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
-      if (Math.abs(p.x - n.x) < 2) return "WEST";
-      if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
-    }
-    return null;
-  };
   // Only the flagged flows' nodes are pinned. Pinning *every* flow to its
   // first-pass side was measured worse (attachAway 303 -> 304, nearParallel
   // 63 -> 66, the application-compact regressions back): with no freedom left
@@ -474,19 +627,14 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
       const role = flow.from === nodeId ? "src" : "dst";
       const other = nodeById.get(role === "src" ? flow.to : flow.from);
       if (!other) continue;
-      let side = sideToward(sceneNode, other);
-      if (!flagged.has(flow.id)) {
-        const edge = scene.edges.find((e) => e.id === flow.id);
-        const terminal =
-          edge && edge.pts.length >= 2
-            ? role === "src"
-              ? edge.pts[0]
-              : edge.pts[edge.pts.length - 1]
-            : null;
-        const actual = terminal ? sideOn(terminal, sceneNode) : null;
-        if (actual) side = actual;
-      }
+      const side = flagged.has(flow.id)
+        ? sideToward(sceneNode, other)
+        : (firstPassSide(scene, flow.id, role, sceneNode) ?? sideToward(sceneNode, other));
       const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      // The author already pinned this terminal, and `applyDeclaredPorts` put
+      // the port on the node when the graph was built: leave it exactly as
+      // declared instead of adding a second port under the same id.
+      if ((elkNode.ports ?? []).some((port) => port.id === portId)) continue;
       // 1x1, not 0x0: a zero-size port breaks the scanline constraint's
       // hitbox math inside elk ("Invalid hitboxes for scanline constraint
       // calculation") on hierarchical graphs — measured on every themes/*
@@ -509,6 +657,12 @@ interface GraphContext {
   model: Model;
   view: View;
   ingressExternal: Set<string>;
+  /**
+   * Reading-order slot per top-level element, resolved from the `order:` hints
+   * (`readingSlots`). Empty for a diagram that declares none, and an empty map
+   * leaves the view's partitions untouched (§17).
+   */
+  slotOf: Map<string, number>;
   compact: boolean;
   numbered: boolean;
   fonts: { edge: number; node: number; cont: number; scale: number };
@@ -525,7 +679,17 @@ const INGRESS_PARTITION = -1;
 const EGRESS_PARTITION = 900;
 const COMPACT_WRAP = 10;
 
-/** Which elk partition an element belongs to. */
+/**
+ * How many reading-order slots one view partition is split into. A partition
+ * band becomes `partition * SLOT_SCALE + slot`, so the view's own bands (§9)
+ * keep their relative order — every slot of band *n* stays ahead of every slot
+ * of band *n+1* — and an `order:` can only move an element inside its own band.
+ * Slots are normalised ranks bounded by the number of top-level elements, so no
+ * author value can overflow into the next band.
+ */
+const SLOT_SCALE = 1000;
+
+/** Which elk partition an element belongs to, before its reading-order slot. */
 function elkPartitionOf(
   element: Element,
   index: number,
@@ -538,6 +702,90 @@ function elkPartitionOf(
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== undefined) return 90 + view.partitions[element.kind];
   return index;
+}
+
+/** The top-level ancestor of `id` — the element a flow endpoint is banded with. */
+function rootAncestorOf(model: Model, id: string): string | undefined {
+  let element = model.index.get(id);
+  if (!element) return undefined;
+  while (element.parent) element = element.parent;
+  return element.id;
+}
+
+/**
+ * The author's `order:` on a top-level element, resolved into a slot inside that
+ * element's view partition — which is what makes it read along the *direction*
+ * axis: left to right under `elk.direction: RIGHT` (`wide`/`slide`), top to
+ * bottom under `DOWN` (`tall`/`page`). A partition band is a contiguous run of
+ * layers, so this is the one lever that sequences elements the flows would
+ * otherwise put side by side. elk's own layer constraints do not do it:
+ * `layerChoiceConstraint`, `layering.strategy: INTERACTIVE` and
+ * `elk.interactiveLayout` were all measured to be no-ops here.
+ *
+ * Three rules keep it predictable.
+ *
+ * - **Slots are per view partition.** Ordering happens among the siblings that
+ *   share a band, never across bands, so `order:` cannot move an actor-group
+ *   past the applications (§9).
+ * - **Declared values become ranks.** The distinct `order:` values of a band,
+ *   ascending, become slots `1…k`. Gaps in the author's numbering cost nothing,
+ *   and no value can reach the next band.
+ * - **An element without an `order:` follows the flows into a slot.** elk needs
+ *   a partition for every node — one left unpartitioned was measured to drift to
+ *   the end of the drawing — so an unordered element takes the highest slot
+ *   among the elements that flow *into* it, and the lowest declared slot when
+ *   nothing does. That is a monotone fixed point: it terminates on a cyclic
+ *   graph and does not depend on the order the flows are visited (§2).
+ *
+ * Empty unless some top-level element declares an `order:`, and an empty map
+ * leaves every partition exactly as it was — which is what keeps a diagram that
+ * declares none byte-identical (§17).
+ */
+function readingSlots(model: Model, view: View, ingressExternal: Set<string>): Map<string, number> {
+  const slotOf = new Map<string, number>();
+  if (!model.elements.some((element) => element.order)) return slotOf;
+
+  const bandOf = new Map(
+    model.elements.map((element, index) => [
+      element.id,
+      elkPartitionOf(element, index, view, ingressExternal),
+    ]),
+  );
+  const lowestOf = new Map<number, number>();
+  for (const band of new Set(bandOf.values())) {
+    const members = model.elements.filter((element) => bandOf.get(element.id) === band);
+    const declared = [
+      ...new Set(members.filter((m) => m.order).map((m) => m.order!.value)),
+    ].sort((a, b) => a - b);
+    // A band nobody ordered keeps one slot, so its members stay as free as they
+    // were; `lowest` is then that slot, and the propagation below is a no-op.
+    const lowest = declared.length ? 1 : 0;
+    lowestOf.set(band, lowest);
+    for (const member of members)
+      slotOf.set(
+        member.id,
+        member.order ? declared.indexOf(member.order.value) + 1 : lowest,
+      );
+  }
+
+  // Pull every unordered element forward to the last slot that reaches it, so a
+  // flow never has to run backwards into a band it was not placed in.
+  const ordered = new Set(model.elements.filter((element) => element.order).map((e) => e.id));
+  for (let pass = 0; pass < model.elements.length; pass++) {
+    let moved = false;
+    for (const flow of model.flows) {
+      const from = rootAncestorOf(model, flow.from);
+      const to = rootAncestorOf(model, flow.to);
+      if (!from || !to || from === to || ordered.has(to)) continue;
+      if (bandOf.get(from) !== bandOf.get(to)) continue;
+      const candidate = slotOf.get(from)!;
+      if (candidate <= slotOf.get(to)!) continue;
+      slotOf.set(to, candidate);
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return slotOf;
 }
 
 /** The elk edge for one flow, with the label it carries already measured. */
@@ -578,14 +826,118 @@ function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, labelWrap?
   };
 }
 
+/** The author's side names, as the diagram is read, in elk's compass terms. */
+const SIDE_TO_ELK: Record<AttachSide, "NORTH" | "SOUTH" | "EAST" | "WEST"> = {
+  left: "WEST",
+  right: "EAST",
+  top: "NORTH",
+  bottom: "SOUTH",
+};
+
+/**
+ * Gives every author-pinned flow terminal an elk port on the requested side.
+ *
+ * Only the pinned terminals get a port: the node goes to `FIXED_SIDE`, but its
+ * other edges stay portless and elk keeps choosing their sides, which measured
+ * identical to the unpinned layout. The 1×1 size is deliberate — a 0×0 port
+ * breaks elk's scanline constraint on hierarchical graphs (see `constrainPorts`).
+ *
+ * A DOWN layout is not transposed on the way out (`runGeometryPasses` mirrors in
+ * and back), so elk's compass is the rendered side in every disposition.
+ */
+function applyDeclaredPorts(graph: ElkNode, model: Model): void {
+  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide);
+  if (!pinned.length) return;
+  const elkById = new Map<string, ElkNode>();
+  const register = (node: ElkNode) => {
+    elkById.set(node.id, node);
+    for (const child of node.children ?? []) register(child);
+  };
+  register(graph);
+  for (const flow of pinned) {
+    const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
+    if (!elkEdge) continue;
+    for (const [role, declared, nodeId] of [
+      ["out", flow.fromSide, flow.from],
+      ["in", flow.toSide, flow.to],
+    ] as const) {
+      if (!declared) continue;
+      const elkNode = elkById.get(nodeId);
+      if (!elkNode) continue;
+      const portId = `${flow.id}#${role}`;
+      elkNode.ports = [
+        ...(elkNode.ports ?? []),
+        {
+          id: portId,
+          width: 1,
+          height: 1,
+          layoutOptions: { "elk.port.side": SIDE_TO_ELK[declared.value] },
+        },
+      ];
+      elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
+      if (role === "out") elkEdge.sources = [portId];
+      else elkEdge.targets = [portId];
+    }
+  }
+}
+
+/** Which side of `node` the point `p` sits on, or null when it is on none. */
+function terminalSide(p: Point, node: SceneNode): AttachSide | null {
+  if (p.x > node.x - 2 && p.x < node.x + node.width + 2) {
+    if (Math.abs(p.y - node.y) < 2) return "top";
+    if (Math.abs(p.y - (node.y + node.height)) < 2) return "bottom";
+  }
+  if (p.y > node.y - 2 && p.y < node.y + node.height + 2) {
+    if (Math.abs(p.x - node.x) < 2) return "left";
+    if (Math.abs(p.x - (node.x + node.width)) < 2) return "right";
+  }
+  return null;
+}
+
+/**
+ * W0570 for every declared attachment side the finished drawing does not show.
+ * Layout-derived, like W0520: elk honors a port side in the graph, but the
+ * geometry passes that follow may still move a terminal, and a pin that silently
+ * did nothing is worth telling the author about. Runs after every pass.
+ */
+export function attachSideDiagnostics(scene: Scene, model: Model): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  for (const flow of model.flows) {
+    if (!flow.fromSide && !flow.toSide) continue;
+    const edge = scene.edges.find((candidate) => candidate.id === flow.id);
+    if (!edge || edge.pts.length < 2) continue;
+    for (const [declared, nodeId, point, role] of [
+      [flow.fromSide, flow.from, edge.pts[0], "leaves"],
+      [flow.toSide, flow.to, edge.pts[edge.pts.length - 1], "arrives on"],
+    ] as const) {
+      const node = declared ? nodeById.get(nodeId) : undefined;
+      if (!declared || !node) continue;
+      const actual = terminalSide(point, node);
+      if (actual === declared.value) continue;
+      diagnostics.push({
+        code: "W0570",
+        severity: "warning",
+        message: `attachment side \`${declared.value}\` could not be honored`,
+        span: declared.span,
+        note: actual
+          ? `the flow ${role} the ${actual} side of \`${nodeId}\``
+          : `the flow does not ${role} a side of \`${nodeId}\` cleanly`,
+        help: "a side the layout cannot reach is dropped rather than forced — try the opposite endpoint, or `order:` to move the element instead",
+      });
+    }
+  }
+  return diagnostics;
+}
+
 /** The whole model as one elk graph, in the given direction. */
 function buildElkGraph(
   ctx: GraphContext,
   direction: "RIGHT" | "DOWN",
   options?: GraphOptions,
 ): ElkNode {
-  const { model, view, ingressExternal, compact, numbered, fonts } = ctx;
-  return {
+  const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
+  const graph: ElkNode = {
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
@@ -627,17 +979,23 @@ function buildElkGraph(
         : {}),
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode(element, compact, fonts.cont, fonts.node);
+      const elkNode = toElkNode(element, compact, fonts, true);
+      const band = elkPartitionOf(element, index, view, ingressExternal);
+      const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
+        // Without an `order:` anywhere the band is emitted as it always was, so
+        // the drawing is byte-identical to one from before the hint existed.
         "elk.partitioning.partition": String(
-          elkPartitionOf(element, index, view, ingressExternal),
+          slot === undefined ? band : band * SLOT_SCALE + slot,
         ),
       };
       return elkNode;
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap)),
   };
+  applyDeclaredPorts(graph, model);
+  return graph;
 }
 
 /**
@@ -767,6 +1125,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     model,
     view,
     ingressExternal: ingressExternalElements,
+    slotOf: readingSlots(model, view, ingressExternalElements),
     compact,
     numbered,
     fonts: {
@@ -793,6 +1152,17 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
 
     const edges = collectSceneEdges(result, origins, numbered, edgeFontSize);
+    // Before any geometry pass runs: `pinned` is what tells them the terminal
+    // side is the author's, not elk's guess.
+    const pinnedFlows = new Map(
+      model.flows
+        .filter((flow) => flow.fromSide || flow.toSide)
+        .map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }] as const),
+    );
+    for (const edge of edges) {
+      const pinned = pinnedFlows.get(edge.id);
+      if (pinned) edge.pinned = { ...pinned };
+    }
 
     const scene: Scene = {
       width: Math.ceil(result.width),
@@ -873,37 +1243,62 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     result = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
   }
   const layoutMs = Date.now() - startTime;
-  const scene = sceneFromResult(result, layoutMs);
-  const away = attachAwayOf(scene, model);
+  const base = sceneFromResult(result, layoutMs);
   // The playground bundles this module for the browser, where `process` does
   // not exist; reach it through `globalThis` so the switch is simply absent
   // there instead of a ReferenceError. CLI-only debug aid — see CONTRIBUTING.md.
   const skipPortPass = !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
     .process?.env?.CAIRN_NO_PORT_PASS;
-  if (!away.size || skipPortPass) return scene;
+  if (skipPortPass) return base;
+  /** What a whole-layout choice is judged on: the ladder plus the gate's blind spots. */
+  const layoutProfile = (candidate: Scene): Profile => {
+    const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
+    const profile = inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, new Map());
+    for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
+    return profile;
+  };
+  const baseProfile = layoutProfile(base);
   // `route-detour` only claims the wrap-arounds wasteful enough to deserve a
   // channel, leaving the merely-bad wrapped. Re-run the winning config with
   // those flows pinned to ports facing their counterpart, judged by the house
   // ladder rather than the metric being fixed: a relayout that clears wrong-side
   // departures but strikes a title or merges a run is refused. Opportunistic —
   // port constraints hit an elk scanline bug on some models, so a crash here
-  // just keeps the first pass.
-  try {
-    const constrained = makeGraph(winnerDirection, winnerOptions);
-    constrainPorts(constrained, scene, away, model);
-    const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
-    const rescene = sceneFromResult(reresult, Date.now() - startTime);
-    const allEdges = (s: Scene) => new Set(s.edges.map((edge) => edge.id));
-    const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), new Map());
-    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(
-      allEdges(rescene),
-      new Map(),
-    );
-    for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
-    for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
-    const verdict = relayoutVerdict(before, after);
-    return verdict >= 0 ? rescene : scene;
-  } catch {
-    return scene;
+  // just keeps what has been accepted so far.
+  //
+  // Two things this loop does that a single round cannot.
+  //
+  // It **re-enters**: constraining one pair's ports moves every layer around it,
+  // and the layout that comes back can wrap a flow that was straight before. The
+  // next round measures that layout and repairs it in turn.
+  //
+  // And every round is judged against **the layout elk drew unaided**, never
+  // against the round before it, because that is the promise the pass makes —
+  // and because chaining the verdicts refuses a strictly better candidate: the
+  // second round here removed two wrap-arounds and sixteen net crossings, and
+  // was rejected for gaining eight of them. Candidates that beat the base are
+  // collected, and the one that pays at the best tier wins; ties go to the
+  // candidate carrying fewer over-long routes, the defect the verdict is blind
+  // to, and then to the earlier round so the choice stays deterministic.
+  let current = base;
+  let best: RelayoutRound<Scene> | null = null;
+  for (let round = 0; round < PORT_PASS_ROUNDS; round++) {
+    const flagged = attachAwayOf(current, model);
+    if (!flagged.size) break;
+    let candidate: Scene;
+    try {
+      const constrained = makeGraph(winnerDirection, winnerOptions);
+      constrainPorts(constrained, current, flagged, model);
+      const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
+      candidate = sceneFromResult(reresult, Date.now() - startTime);
+    } catch {
+      break;
+    }
+    const tier = relayoutVerdict(baseProfile, layoutProfile(candidate));
+    if (tier < 0) break;
+    const scored = { scene: candidate, tier, detours: longDetourCount(candidate, model) };
+    if (beatsRelayout(scored, best)) best = scored;
+    current = candidate;
   }
+  return best?.scene ?? base;
 }

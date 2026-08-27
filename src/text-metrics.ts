@@ -8,8 +8,11 @@
 
 const DEFAULT_FONT_SIZE_NODE = 12.5;
 const FONT_SIZE_BASE = 12.5;
+
+/** Character width ratio for font size calculation (deterministic across platforms). */
 export const CHAR_WIDTH = 0.56;
 
+/** Computes scaled font sizes for different element types (nodes, edges, containers, etc.). */
 export const fontSizes = (base: number) => {
   const scale = base / FONT_SIZE_BASE;
   return {
@@ -26,6 +29,7 @@ export const fontSizes = (base: number) => {
   };
 };
 
+/** Measures text dimensions (width and height) for the given font size. */
 export const measure = (text: string, fontSize: number) => {
   const lines = text.split("\n");
   return {
@@ -35,6 +39,7 @@ export const measure = (text: string, fontSize: number) => {
   };
 };
 
+/** Wraps text to fit within the specified maximum character width per line. */
 export function wrapText(text: string, maxChars: number): string {
   const words = text.replace(/\n/g, " ").split(/\s+/).filter(Boolean);
   const lines: string[] = [];
@@ -50,11 +55,16 @@ export function wrapText(text: string, maxChars: number): string {
 }
 
 const CHIP_HEIGHT = 19;
+
+/** Calculates the width of a chip badge based on name length and scale. */
 export const chipW = (name: string, scale = 1) =>
   Math.ceil(name.length * 9.5 * scale * CHAR_WIDTH) + Math.round(16 * scale);
+
+/** Formats technology details (protocol and format) as display text. */
 export const techText = (tech?: { protocol?: string; format?: string }) =>
   tech?.protocol ? `(${tech.protocol}${tech.format ? ", " + tech.format : ""})` : "";
 
+/** Calculates the bounding box dimensions for a flow label including text, chips, and tech details. */
 export const flowLabelBox = (opts: {
   text: string;
   chipNames: string[];
@@ -73,6 +83,7 @@ export const flowLabelBox = (opts: {
   };
 };
 
+/** Calculates node dimensions based on kind, label text, and font size. */
 export const nodeSize = (
   kind: string,
   label: string,

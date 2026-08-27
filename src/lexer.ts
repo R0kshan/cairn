@@ -24,6 +24,7 @@ const SINGLE_CHAR_TOKENS: Record<string, TokenKind> = {
   ",": "comma",
 };
 
+/** Lexes source text into a token stream and reports any lexical errors as diagnostics. */
 export function lex(src: string, diagnostics: Diagnostic[]): Token[] {
   const tokens: Token[] = [];
   let position = 0,
@@ -113,10 +114,17 @@ export function lex(src: string, diagnostics: Diagnostic[]): Token[] {
       col++;
       continue;
     }
-    if (char === "-" && src[position + 1] === ">") {
-      push("arrow", "->", line, col);
-      position += 2;
-      col += 2;
+    // The three arrow glyphs, longest first: `-` and `.` are both id characters,
+    // so these branches must run before the id scan or `-->` lexes as the id
+    // `--`. The glyph carries the flow's line style (`->` solid, `-->` dashed,
+    // `..>` dotted); like `->`, each needs whitespace before it.
+    const arrowGlyph = ["-->", "..>", "->"].find(
+      (glyph) => src.startsWith(glyph, position) && glyph[0] === char,
+    );
+    if (arrowGlyph) {
+      push("arrow", arrowGlyph, line, col);
+      position += arrowGlyph.length;
+      col += arrowGlyph.length;
       continue;
     }
     const singleCharKind = SINGLE_CHAR_TOKENS[char];

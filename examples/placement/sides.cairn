@@ -1,0 +1,29 @@
+diagram logical "Claims handling — flow attachment sides"
+
+# Baseline shape, shared with `sides.cairn` so the flow attachment pins are the
+# only thing that differs between them.
+# See documentation/DSL_SPEC.md § Positioning controls
+
+actor-group TEAM "Operations team" {
+  actor AGENT "Claims agent"
+}
+
+system INTAKE  "Claim intake"         { block RECEIVE "Claim reception module" }
+system ROUTING "Claim routing"        { block ASSIGN  "Assignment module" }
+system AUDIT   "Audit trail"          { block TRACE   "Traceability module" }
+system ARCHIVE "Claim archive"        { block STORE   "Document storage module" }
+system REPORT  "Management reporting" { block DASH    "Reporting dashboard" }
+
+external PARTNER "Partner network" { block SETTLE "Settlement service" }
+
+# Each flow below names the side of the box it attaches to, as the diagram is
+# read: `left`, `right`, `top`, `bottom`. The two endpoints are independent —
+# name one and the engine still chooses the other. A side the layout cannot
+# reach is dropped and reported as W0570, never forced.
+
+AGENT   -> RECEIVE : "File a claim"
+RECEIVE.bottom -> ASSIGN.top : "Route for assignment"
+ASSIGN.right -> SETTLE : "Request settlement"
+AGENT   -> TRACE   : "Consult the audit trail"
+TRACE.top -> STORE.bottom : "Archive the trace"
+AGENT -> DASH.left : "Open the dashboard"

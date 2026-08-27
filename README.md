@@ -32,6 +32,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Spacial optimization** | Cairn aims to optimize space as much as possible (Still working on improving this functionnality) |
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
 | **Flow matrix.** | `cairn matrix` exports the flow matrix as CSV, Markdown, or SVG — from any view, with the columns that view can fill. In infrastructure it splits protocol from port and annotates endpoints that sit in a network zone; headers localise via `style { lang: fr }`. The same table is available to embedders through `compile(source, { matrix: true })`. |
+| **Author-controlled positioning.** | Layout is automatic, with three opt-in overrides for when it gets a diagram wrong: `order: 2` sequences a top-level element along the disposition's own reading direction (left to right in `wide`, top to bottom in `tall`) and sorts siblings inside a container, `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). A pin the layout cannot honor is reported (`W0570`), never silently dropped. |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
 | **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
@@ -98,7 +99,7 @@ Colours are resolved at three levels — most specific wins. From lowest to high
 
 1. **Theme defaults** — per-kind colours defined by the selected theme (fill, stroke, text for each element kind).
 2. **Diagram-level per-kind overrides** — override colours for all elements of a given kind in the `style` block:
-   ```
+   ```cairn
    style {
      fill actor-group: #eef4fb
      stroke actor-group: #7a9cc4 dashed
@@ -107,18 +108,130 @@ Colours are resolved at three levels — most specific wins. From lowest to high
    }
    ```
 3. **Inline per-element styles** — override colour for a single element:
-   ```
+   ```cairn
    block API "API gateway" { style { fill: #e8f5e9  stroke: #2e7d32  text: #1b5e20 } }
    ```
 
 Flows can also be coloured inline:
-```
+```cairn
 COM_CTR -> OBS : "Alerts…" { label: above  stroke: dashed #a33  text: #a33 }
 ```
 
 See [`examples/colors-custom.cairn`](examples/colors-custom.cairn) for a full example:
 
 <p align="center"><img src="examples/colors-custom.svg" alt="Custom colours" width="620"></p>
+
+### Positioning and flow line styles
+
+Layout is automatic. When it gets a diagram wrong, four opt-in controls take
+it back — a file that uses none of them renders exactly as before.
+
+**Dashed and dotted flows.** The arrow glyph carries the line style. From
+[`examples/positioning-sides.cairn`](examples/positioning-sides.cairn):
+
+```cairn
+TASKS -> SCORING (MQ, JSON)                # solid — the default
+SCORING --> REINSURER (SFTP, CSV)          # dashed
+TRIAGE ..> REINSURER (API_REST, JSON)      # dotted
+```
+
+**Which side a flow leaves and arrives on.** Name the side on either endpoint,
+or both. Sides read as the diagram is drawn — `left`, `right`, `top`, `bottom`.
+Same file:
+
+```cairn
+FORM.right -> TRIAGE.left (API_REST, JSON)   # both ends pinned
+TRIAGE -> TASKS.bottom (MQ, JSON)            # only the arrival pinned
+SCORING.top -> TRIAGE.right (API_REST, JSON) # a backward flow, pinned both ends
+```
+
+A pin fixes the two ends, not the path between them. The passes that would move a
+terminal stand down — including the channel rerouting that would otherwise take
+over a backward flow like the third one — while the route itself is still tidied,
+along shapes that leave the pinned ends where you put them. A side the layout genuinely cannot reach is dropped
+rather than forced into an unreadable route, and reported as `W0570` — never
+silently ignored. Note that `A.right` loses to an element actually *named*
+`A.right` (`W0571`), and an unknown side name is `E0223`.
+
+<p align="center"><img src="examples/positioning-sides.svg" alt="Flow attachment sides" width="760"></p>
+
+**Element ordering.** `order:` is a statement in the element's own body — layout,
+not style, so it does not go in a `style` block. Lower comes first in the reading
+order the disposition defines: left to right for `wide`/`slide`, top to bottom
+for `tall`/`page`. From
+[`examples/placement/reading-order.cairn`](examples/placement/reading-order.cairn),
+where two backends publishing to the same queue would otherwise be stacked:
+
+```cairn
+application BACKEND_L1 "Line 1 backend" {
+  order: 1
+  module MSG_L1 "Messaging\nhandler"
+}
+application BACKEND_L2 "Line 2 backend" {
+  order: 2
+  module MSG_L2 "Messaging\nhandler"
+}
+```
+
+<p align="center"><img src="examples/placement/reading-order.svg" alt="Top-level elements sequenced by order:" width="620"></p>
+
+Inside a container the axis flips, because a child's layer belongs to the flows
+and elk honors no constraint that would change it: there `order:` sorts the
+siblings sharing a layer — top to bottom in `wide`, left to right in `tall`. From
+[`examples/positioning.cairn`](examples/positioning.cairn):
+
+```cairn
+actor-group STAFF "Payment actors" {
+  actor OPERATOR "Payment operator" {
+    order: 1
+  }
+  actor AUDITOR "Compliance auditor" {
+    order: 2
+  }
+}
+```
+
+Values need not be contiguous, and the hint never moves an element into another
+band — an ordered actor-group stays on the entry side, ahead of the applications.
+A top-level element nobody ordered follows the flows into the band of the latest
+ordered element that reaches it, so a hint never drags a consumer ahead of its
+own source; where a declared order does contradict a flow, the order wins and the
+flow is drawn running backwards. The
+attachment-sides file above orders its containers, its modules and its leaves
+too, and ships as `wide`, `tall`, `slide` and `page` variants in
+[`examples/dispositions/`](examples/dispositions/) — same ordering and the same
+pins, four layouts. The file below orders the queue and the datastore inside
+their system boundary and pins `POSTING.bottom -> LEDGER_DB.top`:
+
+<p align="center"><img src="examples/positioning.svg" alt="Element ordering, pinned sides and arrow glyphs" width="760"></p>
+
+Three files in [`examples/placement/`](examples/placement/) show both controls on
+one shape: `baseline.cairn` declares neither, `sides.cairn` adds the pins above,
+and `reading-order.cairn` sequences two backends with `order:`.
+
+**Where the label sits on its flow.** This one *is* style (decision D4), so it
+lives in the `style` block and resolves at the usual three levels — view default,
+then diagram, then inline per flow:
+
+```cairn
+style {
+  flow-label: above     # on-line (default) | above | below
+}
+
+INTAKE -> ROUTING (API_REST, JSON)                     # above, from the style block
+ROUTING --> SETTLE (MQ, JSON) { label: below }         # this one flow overrides it
+```
+
+- `on-line` — the default. The text is centred **on** the run, with a halo
+  stroked behind it so the line does not cut through the words.
+- `above` / `below` — lift the text clear of the run by a fixed offset before it
+  is settled. Useful on a dense diagram where several runs share a corridor and
+  the halos start eating each other.
+
+The offset is applied first and the label is settled afterwards, so a placement
+that would collide with another label still ends up somewhere readable — the
+zero-overlap gate holds whichever value you pick. No shipped example sets it, so
+every diagram above shows the `on-line` default.
 
 ### Dispositions
 

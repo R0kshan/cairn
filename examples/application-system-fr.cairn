@@ -1,0 +1,36 @@
+diagram application "Plateforme de commandes — vue applicative"
+style {
+  lang: fr
+  theme: dark
+}
+
+# Le bloc `system` en français et sur le thème sombre : nom de légende
+# (« Système »), palette sombre du conteneur, et annotation de la matrice des
+# flux par le conteneur le plus proche.
+
+actor-group VENTES "Acteurs des ventes" {
+  actor VENDEUR "Chargé de commandes"
+}
+
+system COMMANDES "Plateforme de commandes" {
+  application APP_CMD "Gestion des commandes" {
+    order: 1
+    module SAISIE "Saisie des\ncommandes"
+    module CONTROLE "Contrôle des\ncommandes"
+  }
+  # `order:` reste un mot-clé anglais même avec `lang: fr` (décision D2).
+  queue EVENEMENTS "Bus d'événements\ncommandes" {
+    order: 2
+  }
+  datastore REF_CMD "Référentiel\ndes commandes" {
+    order: 3
+  }
+}
+
+external TRANSPORTEUR "Suivi transporteur\n(tiers)"
+
+VENDEUR -> SAISIE (API_REST, JSON)
+SAISIE -> CONTROLE (API_REST, JSON)
+CONTROLE -> REF_CMD (JDBC)
+CONTROLE --> EVENEMENTS (MQ, JSON)
+EVENEMENTS ..> TRANSPORTEUR (SFTP, CSV)

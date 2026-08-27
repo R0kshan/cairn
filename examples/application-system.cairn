@@ -1,0 +1,38 @@
+diagram application "Order platform — application view"
+
+# The `system` block is a C4 system boundary: it groups the applications,
+# queues and datastores that belong to one system. The flow matrix annotates
+# an endpoint with its nearest container, so a module reads `Name (App)` and a
+# queue sitting directly in the system reads `Name (Order platform)`.
+
+actor-group SALES "Sales actors" {
+  actor CLERK "Order clerk"
+  actor SUPPORT "Support agent"
+}
+
+system ORDERS "Order platform" {
+  application ORDER_APP "Order management" {
+    module CAPTURE "Order\ncapture"
+    module VALIDATE "Order\nvalidation"
+  }
+  application BILLING_APP "Billing" {
+    module INVOICE "Invoicing"
+  }
+  queue EVENTS "Order event\nbus"
+  datastore ORDER_DB "Order\nrepository"
+}
+
+application CRM "Customer CRM" {
+  module CUSTOMER "Customer\nrecords"
+}
+
+external CARRIER "Carrier tracking\n(third party)"
+
+CLERK -> CAPTURE
+SUPPORT -> CUSTOMER
+CAPTURE -> VALIDATE (API_REST, JSON)
+VALIDATE -> ORDER_DB (JDBC)
+VALIDATE -> EVENTS (MQ, JSON)
+EVENTS -> INVOICE (MQ, JSON)
+CUSTOMER -> VALIDATE (API_REST, JSON)
+INVOICE -> CARRIER (SFTP, CSV)

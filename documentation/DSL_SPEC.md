@@ -10,7 +10,7 @@ diagnostics-friendly (every token carries a source span), Git-friendly
 
 | Dec | Principle | Rationale |
 |---|---|---|
-| **D1** | Flat unique IDs | IDs are unique per file — no namespace nesting. Elements and business objects share one ID pool; duplicates produce a diagnostic with a rename suggestion. Flows get synthetic IDs (`F01`, `F02`…) during parsing and are excluded from ID-conflict checks. Keeps references simple (`A -> B`, not `parent.child.grandchild`). |
+| **D1** | Flat unique IDs | IDs are unique per file — no namespace nesting. Elements and business objects share one ID pool; duplicates produce a diagnostic with a rename suggestion. Flows get synthetic IDs (`F01`, `F02`…) during parsing and are excluded from ID-conflict checks. Keeps references simple (`A -> B`, not `parent.child.grandchild`). The one dotted form in the grammar is not namespacing: `A.right` names an attachment *side* on the flat id `A`, and a declared id always wins over that reading (see [Positioning controls](#positioning-controls)). |
 | **D2** | All-English keywords | Element kinds, style properties, and diagram keywords stay English even with `lang: fr`. Source files remain portable, diff-clean, and independent of the output language. |
 | **D3** | Terse shorthand styles | The parser disambiguates values by shape (`#hex` = color, keyword = line style, number = width). Several properties may share one line (`{ fill: #a stroke: #b }`). Conflicting same-type values produce a diagnostic. |
 | **D4** | Label placement lives in style | Flow-label position (`on-line`, `above`, `below`) is a `style` property, not a flow syntax flag. Applies per-flow via inline style or globally via the `style` block. Cleaner syntax and consistent with the three-level style resolution model. |
@@ -22,7 +22,7 @@ Keywords are English; labels are free text. Built-in diagram types: `logical`, `
 | View | Element kinds | Flow specifics |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label required; business objects via `[REFS]` (**logical-view only** — a `business-object` in any other view is **E0222**) |
-| `application` | actor-group, actor, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540, actor flows exempt — C4 container-diagram practice)**; no business objects |
+| `application` | actor-group, actor, system, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540, actor flows exempt — C4 container-diagram practice)**; no business objects |
 | `infrastructure` | site, network-zone, server, app-instance, queue (horizontal cylinder), gateway (shield hexagon), auth (lock badge), idp, external | label **optional**; protocol still required (**E0240**): `(HTTPS/443)`; zones band left→right in declaration order |
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a sensitivity level `(public\|internal\|restricted\|secret)` (**E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**); zones band exposed→protected in declaration order |
 
@@ -33,7 +33,7 @@ Each view defines which element kinds are valid and how they can nest. Violation
 | View | Allowed nesting (child → parent) |
 |---|---|
 | `logical` | `block` → `layer` / `system` / `external`; `actor` → `actor-group`; `layer` → `system` |
-| `application` | `module` → `application`; `datastore` → root; `actor` → `actor-group` |
+| `application` | `module` → `application`; `datastore` → root; `actor` → `actor-group`; `application` / `queue` / `datastore` → `system` (optional — a `system` is a C4 system boundary, never required) |
 | `infrastructure` | `server` → `network-zone` / `site`; `app-instance` → `server` / `network-zone`; `network-zone` → `site` / `network-zone`; `gateway` / `auth` / `idp` → `network-zone` / `site` (convention, not enforced) |
 | `security` | `asset` → `trust-zone`; `security-node` → `trust-zone`; `actor` → `actor-group` |
 
@@ -43,12 +43,12 @@ The layout engine assigns each element a semantic horizontal band (ELK partition
 
 | View | Partitions (left → right) |
 |---|---|
-| `logical` | actor-groups (0) | systems (1) | externals (2) |
-| `application` | actors (0) | applications / datastores (1) | externals (2) |
-| `infrastructure` | sites / zones in declaration order (0) | externals (1) |
+| `logical` | actor-groups (0) · systems (1) · externals (2) |
+| `application` | actors (0) · systems / applications / datastores (1) · externals (2) |
+| `infrastructure` | sites / zones in declaration order (0) · externals (1) |
 | `security` | zones in declaration order (exposed → protected) |
 
-Flow syntax, full form: `A -> B : "label" (PROTOCOL, FORMAT) [BO_REFS] { inline style }` — every segment after the arrow is optional (subject to view rules). The `[BO_REFS]` segment is **logical-view only**. When a prose label is present the technical tail renders as a smaller gray sub-line under it; when the label is omitted the technical tail is promoted to the primary arrow label. In `flow-text: numbered` mode the tail joins the flow table entry.
+Flow syntax, full form: `A -> B : "label" (PROTOCOL, FORMAT) [BO_REFS] { inline style }` — every segment after the arrow is optional (subject to view rules). The arrow itself has three forms — `->` solid, `-->` dashed, `..>` dotted — and either endpoint may name the side it attaches to (`A.right -> B.left`); see [Positioning controls](#positioning-controls) below. The `[BO_REFS]` segment is **logical-view only**. When a prose label is present the technical tail renders as a smaller gray sub-line under it; when the label is omitted the technical tail is promoted to the primary arrow label. In `flow-text: numbered` mode the tail joins the flow table entry.
 
 ```
 diagram logical "Display system — logical view"
@@ -117,6 +117,93 @@ General form: `<kind> <ID> "<Label>" (<attr>)? { …children… }` for elements,
 
 **Inline style restriction:** Per-element and per-flow `{ style { … } }` blocks only support four properties: `fill`, `stroke`, `text`, `label`. Diagram-level `style { … }` blocks support the full 13-property set (themes, disposition, flow-text, etc.). An unknown property inside an inline block produces diagnostic **E0104**.
 
+### Positioning controls
+
+Layout is automatic. These three controls exist for the cases where it gets a
+diagram wrong; each is opt-in, and a file that uses none of them renders exactly
+as it did before they existed.
+
+**`order: <n>` — where an element sits in the reading order.** A statement in the
+element's body, not a style property (placement is layout, not cosmetics). Lower
+comes first, and *first* is defined by the active disposition: left to right for
+`wide`/`slide`, top to bottom for `tall`/`page`. Values need not be contiguous,
+and a value that is not a whole number ≥ 0 is **E0106**.
+
+```
+application BACKEND_L1 "Line 1 backend" {
+  order: 1
+  module MSG_L1 "Messaging handler"
+}
+application BACKEND_L2 "Line 2 backend" {
+  order: 2
+  module MSG_L2 "Messaging handler"
+}
+```
+
+At the diagram root the hint becomes a band of the element's own layout
+partition, which is why it reads along the length: two elements the flows give
+the same depth — the two backends above, both publishing to the same queue —
+would otherwise be drawn side by side across the axis. Three rules bound it.
+
+- **It never crosses a view partition** (§9). An `order:` on an actor-group
+  orders it among the other actor-groups; it cannot push it past the
+  applications.
+- **An element without an `order:` follows the flows.** It joins the band of the
+  latest ordered element that flows into it, so a hint never drags a consumer
+  ahead of its own source; when nothing flows into it, it sits in the first band.
+- **A flow may end up running backwards.** Where the declared order contradicts
+  the flow direction, the order wins and the flow is drawn as a backward edge.
+
+**Inside a container `order:` sorts across the axis instead** — top to bottom in
+`wide`/`slide`, left to right in `tall`/`page`. A child's layer is fixed by the
+flows there and every layer constraint elk offers was measured to be a no-op
+under its `INCLUDE_CHILDREN` hierarchy handling, so the hint orders the siblings
+that share a layer and nothing more:
+
+```
+actor-group STAFF "Payment actors" {
+  actor OPERATOR "Payment operator" { order: 1 }
+  actor AUDITOR  "Compliance auditor" { order: 2 }
+}
+```
+
+**`ID.side` — which side of an element a flow attaches to.** Written on either
+endpoint, independently: `A.right -> B`, `A -> B.top`, or both. Sides are named
+as the diagram is *read* — `left`, `right`, `top`, `bottom` — not relative to the
+flow's direction, so a diagram authored for `wide` may want different pins after
+switching to `tall`.
+
+```
+POSTING.bottom -> LEDGER_DB.top (JDBC)
+```
+
+Because `.` is a legal id character, `API.right` is ambiguous with an element
+*named* `API.right`. A declared id always wins, and the dropped side reading is
+reported as **W0571**. An unknown side name is **E0223**. A pin is a request,
+not a guarantee: one the layout cannot reach is dropped rather than forced into
+an unreadable route, and reported as **W0570**. A pin fixes the two ends, not the
+path between them: the passes that would move a terminal stand down for *that*
+terminal — pin one end and the other is still re-aimed, unwoven and measured as
+usual — while the route itself is still tidied along shapes that leave the
+pinned ends where the author put them.
+
+**Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
+`..>` dotted. Whitespace before the arrow is required, as it always has been
+(`A->B` does not parse: `-` is a legal id character). Precedence follows the
+style model: an inline `{ stroke: dashed }` beats the glyph, which beats the
+diagram-level `flow-stroke`.
+
+```
+ROUTING --> SETTLE (MQ, JSON)          # dashed
+ROUTING ..> SCHEME (ISO8583)           # dotted
+M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
+```
+
+Three files in [`examples/placement/`](../examples/placement) show the two
+controls: `baseline.cairn` declares neither, `sides.cairn` is the same shape with
+`ID.side` pins on its flows, and `reading-order.cairn` sequences two backends
+along the length with `order:`.
+
 ## 2. Styling — three levels, most specific wins
 
 View defaults → diagram-level `style` block → inline per-element/per-flow. Terse shorthand: the parser disambiguates values by shape (`#hex` = color, keyword = line style, number = width). Conflicting same-type values (e.g. `dashed dotted`) → diagnostic.
@@ -176,7 +263,7 @@ Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS 
 | View | Columns (English) | Endpoint annotated with |
 |---|---|---|
 | `infrastructure` | No. · Source · Destination · Protocol · Port · Flow | `network-zone`, `site` |
-| `application` | No. · Source · Destination · Protocol · Flow | `application` |
+| `application` | No. · Source · Destination · Protocol · Flow | `application`, `system` |
 | `security` | No. · Source · Destination · Protocol · Flow | `trust-zone` |
 | `logical` | No. · Source · Destination · Flow | `layer`, `system` |
 
@@ -192,4 +279,4 @@ Every issue cairn reports carries a stable code (`E01xx` syntax, `E02xx` semanti
 
 ## 4. Deferred (not v0.1)
 
-Imports/includes across files, variables/themes, ports/anchors on element sides, icons, longhand style properties (`stroke-color:` …) as an additive alternative.
+Imports/includes across files, variables/themes, icons, longhand style properties (`stroke-color:` …) as an additive alternative.

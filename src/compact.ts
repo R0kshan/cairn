@@ -36,6 +36,7 @@ interface Cut {
   save: number;
 }
 
+/** Removes empty horizontal bands from the scene to reduce vertical whitespace. */
 export function compactVertical(scene: Scene): void {
   const pinned: { top: number; bottom: number }[] = [];
   for (const node of scene.nodes) pinned.push({ top: node.y, bottom: node.y + node.height });

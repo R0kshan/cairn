@@ -1,0 +1,40 @@
+diagram application "Order platform — cross-region messaging (Region A ↔ Region B)"
+style {
+  disposition: wide
+}
+
+# ============================================================================
+# REGIONAL ORDER BACKENDS, REGIONS A AND B
+# (only the messaging modules are shown)
+# ============================================================================
+application BACKEND_A "Order backend\nRegion A" {
+  module MESSAGING_A "Message\nhandling"
+  order: 1
+}
+
+application BACKEND_B "Order backend\nRegion B" {
+  module MESSAGING_B "Message\nhandling"
+  order: 4
+}
+
+# ============================================================================
+# Cross-region message queues
+# ============================================================================
+queue Q_REGION_A "Region A\nmessages" { order: 2 }
+queue Q_REGION_B "Region B\nmessages" { order: 3 }
+
+# ============================================================================
+# FLOWS — cross-region exchanges through the queues
+# ============================================================================
+MESSAGING_A.right -> Q_REGION_A (AMQP)
+MESSAGING_B.left -> Q_REGION_A.right (AMQP)
+
+MESSAGING_B.left -> Q_REGION_B.right (AMQP)
+MESSAGING_A -> Q_REGION_B.left (AMQP)
+
+# ============================================================================
+# NOTE
+# ============================================================================
+# Each region's internal flows (tracking, data, system) belong to a per-region
+# view; this one shows only the exchanges between regions.
+# ============================================================================

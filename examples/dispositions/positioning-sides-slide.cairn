@@ -1,0 +1,50 @@
+diagram application "Claims platform — attachment sides (slide)"
+style { disposition: slide }
+
+# Every attachment side, on both ends of a flow and on one end alone.
+# Sides are named as the diagram is read: left, right, top, bottom.
+# `order:` places each element inside its band, here on containers, on the two
+# modules of one application, and on the leaves at the system's own level.
+
+actor-group AGENTS "Claims actors" {
+  actor HANDLER "Claims handler"
+}
+
+system CLAIMS "Claims platform" {
+  application INTAKE_APP "Claim intake" {
+    order: 1
+    module FORM "Claim\nform" {
+      order: 1
+    }
+    module TRIAGE "Triage" {
+      order: 2
+    }
+  }
+  application ASSESS_APP "Assessment" {
+    order: 2
+    module SCORING "Risk\nscoring"
+  }
+  queue TASKS "Task\nqueue" {
+    order: 4
+  }
+  datastore CLAIM_DB "Claim\nstore" {
+    order: 3
+  }
+  datastore AUDIT_DB "Audit\nlog" {
+    order: 5
+  }
+}
+
+external REINSURER "Reinsurer\n(external)"
+
+HANDLER.right -> FORM (API_REST, JSON)
+FORM.right -> TRIAGE.left (API_REST, JSON)
+TRIAGE.right -> CLAIM_DB.left (JDBC)
+TRIAGE.bottom -> TASKS.left (MQ, JSON)
+TASKS -> SCORING (MQ, JSON)
+SCORING.bottom -> AUDIT_DB.top (JDBC)
+SCORING --> REINSURER (SFTP, CSV)
+TRIAGE ..> REINSURER (API_REST, JSON)
+FORM --> AUDIT_DB (JDBC) { stroke: solid }
+# A backward flow, pinned on both ends: top on the source, right on the target.
+SCORING.top -> TRIAGE.right (API_REST, JSON)

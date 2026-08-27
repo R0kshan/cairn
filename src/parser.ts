@@ -9,9 +9,17 @@
 
 import { lex } from "./lexer.ts";
 import type { Token } from "./models/token.ts";
-import type { Model, Element, Flow, StyleProps, DiagramStyle, Span } from "./models/ast.ts";
+import type {
+  Model,
+  Element,
+  Flow,
+  StyleProps,
+  DiagramStyle,
+  Span,
+  AttachSide,
+} from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
-import { defaultDiagramStyle } from "./models/ast.ts";
+import { defaultDiagramStyle, ATTACH_SIDES } from "./models/ast.ts";
 import { themeNames } from "./themes.ts";
 import { indexElementsById } from "./element-tree.ts";
 
@@ -27,12 +35,16 @@ interface Parser {
   advance: () => Token;
   skipNewlines: () => void;
   reportError: (message: string, span: Span, help?: string) => void;
+  /** `reportError` for a production that owns a code other than `E0101`. */
+  reportCoded: (code: string, message: string, span: Span, help?: string) => void;
   syncToNextLine: () => void;
   /** Cursor marks, for the keyword blocks that commit only once `{` follows. */
   save: () => number;
   restore: (mark: number) => void;
   /** Boxed so `parseFlow` can advance it — flow ids are assigned in source order. */
   flowSequence: { next: number };
+  /** `ID.side` endpoints awaiting `resolveAttachSides` once the id index exists. */
+  endpointSplits: EndpointSplit[];
   parseStyleEntries: (target: DiagramStyle | null, inline: StyleProps | null) => void;
   parseElementBody: (parent: Element) => void;
 }
@@ -41,9 +53,9 @@ interface Parser {
  *  optional. `sourceToken` (the source id) is already consumed by the caller. */
 function parseFlow(p: Parser, sourceToken: Token): void {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
-  advance();
+  const arrowToken = advance();
   if (!matchToken("id")) {
-    reportError("target identifier expected after `->`", lookAhead().span);
+    reportError(`target identifier expected after \`${arrowToken.text}\``, lookAhead().span);
     syncToNextLine();
     return;
   }
@@ -60,6 +72,8 @@ function parseFlow(p: Parser, sourceToken: Token): void {
       len: targetToken.span.col + targetToken.span.len - sourceToken.span.col,
     },
   };
+  if (arrowToken.text === "-->") flow.lineStyle = "dashed";
+  else if (arrowToken.text === "..>") flow.lineStyle = "dotted";
   if (matchToken("colon")) {
     advance();
     if (matchToken("str")) flow.label = advance().text;
@@ -119,6 +133,11 @@ function parseFlow(p: Parser, sourceToken: Token): void {
     flow.style = {};
     p.parseStyleEntries(null, flow.style);
   }
+  for (const split of [
+    splitEndpoint(sourceToken, flow, "from"),
+    splitEndpoint(targetToken, flow, "to"),
+  ])
+    if (split) p.endpointSplits.push(split);
   model.flows.push(flow);
 }
 
@@ -172,6 +191,120 @@ function parseElement(p: Parser, sourceToken: Token, parent: Element | null): vo
     p.parseElementBody(element);
   }
   (parent ? parent.children : model.elements).push(element);
+}
+
+/**
+ * An endpoint written `ID.side` — `.` is a legal id character, so the split is
+ * only a *candidate* here: `resolveAttachSides` decides against `model.index`
+ * whether the whole text is an id or an id plus an attachment side.
+ */
+interface EndpointSplit {
+  flow: Flow;
+  role: "from" | "to";
+  raw: string;
+  rawSpan: Span;
+  base: string;
+  baseSpan: Span;
+  side: string;
+  sideSpan: Span;
+}
+
+/** Splits `ID.suffix` on the last `.`; null when there is no dot to split on. */
+function splitEndpoint(token: Token, flow: Flow, role: "from" | "to"): EndpointSplit | null {
+  const dot = token.text.lastIndexOf(".");
+  if (dot <= 0 || dot === token.text.length - 1) return null;
+  const base = token.text.slice(0, dot);
+  const side = token.text.slice(dot + 1);
+  return {
+    flow,
+    role,
+    raw: token.text,
+    rawSpan: token.span,
+    base,
+    baseSpan: { line: token.span.line, col: token.span.col, len: base.length },
+    side,
+    sideSpan: { line: token.span.line, col: token.span.col + dot + 1, len: side.length },
+  };
+}
+
+/**
+ * Decides, per endpoint written with a dot, whether it names an element or an
+ * element plus an attachment side. A declared id always wins — an element may
+ * legitimately be called `API.right` — so the side reading only applies when the
+ * whole text is unknown and the base is known.
+ */
+function resolveAttachSides(
+  splits: EndpointSplit[],
+  model: Model,
+  diagnostics: Diagnostic[],
+): void {
+  for (const split of splits) {
+    if (model.index.has(split.raw)) {
+      if (ATTACH_SIDES.includes(split.side as AttachSide))
+        diagnostics.push({
+          code: "W0571",
+          severity: "warning",
+          message: `\`${split.raw}\` is a declared element, so \`.${split.side}\` is not read as an attachment side`,
+          span: split.rawSpan,
+          note: "a declared id always wins over the `ID.side` reading",
+          help: `rename the element if you meant to attach the flow to the ${split.side} side of \`${split.base}\``,
+        });
+      continue;
+    }
+    if (!model.index.has(split.base)) continue; // unknown either way — E0220 reports it
+    const known = ATTACH_SIDES.includes(split.side as AttachSide);
+    if (!known)
+      diagnostics.push({
+        code: "E0223",
+        severity: "error",
+        message: `unknown attachment side \`${split.side}\``,
+        span: split.sideSpan,
+        note: "sides are named as the diagram is read",
+        help: "use `left`, `right`, `top` or `bottom`, e.g. `APP.right -> DB.left`",
+      });
+    // The endpoint is rebound to the base either way: with an unknown side the
+    // element is still identified, so E0223 reports the real problem alone
+    // instead of trailing an `unknown reference` for the same text.
+    const side = known ? { value: split.side as AttachSide, span: split.sideSpan } : undefined;
+    if (split.role === "from") {
+      split.flow.from = split.base;
+      split.flow.fromSpan = split.baseSpan;
+      split.flow.fromSide = side;
+    } else {
+      split.flow.to = split.base;
+      split.flow.toSpan = split.baseSpan;
+      split.flow.toSide = side;
+    }
+  }
+}
+
+/** `order: <n>` inside an element body. Backtracks when `order` is not followed
+ *  by a colon, so `order` stays usable as an id. Layout, not cosmetics — hence a
+ *  statement of its own rather than a `style` property. */
+function tryOrderEntry(p: Parser, parent: Element | null): boolean {
+  const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
+  if (!parent || !matchToken("id", "order")) return false;
+  const mark = save();
+  const keyToken = advance();
+  if (!matchToken("colon")) {
+    restore(mark);
+    return false;
+  }
+  advance();
+  const valueToken = matchToken("num") ? advance() : null;
+  const value = valueToken ? Number(valueToken.text) : Number.NaN;
+  if (!Number.isInteger(value) || value < 0) {
+    reportCoded(
+      "E0106",
+      "`order` expects a whole number ≥ 0",
+      (valueToken ?? keyToken).span,
+      "e.g. `order: 1` — lower comes first in reading order",
+    );
+    syncToNextLine();
+    return true;
+  }
+  parent.order = { value, span: valueToken!.span };
+  return true;
 }
 
 /** Top-level `legend { note "…" }`. Backtracks when `legend` is not followed by
@@ -251,6 +384,7 @@ function parseFlowOrElement(p: Parser, parent: Element | null): void {
   else parseElement(p, sourceToken, parent);
 }
 
+/** Parses Cairn DSL source into a Model and returns any diagnostic messages. */
 export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const diagnostics: Diagnostic[] = [];
   const tokens = lex(src, diagnostics);
@@ -263,14 +397,16 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   const skipNewlines = () => {
     while (matchToken("nl")) advance();
   };
-  const reportError = (message: string, span: Span, help?: string) =>
+  const reportCoded = (code: string, message: string, span: Span, help?: string) =>
     diagnostics.push({
-      code: "E0101",
+      code,
       severity: "error",
       message,
       span,
       help,
     });
+  const reportError = (message: string, span: Span, help?: string) =>
+    reportCoded("E0101", message, span, help);
   const syncToNextLine = () => {
     while (!matchToken("nl") && !matchToken("eof")) advance();
   };
@@ -284,6 +420,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     index: new Map(),
   };
   const flowSequence = { next: 0 };
+  const endpointSplits: EndpointSplit[] = [];
 
   skipNewlines();
   if (matchToken("id", "diagram")) {
@@ -388,12 +525,14 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     advance,
     skipNewlines,
     reportError,
+    reportCoded,
     syncToNextLine,
     save: () => position,
     restore: (mark: number) => {
       position = mark;
     },
     flowSequence,
+    endpointSplits,
     parseStyleEntries,
     parseElementBody,
   };
@@ -404,6 +543,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
       return;
     }
     if (tryStyleBlock(parent)) return;
+    if (tryOrderEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
     parseFlowOrElement(parser, parent);
@@ -418,6 +558,9 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   for (const [id, element] of indexElementsById(model.elements)) {
     if (!model.index.has(id)) model.index.set(id, element);
   }
+  // Needs the finished index: an endpoint may be written before the element it
+  // names, and `ID.side` is only a side when `ID.side` is not itself an element.
+  resolveAttachSides(endpointSplits, model, diagnostics);
 
   return { model, diags: diagnostics };
 }

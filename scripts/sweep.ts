@@ -801,7 +801,9 @@ async function sweepShard(shardIndex: number, shardCount: number): Promise<void>
       // target up-and-left). Judged per axis with a tolerance: when the two nodes
       // roughly align on an axis (within `ATTACH_AWAY_TOL`), moving either way on
       // it is positioning, not wandering. Edges rerouted through detour channels
-      // wrap by design (invariant §11) and are exempt.
+      // wrap by design (invariant §11) and are exempt, as are edges whose
+      // terminal side the author pinned in the DSL (`APP.right -> DB.left`) —
+      // per end, so the free end of a half-pinned flow is still measured.
       const ATTACH_AWAY_TOL = 24;
       const byId = new Map(scene.nodes.map((n) => [n.id, n]));
       for (const e of scene.edges) {
@@ -823,10 +825,12 @@ async function sweepShard(shardIndex: number, shardCount: number): Promise<void>
         const toCenter = centerOf(to);
         const fromCenter = centerOf(from);
         if (
+          !e.pinned?.start &&
           away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y })
         )
           note("attachAway", `${e.id} ${flow!.from}->${flow!.to} departs away`);
         if (
+          !e.pinned?.end &&
           away(
             { x: pn.x - pm.x, y: pn.y - pm.y },
             { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y },
