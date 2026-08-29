@@ -68,8 +68,8 @@
 <text x="747" y="289" font-size="11" text-anchor="start" fill="#444"></text>
 <rect x="0" y="298" width="850" height="26" fill="#ddd" opacity="0.18"/>
 <text x="19.5" y="315" font-size="11" text-anchor="middle" fill="#444">10</text>
-<text x="49" y="315" font-size="11" text-anchor="start" fill="#444">Broker de messages (Zone applicative)</text>
-<text x="347" y="315" font-size="11" text-anchor="start" fill="#444">CRM (Zone applicative)</text>
+<text x="49" y="315" font-size="11" text-anchor="start" fill="#444">CRM (Zone applicative)</text>
+<text x="347" y="315" font-size="11" text-anchor="start" fill="#444">Broker de messages (Zone applicative)</text>
 <text x="614" y="315" font-size="11" text-anchor="start" fill="#444">TCP</text>
 <text x="711.5" y="315" font-size="11" text-anchor="middle" fill="#444">9092</text>
 <text x="747" y="315" font-size="11" text-anchor="start" fill="#444"></text>

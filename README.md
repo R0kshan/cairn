@@ -32,7 +32,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Spacial optimization** | Cairn aims to optimize space as much as possible (Still working on improving this functionnality) |
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
 | **Flow matrix.** | `cairn matrix` exports the flow matrix as CSV, Markdown, or SVG — from any view, with the columns that view can fill. In infrastructure it splits protocol from port and annotates endpoints that sit in a network zone; headers localise via `style { lang: fr }`. The same table is available to embedders through `compile(source, { matrix: true })`. |
-| **Author-controlled positioning.** | Layout is automatic, with three opt-in overrides for when it gets a diagram wrong: `order: 2` sequences a top-level element along the disposition's own reading direction (left to right in `wide`, top to bottom in `tall`) and sorts siblings inside a container, `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). A pin the layout cannot honor is reported (`W0570`), never silently dropped. |
+| **Author-controlled positioning.** | Layout is automatic, with three opt-in overrides for when it gets a diagram wrong: `order: 2` sequences a top-level element along the disposition's own reading direction (left to right in `wide`, top to bottom in `tall`) and sorts siblings inside a container, `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
 | **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
@@ -83,6 +83,27 @@ Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/
 <p align="center"><img src="examples/application-medium.svg" alt="Medium application view" width="760"></p>
 <p align="center"><img src="examples/application-large.svg" alt="Large application view" width="760"></p>
 
+#### System boundaries
+
+`system` is a C4 system boundary: it groups the applications, queues and
+datastores that belong to one system — the small example above uses one. The
+flow matrix names an endpoint's nearest container, so a module reads
+`Name (App)` and a queue sitting directly in the system reads `Name (System)`.
+From [`examples/application-system.cairn`](examples/application-system.cairn):
+
+```cairn
+system ORDERS "Order platform" {
+  application ORDER_APP "Order management" {
+    module CAPTURE "Order\ncapture"
+    module VALIDATE "Order\nvalidation"
+  }
+  queue EVENTS "Order event\nbus"
+  datastore ORDER_DB "Order\nrepository"
+}
+```
+
+<p align="center"><img src="examples/application-system.svg" alt="Application view with a system boundary" width="760"></p>
+
 ### Infrastructure view diagram examples from small to large
 
 <p align="center"><img src="examples/infrastructure-small.svg" alt="Small infrastructure view" width="760"></p>
@@ -123,44 +144,29 @@ See [`examples/colors-custom.cairn`](examples/colors-custom.cairn) for a full ex
 
 ### Positioning and flow line styles
 
-Layout is automatic. When it gets a diagram wrong, four opt-in controls take
-it back — a file that uses none of them renders exactly as before.
-
-**Dashed and dotted flows.** The arrow glyph carries the line style. From
-[`examples/positioning-sides.cairn`](examples/positioning-sides.cairn):
+**Line style** — carried by the arrow glyph:
 
 ```cairn
-TASKS -> SCORING (MQ, JSON)                # solid — the default
+TRIAGE -> TASKS (MQ, JSON)                 # solid — the default
 SCORING --> REINSURER (SFTP, CSV)          # dashed
 TRIAGE ..> REINSURER (API_REST, JSON)      # dotted
 ```
 
-**Which side a flow leaves and arrives on.** Name the side on either endpoint,
-or both. Sides read as the diagram is drawn — `left`, `right`, `top`, `bottom`.
-Same file:
+**Attachment sides** — pin either endpoint, or both, with `left`, `right`,
+`top` or `bottom`:
 
 ```cairn
 FORM.right -> TRIAGE.left (API_REST, JSON)   # both ends pinned
-TRIAGE -> TASKS.bottom (MQ, JSON)            # only the arrival pinned
-SCORING.top -> TRIAGE.right (API_REST, JSON) # a backward flow, pinned both ends
+SCORING -> TASKS.right (MQ, JSON)            # only the arrival pinned
+SCORING.top -> TRIAGE.top (API_REST, JSON)   # a backward flow, pinned both ends
 ```
-
-A pin fixes the two ends, not the path between them. The passes that would move a
-terminal stand down — including the channel rerouting that would otherwise take
-over a backward flow like the third one — while the route itself is still tidied,
-along shapes that leave the pinned ends where you put them. A side the layout genuinely cannot reach is dropped
-rather than forced into an unreadable route, and reported as `W0570` — never
-silently ignored. Note that `A.right` loses to an element actually *named*
-`A.right` (`W0571`), and an unknown side name is `E0223`.
 
 <p align="center"><img src="examples/positioning-sides.svg" alt="Flow attachment sides" width="760"></p>
 
-**Element ordering.** `order:` is a statement in the element's own body — layout,
-not style, so it does not go in a `style` block. Lower comes first in the reading
-order the disposition defines: left to right for `wide`/`slide`, top to bottom
-for `tall`/`page`. From
-[`examples/placement/reading-order.cairn`](examples/placement/reading-order.cairn),
-where two backends publishing to the same queue would otherwise be stacked:
+**Element ordering** — `order:` is a statement in the element's own body, not a
+`style` entry. Lower comes first along the disposition's reading direction: left
+to right in `wide`/`slide`, top to bottom in `tall`/`page`. From
+[`examples/placement/reading-order.cairn`](examples/placement/reading-order.cairn):
 
 ```cairn
 application BACKEND_L1 "Line 1 backend" {
@@ -175,69 +181,54 @@ application BACKEND_L2 "Line 2 backend" {
 
 <p align="center"><img src="examples/placement/reading-order.svg" alt="Top-level elements sequenced by order:" width="620"></p>
 
-Inside a container the axis flips, because a child's layer belongs to the flows
-and elk honors no constraint that would change it: there `order:` sorts the
-siblings sharing a layer — top to bottom in `wide`, left to right in `tall`. From
+Inside a container the axis flips: `order:` sorts the siblings sharing a layer —
+top to bottom in `wide`, left to right in `tall`. From
 [`examples/positioning.cairn`](examples/positioning.cairn):
 
 ```cairn
 actor-group STAFF "Payment actors" {
-  actor OPERATOR "Payment operator" {
-    order: 1
-  }
-  actor AUDITOR "Compliance auditor" {
-    order: 2
-  }
+  actor OPERATOR "Payment operator" { order: 1 }
+  actor AUDITOR "Compliance auditor" { order: 2 }
 }
 ```
 
 Values need not be contiguous, and the hint never moves an element into another
-band — an ordered actor-group stays on the entry side, ahead of the applications.
-A top-level element nobody ordered follows the flows into the band of the latest
-ordered element that reaches it, so a hint never drags a consumer ahead of its
-own source; where a declared order does contradict a flow, the order wins and the
-flow is drawn running backwards. The
-attachment-sides file above orders its containers, its modules and its leaves
-too, and ships as `wide`, `tall`, `slide` and `page` variants in
-[`examples/dispositions/`](examples/dispositions/) — same ordering and the same
-pins, four layouts. The file below orders the queue and the datastore inside
-their system boundary and pins `POSTING.bottom -> LEDGER_DB.top`:
+band. Where a declared order contradicts a flow, the order wins and the flow is
+drawn running backwards.
 
 <p align="center"><img src="examples/positioning.svg" alt="Element ordering, pinned sides and arrow glyphs" width="760"></p>
 
-Three files in [`examples/placement/`](examples/placement/) show both controls on
-one shape: `baseline.cairn` declares neither, `sides.cairn` adds the pins above,
-and `reading-order.cairn` sequences two backends with `order:`.
+More examples: [`examples/placement/`](examples/placement/) shows one shape four
+ways (`baseline.cairn`, `sides.cairn`, `reading-order.cairn`,
+`flow-label.cairn`), and [`examples/dispositions/`](examples/dispositions/) ships
+the attachment-sides file as `wide`, `tall`, `slide` and `page` variants.
 
-**Where the label sits on its flow.** This one *is* style (decision D4), so it
-lives in the `style` block and resolves at the usual three levels — view default,
-then diagram, then inline per flow:
+**Label position** — this one *is* style, so it lives in the `style` block and
+resolves at the usual three levels (view default, diagram, inline per flow). From
+[`examples/placement/flow-label.cairn`](examples/placement/flow-label.cairn):
 
 ```cairn
 style {
   flow-label: above     # on-line (default) | above | below
 }
 
-INTAKE -> ROUTING (API_REST, JSON)                     # above, from the style block
-ROUTING --> SETTLE (MQ, JSON) { label: below }         # this one flow overrides it
+AGENT  -> RECEIVE : "File a claim"                            # above, from the style block
+ASSIGN -> SETTLE  : "Request settlement" { label: below }     # overridden per flow
+TRACE  -> STORE   : "Archive the trace" { label: on-line }    # back to the default
 ```
 
-- `on-line` — the default. The text is centred **on** the run, with a halo
-  stroked behind it so the line does not cut through the words.
-- `above` / `below` — lift the text clear of the run by a fixed offset before it
-  is settled. Useful on a dense diagram where several runs share a corridor and
-  the halos start eating each other.
+<p align="center"><img src="examples/placement/flow-label.svg" alt="Flow label positions" width="760"></p>
 
-The offset is applied first and the label is settled afterwards, so a placement
-that would collide with another label still ends up somewhere readable — the
-zero-overlap gate holds whichever value you pick. No shipped example sets it, so
-every diagram above shows the `on-line` default.
+`on-line` centres the text on the run behind a halo; `above`/`below` lift it clear
+by a fixed offset first. Either way the label is settled afterwards, so the
+zero-overlap gate holds. Every other diagram in this README shows the `on-line`
+default.
 
 ### Dispositions
 
 Same diagram different disposition : 
-- [Slide disposition](https://cairn-psi-five.vercel.app/#src=ZGlhZ3JhbSBsb2dpY2FsICJPbmxpbmUgYXBwb2ludG1lbnQgYm9va2luZyDigJQgbG9naWNhbCB2aWV3IgpzdHlsZSB7IGRpc3Bvc2l0aW9uOiBzbGlkZSB9CgphY3Rvci1ncm91cCBVU0VSUyAiVXNlcnMiIHsKICBhY3RvciBQQVRJRU5UICJQYXRpZW50Igp9CgphY3Rvci1ncm91cCBTVEFGRiAiU3RhZmYiIHsKICBhY3RvciBTRUNSRVRBUlkgIk1lZGljYWwgc2VjcmV0YXJ5Igp9CgpzeXN0ZW0gQk9PS0lORyAiQXBwb2ludG1lbnQgYm9va2luZyBzeXN0ZW0iIHsKICBsYXllciBGUk9OVCAiUHJlc2VudGF0aW9uIGxheWVyIiB7CiAgICBibG9jayBQT1JUQUwgIkJvb2tpbmdcbnBvcnRhbCIKICB9CiAgbGF5ZXIgQlVTSU5FU1MgIkJ1c2luZXNzIGxheWVyIiB7CiAgICBibG9jayBTQ0hFRFVMRVIgIlNsb3Rcbm1hbmFnZW1lbnQiCiAgICBibG9jayBOT1RJRiAiTm90aWZpY2F0aW9ucyIKICB9Cn0KCmV4dGVybmFsIEVYVCAiRXh0ZXJuYWwgc3lzdGVtcyIgewogIGJsb2NrIFNNUyAiU01TIGdhdGV3YXkiCn0KCiMgLS0tLSBidXNpbmVzcyBvYmplY3RzIC0tLS0KYnVzaW5lc3Mtb2JqZWN0IEJPX0FQUFQgIkFwcG9pbnRtZW50IiAic2xvdCBib29rZWQgYnkgYSBwYXRpZW50IHdpdGggYSBwcmFjdGl0aW9uZXIiCmJ1c2luZXNzLW9iamVjdCBCT19TTE9UICJTbG90IiAidGltZSB3aW5kb3cgb3BlbiBmb3IgYm9va2luZyIKClBBVElFTlQgLT4gUE9SVEFMIDogIlNlYXJjaCBhIHNsb3RcbmFuZCBib29rIiBbQk9fU0xPVF0KUE9SVEFMIC0+IFNDSEVEVUxFUiA6ICJCb29raW5nIHJlcXVlc3QiIFtCT19BUFBUXQpTQ0hFRFVMRVIgLT4gTk9USUYgOiAiQXBwb2ludG1lbnQgY29uZmlybWVkIiBbQk9fQVBQVF0KTk9USUYgLT4gU01TIDogIlNlbmQgU01TIHJlbWluZGVyIgpTRUNSRVRBUlkgLT4gU0NIRURVTEVSIDogIk9wZW4gLyBibG9ja1xuc2xvdHMiIFtCT19TTE9UXQpTQ0hFRFVMRVIgLT4gUEFUSUVOVCA6ICJBcHBvaW50bWVudFxuY29uZmlybWF0aW9uIiBbQk9fQVBQVF0KCmxlZ2VuZCB7CiAgbm90ZSAiSGVhbHRoIGRhdGEgaXMgc3RvcmVkIG9uIGNlcnRpZmllZCBoZWFsdGgtZGF0YS1ob3N0aW5nIGluZnJhc3RydWN0dXJlIgp9Cg==)
-- [Page disposition](https://cairn-psi-five.vercel.app/#src=ZGlhZ3JhbSBsb2dpY2FsICJPbmxpbmUgYXBwb2ludG1lbnQgYm9va2luZyDigJQgbG9naWNhbCB2aWV3IgpzdHlsZSB7IGRpc3Bvc2l0aW9uOiBwYWdlIH0KCmFjdG9yLWdyb3VwIFVTRVJTICJVc2VycyIgewogIGFjdG9yIFBBVElFTlQgIlBhdGllbnQiCn0KCmFjdG9yLWdyb3VwIFNUQUZGICJTdGFmZiIgewogIGFjdG9yIFNFQ1JFVEFSWSAiTWVkaWNhbCBzZWNyZXRhcnkiCn0KCnN5c3RlbSBCT09LSU5HICJBcHBvaW50bWVudCBib29raW5nIHN5c3RlbSIgewogIGxheWVyIEZST05UICJQcmVzZW50YXRpb24gbGF5ZXIiIHsKICAgIGJsb2NrIFBPUlRBTCAiQm9va2luZ1xucG9ydGFsIgogIH0KICBsYXllciBCVVNJTkVTUyAiQnVzaW5lc3MgbGF5ZXIiIHsKICAgIGJsb2NrIFNDSEVEVUxFUiAiU2xvdFxubWFuYWdlbWVudCIKICAgIGJsb2NrIE5PVElGICJOb3RpZmljYXRpb25zIgogIH0KfQoKZXh0ZXJuYWwgRVhUICJFeHRlcm5hbCBzeXN0ZW1zIiB7CiAgYmxvY2sgU01TICJTTVMgZ2F0ZXdheSIKfQoKIyAtLS0tIGJ1c2luZXNzIG9iamVjdHMgLS0tLQpidXNpbmVzcy1vYmplY3QgQk9fQVBQVCAiQXBwb2ludG1lbnQiICJzbG90IGJvb2tlZCBieSBhIHBhdGllbnQgd2l0aCBhIHByYWN0aXRpb25lciIKYnVzaW5lc3Mtb2JqZWN0IEJPX1NMT1QgIlNsb3QiICJ0aW1lIHdpbmRvdyBvcGVuIGZvciBib29raW5nIgoKUEFUSUVOVCAtPiBQT1JUQUwgOiAiU2VhcmNoIGEgc2xvdFxuYW5kIGJvb2siIFtCT19TTE9UXQpQT1JUQUwgLT4gU0NIRURVTEVSIDogIkJvb2tpbmcgcmVxdWVzdCIgW0JPX0FQUFRdClNDSEVEVUxFUiAtPiBOT1RJRiA6ICJBcHBvaW50bWVudCBjb25maXJtZWQiIFtCT19BUFBUXQpOT1RJRiAtPiBTTVMgOiAiU2VuZCBTTVMgcmVtaW5kZXIiClNFQ1JFVEFSWSAtPiBTQ0hFRFVMRVIgOiAiT3BlbiAvIGJsb2NrXG5zbG90cyIgW0JPX1NMT1RdClNDSEVEVUxFUiAtPiBQQVRJRU5UIDogIkFwcG9pbnRtZW50XG5jb25maXJtYXRpb24iIFtCT19BUFBUXQoKbGVnZW5kIHsKICBub3RlICJIZWFsdGggZGF0YSBpcyBzdG9yZWQgb24gY2VydGlmaWVkIGhlYWx0aC1kYXRhLWhvc3RpbmcgaW5mcmFzdHJ1Y3R1cmUiCn0K)
+- [Slide disposition](https://cairn-psi-five.vercel.app/#src=ZGlhZ3JhbSBsb2dpY2FsICJPbmxpbmUgYXBwb2ludG1lbnQgYm9va2luZyDigJQgbG9naWNhbCB2aWV3IgpzdHlsZSB7IGRpc3Bvc2l0aW9uOiBzbGlkZSB9CgphY3Rvci1ncm91cCBVU0VSUyAiVXNlcnMiIHsKICBhY3RvciBQQVRJRU5UICJQYXRpZW50Igp9CgphY3Rvci1ncm91cCBTVEFGRiAiU3RhZmYiIHsKICBhY3RvciBTRUNSRVRBUlkgIk1lZGljYWwgc2VjcmV0YXJ5Igp9CgpzeXN0ZW0gQk9PS0lORyAiQXBwb2ludG1lbnQgYm9va2luZyBzeXN0ZW0iIHsKICBsYXllciBGUk9OVCAiQm9va2luZyBjaGFubmVscyIgewogICAgYmxvY2sgUE9SVEFMICJCb29raW5nXG5wb3J0YWwiCiAgfQogIGxheWVyIEJVU0lORVNTICJBcHBvaW50bWVudCBtYW5hZ2VtZW50IiB7CiAgICBibG9jayBTQ0hFRFVMRVIgIlNsb3Rcbm1hbmFnZW1lbnQiCiAgICBibG9jayBOT1RJRiAiTm90aWZpY2F0aW9ucyIKICB9Cn0KCmV4dGVybmFsIEVYVCAiRXh0ZXJuYWwgc3lzdGVtcyIgewogIGJsb2NrIFNNUyAiU01TIGdhdGV3YXkiCn0KCiMgLS0tLSBidXNpbmVzcyBvYmplY3RzIC0tLS0KYnVzaW5lc3Mtb2JqZWN0IEJPX0FQUFQgIkFwcG9pbnRtZW50IiAic2xvdCBib29rZWQgYnkgYSBwYXRpZW50IHdpdGggYSBwcmFjdGl0aW9uZXIiCmJ1c2luZXNzLW9iamVjdCBCT19TTE9UICJTbG90IiAidGltZSB3aW5kb3cgb3BlbiBmb3IgYm9va2luZyIKClBBVElFTlQgLT4gUE9SVEFMIDogIlNlYXJjaCBhIHNsb3RcbmFuZCBib29rIiBbQk9fU0xPVF0KUE9SVEFMIC0+IFNDSEVEVUxFUiA6ICJCb29raW5nIHJlcXVlc3QiIFtCT19BUFBUXQpTQ0hFRFVMRVIgLT4gTk9USUYgOiAiQXBwb2ludG1lbnQgY29uZmlybWVkIiBbQk9fQVBQVF0KTk9USUYgLT4gU01TIDogIlNlbmQgU01TIHJlbWluZGVyIgpTRUNSRVRBUlkgLT4gU0NIRURVTEVSIDogIk9wZW4gLyBibG9ja1xuc2xvdHMiIFtCT19TTE9UXQpTQ0hFRFVMRVIgLT4gUEFUSUVOVCA6ICJBcHBvaW50bWVudFxuY29uZmlybWF0aW9uIiBbQk9fQVBQVF0KCmxlZ2VuZCB7CiAgbm90ZSAiSGVhbHRoIGRhdGEgaXMgc3RvcmVkIG9uIGNlcnRpZmllZCBoZWFsdGgtZGF0YS1ob3N0aW5nIGluZnJhc3RydWN0dXJlIgp9Cg==)
+- [Page disposition](https://cairn-psi-five.vercel.app/#src=ZGlhZ3JhbSBsb2dpY2FsICJPbmxpbmUgYXBwb2ludG1lbnQgYm9va2luZyDigJQgbG9naWNhbCB2aWV3IgpzdHlsZSB7IGRpc3Bvc2l0aW9uOiBwYWdlIH0KCmFjdG9yLWdyb3VwIFVTRVJTICJVc2VycyIgewogIGFjdG9yIFBBVElFTlQgIlBhdGllbnQiCn0KCmFjdG9yLWdyb3VwIFNUQUZGICJTdGFmZiIgewogIGFjdG9yIFNFQ1JFVEFSWSAiTWVkaWNhbCBzZWNyZXRhcnkiCn0KCnN5c3RlbSBCT09LSU5HICJBcHBvaW50bWVudCBib29raW5nIHN5c3RlbSIgewogIGxheWVyIEZST05UICJCb29raW5nIGNoYW5uZWxzIiB7CiAgICBibG9jayBQT1JUQUwgIkJvb2tpbmdcbnBvcnRhbCIKICB9CiAgbGF5ZXIgQlVTSU5FU1MgIkFwcG9pbnRtZW50IG1hbmFnZW1lbnQiIHsKICAgIGJsb2NrIFNDSEVEVUxFUiAiU2xvdFxubWFuYWdlbWVudCIKICAgIGJsb2NrIE5PVElGICJOb3RpZmljYXRpb25zIgogIH0KfQoKZXh0ZXJuYWwgRVhUICJFeHRlcm5hbCBzeXN0ZW1zIiB7CiAgYmxvY2sgU01TICJTTVMgZ2F0ZXdheSIKfQoKIyAtLS0tIGJ1c2luZXNzIG9iamVjdHMgLS0tLQpidXNpbmVzcy1vYmplY3QgQk9fQVBQVCAiQXBwb2ludG1lbnQiICJzbG90IGJvb2tlZCBieSBhIHBhdGllbnQgd2l0aCBhIHByYWN0aXRpb25lciIKYnVzaW5lc3Mtb2JqZWN0IEJPX1NMT1QgIlNsb3QiICJ0aW1lIHdpbmRvdyBvcGVuIGZvciBib29raW5nIgoKUEFUSUVOVCAtPiBQT1JUQUwgOiAiU2VhcmNoIGEgc2xvdFxuYW5kIGJvb2siIFtCT19TTE9UXQpQT1JUQUwgLT4gU0NIRURVTEVSIDogIkJvb2tpbmcgcmVxdWVzdCIgW0JPX0FQUFRdClNDSEVEVUxFUiAtPiBOT1RJRiA6ICJBcHBvaW50bWVudCBjb25maXJtZWQiIFtCT19BUFBUXQpOT1RJRiAtPiBTTVMgOiAiU2VuZCBTTVMgcmVtaW5kZXIiClNFQ1JFVEFSWSAtPiBTQ0hFRFVMRVIgOiAiT3BlbiAvIGJsb2NrXG5zbG90cyIgW0JPX1NMT1RdClNDSEVEVUxFUiAtPiBQQVRJRU5UIDogIkFwcG9pbnRtZW50XG5jb25maXJtYXRpb24iIFtCT19BUFBUXQoKbGVnZW5kIHsKICBub3RlICJIZWFsdGggZGF0YSBpcyBzdG9yZWQgb24gY2VydGlmaWVkIGhlYWx0aC1kYXRhLWhvc3RpbmcgaW5mcmFzdHJ1Y3R1cmUiCn0K)
 
 
 ### Numbered flows

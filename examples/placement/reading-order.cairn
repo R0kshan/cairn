@@ -1,11 +1,5 @@
 diagram application "Inter-line messaging — reading order"
 
-# `order:` on a top-level element sequences it along the reading direction of
-# the active disposition: left to right for `wide`/`slide`, top to bottom for
-# `tall`/`page`. Without it the two backends have the same depth in the flows,
-# so the engine stacks them across the axis and the drawing grows sideways.
-# See documentation/DSL_SPEC.md § Positioning controls
-
 application BACKEND_L1 "Line 1 backend" {
   order: 1
   module MSG_L1 "Messaging\nhandler"
@@ -20,6 +14,6 @@ queue Q_L1 "Line 1\nmessages"
 queue Q_L2 "Line 2\nmessages"
 
 MSG_L1 -> Q_L1 (AMQP)
-MSG_L2 -> Q_L1 (AMQP)
+MSG_L2 -> Q_L1.right (AMQP)
 MSG_L2 -> Q_L2 (AMQP)
-MSG_L1 -> Q_L2 (AMQP)
+MSG_L1 -> Q_L2.right (AMQP)
