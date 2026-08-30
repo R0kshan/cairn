@@ -21,6 +21,11 @@ export interface View {
   name: string;
   kinds: string[];
   containerKinds: string[];
+  /**
+   * Kinds the renderer draws with a corner glyph. They reserve `GLYPH_GUTTER`
+   * of width for it, and the renderer centres their label in what is left.
+   */
+  glyphKinds?: string[];
   /** Which columns the flow matrix emits for this view, and what annotates an endpoint. */
   matrix: MatrixSpec;
   legendNames: Record<string, string>;
@@ -367,11 +372,13 @@ const infrastructureView: View = {
     "app-instance",
     "queue",
     "gateway",
+    "firewall",
     "auth",
     "idp",
     "external",
   ],
   containerKinds: ["site", "network-zone", "server"],
+  glyphKinds: ["gateway", "firewall", "auth", "idp"],
   // The reference shape: the matrice des flux techniques as an EA dossier expects it.
   matrix: {
     zoneKinds: ["network-zone", "site"],
@@ -388,6 +395,7 @@ const infrastructureView: View = {
     "app-instance": "Deployed application",
     queue: "Message queue / broker",
     gateway: "Gateway / reverse proxy",
+    firewall: "Firewall",
     auth: "Auth middleware",
     idp: "Identity provider (IdP)",
     external: "External system",
@@ -400,6 +408,7 @@ const infrastructureView: View = {
     "app-instance": "Application d\u00e9ploy\u00e9e",
     queue: "File de messages / broker",
     gateway: "Passerelle / proxy",
+    firewall: "Pare-feu",
     auth: "Middleware d'authentification",
     idp: "Fournisseur d'identit\u00e9 (IdP)",
     external: "Syst\u00e8me externe",
@@ -444,7 +453,7 @@ const infrastructureView: View = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance", "queue", "gateway", "auth", "idp"],
+    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp"],
     message: "isolated element: no incoming or outgoing flow",
   },
   defaults: {
@@ -473,9 +482,13 @@ const infrastructureView: View = {
       fill: "#f5e6dd",
       stroke: { color: "#bf5530", style: "solid", width: 1.6 },
     },
+    firewall: {
+      fill: "#fdecea",
+      stroke: { color: "#c0392b", style: "solid", width: 1.6 },
+    },
     auth: {
-      fill: "#fef3e2",
-      stroke: { color: "#d68a2a", style: "solid", width: 1.5 },
+      fill: "#e8f1fb",
+      stroke: { color: "#2f6fb5", style: "solid", width: 1.5 },
     },
     idp: {
       fill: "#e0f0f0",
@@ -512,9 +525,13 @@ const infrastructureView: View = {
       fill: "#332218",
       stroke: { color: "#c96a4a", style: "solid", width: 1.6 },
     },
+    firewall: {
+      fill: "#33211f",
+      stroke: { color: "#e5675a", style: "solid", width: 1.6 },
+    },
     auth: {
-      fill: "#332614",
-      stroke: { color: "#b88a30", style: "solid", width: 1.5 },
+      fill: "#1d2735",
+      stroke: { color: "#6fa8e0", style: "solid", width: 1.5 },
     },
     idp: {
       fill: "#1a2e2e",

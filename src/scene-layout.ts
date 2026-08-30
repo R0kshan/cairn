@@ -10,7 +10,14 @@
 import type { Model, Element, AttachSide } from "./models/ast.ts";
 import type { ElkNode, ElkEdgeSection } from "elkjs/lib/elk.bundled.js";
 import type { View } from "./views.ts";
-import { measure, wrapText, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
+import {
+  measure,
+  wrapText,
+  flowLabelBox,
+  techText,
+  fontSizes,
+  GLYPH_GUTTER,
+} from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
@@ -171,6 +178,14 @@ const semiInteractiveOption = (children: Element[]): Record<string, string> =>
     ? { "elk.layered.crossingMinimization.semiInteractive": "true" }
     : {};
 
+/** What sizing a node needs beyond the element itself: the same values for every node in one layout. */
+interface NodeSizing {
+  compact: boolean;
+  fonts: { cont: number; node: number };
+  /** Kinds drawn with a corner glyph — see `View.glyphKinds`. */
+  glyphKinds: ReadonlySet<string>;
+}
+
 /**
  * Converts an `Element` (and its children, recursively) into elk's input node
  * shape. `root` marks a top-level element, whose own `order:` is a partition
@@ -178,10 +193,10 @@ const semiInteractiveOption = (children: Element[]): Record<string, string> =>
  */
 function toElkNode(
   element: Element,
-  compact: boolean,
-  fonts: { cont: number; node: number },
+  sizing: NodeSizing,
   root = false,
 ): ElkNode {
+  const { compact, fonts, glyphKinds } = sizing;
   const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
@@ -198,19 +213,21 @@ function toElkNode(
           ...measure(element.label ?? element.id, containerFontSize),
         },
       ],
-      children: element.children.map((child) =>
-        toElkNode(child, compact, fonts),
-      ),
+      children: element.children.map((child) => toElkNode(child, sizing)),
     };
   }
   const measured = measure(element.label ?? element.id, nodeFontSize);
   const isActor = element.kind === "actor";
+  // A glyph node keeps the same minimum: the minimum already leaves more room
+  // than a short label needs, so only labels wide enough to reach the glyph
+  // widen the box.
+  const gutter = glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0;
   return {
     id: element.id,
     ...(element.order && !root ? { layoutOptions: orderOption(element) } : {}),
     width: isActor
       ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8)
-      : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
+      : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12) + gutter),
     height: isActor
       ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11
       : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12)),
@@ -937,6 +954,11 @@ function buildElkGraph(
   options?: GraphOptions,
 ): ElkNode {
   const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
+  // `slide-fold.ts` sizes nodes on its own path and does not reserve the
+  // gutter: `foldedLayout` bails out on any `partitionByOrder` view, which is
+  // every view that declares `glyphKinds`. Declaring glyph kinds on a view
+  // without `partitionByOrder` means teaching that path the gutter too.
+  const glyphKinds = new Set(view.glyphKinds ?? []);
   const graph: ElkNode = {
     id: "root",
     layoutOptions: {
@@ -979,7 +1001,7 @@ function buildElkGraph(
         : {}),
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode(element, compact, fonts, true);
+      const elkNode = toElkNode(element, { compact, fonts, glyphKinds }, true);
       const band = elkPartitionOf(element, index, view, ingressExternal);
       const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {

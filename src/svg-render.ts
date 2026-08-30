@@ -26,7 +26,7 @@ import { labelsSeated } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
 import { inspect } from "./readability.ts";
-import { chipW, techText, wrapText, fontSizes } from "./text-metrics.ts";
+import { chipW, techText, wrapText, fontSizes, GLYPH_GUTTER } from "./text-metrics.ts";
 
 const HOP_RADIUS = 5;
 /**
@@ -316,6 +316,76 @@ function settleOneLabel(s: Settler, label: SceneLabel): void {
   label.y = origin.y;
 }
 
+/**
+ * The corner glyphs that tell the infrastructure kinds apart at a glance.
+ *
+ * Each is stroke-only, in the kind's own stroke colour, drawn inside one 18x16
+ * box so the four read as a family. A pen receives that box already placed and
+ * scaled: `x`/`y` map box-relative coordinates, `r` scales a length, and
+ * `line` is the shared stroke attributes. `GLYPH_GUTTER` (text-metrics) is the
+ * width the layout reserves for the box, so no label can run underneath it.
+ */
+const GLYPH_BOX = { width: 18, height: 16, left: 6, top: 7 };
+
+interface GlyphPen {
+  /** Box-relative x, in output coordinates. */
+  x: (v: number) => number;
+  /** Box-relative y, in output coordinates. */
+  y: (v: number) => number;
+  /** A box-relative length, scaled. */
+  r: (v: number) => number;
+  /** `stroke`/`stroke-width`/`fill` attributes shared by every stroke in the family. */
+  line: string;
+  /** The glyph's colour, for the one filled dot in the set. */
+  stroke: string;
+}
+
+const GLYPHS: Record<string, (pen: GlyphPen) => string> = {
+  // Padlock: authentication is a check something must pass.
+  auth: ({ x, y, r, line, stroke }) =>
+    `<rect x="${x(3)}" y="${y(7)}" width="${r(12)}" height="${r(9)}" rx="${r(2)}" ${line}/>` +
+    `<path d="M ${x(6)} ${y(7)} v ${-r(3)} a ${r(3)} ${r(3)} 0 0 1 ${r(6)} 0 v ${r(3)}" ${line}/>` +
+    `<circle cx="${x(9)}" cy="${y(11)}" r="${r(1.5)}" fill="${stroke}"/>`,
+  // Two posts with traffic passing between them: a gateway routes, it does not block.
+  gateway: ({ x, y, r, line }) =>
+    `<path d="M ${x(2)} ${y(1)} V ${y(15)} M ${x(16)} ${y(1)} V ${y(15)}" ${line}/>` +
+    `<path d="M ${x(4)} ${y(8)} H ${x(14)}" ${line}/>` +
+    `<path d="M ${x(11)} ${y(5)} l ${r(3)} ${r(3)} l ${-r(3)} ${r(3)}" ${line}/>`,
+  // ID badge: an identity provider issues who-you-are, it does not check it.
+  idp: ({ x, y, r, line }) =>
+    `<rect x="${x(3)}" y="${y(2)}" width="${r(12)}" height="${r(13)}" rx="${r(2)}" ${line}/>` +
+    `<path d="M ${x(7)} ${y(2)} H ${x(11)}" ${line}/>` +
+    `<circle cx="${x(9)}" cy="${y(7)}" r="${r(2)}" ${line}/>` +
+    `<path d="M ${x(5)} ${y(13)} q ${r(4)} ${-r(4)} ${r(8)} 0" ${line}/>`,
+  // Brick wall: a firewall is a barrier, and no other kind reads as one.
+  firewall: ({ x, y, r, line }) =>
+    `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/>` +
+    `<path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/>` +
+    `<path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`,
+};
+
+/**
+ * One glyph with its box's top-left at `box.x`/`box.y`, scaled by `box.scale`
+ * — the legend key draws the same glyphs smaller. Empty for a kind with none.
+ */
+function glyphSvg(
+  kind: string,
+  stroke: string,
+  box: { x: number; y: number; scale?: number },
+): string {
+  const glyph = GLYPHS[kind];
+  if (!glyph) return "";
+  const { x, y, scale = 1 } = box;
+  const width = round1(1.3 * scale);
+  return glyph({
+    x: (v) => round1(x + v * scale),
+    y: (v) => round1(y + v * scale),
+    r: (v) => round1(v * scale),
+    line: `fill="none" stroke="${stroke}" stroke-width="${width}"`,
+    stroke,
+  });
+}
+
 /** Everything the node shapes paint with: theme colours, fonts and per-element style. */
 interface NodePaint {
   palette: ReturnType<typeof themeFor>["palette"];
@@ -327,11 +397,8 @@ interface NodePaint {
   elementAttr: Map<string, string | undefined>;
 }
 
-/** One function per node kind, plus the container frame and the shared label helpers. */
-function createNodeRenderers(paint: NodePaint) {
-  const { palette, style, annot, nodeFontSize, containerFontSize, resolveStyle, elementAttr } =
-    paint;
-
+/** The text-placement maths every node shape shares: line stacking, vertical centring, glyph gutter. */
+function createNodeLabelHelpers(nodeFontSize: number) {
   const centeredNodeLabel = (
     lines: string[],
     centerX: number,
@@ -346,6 +413,23 @@ function createNodeRenderers(paint: NodePaint) {
       .join("");
   const centerLinesY = (top: number, height: number, lineCount: number) =>
     top + height / 2 - ((lineCount - 1) * (nodeFontSize + 2)) / 2 + 4;
+  /**
+   * Where a glyph node's label is centred: in the width left over once the
+   * glyph gutter is taken off the left, not in the node as a whole. The layout
+   * reserved that same gutter (`GLYPH_GUTTER`), so the label cannot reach the
+   * glyph however long it is.
+   */
+  const glyphLabelCenterX = (node: SceneNode) =>
+    node.x + GLYPH_GUTTER + (node.width - GLYPH_GUTTER) / 2;
+  return { centeredNodeLabel, centerLinesY, glyphLabelCenterX };
+}
+
+/** One function per node kind, plus the container frame. */
+function createNodeRenderers(paint: NodePaint) {
+  const { palette, style, annot, nodeFontSize, containerFontSize, resolveStyle, elementAttr } =
+    paint;
+  const { centeredNodeLabel, centerLinesY, glyphLabelCenterX } =
+    createNodeLabelHelpers(nodeFontSize);
 
   const renderContainerNode = (node: SceneNode): string => {
     const nodeStyle = resolveStyle(node.kind, node.id);
@@ -416,33 +500,29 @@ function createNodeRenderers(paint: NodePaint) {
     );
   };
 
-  const renderGateway = (node: SceneNode, nodeStyle: StyleProps, lines: string[]): string => {
-    const centerX = node.x + node.width / 2;
+  /**
+   * A box with its kind's glyph in the top-left corner. The label is centred in
+   * the width left over, which the layout reserved as `GLYPH_GUTTER`.
+   */
+  const renderGlyphBox = (node: SceneNode, nodeStyle: StyleProps, lines: string[]): string => {
     const fill = escAttr(nodeStyle.fill ?? palette.nodeFill),
       stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke),
       text = escAttr(nodeStyle.text ?? palette.nodeText);
     const body =
-      `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>\n` +
-      `<path d="M ${round1(node.x + 8)} ${round1(node.y + 8)} L ${round1(node.x + 22)} ${round1(node.y + 8)} Q ${round1(node.x + 24)} ${round1(node.y + 13)} ${round1(node.x + 15)} ${round1(node.y + 20)} Q ${round1(node.x + 6)} ${round1(node.y + 13)} ${round1(node.x + 8)} ${round1(node.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>\n`;
+      `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>\n` +
+      glyphSvg(node.kind, stroke, {
+        x: node.x + GLYPH_BOX.left,
+        y: node.y + GLYPH_BOX.top,
+      }) +
+      "\n";
     return (
       body +
-      centeredNodeLabel(lines, centerX + 10, centerLinesY(node.y, node.height, lines.length), text)
-    );
-  };
-
-  const renderAuth = (node: SceneNode, nodeStyle: StyleProps, lines: string[]): string => {
-    const centerX = node.x + node.width / 2;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill),
-      stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke),
-      text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body =
-      `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>\n` +
-      `<rect x="${node.x + 6}" y="${node.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>\n` +
-      `<path d="M ${node.x + 10} ${node.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>\n` +
-      `<circle cx="${node.x + 15}" cy="${node.y + 16}" r="2.5" fill="${stroke}"/>\n`;
-    return (
-      body +
-      centeredNodeLabel(lines, centerX + 10, centerLinesY(node.y, node.height, lines.length), text)
+      centeredNodeLabel(
+        lines,
+        glyphLabelCenterX(node),
+        centerLinesY(node.y, node.height, lines.length),
+        text,
+      )
     );
   };
 
@@ -452,22 +532,6 @@ function createNodeRenderers(paint: NodePaint) {
       text = escAttr(nodeStyle.text ?? palette.nodeText);
     const dash = dashArray(nodeStyle.stroke?.style);
     const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>\n`;
-    return (
-      body +
-      centeredNodeLabel(
-        lines,
-        node.x + node.width / 2,
-        centerLinesY(node.y, node.height, lines.length),
-        text,
-      )
-    );
-  };
-
-  const renderIdp = (node: SceneNode, nodeStyle: StyleProps, lines: string[]): string => {
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill),
-      stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke),
-      text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>\n`;
     return (
       body +
       centeredNodeLabel(
@@ -489,14 +553,10 @@ function createNodeRenderers(paint: NodePaint) {
         return renderDatastore(node, nodeStyle, lines);
       case "queue":
         return renderQueue(node, nodeStyle, lines);
-      case "gateway":
-        return renderGateway(node, nodeStyle, lines);
-      case "auth":
-        return renderAuth(node, nodeStyle, lines);
-      case "idp":
-        return renderIdp(node, nodeStyle, lines);
       default:
-        return renderPlainBox(node, nodeStyle, lines);
+        return GLYPHS[node.kind]
+          ? renderGlyphBox(node, nodeStyle, lines)
+          : renderPlainBox(node, nodeStyle, lines);
     }
   };
 
@@ -868,7 +928,17 @@ function createBandRenderers(paint: BandPaint) {
         bandsSvg += `<path d="M ${lx + scaled(8)} ${bandY + scaled(15)} q ${scaled(5)} ${scaled(-7)} ${scaled(10)} 0" fill="none" stroke="${stroke}" stroke-width="1.2"/>\n`;
       } else {
         const dash = dashArray(nodeStyle.stroke?.style);
-        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${nodeStyle.stroke?.color ?? palette.nodeStroke}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>\n`;
+        const stroke = nodeStyle.stroke?.color ?? palette.nodeStroke;
+        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${escAttr(stroke)}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>\n`;
+        // A kind drawn with a glyph shows that glyph in its key, from the same
+        // function the node renderer calls — key and node cannot drift apart.
+        // The glyph is scaled to sit inside the swatch with a 2px margin.
+        const glyphScale = (scaled(14) - scaled(4)) / GLYPH_BOX.height;
+        bandsSvg += glyphSvg(kind, escAttr(stroke), {
+          x: lx + (scaled(26) - GLYPH_BOX.width * glyphScale) / 2,
+          y: bandY + 2 + (scaled(14) - GLYPH_BOX.height * glyphScale) / 2,
+          scale: glyphScale,
+        });
       }
       const name = legendNames[kind];
       bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>\n`;

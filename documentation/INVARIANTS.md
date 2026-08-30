@@ -558,7 +558,8 @@ backward flow is the case an author is most likely to be pinning.
 ## 12. Element kind validity per view
 
 Element kinds are restricted by view. Examples: `queue` is valid only in
-application & infrastructure; `gateway`, `auth`, `idp` only in infrastructure;
+application & infrastructure; `gateway`, `firewall`, `auth`, `idp` only in
+infrastructure;
 `trust-zone`, `security-node`, `asset` only in security; `system` in logical and
 application (a C4 system boundary there, grouping applications, queues and
 datastores); `datastore` renders as cylinder; business objects are logical-view

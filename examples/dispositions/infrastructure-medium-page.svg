@@ -25,17 +25,16 @@
 <rect x="361" y="621.875" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="415" y="642.125" font-size="12.5" text-anchor="middle" fill="#17202c">Transfer</text>
 <text x="415" y="656.625" font-size="12.5" text-anchor="middle" fill="#17202c">gateway</text>
-<rect x="87" y="181" width="108" height="38" rx="4" fill="#f5e6dd" stroke="#b85a30" stroke-width="1.3"/>
-<path d="M 95 189 L 109 189 Q 111 194 102 201 Q 93 194 95 189" fill="none" stroke="#b85a30" stroke-width="1.3"/>
-<text x="151" y="204" font-size="12.5" text-anchor="middle" fill="#17202c">Gateway</text>
-<rect x="60" y="306" width="108" height="47" rx="4" fill="#fdefe3" stroke="#d1600f" stroke-width="1.3"/>
-<rect x="66" y="312" width="18" height="14" rx="3" fill="none" stroke="#d1600f" stroke-width="1.3"/>
-<path d="M 70 315 v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="#d1600f" stroke-width="1.3"/>
-<circle cx="75" cy="322" r="2.5" fill="#d1600f"/>
-<text x="124" y="326.25" font-size="12.5" text-anchor="middle" fill="#17202c">OAuth2</text>
-<text x="124" y="340.75" font-size="12.5" text-anchor="middle" fill="#17202c">proxy</text>
-<rect x="60" y="430" width="108" height="38" rx="4" fill="#e0f0f0" stroke="#3a8f8f" stroke-width="1.3"/>
-<text x="114" y="453" font-size="12.5" text-anchor="middle" fill="#17202c">LDAP / IdP</text>
+<rect x="87" y="181" width="108" height="38" rx="4" fill="#f5e6dd" stroke="#b85a30" stroke-width="1.4"/>
+<path d="M 95 189 V 203 M 109 189 V 203" fill="none" stroke="#b85a30" stroke-width="1.3"/><path d="M 97 196 H 107" fill="none" stroke="#b85a30" stroke-width="1.3"/><path d="M 104 193 l 3 3 l -3 3" fill="none" stroke="#b85a30" stroke-width="1.3"/>
+<text x="154" y="204" font-size="12.5" text-anchor="middle" fill="#17202c">Gateway</text>
+<rect x="60" y="306" width="108" height="47" rx="4" fill="#e8f1fb" stroke="#2f6fb5" stroke-width="1.5"/>
+<rect x="69" y="320" width="12" height="9" rx="2" fill="none" stroke="#2f6fb5" stroke-width="1.3"/><path d="M 72 320 v -3 a 3 3 0 0 1 6 0 v 3" fill="none" stroke="#2f6fb5" stroke-width="1.3"/><circle cx="75" cy="324" r="1.5" fill="#2f6fb5"/>
+<text x="127" y="326.25" font-size="12.5" text-anchor="middle" fill="#17202c">OAuth2</text>
+<text x="127" y="340.75" font-size="12.5" text-anchor="middle" fill="#17202c">proxy</text>
+<rect x="57" y="430" width="114" height="38" rx="4" fill="#e0f0f0" stroke="#3a8f8f" stroke-width="1.3"/>
+<rect x="66" y="439" width="12" height="13" rx="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 70 439 H 74" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><circle cx="72" cy="444" r="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 68 450 q 4 -4 8 0" fill="none" stroke="#3a8f8f" stroke-width="1.3"/>
+<text x="127" y="453" font-size="12.5" text-anchor="middle" fill="#17202c">LDAP / IdP</text>
 <rect x="343" y="319.5" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
 <text x="397" y="342.5" font-size="12.5" text-anchor="middle" fill="#17202c">Billing</text>
 <rect x="197" y="319.5" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
@@ -85,11 +84,11 @@
 <rect x="150" y="925" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
 <text x="182" y="936" font-size="10" fill="#17202c">Deployed application</text>
 <rect x="318" y="925" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
-<text x="350" y="936" font-size="10" fill="#17202c">Gateway / reverse proxy</text>
-<rect x="502" y="925" width="26" height="14" rx="3" fill="#fdefe3" stroke="#d1600f"/>
-<text x="534" y="936" font-size="10" fill="#17202c">Auth middleware</text>
+<path d="M 326.6 927.6 V 936.4 M 335.4 927.6 V 936.4" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 327.9 932 H 334.1" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 332.3 930.1 l 1.9 1.9 l -1.9 1.9" fill="none" stroke="#b85a30" stroke-width="0.8"/><text x="350" y="936" font-size="10" fill="#17202c">Gateway / reverse proxy</text>
+<rect x="502" y="925" width="26" height="14" rx="3" fill="#e8f1fb" stroke="#2f6fb5"/>
+<rect x="511.3" y="931.4" width="7.5" height="5.6" rx="1.3" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><path d="M 513.1 931.4 v -1.9 a 1.9 1.9 0 0 1 3.8 0 v 1.9" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><circle cx="515" cy="933.9" r="0.9" fill="#2f6fb5"/><text x="534" y="936" font-size="10" fill="#17202c">Auth middleware</text>
 <rect x="150" y="947" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
-<text x="182" y="958" font-size="10" fill="#17202c">Identity provider (IdP)</text>
+<rect x="159.3" y="950.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 161.8 950.3 H 164.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="163" cy="953.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 160.5 957.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="182" y="958" font-size="10" fill="#17202c">Identity provider (IdP)</text>
 <circle cx="347" cy="950" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
 <path d="M 342 960 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
 <text x="366" y="958" font-size="10" fill="#17202c">User / consumer</text>

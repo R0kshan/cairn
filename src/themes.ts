@@ -169,6 +169,7 @@ const KIND_ROLE_MAP: Record<string, string> = {
   datastore: "datastore",
   queue: "datastore",
   gateway: "authGateway",
+  firewall: "firewall",
   auth: "auth",
   idp: "identityProvider",
   site: "site",
@@ -226,8 +227,13 @@ const buildTheme = (spec: ThemeSpec): Theme => {
       server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
       appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
       securityNode: leafStyle(accentColors.nodeF, accentColors.node, 1.6),
+      // Accent keys predate the roles that read them: `auth`/`authF` is the
+      // gateway's orange, `authn`/`authnF` the auth middleware's blue. The two
+      // used to share the `node` orange, which is what made a gateway and an
+      // auth middleware indistinguishable in a dense infrastructure view.
       authGateway: leafStyle(accentColors.authF, accentColors.auth, 1.4),
-      auth: leafStyle(accentColors.nodeF, accentColors.node, 1.5),
+      firewall: leafStyle(accentColors.fwF, accentColors.fw, 1.6),
+      auth: leafStyle(accentColors.authnF, accentColors.authn, 1.5),
       identityProvider: leafStyle(accentColors.idpF, accentColors.idp),
     },
     levels: {
@@ -290,6 +296,10 @@ export const themes: Record<string, Theme> = {
       authF: "#f5e6dd",
       idp: "#3a8f8f",
       idpF: "#e0f0f0",
+      fw: "#c0392b",
+      fwF: "#fdecea",
+      authn: "#2f6fb5",
+      authnF: "#e8f1fb",
     },
     lv: {
       public: ["#fdeceb", "#d0463f"],
@@ -347,6 +357,10 @@ export const themes: Record<string, Theme> = {
       authF: "#332218",
       idp: "#4fafaf",
       idpF: "#1a2e2e",
+      fw: "#e5675a",
+      fwF: "#33211f",
+      authn: "#6fa8e0",
+      authnF: "#1d2735",
     },
     lv: {
       public: ["#3a2422", "#c25a54"],
@@ -404,6 +418,10 @@ export const themes: Record<string, Theme> = {
       authF: "#f0e4dd",
       idp: "#3a8f8f",
       idpF: "#e4f0f0",
+      fw: "#bd4b3c",
+      fwF: "#f9e9e6",
+      authn: "#3a6ea5",
+      authnF: "#e9f0f8",
     },
     lv: {
       public: ["#f7ece9", "#c05a4a"],
@@ -461,6 +479,10 @@ export const themes: Record<string, Theme> = {
       authF: "#f0e5dd",
       idp: "#3a7a6f",
       idpF: "#e5f0ed",
+      fw: "#b8492f",
+      fwF: "#f8e8e0",
+      authn: "#3a6b9a",
+      authnF: "#e9eff7",
     },
     lv: {
       public: ["#f7e2da", "#c0562a"],
@@ -518,6 +540,10 @@ export const themes: Record<string, Theme> = {
       authF: "#f6e3dd",
       idp: "#005a5a",
       idpF: "#daf0f0",
+      fw: "#a3140a",
+      fwF: "#fbe3df",
+      authn: "#00408f",
+      authnF: "#dfe8fb",
     },
     lv: {
       public: ["#f9dcd6", "#c0341a"],
@@ -575,6 +601,10 @@ export const themes: Record<string, Theme> = {
       authF: "#332218",
       idp: "#6fafaf",
       idpF: "#203432",
+      fw: "#bf616a",
+      fwF: "#3b2f34",
+      authn: "#81a1c1",
+      authnF: "#333c4a",
     },
     lv: {
       public: ["#3a2a2d", "#bf616a"],
@@ -632,6 +662,10 @@ export const themes: Record<string, Theme> = {
       authF: "#f5e6dd",
       idp: "#2aa198",
       idpF: "#dff0ec",
+      fw: "#dc322f",
+      fwF: "#f7e3dd",
+      authn: "#268bd2",
+      authnF: "#e3edf5",
     },
     lv: {
       public: ["#f7ddd6", "#dc322f"],

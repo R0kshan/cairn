@@ -876,12 +876,47 @@ test("gateway, auth, and idp are valid in infrastructure, unknown in other views
   }
 });
 
-test("gateway renders as a rounded rect with shield badge, overlaps 0", async () => {
+test("gateway renders as a rounded rect with the gate glyph, overlaps 0", async () => {
   const { svg, overlapsAfter } = await build(
     'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" } }\nauth OAUTH2 "OAuth2"\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\n',
   );
   assert.equal(overlapsAfter, 0);
-  assert.match(svg, /Q \d+ \d+ \d+ \d+/); // kite-shield bezier badge
+  assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
+  assert.match(svg, /l 3 3 l -3 3/); // the arrow head passing between the gate posts
+});
+
+test("firewall is valid in infrastructure only, and renders the brick-wall glyph", async () => {
+  const src =
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { firewall FW "Firewall" } }\nactor USR "User"\nUSR -> FW : (HTTPS/443)\n';
+  assert.ok(!check(src).codes.includes("E0201"));
+  for (const v of ["logical", "application", "security"])
+    assert.ok(check(`diagram ${v} "t"\nfirewall FW "Firewall"\n`).codes.includes("E0201"));
+
+  const { svg, overlapsAfter } = await build(src);
+  assert.equal(overlapsAfter, 0);
+  // three courses of brick: two horizontal joints, four staggered verticals
+  assert.match(svg, /<path d="M [\d.]+ [\d.]+ H [\d.]+ M [\d.]+ [\d.]+ H [\d.]+"/);
+});
+
+test("each glyph kind draws its own glyph, so none renders as a plain box", async () => {
+  const { svg } = await build(
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway"\nfirewall FW "Firewall"\nauth AU "Auth"\nidp ID "IdP" } }\nactor USR "User"\nUSR -> GW : (HTTPS/443)\nGW -> FW : (HTTPS/443)\nFW -> AU : (HTTPS/443)\nAU -> ID : (LDAPS/636)\n',
+  );
+  // Three circles in the drawing — padlock keyhole, badge head, actor head —
+  // and each appears again in its legend key. An idp drawn as a plain box (as
+  // it was before the glyph family) would drop two of the six.
+  assert.equal(svg.match(/<circle/g)?.length, 6);
+  assert.match(svg, /q 4 -4 8 0/); // the badge's shoulders
+});
+
+test("the legend key draws the same glyph as the node it stands for", async () => {
+  const { svg } = await build(
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { firewall FW "Firewall" } }\nactor USR "User"\nUSR -> FW : (HTTPS/443)\n',
+  );
+  const legendIndex = svg.indexOf("LEGEND");
+  assert.ok(legendIndex > 0);
+  // the brick joints appear twice: once in the node, once in its legend key
+  assert.equal(svg.match(/ H [\d.]+ M [\d.]+ [\d.]+ H /g)?.length, 2);
 });
 
 test("cairn new: refuses to overwrite an existing file, and never clobbers it", () => {
@@ -933,13 +968,13 @@ test("cairn version / --version / -v all print package.json's version under plai
   }
 });
 
-test("auth renders with a lock icon badge (path + rect), overlaps 0", async () => {
+test("auth renders with a padlock glyph (shackle arc + body rect), overlaps 0", async () => {
   const { svg, overlapsAfter } = await build(
     'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { auth OAUTH2 "OAuth2"\ngateway GW "Gateway" } }\nactor USR "User"\nUSR -> GW : "Login" (HTTPS/443)\nGW -> OAUTH2 : "Forward" (HTTP/80)\n',
   );
   assert.equal(overlapsAfter, 0);
-  // lock shackle arc + body rect
-  assert.match(svg, /v -4 a 5 5 0 0 1 10 0 v 4/);
+  // padlock shackle arc + body rect
+  assert.match(svg, /v -3 a 3 3 0 0 1 6 0 v 3/);
   assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
 });
 

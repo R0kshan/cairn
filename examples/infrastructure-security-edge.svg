@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2094 285" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="2094" height="285" fill="#ffffff"/>
+<rect x="194" y="22" width="1659" height="150.5" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
+<text x="204" y="40" font-size="13" font-weight="bold" fill="#17202c">Main data center</text>
+<rect x="208" y="54.83333333333333" width="379" height="83" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="218" y="72.83333333333333" font-size="13" font-weight="bold" fill="#17202c">Perimeter</text>
+<rect x="721" y="49" width="611" height="88.83333333333333" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="731" y="67" font-size="13" font-weight="bold" fill="#17202c">DMZ</text>
+<rect x="1466" y="53.5" width="373" height="110" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1476" y="71.5" font-size="13" font-weight="bold" fill="#17202c">Application zone</text>
+<rect x="1480" y="80.5" width="126" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1490" y="98.5" font-size="13" font-weight="bold" fill="#17202c">Payments VM</text>
+<rect x="217" y="81.83333333333333" width="108" height="47" rx="4" fill="#fdecea" stroke="#c0392b" stroke-width="1.6"/>
+<rect x="225" y="90.8" width="14" height="12" rx="1" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 225 94.8 H 239 M 225 98.8 H 239" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 232 90.8 V 94.8 M 229 94.8 V 98.8 M 235 94.8 V 98.8 M 232 98.8 V 102.8" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<text x="284" y="102.08333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Perimeter</text>
+<text x="284" y="116.58333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">firewall</text>
+<rect x="442" y="86.33333333333333" width="136" height="38" rx="4" fill="#f5e6dd" stroke="#b85a30" stroke-width="1.4"/>
+<path d="M 450 94.3 V 108.3 M 464 94.3 V 108.3" fill="none" stroke="#b85a30" stroke-width="1.3"/><path d="M 452 101.3 H 462" fill="none" stroke="#b85a30" stroke-width="1.3"/><path d="M 459 98.3 l 3 3 l -3 3" fill="none" stroke="#b85a30" stroke-width="1.3"/>
+<text x="523" y="109.33333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Reverse proxy</text>
+<rect x="730" y="81.83333333333333" width="108" height="47" rx="4" fill="#fdecea" stroke="#c0392b" stroke-width="1.6"/>
+<rect x="738" y="90.8" width="14" height="12" rx="1" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 738 94.8 H 752 M 738 98.8 H 752" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 745 90.8 V 94.8 M 742 94.8 V 98.8 M 748 94.8 V 98.8 M 745 98.8 V 102.8" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<text x="797" y="102.08333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Internal</text>
+<text x="797" y="116.58333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">firewall</text>
+<rect x="962" y="81.83333333333333" width="108" height="47" rx="4" fill="#e8f1fb" stroke="#2f6fb5" stroke-width="1.5"/>
+<rect x="971" y="95.8" width="12" height="9" rx="2" fill="none" stroke="#2f6fb5" stroke-width="1.3"/><path d="M 974 95.8 v -3 a 3 3 0 0 1 6 0 v 3" fill="none" stroke="#2f6fb5" stroke-width="1.3"/><circle cx="977" cy="99.8" r="1.5" fill="#2f6fb5"/>
+<text x="1029" y="102.08333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">OAuth2</text>
+<text x="1029" y="116.58333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">proxy</text>
+<rect x="1187" y="78.5" width="136" height="38" rx="4" fill="#e0f0f0" stroke="#3a8f8f" stroke-width="1.3"/>
+<rect x="1196" y="87.5" width="12" height="13" rx="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 1200 87.5 H 1204" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><circle cx="1202" cy="92.5" r="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 1198 98.5 q 4 -4 8 0" fill="none" stroke="#3a8f8f" stroke-width="1.3"/>
+<text x="1268" y="101.5" font-size="12.5" text-anchor="middle" fill="#17202c">Corporate IdP</text>
+<rect x="1489" y="107.5" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
+<text x="1543" y="130.5" font-size="12.5" text-anchor="middle" fill="#17202c">Payments API</text>
+<path d="M 1730 101.16666666666666 h 92 a 8 19 0 0 1 0 38 h -92 a 8 19 0 0 1 0 -38" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="1730" cy="120.16666666666666" rx="8" ry="19" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="1780" y="124.16666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Event bus</text>
+<circle cx="45" cy="88" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 34 110 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="45" y="122" font-size="11" text-anchor="middle" fill="#20364c">Customers</text>
+<rect x="1967" y="130" width="117" height="38" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="2025.5" y="153" font-size="12.5" text-anchor="middle" fill="#17202c">Card processor</text>
+<path d="M 80 105 L 217 105.33333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 325 105.33333333333333 L 442 105.33333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 578 105.33333333333333 L 730 105.33333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 838 105.33333333333333 L 962 105.33333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1070 87.83333333333333 L 1163 87.83333333333333 L 1163 110.5 L 1187 110.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1070 105.33333333333333 L 1094 105.33333333333333 L 1094 126.5 L 1489 126.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1597 120.16666666666667 L 1722 120.16666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1591 145.5 L 1591 155.5 L 1967 155.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="148.5" y="108.41666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<text x="383.5" y="108.58333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<text x="654" y="108.58333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
+<text x="900" y="108.58333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
+<text x="1116.5" y="91.08333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(LDAPS/636)</text>
+<text x="1291.5" y="129.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/8443)</text>
+<text x="1659.5" y="123.41666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP/9092)</text>
+<text x="1779" y="158.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<line x1="20" y1="193" x2="2074" y2="193" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="215" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="205" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
+<text x="182" y="216" font-size="10" fill="#17202c">Site / data center</text>
+<rect x="308" y="205" width="26" height="14" rx="3" fill="#eaf5ef" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<text x="340" y="216" font-size="10" fill="#17202c">Network zone</text>
+<rect x="435" y="205" width="26" height="14" rx="3" fill="#fdecea" stroke="#c0392b"/>
+<rect x="443.6" y="208.3" width="8.8" height="7.5" rx="0.6" fill="none" stroke="#c0392b" stroke-width="0.8"/><path d="M 443.6 210.8 H 452.4 M 443.6 213.3 H 452.4" fill="none" stroke="#c0392b" stroke-width="0.8"/><path d="M 448 208.3 V 210.8 M 446.1 210.8 V 213.3 M 449.9 210.8 V 213.3 M 448 213.3 V 215.8" fill="none" stroke="#c0392b" stroke-width="0.8"/><text x="467" y="216" font-size="10" fill="#17202c">Firewall</text>
+<rect x="541" y="205" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
+<path d="M 549.6 207.6 V 216.4 M 558.4 207.6 V 216.4" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 550.9 212 H 557.1" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 555.3 210.1 l 1.9 1.9 l -1.9 1.9" fill="none" stroke="#b85a30" stroke-width="0.8"/><text x="573" y="216" font-size="10" fill="#17202c">Gateway / reverse proxy</text>
+<rect x="725" y="205" width="26" height="14" rx="3" fill="#e8f1fb" stroke="#2f6fb5"/>
+<rect x="734.3" y="211.4" width="7.5" height="5.6" rx="1.3" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><path d="M 736.1 211.4 v -1.9 a 1.9 1.9 0 0 1 3.8 0 v 1.9" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><circle cx="738" cy="213.9" r="0.9" fill="#2f6fb5"/><text x="757" y="216" font-size="10" fill="#17202c">Auth middleware</text>
+<rect x="867" y="205" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
+<rect x="876.3" y="208.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 878.8 208.3 H 881.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="880" cy="211.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 877.5 215.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="899" y="216" font-size="10" fill="#17202c">Identity provider (IdP)</text>
+<rect x="1051" y="205" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="1083" y="216" font-size="10" fill="#17202c">Server / VM</text>
+<rect x="1173" y="205" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="1205" y="216" font-size="10" fill="#17202c">Deployed application</text>
+<rect x="1341" y="205" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="1373" y="216" font-size="10" fill="#17202c">Message queue / broker</text>
+<circle cx="1533" cy="208" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<path d="M 1528 218 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<text x="1552" y="216" font-size="10" fill="#17202c">User / consumer</text>
+<rect x="1662" y="205" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="1694" y="216" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="235" x2="176" y2="235" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="239" font-size="10" fill="#17202c">Technical flow (protocol, port)</text>
+<text x="150" y="263" font-size="10" fill="#17202c" font-style="italic">Every north-south flow crosses a firewall before it reaches an application.</text>
+</svg>

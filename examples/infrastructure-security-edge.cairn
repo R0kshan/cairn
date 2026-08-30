@@ -1,0 +1,39 @@
+diagram infrastructure "Payments platform — security edge"
+
+# The four kinds this view draws with a glyph, side by side at a zone edge:
+# firewall (barrier), gateway (routing), auth (check), idp (issuer).
+
+site DC "Main data center" {
+  network-zone EDGE "Perimeter" {
+    firewall FW_EXT "Perimeter\nfirewall"
+    gateway RP "Reverse proxy"
+  }
+  network-zone DMZ "DMZ" {
+    firewall FW_INT "Internal\nfirewall"
+    auth OAUTH2 "OAuth2\nproxy"
+    idp IDP "Corporate IdP"
+  }
+  network-zone LAN "Application zone" {
+    server VM_PAY "Payments VM" {
+      app-instance PAY_I "Payments API"
+    }
+    queue BUS "Event bus"
+  }
+}
+
+actor USERS "Customers"
+external PSP "Card processor"
+
+# ---- technical flows (protocol REQUIRED) ----
+USERS -> FW_EXT : (HTTPS/443)
+FW_EXT -> RP : (HTTPS/443)
+RP -> FW_INT : (HTTPS/8443)
+FW_INT -> OAUTH2 : (HTTPS/8443)
+OAUTH2 -> IDP : (LDAPS/636)
+OAUTH2 -> PAY_I : (HTTPS/8443)
+PAY_I -> BUS : (TCP/9092)
+PAY_I -> PSP : (HTTPS/443)
+
+legend {
+  note "Every north-south flow crosses a firewall before it reaches an application."
+}

@@ -12,6 +12,14 @@ const FONT_SIZE_BASE = 12.5;
 /** Character width ratio for font size calculation (deterministic across platforms). */
 export const CHAR_WIDTH = 0.56;
 
+/**
+ * Horizontal room a corner glyph needs inside a node: the glyph box, its inset
+ * from the node edge, and the gap before the label. Kinds the renderer draws
+ * with a glyph (`View.glyphKinds`) reserve it in their measured width, so a
+ * long label is centred in what is left instead of running under the glyph.
+ */
+export const GLYPH_GUTTER = 26;
+
 /** Computes scaled font sizes for different element types (nodes, edges, containers, etc.). */
 export const fontSizes = (base: number) => {
   const scale = base / FONT_SIZE_BASE;
