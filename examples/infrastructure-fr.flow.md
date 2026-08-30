@@ -11,7 +11,7 @@
 | 7 | Facturation (Zone applicative) | PostgreSQL (Zone de données) | TCP | 5432 |  |
 | 8 | CRM (Zone applicative) | PostgreSQL (Zone de données) | TCP | 5432 |  |
 | 9 | Facturation (Zone applicative) | Broker de messages (Zone applicative) | TCP | 9092 |  |
-| 10 | Broker de messages (Zone applicative) | CRM (Zone applicative) | TCP | 9092 |  |
+| 10 | CRM (Zone applicative) | Broker de messages (Zone applicative) | TCP | 9092 |  |
 | 11 | Facturation (Zone applicative) | Passerelle de transfert (DMZ) | SFTP | 22 |  |
 | 12 | Passerelle de transfert (DMZ) | Plateforme EDI partenaire | AS4 | 443 |  |
 | 13 | Serveur de base de données (Zone de données) | Serveur de sauvegarde (Zone de données) | TCP | 5432 |  |

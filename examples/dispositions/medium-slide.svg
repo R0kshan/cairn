@@ -9,11 +9,11 @@
 <rect x="324" y="50" width="1486" height="349.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="334" y="68" font-size="13" font-weight="bold" fill="#17202c">Claims information system</text>
 <rect x="338" y="88" width="169" height="217" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="348" y="106" font-size="13" font-weight="bold" fill="#17202c">Reporting layer</text>
+<text x="348" y="106" font-size="13" font-weight="bold" fill="#17202c">Claim reporting</text>
 <rect x="657" y="167.5" width="634" height="212" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="667" y="185.5" font-size="13" font-weight="bold" fill="#17202c">Investigation layer</text>
+<text x="667" y="185.5" font-size="13" font-weight="bold" fill="#17202c">Claim investigation</text>
 <rect x="1438" y="206.83333333333331" width="358" height="125.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1448" y="224.83333333333331" font-size="13" font-weight="bold" fill="#17202c">Settlement layer</text>
+<text x="1448" y="224.83333333333331" font-size="13" font-weight="bold" fill="#17202c">Claim settlement</text>
 <rect x="1953" y="88" width="135" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1963" y="106" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="111.33333333333333" cy="117" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>

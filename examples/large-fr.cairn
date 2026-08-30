@@ -19,12 +19,12 @@ actor-group INTERNAL "Équipes internes" {
 }
 
 system FRONT "Front commerce" {
-  layer PRESENTATION "Couche de présentation" {
+  layer PRESENTATION "Canaux de vente" {
     block SITE "Site\ne-commerce"
     block APP "Application\nmobile"
     block KIOSK "Bornes\nmagasin"
   }
-  layer JOURNEY "Couche parcours client" {
+  layer JOURNEY "Parcours client" {
     block CATALOG_FRONT "Navigation\ncatalogue"
     block CART "Panier et\ntunnel d'achat"
     block ACCOUNT "Compte\nclient"
@@ -33,18 +33,18 @@ system FRONT "Front commerce" {
 }
 
 system CORE "Cœur commerce" {
-  layer SALES "Couche vente" {
+  layer SALES "Vente" {
     block ORDER "Gestion des\ncommandes"
     block PAYMENT "Orchestration des\npaiements"
     block PROMO "Moteur de\npromotions"
     block LOYALTY "Programme de\nfidélité"
   }
-  layer OFFER "Couche offre" {
+  layer OFFER "Offre" {
     block PIM "Référentiel\nproduits"
     block PRICING "Tarification"
     block STOCK "Vue stock\nunifiée"
   }
-  layer EXECUTION "Couche exécution" {
+  layer EXECUTION "Exécution" {
     block OMS "Orchestration des\nexpéditions"
     block WMS_LINK "Pilotage\nentrepôt"
     block AFTERSALES "Service\naprès-vente"
@@ -52,11 +52,11 @@ system CORE "Cœur commerce" {
 }
 
 system DATA "Plateforme data" {
-  layer COLLECTION "Couche collecte" {
+  layer COLLECTION "Collecte" {
     block TRACKING "Collecte d'événements\nde navigation"
     block CDC "Capture des changements\nde référentiel"
   }
-  layer ANALYTICS "Couche analytique" {
+  layer ANALYTICS "Analytique" {
     block DWH "Entrepôt de\ndonnées"
     block SEGMENTS "Segmentation\nclient"
   }

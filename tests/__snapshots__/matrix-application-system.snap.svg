@@ -36,8 +36,8 @@
 <text x="615" y="185" font-size="11" text-anchor="start" fill="#444"></text>
 <rect x="0" y="194" width="656" height="26" fill="#ddd" opacity="0.2"/>
 <text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
-<text x="55" y="211" font-size="11" text-anchor="start" fill="#444">Order event bus (Order platform)</text>
-<text x="297" y="211" font-size="11" text-anchor="start" fill="#444">Invoicing (Billing)</text>
+<text x="55" y="211" font-size="11" text-anchor="start" fill="#444">Invoicing (Billing)</text>
+<text x="297" y="211" font-size="11" text-anchor="start" fill="#444">Order event bus (Order platform)</text>
 <text x="539" y="211" font-size="11" text-anchor="start" fill="#444">MQ</text>
 <text x="615" y="211" font-size="11" text-anchor="start" fill="#444"></text>
 <text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>

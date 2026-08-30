@@ -1,307 +1,307 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3947 1700" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3995 1614" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="3947" height="1700" fill="#ffffff"/>
-<rect x="234" y="22" width="113" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="244" y="40" font-size="13" font-weight="bold" fill="#17202c">Clients</text>
-<rect x="10" y="562" width="150" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="20" y="580" font-size="13" font-weight="bold" fill="#17202c">Équipes internes</text>
-<rect x="1736" y="311" width="918" height="398.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="1746" y="329" font-size="13" font-weight="bold" fill="#17202c">Front commerce</text>
-<rect x="1770" y="408.7" width="156" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1780" y="426.7" font-size="13" font-weight="bold" fill="#17202c">Couche de présentation</text>
-<rect x="2194" y="465" width="426" height="235.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="2204" y="483" font-size="13" font-weight="bold" fill="#17202c">Couche parcours client</text>
-<rect x="397" y="371" width="1119" height="814" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="407" y="389" font-size="13" font-weight="bold" fill="#17202c">Cœur commerce</text>
-<rect x="1075" y="726" width="407" height="284" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1085" y="744" font-size="13" font-weight="bold" fill="#17202c">Couche vente</text>
-<rect x="596" y="429" width="147" height="218" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="606" y="447" font-size="13" font-weight="bold" fill="#17202c">Couche offre</text>
-<rect x="441" y="879.5" width="457" height="197.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="451" y="897.5" font-size="13" font-weight="bold" fill="#17202c">Couche exécution</text>
-<rect x="2786" y="376" width="756" height="186" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="2796" y="394" font-size="13" font-weight="bold" fill="#17202c">Plateforme data</text>
-<rect x="2800" y="403" width="198" height="150" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="2810" y="421" font-size="13" font-weight="bold" fill="#17202c">Couche collecte</text>
-<rect x="3170" y="410.8" width="358" height="96.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="3180" y="428.8" font-size="13" font-weight="bold" fill="#17202c">Couche analytique</text>
-<rect x="3695" y="349" width="176" height="361" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="3705" y="367" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
-<circle cx="300" cy="218" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 289 240 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="300" y="252" font-size="11" text-anchor="middle" fill="#20364c">Client web</text>
-<circle cx="290.5" cy="144" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 279.5 166 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="290.5" y="178" font-size="11" text-anchor="middle" fill="#20364c">Client mobile</text>
-<circle cx="303" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 292 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="303" y="93" font-size="11" text-anchor="middle" fill="#20364c">Client en</text>
-<text x="303" y="104" font-size="11" text-anchor="middle" fill="#20364c">magasin</text>
-<circle cx="85" cy="843" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 74 865 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="85" y="877" font-size="11" text-anchor="middle" fill="#20364c">Conseiller relation</text>
-<text x="85" y="888" font-size="11" text-anchor="middle" fill="#20364c">client</text>
-<circle cx="103.5" cy="599" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 92.5 621 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="103.5" y="633" font-size="11" text-anchor="middle" fill="#20364c">Responsable</text>
-<text x="103.5" y="644" font-size="11" text-anchor="middle" fill="#20364c">merchandising</text>
-<circle cx="116" cy="758" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 105 780 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="116" y="792" font-size="11" text-anchor="middle" fill="#20364c">Opérateur</text>
-<text x="116" y="803" font-size="11" text-anchor="middle" fill="#20364c">entrepôt</text>
-<circle cx="116" cy="684" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 105 706 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="116" y="718" font-size="11" text-anchor="middle" fill="#20364c">Comptable</text>
-<circle cx="100.5" cy="928" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 89.5 950 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="100.5" y="962" font-size="11" text-anchor="middle" fill="#20364c">Administrateur</text>
-<text x="100.5" y="973" font-size="11" text-anchor="middle" fill="#20364c">plateforme</text>
-<rect x="1809" y="502.7" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1863" y="522.9" font-size="12.5" text-anchor="middle" fill="#17202c">Site</text>
-<text x="1863" y="537.4" font-size="12.5" text-anchor="middle" fill="#17202c">e-commerce</text>
-<rect x="1809" y="569.7" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1863" y="589.9" font-size="12.5" text-anchor="middle" fill="#17202c">Application</text>
-<text x="1863" y="604.4" font-size="12.5" text-anchor="middle" fill="#17202c">mobile</text>
-<rect x="1809" y="435.7" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1863" y="455.9" font-size="12.5" text-anchor="middle" fill="#17202c">Bornes</text>
-<text x="1863" y="470.4" font-size="12.5" text-anchor="middle" fill="#17202c">magasin</text>
-<rect x="2254.1" y="577.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2308.1" y="597.8" font-size="12.5" text-anchor="middle" fill="#17202c">Navigation</text>
-<text x="2308.1" y="612.3" font-size="12.5" text-anchor="middle" fill="#17202c">catalogue</text>
-<rect x="2253" y="506.3" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2311.5" y="526.6" font-size="12.5" text-anchor="middle" fill="#17202c">Panier et</text>
-<text x="2311.5" y="541.1" font-size="12.5" text-anchor="middle" fill="#17202c">tunnel d'achat</text>
-<rect x="2256" y="644.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2310" y="664.8" font-size="12.5" text-anchor="middle" fill="#17202c">Compte</text>
-<text x="2310" y="679.3" font-size="12.5" text-anchor="middle" fill="#17202c">client</text>
-<rect x="2487" y="533" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2549" y="553.3" font-size="12.5" text-anchor="middle" fill="#17202c">Recommandations</text>
-<text x="2549" y="567.8" font-size="12.5" text-anchor="middle" fill="#17202c">personnalisées</text>
-<rect x="1105" y="820" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1159" y="840.3" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des</text>
-<text x="1159" y="854.8" font-size="12.5" text-anchor="middle" fill="#17202c">commandes</text>
-<rect x="1335" y="753" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1404" y="773.3" font-size="12.5" text-anchor="middle" fill="#17202c">Orchestration des</text>
-<text x="1404" y="787.8" font-size="12.5" text-anchor="middle" fill="#17202c">paiements</text>
-<rect x="1105" y="954" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1159" y="974.3" font-size="12.5" text-anchor="middle" fill="#17202c">Moteur de</text>
-<text x="1159" y="988.8" font-size="12.5" text-anchor="middle" fill="#17202c">promotions</text>
-<rect x="1105" y="887" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1159" y="907.3" font-size="12.5" text-anchor="middle" fill="#17202c">Programme de</text>
-<text x="1159" y="921.8" font-size="12.5" text-anchor="middle" fill="#17202c">fidélité</text>
-<rect x="605.5" y="591" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="659.5" y="611.3" font-size="12.5" text-anchor="middle" fill="#17202c">Référentiel</text>
-<text x="659.5" y="625.8" font-size="12.5" text-anchor="middle" fill="#17202c">produits</text>
-<rect x="605" y="466" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="659" y="489" font-size="12.5" text-anchor="middle" fill="#17202c">Tarification</text>
-<rect x="605.5" y="524" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="659.5" y="544.3" font-size="12.5" text-anchor="middle" fill="#17202c">Vue stock</text>
-<text x="659.5" y="558.8" font-size="12.5" text-anchor="middle" fill="#17202c">unifiée</text>
-<rect x="450" y="993.5" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="519" y="1013.8" font-size="12.5" text-anchor="middle" fill="#17202c">Orchestration des</text>
-<text x="519" y="1028.3" font-size="12.5" text-anchor="middle" fill="#17202c">expéditions</text>
-<rect x="781" y="952" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="835" y="972.3" font-size="12.5" text-anchor="middle" fill="#17202c">Pilotage</text>
-<text x="835" y="986.8" font-size="12.5" text-anchor="middle" fill="#17202c">entrepôt</text>
-<rect x="465.5" y="917.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="519.5" y="937.8" font-size="12.5" text-anchor="middle" fill="#17202c">Service</text>
-<text x="519.5" y="952.3" font-size="12.5" text-anchor="middle" fill="#17202c">après-vente</text>
-<rect x="2816.5" y="430" width="165" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2899" y="450.3" font-size="12.5" text-anchor="middle" fill="#17202c">Collecte d'événements</text>
-<text x="2899" y="464.8" font-size="12.5" text-anchor="middle" fill="#17202c">de navigation</text>
-<rect x="2809" y="497" width="180" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2899" y="517.3" font-size="12.5" text-anchor="middle" fill="#17202c">Capture des changements</text>
-<text x="2899" y="531.8" font-size="12.5" text-anchor="middle" fill="#17202c">de référentiel</text>
-<rect x="3179" y="437.8" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="3233" y="458.1" font-size="12.5" text-anchor="middle" fill="#17202c">Entrepôt de</text>
-<text x="3233" y="472.6" font-size="12.5" text-anchor="middle" fill="#17202c">données</text>
-<rect x="3411" y="437.8" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="3465" y="458.1" font-size="12.5" text-anchor="middle" fill="#17202c">Segmentation</text>
-<text x="3465" y="472.6" font-size="12.5" text-anchor="middle" fill="#17202c">client</text>
-<rect x="3734.5" y="443" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="3793" y="463.3" font-size="12.5" text-anchor="middle" fill="#17202c">Prestataire de</text>
-<text x="3793" y="477.8" font-size="12.5" text-anchor="middle" fill="#17202c">paiement (PSP)</text>
-<rect x="3738" y="644" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="3793" y="664.3" font-size="12.5" text-anchor="middle" fill="#17202c">Plateformes</text>
-<text x="3793" y="678.8" font-size="12.5" text-anchor="middle" fill="#17202c">transporteurs</text>
-<rect x="3753" y="510" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="3807" y="530.3" font-size="12.5" text-anchor="middle" fill="#17202c">ERP</text>
-<text x="3807" y="544.8" font-size="12.5" text-anchor="middle" fill="#17202c">groupe</text>
-<rect x="3739" y="376" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="3793" y="396.3" font-size="12.5" text-anchor="middle" fill="#17202c">CRM</text>
-<text x="3793" y="410.8" font-size="12.5" text-anchor="middle" fill="#17202c">groupe</text>
-<rect x="3724" y="577" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="3793" y="597.3" font-size="12.5" text-anchor="middle" fill="#17202c">Plateforme d'avis</text>
-<text x="3793" y="611.8" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
-<path d="M 338 235 L 362 235 L 362 207 L 1681 207 L 1681 531.7 L 1809 531.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 338 179 L 1696 179 A 5 5 0 0 1 1706 179 L 1963 179 L 1963 575.7 L 1917 575.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 338 81.5 L 1701 81.5 L 1701 459 L 1809 459.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 538.4 L 1958 538.4 A 5 5 0 0 1 1968 538.4 L 1977 538.4 L 1977 507 L 2139 507 L 2139 532 L 2213 532 L 2213 580.5 L 2254.1 580.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 590.8 L 2080 590.8 A 5 5 0 0 1 2090 590.8 L 2254.1 590.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 441.7 L 1936 441.7 A 5 5 0 0 1 1946 441.7 L 1958 441.7 A 5 5 0 0 1 1968 441.7 L 2387 441.7 L 2387 583.5 L 2385 583.5 A 5 5 0 0 0 2375 583.5 L 2362.1 583.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 526.4 L 1967 526.4 L 1967 474.5 L 2149 474.5 L 2149 522 L 2253 522" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 610.7 L 2085 610.7 L 2085 547.3 L 2208 547.3 A 5 5 0 0 1 2218 547.3 L 2253 547.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2370 529.8 L 2380 529.8 L 2380 1215 L 2331 1215 A 5 5 0 0 0 2321 1215 L 1409 1215 A 5 5 0 0 0 1399 1215 L 1252 1215 A 5 5 0 0 0 1242 1215 L 1159 1215 L 1159 1001" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2362.1 601 L 2375 601 A 5 5 0 0 1 2385 601 L 2387 601 A 5 5 0 0 1 2397 601 L 2463 601 L 2463 574 L 2487 574" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2529 580 L 2529 947.5 L 2397 947.5 A 5 5 0 0 0 2387 947.5 L 2385 947.5 A 5 5 0 0 0 2375 947.5 L 2331 947.5 A 5 5 0 0 0 2321 947.5 L 1751 947.5 L 1751 543.7 L 1809 543.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2256 685.5 L 2244 685.5 L 2244 910.5 L 1756 910.5 A 5 5 0 0 0 1746 910.5 L 1546 910.5 A 5 5 0 0 0 1536 910.5 L 1502 910.5 A 5 5 0 0 0 1492 910.5 L 1409 910.5 A 5 5 0 0 0 1399 910.5 L 1252 910.5 A 5 5 0 0 0 1242 910.5 L 1213 910.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2370 541.8 L 2375 541.8 A 5 5 0 0 1 2385 541.8 L 2392 541.8 L 2392 1258 L 2331 1258 A 5 5 0 0 0 2321 1258 L 1409 1258 A 5 5 0 0 0 1399 1258 L 1247 1258 L 1247 855.5 L 1239 855.5 A 5 5 0 0 0 1229 855.5 L 1213 855.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1214 831.5 L 1325 831.5 L 1325 788.5 L 1335 788.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1473 776.5 L 1746 776.5 A 5 5 0 0 1 1756 776.5 L 2239 776.5 A 5 5 0 0 1 2249 776.5 L 2321 776.5 A 5 5 0 0 1 2331 776.5 L 2375 776.5 A 5 5 0 0 1 2385 776.5 L 2387 776.5 A 5 5 0 0 1 2397 776.5 L 2524 776.5 A 5 5 0 0 1 2534 776.5 L 3660 776.5 L 3660 467 L 3734.5 467" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3851.5 466.5 L 3901.5 466.5 L 3901.5 1339 L 2331 1339 A 5 5 0 0 0 2321 1339 L 1404 1339 L 1404 800" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1104 835.5 L 1094 835.5 L 1094 810 L 1320 810 A 5 5 0 0 1 1330 810 L 1399 810 A 5 5 0 0 1 1409 810 L 1497 810 L 1497 1087 L 1409 1087 A 5 5 0 0 0 1399 1087 L 1252 1087 A 5 5 0 0 0 1242 1087 L 1164 1087 A 5 5 0 0 0 1154 1087 L 599 1087 L 599 1037.5 L 589 1037.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 589 1027.3 L 609 1027.3 L 609 1031 L 771 1031 L 771 983.3 L 781 983.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 151 780.5 L 411 780.5 A 5 5 0 0 1 421 780.5 L 771 780.5 L 771 967.7 L 781 967.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 589 1017 L 766 1017 A 5 5 0 0 1 776 1017 L 1154 1017 A 5 5 0 0 1 1164 1017 L 1242 1017 A 5 5 0 0 1 1252 1017 L 1399 1017 A 5 5 0 0 1 1409 1017 L 1492 1017 A 5 5 0 0 1 1502 1017 L 1541 1017 L 1541 888 L 1746 888 A 5 5 0 0 1 1756 888 L 2239 888 A 5 5 0 0 1 2249 888 L 2321 888 A 5 5 0 0 1 2331 888 L 2375 888 A 5 5 0 0 1 2385 888 L 2387 888 A 5 5 0 0 1 2397 888 L 2524 888 A 5 5 0 0 1 2534 888 L 3680 888 L 3680 660 L 3737 660" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3737 675.5 L 3714 675.5 L 3714 1308 L 2331 1308 A 5 5 0 0 0 2321 1308 L 1409 1308 A 5 5 0 0 0 1399 1308 L 352 1308 L 352 984 L 599 984 L 599 996.5 L 589 996.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 589 1006.8 L 766 1006.8 A 5 5 0 0 1 776 1006.8 L 923 1006.8 L 923 715 L 1035 715 A 5 5 0 0 1 1045 715 L 1045 715 A 5 5 0 0 1 1055 715 L 1531 715 L 1531 730 L 1667 730 L 1667 681 L 1706 681 A 5 5 0 0 1 1716 681 L 1746 681 A 5 5 0 0 1 1756 681 L 2169 681 L 2169 660.2 L 2256 660.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 151 865.5 L 372 865.5 L 372 941 L 411 941 A 5 5 0 0 1 421 941 L 465.5 941" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 573.5 941 L 766 941 A 5 5 0 0 1 776 941 L 913 941 L 913 668 L 1040 668 L 1040 851.5 L 1104 851.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 151 621.5 L 378.3 621.5 L 378.3 597 L 605.5 597" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 713.5 606.7 L 1551 607 L 1551 653 L 1651 653 L 1651 670 L 1706 670 A 5 5 0 0 1 1716 670 L 1746 670 A 5 5 0 0 1 1756 670 L 2159 670 L 2159 631 L 2233 631 L 2233 621.5 L 2254.1 621.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 714 491.5 L 718.5 491.5 A 5 5 0 0 1 728.5 491.5 L 1671 491.5 L 1671 648 L 1706 648 A 5 5 0 0 1 1716 648 L 1746 648 A 5 5 0 0 1 1756 648 L 2139 648 L 2139 611 L 2213 611 L 2213 601 L 2254.1 601" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3855 510 L 3855 301 L 1968 301 A 5 5 0 0 0 1958 301 L 1706 301 A 5 5 0 0 0 1696 301 L 1686 301 A 5 5 0 0 0 1676 301 L 723.5 301 L 723.5 547.5 L 713.5 547.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 713.5 559.5 L 1661 559.5 L 1661 659 L 1706 659 A 5 5 0 0 1 1716 659 L 1746 659 A 5 5 0 0 1 1756 659 L 2149 659 L 2149 621 L 2223 621 L 2223 611.3 L 2254.1 611.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3861 533.5 L 3896.5 533.5 A 5 5 0 0 1 3906.5 533.5 L 3919 533.5 L 3919 1386 L 2331 1386 A 5 5 0 0 0 2321 1386 L 4 1386 L 4 485 L 605 485" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1917 508.7 L 1941 508.7 L 1941 436 L 1958 436 A 5 5 0 0 1 1968 436 L 2562 436 A 5 5 0 0 1 2572 436 L 2816.5 436" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 713.5 622.3 L 1546 622.3 A 5 5 0 0 1 1556 622.3 L 1656 622.3 A 5 5 0 0 1 1666 622.3 L 1666 622.3 A 5 5 0 0 1 1676 622.3 L 1711 622 L 1711 730 L 1746 730 A 5 5 0 0 1 1756 730 L 2239 730 A 5 5 0 0 1 2249 730 L 2321 730 A 5 5 0 0 1 2331 730 L 2375 730 A 5 5 0 0 1 2385 730 L 2387 730 A 5 5 0 0 1 2397 730 L 2524 730 A 5 5 0 0 1 2534 730 L 2771 730 L 2771 521 L 2809 521" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2981.5 453.5 L 3179 453.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2989 520.5 L 3013 520.5 L 3013 469.2 L 3179 469.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3287 461.3 L 3411 461.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3447 437.8 L 3447 366 L 2567 366 L 2567 533" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3519 469.2 L 3567 469 L 3567 400 L 3739 399.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3847 399.5 L 3850 399.5 A 5 5 0 0 1 3860 399.5 L 3937 399.5 L 3937 1433 L 2326 1433 L 2326 691.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 151 701 L 175 701 L 175 657 L 411 657 A 5 5 0 0 1 421 657 L 1050 657 L 1050 776.5 L 1335 776.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 151 950.5 L 416 950.5 L 416 622.3 L 605.5 622.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1214 843.5 L 1234 843.5 L 1234 897.5 L 1242 897.5 A 5 5 0 0 1 1252 897.5 L 1399 897.5 A 5 5 0 0 1 1409 897.5 L 1492 897.5 A 5 5 0 0 1 1502 897.5 L 1531 897.5 L 1531 842 L 1746 842 A 5 5 0 0 1 1756 842 L 2239 842 A 5 5 0 0 1 2249 842 L 2321 842 A 5 5 0 0 1 2331 842 L 2375 842 A 5 5 0 0 1 2385 842 L 2387 842 A 5 5 0 0 1 2397 842 L 2524 842 A 5 5 0 0 1 2534 842 L 3670 842 L 3670 601 L 3724 601" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 3724 583 L 3665 583 A 5 5 0 0 0 3655 583 L 3043.1 583 L 3043.1 618.5 L 2776 618.5 A 5 5 0 0 0 2766 618.5 L 2534 618.5 A 5 5 0 0 0 2524 618.5 L 2397 618.5 A 5 5 0 0 0 2387 618.5 L 2385 618.5 A 5 5 0 0 0 2375 618.5 L 2362.1 618.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="1021.5" y="203" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Naviguer, rechercher,</text>
-<text x="1021.5" y="217.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">commander</text>
-<text x="1150.5" y="175" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Parcours d'achat</text>
-<text x="1150.5" y="189.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">mobile</text>
-<text x="1019.5" y="77.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Vérifier le stock et</text>
-<text x="1019.5" y="92" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">commander en magasin</text>
-<text x="2058" y="503" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Afficher les fiches</text>
-<text x="2058" y="517.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
-<text x="2085.6" y="586.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Afficher le catalogue</text>
-<text x="2085.6" y="601.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">mobile</text>
-<text x="2152" y="437.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Parcourir l'offre</text>
-<text x="2152" y="452.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">magasin</text>
-<text x="2058" y="477.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Constituer le panier</text>
-<text x="1962" y="606.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Panier mobile</text>
-<text x="1962" y="621.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">synchronisé</text>
-<text x="1769.5" y="1211" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appliquer les offres</text>
-<text x="1769.5" y="1225.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">en cours</text>
-<text x="2412.6" y="597" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Contexte de</text>
-<text x="2412.6" y="611.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">navigation</text>
-<text x="2140" y="943.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Suggestions</text>
-<text x="2140" y="958" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
-<text x="1955.8" y="906.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Solde et avantages</text>
-<text x="1955.8" y="921" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de fidélité</text>
-<text x="1819.5" y="1254" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Validation de</text>
-<text x="1819.5" y="1268.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">la commande</text>
-<rect x="1790" y="1276.5" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1819.5" y="1287.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
-<text x="1289.5" y="827.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande de</text>
-<text x="1289.5" y="842" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">paiement</text>
-<rect x="1260" y="850" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1289.5" y="861" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
-<text x="2058.5" y="772.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Autorisation et capture</text>
-<text x="2058.5" y="787" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">du paiement</text>
-<rect x="2029" y="795" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="2058.5" y="806" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
-<text x="2652.8" y="1335" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Statut de la</text>
-<text x="2652.8" y="1349.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">transaction</text>
-<text x="1048" y="1083" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Commande à</text>
-<text x="1048" y="1097.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">exécuter</text>
-<rect x="1018.5" y="1105.5" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1048" y="1116.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
-<text x="690" y="1027" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Vagues de préparation</text>
-<text x="690" y="1041.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">entrepôt</text>
-<text x="339.8" y="776.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Préparer et expédier</text>
-<text x="339.8" y="791" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">les colis</text>
-<text x="2610.5" y="884" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demandes d'enlèvement</text>
-<text x="2610.5" y="898.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et étiquettes</text>
-<rect x="2589" y="906.5" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="2610.5" y="917.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Colis</text>
-<text x="3714" y="987.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Événements de suivi</text>
-<text x="3714" y="1002.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des colis</text>
-<text x="1599" y="726" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Suivi de commande</text>
-<text x="1599" y="740.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">client</text>
-<text x="261.5" y="861.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Traiter les</text>
-<text x="261.5" y="876" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">réclamations</text>
-<text x="682.6" y="937" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Retours et</text>
-<text x="682.6" y="951.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">remboursements</text>
-<text x="264.6" y="617.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Enrichir les fiches</text>
-<text x="264.6" y="632" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
-<text x="1601" y="649" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Publier le</text>
-<text x="1601" y="663.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">catalogue</text>
-<rect x="1574" y="671.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1601" y="682.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
-<text x="1192.5" y="487.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Prix de vente</text>
-<text x="1192.5" y="502" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">en cours</text>
-<text x="2289.3" y="297" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Mouvements de stock</text>
-<text x="2289.3" y="311.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">comptables</text>
-<text x="1187.3" y="555.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Disponibilité</text>
-<text x="1187.3" y="570" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
-<rect x="1160.3" y="578" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1187.3" y="589" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
-<text x="1961.5" y="1382" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Coûts d'achat de</text>
-<text x="1961.5" y="1396.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">référence</text>
-<text x="2476.9" y="432" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Événements de</text>
-<text x="2476.9" y="446.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">navigation</text>
-<text x="2000.3" y="726" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Changements de</text>
-<text x="2000.3" y="740.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">référentiel</text>
-<text x="3080.3" y="421.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alimenter le socle</text>
-<text x="3080.3" y="436" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de données</text>
-<text x="3096" y="465.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Synchronisation du</text>
-<text x="3096" y="479.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">référentiel</text>
-<text x="3349" y="457.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Calculer les</text>
-<text x="3349" y="471.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">segments</text>
-<text x="3007" y="362" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Segments d'audience</text>
-<text x="3007" y="376.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">pour personnalisation</text>
-<text x="3653" y="395.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Audiences pour</text>
-<text x="3653" y="410.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">campagnes</text>
-<text x="3131.5" y="1429" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Sollicitations</text>
-<text x="3131.5" y="1443.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
-<text x="612.5" y="653" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Rapprocher les</text>
-<text x="612.5" y="667.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">encaissements</text>
-<text x="283.5" y="946.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Administrer référentiels</text>
-<text x="283.5" y="961" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et habilitations</text>
-<text x="2600.5" y="838" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demander un avis</text>
-<text x="2600.5" y="852.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">après livraison</text>
-<text x="3043.1" y="596.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notes et avis</text>
-<text x="3043.1" y="611.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
-<line x1="20" y1="1482" x2="3927" y2="1482" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1504" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
-<rect x="150" y="1494" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="179.5" y="1505" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
-<text x="219" y="1505" font-size="10" fill="#79828f">— panier validé par un client, suivi jusqu'à la livraison</text>
-<rect x="150" y="1518" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="179.5" y="1529" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
-<text x="219" y="1529" font-size="10" fill="#79828f">— transaction financière liée à une commande</text>
-<rect x="150" y="1542" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="177" y="1553" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
-<text x="214" y="1553" font-size="10" fill="#79828f">— article du catalogue avec prix et disponibilité</text>
-<rect x="150" y="1566" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="171.5" y="1577" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Colis</text>
-<text x="203" y="1577" font-size="10" fill="#79828f">— unité d'expédition remise au transporteur</text>
-<rect x="150" y="1590" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="190" y="1601" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
-<text x="240" y="1601" font-size="10" fill="#79828f">porté par le flux</text>
-<line x1="20" y1="1628" x2="3927" y2="1628" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1650" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="1640" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="1651" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="1640" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="330" y="1651" font-size="10" fill="#17202c">Système</text>
-<rect x="399" y="1640" width="26" height="14" rx="3" fill="#f6f4fb" stroke="#cf9f2f"/>
-<text x="431" y="1651" font-size="10" fill="#17202c">Couche</text>
-<rect x="495" y="1640" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="527" y="1651" font-size="10" fill="#17202c">Bloc fonctionnel</text>
-<rect x="643" y="1640" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="675" y="1651" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="1670" x2="176" y2="1670" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="1674" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
+<rect width="3995" height="1614" fill="#ffffff"/>
+<rect x="224" y="801" width="113" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="234" y="819" font-size="13" font-weight="bold" fill="#17202c">Clients</text>
+<rect x="10" y="355" width="150" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="373" font-size="13" font-weight="bold" fill="#17202c">Équipes internes</text>
+<rect x="1766" y="561" width="913" height="468.7" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="1776" y="579" font-size="13" font-weight="bold" fill="#17202c">Front commerce</text>
+<rect x="1800" y="679" width="166" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1810" y="697" font-size="13" font-weight="bold" fill="#17202c">Canaux de vente</text>
+<rect x="2228" y="762.7" width="417" height="247" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="2238" y="780.7" font-size="13" font-weight="bold" fill="#17202c">Parcours client</text>
+<rect x="397" y="218" width="1119" height="664.2" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="407" y="236" font-size="13" font-weight="bold" fill="#17202c">Cœur commerce</text>
+<rect x="1055" y="245" width="427" height="316" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1065" y="263" font-size="13" font-weight="bold" fill="#17202c">Vente</text>
+<rect x="581" y="655.2" width="157" height="218" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="591" y="673.2" font-size="13" font-weight="bold" fill="#17202c">Offre</text>
+<rect x="431" y="438" width="457" height="197.2" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="441" y="456" font-size="13" font-weight="bold" fill="#17202c">Exécution</text>
+<rect x="2845" y="263" width="756" height="186" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="2855" y="281" font-size="13" font-weight="bold" fill="#17202c">Plateforme data</text>
+<rect x="2859" y="290" width="198" height="150" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="2869" y="308" font-size="13" font-weight="bold" fill="#17202c">Collecte</text>
+<rect x="3229" y="297.8" width="358" height="96.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="3239" y="315.8" font-size="13" font-weight="bold" fill="#17202c">Analytique</text>
+<rect x="3744" y="22" width="196" height="351" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="3754" y="40" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
+<circle cx="290" cy="923" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 279 945 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="290" y="957" font-size="11" text-anchor="middle" fill="#20364c">Client web</text>
+<circle cx="280.5" cy="997" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 269.5 1019 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="280.5" y="1031" font-size="11" text-anchor="middle" fill="#20364c">Client mobile</text>
+<circle cx="293" cy="838" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 282 860 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="293" y="872" font-size="11" text-anchor="middle" fill="#20364c">Client en</text>
+<text x="293" y="883" font-size="11" text-anchor="middle" fill="#20364c">magasin</text>
+<circle cx="85" cy="466" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 74 488 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="85" y="500" font-size="11" text-anchor="middle" fill="#20364c">Conseiller relation</text>
+<text x="85" y="511" font-size="11" text-anchor="middle" fill="#20364c">client</text>
+<circle cx="103.5" cy="721" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 92.5 743 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="103.5" y="755" font-size="11" text-anchor="middle" fill="#20364c">Responsable</text>
+<text x="103.5" y="766" font-size="11" text-anchor="middle" fill="#20364c">merchandising</text>
+<circle cx="116" cy="551" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 105 573 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="116" y="585" font-size="11" text-anchor="middle" fill="#20364c">Opérateur</text>
+<text x="116" y="596" font-size="11" text-anchor="middle" fill="#20364c">entrepôt</text>
+<circle cx="116" cy="392" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 105 414 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="116" y="426" font-size="11" text-anchor="middle" fill="#20364c">Comptable</text>
+<circle cx="100.5" cy="636" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 89.5 658 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="100.5" y="670" font-size="11" text-anchor="middle" fill="#20364c">Administrateur</text>
+<text x="100.5" y="681" font-size="11" text-anchor="middle" fill="#20364c">plateforme</text>
+<rect x="1809" y="773" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1863" y="793.3" font-size="12.5" text-anchor="middle" fill="#17202c">Site</text>
+<text x="1863" y="807.8" font-size="12.5" text-anchor="middle" fill="#17202c">e-commerce</text>
+<rect x="1809" y="840" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1863" y="860.3" font-size="12.5" text-anchor="middle" fill="#17202c">Application</text>
+<text x="1863" y="874.8" font-size="12.5" text-anchor="middle" fill="#17202c">mobile</text>
+<rect x="1809" y="706" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1863" y="726.3" font-size="12.5" text-anchor="middle" fill="#17202c">Bornes</text>
+<text x="1863" y="740.8" font-size="12.5" text-anchor="middle" fill="#17202c">magasin</text>
+<rect x="2279" y="802.2" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2333" y="822.4" font-size="12.5" text-anchor="middle" fill="#17202c">Navigation</text>
+<text x="2333" y="836.9" font-size="12.5" text-anchor="middle" fill="#17202c">catalogue</text>
+<rect x="2278" y="886.7" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2336.5" y="906.9" font-size="12.5" text-anchor="middle" fill="#17202c">Panier et</text>
+<text x="2336.5" y="921.4" font-size="12.5" text-anchor="middle" fill="#17202c">tunnel d'achat</text>
+<rect x="2280.7" y="953.7" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2334.7" y="973.9" font-size="12.5" text-anchor="middle" fill="#17202c">Compte</text>
+<text x="2334.7" y="988.4" font-size="12.5" text-anchor="middle" fill="#17202c">client</text>
+<rect x="2512" y="810" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2574" y="830.3" font-size="12.5" text-anchor="middle" fill="#17202c">Recommandations</text>
+<text x="2574" y="844.8" font-size="12.5" text-anchor="middle" fill="#17202c">personnalisées</text>
+<rect x="1085" y="427" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1139" y="447.3" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des</text>
+<text x="1139" y="461.8" font-size="12.5" text-anchor="middle" fill="#17202c">commandes</text>
+<rect x="1335" y="313.8" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1404" y="334" font-size="12.5" text-anchor="middle" fill="#17202c">Orchestration des</text>
+<text x="1404" y="348.5" font-size="12.5" text-anchor="middle" fill="#17202c">paiements</text>
+<rect x="1085" y="494" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1139" y="514.3" font-size="12.5" text-anchor="middle" fill="#17202c">Moteur de</text>
+<text x="1139" y="528.8" font-size="12.5" text-anchor="middle" fill="#17202c">promotions</text>
+<rect x="1085" y="360" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1139" y="380.3" font-size="12.5" text-anchor="middle" fill="#17202c">Programme de</text>
+<text x="1139" y="394.8" font-size="12.5" text-anchor="middle" fill="#17202c">fidélité</text>
+<rect x="590.5" y="692.2" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="644.5" y="712.4" font-size="12.5" text-anchor="middle" fill="#17202c">Référentiel</text>
+<text x="644.5" y="726.9" font-size="12.5" text-anchor="middle" fill="#17202c">produits</text>
+<rect x="590.5" y="826.2" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="644.5" y="849.2" font-size="12.5" text-anchor="middle" fill="#17202c">Tarification</text>
+<rect x="590" y="759.2" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="644" y="779.4" font-size="12.5" text-anchor="middle" fill="#17202c">Vue stock</text>
+<text x="644" y="793.9" font-size="12.5" text-anchor="middle" fill="#17202c">unifiée</text>
+<rect x="440" y="532" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="509" y="552.3" font-size="12.5" text-anchor="middle" fill="#17202c">Orchestration des</text>
+<text x="509" y="566.8" font-size="12.5" text-anchor="middle" fill="#17202c">expéditions</text>
+<rect x="771" y="579.2" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="825" y="599.4" font-size="12.5" text-anchor="middle" fill="#17202c">Pilotage</text>
+<text x="825" y="613.9" font-size="12.5" text-anchor="middle" fill="#17202c">entrepôt</text>
+<rect x="455.5" y="465" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="509.5" y="485.3" font-size="12.5" text-anchor="middle" fill="#17202c">Service</text>
+<text x="509.5" y="499.8" font-size="12.5" text-anchor="middle" fill="#17202c">après-vente</text>
+<rect x="2875.5" y="384" width="165" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2958" y="404.3" font-size="12.5" text-anchor="middle" fill="#17202c">Collecte d'événements</text>
+<text x="2958" y="418.8" font-size="12.5" text-anchor="middle" fill="#17202c">de navigation</text>
+<rect x="2868" y="317" width="180" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2958" y="337.3" font-size="12.5" text-anchor="middle" fill="#17202c">Capture des changements</text>
+<text x="2958" y="351.8" font-size="12.5" text-anchor="middle" fill="#17202c">de référentiel</text>
+<rect x="3238" y="324.8" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="3292" y="345.1" font-size="12.5" text-anchor="middle" fill="#17202c">Entrepôt de</text>
+<text x="3292" y="359.6" font-size="12.5" text-anchor="middle" fill="#17202c">données</text>
+<rect x="3470" y="324.8" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="3524" y="345.1" font-size="12.5" text-anchor="middle" fill="#17202c">Segmentation</text>
+<text x="3524" y="359.6" font-size="12.5" text-anchor="middle" fill="#17202c">client</text>
+<rect x="3783.5" y="49" width="117" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="3842" y="69.3" font-size="12.5" text-anchor="middle" fill="#17202c">Prestataire de</text>
+<text x="3842" y="83.8" font-size="12.5" text-anchor="middle" fill="#17202c">paiement (PSP)</text>
+<rect x="3787" y="183" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="3842" y="203.3" font-size="12.5" text-anchor="middle" fill="#17202c">Plateformes</text>
+<text x="3842" y="217.8" font-size="12.5" text-anchor="middle" fill="#17202c">transporteurs</text>
+<rect x="3802" y="250" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="3856" y="270.3" font-size="12.5" text-anchor="middle" fill="#17202c">ERP</text>
+<text x="3856" y="284.8" font-size="12.5" text-anchor="middle" fill="#17202c">groupe</text>
+<rect x="3788" y="317" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="3842" y="337.3" font-size="12.5" text-anchor="middle" fill="#17202c">CRM</text>
+<text x="3842" y="351.8" font-size="12.5" text-anchor="middle" fill="#17202c">groupe</text>
+<rect x="3773" y="116" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="3842" y="136.3" font-size="12.5" text-anchor="middle" fill="#17202c">Plateforme d'avis</text>
+<text x="3842" y="150.8" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
+<path d="M 328 940 L 367 940 A 5 5 0 0 1 377 940 L 475 940 A 5 5 0 0 1 485 940 L 527 940 A 5 5 0 0 1 537 940 L 1134 940 A 5 5 0 0 1 1144 940 L 1198 940 A 5 5 0 0 1 1208 940 L 1222 940 A 5 5 0 0 1 1232 940 L 1238 940 A 5 5 0 0 1 1248 940 L 1399 940 A 5 5 0 0 1 1409 940 L 1526 940 A 5 5 0 0 1 1536 940 L 1721 940 L 1721 802 L 1809 802" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 316.5 987 L 316.5 975 L 367 975 A 5 5 0 0 1 377 975 L 475 975 A 5 5 0 0 1 485 975 L 527 975 A 5 5 0 0 1 537 975 L 1134 975 A 5 5 0 0 1 1144 975 L 1198 975 A 5 5 0 0 1 1208 975 L 1222 975 A 5 5 0 0 1 1232 975 L 1238 975 A 5 5 0 0 1 1248 975 L 1399 975 A 5 5 0 0 1 1409 975 L 1526 975 A 5 5 0 0 1 1536 975 L 1778 975 A 5 5 0 0 1 1788 975 L 1827 975 L 1827 887" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 328 860.5 L 367 860.5 A 5 5 0 0 1 377 860.5 L 382 860.5 L 382 894 L 475 894 A 5 5 0 0 1 485 894 L 527 894 A 5 5 0 0 1 537 894 L 1134 894 A 5 5 0 0 1 1144 894 L 1198 894 A 5 5 0 0 1 1208 894 L 1222 894 A 5 5 0 0 1 1232 894 L 1238 894 A 5 5 0 0 1 1248 894 L 1399 894 A 5 5 0 0 1 1409 894 L 1526 894 A 5 5 0 0 1 1536 894 L 1711 894 L 1711 730 L 1809 730" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 784.8 L 1942 784.8 A 5 5 0 0 1 1952 784.8 L 1981 784.7 L 1981 747.7 L 2173 747.7 L 2173 835.7 L 2247 835.7 L 2247 829.8 L 2279 829.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 855.7 L 1922 855.7 A 5 5 0 0 1 1932 855.7 L 1932 855.7 A 5 5 0 0 1 1942 855.7 L 2267 855.7 L 2267 846.2 L 2279 846.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 729.5 L 1947 729.5 L 1947 794.8 L 2163 794.7 L 2163 845.7 L 2257 845.7 L 2257 838 L 2279 838" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 796.8 L 1937 796.8 L 1937 865.7 L 2001 865.7 L 2001 938.5 L 2173 938.5 L 2173 905.4 L 2277 905.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 871.3 L 1922 871.3 A 5 5 0 0 1 1932 871.3 L 1937 871.3 L 1937 875.7 L 1991 875.7 L 1991 949.5 L 2183 949.5 L 2183 917.4 L 2277 917.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2395 910.2 L 2405 910.2 L 2405 1171.7 L 1409 1171.7 A 5 5 0 0 0 1399 1171.7 L 1208 1171.7 A 5 5 0 0 0 1198 1171.7 L 1139 1171.7 L 1139 541" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2387 825.7 L 2512 825.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2554 857 L 2554 1039.7 L 2434 1039.7 A 5 5 0 0 0 2424 1039.7 L 2422 1039.7 A 5 5 0 0 0 2412 1039.7 L 2410 1039.7 A 5 5 0 0 0 2400 1039.7 L 2323.7 1039.7 A 5 5 0 0 0 2313.7 1039.7 L 1783 1039.7 L 1783 814 L 1809 814" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2318.7 1000.7 L 2318.7 1105.7 L 1409 1105.7 A 5 5 0 0 0 1399 1105.7 L 1227 1105.7 L 1227 383.5 L 1193 383.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2395 922.2 L 2400 922.2 A 5 5 0 0 1 2410 922.2 L 2417 922.2 L 2417 1218.7 L 1409 1218.7 A 5 5 0 0 0 1399 1218.7 L 1203 1218.7 L 1203 468.5 L 1193 468.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1175 427 L 1175 415 L 1222 415 A 5 5 0 0 1 1232 415 L 1368 415 L 1368 360.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1473 319.8 L 1485 319.8 L 1485 90 L 3783.5 90" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3900.5 72.5 L 3914.5 72.5 L 3914.5 1268.7 L 1404 1268.7 L 1404 360.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1193 456.5 L 1222 456.5 A 5 5 0 0 1 1232 456.5 L 1243 456.5 L 1243 1039.7 L 1232 1039.7 A 5 5 0 0 0 1222 1039.7 L 1208 1039.7 A 5 5 0 0 0 1198 1039.7 L 1144 1039.7 A 5 5 0 0 0 1134 1039.7 L 532 1039.7 L 532 579" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 579 565.5 L 761 565.5 L 761 594.8 L 771 594.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 151 573.5 L 382 573.5 L 382 611 L 475 611 A 5 5 0 0 1 485 611 L 527 611 A 5 5 0 0 1 537 611 L 771 611" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 579 541.5 L 913 541.5 L 913 637 L 1134 637 A 5 5 0 0 1 1144 637 L 1198 637 A 5 5 0 0 1 1208 637 L 1222 637 A 5 5 0 0 1 1232 637 L 1238 637 A 5 5 0 0 1 1248 637 L 1399 637 A 5 5 0 0 1 1409 637 L 1526 637 A 5 5 0 0 1 1536 637 L 1561 637 L 1561 169 L 2886 169 L 2886 207 L 3739 207 L 3774 207 A 5 5 0 0 1 3784 207 L 3787 207" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3897 206.5 L 3909.5 206.5 A 5 5 0 0 1 3919.5 206.5 L 3927 206.5 L 3927 1299.7 L 480 1299.7 L 480 579" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 579 553.5 L 908 553.5 A 5 5 0 0 1 918 553.5 L 1134 553.5 A 5 5 0 0 1 1144 553.5 L 1198 553.5 A 5 5 0 0 1 1208 553.5 L 1222 553.5 A 5 5 0 0 1 1232 553.5 L 1238 553.5 A 5 5 0 0 1 1248 553.5 L 1399 553.5 A 5 5 0 0 1 1409 553.5 L 1531 553.5 L 1531 997 L 1778 997 A 5 5 0 0 1 1788 997 L 1976 997 A 5 5 0 0 1 1986 997 L 2163 997 L 2163 969.3 L 2280.7 969.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 151 488.5 L 455.5 488.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 563.5 488.5 L 1040 488.5 L 1040 442.5 L 1084 442.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 151 743.5 L 203 743.5 L 203 724 L 475 724 A 5 5 0 0 1 485 724 L 527 724 A 5 5 0 0 1 537 724 L 590.5 724" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 698.5 723.5 L 709 723.5 L 709 802 L 1134 802 A 5 5 0 0 1 1144 802 L 1198 802 A 5 5 0 0 1 1208 802 L 1222 802 A 5 5 0 0 1 1232 802 L 1238 802 A 5 5 0 0 1 1248 802 L 1399 802 A 5 5 0 0 1 1409 802 L 1526 802 A 5 5 0 0 1 1536 802 L 1600 802 L 1600 780 L 1691 780 L 1691 657 L 2193 657 L 2193 815.7 L 2247 815.7 L 2247 813.4 L 2279 813.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 698.5 845.2 L 1134 845.2 A 5 5 0 0 1 1144 845.2 L 1198 845.2 A 5 5 0 0 1 1208 845.2 L 1222 845.2 A 5 5 0 0 1 1232 845.2 L 1238 845.2 A 5 5 0 0 1 1248 845.2 L 1399 845.2 A 5 5 0 0 1 1409 845.2 L 1526 845.2 A 5 5 0 0 1 1536 845.2 L 1701 845 L 1701 668 L 2183 668 L 2183 821.6 L 2279 821.6" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3910 285.5 L 3922 285.5 A 5 5 0 0 1 3932 285.5 L 3952 285.5 L 3952 1346.7 L 4 1346.7 L 4 788.7 L 475 788.7 A 5 5 0 0 1 485 788.7 L 527 788.7 A 5 5 0 0 1 537 788.7 L 590 788.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 699 790.7 L 704 790.7 A 5 5 0 0 1 714 790.7 L 1134 790.7 A 5 5 0 0 1 1144 790.7 L 1198 790.7 A 5 5 0 0 1 1208 790.7 L 1222 790.7 A 5 5 0 0 1 1232 790.7 L 1238 790.7 A 5 5 0 0 1 1248 790.7 L 1399 790.7 A 5 5 0 0 1 1409 790.7 L 1526 790.7 A 5 5 0 0 1 1536 790.7 L 1581 791 L 1581 646 L 2203 646 L 2203 805.7 L 2257 805.7 L 2257 805.2 L 2279 805.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3911 273.5 L 3922 273.5 A 5 5 0 0 1 3932 273.5 L 3985 273.5 L 3985 1153 L 3957 1153 A 5 5 0 0 0 3947 1153 L 3932 1153 A 5 5 0 0 0 3922 1153 L 3919.5 1153 A 5 5 0 0 0 3909.5 1153 L 2422 1153 A 5 5 0 0 0 2412 1153 L 2410 1153 A 5 5 0 0 0 2400 1153 L 1409 1153 A 5 5 0 0 0 1399 1153 L 1208 1153 A 5 5 0 0 0 1198 1153 L 1144 1153 A 5 5 0 0 0 1134 1153 L 485 1153 A 5 5 0 0 0 475 1153 L 372 1153 L 372 845 L 475 845 A 5 5 0 0 1 485 845 L 527 845 A 5 5 0 0 1 537 845 L 590.5 845.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1917 808.8 L 1927 808.8 L 1927 885.7 L 1981 885.7 L 1981 1019.7 L 2313.7 1019.7 A 5 5 0 0 1 2323.7 1019.7 L 2400 1019.7 A 5 5 0 0 1 2410 1019.7 L 2412 1019.7 A 5 5 0 0 1 2422 1019.7 L 2424 1019.7 A 5 5 0 0 1 2434 1019.7 L 2549 1019.7 A 5 5 0 0 1 2559 1019.7 L 2724 1020 L 2724 408 L 2875.5 408" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 698.5 707.8 L 1134 707.8 A 5 5 0 0 1 1144 707.8 L 1198 707.8 A 5 5 0 0 1 1208 707.8 L 1222 707.8 A 5 5 0 0 1 1232 707.8 L 1238 707.8 A 5 5 0 0 1 1248 707.8 L 1399 707.8 A 5 5 0 0 1 1409 707.8 L 1526 707.8 A 5 5 0 0 1 1536 707.8 L 1571 708 L 1571 180 L 2724 180 L 2724 235 L 2830 235 L 2830 341 L 2840 341 L 2868 341" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3040.5 407.5 L 3072 407.5 L 3072 356.2 L 3238 356.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3048 340.5 L 3238 340.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3346 348.3 L 3470 348.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3470 365.8 L 3458 365.8 L 3458 833.5 L 2729 833.5 A 5 5 0 0 0 2719 833.5 L 2636 833.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3578 340.5 L 3774 340.5 A 5 5 0 0 1 3784 340.5 L 3788 340.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3842 364 L 3842 977.2 L 3784 977.2 A 5 5 0 0 0 3774 977.2 L 2729 977.2 A 5 5 0 0 0 2719 977.2 L 2559 977.2 A 5 5 0 0 0 2549 977.2 L 2434 977.2 A 5 5 0 0 0 2424 977.2 L 2422 977.2 A 5 5 0 0 0 2412 977.2 L 2410 977.2 A 5 5 0 0 0 2400 977.2 L 2388.7 977.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 151 409 L 235 409 L 235 349.3 L 1335 349.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 151 658.5 L 382 658.5 L 382 708 L 475 708 A 5 5 0 0 1 485 708 L 527 708 A 5 5 0 0 1 537 708 L 590.5 707.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1194 432.5 L 1222 432.5 A 5 5 0 0 1 1232 432.5 L 1399 432.5 A 5 5 0 0 1 1409 432.5 L 1551 432.5 L 1551 123 L 3729 123 L 3729 140 L 3773 140" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 3779 163 L 3779 1105.7 L 2429 1105.7 L 2429 837.7 L 2387 837.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="1024.5" y="936" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Naviguer, rechercher,</text>
+<text x="1024.5" y="950.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">commander</text>
+<text x="1071.8" y="971" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Parcours d'achat</text>
+<text x="1071.8" y="985.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">mobile</text>
+<text x="1046.5" y="890" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Vérifier le stock et</text>
+<text x="1046.5" y="904.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">commander en magasin</text>
+<text x="2077" y="743.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Afficher les fiches</text>
+<text x="2077" y="758.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
+<text x="2092" y="851.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Afficher le catalogue</text>
+<text x="2092" y="866.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">mobile</text>
+<text x="2055" y="790.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Parcourir l'offre</text>
+<text x="2055" y="805.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">magasin</text>
+<text x="2087" y="941.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Constituer le panier</text>
+<text x="1964" y="871.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Panier mobile</text>
+<text x="1964" y="886.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">synchronisé</text>
+<text x="1772" y="1167.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appliquer les offres</text>
+<text x="1772" y="1182.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">en cours</text>
+<text x="2473.5" y="821.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Contexte de</text>
+<text x="2473.5" y="836.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">navigation</text>
+<text x="2168.5" y="1035.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Suggestions</text>
+<text x="2168.5" y="1050.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
+<text x="1772.8" y="1101.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Solde et avantages</text>
+<text x="1772.8" y="1116.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de fidélité</text>
+<text x="1810" y="1214.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Validation de</text>
+<text x="1810" y="1229.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">la commande</text>
+<rect x="1780.5" y="1237.2" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1810" y="1248.2" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
+<text x="1271.5" y="411" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande de</text>
+<text x="1271.5" y="425.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">paiement</text>
+<rect x="1242" y="433.5" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1271.5" y="444.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
+<text x="1485" y="200.9" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Autorisation et capture</text>
+<text x="1485" y="215.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">du paiement</text>
+<rect x="1455.5" y="223.4" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1485" y="234.4" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
+<text x="1404" y="818.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Statut de la</text>
+<text x="1404" y="833.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">transaction</text>
+<text x="887.5" y="1035.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Commande à</text>
+<text x="887.5" y="1050.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">exécuter</text>
+<rect x="858" y="1058.2" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="887.5" y="1069.2" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
+<text x="670" y="561.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Vagues de préparation</text>
+<text x="670" y="576" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">entrepôt</text>
+<text x="266.5" y="569.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Préparer et expédier</text>
+<text x="266.5" y="584" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">les colis</text>
+<text x="2815" y="165" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demandes d'enlèvement</text>
+<text x="2815" y="179.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et étiquettes</text>
+<rect x="2793.5" y="187.5" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="2815" y="198.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Colis</text>
+<text x="2203.5" y="1295.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Événements de suivi</text>
+<text x="2203.5" y="1310.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des colis</text>
+<text x="1473" y="549.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Suivi de commande</text>
+<text x="1473" y="564" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">client</text>
+<text x="303.3" y="484.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Traiter les</text>
+<text x="303.3" y="499" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">réclamations</text>
+<text x="801.8" y="484.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Retours et</text>
+<text x="801.8" y="499" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">remboursements</text>
+<text x="267.5" y="720" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Enrichir les fiches</text>
+<text x="267.5" y="734.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
+<text x="1645.5" y="776" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Publier le</text>
+<text x="1645.5" y="790.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">catalogue</text>
+<rect x="1618.5" y="798.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1645.5" y="809.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
+<text x="971.6" y="841.1" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Prix de vente</text>
+<text x="971.6" y="855.6" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">en cours</text>
+<text x="1978" y="1342.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Mouvements de stock</text>
+<text x="1978" y="1357.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">comptables</text>
+<text x="1626" y="642" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Disponibilité</text>
+<text x="1626" y="656.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
+<rect x="1599" y="664.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1626" y="675.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
+<text x="2178.5" y="1149" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Coûts d'achat de</text>
+<text x="2178.5" y="1163.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">référence</text>
+<text x="2799.8" y="404" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Événements de</text>
+<text x="2799.8" y="418.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">navigation</text>
+<text x="940.9" y="703.9" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Changements de</text>
+<text x="940.9" y="718.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">référentiel</text>
+<text x="3155" y="380.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alimenter le socle</text>
+<text x="3155" y="394.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de données</text>
+<text x="3143" y="336.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Synchronisation du</text>
+<text x="3143" y="351" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">référentiel</text>
+<text x="3408" y="344.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Calculer les</text>
+<text x="3408" y="358.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">segments</text>
+<text x="3047" y="829.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Segments d'audience</text>
+<text x="3047" y="844" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">pour personnalisation</text>
+<text x="3683" y="336.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Audiences pour</text>
+<text x="3683" y="351" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">campagnes</text>
+<text x="3115.3" y="973.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Sollicitations</text>
+<text x="3115.3" y="987.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">personnalisées</text>
+<text x="785" y="345.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Rapprocher les</text>
+<text x="785" y="359.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">encaissements</text>
+<text x="266.5" y="654.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Administrer référentiels</text>
+<text x="266.5" y="669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et habilitations</text>
+<text x="2640" y="119" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demander un avis</text>
+<text x="2640" y="133.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">après livraison</text>
+<text x="3104" y="1101.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notes et avis</text>
+<text x="3104" y="1116.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
+<line x1="20" y1="1396" x2="3975" y2="1396" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1418" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
+<rect x="150" y="1408" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="179.5" y="1419" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Commande</text>
+<text x="219" y="1419" font-size="10" fill="#79828f">— panier validé par un client, suivi jusqu'à la livraison</text>
+<rect x="150" y="1432" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="179.5" y="1443" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paiement</text>
+<text x="219" y="1443" font-size="10" fill="#79828f">— transaction financière liée à une commande</text>
+<rect x="150" y="1456" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="177" y="1467" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Produit</text>
+<text x="214" y="1467" font-size="10" fill="#79828f">— article du catalogue avec prix et disponibilité</text>
+<rect x="150" y="1480" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="171.5" y="1491" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Colis</text>
+<text x="203" y="1491" font-size="10" fill="#79828f">— unité d'expédition remise au transporteur</text>
+<rect x="150" y="1504" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="190" y="1515" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
+<text x="240" y="1515" font-size="10" fill="#79828f">porté par le flux</text>
+<line x1="20" y1="1542" x2="3975" y2="1542" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1564" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="1554" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="1565" font-size="10" fill="#17202c">Groupe d'acteurs</text>
+<rect x="298" y="1554" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="330" y="1565" font-size="10" fill="#17202c">Système</text>
+<rect x="399" y="1554" width="26" height="14" rx="3" fill="#f6f4fb" stroke="#cf9f2f"/>
+<text x="431" y="1565" font-size="10" fill="#17202c">Couche</text>
+<rect x="495" y="1554" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="527" y="1565" font-size="10" fill="#17202c">Bloc fonctionnel</text>
+<rect x="643" y="1554" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="675" y="1565" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="1584" x2="176" y2="1584" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="1588" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
 </svg>

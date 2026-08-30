@@ -4,6 +4,6 @@ No.,Source,Destination,Protocol,Flow
 3,Order capture (Order management),Order validation (Order management),API_REST,
 4,Order validation (Order management),Order repository (Order platform),JDBC,
 5,Order validation (Order management),Order event bus (Order platform),MQ,
-6,Order event bus (Order platform),Invoicing (Billing),MQ,
+6,Invoicing (Billing),Order event bus (Order platform),MQ,
 7,Customer records (Customer CRM),Order validation (Order management),API_REST,
 8,Invoicing (Billing),Carrier tracking (third party),SFTP,

@@ -1,98 +1,98 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1202 550" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1198 581" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1202" height="550" fill="#ffffff"/>
-<rect x="10" y="21.5" width="119" height="175" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="20" y="39.5" font-size="13" font-weight="bold" fill="#17202c">Responsables</text>
-<rect x="672" y="30.5" width="142" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="682" y="48.5" font-size="13" font-weight="bold" fill="#17202c">CRM</text>
-<rect x="344" y="97.5" width="176" height="217" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="354" y="115.5" font-size="13" font-weight="bold" fill="#17202c">Facturation</text>
-<rect x="641" y="321.5" width="358" height="94" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="651" y="339.5" font-size="13" font-weight="bold" fill="#17202c">Comptabilité</text>
-<circle cx="85" cy="143.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 74 165.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="85" y="177.5" font-size="11" text-anchor="middle" fill="#20364c">Comptable</text>
-<circle cx="69.5" cy="58.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 58.5 80.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="69.5" y="92.5" font-size="11" text-anchor="middle" fill="#20364c">Administration</text>
-<text x="69.5" y="103.5" font-size="11" text-anchor="middle" fill="#20364c">des ventes</text>
-<rect x="681" y="124.5" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="743" y="144.75" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des</text>
-<text x="743" y="159.25" font-size="12.5" text-anchor="middle" fill="#17202c">comptes clients</text>
-<rect x="689" y="57.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="743" y="77.75" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des</text>
-<text x="743" y="92.25" font-size="12.5" text-anchor="middle" fill="#17202c">contrats</text>
-<rect x="363" y="191.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="417" y="211.75" font-size="12.5" text-anchor="middle" fill="#17202c">Moteur de</text>
-<text x="417" y="226.25" font-size="12.5" text-anchor="middle" fill="#17202c">facturation</text>
-<rect x="353" y="258.5" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="422" y="278.75" font-size="12.5" text-anchor="middle" fill="#17202c">Émission et envoi</text>
-<text x="422" y="293.25" font-size="12.5" text-anchor="middle" fill="#17202c">des factures</text>
-<rect x="368" y="124.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="422" y="144.75" font-size="12.5" text-anchor="middle" fill="#17202c">Relance et</text>
-<text x="422" y="159.25" font-size="12.5" text-anchor="middle" fill="#17202c">recouvrement</text>
-<rect x="882" y="359.3333333333333" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="936" y="382.3333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Grand livre</text>
-<rect x="650" y="348.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="704" y="368.75" font-size="12.5" text-anchor="middle" fill="#17202c">Comptes</text>
-<text x="704" y="383.25" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
-<path d="M 640 197.5 h 115 a 8 23.5 0 0 1 0 47 h -115 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="640" cy="221" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="701.5" y="217.75" font-size="12.5" text-anchor="middle" fill="#17202c">Bus d'événements</text>
-<text x="701.5" y="232.25" font-size="12.5" text-anchor="middle" fill="#17202c">facturation</text>
-<path d="M 961 131.5 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="1015" cy="131.5" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="1015" y="148.25" font-size="12.5" text-anchor="middle" fill="#17202c">Référentiel</text>
-<text x="1015" y="162.75" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
-<path d="M 154 205.5 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="208" cy="205.5" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="208" y="222.25" font-size="12.5" text-anchor="middle" fill="#17202c">Catalogue</text>
-<text x="208" y="236.75" font-size="12.5" text-anchor="middle" fill="#17202c">d'offres</text>
-<rect x="1019" y="253.5" width="117" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
-<text x="1077.5" y="273.75" font-size="12.5" text-anchor="middle" fill="#17202c">Plateforme EDI</text>
-<text x="1077.5" y="288.25" font-size="12.5" text-anchor="middle" fill="#17202c">partenaire</text>
-<rect x="1019" y="311.5" width="173" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
-<text x="1105.5" y="331.75" font-size="12.5" text-anchor="middle" fill="#17202c">Portail de facturation</text>
-<text x="1105.5" y="346.25" font-size="12.5" text-anchor="middle" fill="#17202c">électronique (PPF)</text>
-<path d="M 120 63.5 L 689 63.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 805 148 L 961 148" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 689 81 L 483 81 L 483 197.5 L 471 197.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 262 222.5 L 363 222.83333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 471 232.5 L 495 232.5 L 495 203.5 L 632 203.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 491 264 L 535 264 L 535 228.5 L 632 228.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 491 276 L 515 276 L 515 277 L 1019 277" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 491 288 L 501 288 L 501 287.9 L 1009 287.5 L 1009 335.5 L 1019 335.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 491 300 L 535 300 L 535 372.5 L 650 372.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 476 148 L 478 148 A 5 5 0 0 1 488 148 L 681 148" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 758 372 L 882 372" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 114 187.5 L 114 421.3333333333333 L 918 421.3333333333333 L 918 397.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 120 151.5 L 368 151.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="883" y="151.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="586" y="84.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="312.5" y="225.91666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="563.5" y="206.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="535" y="249.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="767" y="280.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
-<text x="660.25" y="290.95" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
-<text x="535" y="339.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="578.5" y="151.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="820" y="375.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(batch, CSV)</text>
-<line x1="20" y1="436" x2="1182" y2="436" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="458" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="448" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="459" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="448" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
-<text x="330" y="459" font-size="10" fill="#17202c">Application</text>
-<rect x="420" y="448" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="452" y="459" font-size="10" fill="#17202c">Module applicatif</text>
-<rect x="573" y="448" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="605" y="459" font-size="10" fill="#17202c">File de messages / broker</text>
-<rect x="767" y="448" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="799" y="459" font-size="10" fill="#17202c">Entrepôt / référentiel</text>
-<rect x="946" y="448" width="26" height="14" rx="3" fill="#f4eff8" stroke="#b33" stroke-dasharray="5 3"/>
-<text x="978" y="459" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="500" x2="176" y2="500" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="504" font-size="10" fill="#17202c">Flux applicatif — (protocole, format) sous le libellé</text>
-<text x="150" y="528" font-size="10" fill="#17202c" font-style="italic">Factur-X obligatoire depuis la réforme de la facturation électronique</text>
+<rect width="1198" height="581" fill="#ffffff"/>
+<rect x="10" y="24.5" width="119" height="175" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="42.5" font-size="13" font-weight="bold" fill="#17202c">Responsables</text>
+<rect x="676" y="35.5" width="142" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="686" y="53.5" font-size="13" font-weight="bold" fill="#17202c">CRM</text>
+<rect x="344" y="95.5" width="176" height="228" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="354" y="113.5" font-size="13" font-weight="bold" fill="#17202c">Facturation</text>
+<rect x="641" y="352.5" width="358" height="94" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="651" y="370.5" font-size="13" font-weight="bold" fill="#17202c">Comptabilité</text>
+<circle cx="85" cy="146.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 74 168.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="85" y="180.5" font-size="11" text-anchor="middle" fill="#20364c">Comptable</text>
+<circle cx="69.5" cy="61.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 58.5 83.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="69.5" y="95.5" font-size="11" text-anchor="middle" fill="#20364c">Administration</text>
+<text x="69.5" y="106.5" font-size="11" text-anchor="middle" fill="#20364c">des ventes</text>
+<rect x="685" y="129.5" width="124" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="747" y="149.75" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des</text>
+<text x="747" y="164.25" font-size="12.5" text-anchor="middle" fill="#17202c">comptes clients</text>
+<rect x="693" y="62.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="747" y="82.75" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des</text>
+<text x="747" y="97.25" font-size="12.5" text-anchor="middle" fill="#17202c">contrats</text>
+<rect x="363" y="200.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="417" y="220.75" font-size="12.5" text-anchor="middle" fill="#17202c">Moteur de</text>
+<text x="417" y="235.25" font-size="12.5" text-anchor="middle" fill="#17202c">facturation</text>
+<rect x="353" y="267.5" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="422" y="287.75" font-size="12.5" text-anchor="middle" fill="#17202c">Émission et envoi</text>
+<text x="422" y="302.25" font-size="12.5" text-anchor="middle" fill="#17202c">des factures</text>
+<rect x="383" y="133.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="437" y="153.75" font-size="12.5" text-anchor="middle" fill="#17202c">Relance et</text>
+<text x="437" y="168.25" font-size="12.5" text-anchor="middle" fill="#17202c">recouvrement</text>
+<rect x="882" y="390.3333333333333" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="936" y="413.3333333333333" font-size="12.5" text-anchor="middle" fill="#17202c">Grand livre</text>
+<rect x="650" y="379.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="704" y="399.75" font-size="12.5" text-anchor="middle" fill="#17202c">Comptes</text>
+<text x="704" y="414.25" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
+<path d="M 640 196.5 h 115 a 8 23.5 0 0 1 0 47 h -115 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="640" cy="220" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="701.5" y="216.75" font-size="12.5" text-anchor="middle" fill="#17202c">Bus d'événements</text>
+<text x="701.5" y="231.25" font-size="12.5" text-anchor="middle" fill="#17202c">facturation</text>
+<path d="M 965 136.5 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="1019" cy="136.5" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="1019" y="153.25" font-size="12.5" text-anchor="middle" fill="#17202c">Référentiel</text>
+<text x="1019" y="167.75" font-size="12.5" text-anchor="middle" fill="#17202c">clients</text>
+<path d="M 154 214.5 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="208" cy="214.5" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="208" y="231.25" font-size="12.5" text-anchor="middle" fill="#17202c">Catalogue</text>
+<text x="208" y="245.75" font-size="12.5" text-anchor="middle" fill="#17202c">d'offres</text>
+<rect x="642" y="262.5" width="117" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="700.5" y="282.75" font-size="12.5" text-anchor="middle" fill="#17202c">Plateforme EDI</text>
+<text x="700.5" y="297.25" font-size="12.5" text-anchor="middle" fill="#17202c">partenaire</text>
+<rect x="1015" y="320.5" width="173" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="1101.5" y="340.75" font-size="12.5" text-anchor="middle" fill="#17202c">Portail de facturation</text>
+<text x="1101.5" y="355.25" font-size="12.5" text-anchor="middle" fill="#17202c">électronique (PPF)</text>
+<path d="M 120 84 L 693 84" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 809 153 L 965 153" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 693 103.5 L 582 103.5 L 582 206.5 L 471 206.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 262 231.5 L 363 231.83333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 471 224 L 608 224 L 608 202.5 L 632 202.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 461 314.5 L 461 338.5 L 770 338.5 A 5 5 0 0 1 780 338.5 L 787 338.5 L 787 237.5 L 763 237.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 491 273.5 L 566.5 273.5 L 566.5 303.5 L 642 303.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 491 297 L 501 297 L 501 296.9 L 545 296.5 L 545 318.5 L 775 318.5 L 775 344.5 L 1015 344.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 440 314.5 L 440 385.5 L 650 385.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 491 153 L 577 153 A 5 5 0 0 1 587 153 L 685 153" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 758 403 L 882 403" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 114 190.5 L 114 452.3333333333333 L 918 452.3333333333333 L 918 428.3333333333333" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 120 154.5 L 144 154.5 L 144 122.5 L 437 122.5 L 437 132.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="887" y="156.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="637.5" y="106.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="312.5" y="234.91666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<text x="539.5" y="227.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="624" y="341.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="566.5" y="288.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
+<text x="895" y="347.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
+<text x="545" y="388.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="588" y="156.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="820" y="406.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(batch, CSV)</text>
+<line x1="20" y1="467" x2="1178" y2="467" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="489" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="479" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="490" font-size="10" fill="#17202c">Groupe d'acteurs</text>
+<rect x="298" y="479" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="330" y="490" font-size="10" fill="#17202c">Application</text>
+<rect x="420" y="479" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="452" y="490" font-size="10" fill="#17202c">Module applicatif</text>
+<rect x="573" y="479" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="605" y="490" font-size="10" fill="#17202c">File de messages / broker</text>
+<rect x="767" y="479" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="799" y="490" font-size="10" fill="#17202c">Entrepôt / référentiel</text>
+<rect x="946" y="479" width="26" height="14" rx="3" fill="#f4eff8" stroke="#b33" stroke-dasharray="5 3"/>
+<text x="978" y="490" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="531" x2="176" y2="531" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="535" font-size="10" fill="#17202c">Flux applicatif — (protocole, format) sous le libellé</text>
+<text x="150" y="559" font-size="10" fill="#17202c" font-style="italic">Factur-X obligatoire depuis la réforme de la facturation électronique</text>
 </svg>

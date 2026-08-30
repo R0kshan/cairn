@@ -9,11 +9,11 @@
 <rect x="355" y="50" width="1737" height="320.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="365" y="68" font-size="13" font-weight="bold" fill="#17202c">Système d'information sinistres</text>
 <rect x="369" y="88" width="183" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="379" y="106" font-size="13" font-weight="bold" fill="#17202c">Couche déclaration</text>
+<text x="379" y="106" font-size="13" font-weight="bold" fill="#17202c">Déclaration</text>
 <rect x="747" y="167.5" width="746" height="183" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="757" y="185.5" font-size="13" font-weight="bold" fill="#17202c">Couche instruction</text>
+<text x="757" y="185.5" font-size="13" font-weight="bold" fill="#17202c">Instruction</text>
 <rect x="1653" y="221.33333333333331" width="425" height="111" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1663" y="239.33333333333331" font-size="13" font-weight="bold" fill="#17202c">Couche indemnisation</text>
+<text x="1663" y="239.33333333333331" font-size="13" font-weight="bold" fill="#17202c">Indemnisation</text>
 <rect x="2289" y="92" width="149" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="2299" y="110" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
 <circle cx="94.66666666666666" cy="117" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
