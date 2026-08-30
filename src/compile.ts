@@ -15,7 +15,7 @@
 
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
-import { layout } from "./scene-layout.ts";
+import { layout, attachSideDiagnostics } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { views } from "./views.ts";
 import { buildFlowMatrix } from "./flow-matrix.ts";
@@ -54,6 +54,9 @@ export async function compile(source: string, options?: CompileOptions): Promise
   // and costs nothing when it wasn't asked for.
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
   const scene = await layout(model, view);
+  // Post-layout: whether a declared attachment side actually survived is only
+  // knowable from the finished geometry (W0570).
+  diags.push(...attachSideDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene);
   return {
     svg,

@@ -12,10 +12,10 @@ actor-group STAFF "Staff" {
 }
 
 system BOOKING "Appointment booking system" {
-  layer FRONT "Presentation layer" {
+  layer FRONT "Booking channels" {
     block PORTAL "Booking\nportal"
   }
-  layer BUSINESS "Business layer" {
+  layer BUSINESS "Appointment management" {
     block SCHEDULER "Slot\nmanagement"
     block NOTIF "Notifications"
   }

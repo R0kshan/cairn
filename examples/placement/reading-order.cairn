@@ -1,0 +1,19 @@
+diagram application "Inter-line messaging — reading order"
+
+application BACKEND_L1 "Line 1 backend" {
+  order: 1
+  module MSG_L1 "Messaging\nhandler"
+}
+
+application BACKEND_L2 "Line 2 backend" {
+  order: 2
+  module MSG_L2 "Messaging\nhandler"
+}
+
+queue Q_L1 "Line 1\nmessages"
+queue Q_L2 "Line 2\nmessages"
+
+MSG_L1 -> Q_L1 (AMQP)
+MSG_L2 -> Q_L1.right (AMQP)
+MSG_L2 -> Q_L2 (AMQP)
+MSG_L1 -> Q_L2.right (AMQP)

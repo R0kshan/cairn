@@ -14,6 +14,7 @@ const RESET = "\x1b[0m",
   BLUE = "\x1b[34m",
   DIM = "\x1b[2m";
 
+/** Formats diagnostics as human-readable text with source excerpts and ANSI colors. */
 export function renderHuman(
   file: string,
   src: string,
@@ -72,6 +73,7 @@ export function renderHuman(
   return report.join("\n");
 }
 
+/** Formats diagnostics as structured JSON for machine consumption. */
 export function renderJson(file: string, diagnostics: Diagnostic[]): string {
   return JSON.stringify(
     {

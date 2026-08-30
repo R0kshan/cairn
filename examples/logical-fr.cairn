@@ -16,17 +16,17 @@ actor-group GESTIONNAIRES "Gestionnaires" {
 }
 
 system SINISTRES "Système d'information sinistres" {
-  layer DECLARATION "Couche déclaration" {
+  layer DECLARATION "Déclaration" {
     block DECL_WEB "Déclaration\nen ligne"
     block DECL_TEL "Déclaration\ntéléphonique"
     block PIECES "Collecte des\npièces justificatives"
   }
-  layer INSTRUCTION "Couche instruction" {
+  layer INSTRUCTION "Instruction" {
     block DOSSIER "Gestion du\ndossier sinistre"
     block EXPERTISE "Suivi\nd'expertise"
     block FRAUDE "Détection\nde fraude"
   }
-  layer INDEMNISATION "Couche indemnisation" {
+  layer INDEMNISATION "Indemnisation" {
     block CALCUL "Calcul de\nl'indemnité"
     block PAIEMENT "Ordonnancement\ndes paiements"
   }

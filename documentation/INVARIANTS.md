@@ -32,6 +32,7 @@ These invariants must never be broken. Every change is verified against them.
 - [14. Snapshot & corpus gates](#14-snapshot--corpus-gates)
 - [15. Flow matrix export invariants](#15-flow-matrix-export-invariants)
 - [16. Flow positioning is blind to the DSL](#16-flow-positioning-is-blind-to-the-dsl)
+- [17. Author positioning hints are honored, not negotiated](#17-author-positioning-hints-are-honored-not-negotiated)
 
 ## At a glance
 
@@ -64,6 +65,7 @@ you what a violation looks like when you cause one.
 | 14 | Snapshot & corpus gates | `tests/corpus.ts` | reference |
 | 15 | Flow matrix export | `flow-matrix` | reference + test |
 | 16 | Flow positioning is blind to the DSL | `edge-tidy`, `route-detour`, `label-anchor`, `compact`, `readability` | structural + test |
+| 17 | Author positioning hints honored, not negotiated | `parser`, `scene-layout`, `edge-tidy` | reference + test |
 
 Two rules cut across all of them:
 
@@ -212,7 +214,9 @@ arrive from beyond it, when the two nodes are genuinely offset (>24px) on that
 axis — a flow that leaves eastward for a target up-and-left sends the reader's
 eye the wrong way before doubling back (`attachAway`, ratchet). Edges routed
 through §11 channels that keep their channel are exempt: their wrap is the
-design.
+design. So are edges the author pinned to a node side in the DSL
+(`APP.right -> DB.left`, §17): a pinned terminal is intent, and this rule exists
+to overrule elk, not the author.
 
 The same pass also re-sides a flow that **crosses its own return leg** — the
 other flow joining the same two nodes the opposite way. A round trip is the one
@@ -236,6 +240,34 @@ band struck, no container border ridden, no new fan tangle, no crowding of an
 occupied side, the edge's own labels re-seatable, and strictly shorter. If any
 check fails, the wrap stays — a wrap is a blemish, each of those is worse. Do
 not weaken a check to reroute more; the remainder needs elk port constraints.
+
+**The port-constrained relayout is where that remainder goes**
+(`constrainPorts` in `scene-layout`): the flows this rule flags are given elk
+ports on the side facing their counterpart and the winning configuration is laid
+out again. Three things about it are load-bearing.
+
+- **It also takes flows nothing else can see.** A route can measure far longer
+  than the distance it covers with both terminals pointing the right way — a
+  backward flow whose channel plan fell through to a lane over the top of the
+  drawing leaves north and arrives north, and when its two nodes sit at the same
+  height neither offset clears the 24px tolerance. `scripts/sweep.ts` counts that
+  as `longDetour`; the flagged population is `attachAway` **plus** `isLongDetour`
+  (`geometry.ts`, the sweep's own predicate — §3a), because no post-pass can
+  repair it: the corridor between the two nodes is one lane wide and already
+  carries the answering flow, so the §4c reroute is refused for merging with it.
+- **It is re-entered, at most twice.** Constraining one pair's ports moves every
+  layer around it, and the layout that comes back can wrap a flow that was
+  straight before. The second round measures that layout and repairs it in turn.
+- **Every round is judged against the layout elk drew unaided**, never against
+  the round before it. Chaining the verdicts refuses strictly better candidates:
+  a second round measured on `logical`-shaped input removed two wrap-arounds and
+  sixteen net crossings and was rejected for gaining eight of them. Among rounds
+  that beat that base, the one paying at the better tier wins; ties go to the one
+  carrying fewer `longDetour` routes — `relayoutVerdict` refuses on any per-key
+  gain, so it cannot weigh two whole layouts that both clear a tier-0 defect,
+  even when one leaves flows wrapped around the drawing and the other does not
+  (`beatsRelayout`). An exact tie keeps the earlier round, so the choice does not
+  depend on iteration order (§2).
 
 ### 4d. Labels sit **on** their flow, never beside it
 
@@ -496,6 +528,13 @@ placed on the left; external systems stay on the right. For `tall`/`page`
 dispositions, they go on the top and bottom respectively. The infrastructure
 view models users as actors (person glyph) on the entry side.
 
+Within a partition, order is the layout engine's to choose — unless the author
+declares one (`order: 2`, §17). A top-level `order:`
+splits its partition into bands (`readingSlots` in `scene-layout`, emitted as
+`partition * SLOT_SCALE + slot`), so the author sequences elements *inside* the
+partition the view gave them and can never move one into a different partition:
+every slot of band *n* still precedes every slot of band *n+1*.
+
 ## 10. Slide / page orientation
 
 `slide` must be landscape (width ≥ height). `page` must be portrait (height ≥
@@ -511,12 +550,19 @@ routes, so this is the only path to one. Priority: direct beats channel beats
 elk wrap. Rerouting applies to every disposition. Deterministic: no-op
 (byte-identical scene) when nothing qualifies.
 
+One exception: a flow whose terminals the author pinned (`A.top -> B.right`,
+§17) is never sent through a channel. A channel replaces both terminals with the
+lane's own entry and exit, so routing one would silently overrule the pin — and a
+backward flow is the case an author is most likely to be pinning.
+
 ## 12. Element kind validity per view
 
 Element kinds are restricted by view. Examples: `queue` is valid only in
 application & infrastructure; `gateway`, `auth`, `idp` only in infrastructure;
-`trust-zone`, `security-node`, `asset` only in security; `datastore` renders as
-cylinder; business objects are logical-view only. Unknown element kinds for the
+`trust-zone`, `security-node`, `asset` only in security; `system` in logical and
+application (a C4 system boundary there, grouping applications, queues and
+datastores); `datastore` renders as cylinder; business objects are logical-view
+only. Unknown element kinds for the
 active view are rejected (`E0201`).
 
 ## 13. `cairn new` must not overwrite files
@@ -585,7 +631,73 @@ Enforced structurally and by test:
 - `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
   registry appears in those sources, so the check covers kinds added later.
 
+Three DSL-declared positioning hints exist (§17), and none breaches this: an
+`order:` becomes a partition band and a `layout` rank an elk position, both
+before any `Scene` exists, and a pinned
+attachment side becomes an elk port plus a plain `pinned` boolean on the
+`SceneEdge`. The passes that read `pinned` read a boolean on geometry, exactly
+as they already read `detour` — no kind, no view name, so a new view inherits
+the behavior for free.
+
 Not to be confused with declaration-order independence, which does **not**
 hold: reversing the flow declarations in `logical-archi.cairn` moves 48 path
 segments and 60 node boxes, because elk orders its layers by edge insertion.
 That is a known limitation, not a guarantee.
+
+## 17. Author positioning hints are honored, not negotiated
+
+Three opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
+override layout: `order:` on an element, `ID.side` on a flow endpoint, and the
+arrow glyph's line style. Three rules hold for them.
+
+**`order:` reads along the drawing at the root, across it inside a container.**
+A top-level `order:` becomes a partition band (§9), and a band is a contiguous
+run of layers, so it sequences elements along `elk.direction` — left to right for
+`wide`/`slide`, top to bottom for `tall`/`page`. That is the only lever that does: elk's own
+`layerChoiceConstraint`, `layering.strategy: INTERACTIVE` and
+`elk.interactiveLayout` were each measured to be no-ops on these graphs. An
+`order:` on an element *inside a container* stays `elk.position` under
+`crossingMinimization.semiInteractive` — an index inside a layer, which orders
+what the engine already draws side by side. Nested elements get no choice about
+it: under `hierarchyHandling: INCLUDE_CHILDREN` every layer constraint elk
+offers, partitioning included, is ignored for a container's children.
+
+An element nobody ordered still needs a band, because a node left unpartitioned
+was measured to drift to the end of the drawing. It takes the highest band that
+flows into it (a monotone fixed point: terminates on a cycle, independent of the
+order the flows are visited — §2), so a hint never drags a consumer ahead of its
+own source. Where an author's order does contradict a flow, the order wins and
+the flow is drawn backwards; nothing is reported, because the hint is a statement
+about reading order, not about the flows.
+
+**Opt-in means byte-identical.** A diagram that declares none of them must
+render exactly as it did before the feature existed — the elk options that
+implement them are emitted only where an author asked. `tests/corpus.test.ts`
+and the committed `examples/*.svg` are the gate.
+
+**A pin fixes the ends, not the path.** Where the author pinned a terminal, the
+passes that would *move* that terminal stand down: `route-detour` never sends the
+flow through a channel (§11), `edge-tidy`'s re-siding (§4c) offers that terminal
+only the side it already sits on, `clearSideHugs` gives up on the run rather
+than take its one fallback that lands the terminal elsewhere, and `attachAway`
+exempts it in both the layout's own count and `scripts/sweep.ts`. Sliding a seat
+*along* the side it is already on is not moving it, so every pass keeps that.
+
+The exemption is **per terminal**, because `SceneEdge.pinned` records the two
+ends separately. Pin one end and the other stays the layout's to answer for: it
+is still re-aimed, still unwoven, and still counted by `attachAway`. Only a flow
+pinned at both ends has no terminal left to choose, and `route-detour` is the
+one whole-edge exception — a channel replaces *both* terminals, so a single pin
+takes the flow out of the running.
+
+The route between those ends stays the repair's business. `optimiseRoutes` keeps
+a pinned edge as a candidate but generates only routes that leave the pinned end
+on its declared side (the free end of a half-pinned flow keeps the full search),
+and offers it one shape an unpinned flow never needs: the two-lane approach into
+a side the plain L cannot reach without hugging a node border. Both lanes come
+from `laneBeyond`, so the approach clears the corridors already in the drawing
+instead of ploughing through them. Without it a pinned flow would keep whatever
+the layout engine drew — measured at 5 turns and a 334px climb over a sibling
+container on `positioning-sides`, against 3 turns after.
+What the layout genuinely cannot deliver is dropped and reported as `W0570` —
+never forced into an unreadable route, and never silently ignored.

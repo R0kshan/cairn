@@ -21,7 +21,7 @@ external PAY "Payment provider"
 DEV  -> API (HTTPS, JSON)
 API  -> DB (SQL)
 API  -> BUS (AMQP)
-BUS  -> JOBS (AMQP)
+JOBS  -> BUS.right (AMQP)
 API  -> PAY (HTTPS)
 OPS  -> JOBS
 JOBS -> DB (SQL)

@@ -11,7 +11,7 @@
 | 7 | Billing (Application zone) | PostgreSQL (Data zone) | TCP | 5432 |  |
 | 8 | CRM (Application zone) | PostgreSQL (Data zone) | TCP | 5432 |  |
 | 9 | Billing (Application zone) | Message broker (Application zone) | TCP | 9092 |  |
-| 10 | Message broker (Application zone) | CRM (Application zone) | TCP | 9092 |  |
+| 10 | CRM (Application zone) | Message broker (Application zone) | TCP | 9092 |  |
 | 11 | Billing (Application zone) | Transfer gateway (DMZ) | SFTP | 22 |  |
 | 12 | Transfer gateway (DMZ) | Partner EDI platform | AS4 | 443 |  |
 | 13 | Database server (Data zone) | Backup server (Data zone) | TCP | 5432 |  |

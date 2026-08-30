@@ -33,7 +33,12 @@ export const DIGEST_PATH = join(HERE, "__snapshots__", "corpus.digest");
 
 /** All buildable examples, minus deliberately-broken fixtures, sorted for a stable digest order. */
 export function corpusFiles(): string[] {
-  const dirs = [EXAMPLES_DIR, join(EXAMPLES_DIR, "dispositions"), join(EXAMPLES_DIR, "themes")];
+  const dirs = [
+    EXAMPLES_DIR,
+    join(EXAMPLES_DIR, "dispositions"),
+    join(EXAMPLES_DIR, "themes"),
+    join(EXAMPLES_DIR, "placement"),
+  ];
   const out: string[] = [];
   for (const d of dirs) {
     if (!existsSync(d)) continue;

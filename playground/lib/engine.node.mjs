@@ -92256,10 +92256,13 @@ function lex(src, diagnostics) {
       col++;
       continue;
     }
-    if (char === "-" && src[position + 1] === ">") {
-      push("arrow", "->", line, col);
-      position += 2;
-      col += 2;
+    const arrowGlyph = ["-->", "..>", "->"].find(
+      (glyph) => src.startsWith(glyph, position) && glyph[0] === char
+    );
+    if (arrowGlyph) {
+      push("arrow", arrowGlyph, line, col);
+      position += arrowGlyph.length;
+      col += arrowGlyph.length;
       continue;
     }
     const singleCharKind = SINGLE_CHAR_TOKENS[char];
@@ -92299,6 +92302,7 @@ function lex(src, diagnostics) {
 }
 
 // src/models/ast.ts
+var ATTACH_SIDES = ["left", "right", "top", "bottom"];
 var defaultDiagramStyle = () => ({
   crossingHops: true,
   compact: false,
@@ -92935,9 +92939,9 @@ function indexElementsById(elements) {
 // src/parser.ts
 function parseFlow(p, sourceToken) {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
-  advance();
+  const arrowToken = advance();
   if (!matchToken("id")) {
-    reportError("target identifier expected after `->`", lookAhead().span);
+    reportError(`target identifier expected after \`${arrowToken.text}\``, lookAhead().span);
     syncToNextLine();
     return;
   }
@@ -92954,6 +92958,8 @@ function parseFlow(p, sourceToken) {
       len: targetToken.span.col + targetToken.span.len - sourceToken.span.col
     }
   };
+  if (arrowToken.text === "-->") flow.lineStyle = "dashed";
+  else if (arrowToken.text === "..>") flow.lineStyle = "dotted";
   if (matchToken("colon")) {
     advance();
     if (matchToken("str")) flow.label = advance().text;
@@ -93006,6 +93012,11 @@ function parseFlow(p, sourceToken) {
     flow.style = {};
     p.parseStyleEntries(null, flow.style);
   }
+  for (const split of [
+    splitEndpoint(sourceToken, flow, "from"),
+    splitEndpoint(targetToken, flow, "to")
+  ])
+    if (split) p.endpointSplits.push(split);
   model.flows.push(flow);
 }
 function parseElement(p, sourceToken, parent) {
@@ -93056,6 +93067,84 @@ function parseElement(p, sourceToken, parent) {
     p.parseElementBody(element);
   }
   (parent ? parent.children : model.elements).push(element);
+}
+function splitEndpoint(token, flow, role) {
+  const dot = token.text.lastIndexOf(".");
+  if (dot <= 0 || dot === token.text.length - 1) return null;
+  const base = token.text.slice(0, dot);
+  const side = token.text.slice(dot + 1);
+  return {
+    flow,
+    role,
+    raw: token.text,
+    rawSpan: token.span,
+    base,
+    baseSpan: { line: token.span.line, col: token.span.col, len: base.length },
+    side,
+    sideSpan: { line: token.span.line, col: token.span.col + dot + 1, len: side.length }
+  };
+}
+function resolveAttachSides(splits, model, diagnostics) {
+  for (const split of splits) {
+    if (model.index.has(split.raw)) {
+      if (ATTACH_SIDES.includes(split.side))
+        diagnostics.push({
+          code: "W0571",
+          severity: "warning",
+          message: `\`${split.raw}\` is a declared element, so \`.${split.side}\` is not read as an attachment side`,
+          span: split.rawSpan,
+          note: "a declared id always wins over the `ID.side` reading",
+          help: `rename the element if you meant to attach the flow to the ${split.side} side of \`${split.base}\``
+        });
+      continue;
+    }
+    if (!model.index.has(split.base)) continue;
+    const known = ATTACH_SIDES.includes(split.side);
+    if (!known)
+      diagnostics.push({
+        code: "E0223",
+        severity: "error",
+        message: `unknown attachment side \`${split.side}\``,
+        span: split.sideSpan,
+        note: "sides are named as the diagram is read",
+        help: "use `left`, `right`, `top` or `bottom`, e.g. `APP.right -> DB.left`"
+      });
+    const side = known ? { value: split.side, span: split.sideSpan } : void 0;
+    if (split.role === "from") {
+      split.flow.from = split.base;
+      split.flow.fromSpan = split.baseSpan;
+      split.flow.fromSide = side;
+    } else {
+      split.flow.to = split.base;
+      split.flow.toSpan = split.baseSpan;
+      split.flow.toSide = side;
+    }
+  }
+}
+function tryOrderEntry(p, parent) {
+  const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
+  if (!parent || !matchToken("id", "order")) return false;
+  const mark = save();
+  const keyToken = advance();
+  if (!matchToken("colon")) {
+    restore(mark);
+    return false;
+  }
+  advance();
+  const valueToken = matchToken("num") ? advance() : null;
+  const value = valueToken ? Number(valueToken.text) : Number.NaN;
+  if (!Number.isInteger(value) || value < 0) {
+    reportCoded(
+      "E0106",
+      "`order` expects a whole number \u2265 0",
+      (valueToken ?? keyToken).span,
+      "e.g. `order: 1` \u2014 lower comes first in reading order"
+    );
+    syncToNextLine();
+    return true;
+  }
+  parent.order = { value, span: valueToken.span };
+  return true;
 }
 function tryLegendBlock(p) {
   const { matchToken, advance, reportError, lookAhead, skipNewlines, syncToNextLine, model } = p;
@@ -93134,13 +93223,14 @@ function parse(src) {
   const skipNewlines = () => {
     while (matchToken("nl")) advance();
   };
-  const reportError = (message, span, help) => diagnostics.push({
-    code: "E0101",
+  const reportCoded = (code, message, span, help) => diagnostics.push({
+    code,
     severity: "error",
     message,
     span,
     help
   });
+  const reportError = (message, span, help) => reportCoded("E0101", message, span, help);
   const syncToNextLine = () => {
     while (!matchToken("nl") && !matchToken("eof")) advance();
   };
@@ -93153,6 +93243,7 @@ function parse(src) {
     index: /* @__PURE__ */ new Map()
   };
   const flowSequence = { next: 0 };
+  const endpointSplits = [];
   skipNewlines();
   if (matchToken("id", "diagram")) {
     advance();
@@ -93244,12 +93335,14 @@ function parse(src) {
     advance,
     skipNewlines,
     reportError,
+    reportCoded,
     syncToNextLine,
     save: () => position,
     restore: (mark) => {
       position = mark;
     },
     flowSequence,
+    endpointSplits,
     parseStyleEntries,
     parseElementBody
   };
@@ -93259,6 +93352,7 @@ function parse(src) {
       return;
     }
     if (tryStyleBlock(parent)) return;
+    if (tryOrderEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
     parseFlowOrElement(parser, parent);
@@ -93271,6 +93365,7 @@ function parse(src) {
   for (const [id, element] of indexElementsById(model.elements)) {
     if (!model.index.has(id)) model.index.set(id, element);
   }
+  resolveAttachSides(endpointSplits, model, diagnostics);
   return { model, diags: diagnostics };
 }
 var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
@@ -93616,12 +93711,27 @@ var logicalView = {
 };
 var applicationView = {
   name: "application",
-  kinds: ["actor-group", "actor", "application", "module", "queue", "datastore", "external"],
-  containerKinds: ["actor-group", "application", "external"],
+  kinds: [
+    "actor-group",
+    "actor",
+    "system",
+    "application",
+    "module",
+    "queue",
+    "datastore",
+    "external"
+  ],
+  containerKinds: ["actor-group", "system", "application", "external"],
   // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
-  matrix: { zoneKinds: ["application"], columns: ["num", "source", "dest", "proto", "nature"] },
+  // `zoneOf` walks ancestors nearest-first, so an endpoint inside an application
+  // still reads `Name (App)`; the system only annotates what sits directly in it.
+  matrix: {
+    zoneKinds: ["application", "system"],
+    columns: ["num", "source", "dest", "proto", "nature"]
+  },
   partitions: {
     "actor-group": 0,
+    system: 1,
     application: 1,
     queue: 1,
     datastore: 1,
@@ -93630,6 +93740,7 @@ var applicationView = {
   legendNames: {
     "actor-group": "Actor group",
     actor: "Actor",
+    system: "System",
     application: "Application",
     module: "Application module",
     queue: "Message queue / broker",
@@ -93639,6 +93750,7 @@ var applicationView = {
   legendNamesFr: {
     "actor-group": "Groupe d'acteurs",
     actor: "Acteur",
+    system: "Syst\xE8me",
     application: "Application",
     module: "Module applicatif",
     queue: "File de messages / broker",
@@ -93686,6 +93798,12 @@ var applicationView = {
       fill: "#eef4fb",
       stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 }
     },
+    // Same palette as the logical view's `system`, so a system boundary reads
+    // the same in both views.
+    system: {
+      fill: "#f6f2ea",
+      stroke: { color: "#b09a6d", style: "solid", width: 1.2 }
+    },
     application: {
       fill: "#e8f1f8",
       stroke: { color: "#5b8db8", style: "solid", width: 1.2 }
@@ -93712,6 +93830,10 @@ var applicationView = {
     "actor-group": {
       fill: "#232a33",
       stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 }
+    },
+    system: {
+      fill: "#2b2822",
+      stroke: { color: "#9c8558", style: "solid", width: 1.2 }
     },
     application: {
       fill: "#1f2a33",
@@ -95108,6 +95230,14 @@ var pathLength = (points) => {
     length += Math.abs(points[index + 1].x - points[index].x) + Math.abs(points[index + 1].y - points[index].y);
   return length;
 };
+var DETOUR_RATIO = 2.2;
+var DETOUR_WASTE = 400;
+var isLongDetour = (points, boxA, boxB) => {
+  const direct = Math.abs(boxA.x + boxA.width / 2 - (boxB.x + boxB.width / 2)) + Math.abs(boxA.y + boxA.height / 2 - (boxB.y + boxB.height / 2));
+  if (direct <= 0) return false;
+  const length = pathLength(points);
+  return length > DETOUR_RATIO * direct && length - direct > DETOUR_WASTE;
+};
 var boxToPolylineSq = (box, points) => {
   let best = Number.POSITIVE_INFINITY;
   for (let index = 0; index + 1 < points.length; index++) {
@@ -95173,6 +95303,7 @@ function detourCandidates(scene, model) {
   for (const edge of scene.edges) {
     const flow = flowById.get(edge.id);
     if (!flow || edge.pts.length < 2) continue;
+    if (edge.pinned) continue;
     const source = nodeById.get(flow.from);
     const target = nodeById.get(flow.to);
     if (!source || !target) continue;
@@ -95196,7 +95327,9 @@ function verticalConflict(segment, x, top, bottom) {
 var blockedBelowBy = (leafBoxes, x, top) => leafBoxes.some(
   (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y + node.height > top + 1
 );
-var blockedAboveBy = (leafBoxes, titleBoxes, x, bottom) => leafBoxes.some((node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1) || titleBoxes.some(
+var blockedAboveBy = (leafBoxes, titleBoxes, x, bottom) => leafBoxes.some(
+  (node) => x >= node.x - 2 && x <= node.x + node.width + 2 && node.y < bottom - 1
+) || titleBoxes.some(
   (box) => x >= box.x - TITLE_CLEARANCE && x <= box.x + box.width + TITLE_CLEARANCE && box.y < bottom - 1
 );
 var horizontalBlocked = (leafBoxes, y, probe) => leafBoxes.some(
@@ -95614,9 +95747,7 @@ function laneOffsets(lc, subset, direction, anchor) {
     const ownPosition = spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
     const start = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
     labelHeights.push(labelHeight);
-    positions.push(
-      resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction)
-    );
+    positions.push(resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction));
   }
   return positions;
 }
@@ -97030,6 +97161,7 @@ function clearRunHug(ctx, edge, run, own) {
     if (attemptHugFix(ctx, edge, { run, axis, target }, own)) return true;
   }
   if (run.i !== 0 && run.i + 1 !== edge.pts.length - 1) return false;
+  if (edge.pinned?.[run.i === 0 ? "start" : "end"]) return false;
   if (!sideOf(edge.pts[run.i === 0 ? 0 : edge.pts.length - 1], leaves)) return false;
   return resideAtSide(ctx, edge, run, own);
 }
@@ -97462,8 +97594,10 @@ function generateReaimCandidates(AWAY_TOL2, from, to) {
   };
   const normalOf = (side) => side === "north" ? { x: 0, y: -1 } : side === "south" ? { x: 0, y: 1 } : side === "west" ? { x: -1, y: 0 } : { x: 1, y: 0 };
   const candidates = [];
-  for (const srcSide of facingSides(src, dstC))
-    for (const dstSide of facingSides(dst, srcC)) {
+  const srcSides = from.keepSide ? [from.keepSide] : facingSides(src, dstC);
+  const dstSides = to.keepSide ? [to.keepSide] : facingSides(dst, srcC);
+  for (const srcSide of srcSides)
+    for (const dstSide of dstSides) {
       const na = normalOf(srcSide);
       const nb = normalOf(dstSide);
       const horizontalA = na.x !== 0;
@@ -97607,8 +97741,8 @@ function reaimEdge(rctx, edge) {
   const dstC = { x: dst.x + dst.width / 2, y: dst.y + dst.height / 2 };
   const candidates = generateReaimCandidates(
     AWAY_TOL2,
-    { node: src, centre: srcC },
-    { node: dst, centre: dstC }
+    { node: src, centre: srcC, keepSide: edge.pinned?.start ? srcSeat.side : null },
+    { node: dst, centre: dstC, keepSide: edge.pinned?.end ? dstSeat.side : null }
   );
   const outside = runsExcept(edge.id);
   const labelBoxes = seatedLabelBoxes(edge);
@@ -97640,7 +97774,8 @@ function reaimEdge(rctx, edge) {
 function reaimWrapAroundTerminals(ctx) {
   const { scene } = ctx;
   const rctx = createReaimContext(ctx);
-  for (const edge of scene.edges) reaimEdge(rctx, edge);
+  for (const edge of scene.edges)
+    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge);
 }
 function shiftCoincidentRun(leaves, pts, b, newAt) {
   if (b.vert) {
@@ -98086,8 +98221,10 @@ function bestUnweaveRoute(uctx, job) {
   const { edge, srcSeat, dstSeat } = job;
   let best = null;
   let bestLength = Number.POSITIVE_INFINITY;
-  for (const srcSide of ALL_SIDES)
-    for (const dstSide of ALL_SIDES)
+  const srcSides = edge.pinned?.start ? [srcSeat.side] : ALL_SIDES;
+  const dstSides = edge.pinned?.end ? [dstSeat.side] : ALL_SIDES;
+  for (const srcSide of srcSides)
+    for (const dstSide of dstSides)
       for (const srcOffset of SEAT_OFFSETS)
         for (const dstOffset of SEAT_OFFSETS) {
           const a = unweaveSeat(srcSeat.node, srcSide, srcOffset);
@@ -98140,6 +98277,7 @@ function unweaveAndClearContainers(ctx) {
   for (const edge of [...scene.edges].sort(
     (a, b) => (Number.parseInt(a.id.slice(1), 10) || 0) - (Number.parseInt(b.id.slice(1), 10) || 0)
   )) {
+    if (edge.pinned?.start && edge.pinned?.end) continue;
     unweaveEdge(uctx, edge);
   }
 }
@@ -98445,7 +98583,7 @@ function createLaneModel(deps) {
     const fromB = lane - (firstVertical ? pts[3].y : pts[3].x);
     return fromA * fromB > 0;
   };
-  return { channelU, isChannelU };
+  return { channelU, isChannelU, laneBeyond };
 }
 function optimiseRoutes(scene, titleBoxes = [], folded = false) {
   const leaves = scene.nodes.filter((node) => !node.container);
@@ -98455,7 +98593,7 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
     const preRouted = new Set(scene.edges.filter((edge) => edge.detour).map((edge) => edge.id));
     const { SIDES, seatOffsetsFor, seatOn, outward, horizontalSide } = createSeatModel(titleBoxes);
     const clock = { generation: 0 };
-    const { channelU, isChannelU } = createLaneModel({
+    const { channelU, isChannelU, laneBeyond } = createLaneModel({
       scene,
       inspector,
       titleBoxes,
@@ -98465,7 +98603,10 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
     const shapesFor = (a, b, sides, subject) => {
       const aH = horizontalSide(sides.a);
       const bH = horizontalSide(sides.b);
-      if (aH !== bH) return [[a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b]];
+      if (aH !== bH) {
+        const plainL = [a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b];
+        return [plainL, ...approachLanes(a, b, sides, subject)];
+      }
       if (outward(sides.a) === outward(sides.b)) return channelU(a, b, sides.a, subject);
       if (aH)
         return [
@@ -98479,6 +98620,40 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
         Math.max(a.y, b.y) - CHANNEL_INSET
       ].map((mid) => [a, { x: a.x, y: mid }, { x: b.x, y: mid }, b]);
     };
+    const approachLanes = (a, b, sides, subject) => {
+      if (!subject.edge.pinned) return [];
+      const aH = horizontalSide(sides.a);
+      const bH = horizontalSide(sides.b);
+      const beforeA = sides.a === "west" || sides.a === "north";
+      const crossLane = laneBeyond(
+        {
+          spanLo: Math.min(a.x, b.x),
+          spanHi: Math.max(a.x, b.x),
+          start: (aH ? a.x : a.y) + (beforeA ? -CHANNEL_STEP : CHANNEL_STEP),
+          vertical: !aH,
+          before: beforeA
+        },
+        subject,
+        true
+      );
+      if (crossLane === null) return [];
+      const beforeB = sides.b === "west" || sides.b === "north";
+      const search = {
+        spanLo: bH ? Math.min(crossLane, b.y) : Math.min(crossLane, b.x),
+        spanHi: bH ? Math.max(crossLane, b.y) : Math.max(crossLane, b.x),
+        start: (bH ? b.x : b.y) + (beforeB ? -CHANNEL_STEP : CHANNEL_STEP),
+        // `laneBeyond` names the axis after the terminal legs: a lane at a
+        // constant x is the `vertical: false` search.
+        vertical: !bH,
+        before: beforeB
+      };
+      const lanes = [laneBeyond(search, subject, false), laneBeyond(search, subject, true)].filter(
+        (lane, index, all) => lane !== null && all.indexOf(lane) === index
+      );
+      return lanes.map(
+        (lane) => bH ? [a, { x: a.x, y: crossLane }, { x: lane, y: crossLane }, { x: lane, y: b.y }, b] : [a, { x: crossLane, y: a.y }, { x: crossLane, y: lane }, { x: b.x, y: lane }, b]
+      );
+    };
     const routeCache = /* @__PURE__ */ new Map();
     const routesFor = (edge) => {
       const cacheKey = `${clock.generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
@@ -98489,8 +98664,10 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
       const subject = { ends, edge };
       const out = [];
       const seen = /* @__PURE__ */ new Set();
-      for (const aSide of SIDES)
-        for (const bSide of SIDES) {
+      const aSides = edge.pinned?.start ? [ends[0].side] : SIDES;
+      const bSides = edge.pinned?.end ? [ends[1].side] : SIDES;
+      for (const aSide of aSides)
+        for (const bSide of bSides) {
           const sides = { a: aSide, b: bSide };
           for (const aOff of seatOffsetsFor(ends[0].node, aSide))
             for (const bOff of seatOffsetsFor(ends[1].node, bSide))
@@ -98822,13 +98999,18 @@ function computeIngressExternalElements(model) {
   }
   return ingressExternalElements;
 }
-function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
+var orderOption = (element) => element.order ? { "elk.position": `(0,${element.order.value})` } : {};
+var semiInteractiveOption = (children) => children.some((child) => child.order) ? { "elk.layered.crossingMinimization.semiInteractive": "true" } : {};
+function toElkNode2(element, compact, fonts, root = false) {
+  const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
     return {
       id: element.id,
       layoutOptions: {
-        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`
+        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
+        ...root ? {} : orderOption(element),
+        ...semiInteractiveOption(element.children)
       },
       labels: [
         {
@@ -98837,7 +99019,7 @@ function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
         }
       ],
       children: element.children.map(
-        (child) => toElkNode2(child, compact, containerFontSize, nodeFontSize)
+        (child) => toElkNode2(child, compact, fonts)
       )
     };
   }
@@ -98845,6 +99027,7 @@ function toElkNode2(element, compact, containerFontSize, nodeFontSize) {
   const isActor = element.kind === "actor";
   return {
     id: element.id,
+    ...element.order && !root ? { layoutOptions: orderOption(element) } : {},
     width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
     height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
   };
@@ -98931,6 +99114,12 @@ function transpose(scene, titleBoxes) {
   }
   [scene.width, scene.height] = [scene.height, scene.width];
 }
+var PORT_PASS_ROUNDS = 2;
+function beatsRelayout(round, best) {
+  if (!best) return true;
+  if (round.tier !== best.tier) return round.tier < best.tier;
+  return round.detours < best.detours;
+}
 function attachAwayOf(scene, model) {
   const ATTACH_AWAY_TOL = 24;
   const byId = new Map(scene.nodes.map((node) => [node.id, node]));
@@ -98941,20 +99130,34 @@ function attachAwayOf(scene, model) {
     const from = byId.get(flow?.from ?? "");
     const to = byId.get(flow?.to ?? "");
     if (!from || !to) continue;
-    const centerOf = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+    const centerOf2 = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
     const away = (seg, target) => Math.abs(seg.x) >= 0.5 && Math.abs(target.x) > ATTACH_AWAY_TOL && seg.x * target.x < 0 || Math.abs(seg.y) >= 0.5 && Math.abs(target.y) > ATTACH_AWAY_TOL && seg.y * target.y < 0;
     const p0 = e.pts[0];
     const p1 = e.pts[1];
     const pn = e.pts[e.pts.length - 1];
     const pm = e.pts[e.pts.length - 2];
-    const toCenter = centerOf(to);
-    const fromCenter = centerOf(from);
-    if (away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
+    const toCenter = centerOf2(to);
+    const fromCenter = centerOf2(from);
+    if (!e.pinned?.start && away({ x: p1.x - p0.x, y: p1.y - p0.y }, { x: toCenter.x - p0.x, y: toCenter.y - p0.y }))
       flagged.add(e.id);
-    if (away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
+    if (!e.pinned?.end && away({ x: pn.x - pm.x, y: pn.y - pm.y }, { x: pn.x - fromCenter.x, y: pn.y - fromCenter.y }))
       flagged.add(e.id);
+    if (!e.pinned && isLongDetour(e.pts, from, to)) flagged.add(e.id);
   }
   return flagged;
+}
+function longDetourCount(scene, model) {
+  const byId = new Map(scene.nodes.map((node) => [node.id, node]));
+  let count = 0;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const flow = model.flows.find((f) => f.id === edge.id);
+    const from = byId.get(flow?.from ?? "");
+    const to = byId.get(flow?.to ?? "");
+    if (!from || !to) continue;
+    if (isLongDetour(edge.pts, from, to)) count++;
+  }
+  return count;
 }
 function selectionExtras(scene, model) {
   const extra = /* @__PURE__ */ new Map();
@@ -99013,6 +99216,28 @@ function relayoutVerdict(before, after) {
   }
   return -1;
 }
+var centerOf = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
+function sideToward(from, to) {
+  const dx = centerOf(to).x - centerOf(from).x;
+  const dy = centerOf(to).y - centerOf(from).y;
+  return Math.abs(dx) >= Math.abs(dy) ? dx < 0 ? "WEST" : "EAST" : dy < 0 ? "NORTH" : "SOUTH";
+}
+function sideOn(p, n) {
+  if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
+    if (Math.abs(p.y - n.y) < 2) return "NORTH";
+    if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
+  }
+  if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
+    if (Math.abs(p.x - n.x) < 2) return "WEST";
+    if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
+  }
+  return null;
+}
+function firstPassSide(scene, flowId, role, sceneNode) {
+  const edge = scene.edges.find((candidate) => candidate.id === flowId);
+  if (!edge || edge.pts.length < 2) return null;
+  return sideOn(role === "src" ? edge.pts[0] : edge.pts[edge.pts.length - 1], sceneNode);
+}
 function constrainPorts(graph, scene, flagged, model) {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const elkById = /* @__PURE__ */ new Map();
@@ -99021,23 +99246,6 @@ function constrainPorts(graph, scene, flagged, model) {
     for (const child of node.children ?? []) register(child);
   };
   register(graph);
-  const centerOf = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
-  const sideToward = (from, to) => {
-    const dx = centerOf(to).x - centerOf(from).x;
-    const dy = centerOf(to).y - centerOf(from).y;
-    return Math.abs(dx) >= Math.abs(dy) ? dx < 0 ? "WEST" : "EAST" : dy < 0 ? "NORTH" : "SOUTH";
-  };
-  const sideOn = (p, n) => {
-    if (p.x > n.x - 2 && p.x < n.x + n.width + 2) {
-      if (Math.abs(p.y - n.y) < 2) return "NORTH";
-      if (Math.abs(p.y - (n.y + n.height)) < 2) return "SOUTH";
-    }
-    if (p.y > n.y - 2 && p.y < n.y + n.height + 2) {
-      if (Math.abs(p.x - n.x) < 2) return "WEST";
-      if (Math.abs(p.x - (n.x + n.width)) < 2) return "EAST";
-    }
-    return null;
-  };
   const flaggedNodes = /* @__PURE__ */ new Set();
   for (const flow of model.flows)
     if (flagged.has(flow.id)) {
@@ -99054,14 +99262,9 @@ function constrainPorts(graph, scene, flagged, model) {
       const role = flow.from === nodeId ? "src" : "dst";
       const other = nodeById.get(role === "src" ? flow.to : flow.from);
       if (!other) continue;
-      let side = sideToward(sceneNode, other);
-      if (!flagged.has(flow.id)) {
-        const edge = scene.edges.find((e) => e.id === flow.id);
-        const terminal = edge && edge.pts.length >= 2 ? role === "src" ? edge.pts[0] : edge.pts[edge.pts.length - 1] : null;
-        const actual = terminal ? sideOn(terminal, sceneNode) : null;
-        if (actual) side = actual;
-      }
+      const side = flagged.has(flow.id) ? sideToward(sceneNode, other) : firstPassSide(scene, flow.id, role, sceneNode) ?? sideToward(sceneNode, other);
       const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      if ((elkNode.ports ?? []).some((port) => port.id === portId)) continue;
       ports.push({ id: portId, width: 1, height: 1, layoutOptions: { "elk.port.side": side } });
       const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
       if (elkEdge) {
@@ -99077,6 +99280,7 @@ function constrainPorts(graph, scene, flagged, model) {
 var INGRESS_PARTITION = -1;
 var EGRESS_PARTITION = 900;
 var COMPACT_WRAP = 10;
+var SLOT_SCALE = 1e3;
 function elkPartitionOf(element, index, view, ingressExternal) {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
   if (element.kind === "actor" || element.kind === "actor-group") return INGRESS_PARTITION;
@@ -99084,6 +99288,52 @@ function elkPartitionOf(element, index, view, ingressExternal) {
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== void 0) return 90 + view.partitions[element.kind];
   return index;
+}
+function rootAncestorOf(model, id) {
+  let element = model.index.get(id);
+  if (!element) return void 0;
+  while (element.parent) element = element.parent;
+  return element.id;
+}
+function readingSlots(model, view, ingressExternal) {
+  const slotOf = /* @__PURE__ */ new Map();
+  if (!model.elements.some((element) => element.order)) return slotOf;
+  const bandOf = new Map(
+    model.elements.map((element, index) => [
+      element.id,
+      elkPartitionOf(element, index, view, ingressExternal)
+    ])
+  );
+  const lowestOf = /* @__PURE__ */ new Map();
+  for (const band of new Set(bandOf.values())) {
+    const members = model.elements.filter((element) => bandOf.get(element.id) === band);
+    const declared = [
+      ...new Set(members.filter((m) => m.order).map((m) => m.order.value))
+    ].sort((a, b) => a - b);
+    const lowest = declared.length ? 1 : 0;
+    lowestOf.set(band, lowest);
+    for (const member of members)
+      slotOf.set(
+        member.id,
+        member.order ? declared.indexOf(member.order.value) + 1 : lowest
+      );
+  }
+  const ordered = new Set(model.elements.filter((element) => element.order).map((e) => e.id));
+  for (let pass = 0; pass < model.elements.length; pass++) {
+    let moved = false;
+    for (const flow of model.flows) {
+      const from = rootAncestorOf(model, flow.from);
+      const to = rootAncestorOf(model, flow.to);
+      if (!from || !to || from === to || ordered.has(to)) continue;
+      if (bandOf.get(from) !== bandOf.get(to)) continue;
+      const candidate = slotOf.get(from);
+      if (candidate <= slotOf.get(to)) continue;
+      slotOf.set(to, candidate);
+      moved = true;
+    }
+    if (!moved) break;
+  }
+  return slotOf;
 }
 function elkFlowEdge(flow, ctx, labelWrap) {
   const { compact, numbered, fonts, businessObjectName } = ctx;
@@ -99121,9 +99371,88 @@ function elkFlowEdge(flow, ctx, labelWrap) {
     labels: text || chips.length ? [{ text, ...labelBox }] : []
   };
 }
+var SIDE_TO_ELK = {
+  left: "WEST",
+  right: "EAST",
+  top: "NORTH",
+  bottom: "SOUTH"
+};
+function applyDeclaredPorts(graph, model) {
+  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide);
+  if (!pinned.length) return;
+  const elkById = /* @__PURE__ */ new Map();
+  const register = (node) => {
+    elkById.set(node.id, node);
+    for (const child of node.children ?? []) register(child);
+  };
+  register(graph);
+  for (const flow of pinned) {
+    const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
+    if (!elkEdge) continue;
+    for (const [role, declared, nodeId] of [
+      ["out", flow.fromSide, flow.from],
+      ["in", flow.toSide, flow.to]
+    ]) {
+      if (!declared) continue;
+      const elkNode = elkById.get(nodeId);
+      if (!elkNode) continue;
+      const portId = `${flow.id}#${role}`;
+      elkNode.ports = [
+        ...elkNode.ports ?? [],
+        {
+          id: portId,
+          width: 1,
+          height: 1,
+          layoutOptions: { "elk.port.side": SIDE_TO_ELK[declared.value] }
+        }
+      ];
+      elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
+      if (role === "out") elkEdge.sources = [portId];
+      else elkEdge.targets = [portId];
+    }
+  }
+}
+function terminalSide(p, node) {
+  if (p.x > node.x - 2 && p.x < node.x + node.width + 2) {
+    if (Math.abs(p.y - node.y) < 2) return "top";
+    if (Math.abs(p.y - (node.y + node.height)) < 2) return "bottom";
+  }
+  if (p.y > node.y - 2 && p.y < node.y + node.height + 2) {
+    if (Math.abs(p.x - node.x) < 2) return "left";
+    if (Math.abs(p.x - (node.x + node.width)) < 2) return "right";
+  }
+  return null;
+}
+function attachSideDiagnostics(scene, model) {
+  const diagnostics = [];
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  for (const flow of model.flows) {
+    if (!flow.fromSide && !flow.toSide) continue;
+    const edge = scene.edges.find((candidate) => candidate.id === flow.id);
+    if (!edge || edge.pts.length < 2) continue;
+    for (const [declared, nodeId, point, role] of [
+      [flow.fromSide, flow.from, edge.pts[0], "leaves"],
+      [flow.toSide, flow.to, edge.pts[edge.pts.length - 1], "arrives on"]
+    ]) {
+      const node = declared ? nodeById.get(nodeId) : void 0;
+      if (!declared || !node) continue;
+      const actual = terminalSide(point, node);
+      if (actual === declared.value) continue;
+      diagnostics.push({
+        code: "W0570",
+        severity: "warning",
+        message: `attachment side \`${declared.value}\` could not be honored`,
+        span: declared.span,
+        note: actual ? `the flow ${role} the ${actual} side of \`${nodeId}\`` : `the flow does not ${role} a side of \`${nodeId}\` cleanly`,
+        help: "a side the layout cannot reach is dropped rather than forced \u2014 try the opposite endpoint, or `order:` to move the element instead"
+      });
+    }
+  }
+  return diagnostics;
+}
 function buildElkGraph(ctx, direction, options) {
-  const { model, view, ingressExternal, compact, numbered, fonts } = ctx;
-  return {
+  const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
+  const graph = {
     id: "root",
     layoutOptions: {
       "elk.algorithm": "layered",
@@ -99161,17 +99490,23 @@ function buildElkGraph(ctx, direction, options) {
       } : {}
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode2(element, compact, fonts.cont, fonts.node);
+      const elkNode = toElkNode2(element, compact, fonts, true);
+      const band = elkPartitionOf(element, index, view, ingressExternal);
+      const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
+        // Without an `order:` anywhere the band is emitted as it always was, so
+        // the drawing is byte-identical to one from before the hint existed.
         "elk.partitioning.partition": String(
-          elkPartitionOf(element, index, view, ingressExternal)
+          slot === void 0 ? band : band * SLOT_SCALE + slot
         )
       };
       return elkNode;
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap))
   };
+  applyDeclaredPorts(graph, model);
+  return graph;
 }
 function recordRepairs(scene, routesBefore) {
   for (const edge of scene.edges) {
@@ -99226,6 +99561,7 @@ async function layout(model, view) {
     model,
     view,
     ingressExternal: ingressExternalElements,
+    slotOf: readingSlots(model, view, ingressExternalElements),
     compact,
     numbered,
     fonts: {
@@ -99246,18 +99582,25 @@ async function layout(model, view) {
     const nodes = walkedNodes.map((walked) => walked.node);
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
     const edges = collectSceneEdges(result2, origins, numbered, edgeFontSize);
-    const scene2 = {
+    const pinnedFlows = new Map(
+      model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }])
+    );
+    for (const edge of edges) {
+      const pinned = pinnedFlows.get(edge.id);
+      if (pinned) edge.pinned = { ...pinned };
+    }
+    const scene = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),
       nodes,
       edges,
       layoutMs: layoutMs2
     };
-    runGeometryPasses(scene2, model, {
+    runGeometryPasses(scene, model, {
       numbered,
       sideways: disposition === "page" || disposition === "tall"
     });
-    return scene2;
+    return scene;
   };
   const startTime = Date.now();
   let result;
@@ -99303,28 +99646,37 @@ async function layout(model, view) {
     result = await elk.layout(makeGraph(winnerDirection));
   }
   const layoutMs = Date.now() - startTime;
-  const scene = sceneFromResult(result, layoutMs);
-  const away = attachAwayOf(scene, model);
+  const base = sceneFromResult(result, layoutMs);
   const skipPortPass = !!globalThis.process?.env?.CAIRN_NO_PORT_PASS;
-  if (!away.size || skipPortPass) return scene;
-  try {
-    const constrained = makeGraph(winnerDirection, winnerOptions);
-    constrainPorts(constrained, scene, away, model);
-    const reresult = await elk.layout(constrained);
-    const rescene = sceneFromResult(reresult, Date.now() - startTime);
-    const allEdges = (s) => new Set(s.edges.map((edge) => edge.id));
-    const before = inspect(scene, titleBoxesOf(scene, model)).local(allEdges(scene), /* @__PURE__ */ new Map());
-    const after = inspect(rescene, titleBoxesOf(rescene, model)).local(
-      allEdges(rescene),
-      /* @__PURE__ */ new Map()
-    );
-    for (const [key, tier] of selectionExtras(scene, model)) before.set(key, tier);
-    for (const [key, tier] of selectionExtras(rescene, model)) after.set(key, tier);
-    const verdict = relayoutVerdict(before, after);
-    return verdict >= 0 ? rescene : scene;
-  } catch {
-    return scene;
+  if (skipPortPass) return base;
+  const layoutProfile = (candidate) => {
+    const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
+    const profile = inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, /* @__PURE__ */ new Map());
+    for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
+    return profile;
+  };
+  const baseProfile = layoutProfile(base);
+  let current = base;
+  let best = null;
+  for (let round = 0; round < PORT_PASS_ROUNDS; round++) {
+    const flagged = attachAwayOf(current, model);
+    if (!flagged.size) break;
+    let candidate;
+    try {
+      const constrained = makeGraph(winnerDirection, winnerOptions);
+      constrainPorts(constrained, current, flagged, model);
+      const reresult = await elk.layout(constrained);
+      candidate = sceneFromResult(reresult, Date.now() - startTime);
+    } catch {
+      break;
+    }
+    const tier = relayoutVerdict(baseProfile, layoutProfile(candidate));
+    if (tier < 0) break;
+    const scored = { scene: candidate, tier, detours: longDetourCount(candidate, model) };
+    if (beatsRelayout(scored, best)) best = scored;
+    current = candidate;
   }
+  return best?.scene ?? base;
 }
 
 // src/localization.ts
@@ -99980,7 +100332,7 @@ function createEdgePainter(paint) {
     const flowStyle = flow?.style;
     const color = flowColorOf(flow);
     const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
-    const dash = dashArray(flowStyle?.stroke?.style ?? style.flowStroke.style);
+    const dash = dashArray(flowStyle?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style);
     const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
     return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
 `;
@@ -100311,6 +100663,7 @@ async function compile(source, options) {
   const view = views[model.type];
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
   const scene = await layout(model, view);
+  diags.push(...attachSideDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene);
   return {
     svg,

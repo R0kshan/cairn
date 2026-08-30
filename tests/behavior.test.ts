@@ -1,7 +1,7 @@
 /**
  * Behavior suite: direct, deep assertions on parsing, validation, layout, rendering,
  * matrix export, i18n, theming, and CLI behavior — including exact SVG geometry,
- * diagnostic codes and determinism. 
+ * diagnostic codes and determinism.
  * Run via `npm test`.
  */
 
@@ -14,7 +14,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
-import { layout } from "../src/scene-layout.ts";
+import { layout, attachSideDiagnostics, beatsRelayout } from "../src/scene-layout.ts";
+import { isLongDetour } from "../src/geometry.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
@@ -48,6 +49,13 @@ test("broken.cairn raises exactly the seeded diagnostic codes", () => {
   const { codes } = check(load("broken.cairn"));
   for (const c of ["E0210", "E0202", "E0201", "E0203", "E0220"]) assert.ok(codes.includes(c), c);
   assert.equal(codes.filter((c) => c === "W0510").length, 2);
+});
+
+test("a missing flow target names the arrow the author actually wrote", () => {
+  const dashed = check('diagram logical "t"\nsystem S "s"\nS -->\n');
+  assert.match(dashed.diags.find((d) => d.severity === "error")!.message, /after `-->`/);
+  const dotted = check('diagram logical "t"\nsystem S "s"\nS ..>\n');
+  assert.match(dotted.diags.find((d) => d.severity === "error")!.message, /after `\.\.>`/);
 });
 
 test("unknown kind suggests the nearest valid kind", () => {
@@ -171,10 +179,7 @@ test("flows are orthogonal and never share an attachment point", async () => {
           if (!side) continue;
           const vertical = side === "east" || side === "west";
           const key = `${n.id}|${side}|${vertical ? n.height : n.width}`;
-          seats.set(key, [
-            ...(seats.get(key) ?? []),
-            { along: vertical ? p.y : p.x, id: e.id },
-          ]);
+          seats.set(key, [...(seats.get(key) ?? []), { along: vertical ? p.y : p.x, id: e.id }]);
           break;
         }
       }
@@ -238,8 +243,7 @@ test("no dead horizontal band survives in any disposition", async () => {
       const base = load(file);
       const { scene } = await build(base.replace('"\n', `"\nstyle { disposition: ${disp} }\n`));
       const pinned: [number, number][] = scene.nodes.map((n) => [n.y, n.y + n.height]);
-      for (const e of scene.edges)
-        for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
+      for (const e of scene.edges) for (const l of e.labels) pinned.push([l.y, l.y + l.height]);
       for (const s of segmentsOf(scene).horizontal) pinned.push([s.y - 1, s.y + 1]);
       pinned.sort((a, b) => a[0] - b[0]);
       let reach = 0;
@@ -311,6 +315,42 @@ test("south-blocked backward flows use the top channel instead (logical-archi)",
     len < 2.2 * direct,
     `COORD→OPE must route via the top channel (len ${Math.round(len)} vs direct ${Math.round(direct)})`,
   );
+});
+
+test("no flow in the corpus wraps around a whole drawing (longDetour is 0 per drawing)", async () => {
+  // The sweep ratchets `longDetour` corpus-wide; this checks the two logical
+  // fixtures whose backward flows leave a container for a target inside another
+  // one, which is the shape the port-constrained relayout exists to keep clean.
+  for (const name of ["logical.cairn", "logical-archi.cairn"]) {
+    const { model, scene } = await build(load(name));
+    const nodeById = new Map(scene.nodes.map((n) => [n.id, n]));
+    for (const edge of scene.edges) {
+      const flow = model.flows.find((f) => f.id === edge.id);
+      const from = nodeById.get(flow?.from ?? "");
+      const to = nodeById.get(flow?.to ?? "");
+      if (!from || !to) continue;
+      assert.equal(
+        isLongDetour(edge.pts, from, to),
+        false,
+        `${name}: ${flow!.from}→${flow!.to} measures far longer than the distance it covers`,
+      );
+    }
+  }
+});
+
+test("a relayout round is chosen by tier first, then by the wraps the verdict cannot weigh", () => {
+  const round = (tier: number, detours: number) => ({ scene: `${tier}/${detours}`, tier, detours });
+  // Nothing accepted yet: any round that got this far beats nothing.
+  assert.equal(beatsRelayout(round(3, 9), null), true);
+  // The ladder decides first, in both directions.
+  assert.equal(beatsRelayout(round(0, 9), round(2, 0)), true);
+  assert.equal(beatsRelayout(round(2, 0), round(0, 9)), false);
+  // Same tier: the round leaving fewer flows wrapped around the drawing wins.
+  assert.equal(beatsRelayout(round(0, 0), round(0, 2)), true);
+  assert.equal(beatsRelayout(round(0, 2), round(0, 0)), false);
+  // A dead heat keeps the round already accepted, so the choice cannot depend
+  // on how many rounds ran (§2, byte-deterministic output).
+  assert.equal(beatsRelayout(round(1, 1), round(1, 1)), false);
 });
 
 // ---------- dispositions ----------
@@ -901,4 +941,253 @@ test("auth renders with a lock icon badge (path + rect), overlaps 0", async () =
   // lock shackle arc + body rect
   assert.match(svg, /v -4 a 5 5 0 0 1 10 0 v 4/);
   assert.match(svg, /<rect[^>]*rx="4"/); // rounded rect
+});
+
+// ---------- positioning controls (issue #8) ----------
+
+/** Y of the node with this id, for order assertions across a `wide` drawing. */
+const yOf = (scene: { nodes: { id: string; y: number }[] }, id: string) =>
+  scene.nodes.find((node) => node.id === id)!.y;
+
+/** X of the node with this id, for order assertions along a `wide` drawing. */
+const xOf = (scene: { nodes: { id: string; x: number }[] }, id: string) =>
+  scene.nodes.find((node) => node.id === id)!.x;
+
+const ORDER_SRC = (first: string, second: string) =>
+  `diagram application "t"
+actor-group G "Actors" {
+  actor A_ONE "Alpha person" {
+    order: ${first}
+  }
+  actor B_TWO "Bravo person" {
+    order: ${second}
+  }
+}
+application APP "App" {
+  module M1 "Mod one"
+}
+A_ONE -> M1 (API_REST, JSON)
+B_TWO -> M1 (API_REST, JSON)
+`;
+
+test("inside a container, `order:` sorts siblings across the axis, both ways", async () => {
+  // The two actors share their actor-group's layer, and elk honors nothing else
+  // for a nested element — so `wide` orders them top to bottom.
+  const ascending = await build(ORDER_SRC("1", "2"));
+  assert.ok(yOf(ascending.scene, "A_ONE") < yOf(ascending.scene, "B_TWO"));
+  const descending = await build(ORDER_SRC("2", "1"));
+  assert.ok(yOf(descending.scene, "B_TWO") < yOf(descending.scene, "A_ONE"));
+});
+
+const READING_SRC = (disposition: string, first: string, second: string) =>
+  `diagram application "t"
+style { disposition: ${disposition} }
+application BACK_ONE "Backend one" {
+  order: ${first}
+  module MSG_ONE "Messaging one"
+}
+application BACK_TWO "Backend two" {
+  order: ${second}
+  module MSG_TWO "Messaging two"
+}
+queue Q_ONE "Queue one"
+MSG_ONE -> Q_ONE (AMQP)
+MSG_TWO -> Q_ONE (AMQP)
+`;
+
+test("at the diagram root, `order:` reads along the disposition's own direction", async () => {
+  // Both backends feed the same queue, so the flows give them equal depth and
+  // the engine would draw them side by side. `order:` sequences them instead.
+  const wide = await build(READING_SRC("wide", "1", "2"));
+  assert.ok(xOf(wide.scene, "BACK_ONE") < xOf(wide.scene, "BACK_TWO"), "wide: left to right");
+  const wideReversed = await build(READING_SRC("wide", "2", "1"));
+  assert.ok(
+    xOf(wideReversed.scene, "BACK_TWO") < xOf(wideReversed.scene, "BACK_ONE"),
+    "wide: and the other way round",
+  );
+
+  const tall = await build(READING_SRC("tall", "1", "2"));
+  assert.ok(yOf(tall.scene, "BACK_ONE") < yOf(tall.scene, "BACK_TWO"), "tall: top to bottom");
+  const tallReversed = await build(READING_SRC("tall", "2", "1"));
+  assert.ok(
+    yOf(tallReversed.scene, "BACK_TWO") < yOf(tallReversed.scene, "BACK_ONE"),
+    "tall: and the other way round",
+  );
+});
+
+test("`order:` never moves an element out of its view partition", async () => {
+  // The actor-group is banded ahead of the applications (§9). An order that says
+  // otherwise orders it among its own band's members, and nothing more.
+  const { scene } = await build(`diagram application "t"
+actor-group G "Actors" {
+  order: 9
+  actor U1 "User one"
+}
+application APP_ONE "App one" {
+  order: 1
+  module M1 "Mod one"
+}
+application APP_TWO "App two" {
+  order: 2
+  module M2 "Mod two"
+}
+U1 -> M1 (API_REST, JSON)
+M1 -> M2 (API_REST, JSON)
+`);
+  assert.ok(xOf(scene, "G") < xOf(scene, "APP_ONE"), "actors stay on the entry side");
+  assert.ok(xOf(scene, "APP_ONE") < xOf(scene, "APP_TWO"), "…and the applications still order");
+});
+
+test("an unordered element follows the flows into a band, not to the front", async () => {
+  // Nothing orders the queue; it is fed by the later backend, so it lands with
+  // it rather than being dragged into the first band ahead of its own source.
+  const { scene } = await build(READING_SRC("wide", "1", "2"));
+  assert.ok(xOf(scene, "Q_ONE") >= xOf(scene, "BACK_TWO"), "no backward flow into the queue");
+});
+
+test("`order:` rejects a non-integer or negative value (E0106), and stays usable as an id", () => {
+  const { codes } = check(
+    'diagram application "t"\napplication APP "a" {\n  order: two\n  module M1 "m"\n}\n',
+  );
+  assert.ok(codes.includes("E0106"));
+  // `order` is only a keyword before a `:` — as an id it still parses as a flow.
+  const asId = check(`diagram application "t"
+application APP "a" {
+  module order "Named order"
+  module M1 "m"
+}
+order -> M1 (API_REST, JSON)
+`);
+  assert.equal(asId.diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(asId.model.flows[0].from, "order");
+});
+
+/** Which side of `nodeId` the flow's terminal sits on. */
+const sideOfTerminal = (
+  scene: {
+    nodes: { id: string; x: number; y: number; width: number; height: number }[];
+    edges: { id: string; pts: { x: number; y: number }[] }[];
+  },
+  flowId: string,
+  nodeId: string,
+  end: "start" | "finish",
+) => {
+  const edge = scene.edges.find((candidate) => candidate.id === flowId)!;
+  const node = scene.nodes.find((candidate) => candidate.id === nodeId)!;
+  const p = end === "start" ? edge.pts[0] : edge.pts[edge.pts.length - 1];
+  if (Math.abs(p.y - node.y) < 2) return "top";
+  if (Math.abs(p.y - (node.y + node.height)) < 2) return "bottom";
+  if (Math.abs(p.x - node.x) < 2) return "left";
+  if (Math.abs(p.x - (node.x + node.width)) < 2) return "right";
+  return "none";
+};
+
+test("`ID.side` pins where a flow leaves and arrives, and marks the edge pinned", async () => {
+  const { scene, model } = await build(
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\ndatastore DB "Store"\nU1 -> M1 (API_REST, JSON)\nM1.bottom -> DB.top (JDBC)\n',
+  );
+  const pinned = model.flows.find((flow) => flow.from === "M1")!;
+  assert.equal(pinned.fromSide?.value, "bottom");
+  assert.equal(pinned.toSide?.value, "top");
+  assert.equal(sideOfTerminal(scene, pinned.id, "M1", "start"), "bottom");
+  assert.equal(sideOfTerminal(scene, pinned.id, "DB", "finish"), "top");
+  // Both ends pinned, recorded per end so a half-pinned flow keeps its free end.
+  assert.deepEqual(scene.edges.find((edge) => edge.id === pinned.id)!.pinned, {
+    start: true,
+    end: true,
+  });
+  // An unpinned flow in the same drawing carries no flag — the exemption is opt-in.
+  const free = model.flows.find((flow) => flow.from === "U1")!;
+  assert.equal(scene.edges.find((edge) => edge.id === free.id)!.pinned, undefined);
+});
+
+test("a half-pinned flow records only the end the author named", async () => {
+  const { scene, model } = await build(
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\ndatastore DB "Store"\nU1 -> M1 (API_REST, JSON)\nM1 -> DB.left (JDBC)\n',
+  );
+  const half = model.flows.find((flow) => flow.from === "M1")!;
+  assert.equal(half.fromSide, undefined);
+  assert.equal(half.toSide?.value, "left");
+  assert.deepEqual(scene.edges.find((edge) => edge.id === half.id)!.pinned, {
+    start: false,
+    end: true,
+  });
+});
+
+test("a declared id beats the `ID.side` reading (W0571), and an unknown side is E0223 alone", () => {
+  const shadowed = check(
+    'diagram application "t"\napplication APP "a" {\n  module M1 "m"\n  module M1.right "literal"\n}\ndatastore DB "d"\nM1.right -> DB (JDBC)\n',
+  );
+  assert.ok(shadowed.codes.includes("W0571"));
+  assert.equal(shadowed.model.flows[0].from, "M1.right");
+  assert.equal(shadowed.model.flows[0].fromSide, undefined);
+
+  const unknownSide = check(
+    'diagram application "t"\napplication APP "a" {\n  module M1 "m"\n}\ndatastore DB "d"\nM1.middle -> DB (JDBC)\n',
+  );
+  assert.ok(unknownSide.codes.includes("E0223"));
+  // The element is still identified, so no `unknown reference` piles on top.
+  assert.ok(!unknownSide.codes.includes("E0220"));
+});
+
+test("a pin the drawing does show is reported by nothing", async () => {
+  // U1 is the leftmost node, so leaving by its left side is the least convenient
+  // pin in the drawing — and it is still honored, which is what the silence means.
+  const src =
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\nU1.left -> M1 (API_REST, JSON)\n';
+  const { model, view, scene } = await build(src);
+  assert.equal(view.name, "application");
+  assert.equal(sideOfTerminal(scene, model.flows[0].id, "U1", "start"), "left");
+  assert.deepEqual(attachSideDiagnostics(scene, model), []);
+});
+
+test("W0570 reports a pin the finished drawing does not show", async () => {
+  // Driven off a scene rather than a source file: the point under test is that
+  // a terminal sitting on another side is *reported*, and pinning a real layout
+  // into that state would tie the test to whichever geometry pass moved it.
+  const src =
+    'diagram application "t"\nactor-group G "Actors" {\n  actor U1 "User one"\n}\napplication APP "App" {\n  module M1 "Mod one"\n}\nU1.left -> M1.top (API_REST, JSON)\n';
+  const { model, scene } = await build(src);
+  const flow = model.flows[0];
+  const node = scene.nodes.find((candidate) => candidate.id === "U1")!;
+  const edge = scene.edges.find((candidate) => candidate.id === flow.id)!;
+  // Move the pinned start onto the right side, leaving the arrival untouched.
+  edge.pts[0] = { x: node.x + node.width, y: node.y + node.height / 2 };
+
+  const diags = attachSideDiagnostics(scene, model);
+  assert.equal(diags.length, 1);
+  assert.equal(diags[0].code, "W0570");
+  assert.equal(diags[0].severity, "warning");
+  assert.match(diags[0].message, /`left` could not be honored/);
+  assert.match(diags[0].note!, /leaves the right side of `U1`/);
+  // The span points at the pin the author wrote, not at the whole flow.
+  assert.deepEqual(diags[0].span, flow.fromSide!.span);
+});
+
+test("arrow glyphs carry the line style, inline `{ stroke: … }` overrides them", async () => {
+  const { svg } = await build(
+    'diagram application "t"\napplication APP "a" {\n  module M1 "one"\n  module M2 "two"\n  module M3 "three"\n  module M4 "four"\n}\nM1 -> M2 (API_REST, JSON)\nM1 --> M3 (MQ, JSON)\nM1 ..> M4 (MQ, JSON)\nM2 --> M4 (MQ, JSON) { stroke: solid }\n',
+  );
+  const flowPaths = [...svg.matchAll(/<path[^>]*marker-end[^>]*>/g)].map((match) => match[0]);
+  assert.equal(flowPaths.length, 4);
+  assert.equal(flowPaths.filter((path) => path.includes('stroke-dasharray="5 3"')).length, 1);
+  assert.equal(flowPaths.filter((path) => path.includes('stroke-dasharray="2 2.5"')).length, 1);
+  assert.equal(flowPaths.filter((path) => !path.includes("stroke-dasharray")).length, 2);
+});
+
+test("`system` is a container kind in the application view and annotates the matrix", () => {
+  const src =
+    'diagram application "t"\nsystem PLAT "Platform" {\n  application APP "App" {\n    module M1 "Mod one"\n  }\n  datastore DB "Store"\n}\nM1 -> DB (JDBC)\n';
+  const { model, diags } = check(src);
+  assert.equal(diags.filter((d) => d.severity === "error").length, 0);
+  assert.ok(views.application.containerKinds.includes("system"));
+  const matrix = buildFlowMatrix(model, views.application);
+  const cellOf = (column: string) =>
+    matrix.rows[0].cells[matrix.columns.findIndex((c) => c.id === column)];
+  // Nearest container wins: the module reads as its application, the datastore
+  // as the system that directly holds it.
+  assert.match(cellOf("source"), /\(App\)$/);
+  assert.match(cellOf("dest"), /\(Platform\)$/);
+  // …and `system` stays unknown in a view that does not declare it.
+  assert.ok(check('diagram infrastructure "t"\nsystem S "s"\n').codes.includes("E0201"));
 });

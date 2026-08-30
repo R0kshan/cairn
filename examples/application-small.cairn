@@ -8,14 +8,18 @@ actor-group HR "HR actors" {
   actor MANAGER "Manager"
 }
 
-application PORTAL "HR portal" {
-  module LEAVE "Leave\nrequests"
-  module APPROVAL "Approval\nworkflow"
+# `system` is a C4 system boundary: it groups the applications, queues and
+# datastores that belong to one system.
+system HRIS "HR information system" {
+  application PORTAL "HR portal" {
+    module LEAVE "Leave\nrequests"
+    module APPROVAL "Approval\nworkflow"
+  }
+
+  queue NOTIFY "Notification\nbus"
+
+  datastore HR_REF "HR\nrepository"
 }
-
-queue NOTIFY "Notification\nbus"
-
-datastore HR_REF "HR\nrepository"
 
 external PAYROLL "Payroll HRIS\n(outsourced)"
 
@@ -25,5 +29,5 @@ LEAVE -> APPROVAL (API_REST, JSON)
 MANAGER -> APPROVAL
 APPROVAL -> HR_REF (JDBC)
 APPROVAL -> NOTIFY (MQ, JSON)
-EMPLOYEE -> NOTIFY (webhook, JSON)
+LEAVE -> NOTIFY.right (MQ, JSON)
 APPROVAL -> PAYROLL (SFTP, CSV)

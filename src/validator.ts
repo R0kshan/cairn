@@ -2,7 +2,8 @@
  * Stage 3: semantic checks over the parsed `Model`, driven by the active view's
  * rules (`views` registry). Runs a battery of focused passes — duplicate IDs,
  * unknown kinds, nesting, flow references, per-view flow requirements, trust
- * boundaries, business objects, minimum counts, isolated elements — each
+ * boundaries, business objects, minimum counts, isolated elements, placement
+ * constraints — each
  * returning `Diagnostic[]`. `nearest`/`editDistance` power the "did you mean?"
  * suggestions. Purely diagnostic: never mutates the model.
  */
@@ -13,6 +14,7 @@ import type { View } from "./views.ts";
 import { views } from "./views.ts";
 import { subtreeIds, subtreeElements } from "./element-tree.ts";
 
+/** Validates a parsed model against view-specific rules and returns diagnostic messages. */
 export function validate(model: Model): Diagnostic[] {
   const view = model.type ? views[model.type] : undefined;
 
@@ -226,7 +228,8 @@ function checkTrustBoundaries(model: Model, view: View): Diagnostic[] {
     return level && view.trustOrder?.[level] !== undefined ? view.trustOrder[level] : -1;
   };
   const lint = view.boundaryLint;
-  const isSecurityNode = (id: string) => lint !== undefined && model.index.get(id)?.kind === lint.nodeKind;
+  const isSecurityNode = (id: string) =>
+    lint !== undefined && model.index.get(id)?.kind === lint.nodeKind;
 
   for (const flow of model.flows) {
     if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;

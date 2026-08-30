@@ -8,7 +8,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 execSync('node --experimental-strip-types scripts/snapshots-report.ts', { cwd: root, stdio: 'inherit' });
 
 const cairn = 'node --experimental-strip-types src/cli.ts';
-const dirs = ['examples', 'examples/dispositions', 'examples/themes'];
+const dirs = ['examples', 'examples/dispositions', 'examples/themes', 'examples/placement'];
 
 console.log('• rebuilding diagram SVGs…');
 let n = 0, warn = 0;

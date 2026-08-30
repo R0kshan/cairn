@@ -19,6 +19,7 @@ import ELKConstructor, { type ELK } from "elkjs/lib/elk.bundled.js";
 // constructor, so we cast to the construct signature at this single boundary.
 const ElkClass = ELKConstructor as unknown as new () => ELK;
 
+/** Creates an ELK instance for Node.js (temporarily removes self global to run synchronously). */
 export function nodeElkFactory(): ELK {
   const globalObject = globalThis as unknown as { self?: unknown };
   const savedSelf = globalObject.self;

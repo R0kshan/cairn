@@ -117,7 +117,9 @@ const pair = (a: string, b: string) => (a < b ? `${a}~${b}` : `${b}~${a}`);
 /** A route terminal resolved to the node side it lands on. */
 interface Seat {
   node: SceneNode;
-  side: string;
+  /** The same four names `edge-tidy`'s `Side` uses, as literals so a caller can
+   *  feed a seat's side straight back into a side-typed API. */
+  side: "north" | "south" | "east" | "west";
 }
 
 /** The two terminals of a route, either of which may be unseated. */

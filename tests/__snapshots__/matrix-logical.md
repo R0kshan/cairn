@@ -2,22 +2,22 @@
 
 | No. | Source | Destination | Flow |
 |---|---|---|---|
-| 1 | Policyholder | Online reporting (Reporting layer) | Report a claim |
-| 2 | Involved third party | Phone reporting (Reporting layer) | Report involvement |
-| 3 | Policyholder | Supporting-document collection (Reporting layer) | Upload photos and documents |
-| 4 | Supporting-document collection (Reporting layer) | Group ECM | Archive documents |
-| 5 | Online reporting (Reporting layer) | Claim-file management (Investigation layer) | Open the case file |
-| 6 | Phone reporting (Reporting layer) | Claim-file management (Investigation layer) | Open the case file (phone channel) |
-| 7 | Claim-file management (Investigation layer) | Fraud detection (Investigation layer) | Systematic check at opening |
-| 8 | Fraud detection (Investigation layer) | Inter-insurer files | Query claims-history files |
-| 9 | Inter-insurer files | Fraud detection (Investigation layer) | Policyholder history |
-| 10 | Claim-file management (Investigation layer) | Assessment tracking (Investigation layer) | Assessment mission if damage > threshold |
-| 11 | Appointed expert | Assessment tracking (Investigation layer) | Submit assessment report |
-| 12 | Assessment tracking (Investigation layer) | Claim-file management (Investigation layer) | Assessment conclusions |
-| 13 | Claims handler | Claim-file management (Investigation layer) | Investigation and management decisions |
-| 14 | Claim-file management (Investigation layer) | Compensation calculation (Settlement layer) | Approved items for pricing |
-| 15 | Compensation calculation (Settlement layer) | Settlement supervisor | Approval request beyond delegation |
-| 16 | Settlement supervisor | Compensation calculation (Settlement layer) | Approval or reasoned refusal |
-| 17 | Compensation calculation (Settlement layer) | Payment scheduling (Settlement layer) | Compensation order |
-| 18 | Payment scheduling (Settlement layer) | Banking system (transfers) | SEPA transfer |
-| 19 | Claim-file management (Investigation layer) | Policyholder | Notify steps and decision |
+| 1 | Policyholder | Online reporting (Claim reporting) | Report a claim |
+| 2 | Involved third party | Phone reporting (Claim reporting) | Report involvement |
+| 3 | Policyholder | Supporting-document collection (Claim reporting) | Upload photos and documents |
+| 4 | Supporting-document collection (Claim reporting) | Group ECM | Archive documents |
+| 5 | Online reporting (Claim reporting) | Claim-file management (Claim investigation) | Open the case file |
+| 6 | Phone reporting (Claim reporting) | Claim-file management (Claim investigation) | Open the case file (phone channel) |
+| 7 | Claim-file management (Claim investigation) | Fraud detection (Claim investigation) | Systematic check at opening |
+| 8 | Fraud detection (Claim investigation) | Inter-insurer files | Query claims-history files |
+| 9 | Inter-insurer files | Fraud detection (Claim investigation) | Policyholder history |
+| 10 | Claim-file management (Claim investigation) | Assessment tracking (Claim investigation) | Assessment mission if damage > threshold |
+| 11 | Appointed expert | Assessment tracking (Claim investigation) | Submit assessment report |
+| 12 | Assessment tracking (Claim investigation) | Claim-file management (Claim investigation) | Assessment conclusions |
+| 13 | Claims handler | Claim-file management (Claim investigation) | Investigation and management decisions |
+| 14 | Claim-file management (Claim investigation) | Compensation calculation (Claim settlement) | Approved items for pricing |
+| 15 | Compensation calculation (Claim settlement) | Settlement supervisor | Approval request beyond delegation |
+| 16 | Settlement supervisor | Compensation calculation (Claim settlement) | Approval or reasoned refusal |
+| 17 | Compensation calculation (Claim settlement) | Payment scheduling (Claim settlement) | Compensation order |
+| 18 | Payment scheduling (Claim settlement) | Banking system (transfers) | SEPA transfer |
+| 19 | Claim-file management (Claim investigation) | Policyholder | Notify steps and decision |

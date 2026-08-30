@@ -15,17 +15,17 @@ actor-group HANDLERS "Case handlers" {
 }
 
 system CLAIMS "Claims information system" {
-  layer REPORTING "Reporting layer" {
+  layer REPORTING "Claim reporting" {
     block REPORT_WEB "Online\nreporting"
     block REPORT_PHONE "Phone\nreporting"
     block DOCS "Supporting-document\ncollection"
   }
-  layer INVESTIGATION "Investigation layer" {
+  layer INVESTIGATION "Claim investigation" {
     block CASE "Claim-file\nmanagement"
     block ASSESSMENT "Assessment\ntracking"
     block FRAUD "Fraud\ndetection"
   }
-  layer SETTLEMENT "Settlement layer" {
+  layer SETTLEMENT "Claim settlement" {
     block COMPENSATION "Compensation\ncalculation"
     block PAYMENT "Payment\nscheduling"
     block RECOURSE "Subrogation\nand recourse"

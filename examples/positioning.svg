@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1180 386" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="1180" height="386" fill="#ffffff"/>
+<rect x="10" y="46" width="143" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="64" font-size="13" font-weight="bold" fill="#17202c">Payment actors</text>
+<rect x="309" y="22" width="652" height="249.16666666666669" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="319" y="40" font-size="13" font-weight="bold" fill="#17202c">Payment platform</text>
+<rect x="323" y="49" width="384" height="83" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="333" y="67" font-size="13" font-weight="bold" fill="#17202c">Payment gateway</text>
+<rect x="494.33333333333337" y="152" width="127" height="74" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="504.33333333333337" y="170" font-size="13" font-weight="bold" fill="#17202c">Ledger</text>
+<circle cx="87.5" cy="83" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 76.5 105 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="87.5" y="117" font-size="11" text-anchor="middle" fill="#20364c">Payment operator</text>
+<circle cx="81.5" cy="157" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 70.5 179 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="81.5" y="191" font-size="11" text-anchor="middle" fill="#20364c">Compliance auditor</text>
+<rect x="332" y="76" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="386" y="96.25" font-size="12.5" text-anchor="middle" fill="#17202c">Payment</text>
+<text x="386" y="110.75" font-size="12.5" text-anchor="middle" fill="#17202c">intake</text>
+<rect x="590" y="76" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="644" y="96.25" font-size="12.5" text-anchor="middle" fill="#17202c">Scheme</text>
+<text x="644" y="110.75" font-size="12.5" text-anchor="middle" fill="#17202c">routing</text>
+<rect x="503.33333333333337" y="179" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="557.3333333333334" y="202" font-size="12.5" text-anchor="middle" fill="#17202c">Posting</text>
+<path d="M 831 83.83333333333334 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="831" cy="107.33333333333334" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="881" y="104.08333333333334" font-size="12.5" text-anchor="middle" fill="#17202c">Settlement</text>
+<text x="881" y="118.58333333333334" font-size="12.5" text-anchor="middle" fill="#17202c">queue</text>
+<path d="M 823.5 222.16666666666669 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="877.5" cy="222.16666666666669" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="877.5" y="238.91666666666669" font-size="12.5" text-anchor="middle" fill="#17202c">Ledger</text>
+<text x="877.5" y="253.41666666666669" font-size="12.5" text-anchor="middle" fill="#17202c">store</text>
+<rect x="1062" y="49" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1116" y="69.25" font-size="12.5" text-anchor="middle" fill="#17202c">Card scheme</text>
+<text x="1116" y="83.75" font-size="12.5" text-anchor="middle" fill="#17202c">(external)</text>
+<path d="M 144 100 L 332 100" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 144 174 L 294 174 L 294 198 L 503.33333333333337 198" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 440 99.5 L 590 99.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 698 107.33333333333334 L 823 107.33333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 611.3333333333334 185 L 955 185 L 955 124.83333333333334 L 931 124.83333333333334" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 611.3333333333334 198 L 859.5 198 L 859.5 215.16666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 662 76 L 662 55 L 1062 55" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
+<text x="238" y="103.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="219" y="177.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="515" y="102.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="760.5" y="110.58333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="851.3333333333334" y="188.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="735.4166666666667" y="201.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<text x="862" y="58.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(ISO8583)</text>
+<line x1="20" y1="292" x2="1160" y2="292" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="314" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="304" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="315" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="304" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="315" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="304" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="400" y="315" font-size="10" fill="#17202c">Application</text>
+<rect x="490" y="304" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="522" y="315" font-size="10" fill="#17202c">Application module</text>
+<rect x="648" y="304" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="680" y="315" font-size="10" fill="#17202c">Message queue / broker</text>
+<rect x="827" y="304" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="859" y="315" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="150" y="326" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="182" y="337" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="356" x2="176" y2="356" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="360" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+</svg>

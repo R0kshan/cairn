@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 658 274" font-family="Helvetica,Arial,sans-serif">
+<rect width="658" height="274" fill="white"/>
+<text x="1" y="22" font-size="13" font-weight="bold" fill="#555">TECHNICAL FLOW MATRIX — Order platform — application view</text>
+<rect x="0" y="34" width="656" height="30" fill="#f7f7f7" stroke="#ddd"/>
+<text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">No.</text>
+<text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
+<text x="297" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
+<text x="539" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Protocol</text>
+<text x="615" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Flow</text>
+<text x="22.5" y="81" font-size="11" text-anchor="middle" fill="#444">1</text>
+<text x="55" y="81" font-size="11" text-anchor="start" fill="#444">Order clerk</text>
+<text x="297" y="81" font-size="11" text-anchor="start" fill="#444">Order capture (Order management)</text>
+<text x="539" y="81" font-size="11" text-anchor="start" fill="#444"></text>
+<text x="615" y="81" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="90" width="656" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
+<text x="55" y="107" font-size="11" text-anchor="start" fill="#444">Support agent</text>
+<text x="297" y="107" font-size="11" text-anchor="start" fill="#444">Customer records (Customer CRM)</text>
+<text x="539" y="107" font-size="11" text-anchor="start" fill="#444"></text>
+<text x="615" y="107" font-size="11" text-anchor="start" fill="#444"></text>
+<text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
+<text x="55" y="133" font-size="11" text-anchor="start" fill="#444">Order capture (Order management)</text>
+<text x="297" y="133" font-size="11" text-anchor="start" fill="#444">Order validation (Order management)</text>
+<text x="539" y="133" font-size="11" text-anchor="start" fill="#444">API_REST</text>
+<text x="615" y="133" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="142" width="656" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>
+<text x="55" y="159" font-size="11" text-anchor="start" fill="#444">Order validation (Order management)</text>
+<text x="297" y="159" font-size="11" text-anchor="start" fill="#444">Order repository (Order platform)</text>
+<text x="539" y="159" font-size="11" text-anchor="start" fill="#444">JDBC</text>
+<text x="615" y="159" font-size="11" text-anchor="start" fill="#444"></text>
+<text x="22.5" y="185" font-size="11" text-anchor="middle" fill="#444">5</text>
+<text x="55" y="185" font-size="11" text-anchor="start" fill="#444">Order validation (Order management)</text>
+<text x="297" y="185" font-size="11" text-anchor="start" fill="#444">Order event bus (Order platform)</text>
+<text x="539" y="185" font-size="11" text-anchor="start" fill="#444">MQ</text>
+<text x="615" y="185" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="194" width="656" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
+<text x="55" y="211" font-size="11" text-anchor="start" fill="#444">Invoicing (Billing)</text>
+<text x="297" y="211" font-size="11" text-anchor="start" fill="#444">Order event bus (Order platform)</text>
+<text x="539" y="211" font-size="11" text-anchor="start" fill="#444">MQ</text>
+<text x="615" y="211" font-size="11" text-anchor="start" fill="#444"></text>
+<text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>
+<text x="55" y="237" font-size="11" text-anchor="start" fill="#444">Customer records (Customer CRM)</text>
+<text x="297" y="237" font-size="11" text-anchor="start" fill="#444">Order validation (Order management)</text>
+<text x="539" y="237" font-size="11" text-anchor="start" fill="#444">API_REST</text>
+<text x="615" y="237" font-size="11" text-anchor="start" fill="#444"></text>
+<rect x="0" y="246" width="656" height="26" fill="#ddd" opacity="0.2"/>
+<text x="22.5" y="263" font-size="11" text-anchor="middle" fill="#444">8</text>
+<text x="55" y="263" font-size="11" text-anchor="start" fill="#444">Invoicing (Billing)</text>
+<text x="297" y="263" font-size="11" text-anchor="start" fill="#444">Carrier tracking (third party)</text>
+<text x="539" y="263" font-size="11" text-anchor="start" fill="#444">SFTP</text>
+<text x="615" y="263" font-size="11" text-anchor="start" fill="#444"></text>
+<line x1="45" y1="34" x2="45" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="287" y1="34" x2="287" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="529" y1="34" x2="529" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="605" y1="34" x2="605" y2="272" stroke="#ddd" stroke-width="1"/>
+<line x1="0" y1="272" x2="656" y2="272" stroke="#ddd"/>
+<rect x="0" y="34" width="656" height="238" fill="none" stroke="#ddd"/>
+</svg>

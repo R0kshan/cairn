@@ -17,12 +17,12 @@ actor-group INTERNAL "Internal teams" {
 }
 
 system FRONT "Commerce front" {
-  layer PRESENTATION "Presentation layer" {
+  layer PRESENTATION "Sales channels" {
     block SITE "E-commerce\nsite"
     block APP "Mobile\napp"
     block KIOSK "Store\nkiosks"
   }
-  layer JOURNEY "Customer-journey layer" {
+  layer JOURNEY "Customer journey" {
     block CATALOG_FRONT "Catalog\nbrowsing"
     block CART "Cart and\ncheckout"
     block ACCOUNT "Customer\naccount"
@@ -31,18 +31,18 @@ system FRONT "Commerce front" {
 }
 
 system CORE "Commerce core" {
-  layer SALES "Sales layer" {
+  layer SALES "Sales" {
     block ORDER "Order\nmanagement"
     block PAYMENT "Payment\norchestration"
     block PROMO "Promotions\nengine"
     block LOYALTY "Loyalty\nprogram"
   }
-  layer OFFER "Offer layer" {
+  layer OFFER "Offer" {
     block PIM "Product\nrepository"
     block PRICING "Pricing"
     block STOCK "Unified stock\nview"
   }
-  layer EXECUTION "Execution layer" {
+  layer EXECUTION "Execution" {
     block OMS "Shipment\norchestration"
     block WMS_LINK "Warehouse\ncontrol"
     block AFTERSALES "After-sales\nservice"
@@ -50,11 +50,11 @@ system CORE "Commerce core" {
 }
 
 system DATA "Data platform" {
-  layer COLLECTION "Collection layer" {
+  layer COLLECTION "Collection" {
     block TRACKING "Browsing-event\ncollection"
     block CDC "Reference-data\nchange capture"
   }
-  layer ANALYTICS "Analytics layer" {
+  layer ANALYTICS "Analytics" {
     block DWH "Data\nwarehouse"
     block SEGMENTS "Customer\nsegmentation"
   }
