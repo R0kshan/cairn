@@ -508,8 +508,9 @@ function createNodeRenderers(paint: NodePaint) {
     const fill = escAttr(nodeStyle.fill ?? palette.nodeFill),
       stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke),
       text = escAttr(nodeStyle.text ?? palette.nodeText);
+    const dash = dashArray(nodeStyle.stroke?.style);
     const body =
-      `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>\n` +
+      `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>\n` +
       glyphSvg(node.kind, stroke, {
         x: node.x + GLYPH_BOX.left,
         y: node.y + GLYPH_BOX.top,

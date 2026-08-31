@@ -715,6 +715,27 @@ test("security: a font family cannot break out of the SVG attribute", async () =
   assert.match(svg, /font-family="x&quot; onload=&quot;alert\(1\)/);
 });
 
+test("glyph-box borders honour the node's own `stroke` line style", async () => {
+  // renderGlyphBox draws the same rounded rect as renderPlainBox, so it must
+  // resolve `stroke.style` the same way: a dashed or dotted node style reaches
+  // it through resolveStyle (kind defaults < `stroke <kind>:` < inline), never
+  // through the flow-stroke path. Regression guard for the glyph kinds silently
+  // dropping the dash array while every other box kept it.
+  const src =
+    'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway" { style { stroke: #cc2222 dashed 2 } } server SV "Server" { style { stroke: #2222cc dashed 2 } } } }\n';
+  const { svg } = await build(src);
+  assert.match(
+    svg,
+    /<rect[^>]*stroke="#cc2222"[^>]*stroke-dasharray="5 3"/,
+    "a dashed gateway must render a dashed border like any other box",
+  );
+  assert.match(
+    svg,
+    /<rect[^>]*stroke="#2222cc"[^>]*stroke-dasharray="5 3"/,
+    "the plain-box control must stay dashed",
+  );
+});
+
 test("security: fill/stroke/text on gateway/auth/queue are attribute-escaped", async () => {
   // Per-element style values (fill, stroke, text) on the new element kinds must
   // be passed through escAttr() so a quote in a user-supplied colour does not
