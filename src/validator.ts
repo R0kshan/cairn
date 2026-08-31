@@ -112,7 +112,10 @@ function checkLogos(elements: Element[], view: View): Diagnostic[] {
     }
 
     if (logo.source === "builtin") {
-      if (LOGOS[logo.value]) continue;
+      // `hasOwn`, not a plain lookup: `LOGOS` is an object literal, so
+      // `logo: constructor` would otherwise find `Object.prototype` and pass
+      // for a logo that does not exist.
+      if (Object.hasOwn(LOGOS, logo.value)) continue;
       const suggestion = nearest(logo.value, LOGO_NAMES);
       diagnostics.push({
         code: "E0107",

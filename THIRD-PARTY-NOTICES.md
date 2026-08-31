@@ -33,7 +33,8 @@ covers cairn's own code only.
 
 Version 16.29.0, CC0-1.0. Upstream: https://github.com/simple-icons/simple-icons
 
-cairn does not depend on simple-icons at build time or run time. A curated
+cairn's shipped artifacts and runtime do not depend on simple-icons; only
+regenerating the logos does. A curated
 subset of its icon *paths* — the ones behind `logo: <name>` — is vendored into
 `src/logos.ts` by `scripts/update-logos.mjs`, which fetches the pinned version
 with `npm pack` and writes the paths out as source. The full license text is in
