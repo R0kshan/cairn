@@ -30,10 +30,7 @@ const POSITIONING_PASSES = [
 
 /** Every element kind and view name the DSL knows about. */
 const dslTerms = [
-  ...new Set([
-    ...Object.keys(views),
-    ...Object.values(views).flatMap((view) => view.kinds),
-  ]),
+  ...new Set([...Object.keys(views), ...Object.values(views).flatMap((view) => view.kinds)]),
 ];
 
 /**
@@ -68,6 +65,8 @@ test("only route-detour reaches for the Model, and only for style (INVARIANTS §
 });
 
 test("no positioning pass imports the views registry (INVARIANTS §16)", () => {
-  const importsViews = POSITIONING_PASSES.filter((pass) => codeOf(pass).includes('from "./views.ts"'));
+  const importsViews = POSITIONING_PASSES.filter((pass) =>
+    codeOf(pass).includes('from "./views.ts"'),
+  );
   assert.deepEqual(importsViews, []);
 });

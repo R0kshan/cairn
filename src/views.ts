@@ -26,6 +26,12 @@ export interface View {
    * of width for it, and the renderer centres their label in what is left.
    */
   glyphKinds?: string[];
+  /**
+   * Kinds that accept `logo:` — the ones that stand for running software. A view
+   * without the field takes no logos at all, so the capability is opt-in per
+   * view rather than something every kind silently inherits.
+   */
+  logoKinds?: string[];
   /** Which columns the flow matrix emits for this view, and what annotates an endpoint. */
   matrix: MatrixSpec;
   legendNames: Record<string, string>;
@@ -225,6 +231,10 @@ const applicationView: View = {
     "external",
   ],
   containerKinds: ["actor-group", "system", "application", "external"],
+  // A logo says what a thing is built with, so it belongs to the kinds that run
+  // code. `actor` and `actor-group` are people; `system` is a grouping whose
+  // children carry their own stacks.
+  logoKinds: ["application", "module", "queue", "datastore", "external"],
   // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
   // `zoneOf` walks ancestors nearest-first, so an endpoint inside an application
   // still reads `Name (App)`; the system only annotates what sits directly in it.

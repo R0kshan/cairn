@@ -15,6 +15,7 @@ import { render } from "./svg-render.ts";
 import { views } from "./views.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { esc } from "./xml-escape.ts";
+import { resolveLogoFiles } from "./logo-files.ts";
 
 function errorPanelSvg(file: string, diagnostics: Diagnostic[]): string {
   const errors = diagnostics.filter((diagnostic) => diagnostic.severity === "error").slice(0, 10);
@@ -77,7 +78,9 @@ export function watchCommand(file: string, outFile: string) {
         const view = views[model.type!];
         const scene = await layout(model, view);
         diags.push(...attachSideDiagnostics(scene, model));
-        const { svg, overlapsAfter } = render(model, view, scene);
+        const { logos, diagnostics: logoDiagnostics } = resolveLogoFiles(model, file);
+        diags.push(...logoDiagnostics);
+        const { svg, overlapsAfter } = render(model, view, scene, { logos });
         writeFileSync(outFile, svg);
         if (diags.length)
           console.log(renderHuman(file, src, diags, process.stdout.isTTY ?? false) + "\n");

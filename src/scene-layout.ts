@@ -17,6 +17,7 @@ import {
   techText,
   fontSizes,
   GLYPH_GUTTER,
+  LOGO_GUTTER,
 } from "./text-metrics.ts";
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
@@ -191,11 +192,7 @@ interface NodeSizing {
  * shape. `root` marks a top-level element, whose own `order:` is a partition
  * band rather than an index inside a layer — its children still carry theirs.
  */
-function toElkNode(
-  element: Element,
-  sizing: NodeSizing,
-  root = false,
-): ElkNode {
+function toElkNode(element: Element, sizing: NodeSizing, root = false): ElkNode {
   const { compact, fonts, glyphKinds } = sizing;
   const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
@@ -221,7 +218,10 @@ function toElkNode(
   // A glyph node keeps the same minimum: the minimum already leaves more room
   // than a short label needs, so only labels wide enough to reach the glyph
   // widen the box.
-  const gutter = glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0;
+  // A logo reserves the mirror image of the glyph gutter, on the right. An
+  // element can in principle carry both, so they add rather than override.
+  const gutter =
+    (glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0) + (element.logo ? LOGO_GUTTER : 0);
   return {
     id: element.id,
     ...(element.order && !root ? { layoutOptions: orderOption(element) } : {}),
@@ -771,18 +771,15 @@ function readingSlots(model: Model, view: View, ingressExternal: Set<string>): M
   const lowestOf = new Map<number, number>();
   for (const band of new Set(bandOf.values())) {
     const members = model.elements.filter((element) => bandOf.get(element.id) === band);
-    const declared = [
-      ...new Set(members.filter((m) => m.order).map((m) => m.order!.value)),
-    ].sort((a, b) => a - b);
+    const declared = [...new Set(members.filter((m) => m.order).map((m) => m.order!.value))].sort(
+      (a, b) => a - b,
+    );
     // A band nobody ordered keeps one slot, so its members stay as free as they
     // were; `lowest` is then that slot, and the propagation below is a no-op.
     const lowest = declared.length ? 1 : 0;
     lowestOf.set(band, lowest);
     for (const member of members)
-      slotOf.set(
-        member.id,
-        member.order ? declared.indexOf(member.order.value) + 1 : lowest,
-      );
+      slotOf.set(member.id, member.order ? declared.indexOf(member.order.value) + 1 : lowest);
   }
 
   // Pull every unordered element forward to the last slot that reaches it, so a
@@ -1008,9 +1005,7 @@ function buildElkGraph(
         ...elkNode.layoutOptions,
         // Without an `order:` anywhere the band is emitted as it always was, so
         // the drawing is byte-identical to one from before the hint existed.
-        "elk.partitioning.partition": String(
-          slot === undefined ? band : band * SLOT_SCALE + slot,
-        ),
+        "elk.partitioning.partition": String(slot === undefined ? band : band * SLOT_SCALE + slot),
       };
       return elkNode;
     }),
@@ -1158,10 +1153,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     },
     businessObjectName,
   };
-  const makeGraph = (
-    direction: "RIGHT" | "DOWN",
-    options?: GraphOptions,
-  ): ElkNode => buildElkGraph(graphContext, direction, options);
+  const makeGraph = (direction: "RIGHT" | "DOWN", options?: GraphOptions): ElkNode =>
+    buildElkGraph(graphContext, direction, options);
 
   const kindOf = new Map(indexElementsById(model.elements));
 

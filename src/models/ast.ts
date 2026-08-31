@@ -65,6 +65,14 @@ export interface Element {
    * engine puts it, so a diagram that declares no order renders unchanged.
    */
   order?: { value: number; span: Span };
+  /**
+   * Tech-stack logo drawn in the element's corner (`logo: react`, or
+   * `logo: "./logos/acme.svg"` for a file). `source` records which of the two
+   * the author wrote, because a bare name resolves against the built-in set
+   * while a quoted one is a path the CLI reads and inlines — the core never
+   * touches the filesystem. Opt-in: an element without one renders unchanged.
+   */
+  logo?: { value: string; source: "builtin" | "file"; span: Span };
 }
 
 /**
@@ -139,8 +147,16 @@ export const defaultDiagramStyle = (): DiagramStyle => ({
 /** Registry of diagnostic code explanations for the `cairn explain` command. */
 export const explanations: Record<string, string> = {
   E0101: "Syntax error: the file does not follow the DSL grammar.",
+  E0105:
+    '`logo:` takes either a built-in name (`logo: react`) or a quoted path to a file in the workspace (`logo: "./logos/acme.svg"`). A URL is refused on purpose: a diagram that fetches its logos stops being self-contained, leaks the reader\'s IP to whoever hosts them, and rots silently when the address dies — so cairn inlines a file instead of linking one.',
   E0106:
     "`order:` takes a whole number ≥ 0. On a top-level element it sets the reading order the disposition defines — left to right for `wide`/`slide`, top to bottom for `tall`/`page` — by banding the element inside its own layout partition, so it never crosses into another partition. Inside a container the axis flips: a child's layer belongs to the flows and elk honors no constraint that would change it, so there `order:` sorts the siblings that share a layer. Values need not be contiguous.",
+  E0107:
+    'Unknown built-in logo. The built-in set is deliberately small — it covers common stack technologies, not every brand. Anything outside it is still reachable as a workspace file: `logo: "./logos/name.svg"`.',
+  E0108:
+    "This element kind does not carry a logo. A logo marks what a piece of software is built with, so the kinds that accept one are the kinds that run code; actors are people and containers are groupings, so neither takes one.",
+  W0580:
+    "A `logo:` file could not be inlined — it is missing, too large, or not one of the supported types. Only a warning: the diagram is still valid and renders without the mark, because a decoration that failed to load is no reason to fail a build.",
   E0201:
     "Unknown element kind for the active view. Each view defines its own kinds (e.g. logical: actor-group, actor, system, layer, block, external).",
   E0202:

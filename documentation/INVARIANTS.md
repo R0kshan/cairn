@@ -566,6 +566,19 @@ datastores); `datastore` renders as cylinder; business objects are logical-view
 only. Unknown element kinds for the
 active view are rejected (`E0201`).
 
+Which kinds accept `logo:` is the same kind of registry fact, declared as
+`View.logoKinds`: application view only, on `application`, `module`, `queue`,
+`datastore` and `external`. A view that declares none takes no logos at all, so
+the capability is opt-in rather than inherited (`E0108`).
+
+A logo is always **inlined, never linked** — a built-in path from `src/logos.ts`,
+or a workspace file read at build time and embedded as a `data:` URI. A URL is
+refused (`E0105`). A cairn SVG is one self-contained file that renders offline
+and identically forever; a diagram that fetches at open time would give that up,
+leak the reader's address, and rot when the far end changes. Reading those files
+is the CLI's job: `svg-render.ts` never touches a filesystem, because the
+playground has none.
+
 ## 13. `cairn new` must not overwrite files
 
 The `new` command uses `O_CREAT|O_EXCL` (`wx` flag) for atomic exclusive

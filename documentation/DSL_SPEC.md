@@ -22,7 +22,7 @@ Keywords are English; labels are free text. Built-in diagram types: `logical`, `
 | View | Element kinds | Flow specifics |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label required; business objects via `[REFS]` (**logical-view only** — a `business-object` in any other view is **E0222**) |
-| `application` | actor-group, actor, system, application, module, queue (horizontal cylinder), datastore (cylinder), external | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540, actor flows exempt — C4 container-diagram practice)**; no business objects |
+| `application` | actor-group, actor, system, application, module, queue (horizontal cylinder), datastore (cylinder), external — `application`, `module`, `queue`, `datastore` and `external` accept `logo:` | label **optional**; technical tail `(protocol, format)` **recommended on system-to-system flows (W0540, actor flows exempt — C4 container-diagram practice)**; no business objects |
 | `infrastructure` | site, network-zone, server, app-instance, queue (horizontal cylinder), gateway (gate glyph), firewall (brick-wall glyph), auth (padlock glyph), idp (badge glyph), external | label **optional**; protocol still required (**E0240**): `(HTTPS/443)`; zones band left→right in declaration order |
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a sensitivity level `(public\|internal\|restricted\|secret)` (**E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**); zones band exposed→protected in declaration order |
 
@@ -166,6 +166,38 @@ actor-group STAFF "Payment actors" {
   actor AUDITOR  "Compliance auditor" { order: 2 }
 }
 ```
+
+**`logo: <name>` — the technology a component is built on.** A statement inside
+an element body, like `order:`. Content rather than cosmetics, so it lives
+outside the `style` block. Application view only, and only on the kinds that
+stand for running software: `application`, `module`, `queue`, `datastore`,
+`external`. An `actor` is a person and a `system` is a grouping, so neither takes
+one (**E0108**).
+
+```
+module WEB "Web client" { logo: react }
+datastore ORDER_DB "Order store" { logo: postgresql }
+module BILLING "Billing" { logo: "./logos/acme.svg" }
+```
+
+A bare name comes from the built-in set — `cairn logos` lists all of them, and an
+unknown one is **E0107** with a `did you mean` suggestion. A quoted value is a
+path to a file **relative to the `.cairn` file**, in `.svg`, `.png`, `.jpg` or
+`.webp`, under 256 KB.
+
+The mark is drawn in the element's top-right corner, opposite the kind glyph, in
+the node's own stroke colour — a built-in logo never introduces a colour the
+theme did not choose. The layout reserves room for it, so a long label is
+centred in what is left rather than running underneath.
+
+**A URL is refused (E0105).** A logo file is read at build time and inlined as a
+`data:` URI, so the SVG stays one self-contained file: it renders offline, it
+cannot change under the author afterwards, and opening it does not tell a third
+party who is reading. A file that is missing, oversized or of an unsupported type
+is **W0580** — a warning, not an error, and the diagram renders without the mark.
+
+Because the core never touches a filesystem, file-sourced logos resolve in the
+CLI. The playground, which has no filesystem, renders built-ins only.
 
 **`ID.side` — which side of an element a flow attaches to.** Written on either
 endpoint, independently: `A.right -> B`, `A -> B.top`, or both. Sides are named

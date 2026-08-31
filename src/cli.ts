@@ -21,6 +21,8 @@ import { explanations } from "./models/ast.ts";
 import type { Model, Span } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { watchCommand } from "./watch.ts";
+import { resolveLogoFiles } from "./logo-files.ts";
+import { LOGO_NAMES } from "./logos.ts";
 
 const TYPE_FLAGS: Record<string, string> = {
   "--logical-architecture": "logical",
@@ -236,6 +238,7 @@ Usage:
                                                       (error panel on failure) for an
                                                       editor auto-refresh preview
   cairn explain <code>                                rule rationale (e.g. E0203)
+  cairn logos                                         list the built-in \`logo:\` names
   cairn version | --version | -v                      print the installed version
 `);
   process.exit(2);
@@ -329,7 +332,9 @@ if (command === "version" || command === "--version" || command === "-v") {
   const view = views[model.type!];
   layout(model, view)
     .then((scene) => {
-      const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene);
+      const { logos, diagnostics: logoDiagnostics } = resolveLogoFiles(model, file);
+      diagnostics.push(...logoDiagnostics);
+      const { svg, overlapsBefore, overlapsAfter } = render(model, view, scene, { logos });
       writeFileSync(outFile, svg);
       const { fitInfo, diagnostic } = densityReport(
         model.style.disposition,
@@ -407,6 +412,21 @@ if (command === "version" || command === "--version" || command === "-v") {
   console.log(
     `\u2713 ${file} created (${type} view) — fill in the sections, then run \`cairn validate ${file}\``,
   );
+} else if (command === "logos") {
+  // Printed in columns because the list is browsed, not parsed — a caller that
+  // wants the names one per line can still pipe this through `tr`.
+  const width = LOGO_NAMES.reduce((widest, name) => Math.max(widest, name.length), 0) + 2;
+  const perLine = Math.max(1, Math.floor(78 / width));
+  console.log(`${LOGO_NAMES.length} built-in logos — use as \`logo: <name>\` on an element:\n`);
+  for (let index = 0; index < LOGO_NAMES.length; index += perLine)
+    console.log(
+      "  " +
+        LOGO_NAMES.slice(index, index + perLine)
+          .map((n) => n.padEnd(width))
+          .join("")
+          .trimEnd(),
+    );
+  console.log('\nAnything else: point at a file — `logo: "./logos/name.svg"`.');
 } else if (command === "explain") {
   const code = args[1];
   if (!code) usage();

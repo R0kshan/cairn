@@ -43,6 +43,127 @@ const build = async (src: string) => {
   return { model, view, scene, ...render(model, view, scene) };
 };
 
+// ---------- logos ----------
+
+const LOGO_SRC =
+  'diagram application "t"\napplication APP "App" { logo: spring\n  module M "Public API" { logo: react }\n}\ndatastore DB "Store" { logo: postgresql }\nqueue Q "Events" { logo: apachekafka }\nM -> DB (SQL, JSON)\nM -> Q (MQ, JSON)\n';
+
+test("a built-in `logo:` renders in the node's own stroke colour, never a brand hue", async () => {
+  // simple-icons paths carry no fill of their own, which is why they can be
+  // vendored at all: the renderer paints them with the node's resolved stroke,
+  // so a logo can never introduce a colour the active theme did not choose.
+  // Guards against a future icon smuggling in a hardcoded fill.
+  const { svg } = await build(LOGO_SRC);
+  for (const title of ["Spring", "React", "PostgreSQL", "Apache Kafka"])
+    assert.match(
+      svg,
+      new RegExp(`<title>${title.replace(" ", " ")}</title>`),
+      `${title} must render`,
+    );
+  const logoFills = [...svg.matchAll(/<g transform="translate[^"]+" fill="([^"]+)">/g)].map(
+    (m) => m[1],
+  );
+  assert.equal(logoFills.length, 4, "one group per logo");
+  // Every logo colour must already be in use as a stroke somewhere in the
+  // document — that is what "painted with the node's own stroke" means, and it
+  // holds whatever theme is active.
+  const strokes = new Set([...svg.matchAll(/stroke="(#[0-9a-f]{6})"/gi)].map((m) => m[1]));
+  for (const fill of logoFills)
+    assert.ok(strokes.has(fill), `logo fill ${fill} must be a stroke colour, not a brand hue`);
+});
+
+test("a logo box sits inside the node it marks, on every shape", async () => {
+  // The corner mark is placed from the node's own geometry, and the datastore
+  // and queue shapes have curved caps that a naive top-right inset would sit
+  // on top of. Assert containment rather than eyeballing a render.
+  const { svg, scene } = await build(LOGO_SRC);
+  const placements = [
+    ...svg.matchAll(/<g transform="translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+)\)"/g),
+  ];
+  assert.equal(placements.length, 4, "every logo is placed");
+  const boxes = scene.nodes.map((n) => ({ x: n.x, y: n.y, w: n.width, h: n.height }));
+  for (const [, xs, ys, ss] of placements) {
+    const x = Number(xs),
+      y = Number(ys),
+      side = 24 * Number(ss);
+    const host = boxes.find(
+      (b) => x >= b.x && y >= b.y && x + side <= b.x + b.w && y + side <= b.y + b.h,
+    );
+    assert.ok(host, `logo at ${x},${y} must be fully inside some node`);
+  }
+});
+
+test("a logo reserves width, so a long label never runs under it", async () => {
+  // The layout adds LOGO_GUTTER for an element that carries one; without it a
+  // label wide enough to fill the box would slide beneath the mark.
+  const withLogo = await build(
+    'diagram application "t"\napplication APP "App" {\n  module M "A fairly long module name" { logo: react }\n  module N "Other" }\nM -> N (API_REST, JSON)\n'.replace(
+      'module N "Other" }',
+      'module N "Other"\n}',
+    ),
+  );
+  const withoutLogo = await build(
+    'diagram application "t"\napplication APP "App" {\n  module M "A fairly long module name"\n  module N "Other"\n}\nM -> N (API_REST, JSON)\n',
+  );
+  const width = (r: Awaited<ReturnType<typeof build>>) =>
+    r.scene.nodes.find((n) => n.id === "M")!.width;
+  assert.ok(
+    width(withLogo) >= width(withoutLogo) + 26,
+    `logo node must reserve the gutter (${width(withLogo)} vs ${width(withoutLogo)})`,
+  );
+});
+
+test("`logo:` refuses a URL — a diagram must not fetch to render", async () => {
+  // The whole point of inlining: a linked logo leaks the reader's IP, can be
+  // swapped after the fact, and breaks offline. Rejected in the validator so
+  // the playground reports it too, not only the CLI.
+  const { codes } = check(
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: "https://cdn.example.com/a.svg" } }\n',
+  );
+  assert.ok(codes.includes("E0105"), `expected E0105, got ${codes.join(", ")}`);
+  const protocolRelative = check(
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: "//cdn.example.com/a.svg" } }\n',
+  );
+  assert.ok(protocolRelative.codes.includes("E0105"), "protocol-relative is a URL too");
+});
+
+test("an unknown built-in logo suggests the nearest name", async () => {
+  const { diags, codes } = check(
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: postgres } }\n',
+  );
+  assert.ok(codes.includes("E0107"), `expected E0107, got ${codes.join(", ")}`);
+  assert.match(diags.find((d) => d.code === "E0107")!.help ?? "", /postgresql/);
+});
+
+test("only kinds that run software carry a logo", async () => {
+  // An actor is a person and a system is a grouping; neither has a tech stack.
+  const { codes } = check(
+    'diagram application "t"\nactor-group G "G" { actor U "User" { logo: react } }\n',
+  );
+  assert.ok(codes.includes("E0108"), `expected E0108, got ${codes.join(", ")}`);
+});
+
+test("a file logo renders nothing until someone resolves it, keeping the core filesystem-free", async () => {
+  // `render()` must never read from disk — the playground has no filesystem.
+  // An unresolved file logo degrades to no mark rather than to a broken link.
+  const src =
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: "./logos/acme.svg" } module N "B" }\nM -> N (API_REST, JSON)\n';
+  const { svg } = await build(src);
+  assert.doesNotMatch(svg, /<image/, "nothing is emitted without a resolver");
+
+  const { model, view } = await build(src);
+  const scene = await layout(model, view);
+  const resolved = render(model, view, scene, {
+    logos: new Map([["M", "data:image/svg+xml;base64,PHN2Zy8+"]]),
+  });
+  assert.ok(
+    resolved.svg.includes(
+      '<image x="106" y="56" width="14" height="14" href="data:image/svg+xml;base64,PHN2Zy8+"',
+    ),
+    "a resolved file logo is inlined as a data URI",
+  );
+});
+
 // ---------- diagnostics ----------
 
 test("broken.cairn raises exactly the seeded diagnostic codes", () => {

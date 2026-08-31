@@ -46,7 +46,6 @@ const HUG_CLEAR = 8;
 /** How much a run must travel alongside a border before hugging it is visible. */
 const HUG_RUN = 12;
 
-
 const orthOf = (a: Point, b: Point) => Math.abs(a.x - b.x) < 0.5;
 
 /** Where two orthogonal segments properly cross, or null. */
@@ -298,8 +297,7 @@ function labelSeatable(blockers: Boxy[], pts: Point[], label: Label): boolean {
 function scanLabelSeats(ctx: Inspector, subj: Subject, profile: Profile): void {
   for (const label of subj.edge.labels) {
     if (!label.width || !label.height) continue;
-    if (!labelSeatable(ctx.blockers, subj.pts, label))
-      profile.set(`unlabelled:${subj.edge.id}`, 1);
+    if (!labelSeatable(ctx.blockers, subj.pts, label)) profile.set(`unlabelled:${subj.edge.id}`, 1);
   }
 }
 
@@ -402,8 +400,7 @@ function scanCrossings(a: Subject, b: Subject, key: string, profile: Profile): v
         if (!end) continue;
         const dx = Math.max(0, end.node.x - hit.x, hit.x - (end.node.x + end.node.width));
         const dy = Math.max(0, end.node.y - hit.y, hit.y - (end.node.y + end.node.height));
-        if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH)
-          profile.set(`fan:${key}@${end.node.id}`, 2);
+        if (dx * dx + dy * dy <= FAN_REACH * FAN_REACH) profile.set(`fan:${key}@${end.node.id}`, 2);
       }
     }
 }
@@ -442,8 +439,7 @@ function scanSharedSeats(a: Subject, b: Subject, key: string, profile: Profile):
       // crowd node sides while every modelled tier looked fine.
       const side = vertical ? seatA.node.height : seatA.node.width;
       const need = Math.min(12, (side - 6) / 2);
-      if (apart < need * 0.8)
-        profile.set(`tight:${key}@${seatA.node.id}|${seatA.side}`, 4);
+      if (apart < need * 0.8) profile.set(`tight:${key}@${seatA.node.id}|${seatA.side}`, 4);
     }
 }
 
@@ -462,7 +458,11 @@ function scanPairs(ctx: Inspector, subj: Subject, query: Query): void {
     const overridden = overrides.has(other.id);
     if (farApart(myBounds, ctx.boundsFor(other, theirs, overridden))) continue;
 
-    const them: Subject = { edge: other, pts: theirs, ends: ctx.endsFor(other, theirs, overridden) };
+    const them: Subject = {
+      edge: other,
+      pts: theirs,
+      ends: ctx.endsFor(other, theirs, overridden),
+    };
     const key = pair(subj.edge.id, other.id);
     scanCrossings(subj, them, key, profile);
     scanParallelRuns(mine, ctx.runsFor(other, theirs, overridden), key, profile);
@@ -517,11 +517,7 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
    * disjoint key namespaces, so a solo key here appears in the full profile too
    * — same code, never a second predicate meaning *almost* this (§3).
    */
-  const local = (
-    ids: Set<string>,
-    overrides: Map<string, Point[]>,
-    soloOnly = false,
-  ): Profile => {
+  const local = (ids: Set<string>, overrides: Map<string, Point[]>, soloOnly = false): Profile => {
     const profile: Profile = new Map();
     const query: Query = { ids, overrides, profile };
 

@@ -1,0 +1,39 @@
+diagram application "Order management — technical stack"
+
+# `logo:` marks what a component is built with. A bare name comes from the
+# built-in set (`cairn logos` lists them); a quoted one is a file next to this
+# diagram, inlined at build time so the SVG stays self-contained.
+
+actor-group STAFF "Back office" {
+  actor OPERATOR "Order operator"
+}
+
+application STOREFRONT "Storefront" { logo: nextdotjs
+  module WEB "Web client" { logo: react }
+  module BFF "Backend for\nfrontend" { logo: nodedotjs }
+}
+
+application ORDERS "Order service" { logo: spring
+  module ORDER_API "Order API" { logo: openjdk }
+  module PRICING "Pricing engine" { logo: python }
+}
+
+queue EVENTS "Order events" { logo: apachekafka }
+datastore ORDER_DB "Order store" { logo: postgresql }
+datastore SEARCH "Order search" { logo: elasticsearch }
+
+external PSP "Card processor"
+
+# ---- application flows ----
+OPERATOR -> WEB (HTTPS, JSON)
+WEB -> BFF (API_REST, JSON)
+BFF -> ORDER_API (API_REST, JSON)
+ORDER_API -> PRICING (API_REST, JSON)
+ORDER_API -> ORDER_DB (SQL, JSON)
+ORDER_API -> EVENTS (MQ, JSON)
+EVENTS -> SEARCH (MQ, JSON)
+ORDER_API -> PSP (API_REST, JSON)
+
+legend {
+  note "Corner marks name the technology each component is built on."
+}

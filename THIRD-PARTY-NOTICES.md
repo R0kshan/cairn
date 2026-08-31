@@ -29,6 +29,30 @@ ties it back to.
 cairn asserts no ownership over elkjs and does not relicense it. Apache-2.0
 covers cairn's own code only.
 
+## simple-icons
+
+Version 16.29.0, CC0-1.0. Upstream: https://github.com/simple-icons/simple-icons
+
+cairn does not depend on simple-icons at build time or run time. A curated
+subset of its icon *paths* — the ones behind `logo: <name>` — is vendored into
+`src/logos.ts` by `scripts/update-logos.mjs`, which fetches the pinned version
+with `npm pack` and writes the paths out as source. The full license text is in
+[`licenses/simple-icons-CC0-1.0.md`](./licenses/simple-icons-CC0-1.0.md), a
+verbatim copy of the project's own `LICENSE.md`.
+
+CC0-1.0 waives copyright and imposes no attribution requirement, so this entry
+is a courtesy rather than an obligation. It is kept because the paths reach
+users inside every shipped artifact, and a reader deserves to know where the
+artwork came from.
+
+**Trademarks are a separate matter from the license.** Simple Icons' own
+`DISCLAIMER.md` is explicit that CC0 covers the project while individual icons
+may carry their own terms, and that brand marks remain the property of their
+owners. cairn redistributes the artwork only; it claims no rights in the brands
+depicted, and using a logo in a diagram does not imply the brand endorses
+anything. Anyone republishing a cairn diagram is responsible for their own use
+of the marks it shows.
+
 ---
 
 If the set of inlined dependencies changes, update this file **and** `licenses/`
