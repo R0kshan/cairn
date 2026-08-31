@@ -395,7 +395,7 @@ function glyphSvg(
  * the node's own stroke colour paints it — a logo never introduces a hue the
  * theme did not choose.
  */
-const LOGO_BOX = { size: 14, right: 7, top: 7 };
+const LOGO_BOX = { size: 18, right: 7, top: 6 };
 
 /**
  * The logo for `node`, or `""` when it has none. A file-sourced logo renders
@@ -538,8 +538,13 @@ function createNodeRenderers(paint: NodePaint) {
       `<ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>\n`;
     const centerY =
       node.y + ry + (node.height - ry) / 2 - ((lines.length - 1) * (nodeFontSize + 2)) / 2 + 4;
-    // The cylinder's cap owns the top `2 * ry`, so the mark starts below it.
-    const logo = logoFor(node, stroke, { top: 2 * ry });
+    // A cylinder is only full width between its caps (`ry` down to `height - ry`);
+    // above and below that the arcs curve away from the corner. Centring the
+    // mark in that band keeps it on paint at any node height, where
+    // top-aligning it below the cap overflows the bottom arc on a short node.
+    const logo = logoFor(node, stroke, {
+      top: ry + (node.height - 2 * ry - LOGO_BOX.size) / 2,
+    });
     return (
       body +
       logo +

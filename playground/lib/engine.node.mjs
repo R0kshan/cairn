@@ -94888,7 +94888,7 @@ var DEFAULT_FONT_SIZE_NODE = 12.5;
 var FONT_SIZE_BASE = 12.5;
 var CHAR_WIDTH = 0.56;
 var GLYPH_GUTTER = 26;
-var LOGO_GUTTER = 26;
+var LOGO_GUTTER = 30;
 var fontSizes = (base) => {
   const scale = base / FONT_SIZE_BASE;
   return {
@@ -100161,7 +100161,7 @@ function glyphSvg(kind, stroke, box) {
     stroke
   });
 }
-var LOGO_BOX = { size: 14, right: 7, top: 7 };
+var LOGO_BOX = { size: 18, right: 7, top: 6 };
 function logoSvg(mark) {
   const { logo, resolved, node, stroke, inset = {} } = mark;
   if (!logo) return "";
@@ -100242,7 +100242,9 @@ function createNodeRenderers(paint) {
 <ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
 `;
     const centerY2 = node.y + ry + (node.height - ry) / 2 - (lines.length - 1) * (nodeFontSize + 2) / 2 + 4;
-    const logo = logoFor(node, stroke, { top: 2 * ry });
+    const logo = logoFor(node, stroke, {
+      top: ry + (node.height - 2 * ry - LOGO_BOX.size) / 2
+    });
     return body + logo + centeredNodeLabel(
       lines,
       logoLabelCenterX(node, logo !== ""),
@@ -101013,7 +101015,7 @@ async function compile(source, options) {
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
   const scene = await layout(model, view);
   diags.push(...attachSideDiagnostics(scene, model));
-  const { svg, overlapsAfter } = render(model, view, scene);
+  const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos });
   return {
     svg,
     diagnostics: diags,

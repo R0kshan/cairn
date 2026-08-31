@@ -82,15 +82,24 @@ test("a logo box sits inside the node it marks, on every shape", async () => {
     ...svg.matchAll(/<g transform="translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+)\)"/g),
   ];
   assert.equal(placements.length, 4, "every logo is placed");
-  const boxes = scene.nodes.map((n) => ({ x: n.x, y: n.y, w: n.width, h: n.height }));
   for (const [, xs, ys, ss] of placements) {
     const x = Number(xs),
       y = Number(ys),
       side = 24 * Number(ss);
-    const host = boxes.find(
-      (b) => x >= b.x && y >= b.y && x + side <= b.x + b.w && y + side <= b.y + b.h,
+    const host = scene.nodes.find(
+      (n) => x >= n.x && y >= n.y && x + side <= n.x + n.width && y + side <= n.y + n.height,
     );
     assert.ok(host, `logo at ${x},${y} must be fully inside some node`);
+    // A datastore is a cylinder, not a rectangle: it spans its full width only
+    // between the caps, so its bounding box is not its paint. Checking the box
+    // alone let a mark overflow the bottom arc by a pixel.
+    if (host.kind === "datastore") {
+      const ry = 7;
+      assert.ok(
+        y >= host.y + ry && y + side <= host.y + host.height - ry,
+        `datastore logo must stay between the caps (${y}..${y + side} vs ${host.y + ry}..${host.y + host.height - ry})`,
+      );
+    }
   }
 });
 
@@ -158,9 +167,7 @@ test("a file logo renders nothing until someone resolves it, keeping the core fi
     logos: new Map([["M", "data:image/svg+xml;base64,PHN2Zy8+"]]),
   });
   assert.ok(
-    resolved.svg.includes(
-      '<image x="106" y="56" width="14" height="14" href="data:image/svg+xml;base64,PHN2Zy8+"',
-    ),
+    resolved.svg.includes('href="data:image/svg+xml;base64,PHN2Zy8+"'),
     "a resolved file logo is inlined as a data URI",
   );
 });
