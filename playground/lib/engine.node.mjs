@@ -92419,6 +92419,7 @@ var KIND_ROLE_MAP = {
   datastore: "datastore",
   queue: "datastore",
   gateway: "authGateway",
+  firewall: "firewall",
   auth: "auth",
   idp: "identityProvider",
   site: "site",
@@ -92472,8 +92473,13 @@ var buildTheme = (spec) => {
       server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
       appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
       securityNode: leafStyle(accentColors.nodeF, accentColors.node, 1.6),
+      // Accent keys predate the roles that read them: `auth`/`authF` is the
+      // gateway's orange, `authn`/`authnF` the auth middleware's blue. The two
+      // used to share the `node` orange, which is what made a gateway and an
+      // auth middleware indistinguishable in a dense infrastructure view.
       authGateway: leafStyle(accentColors.authF, accentColors.auth, 1.4),
-      auth: leafStyle(accentColors.nodeF, accentColors.node, 1.5),
+      firewall: leafStyle(accentColors.fwF, accentColors.fw, 1.6),
+      auth: leafStyle(accentColors.authnF, accentColors.authn, 1.5),
       identityProvider: leafStyle(accentColors.idpF, accentColors.idp)
     },
     levels: {
@@ -92533,7 +92539,11 @@ var themes = {
       auth: "#b85a30",
       authF: "#f5e6dd",
       idp: "#3a8f8f",
-      idpF: "#e0f0f0"
+      idpF: "#e0f0f0",
+      fw: "#c0392b",
+      fwF: "#fdecea",
+      authn: "#2f6fb5",
+      authnF: "#e8f1fb"
     },
     lv: {
       public: ["#fdeceb", "#d0463f"],
@@ -92590,7 +92600,11 @@ var themes = {
       auth: "#c96a4a",
       authF: "#332218",
       idp: "#4fafaf",
-      idpF: "#1a2e2e"
+      idpF: "#1a2e2e",
+      fw: "#e5675a",
+      fwF: "#33211f",
+      authn: "#6fa8e0",
+      authnF: "#1d2735"
     },
     lv: {
       public: ["#3a2422", "#c25a54"],
@@ -92647,7 +92661,11 @@ var themes = {
       auth: "#a85a30",
       authF: "#f0e4dd",
       idp: "#3a8f8f",
-      idpF: "#e4f0f0"
+      idpF: "#e4f0f0",
+      fw: "#bd4b3c",
+      fwF: "#f9e9e6",
+      authn: "#3a6ea5",
+      authnF: "#e9f0f8"
     },
     lv: {
       public: ["#f7ece9", "#c05a4a"],
@@ -92704,7 +92722,11 @@ var themes = {
       auth: "#a85a30",
       authF: "#f0e5dd",
       idp: "#3a7a6f",
-      idpF: "#e5f0ed"
+      idpF: "#e5f0ed",
+      fw: "#b8492f",
+      fwF: "#f8e8e0",
+      authn: "#3a6b9a",
+      authnF: "#e9eff7"
     },
     lv: {
       public: ["#f7e2da", "#c0562a"],
@@ -92761,7 +92783,11 @@ var themes = {
       auth: "#993a1a",
       authF: "#f6e3dd",
       idp: "#005a5a",
-      idpF: "#daf0f0"
+      idpF: "#daf0f0",
+      fw: "#a3140a",
+      fwF: "#fbe3df",
+      authn: "#00408f",
+      authnF: "#dfe8fb"
     },
     lv: {
       public: ["#f9dcd6", "#c0341a"],
@@ -92818,7 +92844,11 @@ var themes = {
       auth: "#c96a4a",
       authF: "#332218",
       idp: "#6fafaf",
-      idpF: "#203432"
+      idpF: "#203432",
+      fw: "#bf616a",
+      fwF: "#3b2f34",
+      authn: "#81a1c1",
+      authnF: "#333c4a"
     },
     lv: {
       public: ["#3a2a2d", "#bf616a"],
@@ -92875,7 +92905,11 @@ var themes = {
       auth: "#b85a30",
       authF: "#f5e6dd",
       idp: "#2aa198",
-      idpF: "#dff0ec"
+      idpF: "#dff0ec",
+      fw: "#dc322f",
+      fwF: "#f7e3dd",
+      authn: "#268bd2",
+      authnF: "#e3edf5"
     },
     lv: {
       public: ["#f7ddd6", "#dc322f"],
@@ -93868,11 +93902,13 @@ var infrastructureView = {
     "app-instance",
     "queue",
     "gateway",
+    "firewall",
     "auth",
     "idp",
     "external"
   ],
   containerKinds: ["site", "network-zone", "server"],
+  glyphKinds: ["gateway", "firewall", "auth", "idp"],
   // The reference shape: the matrice des flux techniques as an EA dossier expects it.
   matrix: {
     zoneKinds: ["network-zone", "site"],
@@ -93889,6 +93925,7 @@ var infrastructureView = {
     "app-instance": "Deployed application",
     queue: "Message queue / broker",
     gateway: "Gateway / reverse proxy",
+    firewall: "Firewall",
     auth: "Auth middleware",
     idp: "Identity provider (IdP)",
     external: "External system"
@@ -93901,6 +93938,7 @@ var infrastructureView = {
     "app-instance": "Application d\xE9ploy\xE9e",
     queue: "File de messages / broker",
     gateway: "Passerelle / proxy",
+    firewall: "Pare-feu",
     auth: "Middleware d'authentification",
     idp: "Fournisseur d'identit\xE9 (IdP)",
     external: "Syst\xE8me externe"
@@ -93945,7 +93983,7 @@ var infrastructureView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance", "queue", "gateway", "auth", "idp"],
+    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
@@ -93974,9 +94012,13 @@ var infrastructureView = {
       fill: "#f5e6dd",
       stroke: { color: "#bf5530", style: "solid", width: 1.6 }
     },
+    firewall: {
+      fill: "#fdecea",
+      stroke: { color: "#c0392b", style: "solid", width: 1.6 }
+    },
     auth: {
-      fill: "#fef3e2",
-      stroke: { color: "#d68a2a", style: "solid", width: 1.5 }
+      fill: "#e8f1fb",
+      stroke: { color: "#2f6fb5", style: "solid", width: 1.5 }
     },
     idp: {
       fill: "#e0f0f0",
@@ -94013,9 +94055,13 @@ var infrastructureView = {
       fill: "#332218",
       stroke: { color: "#c96a4a", style: "solid", width: 1.6 }
     },
+    firewall: {
+      fill: "#33211f",
+      stroke: { color: "#e5675a", style: "solid", width: 1.6 }
+    },
     auth: {
-      fill: "#332614",
-      stroke: { color: "#b88a30", style: "solid", width: 1.5 }
+      fill: "#1d2735",
+      stroke: { color: "#6fa8e0", style: "solid", width: 1.5 }
     },
     idp: {
       fill: "#1a2e2e",
@@ -94591,6 +94637,7 @@ function editDistance(wordA, wordB, cap) {
 var DEFAULT_FONT_SIZE_NODE = 12.5;
 var FONT_SIZE_BASE = 12.5;
 var CHAR_WIDTH = 0.56;
+var GLYPH_GUTTER = 26;
 var fontSizes = (base) => {
   const scale = base / FONT_SIZE_BASE;
   return {
@@ -99001,7 +99048,8 @@ function computeIngressExternalElements(model) {
 }
 var orderOption = (element) => element.order ? { "elk.position": `(0,${element.order.value})` } : {};
 var semiInteractiveOption = (children) => children.some((child) => child.order) ? { "elk.layered.crossingMinimization.semiInteractive": "true" } : {};
-function toElkNode2(element, compact, fonts, root = false) {
+function toElkNode2(element, sizing, root = false) {
+  const { compact, fonts, glyphKinds } = sizing;
   const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
@@ -99018,17 +99066,16 @@ function toElkNode2(element, compact, fonts, root = false) {
           ...measure(element.label ?? element.id, containerFontSize)
         }
       ],
-      children: element.children.map(
-        (child) => toElkNode2(child, compact, fonts)
-      )
+      children: element.children.map((child) => toElkNode2(child, sizing))
     };
   }
   const measured = measure(element.label ?? element.id, nodeFontSize);
   const isActor = element.kind === "actor";
+  const gutter = glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0;
   return {
     id: element.id,
     ...element.order && !root ? { layoutOptions: orderOption(element) } : {},
-    width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12)),
+    width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12) + gutter),
     height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
   };
 }
@@ -99452,6 +99499,7 @@ function attachSideDiagnostics(scene, model) {
 }
 function buildElkGraph(ctx, direction, options) {
   const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
+  const glyphKinds = new Set(view.glyphKinds ?? []);
   const graph = {
     id: "root",
     layoutOptions: {
@@ -99490,7 +99538,7 @@ function buildElkGraph(ctx, direction, options) {
       } : {}
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode2(element, compact, fonts, true);
+      const elkNode = toElkNode2(element, { compact, fonts, glyphKinds }, true);
       const band = elkPartitionOf(element, index, view, ingressExternal);
       const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
@@ -99842,13 +99890,42 @@ function settleOneLabel(s, label) {
   label.x = origin.x;
   label.y = origin.y;
 }
-function createNodeRenderers(paint) {
-  const { palette, style, annot, nodeFontSize, containerFontSize, resolveStyle, elementAttr } = paint;
+var GLYPH_BOX = { width: 18, height: 16, left: 6, top: 7 };
+var GLYPHS = {
+  // Padlock: authentication is a check something must pass.
+  auth: ({ x, y, r, line, stroke }) => `<rect x="${x(3)}" y="${y(7)}" width="${r(12)}" height="${r(9)}" rx="${r(2)}" ${line}/><path d="M ${x(6)} ${y(7)} v ${-r(3)} a ${r(3)} ${r(3)} 0 0 1 ${r(6)} 0 v ${r(3)}" ${line}/><circle cx="${x(9)}" cy="${y(11)}" r="${r(1.5)}" fill="${stroke}"/>`,
+  // Two posts with traffic passing between them: a gateway routes, it does not block.
+  gateway: ({ x, y, r, line }) => `<path d="M ${x(2)} ${y(1)} V ${y(15)} M ${x(16)} ${y(1)} V ${y(15)}" ${line}/><path d="M ${x(4)} ${y(8)} H ${x(14)}" ${line}/><path d="M ${x(11)} ${y(5)} l ${r(3)} ${r(3)} l ${-r(3)} ${r(3)}" ${line}/>`,
+  // ID badge: an identity provider issues who-you-are, it does not check it.
+  idp: ({ x, y, r, line }) => `<rect x="${x(3)}" y="${y(2)}" width="${r(12)}" height="${r(13)}" rx="${r(2)}" ${line}/><path d="M ${x(7)} ${y(2)} H ${x(11)}" ${line}/><circle cx="${x(9)}" cy="${y(7)}" r="${r(2)}" ${line}/><path d="M ${x(5)} ${y(13)} q ${r(4)} ${-r(4)} ${r(8)} 0" ${line}/>`,
+  // Brick wall: a firewall is a barrier, and no other kind reads as one.
+  firewall: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/><path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/><path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`
+};
+function glyphSvg(kind, stroke, box) {
+  const glyph = GLYPHS[kind];
+  if (!glyph) return "";
+  const { x, y, scale = 1 } = box;
+  const width = round1(1.3 * scale);
+  return glyph({
+    x: (v) => round1(x + v * scale),
+    y: (v) => round1(y + v * scale),
+    r: (v) => round1(v * scale),
+    line: `fill="none" stroke="${stroke}" stroke-width="${width}"`,
+    stroke
+  });
+}
+function createNodeLabelHelpers(nodeFontSize) {
   const centeredNodeLabel = (lines, centerX2, topBaseline, fill) => lines.map(
     (line, index) => `<text x="${centerX2}" y="${topBaseline + index * (nodeFontSize + 2)}" font-size="${nodeFontSize}" text-anchor="middle" fill="${fill}">${esc(line)}</text>
 `
   ).join("");
   const centerLinesY = (top, height, lineCount) => top + height / 2 - (lineCount - 1) * (nodeFontSize + 2) / 2 + 4;
+  const glyphLabelCenterX = (node) => node.x + GLYPH_GUTTER + (node.width - GLYPH_GUTTER) / 2;
+  return { centeredNodeLabel, centerLinesY, glyphLabelCenterX };
+}
+function createNodeRenderers(paint) {
+  const { palette, style, annot, nodeFontSize, containerFontSize, resolveStyle, elementAttr } = paint;
+  const { centeredNodeLabel, centerLinesY, glyphLabelCenterX } = createNodeLabelHelpers(nodeFontSize);
   const renderContainerNode = (node) => {
     const nodeStyle = resolveStyle(node.kind, node.id);
     const fill = escAttr(nodeStyle.fill ?? palette.containerFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.containerStroke), text = escAttr(nodeStyle.text ?? palette.containerLabel);
@@ -99907,39 +99984,24 @@ function createNodeRenderers(paint) {
       text
     );
   };
-  const renderGateway = (node, nodeStyle, lines) => {
-    const centerX2 = node.x + node.width / 2;
+  const renderGlyphBox = (node, nodeStyle, lines) => {
     const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<path d="M ${round1(node.x + 8)} ${round1(node.y + 8)} L ${round1(node.x + 22)} ${round1(node.y + 8)} Q ${round1(node.x + 24)} ${round1(node.y + 13)} ${round1(node.x + 15)} ${round1(node.y + 20)} Q ${round1(node.x + 6)} ${round1(node.y + 13)} ${round1(node.x + 8)} ${round1(node.y + 8)}" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-`;
-    return body + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
-  };
-  const renderAuth = (node, nodeStyle, lines) => {
-    const centerX2 = node.x + node.width / 2;
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>
-<rect x="${node.x + 6}" y="${node.y + 6}" width="18" height="14" rx="3" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-<path d="M ${node.x + 10} ${node.y + 9} v -4 a 5 5 0 0 1 10 0 v 4" fill="none" stroke="${stroke}" stroke-width="1.3"/>
-<circle cx="${node.x + 15}" cy="${node.y + 16}" r="2.5" fill="${stroke}"/>
-`;
-    return body + centeredNodeLabel(lines, centerX2 + 10, centerLinesY(node.y, node.height, lines.length), text);
+    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>
+` + glyphSvg(node.kind, stroke, {
+      x: node.x + GLYPH_BOX.left,
+      y: node.y + GLYPH_BOX.top
+    }) + "\n";
+    return body + centeredNodeLabel(
+      lines,
+      glyphLabelCenterX(node),
+      centerLinesY(node.y, node.height, lines.length),
+      text
+    );
   };
   const renderPlainBox = (node, nodeStyle, lines) => {
     const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
     const dash = dashArray(nodeStyle.stroke?.style);
     const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
-`;
-    return body + centeredNodeLabel(
-      lines,
-      node.x + node.width / 2,
-      centerLinesY(node.y, node.height, lines.length),
-      text
-    );
-  };
-  const renderIdp = (node, nodeStyle, lines) => {
-    const fill = escAttr(nodeStyle.fill ?? palette.nodeFill), stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke), text = escAttr(nodeStyle.text ?? palette.nodeText);
-    const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"/>
 `;
     return body + centeredNodeLabel(
       lines,
@@ -99958,14 +100020,8 @@ function createNodeRenderers(paint) {
         return renderDatastore(node, nodeStyle, lines);
       case "queue":
         return renderQueue(node, nodeStyle, lines);
-      case "gateway":
-        return renderGateway(node, nodeStyle, lines);
-      case "auth":
-        return renderAuth(node, nodeStyle, lines);
-      case "idp":
-        return renderIdp(node, nodeStyle, lines);
       default:
-        return renderPlainBox(node, nodeStyle, lines);
+        return GLYPHS[node.kind] ? renderGlyphBox(node, nodeStyle, lines) : renderPlainBox(node, nodeStyle, lines);
     }
   };
   return { renderContainerNode, renderLeafNode };
@@ -100211,8 +100267,15 @@ function createBandRenderers(paint) {
 `;
       } else {
         const dash = dashArray(nodeStyle.stroke?.style);
-        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${nodeStyle.stroke?.color ?? palette.nodeStroke}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+        const stroke = nodeStyle.stroke?.color ?? palette.nodeStroke;
+        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${escAttr(stroke)}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
 `;
+        const glyphScale = (scaled(14) - scaled(4)) / GLYPH_BOX.height;
+        bandsSvg += glyphSvg(kind, escAttr(stroke), {
+          x: lx + (scaled(26) - GLYPH_BOX.width * glyphScale) / 2,
+          y: bandY + 2 + (scaled(14) - GLYPH_BOX.height * glyphScale) / 2,
+          scale: glyphScale
+        });
       }
       const name = legendNames[kind];
       bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>

@@ -519,10 +519,6 @@ dispositions/small-tall/tall	crossings	2
 dispositions/small-tall/tall	labelStraddled	1
 dispositions/small-tall/wide	crossings	1
 dispositions/small-tall/wide	turnHeavy	1
-infrastructure-compact/page	attachAway	1
-infrastructure-compact/page	labelStraddled	1
-infrastructure-compact/tall	attachAway	1
-infrastructure-compact/tall	labelStraddled	1
 infrastructure-fr/page	attachAway	1
 infrastructure-fr/page	titleStruck	1
 infrastructure-fr/slide	jog<=6	1
@@ -571,6 +567,8 @@ infrastructure-large/tall	turnHeavy	2
 infrastructure-large/wide	attachAway	2
 infrastructure-large/wide	crossings	2
 infrastructure-large/wide	turnHeavy	2
+infrastructure-security-edge/page	jog<=6	1
+infrastructure-security-edge/tall	jog<=6	1
 infrastructure-small/page	attachAway	1
 infrastructure-small/tall	attachAway	1
 infrastructure/page	attachAway	1
