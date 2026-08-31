@@ -9,7 +9,7 @@
  * references are not fetched — so a hostile logo file cannot execute or phone
  * home through the diagram that embeds it.
  */
-import { readFileSync, statSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readFileSync } from "node:fs";
 import { dirname, resolve, extname } from "node:path";
 import type { Model, Element } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
@@ -85,15 +85,24 @@ export function resolveLogoFiles(model: Model, sourceFile: string): ResolvedLogo
     const path = resolve(base, logo.value);
     let bytes: Buffer;
     try {
-      const size = statSync(path).size;
-      if (size > MAX_BYTES) {
-        warn(
-          `logo file is ${Math.round(size / 1024)} KB, over the ${MAX_BYTES / 1024} KB limit`,
-          "a corner mark needs very little — export it smaller, or use a built-in",
-        );
-        continue;
+      // Sized and read through one descriptor, not twice through the name: a
+      // path checked and then re-opened is a different file if anything swaps
+      // it in between, and the size limit below is only worth stating if the
+      // bytes it guards are the bytes that were measured.
+      const fd = openSync(path, "r");
+      try {
+        const size = fstatSync(fd).size;
+        if (size > MAX_BYTES) {
+          warn(
+            `logo file is ${Math.round(size / 1024)} KB, over the ${MAX_BYTES / 1024} KB limit`,
+            "a corner mark needs very little — export it smaller, or use a built-in",
+          );
+          continue;
+        }
+        bytes = readFileSync(fd);
+      } finally {
+        closeSync(fd);
       }
-      bytes = readFileSync(path);
     } catch {
       warn(`cannot read logo file \`${logo.value}\``, `looked in \`${base}\``);
       continue;
