@@ -19,6 +19,7 @@ import { isLongDetour } from "../src/geometry.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
+import { compile } from "../src/compile.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const EX = join(ROOT, "examples");
@@ -161,6 +162,25 @@ test("a file logo renders nothing until someone resolves it, keeping the core fi
       '<image x="106" y="56" width="14" height="14" href="data:image/svg+xml;base64,PHN2Zy8+"',
     ),
     "a resolved file logo is inlined as a data URI",
+  );
+});
+
+test("`compile()` renders the same logos the CLI does", async () => {
+  // INVARIANTS §15's parity rule: an embedder and `cairn build` must not
+  // disagree about the same source. Built-ins need nothing; a file logo needs
+  // the caller to pass what it resolved, so `CompileOptions` has to carry it.
+  const src =
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: react } module N "B" { logo: "./a.svg" } }\nM -> N (API_REST, JSON)\n';
+  const plain = await compile(src);
+  assert.match(plain.svg ?? "", /<title>React<\/title>/, "a built-in needs no help");
+  assert.doesNotMatch(plain.svg ?? "", /<image/, "an unresolved file logo draws nothing");
+
+  const resolved = await compile(src, {
+    logos: new Map([["N", "data:image/svg+xml;base64,PHN2Zy8+"]]),
+  });
+  assert.ok(
+    (resolved.svg ?? "").includes('href="data:image/svg+xml;base64,PHN2Zy8+"'),
+    "a resolved file logo reaches the embedder's SVG",
   );
 });
 
