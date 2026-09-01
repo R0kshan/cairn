@@ -9,7 +9,7 @@
  * references are not fetched — so a hostile logo file cannot execute or phone
  * home through the diagram that embeds it.
  */
-import { closeSync, fstatSync, openSync, readFileSync } from "node:fs";
+import { closeSync, fstatSync, openSync, readSync } from "node:fs";
 import { dirname, resolve, extname } from "node:path";
 import type { Model, Element } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
@@ -91,15 +91,28 @@ export function resolveLogoFiles(model: Model, sourceFile: string): ResolvedLogo
       // bytes it guards are the bytes that were measured.
       const fd = openSync(path, "r");
       try {
-        const size = fstatSync(fd).size;
-        if (size > MAX_BYTES) {
+        const stat = fstatSync(fd);
+        // A directory, a device, or a FIFO named `.svg` all open cleanly and
+        // report a size — a FIFO reports zero and then blocks the build for as
+        // long as nothing writes to it. Only a regular file has bytes to inline.
+        if (!stat.isFile()) {
+          warn(`logo file \`${logo.value}\` is not a regular file`, "point at an image file");
+          continue;
+        }
+        if (stat.size > MAX_BYTES) {
           warn(
-            `logo file is ${Math.round(size / 1024)} KB, over the ${MAX_BYTES / 1024} KB limit`,
+            `logo file is ${Math.round(stat.size / 1024)} KB, over the ${MAX_BYTES / 1024} KB limit`,
             "a corner mark needs very little — export it smaller, or use a built-in",
           );
           continue;
         }
-        bytes = readFileSync(fd);
+        // Exactly the measured bytes, from offset 0 — not `readFileSync(fd)`,
+        // which reads on to EOF and so would hand back more than the limit just
+        // cleared if the file grew in between (a `watch` run races every
+        // re-export). Short reads mean it shrank instead; keep what arrived.
+        bytes = Buffer.alloc(stat.size);
+        const read = readSync(fd, bytes, 0, stat.size, 0);
+        if (read < stat.size) bytes = bytes.subarray(0, read);
       } finally {
         closeSync(fd);
       }

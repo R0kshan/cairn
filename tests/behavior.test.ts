@@ -7,7 +7,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
@@ -20,6 +20,7 @@ import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
 import { compile } from "../src/compile.ts";
+import { resolveLogoFiles } from "../src/logo-files.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const EX = join(ROOT, "examples");
@@ -185,6 +186,54 @@ test("`compile()` renders the same logos the CLI does", async () => {
     (resolved.svg ?? "").includes('href="data:image/svg+xml;base64,PHN2Zy8+"'),
     "a resolved file logo reaches the embedder's SVG",
   );
+});
+
+test("a file logo is inlined from its own bytes, and unreadable ones warn instead of failing", () => {
+  // `resolveLogoFiles` is the only place cairn touches a filesystem for a
+  // diagram, and every refusal it makes is a warning — a missing decoration
+  // must never fail an otherwise valid build. Exercised through real files
+  // because the whole point of the code is what the filesystem hands back.
+  const dir = mkdtempSync(join(tmpdir(), "cairn-logo-"));
+  try {
+    writeFileSync(join(dir, "ok.svg"), "<svg/>");
+    writeFileSync(join(dir, "big.png"), Buffer.alloc(257 * 1024));
+    mkdirSync(join(dir, "dir.svg"));
+
+    const diagram = (file: string) =>
+      `diagram application "t"\napplication A "A" { logo: "./${file}" }\n`;
+    const resolveIn = (file: string) =>
+      resolveLogoFiles(parse(diagram(file)).model, join(dir, "d.cairn"));
+
+    const good = resolveIn("ok.svg");
+    assert.deepEqual(good.diagnostics, [], "a readable file produces no diagnostic");
+    assert.equal(
+      good.logos.get("A"),
+      `data:image/svg+xml;base64,${Buffer.from("<svg/>").toString("base64")}`,
+      "the data URI carries exactly the file's bytes",
+    );
+
+    // Each refusal: over the size limit, not a regular file, unknown extension,
+    // and absent entirely. All W0580, all leaving the element unmarked. The
+    // message is asserted too, not just the code — a directory is refused for
+    // *being a directory*, and without that check it would fall through to the
+    // generic read failure instead, which is the same code and the same
+    // severity. Only the wording separates the two.
+    for (const [file, reason, message] of [
+      ["big.png", "over the size limit", /over the 256 KB limit/],
+      ["dir.svg", "a directory, not a regular file", /is not a regular file/],
+      ["ok.txt", "an unsupported extension", /unsupported logo file type/],
+      ["missing.svg", "absent", /cannot read logo file/],
+    ] as const) {
+      const { logos, diagnostics } = resolveIn(file);
+      assert.equal(diagnostics.length, 1, `${reason} warns once`);
+      assert.equal(diagnostics[0]?.code, "W0580", `${reason} is W0580`);
+      assert.equal(diagnostics[0]?.severity, "warning", `${reason} never fails the build`);
+      assert.match(diagnostics[0]?.message ?? "", message, `${reason} says why`);
+      assert.equal(logos.size, 0, `${reason} leaves the element unmarked`);
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 // ---------- diagnostics ----------
