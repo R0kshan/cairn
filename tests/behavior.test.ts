@@ -56,11 +56,7 @@ test("a built-in `logo:` renders in the node's own stroke colour, never a brand 
   // Guards against a future icon smuggling in a hardcoded fill.
   const { svg } = await build(LOGO_SRC);
   for (const title of ["Spring", "React", "PostgreSQL", "Apache Kafka"])
-    assert.match(
-      svg,
-      new RegExp(`<title>${title}</title>`),
-      `${title} must render`,
-    );
+    assert.match(svg, new RegExp(`<title>${title}</title>`), `${title} must render`);
   const logoFills = [...svg.matchAll(/<g transform="translate[^"]+" fill="([^"]+)">/g)].map(
     (m) => m[1],
   );

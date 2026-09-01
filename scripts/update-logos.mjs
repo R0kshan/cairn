@@ -1,6 +1,7 @@
 /**
  * Regenerates `src/logos.ts` — the vendored tech-stack logo paths behind
- * `logo: <name>` in the DSL.
+ * `logo: <name>` in the DSL — and restamps the simple-icons version in
+ * `THIRD-PARTY-NOTICES.md` so the two cannot disagree.
  *
  * Icons come from simple-icons (CC0-1.0). They are *vendored*, not depended on:
  * the published package installs zero dependencies, and cairn has no build step
@@ -15,6 +16,10 @@
  * single `<path>` in a `0 0 24 24` viewBox with no `id` and no `fill`, so they
  * carry no colour of their own (the renderer paints them in the node's stroke
  * colour), and inlining several into one document cannot collide on ids.
+ *
+ * The generated file is formatted here, with the repo's own pinned biome, so
+ * "do not edit by hand" is literally true: a regeneration that changed nothing
+ * leaves no diff, and there is no second command a maintainer can forget.
  *
  *   node scripts/update-logos.mjs
  */
@@ -155,6 +160,43 @@ ${body}
 export const LOGO_NAMES: string[] = Object.keys(LOGOS);
 `,
   );
+
+  // One entry is written per line above, which biome then reflows. Formatting
+  // it here rather than leaving it to `npm run format` is what makes the
+  // generated file byte-stable: regenerating at an unchanged pin produces no
+  // diff at all. The repo's own pinned biome is used directly — not `npx`,
+  // which would reach the network for a version nothing here has agreed to.
+  const biome = new URL("../node_modules/.bin/biome", import.meta.url).pathname;
+  if (!existsSync(biome)) {
+    throw new Error("node_modules/.bin/biome is missing — run `npm install` first");
+  }
+  execFileSync(biome, ["format", "--write", "src/logos.ts"], {
+    cwd: new URL("..", import.meta.url).pathname,
+    stdio: ["ignore", "ignore", "inherit"],
+  });
+
+  // THIRD-PARTY-NOTICES.md names the version too, and it is the one copy a
+  // person edits by hand — so it is the one that can silently disagree with the
+  // paths actually vendored. Rewrite it from the same constant that produced
+  // them. The line is matched by its simple-icons upstream URL so the elkjs
+  // entry above it cannot be hit by accident.
+  const noticesUrl = new URL("../THIRD-PARTY-NOTICES.md", import.meta.url);
+  const notices = readFileSync(noticesUrl, "utf8");
+  const versionLine = /^Version .+, CC0-1\.0\. Upstream: (https:\/\/github\.com\/simple-icons\/simple-icons)$/m;
+  const matches = notices.match(new RegExp(versionLine, "gm")) ?? [];
+  if (matches.length !== 1) {
+    throw new Error(
+      `THIRD-PARTY-NOTICES.md: expected 1 simple-icons version line, found ${matches.length}`,
+    );
+  }
+  const restamped = notices.replace(
+    versionLine,
+    `Version ${SIMPLE_ICONS_VERSION}, CC0-1.0. Upstream: $1`,
+  );
+  if (restamped !== notices) {
+    writeFileSync(noticesUrl, restamped);
+    console.log(`✓ THIRD-PARTY-NOTICES.md — version stamp set to ${SIMPLE_ICONS_VERSION}`);
+  }
 
   const bytes = rows.reduce((sum, row) => sum + row.d.length, 0);
   console.log(`✓ src/logos.ts — ${rows.length} logos, ${(bytes / 1024).toFixed(1)} KB of path data`);

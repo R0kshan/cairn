@@ -39,7 +39,13 @@ subset of its icon *paths* — the ones behind `logo: <name>` — is vendored in
 `src/logos.ts` by `scripts/update-logos.mjs`, which fetches the pinned version
 with `npm pack` and writes the paths out as source. The full license text is in
 [`licenses/simple-icons-CC0-1.0.md`](./licenses/simple-icons-CC0-1.0.md), a
-verbatim copy of the project's own `LICENSE.md`.
+verbatim copy of the project's own `LICENSE.md` at that version.
+
+That version stamp is deliberate. The file records which licence governed the
+paths cairn actually ships, so it is a historical fact rather than a mirror of
+upstream: a later relicence there cannot make it wrong, and cannot oblige a
+cairn release. CC0 is irrevocable, so the vendored paths stay CC0 whatever
+simple-icons does next.
 
 CC0-1.0 waives copyright and imposes no attribution requirement, so this entry
 is a courtesy rather than an obligation. It is kept because the paths reach
