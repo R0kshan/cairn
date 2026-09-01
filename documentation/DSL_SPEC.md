@@ -183,7 +183,7 @@ module BILLING "Billing" { logo: "./logos/acme.svg" }
 A bare name comes from the built-in set — `cairn logos` lists all of them, and an
 unknown one is **E0107** with a `did you mean` suggestion. A quoted value is a
 path to a file **relative to the `.cairn` file**, in `.svg`, `.png`, `.jpg` or
-`.webp`, under 256 KB.
+`.webp`, of up to 256 KB.
 
 The mark is drawn in the element's top-right corner, opposite the kind glyph, in
 the node's own stroke colour — a built-in logo never introduces a colour the

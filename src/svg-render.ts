@@ -422,7 +422,8 @@ function logoSvg(mark: {
     return `<image x="${x}" y="${y}" width="${LOGO_BOX.size}" height="${LOGO_BOX.size}" href="${escAttr(href)}" preserveAspectRatio="xMidYMid meet"/>\n`;
   }
 
-  const builtin = LOGOS[logo.value];
+  // Own entries only — an inherited `Object.prototype` member is not a logo.
+  const builtin = Object.hasOwn(LOGOS, logo.value) ? LOGOS[logo.value] : undefined;
   if (!builtin) return "";
   // 24 is the authored viewBox edge. Rounded to four places through integer
   // maths so the attribute is a short, stable decimal rather than the raw
