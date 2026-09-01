@@ -174,7 +174,7 @@ stand for running software: `application`, `module`, `queue`, `datastore`,
 `external`. An `actor` is a person and a `system` is a grouping, so neither takes
 one (**E0108**).
 
-```
+```cairn
 module WEB "Web client" { logo: react }
 datastore ORDER_DB "Order store" { logo: postgresql }
 module BILLING "Billing" { logo: "./logos/acme.svg" }

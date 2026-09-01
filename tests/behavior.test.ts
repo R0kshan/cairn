@@ -58,7 +58,7 @@ test("a built-in `logo:` renders in the node's own stroke colour, never a brand 
   for (const title of ["Spring", "React", "PostgreSQL", "Apache Kafka"])
     assert.match(
       svg,
-      new RegExp(`<title>${title.replace(" ", " ")}</title>`),
+      new RegExp(`<title>${title}</title>`),
       `${title} must render`,
     );
   const logoFills = [...svg.matchAll(/<g transform="translate[^"]+" fill="([^"]+)">/g)].map(
