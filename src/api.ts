@@ -22,6 +22,7 @@ import pkg from "../package.json" with { type: "json" };
 
 export { compile } from "./compile.ts";
 export { themeNames } from "./themes.ts";
+export { resolveThemeSpec, ThemeSpecError } from "./theme-spec.ts";
 
 // The flow matrix `compile(source, { matrix: true })` returns is data, not text.
 // These turn it into the same CSV / Markdown / SVG `cairn matrix` writes — a
@@ -32,7 +33,10 @@ export { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
 // accident when an internal module gains an export. Every type reachable from
 // `CompileResult` is listed, so a consumer never has to import an internal path.
 export type { CompileOptions, CompileResult } from "./compile.ts";
+export type { ThemeSpec } from "./themes.ts";
+export type { ThemeOverrides } from "./theme-spec.ts";
 export type { FlowMatrix, FlowMatrixRow, MatrixColumn, MatrixColumnId } from "./models/matrix.ts";
+export type { MatrixSvgOptions } from "./flow-matrix.ts";
 export type { Diagnostic, Severity } from "./models/diagnostic.ts";
 export type { Span } from "./models/ast.ts";
 

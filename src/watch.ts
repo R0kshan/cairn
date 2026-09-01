@@ -40,7 +40,7 @@ function errorPanelSvg(file: string, diagnostics: Diagnostic[]): string {
 }
 
 /** Watches a Cairn source file and rebuilds the SVG output on changes (debounced). */
-export function watchCommand(file: string, outFile: string) {
+export function watchCommand(file: string, outFile: string, theme?: string) {
   if (!existsSync(file)) {
     console.error(`error: file not found \`${file}\``);
     process.exit(2);
@@ -60,6 +60,9 @@ export function watchCommand(file: string, outFile: string) {
     const src = readFileSync(file, "utf8");
     const { model, diags } = parse(src);
     diags.push(...validate(model));
+    // Re-applied every rebuild: each save re-parses, so the flag's theme would
+    // otherwise last exactly one render.
+    if (theme) model.style.theme = theme;
     const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
     const stamp = new Date().toLocaleTimeString();
 

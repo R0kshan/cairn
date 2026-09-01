@@ -22,6 +22,8 @@ import type { Model, Span } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { watchCommand } from "./watch.ts";
 import { resolveLogoFiles } from "./logo-files.ts";
+import { loadThemeFile } from "./theme-file.ts";
+import { registerTheme, themeNames } from "./themes.ts";
 import { LOGO_NAMES } from "./logos.ts";
 
 const TYPE_FLAGS: Record<string, string> = {
@@ -209,7 +211,7 @@ const command = args[0];
 declare const CAIRN_BUILD_VERSION: string | undefined;
 const version = typeof CAIRN_BUILD_VERSION !== "undefined" ? CAIRN_BUILD_VERSION : pkg.version;
 
-const VALUE_FLAGS = new Set(["-o", "--format"]);
+const VALUE_FLAGS = new Set(["-o", "--format", "--theme"]);
 const positionalFile = (): string | undefined => {
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
@@ -231,14 +233,17 @@ Usage:
                                                       (-L logical, -A application,
                                                        -I infrastructure, -S security)
   cairn validate <file.cairn> [--format json] [--strict]
-  cairn build <file.cairn> [-o output.svg]
-  cairn matrix <file.cairn> [--format csv|md|svg] [-o out]   matrice des flux techniques
+  cairn build <file.cairn> [-o output.svg] [--theme <name|file.json>]
+  cairn matrix <file.cairn> [--format csv|md|svg] [-o out] [--theme <name|file.json>]
+                                                      matrice des flux techniques
                                                       (default csv; honors style { lang })
-  cairn watch <file.cairn> [-o output.svg]             rebuild on save; SVG stays fresh
+  cairn watch <file.cairn> [-o output.svg] [--theme <name|file.json>]
+                                                      rebuild on save; SVG stays fresh
                                                       (error panel on failure) for an
                                                       editor auto-refresh preview
   cairn explain <code>                                rule rationale (e.g. E0203)
   cairn logos                                         list the built-in \`logo:\` names
+  cairn themes                                        list the built-in theme names
   cairn version | --version | -v                      print the installed version
 `);
   process.exit(2);
@@ -301,6 +306,46 @@ function densityReport(
   };
 }
 
+/**
+ * Resolves `--theme <name|path>` once, for every verb that renders.
+ *
+ * A value ending in `.json` is a file; anything else is a built-in name. The
+ * file is registered under its basename so the renderer, which resolves themes
+ * by name, can find it — and the name is what callers then put in
+ * `model.style.theme`.
+ *
+ * Applied after parsing, never before: the parser validates `theme:` against a
+ * closed set, so a custom name written in the DSL would be rejected. The flag
+ * overrides whatever the diagram declared, which is the point of having it.
+ */
+function themeFromArgs(): string | undefined {
+  const index = args.indexOf("--theme");
+  if (index === -1) return undefined;
+  const value = args[index + 1];
+  if (!value || value.startsWith("-")) {
+    console.error("error: `--theme` needs a theme name or a path to a .json theme file");
+    process.exit(2);
+  }
+  if (!value.toLowerCase().endsWith(".json")) {
+    if (!themeNames.includes(value)) {
+      console.error(
+        `error: unknown theme \`${value}\`\n  available: ${themeNames.join(", ")}\n` +
+          "  or pass a path to a .json theme file",
+      );
+      process.exit(2);
+    }
+    return value;
+  }
+  try {
+    const { name, spec } = loadThemeFile(value);
+    registerTheme(name, spec);
+    return name;
+  } catch (error) {
+    console.error(`error: ${error instanceof Error ? error.message : String(error)}`);
+    process.exit(2);
+  }
+}
+
 function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): void {
   if (diagnostics.some((diagnostic) => diagnostic.severity === "error")) {
     console.error(renderHuman(file, src, diagnostics, process.stderr.isTTY ?? false));
@@ -326,9 +371,11 @@ if (command === "version" || command === "--version" || command === "-v") {
 } else if (command === "build") {
   const file = positionalFile();
   if (!file) usage();
+  const themeOverride = themeFromArgs();
   const outFile = resolveOutputPath(file, ".svg");
   const { src, model, diagnostics } = loadAndCheck(file);
   exitIfErrors(file, src, diagnostics);
+  if (themeOverride) model.style.theme = themeOverride;
   const view = views[model.type!];
   layout(model, view)
     .then((scene) => {
@@ -358,6 +405,7 @@ if (command === "version" || command === "--version" || command === "-v") {
 } else if (command === "matrix") {
   const file = positionalFile();
   if (!file) usage();
+  const themeOverride = themeFromArgs();
   const formatIndex = args.indexOf("--format");
   const format = formatIndex >= 0 ? args[formatIndex + 1] : "csv";
   if (!["csv", "md", "svg"].includes(format)) {
@@ -370,6 +418,7 @@ if (command === "version" || command === "--version" || command === "-v") {
     console.error(`error: \`${file}\` declares no flows — nothing to tabulate`);
     process.exit(1);
   }
+  if (themeOverride) model.style.theme = themeOverride;
   const ext = format === "svg" ? "svg" : format === "md" ? "md" : "csv";
   const outFile = resolveOutputPath(file, ".flow." + ext);
   const lang = model.style.lang;
@@ -383,7 +432,7 @@ if (command === "version" || command === "--version" || command === "-v") {
 } else if (command === "watch") {
   const file = positionalFile();
   if (!file) usage();
-  watchCommand(file, resolveOutputPath(file, ".svg"));
+  watchCommand(file, resolveOutputPath(file, ".svg"), themeFromArgs());
 } else if (command === "new") {
   const type = args.map((arg) => TYPE_FLAGS[arg]).find(Boolean);
   const file = positionalFile();
@@ -427,6 +476,19 @@ if (command === "version" || command === "--version" || command === "-v") {
           .trimEnd(),
     );
   console.log('\nAnything else: point at a file — `logo: "./logos/name.svg"`.');
+} else if (command === "themes") {
+  // The counterpart of `cairn logos`: you cannot pass `--theme` sensibly
+  // without knowing what the names are, and they live in source, not in a doc
+  // that can fall behind.
+  console.log(
+    `${themeNames.length} built-in themes — \`--theme <name>\`, or \`style { theme: … }\`:\n`,
+  );
+  for (const name of themeNames) console.log(`  ${name}`);
+  console.log(
+    "\nFor your own colours, pass a JSON file instead — `--theme ./my-theme.json`.\n" +
+      "It extends a built-in and overrides only what it names:\n" +
+      '\n  { "extends": "dark", "pal": { "bg": "#0d1117" } }\n',
+  );
 } else if (command === "explain") {
   const code = args[1];
   if (!code) usage();

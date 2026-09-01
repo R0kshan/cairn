@@ -9,7 +9,8 @@
 
 import type { Model, StyleProps, Flow, Element } from "./models/ast.ts";
 import type { View } from "./views.ts";
-import { themeFor, flowPalette } from "./themes.ts";
+import { themeFor, themeFromSpec, flowPalette, isDarkTheme } from "./themes.ts";
+import type { ThemeSpec } from "./themes.ts";
 import { UI } from "./localization.ts";
 import { esc, escAttr } from "./xml-escape.ts";
 import {
@@ -1220,6 +1221,16 @@ function createEdgePainter(paint: EdgePaint) {
 export interface RenderOptions {
   /** Element id → inlined `data:` URI for its `logo: "<path>"`. */
   logos?: Map<string, string>;
+  /**
+   * A palette to render with, instead of resolving `style.theme` by name.
+   *
+   * Themes are otherwise looked up in a module-level registry, which a custom
+   * one has to be added to first. That is fine for the CLI — one render, then
+   * the process exits — but an embedder rendering for many callers would grow
+   * that registry on every call and risk two callers colliding on a name. A
+   * spec passed here is used and forgotten.
+   */
+  theme?: ThemeSpec;
 }
 
 export function render(
@@ -1243,15 +1254,21 @@ export function render(
     chipTextDy: round1(11 * fonts.scale),
   };
   const scaled = (n: number) => round1(n * fonts.scale);
-  const { palette, kinds: kindDefaults, levels: levelDefaults } = themeFor(style.theme, view);
-  const isDarkTheme = ["dark", "nord", "classic-dark"].includes(style.theme);
+  const {
+    palette,
+    kinds: kindDefaults,
+    levels: levelDefaults,
+  } = options?.theme ? themeFromSpec(options.theme, view) : themeFor(style.theme, view);
+  // A spec carries its own darkness; a name is looked up. Nothing about the
+  // colours themselves says which flow palette to use.
+  const onDarkGround = options?.theme ? options.theme.dark === true : isDarkTheme(style.theme);
   const defaultEdgeColor = style.flowStrokeColorSet
     ? style.flowStroke.color
     : (style.accent ?? palette.edge);
 
   const sourceHue =
     style.flowColor === "by-source"
-      ? assignSourceHues(model, flowPalette[isDarkTheme ? "dark" : "light"])
+      ? assignSourceHues(model, flowPalette[onDarkGround ? "dark" : "light"])
       : new Map<string, string>();
   const flowColorOf = (flow?: Flow): string =>
     flow?.style?.stroke?.color ??

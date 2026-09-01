@@ -21,9 +21,19 @@ import { views } from "./views.ts";
 import { buildFlowMatrix } from "./flow-matrix.ts";
 import type { FlowMatrix } from "./models/matrix.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
+import { resolveThemeSpec } from "./theme-spec.ts";
+import type { ThemeOverrides } from "./theme-spec.ts";
 
 export interface CompileOptions {
-  theme?: string;
+  /**
+   * A built-in theme name, or a palette of your own.
+   *
+   * An object is validated and merged over the built-in its `extends` names
+   * (default `light`), so overriding one colour is a two-key object rather than
+   * a full palette. It is used for this call only — nothing is registered, so
+   * concurrent callers cannot see or clobber each other's colours.
+   */
+  theme?: string | ThemeOverrides;
   /** Build the flow matrix too. Off by default — it costs a pass over the flows. */
   matrix?: boolean;
   /**
@@ -51,7 +61,11 @@ export interface CompileResult {
 
 export async function compile(source: string, options?: CompileOptions): Promise<CompileResult> {
   const { model, diags } = parse(source);
-  if (options?.theme) model.style.theme = options.theme;
+  // A name goes onto the model, where the renderer resolves it as usual. A spec
+  // bypasses that registry entirely and travels in the render options instead —
+  // see RenderOptions.theme for why an embedder must not register anything.
+  const theme = typeof options?.theme === "object" ? resolveThemeSpec(options.theme) : undefined;
+  if (typeof options?.theme === "string") model.style.theme = options.theme;
   diags.push(...validate(model));
   const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
@@ -65,7 +79,7 @@ export async function compile(source: string, options?: CompileOptions): Promise
   // Post-layout: whether a declared attachment side actually survived is only
   // knowable from the finished geometry (W0570).
   diags.push(...attachSideDiagnostics(scene, model));
-  const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos });
+  const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos, theme });
   return {
     svg,
     diagnostics: diags,

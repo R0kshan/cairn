@@ -19,7 +19,9 @@ import type { Model } from "./models/ast.ts";
 import type { FlowMatrix, MatrixColumn, MatrixColumnId } from "./models/matrix.ts";
 import type { View } from "./views.ts";
 import { UI } from "./localization.ts";
-import { palettes, lightPalette } from "./themes.ts";
+import { paletteFor, paletteFromSpec } from "./themes.ts";
+import { resolveThemeSpec } from "./theme-spec.ts";
+import type { ThemeOverrides } from "./theme-spec.ts";
 import { esc, escAttr } from "./xml-escape.ts";
 import { measure, CHAR_WIDTH } from "./text-metrics.ts";
 
@@ -135,9 +137,28 @@ export function matrixMd(matrix: FlowMatrix): string {
   return outLines.join("\n") + "\n";
 }
 
+export interface MatrixSvgOptions {
+  /**
+   * A palette to draw with, instead of resolving the matrix's own theme name.
+   *
+   * Needed because a custom theme passed to `compile({ theme })` is never
+   * registered under a name — deliberately, so concurrent callers cannot see
+   * each other's colours — and the matrix would otherwise fall back to light
+   * while the diagram beside it rendered in the caller's palette.
+   *
+   * Takes exactly what `compile({ theme })` takes, so the same value themes the
+   * diagram and its matrix.
+   */
+  theme?: string | ThemeOverrides;
+}
+
 /** Exports a flow matrix as a standalone themed SVG table. */
-export function matrixSvg(matrix: FlowMatrix): string {
-  const pal = palettes[matrix.style.theme] ?? lightPalette;
+export function matrixSvg(matrix: FlowMatrix, options?: MatrixSvgOptions): string {
+  const requested = options?.theme;
+  const pal =
+    typeof requested === "object"
+      ? paletteFromSpec(resolveThemeSpec(requested))
+      : paletteFor(requested ?? matrix.style.theme);
   const title = matrix.heading;
   const headers = matrix.columns.map((column) => column.label);
   const cells = matrix.rows.map((row) => row.cells);
