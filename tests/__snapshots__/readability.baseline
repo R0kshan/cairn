@@ -85,6 +85,12 @@ application-queue-messaging/tall	turnHeavy	1
 application-queue-messaging/wide	labelOffLine	1
 application-small/slide	turnHeavy	1
 application-small/wide	turnHeavy	1
+application-tech-stack/page	labelStraddled	1
+application-tech-stack/slide	jog<=6	2
+application-tech-stack/slide	turnHeavy	1
+application-tech-stack/tall	labelStraddled	1
+application-tech-stack/wide	jog<=6	2
+application-tech-stack/wide	turnHeavy	1
 application/page	attachAway	1
 application/page	crossings	3
 application/page	turnHeavy	1

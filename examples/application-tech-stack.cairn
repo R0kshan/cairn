@@ -15,8 +15,10 @@ application STOREFRONT "Storefront" { logo: nextdotjs
 
 application ORDERS "Order service" { logo: spring
   module ORDER_API "Order API" { logo: openjdk }
-  module PRICING "Pricing engine" { logo: python }
+  module INDEXER "Search indexer" { logo: openjdk }
 }
+
+application PRICING "Pricing engine" { logo: python }
 
 queue EVENTS "Order events" { logo: apachekafka }
 datastore ORDER_DB "Order store" { logo: postgresql }
@@ -25,13 +27,15 @@ datastore SEARCH "Order search" { logo: elasticsearch }
 external PSP "Card processor"
 
 # ---- application flows ----
-OPERATOR -> WEB (HTTPS, JSON)
+OPERATOR -> WEB (HTTPS)
 WEB -> BFF (API_REST, JSON)
 BFF -> ORDER_API (API_REST, JSON)
 ORDER_API -> PRICING (API_REST, JSON)
-ORDER_API -> ORDER_DB (SQL, JSON)
-ORDER_API -> EVENTS (MQ, JSON)
-SEARCH -> EVENTS (MQ, JSON)
+ORDER_API -> ORDER_DB (JDBC)
+ORDER_API -> EVENTS.left (MQ, JSON)
+EVENTS -> INDEXER (MQ, JSON)
+INDEXER -> SEARCH (HTTPS, JSON)
+ORDER_API -> SEARCH (HTTPS, JSON)
 ORDER_API -> PSP (API_REST, JSON)
 
 legend {
