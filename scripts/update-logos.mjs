@@ -141,19 +141,22 @@ try {
     if (title.includes('"')) throw new Error(`\`${slug}\` title needs escaping`);
 
     // The project is CC0, but individual icons may carry their own terms, and a
-    // few do. Only licences that permit commercial redistribution under cairn's
-    // own Apache-2.0 are allowed through; anything else stops the build rather
-    // than shipping quietly. That rules out NonCommercial (cairn would be
-    // granting a right it does not hold), ShareAlike (copyleft cairn cannot
-    // promise for its own output), and `custom` (a trademark policy is not a
-    // copyright grant). An icon with no licence field is covered by the
-    // project-wide CC0.
+    // few do. Only licences cairn can pass on under its own Apache-2.0 are
+    // allowed through; anything else stops the build rather than shipping
+    // quietly. Three distinct reasons, not one: NonCommercial bars the
+    // commercial use Apache-2.0 grants downstream, so cairn would be promising a
+    // right it does not hold; ShareAlike does permit commercial use but imposes
+    // copyleft on adaptations, which cairn cannot discharge for whoever embeds
+    // the mark in their own diagram; `custom` here is a trademark policy, which
+    // is no copyright grant at all. An icon with no licence field is covered by
+    // the project-wide CC0.
     const license = bySlug.get(slug)?.license;
     if (license && !PERMITTED_LICENSES.has(license.type)) {
       throw new Error(
-        `\`${slug}\` is ${license.type}, which cairn cannot redistribute — ` +
+        `\`${slug}\` is ${license.type}, which cairn cannot pass on under Apache-2.0 — ` +
           `drop it from CURATED, or add the licence to PERMITTED_LICENSES if it ` +
-          `really does permit commercial redistribution`,
+          `really does allow commercial use and imposes nothing cairn cannot ` +
+          `discharge for a user's own diagram`,
       );
     }
 
@@ -250,10 +253,17 @@ export const LOGO_NAMES: string[] = Object.keys(LOGOS);
     "| --- | --- |",
     ...licensed.map((row) => `| ${row.title} (\`${row.slug}\`) | ${row.license} |`),
     "",
-    "Each permits commercial redistribution; this table is the attribution they",
-    "ask for in return. Icons whose terms do not — NonCommercial, ShareAlike, or",
-    "a trademark policy in place of a copyright grant — are refused by the",
-    "generator and never reach `src/logos.ts`.",
+    "Each permits commercial redistribution and asks only for attribution, which",
+    "this table is. Three kinds of terms are refused by the generator instead, and",
+    "never reach `src/logos.ts`, for three different reasons:",
+    "",
+    "- **NonCommercial** bars the commercial use cairn's own Apache-2.0 grants",
+    "  downstream, so cairn would be promising a right it does not hold.",
+    "- **ShareAlike** does permit commercial use, but requires adaptations to carry",
+    "  the same licence — an obligation cairn cannot discharge on behalf of whoever",
+    "  embeds the mark in their own diagram.",
+    "- **A trademark policy** in place of a licence is not a copyright grant at all,",
+    "  so there is no permission to copy the artwork to rely on.",
     "",
     "<!-- end generated -->",
   ].join("\n");

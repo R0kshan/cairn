@@ -231,6 +231,21 @@ test("a file logo is inlined from its own bytes, and unreadable ones warn instea
       assert.match(diagnostics[0]?.message ?? "", message, `${reason} says why`);
       assert.equal(logos.size, 0, `${reason} leaves the element unmarked`);
     }
+
+    // A FIFO is the case that needs the non-blocking open: reading one blocks
+    // until a writer appears, so without O_NONBLOCK this call never returns and
+    // the test times out rather than failing. Skipped on Windows, which has no
+    // mkfifo. If this ever hangs, the flag is what regressed.
+    if (process.platform !== "win32") {
+      spawnSync("mkfifo", [join(dir, "pipe.svg")]);
+      const piped = resolveIn("pipe.svg");
+      assert.equal(piped.logos.size, 0, "a FIFO is never inlined");
+      assert.match(
+        piped.diagnostics[0]?.message ?? "",
+        /is not a regular file/,
+        "a FIFO is refused for its type, having not blocked the build",
+      );
+    }
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

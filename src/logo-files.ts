@@ -9,7 +9,7 @@
  * references are not fetched — so a hostile logo file cannot execute or phone
  * home through the diagram that embeds it.
  */
-import { closeSync, fstatSync, openSync, readSync } from "node:fs";
+import { closeSync, constants, fstatSync, openSync, readSync } from "node:fs";
 import { dirname, resolve, extname } from "node:path";
 import type { Model, Element } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
@@ -89,12 +89,18 @@ export function resolveLogoFiles(model: Model, sourceFile: string): ResolvedLogo
       // path checked and then re-opened is a different file if anything swaps
       // it in between, and the size limit below is only worth stating if the
       // bytes it guards are the bytes that were measured.
-      const fd = openSync(path, "r");
+      // O_NONBLOCK matters for correctness here, not speed. Opening a FIFO for
+      // reading blocks until something opens the write end (POSIX), so a pipe
+      // named `logo.svg` would hang the build inside `openSync` — before any
+      // check below could run. Non-blocking makes the open return so the file
+      // type can be inspected and refused. It is a no-op for reads of the
+      // regular files that get past that check, and absent on platforms with no
+      // such flag, hence the `?? 0`.
+      const fd = openSync(path, constants.O_RDONLY | (constants.O_NONBLOCK ?? 0));
       try {
         const stat = fstatSync(fd);
-        // A directory, a device, or a FIFO named `.svg` all open cleanly and
-        // report a size — a FIFO reports zero and then blocks the build for as
-        // long as nothing writes to it. Only a regular file has bytes to inline.
+        // Directories, devices and FIFOs all open without being readable as a
+        // stream of bytes to inline. Only a regular file is.
         if (!stat.isFile()) {
           warn(`logo file \`${logo.value}\` is not a regular file`, "point at an image file");
           continue;
