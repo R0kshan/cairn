@@ -412,7 +412,11 @@ function layoutMiddleRows(
 }
 
 /** Centres a partition's columns against the middle stack. */
-function placeCol(cols: ColGroup[], x: number, middleHeight: number): { group: ColGroup; box: Box }[] {
+function placeCol(
+  cols: ColGroup[],
+  x: number,
+  middleHeight: number,
+): { group: ColGroup; box: Box }[] {
   const total = cols.reduce((sum, col) => sum + col.height, 0) + (cols.length - 1) * 30;
   let colY = Math.max(20, 20 + (middleHeight - total) / 2);
   return cols.map((col) => {
@@ -569,9 +573,7 @@ function routeConnector(
   }
   // B crosses the right gutter; A and the X fallback both take the left.
   const laneX =
-    cls === "B"
-      ? gut.laneRightX(ends.source.y, dest.y)
-      : gut.laneLeftX(ends.source.y, dest.y);
+    cls === "B" ? gut.laneRightX(ends.source.y, dest.y) : gut.laneLeftX(ends.source.y, dest.y);
   return {
     points: [ends.source, { x: laneX, y: ends.source.y }, { x: laneX, y: dest.y }, dest],
     laneIndex: 0,

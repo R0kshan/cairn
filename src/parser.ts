@@ -307,6 +307,42 @@ function tryOrderEntry(p: Parser, parent: Element | null): boolean {
   return true;
 }
 
+/** `logo: <name>` or `logo: "<path>"` inside an element body. Backtracks when
+ *  `logo` is not followed by a colon, so `logo` stays usable as an id. Content
+ *  rather than cosmetics — hence a statement of its own, not a `style` property.
+ *
+ *  Only the shape is settled here: whether the name exists, whether the kind
+ *  takes a logo and whether a path is really a path are semantic questions the
+ *  validator answers, so every logo rule lives in one place. */
+function tryLogoEntry(p: Parser, parent: Element | null): boolean {
+  const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
+  if (!parent || !matchToken("id", "logo")) return false;
+  const mark = save();
+  const keyToken = advance();
+  if (!matchToken("colon")) {
+    restore(mark);
+    return false;
+  }
+  advance();
+  const valueToken = matchToken("id") || matchToken("str") ? advance() : null;
+  if (!valueToken || valueToken.text.length === 0) {
+    reportCoded(
+      "E0105",
+      "`logo` expects a built-in name or a quoted file path",
+      (valueToken ?? keyToken).span,
+      'e.g. `logo: react`, or `logo: "./logos/acme.svg"` for your own',
+    );
+    syncToNextLine();
+    return true;
+  }
+  parent.logo = {
+    value: valueToken.text,
+    source: valueToken.kind === "str" ? "file" : "builtin",
+    span: valueToken.span,
+  };
+  return true;
+}
+
 /** Top-level `legend { note "…" }`. Backtracks when `legend` is not followed by
  *  a brace, so an element may still be called `legend`. */
 function tryLegendBlock(p: Parser): boolean {
@@ -544,6 +580,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     }
     if (tryStyleBlock(parent)) return;
     if (tryOrderEntry(parser, parent)) return;
+    if (tryLogoEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
     parseFlowOrElement(parser, parent);

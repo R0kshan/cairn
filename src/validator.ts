@@ -13,6 +13,7 @@ import type { Diagnostic } from "./models/diagnostic.ts";
 import type { View } from "./views.ts";
 import { views } from "./views.ts";
 import { subtreeIds, subtreeElements } from "./element-tree.ts";
+import { LOGOS, LOGO_NAMES } from "./logos.ts";
 
 /** Validates a parsed model against view-specific rules and returns diagnostic messages. */
 export function validate(model: Model): Diagnostic[] {
@@ -39,6 +40,7 @@ export function validate(model: Model): Diagnostic[] {
     ...checkNesting(elements, view),
     ...checkFlows(model, view),
     ...checkElementAttributes(elements, view),
+    ...checkLogos(elements, view),
     ...checkTrustBoundaries(model, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
@@ -80,6 +82,68 @@ function checkUnknownKinds(elements: Element[], view: View): Diagnostic[] {
       note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
       help: suggestion ? `did you mean \`${suggestion}\`?` : undefined,
     });
+  }
+  return diagnostics;
+}
+
+/**
+ * Everything `logo:` has to satisfy, in one place: the kind takes a logo, a bare
+ * name names a built-in, and a quoted value is a workspace path rather than a
+ * URL. The parser only settled the shape.
+ */
+function checkLogos(elements: Element[], view: View): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  const logoKinds = view.logoKinds ?? [];
+  for (const element of elements) {
+    const logo = element.logo;
+    if (!logo) continue;
+
+    if (!logoKinds.includes(element.kind)) {
+      diagnostics.push({
+        code: "E0108",
+        severity: "error",
+        message: `\`${element.kind}\` does not carry a logo`,
+        span: logo.span,
+        note: logoKinds.length
+          ? `the \`${view.name}\` view accepts \`logo\` on: ${logoKinds.join(", ")}`
+          : `the \`${view.name}\` view has no kinds that carry a logo`,
+      });
+      continue;
+    }
+
+    if (logo.source === "builtin") {
+      // `hasOwn`, not a plain lookup: `LOGOS` is an object literal, so
+      // `logo: constructor` would otherwise find `Object.prototype` and pass
+      // for a logo that does not exist.
+      if (Object.hasOwn(LOGOS, logo.value)) continue;
+      const suggestion = nearest(logo.value, LOGO_NAMES);
+      diagnostics.push({
+        code: "E0107",
+        severity: "error",
+        message: `unknown built-in logo \`${logo.value}\``,
+        span: logo.span,
+        note: `${LOGO_NAMES.length} built-ins available — run \`cairn logos\` to list them`,
+        help:
+          suggestion !== undefined
+            ? `did you mean \`${suggestion}\`?`
+            : `use a file instead: \`logo: "./logos/${logo.value}.svg"\``,
+      });
+      continue;
+    }
+
+    // A remote logo would make the diagram fetch on every open. Caught here
+    // rather than at read time so the author hears about it from `validate`,
+    // and so the playground — which has no filesystem — reports it too.
+    if (/^[a-z][a-z0-9+.-]*:/i.test(logo.value) || logo.value.startsWith("//")) {
+      diagnostics.push({
+        code: "E0105",
+        severity: "error",
+        message: `\`logo\` will not fetch \`${logo.value}\``,
+        span: logo.span,
+        note: "a linked logo leaves the diagram depending on a server that can change or vanish",
+        help: 'download it next to the diagram and point at the file: `logo: "./logos/name.svg"`',
+      });
+    }
   }
   return diagnostics;
 }

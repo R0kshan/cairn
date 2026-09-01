@@ -26,6 +26,14 @@ export interface CompileOptions {
   theme?: string;
   /** Build the flow matrix too. Off by default — it costs a pass over the flows. */
   matrix?: boolean;
+  /**
+   * Element id → inlined `data:` URI for its `logo: "<path>"`. Built-in logos
+   * need nothing here; file-sourced ones do, because reading them is filesystem
+   * work this entry point cannot do. Without it an embedder could never render
+   * what `cairn build` renders from the same source, and the CLI and an
+   * embedder must not disagree (INVARIANTS §15).
+   */
+  logos?: Map<string, string>;
 }
 
 export interface CompileResult {
@@ -57,7 +65,7 @@ export async function compile(source: string, options?: CompileOptions): Promise
   // Post-layout: whether a declared attachment side actually survived is only
   // knowable from the finished geometry (W0570).
   diags.push(...attachSideDiagnostics(scene, model));
-  const { svg, overlapsAfter } = render(model, view, scene);
+  const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos });
   return {
     svg,
     diagnostics: diags,

@@ -7,7 +7,7 @@
  * runs, so only the arithmetic allowed by AGENTS.md#non-negotiable-invariants is used here.
  */
 
-import type { Model, StyleProps, Flow } from "./models/ast.ts";
+import type { Model, StyleProps, Flow, Element } from "./models/ast.ts";
 import type { View } from "./views.ts";
 import { themeFor, flowPalette } from "./themes.ts";
 import { UI } from "./localization.ts";
@@ -26,7 +26,8 @@ import { labelsSeated } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
 import { inspect } from "./readability.ts";
-import { chipW, techText, wrapText, fontSizes, GLYPH_GUTTER } from "./text-metrics.ts";
+import { chipW, techText, wrapText, fontSizes, GLYPH_GUTTER, LOGO_GUTTER } from "./text-metrics.ts";
+import { LOGOS } from "./logos.ts";
 
 const HOP_RADIUS = 5;
 /**
@@ -60,6 +61,7 @@ interface ElementStyleEntry {
   id: string;
   style: StyleProps | undefined;
   attrValue: string | undefined;
+  logo: Element["logo"];
 }
 
 interface RenderResult {
@@ -81,7 +83,7 @@ function assignSourceHues(model: Model, hues: string[]): Map<string, string> {
 /** Flattened per-element style/attr entries for `elements` and all their descendants, pre-order. */
 function collectElementStyles(elements: Model["elements"]): ElementStyleEntry[] {
   return elements.flatMap((element) => [
-    { id: element.id, style: element.style, attrValue: element.attr?.value },
+    { id: element.id, style: element.style, attrValue: element.attr?.value, logo: element.logo },
     ...collectElementStyles(element.children),
   ]);
 }
@@ -386,6 +388,50 @@ function glyphSvg(
   });
 }
 
+/**
+ * A tech-stack logo sits in the node's top-right corner, mirroring the kind
+ * glyph in the top-left. simple-icons paths are authored in a `0 0 24 24` box
+ * and carry no colour of their own, so one scale factor places any of them and
+ * the node's own stroke colour paints it — a logo never introduces a hue the
+ * theme did not choose.
+ */
+const LOGO_BOX = { size: 18, right: 7, top: 6 };
+
+/**
+ * The logo for `node`, or `""` when it has none. A file-sourced logo renders
+ * only when the caller resolved it: the core never reads from disk, so `cli.ts`
+ * hands the inlined data URI down and an unresolved one degrades to nothing
+ * rather than to a broken reference.
+ */
+function logoSvg(mark: {
+  logo: Element["logo"];
+  resolved: Map<string, string> | undefined;
+  node: SceneNode;
+  stroke: string;
+  /** Shapes with a curved corner push the mark clear of it. */
+  inset?: { right?: number; top?: number };
+}): string {
+  const { logo, resolved, node, stroke, inset = {} } = mark;
+  if (!logo) return "";
+  const x = round1(node.x + node.width - (inset.right ?? LOGO_BOX.right) - LOGO_BOX.size);
+  const y = round1(node.y + (inset.top ?? LOGO_BOX.top));
+
+  if (logo.source === "file") {
+    const href = resolved?.get(node.id);
+    if (!href) return "";
+    return `<image x="${x}" y="${y}" width="${LOGO_BOX.size}" height="${LOGO_BOX.size}" href="${escAttr(href)}" preserveAspectRatio="xMidYMid meet"/>\n`;
+  }
+
+  // Own entries only — an inherited `Object.prototype` member is not a logo.
+  const builtin = Object.hasOwn(LOGOS, logo.value) ? LOGOS[logo.value] : undefined;
+  if (!builtin) return "";
+  // 24 is the authored viewBox edge. Rounded to four places through integer
+  // maths so the attribute is a short, stable decimal rather than the raw
+  // binary quotient (§2: no drifting floats in the output path).
+  const scale = Math.round((LOGO_BOX.size / 24) * 1e4) / 1e4;
+  return `<g transform="translate(${x} ${y}) scale(${scale})" fill="${stroke}"><title>${esc(builtin.title)}</title><path d="${builtin.d}"/></g>\n`;
+}
+
 /** Everything the node shapes paint with: theme colours, fonts and per-element style. */
 interface NodePaint {
   palette: ReturnType<typeof themeFor>["palette"];
@@ -395,6 +441,9 @@ interface NodePaint {
   containerFontSize: number;
   resolveStyle: (kind: string, id: string) => StyleProps;
   elementAttr: Map<string, string | undefined>;
+  elementLogo: Map<string, Element["logo"]>;
+  /** `id` → inlined `data:` URI, filled in by whoever could read the files. */
+  resolvedLogos: Map<string, string> | undefined;
 }
 
 /** The text-placement maths every node shape shares: line stacking, vertical centring, glyph gutter. */
@@ -421,14 +470,33 @@ function createNodeLabelHelpers(nodeFontSize: number) {
    */
   const glyphLabelCenterX = (node: SceneNode) =>
     node.x + GLYPH_GUTTER + (node.width - GLYPH_GUTTER) / 2;
-  return { centeredNodeLabel, centerLinesY, glyphLabelCenterX };
+  /**
+   * The same idea for a logo, which sits on the right: the label centres in
+   * what is left once `LOGO_GUTTER` is taken off that side. `hasLogo` is false
+   * for most nodes, and then this is just the node's own centre.
+   */
+  const logoLabelCenterX = (node: SceneNode, hasLogo: boolean) =>
+    node.x + (node.width - (hasLogo ? LOGO_GUTTER : 0)) / 2;
+  return { centeredNodeLabel, centerLinesY, glyphLabelCenterX, logoLabelCenterX };
 }
 
 /** One function per node kind, plus the container frame. */
 function createNodeRenderers(paint: NodePaint) {
-  const { palette, style, annot, nodeFontSize, containerFontSize, resolveStyle, elementAttr } =
-    paint;
-  const { centeredNodeLabel, centerLinesY, glyphLabelCenterX } =
+  const {
+    palette,
+    style,
+    annot,
+    nodeFontSize,
+    containerFontSize,
+    resolveStyle,
+    elementAttr,
+    elementLogo,
+    resolvedLogos,
+  } = paint;
+  /** The logo mark for a node, already placed and coloured. `""` when it has none. */
+  const logoFor = (node: SceneNode, stroke: string, inset?: { right?: number; top?: number }) =>
+    logoSvg({ logo: elementLogo.get(node.id), resolved: resolvedLogos, node, stroke, inset });
+  const { centeredNodeLabel, centerLinesY, glyphLabelCenterX, logoLabelCenterX } =
     createNodeLabelHelpers(nodeFontSize);
 
   const renderContainerNode = (node: SceneNode): string => {
@@ -441,6 +509,7 @@ function createNodeRenderers(paint: NodePaint) {
     node.label.split("\n").forEach((line, index) => {
       svg += `<text x="${node.x + 10}" y="${node.y + 18 + index * 14}" font-size="${containerFontSize}" font-weight="bold" fill="${text}">${esc(line)}</text>\n`;
     });
+    svg += logoFor(node, stroke);
     const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : undefined;
     if (level) {
       const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
@@ -470,11 +539,19 @@ function createNodeRenderers(paint: NodePaint) {
       `<ellipse cx="${node.x + node.width / 2}" cy="${node.y + ry}" rx="${node.width / 2}" ry="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>\n`;
     const centerY =
       node.y + ry + (node.height - ry) / 2 - ((lines.length - 1) * (nodeFontSize + 2)) / 2 + 4;
+    // A cylinder is only full width between its caps (`ry` down to `height - ry`);
+    // above and below that the arcs curve away from the corner. Centring the
+    // mark in that band keeps it on paint at any node height, where
+    // top-aligning it below the cap overflows the bottom arc on a short node.
+    const logo = logoFor(node, stroke, {
+      top: ry + (node.height - 2 * ry - LOGO_BOX.size) / 2,
+    });
     return (
       body +
+      logo +
       centeredNodeLabel(
         lines,
-        node.x + node.width / 2,
+        logoLabelCenterX(node, logo !== ""),
         centerY,
         escAttr(nodeStyle.text ?? palette.nodeText),
       )
@@ -489,11 +566,13 @@ function createNodeRenderers(paint: NodePaint) {
     const body =
       `<path d="M ${node.x + rx} ${node.y} h ${node.width - 2 * rx} a ${rx} ${node.height / 2} 0 0 1 0 ${node.height} h ${-(node.width - 2 * rx)} a ${rx} ${node.height / 2} 0 0 1 0 ${-node.height}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>\n` +
       `<ellipse cx="${node.x + rx}" cy="${node.y + node.height / 2}" rx="${rx}" ry="${node.height / 2}" fill="${fill}" stroke="${stroke}" stroke-width="1.3"/>\n`;
+    const logo = logoFor(node, stroke, { right: LOGO_BOX.right + rx });
     return (
       body +
+      logo +
       centeredNodeLabel(
         lines,
-        node.x + rx + (node.width - rx) / 2,
+        node.x + rx + (node.width - rx - (logo === "" ? 0 : LOGO_GUTTER)) / 2,
         centerLinesY(node.y, node.height, lines.length),
         text,
       )
@@ -532,12 +611,14 @@ function createNodeRenderers(paint: NodePaint) {
       stroke = escAttr(nodeStyle.stroke?.color ?? palette.nodeStroke),
       text = escAttr(nodeStyle.text ?? palette.nodeText);
     const dash = dashArray(nodeStyle.stroke?.style);
+    const logo = logoFor(node, stroke);
     const body = `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" rx="4" fill="${fill}" stroke="${stroke}" stroke-width="${nodeStyle.stroke?.width ?? 1.3}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>\n`;
     return (
       body +
+      logo +
       centeredNodeLabel(
         lines,
-        node.x + node.width / 2,
+        logoLabelCenterX(node, logo !== ""),
         centerLinesY(node.y, node.height, lines.length),
         text,
       )
@@ -1129,7 +1210,24 @@ function createEdgePainter(paint: EdgePaint) {
 }
 
 /** Renders the final SVG diagram from the model, view, and positioned scene geometry. */
-export function render(model: Model, view: View, scene: Scene): RenderResult {
+/**
+ * What the caller can hand the renderer that the renderer cannot obtain itself.
+ * Today that is only the logo files: reading them is filesystem work, and the
+ * core stays environment-neutral, so `cli.ts` resolves them and passes the
+ * inlined results down. An embedder that supplies nothing still renders every
+ * built-in logo — only file-sourced ones need this.
+ */
+export interface RenderOptions {
+  /** Element id → inlined `data:` URI for its `logo: "<path>"`. */
+  logos?: Map<string, string>;
+}
+
+export function render(
+  model: Model,
+  view: View,
+  scene: Scene,
+  options?: RenderOptions,
+): RenderResult {
   const style = model.style;
   const fonts = fontSizes(style.font.size);
   const { edge: edgeFontSize, node: nodeFontSize, cont: containerFontSize } = fonts;
@@ -1180,9 +1278,11 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
 
   const elementStyle = new Map<string, StyleProps | undefined>();
   const elementAttr = new Map<string, string | undefined>();
+  const elementLogo = new Map<string, Element["logo"]>();
   for (const entry of collectElementStyles(model.elements)) {
     elementStyle.set(entry.id, entry.style);
     elementAttr.set(entry.id, entry.attrValue);
+    if (entry.logo) elementLogo.set(entry.id, entry.logo);
   }
 
   const resolveStyle = (kind: string, id: string): StyleProps => {
@@ -1239,6 +1339,8 @@ export function render(model: Model, view: View, scene: Scene): RenderResult {
     containerFontSize,
     resolveStyle,
     elementAttr,
+    elementLogo,
+    resolvedLogos: options?.logos,
   });
 
   const { renderEdgePath, renderEdgeLabels } = createEdgePainter({

@@ -7,7 +7,7 @@
 
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync, mkdtempSync, rmSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
@@ -19,6 +19,8 @@ import { isLongDetour } from "../src/geometry.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
+import { compile } from "../src/compile.ts";
+import { resolveLogoFiles } from "../src/logo-files.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const EX = join(ROOT, "examples");
@@ -42,6 +44,212 @@ const build = async (src: string) => {
   const scene = await layout(model, view);
   return { model, view, scene, ...render(model, view, scene) };
 };
+
+// ---------- logos ----------
+
+const LOGO_SRC =
+  'diagram application "t"\napplication APP "App" { logo: spring\n  module M "Public API" { logo: react }\n}\ndatastore DB "Store" { logo: postgresql }\nqueue Q "Events" { logo: apachekafka }\nM -> DB (SQL, JSON)\nM -> Q (MQ, JSON)\n';
+
+test("a built-in `logo:` renders in the node's own stroke colour, never a brand hue", async () => {
+  // simple-icons paths carry no fill of their own, which is why they can be
+  // vendored at all: the renderer paints them with the node's resolved stroke,
+  // so a logo can never introduce a colour the active theme did not choose.
+  // Guards against a future icon smuggling in a hardcoded fill.
+  const { svg } = await build(LOGO_SRC);
+  for (const title of ["Spring", "React", "PostgreSQL", "Apache Kafka"])
+    assert.match(svg, new RegExp(`<title>${title}</title>`), `${title} must render`);
+  const logoFills = [...svg.matchAll(/<g transform="translate[^"]+" fill="([^"]+)">/g)].map(
+    (m) => m[1],
+  );
+  assert.equal(logoFills.length, 4, "one group per logo");
+  // Every logo colour must already be in use as a stroke somewhere in the
+  // document — that is what "painted with the node's own stroke" means, and it
+  // holds whatever theme is active.
+  const strokes = new Set([...svg.matchAll(/stroke="(#[0-9a-f]{6})"/gi)].map((m) => m[1]));
+  for (const fill of logoFills)
+    assert.ok(strokes.has(fill), `logo fill ${fill} must be a stroke colour, not a brand hue`);
+});
+
+test("a logo box sits inside the node it marks, on every shape", async () => {
+  // The corner mark is placed from the node's own geometry, and the datastore
+  // and queue shapes have curved caps that a naive top-right inset would sit
+  // on top of. Assert containment rather than eyeballing a render.
+  const { svg, scene } = await build(LOGO_SRC);
+  const placements = [
+    ...svg.matchAll(/<g transform="translate\(([-\d.]+) ([-\d.]+)\) scale\(([\d.]+)\)"/g),
+  ];
+  assert.equal(placements.length, 4, "every logo is placed");
+  for (const [, xs, ys, ss] of placements) {
+    const x = Number(xs),
+      y = Number(ys),
+      side = 24 * Number(ss);
+    const host = scene.nodes.find(
+      (n) => x >= n.x && y >= n.y && x + side <= n.x + n.width && y + side <= n.y + n.height,
+    );
+    assert.ok(host, `logo at ${x},${y} must be fully inside some node`);
+    // A datastore is a cylinder, not a rectangle: it spans its full width only
+    // between the caps, so its bounding box is not its paint. Checking the box
+    // alone let a mark overflow the bottom arc by a pixel.
+    if (host.kind === "datastore") {
+      const ry = 7;
+      assert.ok(
+        y >= host.y + ry && y + side <= host.y + host.height - ry,
+        `datastore logo must stay between the caps (${y}..${y + side} vs ${host.y + ry}..${host.y + host.height - ry})`,
+      );
+    }
+  }
+});
+
+test("a logo reserves width, so a long label never runs under it", async () => {
+  // The layout adds LOGO_GUTTER for an element that carries one; without it a
+  // label wide enough to fill the box would slide beneath the mark.
+  const withLogo = await build(
+    'diagram application "t"\napplication APP "App" {\n  module M "A fairly long module name" { logo: react }\n  module N "Other" }\nM -> N (API_REST, JSON)\n'.replace(
+      'module N "Other" }',
+      'module N "Other"\n}',
+    ),
+  );
+  const withoutLogo = await build(
+    'diagram application "t"\napplication APP "App" {\n  module M "A fairly long module name"\n  module N "Other"\n}\nM -> N (API_REST, JSON)\n',
+  );
+  const width = (r: Awaited<ReturnType<typeof build>>) =>
+    r.scene.nodes.find((n) => n.id === "M")!.width;
+  assert.ok(
+    width(withLogo) >= width(withoutLogo) + 26,
+    `logo node must reserve the gutter (${width(withLogo)} vs ${width(withoutLogo)})`,
+  );
+});
+
+test("`logo:` refuses a URL — a diagram must not fetch to render", async () => {
+  // The whole point of inlining: a linked logo leaks the reader's IP, can be
+  // swapped after the fact, and breaks offline. Rejected in the validator so
+  // the playground reports it too, not only the CLI.
+  const { codes } = check(
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: "https://cdn.example.com/a.svg" } }\n',
+  );
+  assert.ok(codes.includes("E0105"), `expected E0105, got ${codes.join(", ")}`);
+  const protocolRelative = check(
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: "//cdn.example.com/a.svg" } }\n',
+  );
+  assert.ok(protocolRelative.codes.includes("E0105"), "protocol-relative is a URL too");
+});
+
+test("an unknown built-in logo suggests the nearest name", async () => {
+  const { diags, codes } = check(
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: postgres } }\n',
+  );
+  assert.ok(codes.includes("E0107"), `expected E0107, got ${codes.join(", ")}`);
+  assert.match(diags.find((d) => d.code === "E0107")!.help ?? "", /postgresql/);
+});
+
+test("only kinds that run software carry a logo", async () => {
+  // An actor is a person and a system is a grouping; neither has a tech stack.
+  const { codes } = check(
+    'diagram application "t"\nactor-group G "G" { actor U "User" { logo: react } }\n',
+  );
+  assert.ok(codes.includes("E0108"), `expected E0108, got ${codes.join(", ")}`);
+});
+
+test("a file logo renders nothing until someone resolves it, keeping the core filesystem-free", async () => {
+  // `render()` must never read from disk — the playground has no filesystem.
+  // An unresolved file logo degrades to no mark rather than to a broken link.
+  const src =
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: "./logos/acme.svg" } module N "B" }\nM -> N (API_REST, JSON)\n';
+  const { svg } = await build(src);
+  assert.doesNotMatch(svg, /<image/, "nothing is emitted without a resolver");
+
+  const { model, view } = await build(src);
+  const scene = await layout(model, view);
+  const resolved = render(model, view, scene, {
+    logos: new Map([["M", "data:image/svg+xml;base64,PHN2Zy8+"]]),
+  });
+  assert.ok(
+    resolved.svg.includes('href="data:image/svg+xml;base64,PHN2Zy8+"'),
+    "a resolved file logo is inlined as a data URI",
+  );
+});
+
+test("`compile()` renders the same logos the CLI does", async () => {
+  // INVARIANTS §15's parity rule: an embedder and `cairn build` must not
+  // disagree about the same source. Built-ins need nothing; a file logo needs
+  // the caller to pass what it resolved, so `CompileOptions` has to carry it.
+  const src =
+    'diagram application "t"\napplication APP "App" { module M "API" { logo: react } module N "B" { logo: "./a.svg" } }\nM -> N (API_REST, JSON)\n';
+  const plain = await compile(src);
+  assert.match(plain.svg ?? "", /<title>React<\/title>/, "a built-in needs no help");
+  assert.doesNotMatch(plain.svg ?? "", /<image/, "an unresolved file logo draws nothing");
+
+  const resolved = await compile(src, {
+    logos: new Map([["N", "data:image/svg+xml;base64,PHN2Zy8+"]]),
+  });
+  assert.ok(
+    (resolved.svg ?? "").includes('href="data:image/svg+xml;base64,PHN2Zy8+"'),
+    "a resolved file logo reaches the embedder's SVG",
+  );
+});
+
+test("a file logo is inlined from its own bytes, and unreadable ones warn instead of failing", () => {
+  // `resolveLogoFiles` is the only place cairn touches a filesystem for a
+  // diagram, and every refusal it makes is a warning — a missing decoration
+  // must never fail an otherwise valid build. Exercised through real files
+  // because the whole point of the code is what the filesystem hands back.
+  const dir = mkdtempSync(join(tmpdir(), "cairn-logo-"));
+  try {
+    writeFileSync(join(dir, "ok.svg"), "<svg/>");
+    writeFileSync(join(dir, "big.png"), Buffer.alloc(257 * 1024));
+    mkdirSync(join(dir, "dir.svg"));
+
+    const diagram = (file: string) =>
+      `diagram application "t"\napplication A "A" { logo: "./${file}" }\n`;
+    const resolveIn = (file: string) =>
+      resolveLogoFiles(parse(diagram(file)).model, join(dir, "d.cairn"));
+
+    const good = resolveIn("ok.svg");
+    assert.deepEqual(good.diagnostics, [], "a readable file produces no diagnostic");
+    assert.equal(
+      good.logos.get("A"),
+      `data:image/svg+xml;base64,${Buffer.from("<svg/>").toString("base64")}`,
+      "the data URI carries exactly the file's bytes",
+    );
+
+    // Each refusal: over the size limit, not a regular file, unknown extension,
+    // and absent entirely. All W0580, all leaving the element unmarked. The
+    // message is asserted too, not just the code — a directory is refused for
+    // *being a directory*, and without that check it would fall through to the
+    // generic read failure instead, which is the same code and the same
+    // severity. Only the wording separates the two.
+    for (const [file, reason, message] of [
+      ["big.png", "over the size limit", /over the 256 KB limit/],
+      ["dir.svg", "a directory, not a regular file", /is not a regular file/],
+      ["ok.txt", "an unsupported extension", /unsupported logo file type/],
+      ["missing.svg", "absent", /cannot read logo file/],
+    ] as const) {
+      const { logos, diagnostics } = resolveIn(file);
+      assert.equal(diagnostics.length, 1, `${reason} warns once`);
+      assert.equal(diagnostics[0]?.code, "W0580", `${reason} is W0580`);
+      assert.equal(diagnostics[0]?.severity, "warning", `${reason} never fails the build`);
+      assert.match(diagnostics[0]?.message ?? "", message, `${reason} says why`);
+      assert.equal(logos.size, 0, `${reason} leaves the element unmarked`);
+    }
+
+    // A FIFO is the case that needs the non-blocking open: reading one blocks
+    // until a writer appears, so without O_NONBLOCK this call never returns and
+    // the test times out rather than failing. Skipped on Windows, which has no
+    // mkfifo. If this ever hangs, the flag is what regressed.
+    if (process.platform !== "win32") {
+      spawnSync("mkfifo", [join(dir, "pipe.svg")]);
+      const piped = resolveIn("pipe.svg");
+      assert.equal(piped.logos.size, 0, "a FIFO is never inlined");
+      assert.match(
+        piped.diagnostics[0]?.message ?? "",
+        /is not a regular file/,
+        "a FIFO is refused for its type, having not blocked the build",
+      );
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
 
 // ---------- diagnostics ----------
 

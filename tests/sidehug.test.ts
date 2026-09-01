@@ -102,7 +102,8 @@ const crossCount = (a: P[], b: P[]): number => {
 const allCrossings = (s: Scene): number => {
   let total = 0;
   for (let i = 0; i < s.edges.length; i++)
-    for (let j = i + 1; j < s.edges.length; j++) total += crossCount(s.edges[i].pts, s.edges[j].pts);
+    for (let j = i + 1; j < s.edges.length; j++)
+      total += crossCount(s.edges[i].pts, s.edges[j].pts);
   return total;
 };
 

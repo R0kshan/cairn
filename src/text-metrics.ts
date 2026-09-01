@@ -20,6 +20,15 @@ export const CHAR_WIDTH = 0.56;
  */
 export const GLYPH_GUTTER = 26;
 
+/**
+ * The same room, reserved on the *right* for a `logo:` mark. Wider than
+ * `GLYPH_GUTTER` because a logo is a recognisable brand shape rather than a
+ * line drawing — it has to be big enough to read at a glance. Logos sit
+ * opposite the kind glyph so the two can never fight for the same corner, and
+ * so a container — whose name is anchored top-left — keeps its title clear.
+ */
+export const LOGO_GUTTER = 30;
+
 /** Computes scaled font sizes for different element types (nodes, edges, containers, etc.). */
 export const fontSizes = (base: number) => {
   const scale = base / FONT_SIZE_BASE;

@@ -566,6 +566,35 @@ datastores); `datastore` renders as cylinder; business objects are logical-view
 only. Unknown element kinds for the
 active view are rejected (`E0201`).
 
+Which kinds accept `logo:` is the same kind of registry fact, declared as
+`View.logoKinds`: application view only, on `application`, `module`, `queue`,
+`datastore` and `external`. A view that declares none takes no logos at all, so
+the capability is opt-in rather than inherited (`E0108`).
+
+A logo is always **inlined, never linked** — a built-in path from `src/logos.ts`,
+or a workspace file read at build time and embedded as a `data:` URI. A URL is
+refused (`E0105`). A cairn SVG is one self-contained file that renders offline
+and identically forever; a diagram that fetches at open time would give that up,
+leak the reader's address, and rot when the far end changes. Reading those files
+is the CLI's job: `svg-render.ts` never touches a filesystem, because the
+playground has none.
+
+**A `.cairn` file is trusted exactly as much as the shell that ran it.** A file
+logo path is resolved against the diagram's own directory and may climb out of
+it, deliberately: an author often keeps one shared logo folder beside several
+diagrams. That is safe because there is no privilege boundary to cross —
+`resolveLogoFiles` is reached only from `cli.ts` and `watch.ts`, on the path the
+user typed themselves, running as that user, so it reads nothing they could not
+already read with `cat`.
+
+The boundary that matters is kept somewhere else, and must stay there: no entry
+point that can be handed an untrusted diagram is allowed to touch a filesystem.
+`compile()` cannot read files at all — an embedder passes `CompileOptions.logos`
+already inlined — and `api.ts` does not export `resolveLogoFiles`. That is why
+`playground/api/svg.mjs`, which compiles whatever arrives in a query string,
+resolves no file logos. Render untrusted diagrams through `compile()`; do not
+give that path a filesystem, and do not add a resolver to it.
+
 ## 13. `cairn new` must not overwrite files
 
 The `new` command uses `O_CREAT|O_EXCL` (`wx` flag) for atomic exclusive
