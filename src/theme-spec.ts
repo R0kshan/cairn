@@ -12,6 +12,7 @@
  * reachable from `api.ts` has to run without a filesystem. Reading a file is
  * `theme-file.ts`'s job, and only the CLI imports that.
  */
+import { isColour } from "./css-colours.ts";
 import { THEME_SPECS, type ThemeSpec } from "./themes.ts";
 
 /** The base a theme extends when it does not say. */
@@ -93,21 +94,11 @@ function checkEntry(path: string, value: unknown, arity: number): void {
     throw new ThemeSpecError(`\`${path}\` must be ${arity} colours, got ${describe(value)}`);
   }
   for (const colour of Array.isArray(value) ? value : [value]) {
-    if (typeof colour !== "string" || !COLOUR.test(colour)) {
+    if (typeof colour !== "string" || !isColour(colour)) {
       throw new ThemeSpecError(`\`${path}\`: \`${String(colour)}\` is not a colour`);
     }
   }
 }
-
-/**
- * A colour cairn will put in an SVG attribute unaltered: hex, `rgb()`/`hsl()`,
- * or a bare CSS keyword. Deliberately permissive about keywords — there is no
- * list here, so an unrecognised lowercase word passes as one. The renderer
- * escapes attributes, so nothing here is a security boundary; the check exists
- * to fail a structural typo at load time, naming the key, instead of emitting a
- * diagram that quietly renders the wrong colour.
- */
-const COLOUR = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([0-9.,%\s/-]+\)|[a-z]+)$/i;
 
 /**
  * Validates `input` and returns it merged over the built-in it extends.

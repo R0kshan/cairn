@@ -1580,10 +1580,11 @@ test("a theme the user asked for never fails open", () => {
       [write(dir, "base.json", '{ "extends": "nope" }'), /extends unknown theme `nope`/],
       [write(dir, "hue.json", '{ "pal": { "bg": "puce or so" } }'), /`pal\.bg`.*is not a colour/],
       [write(dir, "dk.json", '{ "dark": "yes" }'), /`dark` must be true or false/],
-      // Structurally invalid rather than merely unfamiliar: a bare lowercase
-      // word is accepted as a CSS keyword, so only something that cannot be a
-      // colour at all — a `#` with non-hex digits — is rejectable here.
       [write(dir, "tup.json", '{ "pal": { "chip": ["#fff", "#ggghhh", "#000"] } }'), /`pal\.chip`/],
+      // A word that is not a CSS colour reaches the SVG as an attribute the
+      // renderer ignores, so the shape falls back to black with nothing to
+      // read. Load time is the only place this typo is still nameable.
+      [write(dir, "kw.json", '{ "pal": { "bg": "dakgrey" } }'), /`pal\.bg`.*is not a colour/],
     ];
     for (const [theme, expected] of cases) {
       const result = cairn("build", src, "-o", join(dir, "out.svg"), "--theme", theme);

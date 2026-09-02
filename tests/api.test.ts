@@ -120,6 +120,19 @@ test("compile() rejects a malformed palette instead of falling back", async () =
   assert.throws(() => resolveThemeSpec("light"), ThemeSpecError);
 });
 
+test("a colour keyword has to be one CSS actually defines", () => {
+  // `notacolour` is not a colour the renderer can refuse: SVG ignores a
+  // presentation attribute it cannot parse, so the shape renders black and the
+  // diagram is produced without complaint. Only this check still knows the key.
+  assert.throws(() => resolveThemeSpec({ pal: { bg: "notacolour" } }), ThemeSpecError);
+
+  // The keywords a real theme reaches for stay accepted, matched the way CSS
+  // matches them — case-insensitively.
+  for (const bg of ["rebeccapurple", "transparent", "currentColor", "WhiteSmoke"]) {
+    assert.doesNotThrow(() => resolveThemeSpec({ pal: { bg } }), `\`${bg}\` is a CSS colour`);
+  }
+});
+
 test("the matrix is themed by the same value as the diagram beside it", async () => {
   // A diagram and its flow matrix are two halves of one deliverable; a caller
   // who themes one and gets the other in default light has been given a broken
