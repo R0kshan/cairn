@@ -1,0 +1,21 @@
+{
+  "extends": "dark",
+  "dark": true,
+  "pal": {
+    "bg": "#0d1117",
+    "cFill": "#161b22",
+    "cStroke": "#30363d",
+    "nFill": "#0d1117",
+    "nStroke": "#58a6ff",
+    "edge": "#7d8590",
+    "halo": "#0d1117"
+  },
+  "accentColors": {
+    "blue": "#58a6ff",
+    "blueF": "#0d2136",
+    "app": "#58a6ff",
+    "appF": "#0d2136",
+    "green": "#3fb950",
+    "greenF": "#0c2113"
+  }
+}

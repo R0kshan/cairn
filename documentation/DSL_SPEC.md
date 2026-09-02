@@ -311,4 +311,6 @@ Every issue cairn reports carries a stable code (`E01xx` syntax, `E02xx` semanti
 
 ## 4. Deferred (not v0.1)
 
-Imports/includes across files, variables/themes, icons, longhand style properties (`stroke-color:` …) as an additive alternative.
+Imports/includes across files, variables, longhand style properties (`stroke-color:` …) as an additive alternative.
+
+Themes are no longer deferred: built-ins are selectable with `cairn --theme <name>` and a custom palette is a JSON file extending one of them (`--theme ./my-theme.json`). It stays a CLI parameter rather than DSL syntax, because reading a file from the parser would put filesystem work back into a core that must run in the playground.

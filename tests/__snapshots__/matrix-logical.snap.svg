@@ -1,99 +1,99 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 964 560" font-family="Helvetica,Arial,sans-serif">
-<rect width="964" height="560" fill="white"/>
-<text x="1" y="22" font-size="13" font-weight="bold" fill="#555">TECHNICAL FLOW MATRIX — Claims management — logical view</text>
-<rect x="0" y="34" width="962" height="30" fill="#f7f7f7" stroke="#ddd"/>
-<text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">No.</text>
-<text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
-<text x="377" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
-<text x="699" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Flow</text>
-<text x="22.5" y="81" font-size="11" text-anchor="middle" fill="#444">1</text>
-<text x="55" y="81" font-size="11" text-anchor="start" fill="#444">Policyholder</text>
-<text x="377" y="81" font-size="11" text-anchor="start" fill="#444">Online reporting (Claim reporting)</text>
-<text x="699" y="81" font-size="11" text-anchor="start" fill="#444">Report a claim</text>
-<rect x="0" y="90" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
-<text x="55" y="107" font-size="11" text-anchor="start" fill="#444">Involved third party</text>
-<text x="377" y="107" font-size="11" text-anchor="start" fill="#444">Phone reporting (Claim reporting)</text>
-<text x="699" y="107" font-size="11" text-anchor="start" fill="#444">Report involvement</text>
-<text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
-<text x="55" y="133" font-size="11" text-anchor="start" fill="#444">Policyholder</text>
-<text x="377" y="133" font-size="11" text-anchor="start" fill="#444">Supporting-document collection (Claim reporting)</text>
-<text x="699" y="133" font-size="11" text-anchor="start" fill="#444">Upload photos and documents</text>
-<rect x="0" y="142" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>
-<text x="55" y="159" font-size="11" text-anchor="start" fill="#444">Supporting-document collection (Claim reporting)</text>
-<text x="377" y="159" font-size="11" text-anchor="start" fill="#444">Group ECM</text>
-<text x="699" y="159" font-size="11" text-anchor="start" fill="#444">Archive documents</text>
-<text x="22.5" y="185" font-size="11" text-anchor="middle" fill="#444">5</text>
-<text x="55" y="185" font-size="11" text-anchor="start" fill="#444">Online reporting (Claim reporting)</text>
-<text x="377" y="185" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="699" y="185" font-size="11" text-anchor="start" fill="#444">Open the case file</text>
-<rect x="0" y="194" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
-<text x="55" y="211" font-size="11" text-anchor="start" fill="#444">Phone reporting (Claim reporting)</text>
-<text x="377" y="211" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="699" y="211" font-size="11" text-anchor="start" fill="#444">Open the case file (phone channel)</text>
-<text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>
-<text x="55" y="237" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="377" y="237" font-size="11" text-anchor="start" fill="#444">Fraud detection (Claim investigation)</text>
-<text x="699" y="237" font-size="11" text-anchor="start" fill="#444">Systematic check at opening</text>
-<rect x="0" y="246" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="263" font-size="11" text-anchor="middle" fill="#444">8</text>
-<text x="55" y="263" font-size="11" text-anchor="start" fill="#444">Fraud detection (Claim investigation)</text>
-<text x="377" y="263" font-size="11" text-anchor="start" fill="#444">Inter-insurer files</text>
-<text x="699" y="263" font-size="11" text-anchor="start" fill="#444">Query claims-history files</text>
-<text x="22.5" y="289" font-size="11" text-anchor="middle" fill="#444">9</text>
-<text x="55" y="289" font-size="11" text-anchor="start" fill="#444">Inter-insurer files</text>
-<text x="377" y="289" font-size="11" text-anchor="start" fill="#444">Fraud detection (Claim investigation)</text>
-<text x="699" y="289" font-size="11" text-anchor="start" fill="#444">Policyholder history</text>
-<rect x="0" y="298" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="315" font-size="11" text-anchor="middle" fill="#444">10</text>
-<text x="55" y="315" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="377" y="315" font-size="11" text-anchor="start" fill="#444">Assessment tracking (Claim investigation)</text>
-<text x="699" y="315" font-size="11" text-anchor="start" fill="#444">Assessment mission if damage &gt; threshold</text>
-<text x="22.5" y="341" font-size="11" text-anchor="middle" fill="#444">11</text>
-<text x="55" y="341" font-size="11" text-anchor="start" fill="#444">Appointed expert</text>
-<text x="377" y="341" font-size="11" text-anchor="start" fill="#444">Assessment tracking (Claim investigation)</text>
-<text x="699" y="341" font-size="11" text-anchor="start" fill="#444">Submit assessment report</text>
-<rect x="0" y="350" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="367" font-size="11" text-anchor="middle" fill="#444">12</text>
-<text x="55" y="367" font-size="11" text-anchor="start" fill="#444">Assessment tracking (Claim investigation)</text>
-<text x="377" y="367" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="699" y="367" font-size="11" text-anchor="start" fill="#444">Assessment conclusions</text>
-<text x="22.5" y="393" font-size="11" text-anchor="middle" fill="#444">13</text>
-<text x="55" y="393" font-size="11" text-anchor="start" fill="#444">Claims handler</text>
-<text x="377" y="393" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="699" y="393" font-size="11" text-anchor="start" fill="#444">Investigation and management decisions</text>
-<rect x="0" y="402" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="419" font-size="11" text-anchor="middle" fill="#444">14</text>
-<text x="55" y="419" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="377" y="419" font-size="11" text-anchor="start" fill="#444">Compensation calculation (Claim settlement)</text>
-<text x="699" y="419" font-size="11" text-anchor="start" fill="#444">Approved items for pricing</text>
-<text x="22.5" y="445" font-size="11" text-anchor="middle" fill="#444">15</text>
-<text x="55" y="445" font-size="11" text-anchor="start" fill="#444">Compensation calculation (Claim settlement)</text>
-<text x="377" y="445" font-size="11" text-anchor="start" fill="#444">Settlement supervisor</text>
-<text x="699" y="445" font-size="11" text-anchor="start" fill="#444">Approval request beyond delegation</text>
-<rect x="0" y="454" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="471" font-size="11" text-anchor="middle" fill="#444">16</text>
-<text x="55" y="471" font-size="11" text-anchor="start" fill="#444">Settlement supervisor</text>
-<text x="377" y="471" font-size="11" text-anchor="start" fill="#444">Compensation calculation (Claim settlement)</text>
-<text x="699" y="471" font-size="11" text-anchor="start" fill="#444">Approval or reasoned refusal</text>
-<text x="22.5" y="497" font-size="11" text-anchor="middle" fill="#444">17</text>
-<text x="55" y="497" font-size="11" text-anchor="start" fill="#444">Compensation calculation (Claim settlement)</text>
-<text x="377" y="497" font-size="11" text-anchor="start" fill="#444">Payment scheduling (Claim settlement)</text>
-<text x="699" y="497" font-size="11" text-anchor="start" fill="#444">Compensation order</text>
-<rect x="0" y="506" width="962" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="523" font-size="11" text-anchor="middle" fill="#444">18</text>
-<text x="55" y="523" font-size="11" text-anchor="start" fill="#444">Payment scheduling (Claim settlement)</text>
-<text x="377" y="523" font-size="11" text-anchor="start" fill="#444">Banking system (transfers)</text>
-<text x="699" y="523" font-size="11" text-anchor="start" fill="#444">SEPA transfer</text>
-<text x="22.5" y="549" font-size="11" text-anchor="middle" fill="#444">19</text>
-<text x="55" y="549" font-size="11" text-anchor="start" fill="#444">Claim-file management (Claim investigation)</text>
-<text x="377" y="549" font-size="11" text-anchor="start" fill="#444">Policyholder</text>
-<text x="699" y="549" font-size="11" text-anchor="start" fill="#444">Notify steps and decision</text>
-<line x1="45" y1="34" x2="45" y2="558" stroke="#ddd" stroke-width="1"/>
-<line x1="367" y1="34" x2="367" y2="558" stroke="#ddd" stroke-width="1"/>
-<line x1="689" y1="34" x2="689" y2="558" stroke="#ddd" stroke-width="1"/>
-<line x1="0" y1="558" x2="962" y2="558" stroke="#ddd"/>
-<rect x="0" y="34" width="962" height="524" fill="none" stroke="#ddd"/>
+<rect width="964" height="560" fill="#ffffff"/>
+<text x="1" y="22" font-size="13" font-weight="bold" fill="#3a4553">TECHNICAL FLOW MATRIX — Claims management — logical view</text>
+<rect x="0" y="34" width="962" height="30" fill="#f5f6f8" stroke="#e6e9ee"/>
+<text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#3a4553">No.</text>
+<text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#3a4553">Source</text>
+<text x="377" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#3a4553">Destination</text>
+<text x="699" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#3a4553">Flow</text>
+<text x="22.5" y="81" font-size="11" text-anchor="middle" fill="#17202c">1</text>
+<text x="55" y="81" font-size="11" text-anchor="start" fill="#17202c">Policyholder</text>
+<text x="377" y="81" font-size="11" text-anchor="start" fill="#17202c">Online reporting (Claim reporting)</text>
+<text x="699" y="81" font-size="11" text-anchor="start" fill="#17202c">Report a claim</text>
+<rect x="0" y="90" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#17202c">2</text>
+<text x="55" y="107" font-size="11" text-anchor="start" fill="#17202c">Involved third party</text>
+<text x="377" y="107" font-size="11" text-anchor="start" fill="#17202c">Phone reporting (Claim reporting)</text>
+<text x="699" y="107" font-size="11" text-anchor="start" fill="#17202c">Report involvement</text>
+<text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#17202c">3</text>
+<text x="55" y="133" font-size="11" text-anchor="start" fill="#17202c">Policyholder</text>
+<text x="377" y="133" font-size="11" text-anchor="start" fill="#17202c">Supporting-document collection (Claim reporting)</text>
+<text x="699" y="133" font-size="11" text-anchor="start" fill="#17202c">Upload photos and documents</text>
+<rect x="0" y="142" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#17202c">4</text>
+<text x="55" y="159" font-size="11" text-anchor="start" fill="#17202c">Supporting-document collection (Claim reporting)</text>
+<text x="377" y="159" font-size="11" text-anchor="start" fill="#17202c">Group ECM</text>
+<text x="699" y="159" font-size="11" text-anchor="start" fill="#17202c">Archive documents</text>
+<text x="22.5" y="185" font-size="11" text-anchor="middle" fill="#17202c">5</text>
+<text x="55" y="185" font-size="11" text-anchor="start" fill="#17202c">Online reporting (Claim reporting)</text>
+<text x="377" y="185" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="699" y="185" font-size="11" text-anchor="start" fill="#17202c">Open the case file</text>
+<rect x="0" y="194" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#17202c">6</text>
+<text x="55" y="211" font-size="11" text-anchor="start" fill="#17202c">Phone reporting (Claim reporting)</text>
+<text x="377" y="211" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="699" y="211" font-size="11" text-anchor="start" fill="#17202c">Open the case file (phone channel)</text>
+<text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#17202c">7</text>
+<text x="55" y="237" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="377" y="237" font-size="11" text-anchor="start" fill="#17202c">Fraud detection (Claim investigation)</text>
+<text x="699" y="237" font-size="11" text-anchor="start" fill="#17202c">Systematic check at opening</text>
+<rect x="0" y="246" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="263" font-size="11" text-anchor="middle" fill="#17202c">8</text>
+<text x="55" y="263" font-size="11" text-anchor="start" fill="#17202c">Fraud detection (Claim investigation)</text>
+<text x="377" y="263" font-size="11" text-anchor="start" fill="#17202c">Inter-insurer files</text>
+<text x="699" y="263" font-size="11" text-anchor="start" fill="#17202c">Query claims-history files</text>
+<text x="22.5" y="289" font-size="11" text-anchor="middle" fill="#17202c">9</text>
+<text x="55" y="289" font-size="11" text-anchor="start" fill="#17202c">Inter-insurer files</text>
+<text x="377" y="289" font-size="11" text-anchor="start" fill="#17202c">Fraud detection (Claim investigation)</text>
+<text x="699" y="289" font-size="11" text-anchor="start" fill="#17202c">Policyholder history</text>
+<rect x="0" y="298" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="315" font-size="11" text-anchor="middle" fill="#17202c">10</text>
+<text x="55" y="315" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="377" y="315" font-size="11" text-anchor="start" fill="#17202c">Assessment tracking (Claim investigation)</text>
+<text x="699" y="315" font-size="11" text-anchor="start" fill="#17202c">Assessment mission if damage &gt; threshold</text>
+<text x="22.5" y="341" font-size="11" text-anchor="middle" fill="#17202c">11</text>
+<text x="55" y="341" font-size="11" text-anchor="start" fill="#17202c">Appointed expert</text>
+<text x="377" y="341" font-size="11" text-anchor="start" fill="#17202c">Assessment tracking (Claim investigation)</text>
+<text x="699" y="341" font-size="11" text-anchor="start" fill="#17202c">Submit assessment report</text>
+<rect x="0" y="350" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="367" font-size="11" text-anchor="middle" fill="#17202c">12</text>
+<text x="55" y="367" font-size="11" text-anchor="start" fill="#17202c">Assessment tracking (Claim investigation)</text>
+<text x="377" y="367" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="699" y="367" font-size="11" text-anchor="start" fill="#17202c">Assessment conclusions</text>
+<text x="22.5" y="393" font-size="11" text-anchor="middle" fill="#17202c">13</text>
+<text x="55" y="393" font-size="11" text-anchor="start" fill="#17202c">Claims handler</text>
+<text x="377" y="393" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="699" y="393" font-size="11" text-anchor="start" fill="#17202c">Investigation and management decisions</text>
+<rect x="0" y="402" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="419" font-size="11" text-anchor="middle" fill="#17202c">14</text>
+<text x="55" y="419" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="377" y="419" font-size="11" text-anchor="start" fill="#17202c">Compensation calculation (Claim settlement)</text>
+<text x="699" y="419" font-size="11" text-anchor="start" fill="#17202c">Approved items for pricing</text>
+<text x="22.5" y="445" font-size="11" text-anchor="middle" fill="#17202c">15</text>
+<text x="55" y="445" font-size="11" text-anchor="start" fill="#17202c">Compensation calculation (Claim settlement)</text>
+<text x="377" y="445" font-size="11" text-anchor="start" fill="#17202c">Settlement supervisor</text>
+<text x="699" y="445" font-size="11" text-anchor="start" fill="#17202c">Approval request beyond delegation</text>
+<rect x="0" y="454" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="471" font-size="11" text-anchor="middle" fill="#17202c">16</text>
+<text x="55" y="471" font-size="11" text-anchor="start" fill="#17202c">Settlement supervisor</text>
+<text x="377" y="471" font-size="11" text-anchor="start" fill="#17202c">Compensation calculation (Claim settlement)</text>
+<text x="699" y="471" font-size="11" text-anchor="start" fill="#17202c">Approval or reasoned refusal</text>
+<text x="22.5" y="497" font-size="11" text-anchor="middle" fill="#17202c">17</text>
+<text x="55" y="497" font-size="11" text-anchor="start" fill="#17202c">Compensation calculation (Claim settlement)</text>
+<text x="377" y="497" font-size="11" text-anchor="start" fill="#17202c">Payment scheduling (Claim settlement)</text>
+<text x="699" y="497" font-size="11" text-anchor="start" fill="#17202c">Compensation order</text>
+<rect x="0" y="506" width="962" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="523" font-size="11" text-anchor="middle" fill="#17202c">18</text>
+<text x="55" y="523" font-size="11" text-anchor="start" fill="#17202c">Payment scheduling (Claim settlement)</text>
+<text x="377" y="523" font-size="11" text-anchor="start" fill="#17202c">Banking system (transfers)</text>
+<text x="699" y="523" font-size="11" text-anchor="start" fill="#17202c">SEPA transfer</text>
+<text x="22.5" y="549" font-size="11" text-anchor="middle" fill="#17202c">19</text>
+<text x="55" y="549" font-size="11" text-anchor="start" fill="#17202c">Claim-file management (Claim investigation)</text>
+<text x="377" y="549" font-size="11" text-anchor="start" fill="#17202c">Policyholder</text>
+<text x="699" y="549" font-size="11" text-anchor="start" fill="#17202c">Notify steps and decision</text>
+<line x1="45" y1="34" x2="45" y2="558" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="367" y1="34" x2="367" y2="558" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="689" y1="34" x2="689" y2="558" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="0" y1="558" x2="962" y2="558" stroke="#e6e9ee"/>
+<rect x="0" y="34" width="962" height="524" fill="none" stroke="#e6e9ee"/>
 </svg>

@@ -21,8 +21,16 @@ import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-mat
 import { views } from "../src/views.ts";
 import { compile } from "../src/compile.ts";
 import { resolveLogoFiles } from "../src/logo-files.ts";
+import { loadThemeFile } from "../src/theme-file.ts";
+import { THEME_SPECS, themeNames } from "../src/themes.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+/** Write a fixture and hand back its path, so a table of bad inputs stays readable. */
+const write = (dir: string, name: string, body: string): string => {
+  const path = join(dir, name);
+  writeFileSync(path, body);
+  return path;
+};
 const EX = join(ROOT, "examples");
 // Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.
 const load = (f: string) => readFileSync(join(EX, f), "utf8").replace(/\r\n/g, "\n");
@@ -1454,4 +1462,164 @@ test("`system` is a container kind in the application view and annotates the mat
   assert.match(cellOf("dest"), /\(Platform\)$/);
   // …and `system` stays unknown in a view that does not declare it.
   assert.ok(check('diagram infrastructure "t"\nsystem S "s"\n').codes.includes("E0201"));
+});
+
+// ---------- custom themes (issue #21) ----------
+
+const cairn = (...argv: string[]) =>
+  spawnSync(
+    process.execPath,
+    ["--experimental-strip-types", join(ROOT, "src", "cli.ts"), ...argv],
+    {
+      encoding: "utf8",
+    },
+  );
+
+test("`--theme` re-tints a diagram without editing it, by name or by file", () => {
+  // The point of the flag: the same source renders in another palette. Asserted
+  // on the canvas rect, which is painted from the theme's background and is the
+  // one colour a reader notices immediately.
+  const dir = mkdtempSync(join(tmpdir(), "cairn-theme-"));
+  try {
+    const src = join(dir, "d.cairn");
+    writeFileSync(src, 'diagram application "t"\napplication A "App"\n');
+    const background = (svg: string) => svg.match(/<rect[^>]*fill="([^"]+)"/)?.[1];
+
+    const built = (theme?: string) => {
+      const out = join(dir, `${theme ? theme.replace(/\W/g, "_") : "default"}.svg`);
+      const result = cairn("build", src, "-o", out, ...(theme ? ["--theme", theme] : []));
+      assert.equal(result.status, 0, result.stderr);
+      return background(readFileSync(out, "utf8"));
+    };
+
+    // A built-in name, which the CLI could not select at all before this flag.
+    assert.notEqual(built("dark"), built("light"), "a named theme changes the canvas");
+
+    // A file, extending a built-in and overriding one colour.
+    writeFileSync(join(dir, "mine.json"), '{ "extends": "dark", "pal": { "bg": "#123456" } }');
+    assert.equal(built(join(dir, "mine.json")), "#123456", "the file's background wins");
+
+    // The flag overrides what the diagram itself declared — otherwise it could
+    // not re-tint a diagram that already names a theme.
+    writeFileSync(src, 'diagram application "t"\nstyle { theme: dark }\napplication A "App"\n');
+    assert.equal(built(join(dir, "mine.json")), "#123456", "the flag beats `style { theme: … }`");
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a theme file inherits every colour it does not name", () => {
+  // The whole reason the format extends rather than declares: a file that sets
+  // one key must be identical to its base everywhere else. Compared as whole
+  // documents, so an accidentally-dropped colour anywhere shows up.
+  const dir = mkdtempSync(join(tmpdir(), "cairn-theme-"));
+  try {
+    const src = join(dir, "d.cairn");
+    writeFileSync(src, 'diagram application "t"\napplication A "App" { module M "M" }\n');
+    writeFileSync(join(dir, "same.json"), '{ "extends": "solarized" }');
+
+    const render = (theme: string, out: string) => {
+      const path = join(dir, out);
+      assert.equal(cairn("build", src, "-o", path, "--theme", theme).status, 0);
+      return readFileSync(path, "utf8");
+    };
+    assert.equal(
+      render(join(dir, "same.json"), "file.svg"),
+      render("solarized", "builtin.svg"),
+      "an override-nothing file renders identically to the theme it extends",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("`dark: true` picks the dark flow palette, which no colour in the file implies", () => {
+  // Flow hues come from one of two fixed sets, and nothing about a background
+  // colour says which. Before this flag existed the choice was a hardcoded list
+  // of built-in names, so a custom dark theme silently drew light flow colours.
+  const dir = mkdtempSync(join(tmpdir(), "cairn-theme-"));
+  try {
+    const src = join(dir, "d.cairn");
+    writeFileSync(
+      src,
+      'diagram application "t"\nstyle { flow-color: by-source }\n' +
+        'application A "A" { module M "M" }\ndatastore DB "DB"\nM -> DB (SQL)\n',
+    );
+    const strokes = (theme: string, out: string) => {
+      const path = join(dir, out);
+      assert.equal(cairn("build", src, "-o", path, "--theme", theme).status, 0);
+      return new Set(
+        [...readFileSync(path, "utf8").matchAll(/stroke="(#[0-9a-f]{6})"/gi)].map((m) => m[1]),
+      );
+    };
+    writeFileSync(join(dir, "lit.json"), '{ "extends": "light" }');
+    writeFileSync(join(dir, "unlit.json"), '{ "extends": "light", "dark": true }');
+    assert.notDeepEqual(
+      strokes(join(dir, "lit.json"), "lit.svg"),
+      strokes(join(dir, "unlit.json"), "unlit.svg"),
+      "the same base with `dark: true` must not draw the same flow colours",
+    );
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("a theme the user asked for never fails open", () => {
+  // Unlike a missing logo, a bad `--theme` cannot be skipped: rendering the
+  // default palette instead would look like success. Every case exits 2 and
+  // says which key or file is at fault.
+  const dir = mkdtempSync(join(tmpdir(), "cairn-theme-"));
+  try {
+    const src = join(dir, "d.cairn");
+    writeFileSync(src, 'diagram application "t"\napplication A "App"\n');
+    const cases: [string, RegExp][] = [
+      ["chartreuse", /unknown theme `chartreuse`/],
+      [join(dir, "absent.json"), /cannot read theme file/],
+      [write(dir, "bad.json", "{ not json"), /is not valid JSON/],
+      [write(dir, "arr.json", "[]"), /a theme must be an object/],
+      [write(dir, "base.json", '{ "extends": "nope" }'), /extends unknown theme `nope`/],
+      [write(dir, "hue.json", '{ "pal": { "bg": "puce or so" } }'), /`pal\.bg`.*is not a colour/],
+      [write(dir, "dk.json", '{ "dark": "yes" }'), /`dark` must be true or false/],
+      [write(dir, "tup.json", '{ "pal": { "chip": ["#fff", "#ggghhh", "#000"] } }'), /`pal\.chip`/],
+      // A word that is not a CSS colour reaches the SVG as an attribute the
+      // renderer ignores, so the shape falls back to black with nothing to
+      // read. Load time is the only place this typo is still nameable.
+      [write(dir, "kw.json", '{ "pal": { "bg": "dakgrey" } }'), /`pal\.bg`.*is not a colour/],
+    ];
+    for (const [theme, expected] of cases) {
+      const result = cairn("build", src, "-o", join(dir, "out.svg"), "--theme", theme);
+      assert.equal(result.status, 2, `${theme} must exit 2`);
+      assert.match(result.stderr, expected);
+    }
+    // A flag with nothing after it is a usage error, not a crash.
+    assert.equal(cairn("build", src, "--theme").status, 2);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test("`cairn themes` lists every name `--theme` accepts", () => {
+  // The list lives in source; a doc naming them would fall behind.
+  const result = cairn("themes");
+  assert.equal(result.status, 0, result.stderr);
+  // Tokenised rather than matched with `new RegExp(name)`: `registerTheme` puts
+  // CLI-supplied names into `themeNames`, so building a pattern from one is a
+  // regex injection. Splitting on non-name characters keeps the whole-word
+  // check without ever compiling caller input.
+  const listed = new Set(result.stdout.split(/[^\w-]+/).filter(Boolean));
+  for (const name of themeNames) assert.ok(listed.has(name), `${name} must be listed`);
+});
+
+test("the shipped example theme is valid and documents the format", () => {
+  // examples/themes/midnight.json is what a reader copies. If it stops loading,
+  // the documented format and the parser have diverged.
+  const loaded = loadThemeFile(join(ROOT, "examples", "themes", "midnight.json"));
+  assert.equal(loaded.name, "midnight", "the theme is named after its file");
+  assert.equal(loaded.spec.dark, true);
+  assert.equal(loaded.spec.pal.bg, "#0d1117", "an overridden colour is applied");
+  assert.equal(
+    loaded.spec.pal.text,
+    THEME_SPECS.dark?.pal.text,
+    "a colour it does not name is inherited from the theme it extends",
+  );
 });

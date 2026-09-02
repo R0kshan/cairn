@@ -259,6 +259,69 @@ Cairn comes with a collection of built-in themes. Choose the one that best fits 
   </tr>
 </table>
 
+Pick one from the command line with `--theme`, without editing the diagram:
+
+```sh
+cairn build my-system.cairn --theme nord
+cairn themes                                     # list the built-in names
+```
+
+#### Your own colours
+
+`--theme` also takes a JSON file. It **extends a built-in and overrides only
+what it names**, so a usable theme is a few lines rather than fifty colours:
+
+```json
+{
+  "extends": "dark",
+  "dark": true,
+  "pal": { "bg": "#0d1117", "nStroke": "#58a6ff" },
+  "accentColors": { "blue": "#58a6ff", "blueF": "#0d2136" }
+}
+```
+
+```sh
+cairn build my-system.cairn --theme ./my-theme.json
+```
+
+`extends` names any built-in (default `light`). `dark` tells cairn the palette
+sits on a dark ground, which selects the flow colour set — nothing about the
+colours themselves implies it, so a dark theme that omits this draws light flow
+hues. `pal` holds the canvas and chrome colours, `accentColors` the per-kind
+fills and strokes, `lv` the security-view sensitivity levels; every key is
+optional and inherited from the base when absent. A complete example ships in
+[`examples/themes/midnight.json`](examples/themes/midnight.json).
+
+Every value is a hex colour (3, 4, 6 or 8 digits), an `rgb()`/`hsl()` call, or a
+CSS colour keyword (`rebeccapurple`, `transparent`, `currentColor`). Anything
+else is rejected by name at load time rather than reaching the SVG, where a
+colour the renderer cannot parse is silently ignored — a bad fill turns the
+shape black, a bad stroke erases its outline.
+
+The flag overrides `style { theme: … }` in the diagram, and works on `build`,
+`matrix` and `watch`. A theme that cannot be loaded is an error, never a silent
+fallback to the default palette.
+
+#### From the npm package
+
+`compile()` takes the same thing as an object, so an embedder needs no file and
+no CLI:
+
+```js
+import { compile } from "@r0kshan/cairn";
+
+const { svg } = await compile(source, {
+  theme: { extends: "dark", dark: true, pal: { bg: "#0d1117" } },
+});
+```
+
+The palette is used for that call and forgotten — nothing is registered
+globally, so a server rendering for many callers cannot leak one caller's
+colours into another's diagram, and two callers cannot collide on a name.
+`resolveThemeSpec()` is exported if you want to validate a palette up front;
+both it and `compile()` throw `ThemeSpecError` naming the offending key rather
+than quietly rendering the default.
+
 ## Installation
 
 Prebuilt, self-contained binaries are published on every `v*` tag (no runtime needed). Pick your platform:
@@ -316,6 +379,7 @@ help: move this `block` inside a `layer`, `system` or `external`
 
 ```sh
 cairn build my-system.cairn -o my-system.svg     # -o optional; defaults to the same name, .svg
+cairn build my-system.cairn --theme nord         # or --theme ./my-theme.json
 ```
 
 On validation errors nothing is written and the exit code is 1; warnings are printed but do not block.

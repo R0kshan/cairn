@@ -85,12 +85,6 @@ const darkPalette: Palette = {
   chipText: "#e0c068",
 };
 
-/** Available color palettes (light and dark). */
-export const palettes: Record<string, Palette> = {
-  light: lightPalette,
-  dark: darkPalette,
-};
-
 /** Flow color palettes for light and dark themes (used for flow lines). */
 export const flowPalette: Record<"light" | "dark", string[]> = {
   light: [
@@ -125,7 +119,13 @@ interface Theme {
   levels: Record<string, StyleProps>;
 }
 
-interface ThemeSpec {
+export interface ThemeSpec {
+  /**
+   * Whether this palette is dark. Flow colours come from one of two sets
+   * (`flowPalette`), and nothing about the colours themselves says which to
+   * pick — so the theme has to declare it rather than be recognised by name.
+   */
+  dark?: boolean;
   pal: {
     bg: string;
     text: string;
@@ -246,8 +246,13 @@ const buildTheme = (spec: ThemeSpec): Theme => {
 };
 
 /** Built-in themes with full color schemes and element styling. */
-export const themes: Record<string, Theme> = {
-  light: buildTheme({
+/**
+ * The built-in palettes as data. Kept separate from the built `themes` below
+ * because a custom theme file extends one of these: merging needs the spec a
+ * theme was built from, which `buildTheme` does not hand back.
+ */
+export const THEME_SPECS: Record<string, ThemeSpec> = {
+  light: {
     pal: {
       bg: "#ffffff",
       text: "#17202c",
@@ -307,8 +312,9 @@ export const themes: Record<string, Theme> = {
       restricted: ["#e9f2fb", "#2f7cc4"],
       secret: ["#efe9f7", "#7a55a8"],
     },
-  }),
-  dark: buildTheme({
+  },
+  dark: {
+    dark: true,
     pal: {
       bg: "#1e2530",
       text: "#e6edf3",
@@ -368,8 +374,8 @@ export const themes: Record<string, Theme> = {
       restricted: ["#1f2a37", "#4a86b8"],
       secret: ["#291f33", "#8a6cb0"],
     },
-  }),
-  slate: buildTheme({
+  },
+  slate: {
     pal: {
       bg: "#f7f9fb",
       text: "#26303c",
@@ -429,8 +435,8 @@ export const themes: Record<string, Theme> = {
       restricted: ["#e8eff6", "#3b6ea5"],
       secret: ["#efecf5", "#7d6ba8"],
     },
-  }),
-  sand: buildTheme({
+  },
+  sand: {
     pal: {
       bg: "#faf6ee",
       text: "#3a2f22",
@@ -490,8 +496,8 @@ export const themes: Record<string, Theme> = {
       restricted: ["#e6f0f1", "#3f7a8c"],
       secret: ["#f0e8ef", "#8a5f7a"],
     },
-  }),
-  contrast: buildTheme({
+  },
+  contrast: {
     pal: {
       bg: "#ffffff",
       text: "#000000",
@@ -551,8 +557,9 @@ export const themes: Record<string, Theme> = {
       restricted: ["#e0edf7", "#005a9c"],
       secret: ["#eee0f7", "#6a2fa0"],
     },
-  }),
-  nord: buildTheme({
+  },
+  nord: {
+    dark: true,
     pal: {
       bg: "#2e3440",
       text: "#eceff4",
@@ -612,8 +619,8 @@ export const themes: Record<string, Theme> = {
       restricted: ["#2f3a44", "#81a1c1"],
       secret: ["#312a3a", "#a38bbd"],
     },
-  }),
-  solarized: buildTheme({
+  },
+  solarized: {
     pal: {
       bg: "#fdf6e3",
       text: "#586e75",
@@ -673,11 +680,56 @@ export const themes: Record<string, Theme> = {
       restricted: ["#e3edf3", "#268bd2"],
       secret: ["#e8e6f2", "#6c71c4"],
     },
-  }),
+  },
 };
+
+/** The built themes, derived from `THEME_SPECS`. Custom ones are added by `registerTheme`. */
+export const themes: Record<string, Theme> = Object.fromEntries(
+  Object.entries(THEME_SPECS).map(([name, spec]) => [name, buildTheme(spec)]),
+);
 
 /** List of available theme names (includes built-in themes and classic variants). */
 export const themeNames: string[] = [...Object.keys(themes), "classic", "classic-dark"];
+
+/** Names a custom theme cannot take: `themeFor` special-cases the first two, and
+ * the rest never become own keys of `THEME_SPECS`. */
+const RESERVED_THEME_NAMES: readonly string[] = [
+  "classic",
+  "classic-dark",
+  "__proto__",
+  "constructor",
+  "prototype",
+];
+
+/**
+ * Whether a theme paints on a dark ground, which decides the flow palette.
+ * `classic-dark` is not in `THEME_SPECS` — it reuses the view's own dark
+ * defaults rather than a spec — so it is named here.
+ */
+export function isDarkTheme(name: string): boolean {
+  return name === "classic-dark" || THEME_SPECS[name]?.dark === true;
+}
+
+/**
+ * Adds a theme built from `spec` under `name`, so `themeFor`, `isDarkTheme` and
+ * the matrix exporter all resolve it like a built-in.
+ *
+ * This exists for `--theme <file.json>`: reading that file is the CLI's job
+ * (the core never touches a filesystem), but the theme it produces has to be
+ * reachable from the renderer, which only knows names.
+ */
+export function registerTheme(name: string, spec: ThemeSpec): void {
+  // `themeFor` answers these two before it ever reads `THEME_SPECS`, and
+  // assigning `__proto__` writes the prototype instead of an own key. Either way
+  // the theme would register without error and then never be used, so a file
+  // named `classic.json` would silently render the built-in palette instead.
+  if (RESERVED_THEME_NAMES.includes(name)) {
+    throw new Error(`\`${name}\` is a reserved theme name — rename the theme file`);
+  }
+  THEME_SPECS[name] = spec;
+  themes[name] = buildTheme(spec);
+  if (!themeNames.includes(name)) themeNames.push(name);
+}
 
 /** Resolves a theme by name for the given view, returning palette and element styles. */
 export function themeFor(
@@ -700,7 +752,51 @@ export function themeFor(
       kinds: view.defaultsDark,
       levels: view.levelDefaultsDark ?? {},
     };
-  const theme = themes[name] ?? themes.light;
+  return applyTheme(themes[name] ?? themes.light, view);
+}
+
+/**
+ * Resolves a theme from a spec rather than a registered name, for a caller that
+ * holds the colours themselves — `compile({ theme })`, and `render`'s
+ * `options.theme` beneath it.
+ *
+ * The name-based path mutates module state to register a theme, which suits a
+ * CLI that renders once and exits but not a long-lived embedder, where every
+ * call would grow those maps and two callers could collide on a name. This
+ * takes the spec straight through instead.
+ */
+export function themeFromSpec(
+  spec: ThemeSpec,
+  view: View,
+): { palette: Palette; kinds: Record<string, StyleProps>; levels: Record<string, StyleProps> } {
+  return applyTheme(buildTheme(spec), view);
+}
+
+/**
+ * The canvas and chrome colours of a theme, without a view to project onto —
+ * what the flow-matrix exporter needs, since a table has no element kinds.
+ *
+ * Resolving through the theme registry rather than a separate map of palettes
+ * is what makes every built-in work here: the old map held only `light` and
+ * `dark`, so a matrix exported under `nord` or `solarized` silently came out
+ * light.
+ */
+export function paletteFor(name: string): Palette {
+  if (name === "classic") return lightPalette;
+  if (name === "classic-dark") return darkPalette;
+  return themes[name]?.palette ?? lightPalette;
+}
+
+/** The same, for a caller holding a spec rather than a registered name. */
+export function paletteFromSpec(spec: ThemeSpec): Palette {
+  return buildTheme(spec).palette;
+}
+
+/** Projects a built theme onto one view: only that view's kinds get a style. */
+function applyTheme(
+  theme: Theme,
+  view: View,
+): { palette: Palette; kinds: Record<string, StyleProps>; levels: Record<string, StyleProps> } {
   const kinds: Record<string, StyleProps> = {};
   for (const kind of view.kinds) kinds[kind] = theme.roles[roleForKind(kind, view.name)] ?? {};
   return { palette: theme.palette, kinds, levels: theme.levels };

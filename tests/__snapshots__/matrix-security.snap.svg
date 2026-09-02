@@ -1,60 +1,60 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 832 274" font-family="Helvetica,Arial,sans-serif">
-<rect width="832" height="274" fill="white"/>
-<text x="1" y="22" font-size="13" font-weight="bold" fill="#555">TECHNICAL FLOW MATRIX — Billing platform — security view</text>
-<rect x="0" y="34" width="830" height="30" fill="#f7f7f7" stroke="#ddd"/>
-<text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#555">No.</text>
-<text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Source</text>
-<text x="316" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Destination</text>
-<text x="583" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Protocol</text>
-<text x="659" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#555">Flow</text>
-<text x="22.5" y="81" font-size="11" text-anchor="middle" fill="#444">1</text>
-<text x="55" y="81" font-size="11" text-anchor="start" fill="#444">End users</text>
-<text x="316" y="81" font-size="11" text-anchor="start" fill="#444">WAF / reverse proxy (DMZ)</text>
-<text x="583" y="81" font-size="11" text-anchor="start" fill="#444">TLS1.3</text>
-<text x="659" y="81" font-size="11" text-anchor="start" fill="#444">Web access</text>
-<rect x="0" y="90" width="830" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#444">2</text>
-<text x="55" y="107" font-size="11" text-anchor="start" fill="#444">WAF / reverse proxy (DMZ)</text>
-<text x="316" y="107" font-size="11" text-anchor="start" fill="#444">Billing application (Application zone)</text>
-<text x="583" y="107" font-size="11" text-anchor="start" fill="#444">mTLS</text>
-<text x="659" y="107" font-size="11" text-anchor="start" fill="#444">Filtered billing traffic</text>
-<text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#444">3</text>
-<text x="55" y="133" font-size="11" text-anchor="start" fill="#444">WAF / reverse proxy (DMZ)</text>
-<text x="316" y="133" font-size="11" text-anchor="start" fill="#444">CRM application (Application zone)</text>
-<text x="583" y="133" font-size="11" text-anchor="start" fill="#444">mTLS</text>
-<text x="659" y="133" font-size="11" text-anchor="start" fill="#444">Filtered CRM traffic</text>
-<rect x="0" y="142" width="830" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#444">4</text>
-<text x="55" y="159" font-size="11" text-anchor="start" fill="#444">Billing application (Application zone)</text>
-<text x="316" y="159" font-size="11" text-anchor="start" fill="#444">Database firewall (Data zone)</text>
-<text x="583" y="159" font-size="11" text-anchor="start" fill="#444">TLS1.3</text>
-<text x="659" y="159" font-size="11" text-anchor="start" fill="#444">Billing data access</text>
-<text x="22.5" y="185" font-size="11" text-anchor="middle" fill="#444">5</text>
-<text x="55" y="185" font-size="11" text-anchor="start" fill="#444">CRM application (Application zone)</text>
-<text x="316" y="185" font-size="11" text-anchor="start" fill="#444">Database firewall (Data zone)</text>
-<text x="583" y="185" font-size="11" text-anchor="start" fill="#444">TLS1.3</text>
-<text x="659" y="185" font-size="11" text-anchor="start" fill="#444">Customer data access</text>
-<rect x="0" y="194" width="830" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#444">6</text>
-<text x="55" y="211" font-size="11" text-anchor="start" fill="#444">Database firewall (Data zone)</text>
-<text x="316" y="211" font-size="11" text-anchor="start" fill="#444">Customer &amp; billing database (Data zone)</text>
-<text x="583" y="211" font-size="11" text-anchor="start" fill="#444">TLS1.3</text>
-<text x="659" y="211" font-size="11" text-anchor="start" fill="#444">Screened queries</text>
-<text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#444">7</text>
-<text x="55" y="237" font-size="11" text-anchor="start" fill="#444">Billing application (Application zone)</text>
-<text x="316" y="237" font-size="11" text-anchor="start" fill="#444">SFTP gateway (DMZ)</text>
-<text x="583" y="237" font-size="11" text-anchor="start" fill="#444">TLS1.3</text>
-<text x="659" y="237" font-size="11" text-anchor="start" fill="#444">Drop invoices to transmit</text>
-<rect x="0" y="246" width="830" height="26" fill="#ddd" opacity="0.2"/>
-<text x="22.5" y="263" font-size="11" text-anchor="middle" fill="#444">8</text>
-<text x="55" y="263" font-size="11" text-anchor="start" fill="#444">SFTP gateway (DMZ)</text>
-<text x="316" y="263" font-size="11" text-anchor="start" fill="#444">Partner EDI platform</text>
-<text x="583" y="263" font-size="11" text-anchor="start" fill="#444">AS4</text>
-<text x="659" y="263" font-size="11" text-anchor="start" fill="#444">Partner transfer</text>
-<line x1="45" y1="34" x2="45" y2="272" stroke="#ddd" stroke-width="1"/>
-<line x1="306" y1="34" x2="306" y2="272" stroke="#ddd" stroke-width="1"/>
-<line x1="573" y1="34" x2="573" y2="272" stroke="#ddd" stroke-width="1"/>
-<line x1="649" y1="34" x2="649" y2="272" stroke="#ddd" stroke-width="1"/>
-<line x1="0" y1="272" x2="830" y2="272" stroke="#ddd"/>
-<rect x="0" y="34" width="830" height="238" fill="none" stroke="#ddd"/>
+<rect width="832" height="274" fill="#ffffff"/>
+<text x="1" y="22" font-size="13" font-weight="bold" fill="#3a4553">TECHNICAL FLOW MATRIX — Billing platform — security view</text>
+<rect x="0" y="34" width="830" height="30" fill="#f5f6f8" stroke="#e6e9ee"/>
+<text x="22.5" y="54" font-size="11" font-weight="bold" text-anchor="middle" fill="#3a4553">No.</text>
+<text x="55" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#3a4553">Source</text>
+<text x="316" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#3a4553">Destination</text>
+<text x="583" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#3a4553">Protocol</text>
+<text x="659" y="54" font-size="11" font-weight="bold" text-anchor="start" fill="#3a4553">Flow</text>
+<text x="22.5" y="81" font-size="11" text-anchor="middle" fill="#17202c">1</text>
+<text x="55" y="81" font-size="11" text-anchor="start" fill="#17202c">End users</text>
+<text x="316" y="81" font-size="11" text-anchor="start" fill="#17202c">WAF / reverse proxy (DMZ)</text>
+<text x="583" y="81" font-size="11" text-anchor="start" fill="#17202c">TLS1.3</text>
+<text x="659" y="81" font-size="11" text-anchor="start" fill="#17202c">Web access</text>
+<rect x="0" y="90" width="830" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="107" font-size="11" text-anchor="middle" fill="#17202c">2</text>
+<text x="55" y="107" font-size="11" text-anchor="start" fill="#17202c">WAF / reverse proxy (DMZ)</text>
+<text x="316" y="107" font-size="11" text-anchor="start" fill="#17202c">Billing application (Application zone)</text>
+<text x="583" y="107" font-size="11" text-anchor="start" fill="#17202c">mTLS</text>
+<text x="659" y="107" font-size="11" text-anchor="start" fill="#17202c">Filtered billing traffic</text>
+<text x="22.5" y="133" font-size="11" text-anchor="middle" fill="#17202c">3</text>
+<text x="55" y="133" font-size="11" text-anchor="start" fill="#17202c">WAF / reverse proxy (DMZ)</text>
+<text x="316" y="133" font-size="11" text-anchor="start" fill="#17202c">CRM application (Application zone)</text>
+<text x="583" y="133" font-size="11" text-anchor="start" fill="#17202c">mTLS</text>
+<text x="659" y="133" font-size="11" text-anchor="start" fill="#17202c">Filtered CRM traffic</text>
+<rect x="0" y="142" width="830" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="159" font-size="11" text-anchor="middle" fill="#17202c">4</text>
+<text x="55" y="159" font-size="11" text-anchor="start" fill="#17202c">Billing application (Application zone)</text>
+<text x="316" y="159" font-size="11" text-anchor="start" fill="#17202c">Database firewall (Data zone)</text>
+<text x="583" y="159" font-size="11" text-anchor="start" fill="#17202c">TLS1.3</text>
+<text x="659" y="159" font-size="11" text-anchor="start" fill="#17202c">Billing data access</text>
+<text x="22.5" y="185" font-size="11" text-anchor="middle" fill="#17202c">5</text>
+<text x="55" y="185" font-size="11" text-anchor="start" fill="#17202c">CRM application (Application zone)</text>
+<text x="316" y="185" font-size="11" text-anchor="start" fill="#17202c">Database firewall (Data zone)</text>
+<text x="583" y="185" font-size="11" text-anchor="start" fill="#17202c">TLS1.3</text>
+<text x="659" y="185" font-size="11" text-anchor="start" fill="#17202c">Customer data access</text>
+<rect x="0" y="194" width="830" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="211" font-size="11" text-anchor="middle" fill="#17202c">6</text>
+<text x="55" y="211" font-size="11" text-anchor="start" fill="#17202c">Database firewall (Data zone)</text>
+<text x="316" y="211" font-size="11" text-anchor="start" fill="#17202c">Customer &amp; billing database (Data zone)</text>
+<text x="583" y="211" font-size="11" text-anchor="start" fill="#17202c">TLS1.3</text>
+<text x="659" y="211" font-size="11" text-anchor="start" fill="#17202c">Screened queries</text>
+<text x="22.5" y="237" font-size="11" text-anchor="middle" fill="#17202c">7</text>
+<text x="55" y="237" font-size="11" text-anchor="start" fill="#17202c">Billing application (Application zone)</text>
+<text x="316" y="237" font-size="11" text-anchor="start" fill="#17202c">SFTP gateway (DMZ)</text>
+<text x="583" y="237" font-size="11" text-anchor="start" fill="#17202c">TLS1.3</text>
+<text x="659" y="237" font-size="11" text-anchor="start" fill="#17202c">Drop invoices to transmit</text>
+<rect x="0" y="246" width="830" height="26" fill="#e6e9ee" opacity="0.2"/>
+<text x="22.5" y="263" font-size="11" text-anchor="middle" fill="#17202c">8</text>
+<text x="55" y="263" font-size="11" text-anchor="start" fill="#17202c">SFTP gateway (DMZ)</text>
+<text x="316" y="263" font-size="11" text-anchor="start" fill="#17202c">Partner EDI platform</text>
+<text x="583" y="263" font-size="11" text-anchor="start" fill="#17202c">AS4</text>
+<text x="659" y="263" font-size="11" text-anchor="start" fill="#17202c">Partner transfer</text>
+<line x1="45" y1="34" x2="45" y2="272" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="306" y1="34" x2="306" y2="272" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="573" y1="34" x2="573" y2="272" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="649" y1="34" x2="649" y2="272" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="0" y1="272" x2="830" y2="272" stroke="#e6e9ee"/>
+<rect x="0" y="34" width="830" height="238" fill="none" stroke="#e6e9ee"/>
 </svg>
