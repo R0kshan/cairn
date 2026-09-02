@@ -157,6 +157,34 @@ FIXTURE="$PWD/examples/application-medium.cairn"
     if (errors.length) throw new Error(`compile() reported errors: ${JSON.stringify(errors)}`);
     if (!result.svg?.startsWith("<svg")) throw new Error("compile() returned no svg");
 
+    // The whole reason an embedder passes a spec rather than a name, driven
+    // through the artifact they install. The unit tests cover this against
+    // `src/`, which is a different build: this entry is bundled from
+    // playground.ts by esbuild, so a theme module that failed to inline — or
+    // reached for a Node API the browser target drops — would leave every
+    // src-level test green and hand the embedder a diagram in default light.
+    const ODD_BG = "#123456";
+    const themed = await engine.compile(readFileSync(fixture, "utf8"), {
+      theme: { extends: "dark", dark: true, pal: { bg: ODD_BG } },
+    });
+    if (!themed.svg?.includes(ODD_BG)) {
+      throw new Error(`compile() ignored the custom theme — no ${ODD_BG} in the svg`);
+    }
+
+    // The other half of the contract: a theme that cannot be honoured is an
+    // error, never a silent fall back to the default palette. Worth asserting
+    // here because the class has to survive bundling to be catchable by name.
+    await engine
+      .compile(readFileSync(fixture, "utf8"), { theme: { pal: { bg: "notacolour" } } })
+      .then(
+        () => {
+          throw new Error("compile() accepted a malformed theme");
+        },
+        (error) => {
+          if (!(error instanceof engine.ThemeSpecError)) throw error;
+        },
+      );
+
     // Everything else stays shut, or it becomes surface we did not choose to
     // support and cannot withdraw once published.
     const resolves = async (specifier) => {
