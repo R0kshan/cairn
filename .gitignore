@@ -10,6 +10,7 @@ bin/cairn.mjs
 # Scratch space for experiments — probe scripts, before/after SVGs, sweep dumps.
 # Never source; a `git add -A` swept 39 of these into a merge commit once.
 .tmp/
+tmp/
 
 *.log
 *.bun-build

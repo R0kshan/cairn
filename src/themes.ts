@@ -691,6 +691,16 @@ export const themes: Record<string, Theme> = Object.fromEntries(
 /** List of available theme names (includes built-in themes and classic variants). */
 export const themeNames: string[] = [...Object.keys(themes), "classic", "classic-dark"];
 
+/** Names a custom theme cannot take: `themeFor` special-cases the first two, and
+ * the rest never become own keys of `THEME_SPECS`. */
+const RESERVED_THEME_NAMES: readonly string[] = [
+  "classic",
+  "classic-dark",
+  "__proto__",
+  "constructor",
+  "prototype",
+];
+
 /**
  * Whether a theme paints on a dark ground, which decides the flow palette.
  * `classic-dark` is not in `THEME_SPECS` — it reuses the view's own dark
@@ -709,6 +719,13 @@ export function isDarkTheme(name: string): boolean {
  * reachable from the renderer, which only knows names.
  */
 export function registerTheme(name: string, spec: ThemeSpec): void {
+  // `themeFor` answers these two before it ever reads `THEME_SPECS`, and
+  // assigning `__proto__` writes the prototype instead of an own key. Either way
+  // the theme would register without error and then never be used, so a file
+  // named `classic.json` would silently render the built-in palette instead.
+  if (RESERVED_THEME_NAMES.includes(name)) {
+    throw new Error(`\`${name}\` is a reserved theme name — rename the theme file`);
+  }
   THEME_SPECS[name] = spec;
   themes[name] = buildTheme(spec);
   if (!themeNames.includes(name)) themeNames.push(name);

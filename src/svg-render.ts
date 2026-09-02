@@ -1233,6 +1233,38 @@ export interface RenderOptions {
   theme?: ThemeSpec;
 }
 
+/**
+ * Wraps the rendered body in the SVG document: one arrow marker per edge
+ * colour, the canvas rect, and a viewBox tall enough for the bands drawn
+ * underneath the diagram.
+ */
+function svgDocument(args: {
+  width: number;
+  height: number;
+  fontFamily: string;
+  background: string;
+  arrowMarkers: Map<string, string>;
+  markerSize: number;
+  body: string;
+  bandsSvg: string;
+}): string {
+  const { width, height, fontFamily, background, arrowMarkers, markerSize, body, bandsSvg } = args;
+  const markers = [...arrowMarkers]
+    .map(
+      ([color, markerName]) =>
+        `<marker id="${markerName}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${markerSize}" markerHeight="${markerSize}" orient="auto-start-reverse">\n<path d="M0,0 L10,5 L0,10 z" fill="${escAttr(color)}"/></marker>`,
+    )
+    .join("\n");
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" font-family="${escAttr(fontFamily)},Arial,sans-serif">
+<defs>${markers}</defs>
+<rect width="${width}" height="${height}" fill="${escAttr(background)}"/>\n` +
+    body +
+    bandsSvg +
+    "</svg>\n"
+  );
+}
+
 export function render(
   model: Model,
   view: View,
@@ -1404,23 +1436,17 @@ export function render(
   const bandsSvg = bands.bandsSvg();
   const bandY = bands.bandY();
 
-  const viewWidth = scene.width,
-    viewHeight = scene.height;
-  const totalHeight = bandY > viewHeight ? bandY + 14 : viewHeight;
-  const markerSize = style.arrows === "large" ? round1(11 * fonts.scale) : 7;
+  const viewHeight = scene.height;
   if (arrowMarkers.size === 0) markerName(defaultEdgeColor);
-  const markers = [...arrowMarkers]
-    .map(
-      ([color, markerName]) =>
-        `<marker id="${markerName}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${markerSize}" markerHeight="${markerSize}" orient="auto-start-reverse">\n<path d="M0,0 L10,5 L0,10 z" fill="${escAttr(color)}"/></marker>`,
-    )
-    .join("\n");
-  const svg =
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${totalHeight}" font-family="${escAttr(style.font.family)},Arial,sans-serif">
-<defs>${markers}</defs>
-<rect width="${viewWidth}" height="${totalHeight}" fill="${escAttr(style.background ?? palette.background)}"/>\n` +
-    body +
-    bandsSvg +
-    "</svg>\n";
+  const svg = svgDocument({
+    width: scene.width,
+    height: bandY > viewHeight ? bandY + 14 : viewHeight,
+    fontFamily: style.font.family,
+    background: style.background ?? palette.background,
+    arrowMarkers,
+    markerSize: style.arrows === "large" ? round1(11 * fonts.scale) : 7,
+    body,
+    bandsSvg,
+  });
   return { svg, overlapsBefore, overlapsAfter };
 }

@@ -1601,7 +1601,12 @@ test("`cairn themes` lists every name `--theme` accepts", () => {
   // The list lives in source; a doc naming them would fall behind.
   const result = cairn("themes");
   assert.equal(result.status, 0, result.stderr);
-  for (const name of themeNames) assert.match(result.stdout, new RegExp(`\\b${name}\\b`));
+  // Tokenised rather than matched with `new RegExp(name)`: `registerTheme` puts
+  // CLI-supplied names into `themeNames`, so building a pattern from one is a
+  // regex injection. Splitting on non-name characters keeps the whole-word
+  // check without ever compiling caller input.
+  const listed = new Set(result.stdout.split(/[^\w-]+/).filter(Boolean));
+  for (const name of themeNames) assert.ok(listed.has(name), `${name} must be listed`);
 });
 
 test("the shipped example theme is valid and documents the format", () => {

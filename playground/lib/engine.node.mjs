@@ -100688,6 +100688,17 @@ function createEdgePainter(paint) {
   };
   return { renderEdgePath, renderEdgeLabels };
 }
+function svgDocument(args) {
+  const { width, height, fontFamily, background, arrowMarkers, markerSize, body, bandsSvg } = args;
+  const markers = [...arrowMarkers].map(
+    ([color, markerName]) => `<marker id="${markerName}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${markerSize}" markerHeight="${markerSize}" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="${escAttr(color)}"/></marker>`
+  ).join("\n");
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" font-family="${escAttr(fontFamily)},Arial,sans-serif">
+<defs>${markers}</defs>
+<rect width="${width}" height="${height}" fill="${escAttr(background)}"/>
+` + body + bandsSvg + "</svg>\n";
+}
 function render(model, view, scene, options) {
   const style = model.style;
   const fonts = fontSizes(style.font.size);
@@ -100826,18 +100837,18 @@ function render(model, view, scene, options) {
   if (style.legend === "auto") bands.renderLegendBand();
   const bandsSvg = bands.bandsSvg();
   const bandY = bands.bandY();
-  const viewWidth = scene.width, viewHeight = scene.height;
-  const totalHeight = bandY > viewHeight ? bandY + 14 : viewHeight;
-  const markerSize = style.arrows === "large" ? round1(11 * fonts.scale) : 7;
+  const viewHeight = scene.height;
   if (arrowMarkers.size === 0) markerName(defaultEdgeColor);
-  const markers = [...arrowMarkers].map(
-    ([color, markerName2]) => `<marker id="${markerName2}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="${markerSize}" markerHeight="${markerSize}" orient="auto-start-reverse">
-<path d="M0,0 L10,5 L0,10 z" fill="${escAttr(color)}"/></marker>`
-  ).join("\n");
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${viewWidth} ${totalHeight}" font-family="${escAttr(style.font.family)},Arial,sans-serif">
-<defs>${markers}</defs>
-<rect width="${viewWidth}" height="${totalHeight}" fill="${escAttr(style.background ?? palette.background)}"/>
-` + body + bandsSvg + "</svg>\n";
+  const svg = svgDocument({
+    width: scene.width,
+    height: bandY > viewHeight ? bandY + 14 : viewHeight,
+    fontFamily: style.font.family,
+    background: style.background ?? palette.background,
+    arrowMarkers,
+    markerSize: style.arrows === "large" ? round1(11 * fonts.scale) : 7,
+    body,
+    bandsSvg
+  });
   return { svg, overlapsBefore, overlapsAfter };
 }
 
@@ -100855,14 +100866,25 @@ var merge = (base, patch) => {
   }
   return merged;
 };
-function* colourEntries(patch) {
-  for (const [section, value] of Object.entries(patch)) {
-    if (section === "extends" || section === "dark") continue;
-    if (!isObject(value)) {
-      yield [section, value];
-      continue;
+var SECTIONS = ["pal", "accentColors", "lv"];
+var arityOf = (section, key) => {
+  if (section === "lv") return 2;
+  if (section === "pal") return key === "chip" ? 3 : key === "badge" ? 2 : 1;
+  return 1;
+};
+var describe = (value) => Array.isArray(value) ? `an array of ${value.length}` : typeof value;
+function checkEntry(path, value, arity) {
+  if (arity === 1) {
+    if (typeof value !== "string") {
+      throw new ThemeSpecError(`\`${path}\` must be a colour, got ${describe(value)}`);
     }
-    for (const [key, inner] of Object.entries(value)) yield [`${section}.${key}`, inner];
+  } else if (!Array.isArray(value) || value.length !== arity) {
+    throw new ThemeSpecError(`\`${path}\` must be ${arity} colours, got ${describe(value)}`);
+  }
+  for (const colour of Array.isArray(value) ? value : [value]) {
+    if (typeof colour !== "string" || !COLOUR.test(colour)) {
+      throw new ThemeSpecError(`\`${path}\`: \`${String(colour)}\` is not a colour`);
+    }
   }
 }
 var COLOUR = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([0-9.,%\s/-]+\)|[a-z]+)$/i;
@@ -100870,7 +100892,7 @@ function resolveThemeSpec(input) {
   if (!isObject(input)) throw new ThemeSpecError("a theme must be an object");
   const base = input.extends ?? DEFAULT_BASE;
   if (typeof base !== "string") throw new ThemeSpecError("`extends` must be a theme name");
-  const baseSpec = THEME_SPECS[base];
+  const baseSpec = Object.hasOwn(THEME_SPECS, base) ? THEME_SPECS[base] : void 0;
   if (!baseSpec) {
     throw new ThemeSpecError(
       `extends unknown theme \`${base}\` \u2014 pick one of: ${Object.keys(THEME_SPECS).join(", ")}`
@@ -100879,14 +100901,20 @@ function resolveThemeSpec(input) {
   if ("dark" in input && typeof input.dark !== "boolean") {
     throw new ThemeSpecError("`dark` must be true or false");
   }
-  for (const [key, value] of colourEntries(input)) {
-    if (!Array.isArray(value) && typeof value !== "string") {
-      throw new ThemeSpecError(`\`${key}\` must be a colour, got ${typeof value}`);
+  for (const [section, value] of Object.entries(input)) {
+    if (section === "extends" || section === "dark") continue;
+    if (!SECTIONS.includes(section)) {
+      throw new ThemeSpecError(
+        `unknown section \`${section}\` \u2014 a theme overrides ${SECTIONS.join(", ")}`
+      );
     }
-    for (const colour of Array.isArray(value) ? value : [value]) {
-      if (typeof colour !== "string" || !COLOUR.test(colour)) {
-        throw new ThemeSpecError(`\`${key}\`: \`${String(colour)}\` is not a colour`);
-      }
+    if (!isObject(value)) {
+      throw new ThemeSpecError(
+        `\`${section}\` must be an object of colours, got ${describe(value)}`
+      );
+    }
+    for (const [key, colour] of Object.entries(value)) {
+      checkEntry(`${section}.${key}`, colour, arityOf(section, key));
     }
   }
   return merge(baseSpec, input);

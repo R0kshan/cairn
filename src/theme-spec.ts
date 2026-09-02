@@ -59,18 +59,43 @@ const merge = (base: ThemeSpec, patch: Record<string, unknown>): ThemeSpec => {
   return merged as unknown as ThemeSpec;
 };
 
+/** The colour sections a custom theme may override. Anything else is a typo. */
+const SECTIONS: readonly string[] = ["pal", "accentColors", "lv"];
+
 /**
- * Every colour a spec sets, as `path -> value`, so a malformed one is reported
- * by the key that is wrong rather than by a whole-object mismatch.
+ * How many colours a key holds. `pal.chip` is `[fill, stroke, text]`, `pal.badge`
+ * and every `lv` entry are `[fill, stroke]`, and everything else is one colour.
  */
-function* colourEntries(patch: Record<string, unknown>): Generator<[string, unknown]> {
-  for (const [section, value] of Object.entries(patch)) {
-    if (section === "extends" || section === "dark") continue;
-    if (!isObject(value)) {
-      yield [section, value];
-      continue;
+const arityOf = (section: string, key: string): number => {
+  if (section === "lv") return 2;
+  if (section === "pal") return key === "chip" ? 3 : key === "badge" ? 2 : 1;
+  return 1;
+};
+
+/** Names what the author wrote where a colour was expected. */
+const describe = (value: unknown): string =>
+  Array.isArray(value) ? `an array of ${value.length}` : typeof value;
+
+/**
+ * Checks one entry against the shape `ThemeSpec` declares for it, reported by
+ * its full `section.key` path rather than by a whole-object mismatch.
+ *
+ * The length check matters as much as the format one: `merge` replaces a tuple
+ * outright, so a two-element `pal.chip` would leave the renderer reading an
+ * undefined chip text colour long after the theme loaded cleanly.
+ */
+function checkEntry(path: string, value: unknown, arity: number): void {
+  if (arity === 1) {
+    if (typeof value !== "string") {
+      throw new ThemeSpecError(`\`${path}\` must be a colour, got ${describe(value)}`);
     }
-    for (const [key, inner] of Object.entries(value)) yield [`${section}.${key}`, inner];
+  } else if (!Array.isArray(value) || value.length !== arity) {
+    throw new ThemeSpecError(`\`${path}\` must be ${arity} colours, got ${describe(value)}`);
+  }
+  for (const colour of Array.isArray(value) ? value : [value]) {
+    if (typeof colour !== "string" || !COLOUR.test(colour)) {
+      throw new ThemeSpecError(`\`${path}\`: \`${String(colour)}\` is not a colour`);
+    }
   }
 }
 
@@ -96,7 +121,11 @@ export function resolveThemeSpec(input: ThemeOverrides | unknown): ThemeSpec {
 
   const base = input.extends ?? DEFAULT_BASE;
   if (typeof base !== "string") throw new ThemeSpecError("`extends` must be a theme name");
-  const baseSpec = THEME_SPECS[base];
+  // `THEME_SPECS[base]` alone would accept anything inherited from
+  // `Object.prototype` — `toString`, `constructor`, `__proto__` — and hand the
+  // merge a function or the prototype instead of a spec, producing a theme with
+  // no `pal` rather than the unknown-theme error the author needs to see.
+  const baseSpec = Object.hasOwn(THEME_SPECS, base) ? THEME_SPECS[base] : undefined;
   if (!baseSpec) {
     throw new ThemeSpecError(
       `extends unknown theme \`${base}\` — pick one of: ${Object.keys(THEME_SPECS).join(", ")}`,
@@ -107,15 +136,23 @@ export function resolveThemeSpec(input: ThemeOverrides | unknown): ThemeSpec {
     throw new ThemeSpecError("`dark` must be true or false");
   }
 
-  for (const [key, value] of colourEntries(input)) {
-    // `pal.chip` and `pal.badge`, and every `lv` entry, are tuples of colours.
-    if (!Array.isArray(value) && typeof value !== "string") {
-      throw new ThemeSpecError(`\`${key}\` must be a colour, got ${typeof value}`);
+  for (const [section, value] of Object.entries(input)) {
+    if (section === "extends" || section === "dark") continue;
+    if (!SECTIONS.includes(section)) {
+      throw new ThemeSpecError(
+        `unknown section \`${section}\` — a theme overrides ${SECTIONS.join(", ")}`,
+      );
     }
-    for (const colour of Array.isArray(value) ? value : [value]) {
-      if (typeof colour !== "string" || !COLOUR.test(colour)) {
-        throw new ThemeSpecError(`\`${key}\`: \`${String(colour)}\` is not a colour`);
-      }
+    // Each section is a map of colours. A bare string here merges over the
+    // base's object and leaves the renderer reading `pal.bg` off a string —
+    // a diagram with no colours, produced long after the theme loaded cleanly.
+    if (!isObject(value)) {
+      throw new ThemeSpecError(
+        `\`${section}\` must be an object of colours, got ${describe(value)}`,
+      );
+    }
+    for (const [key, colour] of Object.entries(value)) {
+      checkEntry(`${section}.${key}`, colour, arityOf(section, key));
     }
   }
 
