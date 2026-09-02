@@ -100853,7 +100853,19 @@ function render(model, view, scene, options) {
 }
 
 // src/css-colours.ts
-var NUMERIC_COLOUR = /^(#[0-9a-f]{3,8}|(rgb|hsl)a?\([0-9.,%\s/-]+\))$/i;
+var HEX = "#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})";
+var NUMBER = String.raw`[+-]?(?:\d+\.?\d*|\.\d+)`;
+var AMOUNT = `${NUMBER}%?`;
+var ANGLE = `${NUMBER}(?:deg|grad|rad|turn)?`;
+var colourFunction = (name, lead) => {
+  const commas = `${lead}\\s*,\\s*${AMOUNT}\\s*,\\s*${AMOUNT}(?:\\s*,\\s*${AMOUNT})?`;
+  const spaces = `${lead}\\s+${AMOUNT}\\s+${AMOUNT}(?:\\s*/\\s*${AMOUNT})?`;
+  return `${name}a?\\(\\s*(?:${commas}|${spaces})\\s*\\)`;
+};
+var NUMERIC_COLOUR = new RegExp(
+  `^(?:${HEX}|${colourFunction("rgb", AMOUNT)}|${colourFunction("hsl", ANGLE)})$`,
+  "i"
+);
 var COLOUR_KEYWORDS = /* @__PURE__ */ new Set([
   "currentcolor",
   "transparent",

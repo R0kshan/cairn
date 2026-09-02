@@ -292,10 +292,11 @@ fills and strokes, `lv` the security-view sensitivity levels; every key is
 optional and inherited from the base when absent. A complete example ships in
 [`examples/themes/midnight.json`](examples/themes/midnight.json).
 
-Every value is a hex colour, an `rgb()`/`hsl()` call, or a CSS colour keyword
-(`rebeccapurple`, `transparent`, `currentColor`). A word that is not one of
-those is rejected by name at load time rather than reaching the SVG, where an
-unparseable colour is silently ignored and the shape renders black.
+Every value is a hex colour (3, 4, 6 or 8 digits), an `rgb()`/`hsl()` call, or a
+CSS colour keyword (`rebeccapurple`, `transparent`, `currentColor`). Anything
+else is rejected by name at load time rather than reaching the SVG, where a
+colour the renderer cannot parse is silently ignored — a bad fill turns the
+shape black, a bad stroke erases its outline.
 
 The flag overrides `style { theme: … }` in the diagram, and works on `build`,
 `matrix` and `watch`. A theme that cannot be loaded is an error, never a silent

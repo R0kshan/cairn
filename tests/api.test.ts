@@ -133,6 +133,45 @@ test("a colour keyword has to be one CSS actually defines", () => {
   }
 });
 
+test("a numeric colour has to parse as CSS, not merely look like it", () => {
+  // Checking the alphabet rather than the grammar lets a hex of the wrong
+  // length and an empty argument list through, and the renderer answers both
+  // the same way it answers a misspelt keyword: it drops the attribute.
+  const malformed = [
+    "#12345",
+    "#1234567",
+    "#gg0000",
+    "rgb(,)",
+    "hsl(---)",
+    "rgb()",
+    "rgb(1, 2)",
+    "rgb(1, 2 3)", // CSS does not let one call mix comma and space separators.
+  ];
+  for (const bg of malformed) {
+    assert.throws(
+      () => resolveThemeSpec({ pal: { bg } }),
+      ThemeSpecError,
+      `\`${bg}\` is not a colour`,
+    );
+  }
+
+  const valid = [
+    "#abc",
+    "#abcd",
+    "#aabbcc",
+    "#aabbccdd",
+    "rgb(1, 2, 3)",
+    "rgba(1, 2, 3, 0.5)",
+    "rgb(0 0 0 / 50%)",
+    "hsl(210, 50%, 40%)",
+    "hsl(210deg 50% 40%)",
+    "hsl(.5turn 50% 40% / .5)",
+  ];
+  for (const bg of valid) {
+    assert.doesNotThrow(() => resolveThemeSpec({ pal: { bg } }), `\`${bg}\` is a CSS colour`);
+  }
+});
+
 test("the matrix is themed by the same value as the diagram beside it", async () => {
   // A diagram and its flow matrix are two halves of one deliverable; a caller
   // who themes one and gets the other in default light has been given a broken
