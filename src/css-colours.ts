@@ -15,30 +15,60 @@
  */
 const HEX = "#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})";
 
-/** A CSS `<number>`: optional sign, and the point on either side — `.5`, `5.`, `-1.25`. */
-const NUMBER = String.raw`[+-]?(?:\d+\.?\d*|\.\d+)`;
+/**
+ * A CSS `<number>`: optional sign, the point on either side of the digits, and
+ * the base-ten exponent CSS allows on all of them — `.5`, `5.`, `-1.25`, `1e2`.
+ */
+const NUMBER = String.raw`[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?`;
 
-/** An `rgb()` channel, or either function's alpha: a number or a percentage. */
+/** A `<percentage>`, which is a number wearing a `%`. */
+const PERCENT = `${NUMBER}%`;
+
+/** Either of the two, which is what a modern channel and every alpha accept. */
 const AMOUNT = `${NUMBER}%?`;
 
 /** `hsl()` leads with an angle, whose unit is optional and defaults to degrees. */
 const ANGLE = `${NUMBER}(?:deg|grad|rad|turn)?`;
 
 /**
- * One colour function in both spellings CSS accepts: the legacy comma-separated
- * form (`rgb(0, 0, 0, .5)`) and the modern space-separated one that puts alpha
- * behind a slash (`rgb(0 0 0 / 50%)`).
+ * The legacy comma-separated argument list — `rgb(0, 0, 0, .5)`. Each component
+ * is spelled out rather than shared, because CSS constrains them differently
+ * here than it does in the modern form.
  *
- * They are separate alternatives rather than one pattern loose enough to cover
- * both, because CSS does not let an author mix them: `rgb(0, 0 0)` is not a
- * colour, and a check that spelled the separator as "comma or space" would read
- * it as one.
+ * Alpha is an `<alpha-value>` in both forms, so it stays an `AMOUNT` throughout:
+ * a number or a percentage, whatever the channels ahead of it are.
  */
-const colourFunction = (name: string, lead: string): string => {
-  const commas = `${lead}\\s*,\\s*${AMOUNT}\\s*,\\s*${AMOUNT}(?:\\s*,\\s*${AMOUNT})?`;
-  const spaces = `${lead}\\s+${AMOUNT}\\s+${AMOUNT}(?:\\s*/\\s*${AMOUNT})?`;
-  return `${name}a?\\(\\s*(?:${commas}|${spaces})\\s*\\)`;
-};
+const commaForm = (first: string, second: string, third: string): string =>
+  `${first}\\s*,\\s*${second}\\s*,\\s*${third}(?:\\s*,\\s*${AMOUNT})?`;
+
+/**
+ * The modern space-separated list, which puts alpha behind a slash —
+ * `rgb(0 0 0 / 50%)`. Kept as a separate alternative rather than folded into one
+ * pattern loose enough for both, because CSS does not let an author mix the
+ * separators: `rgb(0, 0 0)` is not a colour, and a check that spelled the
+ * separator as "comma or space" would read it as one.
+ */
+const spaceForm = (first: string, second: string, third: string): string =>
+  `${first}\\s+${second}\\s+${third}(?:\\s*/\\s*${AMOUNT})?`;
+
+/**
+ * Legacy `rgb()` takes three numbers *or* three percentages, never a mix, so the
+ * two spellings are separate alternatives — `rgb(255, 50%, 0)` is not a colour.
+ * The modern form does allow the mix, and says so by using `AMOUNT` throughout.
+ */
+const RGB =
+  `rgba?\\(\\s*(?:${commaForm(NUMBER, NUMBER, NUMBER)}` +
+  `|${commaForm(PERCENT, PERCENT, PERCENT)}` +
+  `|${spaceForm(AMOUNT, AMOUNT, AMOUNT)})\\s*\\)`;
+
+/**
+ * Legacy `hsl()` requires its saturation and lightness to be percentages —
+ * `hsl(120, 50, 50)` is not a colour. The modern form relaxed that to accept
+ * bare numbers, which is why only the comma branch insists.
+ */
+const HSL =
+  `hsla?\\(\\s*(?:${commaForm(ANGLE, PERCENT, PERCENT)}` +
+  `|${spaceForm(ANGLE, AMOUNT, AMOUNT)})\\s*\\)`;
 
 /**
  * Hex and the `rgb()`/`hsl()` functions — every colour form that carries its own
@@ -49,15 +79,14 @@ const colourFunction = (name: string, lead: string): string => {
  * renderer as an attribute it cannot parse — the same silent failure an
  * unrecognised keyword causes, and the one this module exists to catch.
  *
- * The newer functional syntaxes (`lab()`, `oklch()`, `color()`) are not here.
- * Accepting one is a matter of extending this pattern, but each also has to be
- * a colour every target renderer understands, which is a wider question than
- * this module answers.
+ * Three things CSS accepts are deliberately absent, because each would have to
+ * survive every renderer a cairn SVG is opened in, which is a wider question
+ * than this module answers: the newer colour functions (`lab()`, `oklch()`,
+ * `color()`), the `none` component keyword, and `var()` substitution. A theme
+ * that wants one of them is rejected by name at load time, which is a loud
+ * failure the author can act on — unlike the silent ones above.
  */
-const NUMERIC_COLOUR = new RegExp(
-  `^(?:${HEX}|${colourFunction("rgb", AMOUNT)}|${colourFunction("hsl", ANGLE)})$`,
-  "i",
-);
+const NUMERIC_COLOUR = new RegExp(`^(?:${HEX}|${RGB}|${HSL})$`, "i");
 
 /**
  * Every CSS `<named-color>` (Color Level 4), plus the two colour-valued keywords

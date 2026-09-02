@@ -100854,18 +100854,15 @@ function render(model, view, scene, options) {
 
 // src/css-colours.ts
 var HEX = "#(?:[0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})";
-var NUMBER = String.raw`[+-]?(?:\d+\.?\d*|\.\d+)`;
+var NUMBER = String.raw`[+-]?(?:\d+\.?\d*|\.\d+)(?:e[+-]?\d+)?`;
+var PERCENT = `${NUMBER}%`;
 var AMOUNT = `${NUMBER}%?`;
 var ANGLE = `${NUMBER}(?:deg|grad|rad|turn)?`;
-var colourFunction = (name, lead) => {
-  const commas = `${lead}\\s*,\\s*${AMOUNT}\\s*,\\s*${AMOUNT}(?:\\s*,\\s*${AMOUNT})?`;
-  const spaces = `${lead}\\s+${AMOUNT}\\s+${AMOUNT}(?:\\s*/\\s*${AMOUNT})?`;
-  return `${name}a?\\(\\s*(?:${commas}|${spaces})\\s*\\)`;
-};
-var NUMERIC_COLOUR = new RegExp(
-  `^(?:${HEX}|${colourFunction("rgb", AMOUNT)}|${colourFunction("hsl", ANGLE)})$`,
-  "i"
-);
+var commaForm = (first, second, third) => `${first}\\s*,\\s*${second}\\s*,\\s*${third}(?:\\s*,\\s*${AMOUNT})?`;
+var spaceForm = (first, second, third) => `${first}\\s+${second}\\s+${third}(?:\\s*/\\s*${AMOUNT})?`;
+var RGB = `rgba?\\(\\s*(?:${commaForm(NUMBER, NUMBER, NUMBER)}|${commaForm(PERCENT, PERCENT, PERCENT)}|${spaceForm(AMOUNT, AMOUNT, AMOUNT)})\\s*\\)`;
+var HSL = `hsla?\\(\\s*(?:${commaForm(ANGLE, PERCENT, PERCENT)}|${spaceForm(ANGLE, AMOUNT, AMOUNT)})\\s*\\)`;
+var NUMERIC_COLOUR = new RegExp(`^(?:${HEX}|${RGB}|${HSL})$`, "i");
 var COLOUR_KEYWORDS = /* @__PURE__ */ new Set([
   "currentcolor",
   "transparent",

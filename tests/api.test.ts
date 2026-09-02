@@ -146,6 +146,12 @@ test("a numeric colour has to parse as CSS, not merely look like it", () => {
     "rgb()",
     "rgb(1, 2)",
     "rgb(1, 2 3)", // CSS does not let one call mix comma and space separators.
+    // Legacy `rgb()` takes three numbers or three percentages, never a mix.
+    "rgb(255, 50%, 0)",
+    "rgb(1, 2%, 3)",
+    // Legacy `hsl()` requires percentage saturation and lightness.
+    "hsl(120, 50, 50)",
+    "hsl(0, 50%, 50)",
   ];
   for (const bg of malformed) {
     assert.throws(
@@ -163,9 +169,16 @@ test("a numeric colour has to parse as CSS, not merely look like it", () => {
     "rgb(1, 2, 3)",
     "rgba(1, 2, 3, 0.5)",
     "rgb(0 0 0 / 50%)",
+    "rgb(100%, 50%, 0%)",
     "hsl(210, 50%, 40%)",
     "hsl(210deg 50% 40%)",
     "hsl(.5turn 50% 40% / .5)",
+    "hsl(120 50 50)", // The modern form relaxed s/l to bare numbers.
+    // `<number>` carries a base-ten exponent, in every position that takes one.
+    "rgb(1e2 0 0)",
+    "rgb(1E2, 0, 0)",
+    "hsl(1e2 50% 50%)",
+    "rgb(0 0 0 / 1e-2)",
   ];
   for (const bg of valid) {
     assert.doesNotThrow(() => resolveThemeSpec({ pal: { bg } }), `\`${bg}\` is a CSS colour`);
