@@ -228,6 +228,7 @@ const applicationView: View = {
     "module",
     "gateway",
     "auth",
+    "idp",
     "queue",
     "datastore",
     "external",
@@ -235,15 +236,15 @@ const applicationView: View = {
   containerKinds: ["actor-group", "system", "application", "external"],
   // A logo says what a thing is built with, so it belongs to the kinds that run
   // code. `actor` and `actor-group` are people; `system` is a grouping whose
-  // children carry their own stacks. `gateway` and `auth` are left out on
-  // purpose: they are drawn with a corner glyph, and the glyph renderer has no
-  // logo slot — a logo on them would reserve width and draw nothing.
+  // children carry their own stacks. `gateway`, `auth` and `idp` are left out
+  // on purpose: they are drawn with a corner glyph, and the glyph renderer has
+  // no logo slot — a logo on them would reserve width and draw nothing.
   logoKinds: ["application", "module", "queue", "datastore", "external"],
-  // Same two kinds as the infrastructure view, drawn the same way: an API
-  // gateway and an auth middleware are containers in their own right at the
-  // application level, and the glyph is what tells them apart from a plain
-  // `application` at a glance.
-  glyphKinds: ["gateway", "auth"],
+  // The same three kinds as the infrastructure view, drawn the same way: an API
+  // gateway, an auth middleware and an identity provider are containers in
+  // their own right at the application level, and the glyph is what tells them
+  // apart from a plain `application` at a glance.
+  glyphKinds: ["gateway", "auth", "idp"],
   // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
   // `zoneOf` walks ancestors nearest-first, so an endpoint inside an application
   // still reads `Name (App)`; the system only annotates what sits directly in it.
@@ -257,6 +258,7 @@ const applicationView: View = {
     application: 1,
     gateway: 1,
     auth: 1,
+    idp: 1,
     queue: 1,
     datastore: 1,
     external: 2,
@@ -269,6 +271,7 @@ const applicationView: View = {
     module: "Application module",
     gateway: "Gateway / reverse proxy",
     auth: "Auth middleware",
+    idp: "Identity provider (IdP)",
     queue: "Message queue / broker",
     datastore: "Datastore / registry",
     external: "External system",
@@ -281,6 +284,7 @@ const applicationView: View = {
     module: "Module applicatif",
     gateway: "Passerelle / proxy",
     auth: "Middleware d'authentification",
+    idp: "Fournisseur d'identit\u00e9 (IdP)",
     queue: "File de messages / broker",
     datastore: "Entrep\u00f4t / r\u00e9f\u00e9rentiel",
     external: "Syst\u00e8me externe",
@@ -318,7 +322,7 @@ const applicationView: View = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["module", "gateway", "auth", "queue", "datastore"],
+    kinds: ["module", "gateway", "auth", "idp", "queue", "datastore"],
     message: "isolated element: no incoming or outgoing flow",
   },
   defaults: {
@@ -340,8 +344,8 @@ const applicationView: View = {
       fill: "#ffffff",
       stroke: { color: "#5b7a99", style: "solid", width: 1.3 },
     },
-    // Same colours as the infrastructure view's `gateway` and `auth`: one thing
-    // drawn one way, whichever view it appears in.
+    // Same colours as the infrastructure view's `gateway`, `auth` and `idp`: one
+    // thing drawn one way, whichever view it appears in.
     gateway: {
       fill: "#f5e6dd",
       stroke: { color: "#bf5530", style: "solid", width: 1.6 },
@@ -349,6 +353,10 @@ const applicationView: View = {
     auth: {
       fill: "#e8f1fb",
       stroke: { color: "#2f6fb5", style: "solid", width: 1.5 },
+    },
+    idp: {
+      fill: "#e0f0f0",
+      stroke: { color: "#3a8f8f", style: "solid", width: 1.3 },
     },
     queue: {
       fill: "#f3eef8",
@@ -388,6 +396,10 @@ const applicationView: View = {
     auth: {
       fill: "#1d2735",
       stroke: { color: "#6fa8e0", style: "solid", width: 1.5 },
+    },
+    idp: {
+      fill: "#1a2e2e",
+      stroke: { color: "#4fafaf", style: "solid", width: 1.3 },
     },
     queue: {
       fill: "#2a2433",
