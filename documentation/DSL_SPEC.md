@@ -11,7 +11,7 @@ diagnostics-friendly (every token carries a source span), Git-friendly
 A file is one diagram. The first statement declares which view it is, and the
 view decides every element kind the rest of the file may use:
 
-```
+```text
 diagram <logical|application|infrastructure|security> "Title"
 ```
 
@@ -21,7 +21,7 @@ Everything else is optional and order-free: elements, flows, an optional
 
 ### Grammar shared by every view
 
-```
+```text
 <kind> <ID> "<Label>" (<attr>)? { …statements… }      # element
 <ID> -> <ID> : "<label>" (TECH) [BO_REFS] { style }   # flow
 ```
@@ -93,7 +93,7 @@ has no protocol column.
 Business objects — logical view only — declare *what circulates*, once, and are
 then carried by flows:
 
-```
+```cairn
 business-object BO_MSG "Message" "information message broadcast to the sites"
 #               ^ID     ^name     ^description (both strings optional)
 
@@ -233,7 +233,7 @@ techniques* is built from.
 Flows: **the protocol is mandatory** (**E0240**), the label is optional. The tail
 is one token, `PROTOCOL/PORT`:
 
-```
+```cairn
 CORE -> DB_I : "Queries" (TCP/5432)
 RP   -> CORE (HTTPS/8443)              # label omitted: the tail becomes the label
 CORE -> PARTNER : "Nightly export" (SFTP/22)
@@ -312,7 +312,7 @@ comes first, and *first* is defined by the active disposition: left to right for
 `wide`/`slide`, top to bottom for `tall`/`page`. Values need not be contiguous,
 and a value that is not a whole number ≥ 0 is **E0106**.
 
-```
+```cairn
 application BACKEND_L1 "Line 1 backend" {
   order: 1
   module MSG_L1 "Messaging handler"
@@ -343,7 +343,7 @@ flows there and every layer constraint elk offers was measured to be a no-op
 under its `INCLUDE_CHILDREN` hierarchy handling, so the hint orders the siblings
 that share a layer and nothing more:
 
-```
+```cairn
 actor-group STAFF "Payment actors" {
   actor OPERATOR "Payment operator" { order: 1 }
   actor AUDITOR  "Compliance auditor" { order: 2 }
@@ -388,7 +388,7 @@ as the diagram is *read* — `left`, `right`, `top`, `bottom` — not relative t
 flow's direction, so a diagram authored for `wide` may want different pins after
 switching to `tall`.
 
-```
+```cairn
 POSTING.bottom -> LEDGER_DB.top (JDBC)
 ```
 
@@ -408,7 +408,7 @@ pinned ends where the author put them.
 style model: an inline `{ stroke: dashed }` beats the glyph, which beats the
 diagram-level `flow-stroke`.
 
-```
+```cairn
 ROUTING --> SETTLE (MQ, JSON)          # dashed
 ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
@@ -423,7 +423,7 @@ along the length with `order:`.
 
 View defaults → diagram-level `style` block → inline per-element/per-flow. Terse shorthand: the parser disambiguates values by shape (`#hex` = color, keyword = line style, number = width). Conflicting same-type values (e.g. `dashed dotted`) → diagnostic.
 
-```
+```cairn
 style {
   theme: light                 # light | dark | slate | sand | contrast | nord |
   #                              solarized | classic | classic-dark — selects the
@@ -497,6 +497,100 @@ Infrastructure is the reference shape — the deliverable the format was designe
 
 Which columns a view emits is view data, declared in `views.ts` — adding a view brings its own matrix shape with it, the exporter branches on nothing. The same table is available to embedders: `compile(source, { matrix: true })` returns it as data (`columns` + one `row` per flow), and the `matrixCsv` / `matrixMd` / `matrixSvg` exports format it exactly as the CLI does.
 
+## 2.2 Themes
+
+`theme:` is the one style property whose value space is defined outside the DSL:
+the DSL names a palette, the palette itself is built-in or comes from JSON.
+
+**Nine built-ins**, listed by `cairn themes`: `light` (the default), `dark`,
+`slate`, `sand`, `contrast`, `nord`, `solarized`, plus the two legacy variants
+`classic` and `classic-dark`.
+
+**Three ways to select one**, most specific wins:
+
+```text
+style { theme: nord }                          # in the diagram
+cairn build my-system.cairn --theme nord       # CLI — overrides the diagram
+compile(source, { theme: "nord" })             # embedder
+```
+
+The flag is applied after parsing (the parser validates `theme:` against a
+closed set, so a custom name written in the DSL is rejected) and works on
+`build`, `matrix` and `watch`. A theme that cannot be resolved is an error, never
+a silent fallback to the default palette.
+
+### A palette of your own
+
+Custom palettes are **not DSL syntax** — reading a file from the parser would put
+filesystem work back into a core that must also run in the playground. They are a
+JSON file for the CLI, or an object for `compile()`:
+
+```sh
+cairn build my-system.cairn --theme ./my-theme.json
+```
+
+```json
+{
+  "extends": "dark",
+  "dark": true,
+  "pal": { "bg": "#0d1117", "nStroke": "#58a6ff" },
+  "accentColors": { "blue": "#58a6ff", "blueF": "#0d2136" }
+}
+```
+
+A spec **extends a built-in and overrides only what it names**, so a usable theme
+is a few keys rather than the fifty-odd colours a full palette holds. Five keys
+exist, all optional:
+
+| Key | Holds | Notes |
+|---|---|---|
+| `extends` | a built-in to inherit from | defaults to `light`; accepts `light`, `dark`, `slate`, `sand`, `contrast`, `nord`, `solarized` — **not** `classic` / `classic-dark`, which are aliases rather than specs |
+| `dark` | `true` \| `false` | whether the palette sits on a dark ground. Selects the flow colour set, and **cannot be inferred** from the colours: a dark palette that omits it draws light flow hues |
+| `pal` | canvas and chrome colours | `bg`, `text`, `sub`, `muted`, `cFill`, `cStroke`, `nFill`, `nStroke`, `edge`, `div`, `halo`, `aStroke`, `aText`, `chip`, `badge` |
+| `accentColors` | per-kind fills and strokes | 34 keys in stroke/fill pairs, the fill suffixed `F`: `blue`/`blueF`, `amber`, `app`, `gold`, `violet`, `red`, `purple`, `green`, `node`, `auth`, `idp`, `fw`, `authn` follow that shape; `siteS`/`siteF`, `leafS`/`leafF`, `aiS`/`aiF` and `serverS`/`serverF` suffix the stroke `S` |
+| `lv` | security-view sensitivity levels | `public`, `internal`, `restricted`, `secret`, each a `[fill, stroke]` pair |
+
+Merging is one level deep, which is as deep as a palette goes — naming
+`pal.bg` leaves every other `pal` entry inherited. Most entries are a single
+colour; the exceptions are `pal.chip` (`[fill, stroke, text]`), `pal.badge`
+(`[fill, stroke]`) and every `lv` entry (`[fill, stroke]`), which are replaced
+whole and must carry exactly that many colours.
+
+A colour is a hex value (3, 4, 6 or 8 digits), an `rgb()`/`rgba()` or
+`hsl()`/`hsla()` call in either the legacy comma form or the modern
+slash-separated form, or a CSS colour keyword (`rebeccapurple`, `transparent`,
+`currentColor`). This is wider than the DSL itself, where a colour is always
+`#hex`.
+
+Anything else is rejected **by name, at load time** — `ThemeSpecError` (the CLI
+wraps it as `ThemeFileError` with the file path in front) naming the offending
+key: an unknown `extends`, a non-boolean `dark`, an unknown section, a value
+that is not a colour, or a tuple of the wrong length. Nothing reaches the SVG,
+where an unparseable colour is silently ignored — a bad fill turns the shape
+black, a bad stroke erases its outline.
+
+**The CLI registers the file under its basename** (`my-theme.json` → `my-theme`),
+which is the name the renderer then resolves. `classic`, `classic-dark`,
+`__proto__`, `constructor` and `prototype` are reserved and rejected: a file
+named `classic.json` would otherwise register without error and never be used.
+
+**An embedder passes the same object instead of a file**, and it is used for that
+call and forgotten — nothing is registered globally, so a server rendering for
+many callers cannot leak one caller's colours into another's diagram, and two
+callers cannot collide on a name:
+
+```js
+import { compile, resolveThemeSpec } from "@r0kshan/cairn";
+
+const { svg } = await compile(source, {
+  theme: { extends: "dark", dark: true, pal: { bg: "#0d1117" } },
+});
+```
+
+`resolveThemeSpec()` is exported for validating a palette up front; it and
+`compile()` throw the same `ThemeSpecError`. A complete example ships in
+[`examples/themes/midnight.json`](../examples/themes/midnight.json).
+
 ## 3. Diagnostics
 
 Every issue cairn reports carries a stable code (`E01xx` syntax, `E02xx` semantic, `W05xx` warning). Run `cairn explain <CODE>` for the rationale behind any rule (e.g. `cairn explain E0240`). See [`DIAGNOSTICS.md`](DIAGNOSTICS.md) for the full code catalog.
@@ -505,4 +599,4 @@ Every issue cairn reports carries a stable code (`E01xx` syntax, `E02xx` semanti
 
 Imports/includes across files, variables, longhand style properties (`stroke-color:` …) as an additive alternative.
 
-Themes are no longer deferred: built-ins are selectable with `cairn build <file> --theme <name>` (also on `matrix` and `watch`) and a custom palette is a JSON file extending one of them (`--theme ./my-theme.json`). It stays a CLI parameter rather than DSL syntax, because reading a file from the parser would put filesystem work back into a core that must run in the playground.
+Themes are no longer deferred — see [§2.2](#22-themes). A custom palette stays a CLI parameter (or a `compile()` option) rather than DSL syntax, because reading a file from the parser would put filesystem work back into a core that must run in the playground.
