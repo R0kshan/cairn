@@ -34,8 +34,6 @@ export interface ThemeOverrides {
   pal?: Partial<ThemeSpec["pal"]>;
   /** Per-kind fills and strokes. */
   accentColors?: Record<string, string>;
-  /** Security-view sensitivity levels, each a `[fill, stroke]` pair. */
-  lv?: Record<string, [string, string]>;
 }
 
 /** Raised for a spec that cannot be turned into a theme, naming the key at fault. */
@@ -46,7 +44,7 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 
 /**
  * Overlays `patch` onto `base` one level deep, which is exactly as deep as a
- * `ThemeSpec` goes: `pal`, `accentColors` and `lv` hold flat maps of colours.
+ * `ThemeSpec` goes: `pal` and `accentColors` hold flat maps of colours.
  * Deeper generic merging would be able to half-replace a `[fill, stroke]` pair
  * and produce a colour the author never wrote.
  */
@@ -61,14 +59,13 @@ const merge = (base: ThemeSpec, patch: Record<string, unknown>): ThemeSpec => {
 };
 
 /** The colour sections a custom theme may override. Anything else is a typo. */
-const SECTIONS: readonly string[] = ["pal", "accentColors", "lv"];
+const SECTIONS: readonly string[] = ["pal", "accentColors"];
 
 /**
  * How many colours a key holds. `pal.chip` is `[fill, stroke, text]`, `pal.badge`
- * and every `lv` entry are `[fill, stroke]`, and everything else is one colour.
+ * is `[fill, stroke]`, and everything else is one colour.
  */
 const arityOf = (section: string, key: string): number => {
-  if (section === "lv") return 2;
   if (section === "pal") return key === "chip" ? 3 : key === "badge" ? 2 : 1;
   return 1;
 };

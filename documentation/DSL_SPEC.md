@@ -22,7 +22,7 @@ Everything else is optional and order-free: elements, flows, an optional
 ### Grammar shared by every view
 
 ```text
-<kind> <ID> "<Label>" (<attr>)? { …statements… }      # element
+<kind> <ID> "<Label>" { …statements… }                # element
 <ID> -> <ID> : "<label>" (TECH) [BO_REFS] { style }   # flow
 ```
 
@@ -35,9 +35,6 @@ Everything else is optional and order-free: elements, flows, an optional
   it and the element renders as its bare ID, with a **W0502** warning. *Flow*
   labels are a separate matter, required in some views and optional in others
   (per view, below).
-- **`(<attr>)` after the label** carries a kind-specific attribute. The
-  production is part of the grammar; none of the kinds in the views below takes
-  one.
 - **An element body** holds child elements plus the statements `order:`,
   `logo:` and `style { … }` (see [Positioning controls](#positioning-controls)
   and §2).
@@ -559,7 +556,7 @@ cairn build my-system.cairn --theme ./my-theme.json
 ```
 
 A spec **extends a built-in and overrides only what it names**, so a usable theme
-is a few keys rather than the fifty-odd colours a full palette holds. Five keys
+is a few keys rather than the fifty-odd colours a full palette holds. Four keys
 exist, all optional:
 
 | Key | Holds | Notes |
@@ -568,13 +565,12 @@ exist, all optional:
 | `dark` | `true` \| `false` | whether the palette sits on a dark ground. Selects the flow colour set, and **cannot be inferred** from the colours: a dark palette that omits it draws light flow hues |
 | `pal` | canvas and chrome colours | `bg`, `text`, `sub`, `muted`, `cFill`, `cStroke`, `nFill`, `nStroke`, `edge`, `div`, `halo`, `aStroke`, `aText`, `chip`, `badge` |
 | `accentColors` | per-kind fills and strokes | 34 keys in stroke/fill pairs, the fill suffixed `F`: `blue`/`blueF`, `amber`, `app`, `gold`, `violet`, `red`, `purple`, `green`, `node`, `auth`, `idp`, `fw`, `authn` follow that shape; `siteS`/`siteF`, `leafS`/`leafF`, `aiS`/`aiF` and `serverS`/`serverF` suffix the stroke `S` |
-| `lv` | sensitivity-level palettes | keys `public`, `internal`, `restricted`, `secret`, each a `[fill, stroke]` pair |
 
 Merging is one level deep, which is as deep as a palette goes — naming
 `pal.bg` leaves every other `pal` entry inherited. Most entries are a single
-colour; the exceptions are `pal.chip` (`[fill, stroke, text]`), `pal.badge`
-(`[fill, stroke]`) and every `lv` entry (`[fill, stroke]`), which are replaced
-whole and must carry exactly that many colours.
+colour; the exceptions are `pal.chip` (`[fill, stroke, text]`) and `pal.badge`
+(`[fill, stroke]`), which are replaced whole and must carry exactly that many
+colours.
 
 A colour is a hex value (3, 4, 6 or 8 digits), an `rgb()`/`rgba()` or
 `hsl()`/`hsla()` call in either the legacy comma form or the modern

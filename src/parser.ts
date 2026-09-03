@@ -141,10 +141,10 @@ function parseFlow(p: Parser, sourceToken: Token): void {
   model.flows.push(flow);
 }
 
-/** `<kind> ID "label" (attr) { … }`, everything after the id optional.
+/** `<kind> ID "label" { … }`, everything after the id optional.
  *  `sourceToken` (the kind) is already consumed by the caller. */
 function parseElement(p: Parser, sourceToken: Token, parent: Element | null): void {
-  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  const { matchToken, advance, reportError, syncToNextLine, model } = p;
   if (!matchToken("id")) {
     reportError(
       `invalid declaration: \`${sourceToken.text}\` alone on this line`,
@@ -164,28 +164,6 @@ function parseElement(p: Parser, sourceToken: Token, parent: Element | null): vo
     parent: parent ?? undefined,
   };
   if (matchToken("str")) element.label = advance().text;
-  if (matchToken("lparen")) {
-    advance();
-    if (matchToken("id")) {
-      const token = advance();
-      element.attr = {
-        value: token.text,
-        span: token.span,
-      };
-    } else
-      reportError(
-        "attribute value expected after `(`",
-        lookAhead().span,
-        'e.g. `trust-zone DMZ "DMZ" (public)`',
-      );
-    if (matchToken("rparen")) advance();
-    else
-      reportError(
-        "`)` expected to close the attribute",
-        lookAhead().span,
-        'e.g. `trust-zone DMZ "DMZ" (public)`',
-      );
-  }
   if (matchToken("lbrace")) {
     advance();
     p.parseElementBody(element);

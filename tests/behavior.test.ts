@@ -610,10 +610,9 @@ test("actors are LEFT for wide/slide and TOP for tall/page (all sizes)", async (
   }
 });
 
-// Same reading-order invariant for actor-less views (infrastructure, security):
-// user-facing sources sit on the entry side, downstream partners on the exit
-// side. In infra, users are `actor` elements; in security they are untrusted
-// `external`s. Guards the "Internet visitors on the left" fix.
+// Same reading-order invariant for the infrastructure view: user-facing sources
+// sit on the entry side, downstream partners on the exit side. Users there are
+// `actor` elements. Guards the "Internet visitors on the left" fix.
 const nodeSide = (
   scene: {
     nodes: { id: string; kind: string; x: number; y: number; width: number; height: number }[];
@@ -627,10 +626,9 @@ const nodeSide = (
   return { left: n.x + n.width / 2 < ocx, top: n.y + n.height / 2 < ocy };
 };
 
-test("user-facing sources sit on the entry side in infra/security views", async () => {
+test("user-facing sources sit on the entry side in the infrastructure view", async () => {
   const cases: [string, string, string][] = [
     ["infrastructure.cairn", "USERS", "EDI"], // actor users vs egress partner
-    ["security.cairn", "USERS", "PARTNER"], // untrusted end users vs partner
   ];
   for (const [f, ingress, egress] of cases) {
     const base = load(f);
@@ -830,58 +828,10 @@ test("matrix CSV: header, one row per flow, protocol/port split, zone annotation
   assert.ok(lines.some((l) => /\(DMZ\)/.test(l))); // endpoint annotated with its zone
 });
 
-// ---------- security view ----------
-
-test("security.cairn: valid reference builds clean with zero overlaps", async () => {
-  const { diags, codes } = check(load("security.cairn"));
-  assert.equal(diags.filter((d) => d.severity === "error").length, 0);
-  assert.ok(!codes.includes("W0560"), "reference has no unfiltered crossings");
-  assert.ok(!codes.includes("W0561"), "reference states encryption on cross-zone flows");
-  const { overlapsAfter } = await build(load("security.cairn"));
-  assert.equal(overlapsAfter, 0);
-});
-
-test("security: W0560 fires on an unfiltered trust-boundary crossing", () => {
-  const src =
-    'diagram security "t"\n' +
-    'trust-zone Z0 "Edge" (public) { asset A "a" }\n' +
-    'trust-zone Z1 "Core" (restricted) { asset B "b" }\n' +
-    'A -> B : "direct" (TLS1.3)\n';
-  const { codes } = check(src);
-  assert.ok(codes.includes("W0560"), "A(public) -> B(restricted) without a security-node");
-});
-
-test("security: routing through a security-node clears W0560", () => {
-  const src =
-    'diagram security "t"\n' +
-    'trust-zone Z0 "Edge" (public) { security-node FW "fw" }\n' +
-    'trust-zone Z1 "Core" (restricted) { asset B "b" }\n' +
-    'FW -> B : "filtered" (TLS1.3)\n';
-  const { codes } = check(src);
-  assert.ok(!codes.includes("W0560"));
-});
-
-test("security: E0250 on a trust-zone without a valid sensitivity level", () => {
-  const missing = check('diagram security "t"\ntrust-zone Z "z" { asset A "a" }\n');
-  assert.ok(missing.codes.includes("E0250"));
-  const bad = check('diagram security "t"\ntrust-zone Z "z" (topsecret) { asset A "a" }\n');
-  const d = bad.diags.find((d) => d.code === "E0250")!;
-  assert.match(d.note ?? "", /public, internal, restricted, secret/);
-});
-
-test("security: trust zones are colored by sensitivity level + tag rendered", async () => {
-  const { svg } = await build(load("security.cairn"));
-  assert.match(svg, /fill="#fdeceb"/); // public level fill (modern light)
-  assert.match(svg, /fill="#e9f2fb"/); // restricted level fill (modern light)
-  assert.match(svg, />PUBLIC</);
-  assert.match(svg, />RESTRICTED</);
-});
-
 // Each view declares its own columns in `views.ts` — the infrastructure table
 // is the reference shape, the others drop what their flows cannot carry.
 for (const [file, header] of [
   ["application.cairn", "No.,Source,Destination,Protocol,Flow"],
-  ["security.cairn", "No.,Source,Destination,Protocol,Flow"],
   ["logical.cairn", "No.,Source,Destination,Flow"],
 ] as const) {
   test(`matrix columns follow the view: ${file}`, () => {
@@ -892,10 +842,10 @@ for (const [file, header] of [
 }
 
 test("matrix annotates an endpoint with the view's own container kind", () => {
-  // Infrastructure says `network-zone`/`site`; security says `trust-zone`.
-  const { model } = check(load("security.cairn"));
+  // Infrastructure says `network-zone`/`site`; application says `application`/`system`.
+  const { model } = check(load("application-system.cairn"));
   const csv = matrixCsv(buildFlowMatrix(model, views[model.type!]));
-  assert.ok(csv.includes("(Data zone)"));
+  assert.ok(csv.includes("(Order management)"));
 });
 
 test("matrix respects lang: fr headers; md renders the French title", () => {
@@ -998,7 +948,7 @@ test("business objects are logical-only: allowed in logical, E0222 elsewhere", (
   assert.ok(
     !check(`diagram logical "t"\nsystem S "s" { block B "b" }\n${decl}`).codes.includes("E0222"),
   );
-  // application / infrastructure / security: rejected
+  // application / infrastructure: rejected
   assert.ok(
     check(`diagram application "t"\napplication A "a" { module M "m" }\n${decl}`).codes.includes(
       "E0222",
@@ -1008,11 +958,6 @@ test("business objects are logical-only: allowed in logical, E0222 elsewhere", (
     check(`diagram infrastructure "t"\nsite S "s" { server V "v" }\n${decl}`).codes.includes(
       "E0222",
     ),
-  );
-  assert.ok(
-    check(
-      `diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" }\n${decl}`,
-    ).codes.includes("E0222"),
   );
 });
 
@@ -1046,16 +991,11 @@ test("queue renders as a horizontal cylinder (path + end-rim ellipse), overlaps 
   assert.match(svg, /<ellipse cx="\d+" cy="\d+" rx="8"/); // end-rim ellipse
 });
 
-test("flow labels: required on logical/security (E0203), optional on application/infrastructure", () => {
-  // logical + security still require the label
+test("flow labels: required on logical (E0203), optional on application/infrastructure", () => {
+  // logical still requires the label
   assert.ok(
     check(
       'diagram logical "t"\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "b" }\nA -> B\n',
-    ).codes.includes("E0203"),
-  );
-  assert.ok(
-    check(
-      'diagram security "t"\ntrust-zone Z "z" (public) { asset A "a" asset B "b" }\nA -> B\n',
     ).codes.includes("E0203"),
   );
   // application + infrastructure no longer require it
@@ -1112,8 +1052,8 @@ test("gateway, auth and idp are valid in infrastructure and application", () => 
   assert.ok(!check(app).codes.includes("E0201"));
   // `firewall` stays infrastructure-only: it has no application meaning.
   assert.ok(check('diagram application "t"\nfirewall FW "Firewall"\n').codes.includes("E0201"));
-  // rejected in logical and security
-  for (const v of ["logical", "security"]) {
+  // rejected in logical
+  for (const v of ["logical"]) {
     assert.ok(check(`diagram ${v} "t"\ngateway GW "Gateway"\n`).codes.includes("E0201"));
     assert.ok(check(`diagram ${v} "t"\nauth OAUTH2 "Auth"\n`).codes.includes("E0201"));
     assert.ok(check(`diagram ${v} "t"\nidp IDP "IdP"\n`).codes.includes("E0201"));
@@ -1167,7 +1107,7 @@ test("firewall is valid in infrastructure only, and renders the brick-wall glyph
   const src =
     'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { firewall FW "Firewall" } }\nactor USR "User"\nUSR -> FW : (HTTPS/443)\n';
   assert.ok(!check(src).codes.includes("E0201"));
-  for (const v of ["logical", "application", "security"])
+  for (const v of ["logical", "application"])
     assert.ok(check(`diagram ${v} "t"\nfirewall FW "Firewall"\n`).codes.includes("E0201"));
 
   const { svg, overlapsAfter } = await build(src);

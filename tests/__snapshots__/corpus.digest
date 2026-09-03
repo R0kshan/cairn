@@ -64,8 +64,6 @@ placement/reading-order.cairn  dim:502x203 n:6 e:4 ov:0  geom:ce8de5912a3d color
 placement/sides.cairn  dim:1113x347 n:14 e:6 ov:0  geom:20c2a039644f color:4d06ef3531ab text:fa3340e6308b
 positioning-sides.cairn  dim:1566x323 n:12 e:10 ov:0  geom:b8f2be7c25b3 color:d029d0fcbc88 text:6d35fb19dfd0
 positioning.cairn  dim:1180x282 n:12 e:7 ov:0  geom:55602853f8b6 color:4206a26d45da text:ad300725a272
-security-fr.cairn  dim:1148x278 n:11 e:8 ov:0  geom:340892f2888e color:d16d12617fea text:b6f419cb8c5a
-security.cairn  dim:1133x278 n:11 e:8 ov:0  geom:c48ab9bd0f19 color:1e9d74a79456 text:7990a16e5106
 small.cairn  dim:1302x261 n:12 e:6 ov:0  geom:f9507b5f31d4 color:b048c640e696 text:f052cb74382b
 theme-dark.cairn  dim:1256x169 n:10 e:4 ov:0  geom:8d9e038cd189 color:118c91b3f490 text:a3e28e66b9e1
 theme-light.cairn  dim:1256x169 n:10 e:4 ov:0  geom:8d9e038cd189 color:21a74bb867a3 text:a3e28e66b9e1

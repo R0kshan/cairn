@@ -55,7 +55,6 @@ export interface Element {
   id: string;
   idSpan: Span;
   label?: string;
-  attr?: { value: string; span: Span };
   parent?: Element;
   children: Element[];
   style?: StyleProps;
@@ -194,21 +193,11 @@ export const explanations: Record<string, string> = {
   E0221:
     'Unknown business-object reference: a flow carries `[AN_ID]` that no `business-object` declaration defines. Declare it once (`business-object ID "Name" "description"`) so the registry and the chips stay consistent.',
   E0222:
-    "Business objects are a logical-view concept (what data circulates between functional blocks). They are not part of the application, infrastructure, or security views — model the exchange with the flow label and technical tail instead. Remove the `business-object` declaration and its `[refs]`, or switch the diagram to `logical`.",
+    "Business objects are a logical-view concept (what data circulates between functional blocks). They are not part of the application or infrastructure views — model the exchange with the flow label and technical tail instead. Remove the `business-object` declaration and its `[refs]`, or switch the diagram to `logical`.",
   W0530:
     "Completeness check: a declared business object is never carried by any flow — either connect it to the flows that transport it, or remove it from this view.",
-  E0217:
-    "A sensitive asset must sit inside a trust zone: its protection level is defined by the zone that contains it.",
-  E0218:
-    "A security node (firewall, WAF, bastion, reverse proxy) lives inside a trust zone — typically the exposed zone whose traffic it filters.",
-  E0250:
-    'The security view requires each trust zone to declare a sensitivity level in parentheses after the label: `trust-zone DMZ "DMZ" (public)`. Levels, least \u2192 most trusted: public, internal, restricted, secret. The level drives the zone color and the trust-boundary crossing checks.',
   W0570:
     "A declared attachment side (`APP.right -> DB.left`) did not survive layout: the flow ended up on another side of the element. Pins are honored where the layout can reach them and dropped where it cannot, rather than forced into an unreadable route. Move the element instead (`order:`), pin the other endpoint, or drop the pin.",
   W0571:
     "An endpoint reads `ID.side`, but `ID.side` is itself a declared element, and a declared id always wins — so the flow attaches to that element and no side is pinned. Rename the element if you meant the side.",
-  W0560:
-    "Security check: this flow enters a more-trusted zone from a less-trusted one without passing through a security-node (firewall/WAF/bastion). Route it through a filtering point, or confirm the direct path is deliberate. This is the diagram equivalent of a missing firewall rule review.",
-  W0561:
-    "Security check: an inter-zone flow does not state its encryption/protocol. Cross-zone traffic should declare how it is protected: add `(TLS1.3)` or the relevant protocol after the label.",
 };

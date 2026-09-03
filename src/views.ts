@@ -1,7 +1,7 @@
 /**
  * The `views` registry: one `View` per diagram type (logical, application,
- * infrastructure, security) defining its allowed element kinds, nesting rules,
- * flow requirements, trust-boundary/attribute specs, legend labels (en/fr) and
+ * infrastructure) defining its allowed element kinds, nesting rules,
+ * flow requirements, legend labels (en/fr) and
  * layout partitions. This is the data that makes each view "typed" — the
  * validator and layout read from it, so adding a view starts here.
  */
@@ -72,27 +72,6 @@ export interface View {
   } | null;
   defaults: Record<string, StyleProps>;
   defaultsDark: Record<string, StyleProps>;
-  attrSpec?: {
-    kind: string;
-    values: string[];
-    code: string;
-    message: string;
-    help: string;
-  };
-  trustOrder?: Record<string, number>;
-  boundaryLint?: {
-    code: string;
-    nodeKind: string;
-    message: string;
-    help: string;
-  };
-  crossZoneTechRecommended?: {
-    code: string;
-    message: string;
-    help: string;
-  };
-  levelDefaults?: Record<string, StyleProps>;
-  levelDefaultsDark?: Record<string, StyleProps>;
 }
 
 const logicalView: View = {
@@ -599,187 +578,9 @@ const infrastructureView: View = {
   },
 };
 
-const SEC_LEVELS = ["public", "internal", "restricted", "secret"];
-
-const securityView: View = {
-  name: "security",
-  kinds: ["trust-zone", "security-node", "asset", "actor-group", "actor", "external"],
-  containerKinds: ["trust-zone", "actor-group"],
-  // Security flows state their encryption (W0561) but no port; the trust zone
-  // an endpoint sits in is the point of the view, so it annotates every row.
-  matrix: {
-    zoneKinds: ["trust-zone"],
-    columns: ["num", "source", "dest", "proto", "nature"],
-  },
-  legendNames: {
-    "trust-zone": "Trust zone (sensitivity)",
-    "security-node": "Filtering / security node",
-    asset: "Sensitive asset",
-    "actor-group": "Actor group",
-    actor: "Actor",
-    external: "Untrusted external",
-  },
-  legendNamesFr: {
-    "trust-zone": "Zone de confiance (sensibilit\u00e9)",
-    "security-node": "N\u0153ud de filtrage / s\u00e9curit\u00e9",
-    asset: "Actif sensible",
-    "actor-group": "Groupe d'acteurs",
-    actor: "Acteur",
-    external: "Externe non ma\u00eetris\u00e9",
-  },
-  bandTitles: {
-    flows: "FLOWS",
-    objects: "BUSINESS OBJECTS",
-    legend: "LEGEND",
-  },
-  legendFlowLabel: "Security flow — cross-zone flows should be filtered and encrypted",
-  legendFlowLabelFr:
-    "Flux de s\u00e9curit\u00e9 — les flux inter-zones doivent \u00eatre filtr\u00e9s et chiffr\u00e9s",
-  partitions: {},
-  partitionByOrder: true,
-  flowLabelRequired: {
-    code: "E0203",
-    message: "flow without a label",
-    help: 'add a label describing the exchange: `A -> B : "\u2026" (TLS1.3)`',
-  },
-  flowTechRequired: null,
-  flowTechRecommended: null,
-  attrSpec: {
-    kind: "trust-zone",
-    values: SEC_LEVELS,
-    code: "E0250",
-    message: "trust zone without a valid sensitivity level",
-    help: 'set a level in parentheses: `trust-zone DMZ "DMZ" (public)` — one of public, internal, restricted, secret',
-  },
-  trustOrder: { public: 0, internal: 1, restricted: 2, secret: 3 },
-  boundaryLint: {
-    code: "W0560",
-    nodeKind: "security-node",
-    message: "unfiltered trust-boundary crossing",
-    help: "route this flow through a `security-node` (firewall/WAF/bastion), or confirm the direct path is intended",
-  },
-  crossZoneTechRecommended: {
-    code: "W0561",
-    message: "cross-zone flow without stated encryption/protocol",
-    help: 'add the protocol/encryption on inter-zone flows: `A -> B : "\u2026" (TLS1.3)`',
-  },
-  nesting: [
-    {
-      code: "E0217",
-      child: "asset",
-      parents: ["trust-zone"],
-      message: "sensitive asset outside any trust zone",
-      help: "move this `asset` inside a `trust-zone`",
-    },
-    {
-      code: "E0218",
-      child: "security-node",
-      parents: ["trust-zone"],
-      message: "security node outside any trust zone",
-      help: "place this `security-node` inside a `trust-zone` (typically the exposed one it protects)",
-    },
-    {
-      code: "E0211",
-      child: "actor",
-      parents: ["actor-group"],
-      message: "actor outside any group",
-      help: "move this `actor` inside an `actor-group`",
-    },
-  ],
-  minCounts: [],
-  isolatedWarn: {
-    code: "W0510",
-    kinds: ["asset"],
-    message: "isolated element: no incoming or outgoing flow",
-  },
-  defaults: {
-    "trust-zone": {
-      fill: "#f5f5f4",
-      stroke: { color: "#8a8a85", style: "solid", width: 1.3 },
-    },
-    "security-node": {
-      fill: "#fff7e6",
-      stroke: { color: "#c46b2a", style: "solid", width: 1.6 },
-    },
-    asset: {
-      fill: "#ffffff",
-      stroke: { color: "#55606b", style: "solid", width: 1.3 },
-    },
-    "actor-group": {
-      fill: "#eef4fb",
-      stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 },
-    },
-    external: {
-      fill: "#fdecea",
-      stroke: { color: "#d9534f", style: "dashed", width: 1.3 },
-    },
-    actor: {},
-  },
-  defaultsDark: {
-    "trust-zone": {
-      fill: "#26261f",
-      stroke: { color: "#8a8a72", style: "solid", width: 1.3 },
-    },
-    "security-node": {
-      fill: "#2e2717",
-      stroke: { color: "#c46b2a", style: "solid", width: 1.6 },
-    },
-    asset: {
-      fill: "#252a31",
-      stroke: { color: "#6b7885", style: "solid", width: 1.3 },
-    },
-    "actor-group": {
-      fill: "#232a33",
-      stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 },
-    },
-    external: {
-      fill: "#3a2422",
-      stroke: { color: "#c25a54", style: "dashed", width: 1.3 },
-    },
-    actor: {},
-  },
-  levelDefaults: {
-    public: {
-      fill: "#fdecea",
-      stroke: { color: "#d9534f", style: "solid", width: 1.4 },
-    },
-    internal: {
-      fill: "#fff4e5",
-      stroke: { color: "#e0a458", style: "solid", width: 1.4 },
-    },
-    restricted: {
-      fill: "#e8f1f8",
-      stroke: { color: "#5b8db8", style: "solid", width: 1.4 },
-    },
-    secret: {
-      fill: "#ece8f5",
-      stroke: { color: "#7a5fae", style: "solid", width: 1.4 },
-    },
-  },
-  levelDefaultsDark: {
-    public: {
-      fill: "#3a2422",
-      stroke: { color: "#c25a54", style: "solid", width: 1.4 },
-    },
-    internal: {
-      fill: "#332a1c",
-      stroke: { color: "#c08a44", style: "solid", width: 1.4 },
-    },
-    restricted: {
-      fill: "#1f2a33",
-      stroke: { color: "#4a7ba6", style: "solid", width: 1.4 },
-    },
-    secret: {
-      fill: "#2a2433",
-      stroke: { color: "#7a5f9e", style: "solid", width: 1.4 },
-    },
-  },
-};
-
-/** Registry of available diagram views (logical, application, infrastructure, security). */
+/** Registry of available diagram views (logical, application, infrastructure). */
 export const views: Record<string, View> = {
   logical: logicalView,
   application: applicationView,
   infrastructure: infrastructureView,
-  security: securityView,
 };
