@@ -94,10 +94,6 @@ datastore ORDER_DB "Order store" { logo: postgresql }
 module BILLING "Billing" { logo: "./logos/acme.svg" }
 ```
 
-```sh
-cairn logos                                      # list the built-in names
-```
-
 <p align="center"><img src="examples/application-tech-stack.svg" alt="Application view with technology logos" width="760"></p>
 
 ### Infrastructure view diagram examples from small to large
@@ -395,6 +391,21 @@ cairn watch my-system.cairn
 ```
 
 Rebuilds the SVG on save. On a compile error the SVG becomes an error panel (codes, lines, help), so an open preview never shows a stale diagram. Watch observes only the file it was launched on — run one per file. Pair it with an editor that auto-refreshes an open SVG.
+
+### List the built-in logos
+
+```sh
+cairn logos
+```
+
+```text
+37 built-in logos — use as `logo: <name>` on an element:
+
+  angular        apache         apachekafka    apachespark    django
+  ...
+```
+
+Anything else: point at a file — `logo: "./logos/name.svg"`.
 
 ### Explain a diagnostic
 
