@@ -13,16 +13,16 @@ actor-group VENTES "Acteurs des ventes" {
 }
 
 system COMMANDES "Plateforme de commandes" {
-  application APP_CMD "Gestion des commandes" {
+  application APP_CMD "Gestion des commandes" { logo: spring
     order: 1
-    module SAISIE "Saisie des\ncommandes"
+    module SAISIE "Saisie des\ncommandes" { logo: kotlin }
     module CONTROLE "Contrôle des\ncommandes"
   }
   # `order:` reste un mot-clé anglais même avec `lang: fr` (décision D2).
-  queue EVENEMENTS "Bus d'événements\ncommandes" {
+  queue EVENEMENTS "Bus d'événements\ncommandes" { logo: apachekafka
     order: 2
   }
-  datastore REF_CMD "Référentiel\ndes commandes" {
+  datastore REF_CMD "Référentiel\ndes commandes" { logo: postgresql
     order: 3
   }
 }

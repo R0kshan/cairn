@@ -11,14 +11,14 @@ actor-group HR "HR actors" {
 # `system` is a C4 system boundary: it groups the applications, queues and
 # datastores that belong to one system.
 system HRIS "HR information system" {
-  application PORTAL "HR portal" {
-    module LEAVE "Leave\nrequests"
-    module APPROVAL "Approval\nworkflow"
+  application PORTAL "HR portal" { logo: spring
+    module LEAVE "Leave\nrequests" { logo: openjdk }
+    module APPROVAL "Approval\nworkflow" { logo: openjdk }
   }
 
-  queue NOTIFY "Notification\nbus"
+  queue NOTIFY "Notification\nbus" { logo: rabbitmq }
 
-  datastore HR_REF "HR\nrepository"
+  datastore HR_REF "HR\nrepository" { logo: postgresql }
 }
 
 external PAYROLL "Payroll HRIS\n(outsourced)"

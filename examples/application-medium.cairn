@@ -8,27 +8,27 @@ actor-group MANAGERS "Managers" {
   actor SALES_ADMIN "Sales\nadministration"
 }
 
-application CRM "CRM" {
+application CRM "CRM" { logo: dotnet
   module CRM_ACCOUNTS "Customer-account\nmanagement"
   module CRM_CONTRACTS "Contract\nmanagement"
 }
 
-application BILLING "Billing" {
-  module BILL_ENGINE "Billing\nengine"
+application BILLING "Billing" { logo: spring
+  module BILL_ENGINE "Billing\nengine" { logo: openjdk }
   module BILL_ISSUE "Invoice issuing\nand sending"
   module BILL_DUNNING "Dunning and\ncollection"
-  module TAX "Tax\ncalculation"
+  module TAX "Tax\ncalculation" { logo: python }
 }
 
-application ACCOUNTING "Accounting" {
+application ACCOUNTING "Accounting" { logo: openjdk
   module GL "General ledger"
   module AR "Accounts\nreceivable"
 }
 
-queue EVENTS "Billing\nevent bus"
+queue EVENTS "Billing\nevent bus" { logo: apachekafka }
 
-datastore REF_CUSTOMERS "Customer\nrepository"
-datastore REF_OFFERS "Offer\ncatalog"
+datastore REF_CUSTOMERS "Customer\nrepository" { logo: postgresql }
+datastore REF_OFFERS "Offer\ncatalog" { logo: mongodb }
 
 external EDI "Partner EDI\nplatform"
 external PPF "Electronic-invoicing\nportal (PPF)"

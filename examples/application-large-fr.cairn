@@ -10,41 +10,41 @@ actor-group TEAMS "Équipes internes" {
   actor ACCOUNTANT "Comptable"
 }
 
-application FRONT "Front de vente" {
-  module SITE "Site\ne-commerce"
-  module APP_MOBILE "Application\nmobile"
-  module CHECKOUT "Tunnel\nd'achat"
+application FRONT "Front de vente" { logo: nextdotjs
+  module SITE "Site\ne-commerce" { logo: react }
+  module APP_MOBILE "Application\nmobile" { logo: typescript }
+  module CHECKOUT "Tunnel\nd'achat" { logo: nodedotjs }
 }
 
-application OMS "Gestion des commandes" {
-  module ORDERS "Cycle de vie\ndes commandes"
+application OMS "Gestion des commandes" { logo: spring
+  module ORDERS "Cycle de vie\ndes commandes" { logo: openjdk }
   module SHIPPING "Orchestration des\nexpéditions"
   module RETURNS "Retours et\nremboursements"
 }
 
-application PIM "Référentiel produits" {
+application PIM "Référentiel produits" { logo: django
   module CATALOG "Gestion du\ncatalogue"
   module MEDIA "Gestion des\nmédias"
 }
 
-application PRICING "Tarification" {
-  module RULES "Moteur de règles\nde prix"
+application PRICING "Tarification" { logo: python
+  module RULES "Moteur de règles\nde prix" { logo: fastapi }
 }
 
-application PAYHUB "Hub de paiement" {
+application PAYHUB "Hub de paiement" { logo: go
   module PAY_ORCH "Orchestration des\npaiements"
-  module FRAUD "Scoring\nanti-fraude"
+  module FRAUD "Scoring\nanti-fraude" { logo: python }
 }
 
-application CARE "Relation client" {
+application CARE "Relation client" { logo: nodedotjs
   module TICKETS "Gestion des\ntickets"
-  module SELFCARE "Espace client\nautonome"
+  module SELFCARE "Espace client\nautonome" { logo: react }
 }
 
-queue EVENTS "Bus d'événements\ncommandes"
+queue EVENTS "Bus d'événements\ncommandes" { logo: apachekafka }
 
-datastore DWH "Entrepôt de\ndonnées"
-datastore REF_CUSTOMERS "Référentiel\nclients"
+datastore DWH "Entrepôt de\ndonnées" { logo: postgresql }
+datastore REF_CUSTOMERS "Référentiel\nclients" { logo: mongodb }
 
 external PSP "PSP"
 external CARRIERS "Plateformes\ntransporteurs"

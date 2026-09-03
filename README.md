@@ -83,26 +83,22 @@ Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/
 <p align="center"><img src="examples/application-medium.svg" alt="Medium application view" width="760"></p>
 <p align="center"><img src="examples/application-large.svg" alt="Large application view" width="760"></p>
 
-#### System boundaries
-
-`system` is a C4 system boundary: it groups the applications, queues and
-datastores that belong to one system — the small example above uses one. The
-flow matrix names an endpoint's nearest container, so a module reads
-`Name (App)` and a queue sitting directly in the system reads `Name (System)`.
-From [`examples/application-system.cairn`](examples/application-system.cairn):
+#### Technology logos
 
 ```cairn
-system ORDERS "Order platform" {
-  application ORDER_APP "Order management" {
-    module CAPTURE "Order\ncapture"
-    module VALIDATE "Order\nvalidation"
-  }
-  queue EVENTS "Order event\nbus"
-  datastore ORDER_DB "Order\nrepository"
+application STOREFRONT "Storefront" { logo: nextdotjs
+  module WEB "Web client" { logo: react }
 }
+queue EVENTS "Order events" { logo: apachekafka }
+datastore ORDER_DB "Order store" { logo: postgresql }
+module BILLING "Billing" { logo: "./logos/acme.svg" }
 ```
 
-<p align="center"><img src="examples/application-system.svg" alt="Application view with a system boundary" width="760"></p>
+```sh
+cairn logos                                      # list the built-in names
+```
+
+<p align="center"><img src="examples/application-tech-stack.svg" alt="Application view with technology logos" width="760"></p>
 
 ### Infrastructure view diagram examples from small to large
 

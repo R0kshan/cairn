@@ -7,12 +7,12 @@ style {
 # REGIONAL ORDER BACKENDS, REGIONS A AND B
 # (only the messaging modules are shown)
 # ============================================================================
-application BACKEND_A "Order backend\nRegion A" {
+application BACKEND_A "Order backend\nRegion A" { logo: go
   module MESSAGING_A "Message\nhandling"
   order: 1
 }
 
-application BACKEND_B "Order backend\nRegion B" {
+application BACKEND_B "Order backend\nRegion B" { logo: go
   module MESSAGING_B "Message\nhandling"
   order: 4
 }
@@ -20,8 +20,8 @@ application BACKEND_B "Order backend\nRegion B" {
 # ============================================================================
 # Cross-region message queues
 # ============================================================================
-queue Q_REGION_A "Region A\nmessages" { order: 2 }
-queue Q_REGION_B "Region B\nmessages" { order: 3 }
+queue Q_REGION_A "Region A\nmessages" { order: 2  logo: rabbitmq }
+queue Q_REGION_B "Region B\nmessages" { order: 3  logo: rabbitmq }
 
 # ============================================================================
 # FLOWS — cross-region exchanges through the queues

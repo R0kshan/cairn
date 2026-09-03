@@ -9,26 +9,26 @@ actor-group RESPONSABLES "Responsables" {
   actor ADMIN_VENTES "Administration\ndes ventes"
 }
 
-application CRM "CRM" {
+application CRM "CRM" { logo: dotnet
   module CRM_COMPTES "Gestion des\ncomptes clients"
   module CRM_CONTRATS "Gestion des\ncontrats"
 }
 
-application FACTURATION "Facturation" {
-  module FACT_MOTEUR "Moteur de\nfacturation"
+application FACTURATION "Facturation" { logo: spring
+  module FACT_MOTEUR "Moteur de\nfacturation" { logo: openjdk }
   module FACT_EMISSION "Émission et envoi\ndes factures"
   module FACT_RELANCE "Relance et\nrecouvrement"
 }
 
-application COMPTABILITE "Comptabilité" {
+application COMPTABILITE "Comptabilité" { logo: openjdk
   module GRAND_LIVRE "Grand livre"
   module CLIENTS "Comptes\nclients"
 }
 
-queue EVENTS "Bus d'événements\nfacturation"
+queue EVENTS "Bus d'événements\nfacturation" { logo: apachekafka }
 
-datastore REF_CLIENTS "Référentiel\nclients"
-datastore REF_OFFRES "Catalogue\nd'offres"
+datastore REF_CLIENTS "Référentiel\nclients" { logo: postgresql }
+datastore REF_OFFRES "Catalogue\nd'offres" { logo: mongodb }
 
 external EDI "Plateforme EDI\npartenaire"
 external PPF "Portail de facturation\nélectronique (PPF)"

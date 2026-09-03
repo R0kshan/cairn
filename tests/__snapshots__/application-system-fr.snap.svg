@@ -1,44 +1,48 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1148 334" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1188 334" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#9aa7b4"/></marker></defs>
-<rect width="1148" height="334" fill="#1e2530"/>
+<rect width="1188" height="334" fill="#1e2530"/>
 <rect x="10" y="124" width="150" height="90" rx="6" fill="#233242" stroke="#5aa9e6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="142" font-size="13" font-weight="bold" fill="#e6edf3">Acteurs des ventes</text>
-<rect x="312" y="58" width="665" height="161.2" rx="6" fill="#332a1b" stroke="#e0a955" stroke-width="1.2"/>
+<rect x="312" y="58" width="705" height="161.2" rx="6" fill="#332a1b" stroke="#e0a955" stroke-width="1.2"/>
 <text x="322" y="76" font-size="13" font-weight="bold" fill="#e6edf3">Plateforme de commandes</text>
-<rect x="326" y="127.2" width="384" height="83" rx="6" fill="#1f2a37" stroke="#5aa9e6" stroke-width="1.2"/>
+<rect x="326" y="127.2" width="394" height="83" rx="6" fill="#1f2a37" stroke="#5aa9e6" stroke-width="1.2"/>
 <text x="336" y="145.2" font-size="13" font-weight="bold" fill="#e6edf3">Gestion des commandes</text>
+<g transform="translate(695 133.2) scale(0.8)" fill="#5aa9e6"><title>Spring</title><path d="M21.9 1.4a10.5 10.5 0 0 1-1.3 2.2A12 12 0 1 0 3.9 20.8l.4445.4a12 12 0 0 0 19.6-8.3c.3457-3-.568-6.9-2.1-11.5zM5.6 20.9a1 1 0 1 1-.1482-1.4 1 1 0 0 1 .1482 1.4zm16.2-3.6c-2.9 3.9-9.3 2.6-13.3 2.8 0 0-.7161-1.4.1481 0 0 .2717-.1234.6-.2469 2.8-.9877 4.2-1.2 5.9-2.1 3.2-1.7 6.5-5.3 7.1-9-1.2 3.6-5 6.7-8.4 8-2.3.8643-6.6 1.7-6.6 1.7l-.1729-.0988c-2.9-1.4-3-7.6 2.3-9.6 2.3-.889 4.5-.395 7-.9877 2.6-.6174 5.7-2.6 6.9-5.2 1.4 4.2 3.1 10.6.0493 14.6z"/></g>
 <circle cx="85" cy="161" r="7" fill="none" stroke="#8aa0b8" stroke-width="1.5"/>
 <path d="M 74 183 q 11 -19 22 0" fill="none" stroke="#8aa0b8" stroke-width="1.5"/>
 <text x="85" y="195" font-size="11" text-anchor="middle" fill="#c9d5e1">Chargé de commandes</text>
-<rect x="335" y="154.2" width="108" height="47" rx="4" fill="#252c37" stroke="#6b7885" stroke-width="1.3"/>
-<text x="389" y="174.4" font-size="12.5" text-anchor="middle" fill="#e6edf3">Saisie des</text>
-<text x="389" y="188.9" font-size="12.5" text-anchor="middle" fill="#e6edf3">commandes</text>
-<rect x="593" y="154.2" width="108" height="47" rx="4" fill="#252c37" stroke="#6b7885" stroke-width="1.3"/>
-<text x="647" y="174.4" font-size="12.5" text-anchor="middle" fill="#e6edf3">Contrôle des</text>
-<text x="647" y="188.9" font-size="12.5" text-anchor="middle" fill="#e6edf3">commandes</text>
-<path d="M 834 95 h 115 a 8 23.5 0 0 1 0 47 h -115 a 8 23.5 0 0 1 0 -47" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
-<ellipse cx="834" cy="118.5" rx="8" ry="23.5" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
-<text x="895.5" y="115.3" font-size="12.5" text-anchor="middle" fill="#e6edf3">Bus d'événements</text>
-<text x="895.5" y="129.8" font-size="12.5" text-anchor="middle" fill="#e6edf3">commandes</text>
-<path d="M 826 169 v 33 a 55 7 0 0 0 110 0 v -33" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
-<ellipse cx="881" cy="169" rx="55" ry="7" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
-<text x="881" y="185.8" font-size="12.5" text-anchor="middle" fill="#e6edf3">Référentiel</text>
-<text x="881" y="200.3" font-size="12.5" text-anchor="middle" fill="#e6edf3">des commandes</text>
-<rect x="993" y="22" width="145" height="47" rx="4" fill="#2a2436" stroke="#b48ad6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1065.5" y="42.3" font-size="12.5" text-anchor="middle" fill="#e6edf3">Suivi transporteur</text>
-<text x="1065.5" y="56.8" font-size="12.5" text-anchor="middle" fill="#e6edf3">(tiers)</text>
+<rect x="335" y="154.2" width="118" height="47" rx="4" fill="#252c37" stroke="#6b7885" stroke-width="1.3"/>
+<g transform="translate(428 160.2) scale(0.8)" fill="#6b7885"><title>Kotlin</title><path d="M24 24H0V0h24L12 12Z"/></g>
+<text x="379" y="174.4" font-size="12.5" text-anchor="middle" fill="#e6edf3">Saisie des</text>
+<text x="379" y="188.9" font-size="12.5" text-anchor="middle" fill="#e6edf3">commandes</text>
+<rect x="603" y="154.2" width="108" height="47" rx="4" fill="#252c37" stroke="#6b7885" stroke-width="1.3"/>
+<text x="657" y="174.4" font-size="12.5" text-anchor="middle" fill="#e6edf3">Contrôle des</text>
+<text x="657" y="188.9" font-size="12.5" text-anchor="middle" fill="#e6edf3">commandes</text>
+<path d="M 844 95 h 145 a 8 23.5 0 0 1 0 47 h -145 a 8 23.5 0 0 1 0 -47" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
+<ellipse cx="844" cy="118.5" rx="8" ry="23.5" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
+<g transform="translate(964 101) scale(0.8)" fill="#c085d8"><title>Apache Kafka</title><path d="M9.7 2.1a1.4 1.4 0 0 0-2 0h-.007a1.5 1.5 0 0 0-.421 1c0 .41.2.777.4 1l.7c.257.3.616.4 1.426.4 0 .766-.162 1-.426l.003-.007c.261-.262.4-.629.4-1 0-.408-.159-.777-.421-1H9.7zM8.7 22.3c.404 0 .766-.167 1-.429l.003-.008c.261-.261.4-.631.4-1 0-.41-.159-.778-.421-1H9.7a1.4 1.4 0 0 0-1-.432 1.4 1.4 0 0 0-1.432h-.007c-.26.3-.422.6-.422 1 0 .406.2.775.4 1l.7c.258.3.617.4 1.429zm7.9-4.5c.359-.96.7-.33.9-.684l.027-.052a1.5 1.5 0 0 0 .114-1.1 1.5 1.5 0 0 0-.675-.896l-.021-.014a1.4 1.4 0 0 0-1.1-.132c-.36.1-.684.3-.881.7-.2.3-.241.8-.146 1.1.99.4.33.7.675.9h.002c.346.2.737.2 1.1.144zm-6.4-7.3a2.1 2.1 0 0 0-1.5-.627c-.58 0-1.1.242-1.5.627-.378.4-.612.9-.612 1.5s.233 1.1.612 1.5a2.1 2.1 0 0 0 3 0c.379-.39.6-.923.6-1.5s-.233-1.1-.612-1.5zm-.835-2.5c.843.1 1.6.552 2.2 1.1h.004c.92.1.182.2.265.3l1.4-.851a3.2 3.2 0 0 1-.047-1.8 3.1 3.1 0 0 1 1.5-1.9l.025-.016a3.1 3.1 0 0 1 2.3-.306c.77.2 1.5.721 1.9 1.5v.002c.431.8.518 1.6.313 2.4a3.1 3.1 0 0 1-1.5 1.9l-.198.1h-.02a3.1 3.1 0 0 1-2.2.201 3.1 3.1 0 0 1-1.5-.944l-1.4.848a4.2 4.2 0 0 1 0 2.9l1.4.846c.413-.47.9-.789 1.5-.944a3 3 0 0 1 2.4.319l.48v.002a3.2 3.2 0 0 1 1.4 1.9 3.2 3.2 0 0 1-.313 2.4l-.26.1-.003-.005a3.1 3.1 0 0 1-1.9 1.4 3.1 3.1 0 0 1-2.4-.318v-.006a3.2 3.2 0 0 1-1.5-1.9 3.2 3.2 0 0 1 .047-1.8l-1.4-.848a3.9 3.9 0 0 1-.265.3l-.4a3.9 3.9 0 0 1-2.2 1.1v1.7a3.1 3.1 0 0 1 1.6.862l.2c.565.6.914 1.4.914 2.2 0 .873-.35 1.7-.914 2.2l-.2a3.1 3.1 0 0 1-2.2.931 3.1 3.1 0 0 1-2.2-.93h-.002v-.009a3.2 3.2 0 0 1-.916-2.2c0-.875.4-1.7.916-2.2v-.004h.002a3.1 3.1 0 0 1 1.6-.862v-1.7a3.9 3.9 0 0 1-2.2-1.1l-.006-.005a4.1 4.1 0 0 1-1.2-2.9c0-1.1.452-2.1 1.2-2.9h.006a3.9 3.9 0 0 1 2.2-1.1V6.3a3.1 3.1 0 0 1-1.6-.864h-.002v-.004a3.2 3.2 0 0 1-.916-2.2c0-.871.4-1.7.916-2.2l.002-.002A3.1 3.1 0 0 1 8.7 0c.861 0 1.6.355 2.2.932v.002h.002c.565.6.914 1.4.914 2.2 0 .876-.35 1.7-.914 2.2l-.2a3.1 3.1 0 0 1-1.6.864v1.7zm8.1-1.1l-.012-.019a1.5 1.5 0 0 0-.87-.668 1.4 1.4 0 0 0-1.1.146h.002c-.347.2-.58.5-.677.9-.95.4-.54.8.146 1.1l.7c.2.3.519.6.874.7.357.1.755.1 1.1-.144l.019-.009a1.5 1.5 0 0 0 .657-.885 1.5 1.5 0 0 0-.141-1.1"/></g>
+<text x="905.5" y="115.3" font-size="12.5" text-anchor="middle" fill="#e6edf3">Bus d'événements</text>
+<text x="905.5" y="129.8" font-size="12.5" text-anchor="middle" fill="#e6edf3">commandes</text>
+<path d="M 836 169 v 33 a 70 7 0 0 0 140 0 v -33" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
+<ellipse cx="906" cy="169" rx="70" ry="7" fill="#291f33" stroke="#c085d8" stroke-width="1.3"/>
+<g transform="translate(951 176.5) scale(0.8)" fill="#c085d8"><title>PostgreSQL</title><path d="M23.6 14.7a.5269.5 0 0 0-.0563-.1191c-.139-.2632-.4768-.3418-1-.2321-1.7.3411-2.3.1312-2.5-.0191 1.3-2 2.4-4.5 3-6.8.2714-1.1.7982-3.5.1222-4.7a1.6 1.6 0 0 0-.1509-.235C21.7.9086 19.8.0248 17.5.0005c-1.5-.0158-2.8.3461-3.1.4794a9.4 9.4 0 0 0-.5159-.0816 8 8 0 0 0-1.3-.1278c-1.2-.0184-2.2.2642-3.8406-.8573-.3211-4.8-1.6-7.2.0788C.9359 2.2.3086 3.9.4302 6.3c.409.8.5069 3.3 1.2 5.7.4598 1.5.9387 2.7 1.4 3.6.554 1.1 1.6 1.7 1.8.4474.1 1.1.1441 1.9-.7279.8-.9635 1.6-1.8 1.9-2.2.4351.2.9064.4 1.4.3772a.569.1 0 0 0 .4 11 11 0 0 0-.2472.3c-.3389.4-.4094.5-1.5.7443-.3102.1-1.1.2339-1.1.8115-.25.1.329.2.919.3.2269.4.9216.6 1.6331 1.3.3335 2.5.092 3.4-.6787-.017 2.2.0775 4.4.3454 5.1.2212.6.7618 1.9 2.5 1.9.2505 0 .5263-.291.8-.0941 1.8-.3821 2.6-1.2 2.9-2.9.1503-.8707.4-2.9.5388-4.1.0169-.703-.1207.1-.1362-.5.1-.471.4.0307a.3673.4 0 0 0 .443l.2539.149c.8468 1.9-.1426 2.5-.4308.6-.2988 1.8-1 1.6-1.7zM2.4 11.9c-.7435-2.4-1.2-4.9-1.2-5.6-.1086-2.2.4171-3.7 1.6-4.5 1.8-1.3 4.8-.5408 6.1-.13-.32-.66-.98-2 2-2 5.5-2 5.7-.2.1.66.2.162.4.348.6.0996 1.7-.0735 2.9-.1609 1.2.1937 2.3.9728 3.1.806.1.1648.2.2518.2-.3468.4-1.1 1.2-1.9 2.2-.5677.7-.9597.6-1.1.5087-.3919-.1307-.813-.5871-1.2-1.3-.4796-.839-.9635-2-1.4-3.5zm6 5.1c-.1711-.0428-.3271-.1132-.4322-.1772.1-.394.2-.902.5-.1409 1.3-.2641 1.5-.4506 1.9-1.0992-.126.2-.2687.4-.4426a.3549.4 0 0 0 .0737-.1298c.1708-.1513.3-.1099.4-.417.2.646.3.26.4.4752.1016.1.2945-.452.4-.9043 1.3-2.2 1.2-3.2 1zm2.1-4-.525.1c-.133.4-.2567.7-.3334 1-.6674-.0021-1.3-.2872-1.8-.8024-.6279-.6551-.9131-1.6-.7825-2.5.1828-1.3.1153-2.4.079-3.1-.005-.0857-.0095-.1607-.0122-.2199.3-.2621 1.7-.9962 2.6-.7724.4.1022.7.4057.8.928.6 2.7.0774 3.8-.3302 4.7-.84.2-.1633.4-.2311.5zm7.4 4.6c-.169.2-.358.4-.618.6l-.146.4a.3547.4 0 0 0-.182.1c-.59.5-.54.6-.115.9-.634.2-.1353.5-.1794 1.1-.11 1.4-.8782 2.2-2.4 2.6-1.5.3251-1.8-.4968-2-1.2a6.6 6.6 0 0 0-.0769-.2266c-.2154-.5858-.1911-1.4-.1574-2.6.0165-.5612-.0249-1.9-.3302-2.6.0044-.2932-.5909-.8918a.3529.4 0 0 0-.0153-.1126 1.5 1.5 0 0 0-.0439-.208c-.1226-.4283-.4213-.7866-.7797-.9351-.1424-.059-.4038-.1672-.7178-.869.1-.276.2-.5875.3-.9249l.0529-.142c.0595-.16.1-.3257.2-.5012.4-.9476 1-2.2.3766-5.2-.2374-1.1-1-1.6-2.2-1.5-.7207.1-1.4.3654-1.7.5321a5.7 5.7 0 0 0-.1958.1c.0918-1.1.4386-3.2 1.7-4.5a4 4 0 0 1 .3033-.276.4.3532 0 0 0 .1447-.0644c.7524-.5706 1.7-.8506 2.8-.8325.4.67.8.0339 1.2.081 1.9.3544 3.2 1.4 4 2.4.8144 1.3 1.9 1.4 2.5-1.3-.1346-2.2.1268-2.7.779-.9926 1.4.543 4.2 1.3 5.5.1353.2.2522.5.2889.5.2403.6.5516.7787 1.3.696.1.1372.2.1885.2-.4008.1-1.1.3825-1.1 1.7-.123.2-.423.4-.834.8-.461.2-.702.5-.994.8zm.8905-1.6c-.0405-.8316.3-.9185.6-1a2.9 2.9 0 0 0 .135-.0406 1.2 1.2 0 0 0 .1342.1c.5703.4 1.6.4213 3.1344-.2016.2-.5189.4-.9533.6-.4098.2-1.1.333-1.7.3636-.7197-1.1-.0807-1.2-.151zm.5695-9.3c-.59.4-.542.7-.1054 1-.55.4-.112.7-.1264 1.2-.142.4.404.9.0932 1.3.1066.9.216 1.8-.2075 2.7a3.5 3.5 0 0 1-.1876-.3856c-.0527-.1276-.1669-.3326-.3251-.6162-.6156-1.1-2.1-3.7-1.3-4.7.3795-.5427 1.3-.5661 2.2-.463zm.2284 7a12.4 12.4 0 0 0-.0853-.1074l-.0355-.0444c.7262-1.2.5842-2.4.4578-3.4-.0519-.4318-.1009-.8396-.0885-1.2.0129-.4061.1-.7543.1-1.1.0639-.415.1-.8443.1-1.4.0134-.531-.1158-.1902-.0457-.4855-.5999-1.9-1.7-3.3-.6076-.7073-1.5-1.5-2.7-2.5251-.1066 1.2-.2035 2-.1859 2.1.0456 3.7.8135 4.8 2.3a.908.9 0 0 1 .667.1c.7231 1.4-.2762 6.3-3 10.5zm-8.8-6.1c-.25.2-.3089.4-.6211.4a.5821.6 0 0 1-.0809-.0056c-.1873-.026-.3765-.144-.5059-.3156-.0458-.0605-.1203-.178-.1055-.2844-.401-.985.1-.1488.1-.894.4-.1226.6-.867.3.441.6.1938.6.4186zm7.9-.4114c.111.1-.49.2-.1531.3-.683.1-.212.2-.4079.2a.5456.5 0 0 1-.75c-.2935 0-.5414-.2344-.5607-.3717-.024-.1765.3-.3106.6-.352.3-.414.6.88.6.1851z"/></g>
+<text x="891" y="185.8" font-size="12.5" text-anchor="middle" fill="#e6edf3">Référentiel</text>
+<text x="891" y="200.3" font-size="12.5" text-anchor="middle" fill="#e6edf3">des commandes</text>
+<rect x="1033" y="22" width="145" height="47" rx="4" fill="#2a2436" stroke="#b48ad6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1105.5" y="42.3" font-size="12.5" text-anchor="middle" fill="#e6edf3">Suivi transporteur</text>
+<text x="1105.5" y="56.8" font-size="12.5" text-anchor="middle" fill="#e6edf3">(tiers)</text>
 <path d="M 151 178 L 335 177.7" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 443 177.7 L 593 177.7" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 701 185.5 L 826 185.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 701 169.8 L 725 169.8 L 725 118.5 L 826 118.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1047.5 69 L 1047.5 101 L 957 101" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 453 177.7 L 603 177.7" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 711 185.5 L 836 185.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 711 169.8 L 735 169.8 L 735 118.5 L 836 118.5" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1087.5 69 L 1087.5 101 L 997 101" fill="none" stroke="#9aa7b4" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="243" y="181.1" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="518" y="180.9" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="763.5" y="188.8" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="775.5" y="121.7" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="1002.3" y="104.3" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
-<line x1="20" y1="240" x2="1128" y2="240" stroke="#3a4149" stroke-width="1"/>
+<text x="528" y="180.9" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="773.5" y="188.8" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<text x="785.5" y="121.7" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="1042.3" y="104.3" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
+<line x1="20" y1="240" x2="1168" y2="240" stroke="#3a4149" stroke-width="1"/>
 <text x="20" y="262" font-size="11" font-weight="bold" fill="#c2ccd6">LÉGENDE</text>
 <rect x="150" y="252" width="26" height="14" rx="3" fill="#233242" stroke="#5aa9e6" stroke-dasharray="5 3"/>
 <text x="182" y="263" font-size="10" fill="#e6edf3">Groupe d'acteurs</text>

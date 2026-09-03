@@ -1,21 +1,27 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2364 639" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2417 639" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2364" height="639" fill="#ffffff"/>
+<rect width="2417" height="639" fill="#ffffff"/>
 <rect x="10" y="211" width="143" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="229" font-size="13" font-weight="bold" fill="#17202c">Internal teams</text>
-<rect x="485" y="206" width="384" height="152.2" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="495" y="224" font-size="13" font-weight="bold" fill="#17202c">Sales front</text>
-<rect x="1587" y="180" width="366" height="176.7" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="1597" y="198" font-size="13" font-weight="bold" fill="#17202c">Order management</text>
-<rect x="196" y="275" width="126" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="206" y="293" font-size="13" font-weight="bold" fill="#17202c">Product repository</text>
-<rect x="193" y="181" width="126" height="83" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<rect x="510" y="206" width="394" height="152.2" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="520" y="224" font-size="13" font-weight="bold" fill="#17202c">Sales front</text>
+<g transform="translate(879 212) scale(0.8)" fill="#2f83b6"><title>Next.js</title><path d="M18.7 22C16.8 23.3 14.5 24 12 24 5.4 24 0 18.6 0 12S5.4 0 12 0s12 5.4 12 12c0 3.6-1.6 6.8-4.1 9L9.2 7.2H7.2v9.6h1.6V9.3l9.9 12.7Zm-3.3-8.5 1.6 2.1V7.2h-1.6v6.2Z"/></g>
+<rect x="1632" y="180" width="370" height="176.7" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="1642" y="198" font-size="13" font-weight="bold" fill="#17202c">Order management</text>
+<g transform="translate(1977 186) scale(0.8)" fill="#2f83b6"><title>Spring</title><path d="M21.9 1.4a10.5 10.5 0 0 1-1.3 2.2A12 12 0 1 0 3.9 20.8l.4445.4a12 12 0 0 0 19.6-8.3c.3457-3-.568-6.9-2.1-11.5zM5.6 20.9a1 1 0 1 1-.1482-1.4 1 1 0 0 1 .1482 1.4zm16.2-3.6c-2.9 3.9-9.3 2.6-13.3 2.8 0 0-.7161-1.4.1481 0 0 .2717-.1234.6-.2469 2.8-.9877 4.2-1.2 5.9-2.1 3.2-1.7 6.5-5.3 7.1-9-1.2 3.6-5 6.7-8.4 8-2.3.8643-6.6 1.7-6.6 1.7l-.1729-.0988c-2.9-1.4-3-7.6 2.3-9.6 2.3-.889 4.5-.395 7-.9877 2.6-.6174 5.7-2.6 6.9-5.2 1.4 4.2 3.1 10.6.0493 14.6z"/></g>
+<rect x="221" y="275" width="126" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="231" y="293" font-size="13" font-weight="bold" fill="#17202c">Product repository</text>
+<g transform="translate(322 281) scale(0.8)" fill="#2f83b6"><title>Django</title><path d="M11.1 0h3.9v18.2c-2.382-3.5.535-5.1.535-4.8 0-7.3-2.2-7.3-6.3 0-4 2.7-6.6 6.8-6.6.637 0 1.1.05 1.7.203zm0 9.1a3.9 3.9 0 00-1.3-.204c-2 0-3.1 1.2-3.1 3.4 0 2.1 1.1 3.2 3.1 3.2.433 0 .79-.025 1.4-.102V9.1zM21.3 6.1v9.1c0 3.1-.229 4.6-.917 5.9-.637 1.2-1.5 2-3.2 2.9l-3.6-1.7c1.7-.815 2.6-1.5 3.1-2.6.561-1.1.739-2.4.739-5.8V6.1h3.9zM17.4.021h3.9v4H17.4z"/></g>
+<rect x="193" y="181" width="151" height="83" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
 <text x="203" y="199" font-size="13" font-weight="bold" fill="#17202c">Pricing</text>
-<rect x="1025" y="377" width="396" height="105" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="1035" y="395" font-size="13" font-weight="bold" fill="#17202c">Payment hub</text>
-<rect x="1305" y="52" width="126" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="1315" y="70" font-size="13" font-weight="bold" fill="#17202c">Customer care</text>
+<g transform="translate(319 187) scale(0.8)" fill="#2f83b6"><title>Python</title><path d="M14.3.18l.9.2.73.3.59.3.45.3.34.3.25.3.16.3.1.3.4.3.2.2-.1.1V8.5l-.5.6-.13.6-.21.5-.26.4-.3.3-.33.3-.35.2-.35.1-.33.1-.3.1-.26-.21H8.8l-.69.1-.59.1-.5.2-.41.3-.33.3-.27.4-.2.4-.15.4-.1.4-.7.3-.4.3-.2.2v3.1H3.2l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1-.05-1.2.06-1.2.16-1.24-.87.3-.71.4-.57.4-.44.4-.33.4-.24.4-.16.4-.1.3-.5.2-.01h.16l.6h8.2v-.83H6.2l-.01-2.7-.02-.37.1-.34.1-.31.2-.28.3-.26.3-.23.4-.2.4-.18.5-.15.6-.12.6-.1.7-.6.8-.4.8-.02 1.3.05zm-6.3 2l-.23.3-.8.4.8.4.23.3.33.2.41.1.41-.9.3-.22.2-.34.1-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.1zm13.1 4l.28.1.32.1.35.2.36.3.36.4.35.5.32.6.28.7.21.9.14 1.05 1.2-.06 1.2-.16 1-.24.9-.32.7-.36.6-.4.5-.42.3-.42.2-.4.2-.36.1-.32.1-.24-.16-.01h-8.2v.82h5.8l.01 2.8.2.4-.5.3-.11.3-.17.3-.25.3-.31.2-.38.2-.44.2-.51.2-.58.1-.64.1-.71.1-.77-.84-1.3-.04-1.1-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2-.13v-5.3l.05-.64.1-.54.2-.46.3-.38.3-.32.3-.24.4-.2.4-.14.3-.1.3-.6.3-.4.2-.2.1-.01h5.8l.69-.5.6-.14.5-.21.4-.28.3-.32.3-.35.2-.36.2-.36.1-.35.1-.32-.28-.21V6.1h2.1l.14zm-6.5 14.3l-.23.3-.8.4.8.4.23.3.33.2.41.1.41-.8.3-.23.2-.33.1-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.1z"/></g>
+<rect x="1060" y="377" width="406" height="105" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="1070" y="395" font-size="13" font-weight="bold" fill="#17202c">Payment hub</text>
+<g transform="translate(1441 383) scale(0.8)" fill="#2f83b6"><title>Go</title><path d="M1.8 10.2c-.047 0-.058-.023-.035-.059l.246-.315c.023-.35.1-.58.1-.058h4.2c.046 0 .58.35.1l-.199.3c-.23-.82.1-.117.1zM.047 11.3c-.047 0-.059-.023-.035-.058l.245-.316c.023-.35.1-.58.1-.058h5.3c.047 0 .7.58.1l-.93.3c-.12-.58.1-.105.1zm2.8 1.1c-.047 0-.059-.035-.035-.07l.163-.292c.023-.35.1-.7.1-.07h2.3c.047 0 .7.7.1l-.23.3c0 .047-.47.1-.82.1zm12.1-2.4c-.736.2-1.2.327-2.514-.176-.187.1-.34-.117-.174-.199-.303-.327-.548-.444-.737-.362-1.4-.257-2.1.175-.795.5-1.2 1.3-1.2 2.2.11.9.654 1.7 1.6 1.8.795.1 1.5-.175 2-.77.1-.13.2-.27.3-.434H10.5c-.245 0-.304-.152-.222-.35.2-.362.4-.97.6-1.3a.315.3 0 1.3-.187h4.3c-.23.3-.23.6-.7.9a5 5 0 01-.958 2.3c-.841 1.1-1.9 1.8-3.3 2-1.1.152-2.2-.07-3.1-.77-.865-.655-1.4-1.5-1.5-2.6-.152-1.3.222-2.4.993-3.4.83-1.1 1.9-1.8 3.3-2 1.1-.2 2.2-.07 3.1.571.6.41 1.1.97 1.4 1.6.7.1.23.2-.117.2m3.9 6.5c-1.1-.024-2-.328-2.9-1a3.7 3.7 0 01-1.3-2.3c-.21-1.3.152-2.5.947-3.5.853-1.1 1.9-1.7 3.3-1.9 1.2-.21 2.3-.095 3.3.595.9.63 1.5 1.5 1.6 2.6.198 1.6-.257 2.9-1.3 4-.771.8-1.7 1.3-2.8 1.5-.315.1-.63.1-.934.1zm2.8-4.7c-.011-.153-.011-.27-.034-.387-.21-1.2-1.3-1.8-2.4-1.6-1.1.245-1.8.935-2 2-.21.9.234 1.8 1.1 2.2.643.3 1.3.244 1.9-.7.9-.48 1.4-1.2 1.5-2.2z"/></g>
+<rect x="1346" y="52" width="130" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="1356" y="70" font-size="13" font-weight="bold" fill="#17202c">Customer care</text>
+<g transform="translate(1451 58) scale(0.8)" fill="#2f83b6"><title>Node.js</title><path d="M12,24c-0.3,0-0.6-0.1-0.9-0.2l-2.9-1.7c-0.4-0.2-0.2-0.3-0.1-0.4 c0.6-0.2,0.7-0.2,1.3-0.6c0.10,0.20,0.2,0l2.3,1.3c0.1,0,0.2,0,0.3,0l8.8-5.1 c0.10,0.1-0.1,0.1-0.2V6.9c0-0.1-0.1-0.2-0.1-0.2l-8.8-5.1c-0.10-0.20-0.3,0 L3.1,6.7C3,6.7,2.9,6.8,2.9,6.9v10.2c0,0.1,0.1,0.2,0.1,0.2l2.4,1.4 c1.3,0.7,2.1-0.1,2.1-0.9V7.8c0-0.1,0.1-0.3,0.3-0.3h1.1c0.1,0,0.3,0.1,0.3,0.3v10 c0,1.7-0.9,2.7-2.6,2.7c-0.5,0-0.9,0-2-0.6L2.3,18.7c-0.6-0.3-0.9-0.9-0.9-1.6V6.9 c0-0.7,0.4-1.3,0.9-1.6l8.8-5.1c0.6-0.3,1.3-0.3,1.8,0l8.8,5.1c0.6,0.3,0.9,0.9,0.9,1.6 v10.2c0,0.7-0.4,1.3-0.9,1.6l-8.8,5.1C12.6,23.9,12.3,24,12,24z M19.1,14 c0-1.9-1.3-2.4-4-2.8c-2.7-0.4-3-0.5-3-1.2c0-0.5,0.2-1.2,2.3-1.2 c1.8,0,2.5,0.4,2.7,1.6c0,0.1,0.1,0.2,0.2,0.2h1.1c0.1,0,0.10,0.2-0.1 c0-0.1,0.1-0.1,0.1-0.2c-0.2-2.1-1.6-3.1-4.4-3.1c-2.5,0-4,1.1-4,2.8 c0,1.9,1.5,2.5,3.9,2.7c2.9,0.3,3.1,0.7,3.1,1.3c0,1-0.8,1.4-2.6,1.4 c-2.3,0-2.8-0.6-3-1.7c0-0.1-0.1-0.2-0.3-0.2h-1.1c-0.1,0-0.3,0.1-0.3,0.3 c0,1.5,0.8,3.2,4.7,3.2C17.5,17,19.1,15.9,19.1,14z"/></g>
 <circle cx="96.5" cy="333" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 85.5 355 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="96.5" y="367" font-size="11" text-anchor="middle" fill="#20364c">Merchandising</text>
@@ -27,117 +33,127 @@
 <circle cx="106" cy="418" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 95 440 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="106" y="452" font-size="11" text-anchor="middle" fill="#20364c">Accountant</text>
-<rect x="494" y="302.2" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="548" y="322.4" font-size="12.5" text-anchor="middle" fill="#17202c">E-commerce</text>
-<text x="548" y="336.9" font-size="12.5" text-anchor="middle" fill="#17202c">site</text>
-<rect x="494" y="233" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="548" y="253.3" font-size="12.5" text-anchor="middle" fill="#17202c">Mobile</text>
-<text x="548" y="267.8" font-size="12.5" text-anchor="middle" fill="#17202c">app</text>
-<rect x="752" y="266.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="806" y="286.8" font-size="12.5" text-anchor="middle" fill="#17202c">Checkout</text>
-<text x="806" y="301.3" font-size="12.5" text-anchor="middle" fill="#17202c">funnel</text>
-<rect x="1596" y="233.7" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1650" y="253.9" font-size="12.5" text-anchor="middle" fill="#17202c">Order</text>
-<text x="1650" y="268.4" font-size="12.5" text-anchor="middle" fill="#17202c">lifecycle</text>
-<rect x="1834" y="207" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1889" y="227.3" font-size="12.5" text-anchor="middle" fill="#17202c">Shipment</text>
-<text x="1889" y="241.8" font-size="12.5" text-anchor="middle" fill="#17202c">orchestration</text>
-<rect x="1596" y="300.7" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1650" y="320.9" font-size="12.5" text-anchor="middle" fill="#17202c">Returns and</text>
-<text x="1650" y="335.4" font-size="12.5" text-anchor="middle" fill="#17202c">refunds</text>
-<rect x="205" y="369" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="259" y="389.3" font-size="12.5" text-anchor="middle" fill="#17202c">Catalog</text>
-<text x="259" y="403.8" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
-<rect x="205" y="302" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="259" y="322.3" font-size="12.5" text-anchor="middle" fill="#17202c">Media</text>
-<text x="259" y="336.8" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
-<rect x="202" y="208" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="256" y="228.3" font-size="12.5" text-anchor="middle" fill="#17202c">Pricing-rule</text>
-<text x="256" y="242.8" font-size="12.5" text-anchor="middle" fill="#17202c">engine</text>
-<rect x="1054" y="415.8" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1109" y="436" font-size="12.5" text-anchor="middle" fill="#17202c">Payment</text>
-<text x="1109" y="450.5" font-size="12.5" text-anchor="middle" fill="#17202c">orchestration</text>
-<rect x="1304" y="404" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1358" y="424.3" font-size="12.5" text-anchor="middle" fill="#17202c">Anti-fraud</text>
-<text x="1358" y="438.8" font-size="12.5" text-anchor="middle" fill="#17202c">scoring</text>
-<rect x="1314" y="146" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1368" y="166.3" font-size="12.5" text-anchor="middle" fill="#17202c">Ticket</text>
-<text x="1368" y="180.8" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
-<rect x="1314" y="79" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1368" y="99.3" font-size="12.5" text-anchor="middle" fill="#17202c">Customer</text>
-<text x="1368" y="113.8" font-size="12.5" text-anchor="middle" fill="#17202c">self-care</text>
-<path d="M 2115 144 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="2115" cy="167.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="2165" y="164.3" font-size="12.5" text-anchor="middle" fill="#17202c">Order</text>
-<text x="2165" y="178.8" font-size="12.5" text-anchor="middle" fill="#17202c">event bus</text>
-<path d="M 2118 466 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="2172" cy="466" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="2172" y="482.8" font-size="12.5" text-anchor="middle" fill="#17202c">Data</text>
-<text x="2172" y="497.3" font-size="12.5" text-anchor="middle" fill="#17202c">warehouse</text>
-<path d="M 1669 93 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="1723" cy="93" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="1723" y="109.8" font-size="12.5" text-anchor="middle" fill="#17202c">Customer</text>
-<text x="1723" y="124.3" font-size="12.5" text-anchor="middle" fill="#17202c">repository</text>
-<rect x="2246" y="435" width="108" height="38" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
-<text x="2300" y="458" font-size="12.5" text-anchor="middle" fill="#17202c">PSP</text>
-<rect x="2111" y="207" width="108" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
-<text x="2165" y="227.3" font-size="12.5" text-anchor="middle" fill="#17202c">Carrier</text>
-<text x="2165" y="241.8" font-size="12.5" text-anchor="middle" fill="#17202c">platforms</text>
-<rect x="2246" y="44" width="108" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
-<text x="2300" y="64.3" font-size="12.5" text-anchor="middle" fill="#17202c">Group</text>
-<text x="2300" y="78.8" font-size="12.5" text-anchor="middle" fill="#17202c">ERP</text>
-<path d="M 144 355.5 L 181 355.5 L 181 393 L 205 393" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 313 392.5 L 344 392.5 L 344 337.9 L 494 337.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 313 325.9 L 494 325.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 310 239.3 L 460 239 L 460 314 L 494 313.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 310 223.7 L 470 224 L 470 290.3 L 752 290.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2246 60 L 2236 60 L 2236 31 L 168 31 L 168 232 L 173 232 A 5 5 0 0 1 183 232 L 202 232" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 602 308.2 L 626 308.2 L 626 307.5 L 752 307.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 602 239 L 788 239 L 788 266.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 860 282.2 L 1355 282 L 1355 257.4 L 1441 257.4 A 5 5 0 0 1 1451 257.4 L 1596 257.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 860 297.8 L 1010 298 L 1010 425 L 1054 425" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1164 427.5 L 1304 427.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1164 451.5 L 1174 451.5 L 1174 472 L 1848 472 L 1848 448 L 1906 448 A 5 5 0 0 1 1916 448 L 2246 448" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2246 460 L 2236 460 L 2236 525 L 990 525 L 990 449 L 1054 449" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1164 439.5 L 1184 439.5 L 1184 461 L 1436 461 L 1436 269.4 L 1441 269.4 A 5 5 0 0 1 1451 269.4 L 1596 269.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1704 257.2 L 1810 257.2 L 1810 230.5 L 1834 230.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1944 230.5 L 1968 230.5 L 2111 230.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2111 248 L 1968 248 L 1944 248" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1944 213 L 2025.5 213 L 2025.5 185 L 2107 185" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1422 94.7 L 1552 95 L 1552 42 L 2226 42 L 2226 168 L 2216 168" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 144 270.5 L 178 270.5 L 178 170 L 1314 170" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1422 169.5 L 1446 169.5 L 1446 306.5 L 1596 306.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1596 324.2 L 1441 324.2 A 5 5 0 0 0 1431 324.2 L 1145 324.2 L 1145 415.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1422 110.3 L 1557 110.3 A 5 5 0 0 1 1567 110.3 L 1669 110" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1704 274.7 L 1911 274.7 L 1911 465 L 2118 465" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 602 333.5 L 884 333.5 L 884 492 L 985 492 A 5 5 0 0 1 995 492 L 2118 492" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 144 437 L 879 437 A 5 5 0 0 1 889 437 L 1054 437" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2246 75 L 2231 75 A 5 5 0 0 0 2221 75 L 1562 75 L 1562 245 L 1596 245.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="419" y="355.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="403.5" y="329.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(CDN, HTTPS)</text>
-<text x="385" y="242.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="568" y="293.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="1202" y="34.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
-<text x="689" y="310.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(local, call)</text>
-<text x="695" y="242.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="1107.5" y="285.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="935" y="301.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="1234" y="430.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(local, call)</text>
-<text x="1848" y="463.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="1613" y="528.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
-<text x="1516" y="272.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="1757" y="260.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(local, call)</text>
-<text x="2039.5" y="233.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="2039.5" y="265.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
-<text x="2025.5" y="202.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="1889" y="45.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="1446" y="241.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<text x="1145" y="354.9" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="1495" y="113.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="2014.5" y="468.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(batch, parquet)</text>
-<text x="1501" y="495.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(streaming, avro)</text>
-<text x="1904" y="78.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<line x1="20" y1="567" x2="2344" y2="567" stroke="#e6e9ee" stroke-width="1"/>
+<rect x="519" y="302.2" width="118" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<g transform="translate(612 308.2) scale(0.8)" fill="#48546a"><title>React</title><path d="M14.2 12a2.2 2.2 0 0 1-2.2 2.2 2.2 2.2 0 0 1-2.2-2.2 2.2 2.2 0 0 1 2.2-2.2 2.2 2.2 0 0 1 2.2 2.2zm2.6-10.7c-1.3 0-3.1.96-4.9 2.6-1.8-1.7-3.5-2.6-4.9-2.6-.41 0-.783.1-1.1.278-1.4.793-1.7 3.3-.973 6.4C2 8.9 0 10.4 0 12c0 1.6 2 3.1 5 4-.704 3.1-.39 5.6.988 6.4.32.2.69.3 1.1.275 1.3 0 3.1-.96 4.9-2.6 1.8 1.7 3.5 2.6 4.9 2.6.41 0 .783-.09 1.1-.275 1.4-.792 1.7-3.3.973-6.4C22 15.1 24 13.6 24 12c0-1.6-2-3.1-5-4.704-3.1.39-5.6-.988-6.4-.318-.184-.688-.277-1.1-.278zm-.005 1.1v.006c.225 0 .406.558.1.666.4.955 1.8.73 3.7-.54.5-.142.9-.25 1.4-.96-.236-2-.417-3.1-.534-.66-.905-1.3-1.7-2-2.4 1.6-1.5 3.1-2.3 4.1-2.3zm-9.8.02c1 0 2.5.808 4.1 2.3-.686.7-1.4 1.5-2 2.4-1.1.117-2.2.298-3.1.538-.112-.49-.195-.964-.254-1.4-.23-1.9.054-3.3.714-3.7.19-.9.4-.127.6-.132zm4.9 3.1c.455.5.92 1.4 1.6-.44-.02-.89-.034-1.3-.034-.46 0-.915-1.4.34.4-.572.9-1.1 1.3-1.6zM12 8.1c.74 0 1.5.034 2.2.93.4.582.8 1.2 1.2 1.9.372.6.71 1.3 1 1.9-.308.7-.646 1.3-1 2-.38.7-.773 1.3-1.2 1.9-.728.1-1.5.098-2.2.098-.74 0-1.5-.035-2.2-.093-.406-.582-.802-1.2-1.2-1.9-.372-.64-.71-1.3-1-1.9.303-.657.6-1.3 1-2.38-.66.8-1.3 1.2-1.9.728-.064 1.5-.098 2.2-.098zm-3.6.254c-.24.4-.48.8-.704 1.2-.225.4-.435.8-.635 1.2-.265-.656-.49-1.3-.676-1.9.64-.15 1.3-.283 2-.386zm7.3 0c.695.1 1.4.23 2.387-.18.6-.405 1.3-.66 1.9-.2-.39-.41-.783-.64-1.2-.225-.392-.465-.774-.705-1.1zm3.1.675c.484.2.944.3 1.4.498 1.7.74 2.9 1.7 2.9 2.5-.5.8-1.1 1.7-2.9 2.5-.42.2-.88.3-1.4.493-.28-.958-.646-2-1.1-3.45-1.81-2 1.1-3zm-13.4.004c.279.645 2 1.1 3-.45 1-.812 2-1.1 3-.484-.15-.944-.318-1.4-.5-1.7-.737-2.9-1.7-2.9-2.5 0-.768 1.1-1.7 2.9-2.5.42-.18.9-.342 1.4-.494zm11.7 4.3c.265.7.49 1.3.676 1.9-.64.2-1.3.29-2.39.2-.375.5-.762.7-1.2.225-.39.4-.788.6-1.2zm-9.9.02c.2.4.41.8.64 1.2.23.4.465.8.705 1.1-.695-.102-1.4-.23-2-.386.2-.63.4-1.3.66-1.9zM17.9 16.3c.112.5.3.254 1.4.23 1.9-.054 3.3-.714 3.7-.147.1-.338.1-.563.1-1 0-2.5-.807-4.1-2.3.686-.72 1.4-1.5 2-2.4 1.1-.118 2.2-.3 3.1-.54zm-11.8.01c.96.2 2.415 3.1.532.7.905 1.3 1.7 2 2.4-1.6 1.5-3.1 2.3-4.1 2.3-.22-.005-.406-.05-.553-.132-.666-.38-.955-1.8-.73-3.7.054-.46.1-.944.3-1.4zm4.6.64c.44.89 1.3.34.5 0 .915-.01 1.4-.034-.44.6-.895 1.1-1.3 1.6-.455-.47-.91-.993-1.4-1.6z"/></g>
+<text x="563" y="322.4" font-size="12.5" text-anchor="middle" fill="#17202c">E-commerce</text>
+<text x="563" y="336.9" font-size="12.5" text-anchor="middle" fill="#17202c">site</text>
+<rect x="529" y="233" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<g transform="translate(612 239) scale(0.8)" fill="#48546a"><title>TypeScript</title><path d="M1.1 0C.502 0 0 .502 0 1.1v21.8C0 23.5.502 24 1.1 24h21.8c.623 0 1.1-.502 1.1-1.1V1.1C24 .502 23.5 0 22.9 0zm17.4 9.8c.612 0 1.2.037 1.6.111a6.4 6.4 0 0 1 1.3.34v2.5a4 4 0 0 0-.643-.361 5.1 5.1 0 0 0-.717-.26 5.5 5.5 0 0 0-1.4-.2c-.3 0-.573-.819.1a2.1 2.1 0 0 0-.623.2c-.17.1-.3.2-.393.4a.888.9 0 0 0-.14.5c0 .196.1.373.2.529.1.156.3.304.4.444s.423.3.696.4c.273.1.582.3.926.4.47.2.892.4 1.3.628.4.222.7.474.753.3.279.5.598.6.957.1.359.2.776.2 1.3 0 .657-.125 1.2-.373 1.7a3 3 0 0 1-1 1.1 4.4 4.4 0 0 1-1.5.596c-.566.1-1.2.18-1.8.18a9.9 9.9 0 0 1-1.8-.164 5.5 5.5 0 0 1-1.5-.493v-2.6a5 5 0 0 0 3.2 1.2c.333 0 .624-.3.9-.9.2-.6.5-.144.6-.25.2-.108.3-.234.4-.38a1 1 0 0 0-.074-1.1 2.1 2.1 0 0 0-.537-.5 5.6 5.6 0 0 0-.807-.444 27.7 27.7 0 0 0-1-.436c-.918-.383-1.6-.852-2.1-1.4-.45-.553-.676-1.2-.676-2 0-.614.1-1.1.369-1.6.246-.441.6-.804 1-1.1a4.5 4.5 0 0 1 1.5-.629 7.5 7.5 0 0 1 1.8-.201zm-15.1.188h9.6v2.2H9.5v9.6H6.8v-9.6H3.4z"/></g>
+<text x="568" y="253.3" font-size="12.5" text-anchor="middle" fill="#17202c">Mobile</text>
+<text x="568" y="267.8" font-size="12.5" text-anchor="middle" fill="#17202c">app</text>
+<rect x="787" y="266.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<g transform="translate(870 272.5) scale(0.8)" fill="#48546a"><title>Node.js</title><path d="M12,24c-0.3,0-0.6-0.1-0.9-0.2l-2.9-1.7c-0.4-0.2-0.2-0.3-0.1-0.4 c0.6-0.2,0.7-0.2,1.3-0.6c0.10,0.20,0.2,0l2.3,1.3c0.1,0,0.2,0,0.3,0l8.8-5.1 c0.10,0.1-0.1,0.1-0.2V6.9c0-0.1-0.1-0.2-0.1-0.2l-8.8-5.1c-0.10-0.20-0.3,0 L3.1,6.7C3,6.7,2.9,6.8,2.9,6.9v10.2c0,0.1,0.1,0.2,0.1,0.2l2.4,1.4 c1.3,0.7,2.1-0.1,2.1-0.9V7.8c0-0.1,0.1-0.3,0.3-0.3h1.1c0.1,0,0.3,0.1,0.3,0.3v10 c0,1.7-0.9,2.7-2.6,2.7c-0.5,0-0.9,0-2-0.6L2.3,18.7c-0.6-0.3-0.9-0.9-0.9-1.6V6.9 c0-0.7,0.4-1.3,0.9-1.6l8.8-5.1c0.6-0.3,1.3-0.3,1.8,0l8.8,5.1c0.6,0.3,0.9,0.9,0.9,1.6 v10.2c0,0.7-0.4,1.3-0.9,1.6l-8.8,5.1C12.6,23.9,12.3,24,12,24z M19.1,14 c0-1.9-1.3-2.4-4-2.8c-2.7-0.4-3-0.5-3-1.2c0-0.5,0.2-1.2,2.3-1.2 c1.8,0,2.5,0.4,2.7,1.6c0,0.1,0.1,0.2,0.2,0.2h1.1c0.1,0,0.10,0.2-0.1 c0-0.1,0.1-0.1,0.1-0.2c-0.2-2.1-1.6-3.1-4.4-3.1c-2.5,0-4,1.1-4,2.8 c0,1.9,1.5,2.5,3.9,2.7c2.9,0.3,3.1,0.7,3.1,1.3c0,1-0.8,1.4-2.6,1.4 c-2.3,0-2.8-0.6-3-1.7c0-0.1-0.1-0.2-0.3-0.2h-1.1c-0.1,0-0.3,0.1-0.3,0.3 c0,1.5,0.8,3.2,4.7,3.2C17.5,17,19.1,15.9,19.1,14z"/></g>
+<text x="826" y="286.8" font-size="12.5" text-anchor="middle" fill="#17202c">Checkout</text>
+<text x="826" y="301.3" font-size="12.5" text-anchor="middle" fill="#17202c">funnel</text>
+<rect x="1641" y="233.7" width="112" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<g transform="translate(1728 239.7) scale(0.8)" fill="#48546a"><title>OpenJDK</title><path d="M11.9 0 11.7.215C9.5 2.4 7.5 6.4 6 10.5c-1.1 1-3.6 2.8-3.7 3.6-.93.9 1.7 2.6 1.6 3.2-.198.6-1.3 1.4-1 1.9.1.2.823 1.3-.491a13.4 13.4 0 0 0-.017 2.1c.76.9.27 1.7.643 2.2.372.6.956.9 1.7.911.4 0 .727-.114 1-.264.3-.149.6-.33.9-.5.7-.34 1.6-.666 3.5-.604 1.9.062 2.9.39 3.6.704.7.314 1.2.664 1.9.664.8 0 1.4-.336 1.8-.9.4-.563.6-1.3.72-2.2.06-.623.1-1.3 0-2.1.454.5 1.1.604 1.2.424.3-.53-.816-1.3-1-1.9-.198-.624 1.6-2.4 1.5-3.2-.08-.748-2.7-2.6-3.7-3.6C16.4 6.4 14.3 2.4 12.1.215zm.175 6a3 3 0 0 1 2.9 2.9 3 3 0 0 1-2.9 2.9A3 3 0 0 1 9.1 9a3 3 0 0 1 2.9-2.9zM8.7 8a3.5 3.5 0 0 0-.146c0 2 1.6 3.6 3.6 3.6 2 0 3.6-1.6 3.6-3.5 0-.329-.046-.648-.132-.951.3.95.6.208.9.336a42.7 42.7 0 0 1 2 5.8c.678 2.5 1 4.9.846 6.6-.82.8-.29 1.5-.606 1.9-.315.4-.713.7-1.3.651-.593 0-.932-.27-1.7-.61-.741-.338-1.8-.694-3.8-.758-2-.064-3.1.293-3.8.669-.375.2-.659.4-.911.5s-.466.2-.752.2c-.53 0-.876-.209-1.2-.64-.285-.43-.474-1.1-.545-1.9-.141-1.7.176-4.1.823-6.6a43.2 43.2 0 0 1 1.9-5.8c.348-.167.7-.31 1.2-.425zm-3.4 4.4a.216.2 0 0 1 .13c-.166.6-.323 1.1-.463 1.7a33.8 33.8 0 0 0-.547 2.6 3.9 3.9 0 0 0-.2-.39c-.58-1-.914-1.6-1.2-2.1.315-.24 1.7-1.8 2.2-1.8zm13.4.01c.562 1.9 1.5 2.2 1.8-.246.4-.58 1.1-1.2 2.1a4.4 4.4 0 0 0-.163.3 32.4 32.4 0 0 0-.562-2.5 40.6 40.6 0 0 0-.482-1.7.216.2 0 0 1 .127-.03z"/></g>
+<text x="1682" y="253.9" font-size="12.5" text-anchor="middle" fill="#17202c">Order</text>
+<text x="1682" y="268.4" font-size="12.5" text-anchor="middle" fill="#17202c">lifecycle</text>
+<rect x="1883" y="207" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1938" y="227.3" font-size="12.5" text-anchor="middle" fill="#17202c">Shipment</text>
+<text x="1938" y="241.8" font-size="12.5" text-anchor="middle" fill="#17202c">orchestration</text>
+<rect x="1643" y="300.7" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1697" y="320.9" font-size="12.5" text-anchor="middle" fill="#17202c">Returns and</text>
+<text x="1697" y="335.4" font-size="12.5" text-anchor="middle" fill="#17202c">refunds</text>
+<rect x="230" y="369" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="284" y="389.3" font-size="12.5" text-anchor="middle" fill="#17202c">Catalog</text>
+<text x="284" y="403.8" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="230" y="302" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="284" y="322.3" font-size="12.5" text-anchor="middle" fill="#17202c">Media</text>
+<text x="284" y="336.8" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="202" y="208" width="133" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<g transform="translate(310 214) scale(0.8)" fill="#48546a"><title>FastAPI</title><path d="M12 .0387C5.4.384 5.4 0 12c-.001 6.6 5.4 12 12 12 6.6.0003 12-5.4 12-12-.0003-6.6-5.4-12-12-12m-.829 5.4h7.6l-7.6 5.3h5.2L5.3 18.5q2.9-6.5 5.9-13.1"/></g>
+<text x="253.5" y="228.3" font-size="12.5" text-anchor="middle" fill="#17202c">Pricing-rule</text>
+<text x="253.5" y="242.8" font-size="12.5" text-anchor="middle" fill="#17202c">engine</text>
+<rect x="1089" y="415.8" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1144" y="436" font-size="12.5" text-anchor="middle" fill="#17202c">Payment</text>
+<text x="1144" y="450.5" font-size="12.5" text-anchor="middle" fill="#17202c">orchestration</text>
+<rect x="1339" y="404" width="118" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<g transform="translate(1432 410) scale(0.8)" fill="#48546a"><title>Python</title><path d="M14.3.18l.9.2.73.3.59.3.45.3.34.3.25.3.16.3.1.3.4.3.2.2-.1.1V8.5l-.5.6-.13.6-.21.5-.26.4-.3.3-.33.3-.35.2-.35.1-.33.1-.3.1-.26-.21H8.8l-.69.1-.59.1-.5.2-.41.3-.33.3-.27.4-.2.4-.15.4-.1.4-.7.3-.4.3-.2.2v3.1H3.2l-.21-.03-.28-.07-.32-.12-.35-.18-.36-.26-.36-.36-.35-.46-.32-.59-.28-.73-.21-.88-.14-1-.05-1.2.06-1.2.16-1.24-.87.3-.71.4-.57.4-.44.4-.33.4-.24.4-.16.4-.1.3-.5.2-.01h.16l.6h8.2v-.83H6.2l-.01-2.7-.02-.37.1-.34.1-.31.2-.28.3-.26.3-.23.4-.2.4-.18.5-.15.6-.12.6-.1.7-.6.8-.4.8-.02 1.3.05zm-6.3 2l-.23.3-.8.4.8.4.23.3.33.2.41.1.41-.9.3-.22.2-.34.1-.41-.08-.41-.23-.33-.33-.22-.41-.09-.41.1zm13.1 4l.28.1.32.1.35.2.36.3.36.4.35.5.32.6.28.7.21.9.14 1.05 1.2-.06 1.2-.16 1-.24.9-.32.7-.36.6-.4.5-.42.3-.42.2-.4.2-.36.1-.32.1-.24-.16-.01h-8.2v.82h5.8l.01 2.8.2.4-.5.3-.11.3-.17.3-.25.3-.31.2-.38.2-.44.2-.51.2-.58.1-.64.1-.71.1-.77-.84-1.3-.04-1.1-.14-.9-.2-.73-.25-.59-.3-.45-.33-.34-.34-.25-.34-.16-.33-.1-.3-.04-.25-.02-.2-.13v-5.3l.05-.64.1-.54.2-.46.3-.38.3-.32.3-.24.4-.2.4-.14.3-.1.3-.6.3-.4.2-.2.1-.01h5.8l.69-.5.6-.14.5-.21.4-.28.3-.32.3-.35.2-.36.2-.36.1-.35.1-.32-.28-.21V6.1h2.1l.14zm-6.5 14.3l-.23.3-.8.4.8.4.23.3.33.2.41.1.41-.8.3-.23.2-.33.1-.41-.08-.41-.23-.33-.33-.23-.41-.08-.41.1z"/></g>
+<text x="1383" y="424.3" font-size="12.5" text-anchor="middle" fill="#17202c">Anti-fraud</text>
+<text x="1383" y="438.8" font-size="12.5" text-anchor="middle" fill="#17202c">scoring</text>
+<rect x="1357" y="146" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1411" y="166.3" font-size="12.5" text-anchor="middle" fill="#17202c">Ticket</text>
+<text x="1411" y="180.8" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="1355" y="79" width="112" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<g transform="translate(1442 85) scale(0.8)" fill="#48546a"><title>React</title><path d="M14.2 12a2.2 2.2 0 0 1-2.2 2.2 2.2 2.2 0 0 1-2.2-2.2 2.2 2.2 0 0 1 2.2-2.2 2.2 2.2 0 0 1 2.2 2.2zm2.6-10.7c-1.3 0-3.1.96-4.9 2.6-1.8-1.7-3.5-2.6-4.9-2.6-.41 0-.783.1-1.1.278-1.4.793-1.7 3.3-.973 6.4C2 8.9 0 10.4 0 12c0 1.6 2 3.1 5 4-.704 3.1-.39 5.6.988 6.4.32.2.69.3 1.1.275 1.3 0 3.1-.96 4.9-2.6 1.8 1.7 3.5 2.6 4.9 2.6.41 0 .783-.09 1.1-.275 1.4-.792 1.7-3.3.973-6.4C22 15.1 24 13.6 24 12c0-1.6-2-3.1-5-4.704-3.1.39-5.6-.988-6.4-.318-.184-.688-.277-1.1-.278zm-.005 1.1v.006c.225 0 .406.558.1.666.4.955 1.8.73 3.7-.54.5-.142.9-.25 1.4-.96-.236-2-.417-3.1-.534-.66-.905-1.3-1.7-2-2.4 1.6-1.5 3.1-2.3 4.1-2.3zm-9.8.02c1 0 2.5.808 4.1 2.3-.686.7-1.4 1.5-2 2.4-1.1.117-2.2.298-3.1.538-.112-.49-.195-.964-.254-1.4-.23-1.9.054-3.3.714-3.7.19-.9.4-.127.6-.132zm4.9 3.1c.455.5.92 1.4 1.6-.44-.02-.89-.034-1.3-.034-.46 0-.915-1.4.34.4-.572.9-1.1 1.3-1.6zM12 8.1c.74 0 1.5.034 2.2.93.4.582.8 1.2 1.2 1.9.372.6.71 1.3 1 1.9-.308.7-.646 1.3-1 2-.38.7-.773 1.3-1.2 1.9-.728.1-1.5.098-2.2.098-.74 0-1.5-.035-2.2-.093-.406-.582-.802-1.2-1.2-1.9-.372-.64-.71-1.3-1-1.9.303-.657.6-1.3 1-2.38-.66.8-1.3 1.2-1.9.728-.064 1.5-.098 2.2-.098zm-3.6.254c-.24.4-.48.8-.704 1.2-.225.4-.435.8-.635 1.2-.265-.656-.49-1.3-.676-1.9.64-.15 1.3-.283 2-.386zm7.3 0c.695.1 1.4.23 2.387-.18.6-.405 1.3-.66 1.9-.2-.39-.41-.783-.64-1.2-.225-.392-.465-.774-.705-1.1zm3.1.675c.484.2.944.3 1.4.498 1.7.74 2.9 1.7 2.9 2.5-.5.8-1.1 1.7-2.9 2.5-.42.2-.88.3-1.4.493-.28-.958-.646-2-1.1-3.45-1.81-2 1.1-3zm-13.4.004c.279.645 2 1.1 3-.45 1-.812 2-1.1 3-.484-.15-.944-.318-1.4-.5-1.7-.737-2.9-1.7-2.9-2.5 0-.768 1.1-1.7 2.9-2.5.42-.18.9-.342 1.4-.494zm11.7 4.3c.265.7.49 1.3.676 1.9-.64.2-1.3.29-2.39.2-.375.5-.762.7-1.2.225-.39.4-.788.6-1.2zm-9.9.02c.2.4.41.8.64 1.2.23.4.465.8.705 1.1-.695-.102-1.4-.23-2-.386.2-.63.4-1.3.66-1.9zM17.9 16.3c.112.5.3.254 1.4.23 1.9-.054 3.3-.714 3.7-.147.1-.338.1-.563.1-1 0-2.5-.807-4.1-2.3.686-.72 1.4-1.5 2-2.4 1.1-.118 2.2-.3 3.1-.54zm-11.8.01c.96.2 2.415 3.1.532.7.905 1.3 1.7 2 2.4-1.6 1.5-3.1 2.3-4.1 2.3-.22-.005-.406-.05-.553-.132-.666-.38-.955-1.8-.73-3.7.054-.46.1-.944.3-1.4zm4.6.64c.44.89 1.3.34.5 0 .915-.01 1.4-.034-.44.6-.895 1.1-1.3 1.6-.455-.47-.91-.993-1.4-1.6z"/></g>
+<text x="1396" y="99.3" font-size="12.5" text-anchor="middle" fill="#17202c">Customer</text>
+<text x="1396" y="113.8" font-size="12.5" text-anchor="middle" fill="#17202c">self-care</text>
+<path d="M 2164 144 h 96 a 8 23.5 0 0 1 0 47 h -96 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="2164" cy="167.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<g transform="translate(2235 150) scale(0.8)" fill="#8a53a8"><title>Apache Kafka</title><path d="M9.7 2.1a1.4 1.4 0 0 0-2 0h-.007a1.5 1.5 0 0 0-.421 1c0 .41.2.777.4 1l.7c.257.3.616.4 1.426.4 0 .766-.162 1-.426l.003-.007c.261-.262.4-.629.4-1 0-.408-.159-.777-.421-1H9.7zM8.7 22.3c.404 0 .766-.167 1-.429l.003-.008c.261-.261.4-.631.4-1 0-.41-.159-.778-.421-1H9.7a1.4 1.4 0 0 0-1-.432 1.4 1.4 0 0 0-1.432h-.007c-.26.3-.422.6-.422 1 0 .406.2.775.4 1l.7c.258.3.617.4 1.429zm7.9-4.5c.359-.96.7-.33.9-.684l.027-.052a1.5 1.5 0 0 0 .114-1.1 1.5 1.5 0 0 0-.675-.896l-.021-.014a1.4 1.4 0 0 0-1.1-.132c-.36.1-.684.3-.881.7-.2.3-.241.8-.146 1.1.99.4.33.7.675.9h.002c.346.2.737.2 1.1.144zm-6.4-7.3a2.1 2.1 0 0 0-1.5-.627c-.58 0-1.1.242-1.5.627-.378.4-.612.9-.612 1.5s.233 1.1.612 1.5a2.1 2.1 0 0 0 3 0c.379-.39.6-.923.6-1.5s-.233-1.1-.612-1.5zm-.835-2.5c.843.1 1.6.552 2.2 1.1h.004c.92.1.182.2.265.3l1.4-.851a3.2 3.2 0 0 1-.047-1.8 3.1 3.1 0 0 1 1.5-1.9l.025-.016a3.1 3.1 0 0 1 2.3-.306c.77.2 1.5.721 1.9 1.5v.002c.431.8.518 1.6.313 2.4a3.1 3.1 0 0 1-1.5 1.9l-.198.1h-.02a3.1 3.1 0 0 1-2.2.201 3.1 3.1 0 0 1-1.5-.944l-1.4.848a4.2 4.2 0 0 1 0 2.9l1.4.846c.413-.47.9-.789 1.5-.944a3 3 0 0 1 2.4.319l.48v.002a3.2 3.2 0 0 1 1.4 1.9 3.2 3.2 0 0 1-.313 2.4l-.26.1-.003-.005a3.1 3.1 0 0 1-1.9 1.4 3.1 3.1 0 0 1-2.4-.318v-.006a3.2 3.2 0 0 1-1.5-1.9 3.2 3.2 0 0 1 .047-1.8l-1.4-.848a3.9 3.9 0 0 1-.265.3l-.4a3.9 3.9 0 0 1-2.2 1.1v1.7a3.1 3.1 0 0 1 1.6.862l.2c.565.6.914 1.4.914 2.2 0 .873-.35 1.7-.914 2.2l-.2a3.1 3.1 0 0 1-2.2.931 3.1 3.1 0 0 1-2.2-.93h-.002v-.009a3.2 3.2 0 0 1-.916-2.2c0-.875.4-1.7.916-2.2v-.004h.002a3.1 3.1 0 0 1 1.6-.862v-1.7a3.9 3.9 0 0 1-2.2-1.1l-.006-.005a4.1 4.1 0 0 1-1.2-2.9c0-1.1.452-2.1 1.2-2.9h.006a3.9 3.9 0 0 1 2.2-1.1V6.3a3.1 3.1 0 0 1-1.6-.864h-.002v-.004a3.2 3.2 0 0 1-.916-2.2c0-.871.4-1.7.916-2.2l.002-.002A3.1 3.1 0 0 1 8.7 0c.861 0 1.6.355 2.2.932v.002h.002c.565.6.914 1.4.914 2.2 0 .876-.35 1.7-.914 2.2l-.2a3.1 3.1 0 0 1-1.6.864v1.7zm8.1-1.1l-.012-.019a1.5 1.5 0 0 0-.87-.668 1.4 1.4 0 0 0-1.1.146h.002c-.347.2-.58.5-.677.9-.95.4-.54.8.146 1.1l.7c.2.3.519.6.874.7.357.1.755.1 1.1-.144l.019-.009a1.5 1.5 0 0 0 .657-.885 1.5 1.5 0 0 0-.141-1.1"/></g>
+<text x="2201" y="164.3" font-size="12.5" text-anchor="middle" fill="#17202c">Order</text>
+<text x="2201" y="178.8" font-size="12.5" text-anchor="middle" fill="#17202c">event bus</text>
+<path d="M 2167 466 v 33 a 56 7 0 0 0 112 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="2223" cy="466" rx="56" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<g transform="translate(2254 473.5) scale(0.8)" fill="#8a53a8"><title>PostgreSQL</title><path d="M23.6 14.7a.5269.5 0 0 0-.0563-.1191c-.139-.2632-.4768-.3418-1-.2321-1.7.3411-2.3.1312-2.5-.0191 1.3-2 2.4-4.5 3-6.8.2714-1.1.7982-3.5.1222-4.7a1.6 1.6 0 0 0-.1509-.235C21.7.9086 19.8.0248 17.5.0005c-1.5-.0158-2.8.3461-3.1.4794a9.4 9.4 0 0 0-.5159-.0816 8 8 0 0 0-1.3-.1278c-1.2-.0184-2.2.2642-3.8406-.8573-.3211-4.8-1.6-7.2.0788C.9359 2.2.3086 3.9.4302 6.3c.409.8.5069 3.3 1.2 5.7.4598 1.5.9387 2.7 1.4 3.6.554 1.1 1.6 1.7 1.8.4474.1 1.1.1441 1.9-.7279.8-.9635 1.6-1.8 1.9-2.2.4351.2.9064.4 1.4.3772a.569.1 0 0 0 .4 11 11 0 0 0-.2472.3c-.3389.4-.4094.5-1.5.7443-.3102.1-1.1.2339-1.1.8115-.25.1.329.2.919.3.2269.4.9216.6 1.6331 1.3.3335 2.5.092 3.4-.6787-.017 2.2.0775 4.4.3454 5.1.2212.6.7618 1.9 2.5 1.9.2505 0 .5263-.291.8-.0941 1.8-.3821 2.6-1.2 2.9-2.9.1503-.8707.4-2.9.5388-4.1.0169-.703-.1207.1-.1362-.5.1-.471.4.0307a.3673.4 0 0 0 .443l.2539.149c.8468 1.9-.1426 2.5-.4308.6-.2988 1.8-1 1.6-1.7zM2.4 11.9c-.7435-2.4-1.2-4.9-1.2-5.6-.1086-2.2.4171-3.7 1.6-4.5 1.8-1.3 4.8-.5408 6.1-.13-.32-.66-.98-2 2-2 5.5-2 5.7-.2.1.66.2.162.4.348.6.0996 1.7-.0735 2.9-.1609 1.2.1937 2.3.9728 3.1.806.1.1648.2.2518.2-.3468.4-1.1 1.2-1.9 2.2-.5677.7-.9597.6-1.1.5087-.3919-.1307-.813-.5871-1.2-1.3-.4796-.839-.9635-2-1.4-3.5zm6 5.1c-.1711-.0428-.3271-.1132-.4322-.1772.1-.394.2-.902.5-.1409 1.3-.2641 1.5-.4506 1.9-1.0992-.126.2-.2687.4-.4426a.3549.4 0 0 0 .0737-.1298c.1708-.1513.3-.1099.4-.417.2.646.3.26.4.4752.1016.1.2945-.452.4-.9043 1.3-2.2 1.2-3.2 1zm2.1-4-.525.1c-.133.4-.2567.7-.3334 1-.6674-.0021-1.3-.2872-1.8-.8024-.6279-.6551-.9131-1.6-.7825-2.5.1828-1.3.1153-2.4.079-3.1-.005-.0857-.0095-.1607-.0122-.2199.3-.2621 1.7-.9962 2.6-.7724.4.1022.7.4057.8.928.6 2.7.0774 3.8-.3302 4.7-.84.2-.1633.4-.2311.5zm7.4 4.6c-.169.2-.358.4-.618.6l-.146.4a.3547.4 0 0 0-.182.1c-.59.5-.54.6-.115.9-.634.2-.1353.5-.1794 1.1-.11 1.4-.8782 2.2-2.4 2.6-1.5.3251-1.8-.4968-2-1.2a6.6 6.6 0 0 0-.0769-.2266c-.2154-.5858-.1911-1.4-.1574-2.6.0165-.5612-.0249-1.9-.3302-2.6.0044-.2932-.5909-.8918a.3529.4 0 0 0-.0153-.1126 1.5 1.5 0 0 0-.0439-.208c-.1226-.4283-.4213-.7866-.7797-.9351-.1424-.059-.4038-.1672-.7178-.869.1-.276.2-.5875.3-.9249l.0529-.142c.0595-.16.1-.3257.2-.5012.4-.9476 1-2.2.3766-5.2-.2374-1.1-1-1.6-2.2-1.5-.7207.1-1.4.3654-1.7.5321a5.7 5.7 0 0 0-.1958.1c.0918-1.1.4386-3.2 1.7-4.5a4 4 0 0 1 .3033-.276.4.3532 0 0 0 .1447-.0644c.7524-.5706 1.7-.8506 2.8-.8325.4.67.8.0339 1.2.081 1.9.3544 3.2 1.4 4 2.4.8144 1.3 1.9 1.4 2.5-1.3-.1346-2.2.1268-2.7.779-.9926 1.4.543 4.2 1.3 5.5.1353.2.2522.5.2889.5.2403.6.5516.7787 1.3.696.1.1372.2.1885.2-.4008.1-1.1.3825-1.1 1.7-.123.2-.423.4-.834.8-.461.2-.702.5-.994.8zm.8905-1.6c-.0405-.8316.3-.9185.6-1a2.9 2.9 0 0 0 .135-.0406 1.2 1.2 0 0 0 .1342.1c.5703.4 1.6.4213 3.1344-.2016.2-.5189.4-.9533.6-.4098.2-1.1.333-1.7.3636-.7197-1.1-.0807-1.2-.151zm.5695-9.3c-.59.4-.542.7-.1054 1-.55.4-.112.7-.1264 1.2-.142.4.404.9.0932 1.3.1066.9.216 1.8-.2075 2.7a3.5 3.5 0 0 1-.1876-.3856c-.0527-.1276-.1669-.3326-.3251-.6162-.6156-1.1-2.1-3.7-1.3-4.7.3795-.5427 1.3-.5661 2.2-.463zm.2284 7a12.4 12.4 0 0 0-.0853-.1074l-.0355-.0444c.7262-1.2.5842-2.4.4578-3.4-.0519-.4318-.1009-.8396-.0885-1.2.0129-.4061.1-.7543.1-1.1.0639-.415.1-.8443.1-1.4.0134-.531-.1158-.1902-.0457-.4855-.5999-1.9-1.7-3.3-.6076-.7073-1.5-1.5-2.7-2.5251-.1066 1.2-.2035 2-.1859 2.1.0456 3.7.8135 4.8 2.3a.908.9 0 0 1 .667.1c.7231 1.4-.2762 6.3-3 10.5zm-8.8-6.1c-.25.2-.3089.4-.6211.4a.5821.6 0 0 1-.0809-.0056c-.1873-.026-.3765-.144-.5059-.3156-.0458-.0605-.1203-.178-.1055-.2844-.401-.985.1-.1488.1-.894.4-.1226.6-.867.3.441.6.1938.6.4186zm7.9-.4114c.111.1-.49.2-.1531.3-.683.1-.212.2-.4079.2a.5456.5 0 0 1-.75c-.2935 0-.5414-.2344-.5607-.3717-.024-.1765.3-.3106.6-.352.3-.414.6.88.6.1851z"/></g>
+<text x="2208" y="482.8" font-size="12.5" text-anchor="middle" fill="#17202c">Data</text>
+<text x="2208" y="497.3" font-size="12.5" text-anchor="middle" fill="#17202c">warehouse</text>
+<path d="M 1714 93 v 33 a 59 7 0 0 0 118 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="1773" cy="93" rx="59" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<g transform="translate(1807 100.5) scale(0.8)" fill="#8a53a8"><title>MongoDB</title><path d="M17.2 9.6c-1.3-5.6-4.3-7.4-4.6-8.1-.28-.394-.53-.954-.735-1.4-.36.5-.55.7-.523 1.2-.723.6-4.4 3.7-4.7 10-.282 5.9 4.3 9.4 4.9 9.9l.7.1A73.5 73.5 0 111.9 24h.481c.114-1.284-2.1.51-3.1.417-.296.6-.463.9-.693a11.3 11.3 0 3.6-8.5c.01-.814-.103-1.7-.197-2.2zm-5.3 8.2s0-8.3.275-8.3c.213 0 .49 10.7.49 10.7-.381-.045-.765-1.8-.765-2.4z"/></g>
+<text x="1758" y="109.8" font-size="12.5" text-anchor="middle" fill="#17202c">Customer</text>
+<text x="1758" y="124.3" font-size="12.5" text-anchor="middle" fill="#17202c">repository</text>
+<rect x="2299" y="435" width="108" height="38" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="2353" y="458" font-size="12.5" text-anchor="middle" fill="#17202c">PSP</text>
+<rect x="2160" y="207" width="108" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="2214" y="227.3" font-size="12.5" text-anchor="middle" fill="#17202c">Carrier</text>
+<text x="2214" y="241.8" font-size="12.5" text-anchor="middle" fill="#17202c">platforms</text>
+<rect x="2299" y="44" width="108" height="47" rx="4" fill="#f4eff8" stroke="#b33" stroke-width="1.5" stroke-dasharray="5 3"/>
+<text x="2353" y="64.3" font-size="12.5" text-anchor="middle" fill="#17202c">Group</text>
+<text x="2353" y="78.8" font-size="12.5" text-anchor="middle" fill="#17202c">ERP</text>
+<path d="M 144 355.5 L 206 355.5 L 206 393 L 230 393" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 338 392.5 L 369 392.5 L 369 337.9 L 519 337.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 338 325.9 L 519 325.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 335 239.3 L 485 239 L 485 314 L 519 313.9" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 335 223.7 L 495 224 L 495 290.3 L 787 290.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2299 60 L 2289 60 L 2289 31 L 168 31 L 168 232 L 173 232 A 5 5 0 0 1 183 232 L 202 232" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 637 308.2 L 661 308.2 L 661 307.5 L 787 307.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 637 239 L 823 239 L 823 266.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 895 282.2 L 1400 282 L 1400 257.4 L 1486 257.4 A 5 5 0 0 1 1496 257.4 L 1641 257.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 895 297.8 L 1045 298 L 1045 425 L 1089 425" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1199 427.5 L 1339 427.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1199 451.5 L 1209 451.5 L 1209 472 L 1897 472 L 1897 448 L 1955 448 A 5 5 0 0 1 1965 448 L 2299 448" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2299 460 L 2289 460 L 2289 525 L 1025 525 L 1025 449 L 1089 449" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1199 439.5 L 1219 439.5 L 1219 461 L 1481 461 L 1481 269.4 L 1486 269.4 A 5 5 0 0 1 1496 269.4 L 1641 269.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1753 257.2 L 1859 257.2 L 1859 230.5 L 1883 230.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1993 230.5 L 2017 230.5 L 2160 230.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2160 248 L 2017 248 L 1993 248" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1993 213 L 2074.5 213 L 2074.5 185 L 2156 185" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1467 94.7 L 1597 95 L 1597 42 L 2279 42 L 2279 168 L 2269 168" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 144 270.5 L 178 270.5 L 178 170 L 1357 170" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1465 169.5 L 1491 169.5 L 1491 306.5 L 1643 306.7" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1643 324.2 L 1486 324.2 A 5 5 0 0 0 1476 324.2 L 1180 324.2 L 1180 415.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1467 110.3 L 1602 110.3 A 5 5 0 0 1 1612 110.3 L 1714 110" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1753 274.7 L 1960 274.7 L 1960 465 L 2167 465" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 637 333.5 L 919 333.5 L 919 492 L 1020 492 A 5 5 0 0 1 1030 492 L 2167 492" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 144 437 L 914 437 A 5 5 0 0 1 924 437 L 1089 437" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2299 75 L 2284 75 A 5 5 0 0 0 2274 75 L 1607 75 L 1607 245 L 1641 245.4" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="444" y="355.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="428.5" y="329.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(CDN, HTTPS)</text>
+<text x="410" y="242.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="595.5" y="293.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="1228.5" y="34.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
+<text x="724" y="310.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(local, call)</text>
+<text x="730" y="242.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="1147.5" y="285.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="970" y="301.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="1269" y="430.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(local, call)</text>
+<text x="1897" y="463.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="1657" y="528.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
+<text x="1561" y="272.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="1806" y="260.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(local, call)</text>
+<text x="2088.5" y="233.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="2088.5" y="265.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(webhook, JSON)</text>
+<text x="2074.5" y="202.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="1938" y="45.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="1491" y="241.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="1180" y="354.9" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="1540" y="113.4" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
+<text x="2063.5" y="468.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(batch, parquet)</text>
+<text x="1543" y="495.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(streaming, avro)</text>
+<text x="1953" y="78.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<line x1="20" y1="567" x2="2397" y2="567" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="589" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="579" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="590" font-size="10" fill="#17202c">Actor group</text>

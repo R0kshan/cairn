@@ -11,18 +11,18 @@ actor-group SALES "Sales actors" {
 }
 
 system ORDERS "Order platform" {
-  application ORDER_APP "Order management" {
-    module CAPTURE "Order\ncapture"
+  application ORDER_APP "Order management" { logo: spring
+    module CAPTURE "Order\ncapture" { logo: kotlin }
     module VALIDATE "Order\nvalidation"
   }
-  application BILLING_APP "Billing" {
-    module INVOICE "Invoicing"
+  application BILLING_APP "Billing" { logo: nodedotjs
+    module INVOICE "Invoicing" { logo: typescript }
   }
-  queue EVENTS "Order event\nbus"
-  datastore ORDER_DB "Order\nrepository"
+  queue EVENTS "Order event\nbus" { logo: apachekafka }
+  datastore ORDER_DB "Order\nrepository" { logo: postgresql }
 }
 
-application CRM "Customer CRM" {
+application CRM "Customer CRM" { logo: dotnet
   module CUSTOMER "Customer\nrecords"
 }
 
