@@ -94,10 +94,6 @@ datastore ORDER_DB "Order store" { logo: postgresql }
 module BILLING "Billing" { logo: "./logos/acme.svg" }
 ```
 
-```sh
-cairn logos                                      # list the built-in names
-```
-
 <p align="center"><img src="examples/application-tech-stack.svg" alt="Application view with technology logos" width="760"></p>
 
 ### Infrastructure view diagram examples from small to large
@@ -188,10 +184,6 @@ actor-group STAFF "Payment actors" {
 }
 ```
 
-Values need not be contiguous, and the hint never moves an element into another
-band. Where a declared order contradicts a flow, the order wins and the flow is
-drawn running backwards.
-
 <p align="center"><img src="examples/positioning.svg" alt="Element ordering, pinned sides and arrow glyphs" width="760"></p>
 
 More examples: [`examples/placement/`](examples/placement/) shows one shape four
@@ -280,44 +272,6 @@ what it names**, so a usable theme is a few lines rather than fifty colours:
 cairn build my-system.cairn --theme ./my-theme.json
 ```
 
-`extends` names any built-in (default `light`). `dark` tells cairn the palette
-sits on a dark ground, which selects the flow colour set — nothing about the
-colours themselves implies it, so a dark theme that omits this draws light flow
-hues. `pal` holds the canvas and chrome colours, `accentColors` the per-kind
-fills and strokes, `lv` the security-view sensitivity levels; every key is
-optional and inherited from the base when absent. A complete example ships in
-[`examples/themes/midnight.json`](examples/themes/midnight.json).
-
-Every value is a hex colour (3, 4, 6 or 8 digits), an `rgb()`/`hsl()` call, or a
-CSS colour keyword (`rebeccapurple`, `transparent`, `currentColor`). Anything
-else is rejected by name at load time rather than reaching the SVG, where a
-colour the renderer cannot parse is silently ignored — a bad fill turns the
-shape black, a bad stroke erases its outline.
-
-The flag overrides `style { theme: … }` in the diagram, and works on `build`,
-`matrix` and `watch`. A theme that cannot be loaded is an error, never a silent
-fallback to the default palette.
-
-#### From the npm package
-
-`compile()` takes the same thing as an object, so an embedder needs no file and
-no CLI:
-
-```js
-import { compile } from "@r0kshan/cairn";
-
-const { svg } = await compile(source, {
-  theme: { extends: "dark", dark: true, pal: { bg: "#0d1117" } },
-});
-```
-
-The palette is used for that call and forgotten — nothing is registered
-globally, so a server rendering for many callers cannot leak one caller's
-colours into another's diagram, and two callers cannot collide on a name.
-`resolveThemeSpec()` is exported if you want to validate a palette up front;
-both it and `compile()` throw `ThemeSpecError` naming the offending key rather
-than quietly rendering the default.
-
 ## Installation
 
 Prebuilt, self-contained binaries are published on every `v*` tag (no runtime needed). Pick your platform:
@@ -395,6 +349,21 @@ cairn watch my-system.cairn
 ```
 
 Rebuilds the SVG on save. On a compile error the SVG becomes an error panel (codes, lines, help), so an open preview never shows a stale diagram. Watch observes only the file it was launched on — run one per file. Pair it with an editor that auto-refreshes an open SVG.
+
+### List the built-in logos
+
+```sh
+cairn logos
+```
+
+```text
+37 built-in logos — use as `logo: <name>` on an element:
+
+  angular        apache         apachekafka    apachespark    django
+  ...
+```
+
+Anything else: point at a file — `logo: "./logos/name.svg"`.
 
 ### Explain a diagnostic
 
