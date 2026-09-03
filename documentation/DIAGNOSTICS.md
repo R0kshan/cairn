@@ -38,20 +38,17 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0200 / E0201 | error | Unknown diagram type / element kind (with did-you-mean) |
 | E0202 | error | Duplicate identifier (flat ID namespace, shared with business objects) |
 | E0203 | error | Flow without a label |
-| E0210–E0218 | error | Nesting violations, per view (blocks / actors / layers / modules / servers / app-instances / network-zones / assets / security-nodes) |
+| E0210–E0218 | error | Nesting violations, per view (blocks / actors / layers / modules / servers / app-instances / network-zones) |
 | E0220 / E0221 | error | Unknown flow reference / unknown business-object reference |
 | E0222 | error | Business object used outside the logical view (business objects are logical-view only) |
 | E0223 | error | Unknown attachment side on a flow endpoint (`A.middle -> B`) |
 | E0240 | error | Infrastructure flow without a protocol (required in this view, even when the label is omitted) |
-| E0250 | error | Trust zone without a valid sensitivity level (security view) |
 | W0501 | warning | No actor declared (logical) |
 | W0502 | warning | Element without a label (its ID is displayed as-is) |
 | W0510 | warning | Isolated element (no incoming or outgoing flow) |
 | W0520 | warning | Too dense for a readable slide / page — split the view |
 | W0530 | warning | Business object never carried by any flow |
 | W0540 | warning | Application system-to-system flow without a protocol (actor flows exempt) |
-| W0560 | warning | Flow enters a more-trusted zone without a security-node (security view) |
-| W0561 | warning | Cross-zone flow without stated encryption/protocol (security view) |
 | W0570 | warning | Declared attachment side the layout could not honor |
 | W0571 | warning | Endpoint resolved as a declared id, so its `.side` reading was dropped |
 

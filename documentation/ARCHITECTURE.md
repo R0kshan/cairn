@@ -62,7 +62,7 @@ counts violations of the invariants stages 4–4c exist to guarantee — see §5
 ## 4. The `views` registry as the extension point
 
 `src/views.ts` is where a diagram type — `logical`, `application`,
-`infrastructure`, `security` — is actually defined: valid element kinds,
+`infrastructure` — is actually defined: valid element kinds,
 nesting rules, per-view diagnostics, layout partitions (actors left, systems
 middle, externals right), and visual defaults per kind per theme.
 
@@ -97,7 +97,7 @@ on its `SceneEdge`, which is what keeps §16 intact (INVARIANTS §17).
 | Byte-deterministic output | Every stage restricted to `+ - * / round ceil` + one normalized `Math.hypot` | `tests/corpus.test.ts` (structural digest), `tests/snapshot.test.ts` (canary diff) |
 | Intended vs. regressed render changes | Committed reference output (`examples/*.svg`, `tests/__snapshots__/`) | `npm run snapshots` re-baselines *with* the change that caused it, in the same commit — CI can't tell intent from regression on its own |
 | Readability (staircases, crossings, dead bands, …) | `route-detour.ts`, `compact.ts`, `edge-tidy.ts` | `scripts/sweep.ts` — 6 invariants at zero, 5 more as ceilings expressed per swept flow-instance (may only fall) |
-| Flow labels required (logical/security), protocol required (infrastructure) | `validator.ts` driven by `views.ts` per-view flow rules | `tests/behavior.test.ts` (diagnostic-code assertions) |
+| Flow labels required (logical), protocol required (infrastructure) | `validator.ts` driven by `views.ts` per-view flow rules | `tests/behavior.test.ts` (diagnostic-code assertions) |
 | Routing/tidy/compaction/scoring are DSL-agnostic | `route-detour.ts`, `edge-tidy.ts`, `compact.ts` import only `Scene`/`SceneNode`/`SceneEdge` types, never `views.ts` or element `kind` | No automated gate — verified by import discipline; a `views.ts` or `kind`-string import into any of these three files is the signal to look for in review |
 
 `Diagnostic`s are the mechanism common to the last row and to every
