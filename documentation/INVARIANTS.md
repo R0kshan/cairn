@@ -560,7 +560,7 @@ backward flow is the case an author is most likely to be pinning.
 Element kinds are restricted by view. Examples: `queue`, `gateway`, `auth` and
 `idp` are valid only in application & infrastructure; `firewall` only in
 infrastructure;
-`trust-zone`, `security-node`, `asset` only in security; `system` in logical and
+`system` in logical and
 application (a C4 system boundary there, grouping applications, queues and
 datastores); `datastore` renders as cylinder; business objects are logical-view
 only. Unknown element kinds for the
@@ -635,7 +635,7 @@ committed `examples/infrastructure.flow.csv` the CLI wrote.
 Everything that moves a flow — `edge-tidy`, `route-detour`, `label-anchor`,
 `compact`, and the `readability` metrics that judge them — sees **geometry
 only**. No pass branches on an element kind (`actor`, `datastore`,
-`trust-zone`, …) or on a view name (`logical`, `application`, …).
+`queue`, …) or on a view name (`logical`, `application`, …).
 
 DSL meaning enters at exactly one place: `scene-layout`, which reads the
 `views` registry to decide partitions and reading order (§9, §12). From the

@@ -158,7 +158,6 @@ const MATRIX_SOURCES = [
   "logical.cairn", // no technical tail at all
   "application.cairn", // protocol, no port
   MATRIX_SOURCE, // the reference shape: protocol + port
-  "security.cairn", // protocol only, trust-zone annotation
   "application-system.cairn", // nearest-container annotation: application vs system
 ];
 

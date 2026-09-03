@@ -1,6 +1,6 @@
 /**
  * Colour system: named palettes (light, dark, slate, nord, …), the per-kind and
- * per-trust-level default styles, and `themeFor`/`mkTheme`/`flowPalette` that
+ * default styles, and `themeFor`/`mkTheme`/`flowPalette` that
  * resolve a theme for a given view. Consumed by the renderer and the flow-matrix
  * SVG exporter. Adding or retinting a theme happens here.
  */
@@ -116,7 +116,6 @@ export const flowPalette: Record<"light" | "dark", string[]> = {
 interface Theme {
   palette: Palette;
   roles: Record<string, StyleProps>;
-  levels: Record<string, StyleProps>;
 }
 
 export interface ThemeSpec {
@@ -144,7 +143,6 @@ export interface ThemeSpec {
     badge: [string, string];
   };
   accentColors: Record<string, string>;
-  lv: Record<string, [string, string]>;
 }
 
 const containerStyle = (fill: string, stroke: string, dashed = false, width = 1.2): StyleProps => ({
@@ -176,12 +174,9 @@ const KIND_ROLE_MAP: Record<string, string> = {
   "network-zone": "networkZone",
   server: "server",
   "app-instance": "appInstance",
-  "security-node": "securityNode",
-  asset: "leaf",
 };
 
-const roleForKind = (kind: string, viewName: string): string =>
-  viewName === "security" && kind === "external" ? "untrusted" : (KIND_ROLE_MAP[kind] ?? "leaf");
+const roleForKind = (kind: string): string => KIND_ROLE_MAP[kind] ?? "leaf";
 
 const buildTheme = (spec: ThemeSpec): Theme => {
   const paletteSpec = spec.pal,
@@ -219,14 +214,12 @@ const buildTheme = (spec: ThemeSpec): Theme => {
       application: containerStyle(accentColors.appF, accentColors.app),
       layer: containerStyle(accentColors.goldF, accentColors.gold, false, 1),
       external: containerStyle(accentColors.violetF, accentColors.violet, true),
-      untrusted: containerStyle(accentColors.redF, accentColors.red, true, 1.3),
       leaf: leafStyle(accentColors.leafF, accentColors.leafS),
       datastore: leafStyle(accentColors.purpleF, accentColors.purple),
       site: containerStyle(accentColors.siteF, accentColors.siteS, false, 1.4),
       networkZone: containerStyle(accentColors.greenF, accentColors.green, true),
       server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
       appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
-      securityNode: leafStyle(accentColors.nodeF, accentColors.node, 1.6),
       // Accent keys predate the roles that read them: `auth`/`authF` is the
       // gateway's orange, `authn`/`authnF` the auth middleware's blue. The two
       // used to share the `node` orange, which is what made a gateway and an
@@ -235,12 +228,6 @@ const buildTheme = (spec: ThemeSpec): Theme => {
       firewall: leafStyle(accentColors.fwF, accentColors.fw, 1.6),
       auth: leafStyle(accentColors.authnF, accentColors.authn, 1.5),
       identityProvider: leafStyle(accentColors.idpF, accentColors.idp),
-    },
-    levels: {
-      public: containerStyle(spec.lv.public[0], spec.lv.public[1], false, 1.4),
-      internal: containerStyle(spec.lv.internal[0], spec.lv.internal[1], false, 1.4),
-      restricted: containerStyle(spec.lv.restricted[0], spec.lv.restricted[1], false, 1.4),
-      secret: containerStyle(spec.lv.secret[0], spec.lv.secret[1], false, 1.4),
     },
   };
 };
@@ -306,12 +293,6 @@ export const THEME_SPECS: Record<string, ThemeSpec> = {
       authn: "#2f6fb5",
       authnF: "#e8f1fb",
     },
-    lv: {
-      public: ["#fdeceb", "#d0463f"],
-      internal: ["#fef2e2", "#cf9436"],
-      restricted: ["#e9f2fb", "#2f7cc4"],
-      secret: ["#efe9f7", "#7a55a8"],
-    },
   },
   dark: {
     dark: true,
@@ -368,12 +349,6 @@ export const THEME_SPECS: Record<string, ThemeSpec> = {
       authn: "#6fa8e0",
       authnF: "#1d2735",
     },
-    lv: {
-      public: ["#3a2422", "#c25a54"],
-      internal: ["#332a1c", "#c08a44"],
-      restricted: ["#1f2a37", "#4a86b8"],
-      secret: ["#291f33", "#8a6cb0"],
-    },
   },
   slate: {
     pal: {
@@ -428,12 +403,6 @@ export const THEME_SPECS: Record<string, ThemeSpec> = {
       fwF: "#f9e9e6",
       authn: "#3a6ea5",
       authnF: "#e9f0f8",
-    },
-    lv: {
-      public: ["#f7ece9", "#c05a4a"],
-      internal: ["#f3efe6", "#a8823f"],
-      restricted: ["#e8eff6", "#3b6ea5"],
-      secret: ["#efecf5", "#7d6ba8"],
     },
   },
   sand: {
@@ -490,12 +459,6 @@ export const THEME_SPECS: Record<string, ThemeSpec> = {
       authn: "#3a6b9a",
       authnF: "#e9eff7",
     },
-    lv: {
-      public: ["#f7e2da", "#c0562a"],
-      internal: ["#f6ecd2", "#b0842e"],
-      restricted: ["#e6f0f1", "#3f7a8c"],
-      secret: ["#f0e8ef", "#8a5f7a"],
-    },
   },
   contrast: {
     pal: {
@@ -550,12 +513,6 @@ export const THEME_SPECS: Record<string, ThemeSpec> = {
       fwF: "#fbe3df",
       authn: "#00408f",
       authnF: "#dfe8fb",
-    },
-    lv: {
-      public: ["#f9dcd6", "#c0341a"],
-      internal: ["#f6e6c8", "#9a6a00"],
-      restricted: ["#e0edf7", "#005a9c"],
-      secret: ["#eee0f7", "#6a2fa0"],
     },
   },
   nord: {
@@ -613,12 +570,6 @@ export const THEME_SPECS: Record<string, ThemeSpec> = {
       authn: "#81a1c1",
       authnF: "#333c4a",
     },
-    lv: {
-      public: ["#3a2a2d", "#bf616a"],
-      internal: ["#3a3524", "#d0a85f"],
-      restricted: ["#2f3a44", "#81a1c1"],
-      secret: ["#312a3a", "#a38bbd"],
-    },
   },
   solarized: {
     pal: {
@@ -673,12 +624,6 @@ export const THEME_SPECS: Record<string, ThemeSpec> = {
       fwF: "#f7e3dd",
       authn: "#268bd2",
       authnF: "#e3edf5",
-    },
-    lv: {
-      public: ["#f7ddd6", "#dc322f"],
-      internal: ["#f2e6c8", "#b58900"],
-      restricted: ["#e3edf3", "#268bd2"],
-      secret: ["#e8e6f2", "#6c71c4"],
     },
   },
 };
@@ -738,20 +683,9 @@ export function themeFor(
 ): {
   palette: Palette;
   kinds: Record<string, StyleProps>;
-  levels: Record<string, StyleProps>;
 } {
-  if (name === "classic")
-    return {
-      palette: lightPalette,
-      kinds: view.defaults,
-      levels: view.levelDefaults ?? {},
-    };
-  if (name === "classic-dark")
-    return {
-      palette: darkPalette,
-      kinds: view.defaultsDark,
-      levels: view.levelDefaultsDark ?? {},
-    };
+  if (name === "classic") return { palette: lightPalette, kinds: view.defaults };
+  if (name === "classic-dark") return { palette: darkPalette, kinds: view.defaultsDark };
   return applyTheme(themes[name] ?? themes.light, view);
 }
 
@@ -768,7 +702,7 @@ export function themeFor(
 export function themeFromSpec(
   spec: ThemeSpec,
   view: View,
-): { palette: Palette; kinds: Record<string, StyleProps>; levels: Record<string, StyleProps> } {
+): { palette: Palette; kinds: Record<string, StyleProps> } {
   return applyTheme(buildTheme(spec), view);
 }
 
@@ -796,8 +730,8 @@ export function paletteFromSpec(spec: ThemeSpec): Palette {
 function applyTheme(
   theme: Theme,
   view: View,
-): { palette: Palette; kinds: Record<string, StyleProps>; levels: Record<string, StyleProps> } {
+): { palette: Palette; kinds: Record<string, StyleProps> } {
   const kinds: Record<string, StyleProps> = {};
-  for (const kind of view.kinds) kinds[kind] = theme.roles[roleForKind(kind, view.name)] ?? {};
-  return { palette: theme.palette, kinds, levels: theme.levels };
+  for (const kind of view.kinds) kinds[kind] = theme.roles[roleForKind(kind)] ?? {};
+  return { palette: theme.palette, kinds };
 }

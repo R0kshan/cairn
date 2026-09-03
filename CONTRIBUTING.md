@@ -36,8 +36,8 @@ The tradeoff: it's experimental (track [node#53725](https://github.com/nodejs/no
 Invariants detailed in [`AGENTS.md`](./AGENTS.md#non-negotiable-invariants). In short:
 - **Zero label overlaps. Byte-deterministic output.**
 - **Every flow is a distinct arrow with a distinct label** — flows are never visually merged.
-- **Labels are mandatory in logical view (E0203)** — optional in application, infrastructure and security.
-- **Protocol is mandatory in infrastructure view (E0240)** — recommended (warning) in application (W0540) and for cross-zone security flows (W0561).
+- **Labels are mandatory in logical view (E0203)** — optional in application and infrastructure.
+- **Protocol is mandatory in infrastructure view (E0240)** — recommended (warning) in application (W0540).
 - **Nesting rules are enforced per view (E0210–E0218)** — layout partitions depend on correct parentage.
 - **Duplicate IDs are rejected (E0202)** — flat ID space; every element must be uniquely referenceable.
 - **Dangling flow references are rejected (E0220)** — an edge to nowhere breaks the diagram.

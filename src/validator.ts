@@ -1,9 +1,9 @@
 /**
  * Stage 3: semantic checks over the parsed `Model`, driven by the active view's
  * rules (`views` registry). Runs a battery of focused passes — duplicate IDs,
- * unknown kinds, nesting, flow references, per-view flow requirements, trust
- * boundaries, business objects, minimum counts, isolated elements, placement
- * constraints — each
+ * unknown kinds, nesting, flow references, per-view flow requirements,
+ * business objects, minimum counts, isolated elements, placement constraints —
+ * each
  * returning `Diagnostic[]`. `nearest`/`editDistance` power the "did you mean?"
  * suggestions. Purely diagnostic: never mutates the model.
  */
@@ -39,9 +39,7 @@ export function validate(model: Model): Diagnostic[] {
     ...checkMissingLabels(elements),
     ...checkNesting(elements, view),
     ...checkFlows(model, view),
-    ...checkElementAttributes(elements, view),
     ...checkLogos(elements, view),
-    ...checkTrustBoundaries(model, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
     ...checkIsolatedElements(model, view, elements),
@@ -243,84 +241,6 @@ function checkFlows(model: Model, view: View): Diagnostic[] {
         note: `the \`${view.name}\` view forbids unlabelled arrows`,
         help: view.flowLabelRequired.help,
         fix: { insert: ' : "…"', atEndOfLine: true },
-      });
-    }
-  }
-  return diagnostics;
-}
-
-function checkElementAttributes(elements: Element[], view: View): Diagnostic[] {
-  const spec = view.attrSpec;
-  if (!spec) return [];
-  const diagnostics: Diagnostic[] = [];
-  for (const element of elements) {
-    if (element.kind !== spec.kind) continue;
-    if (!element.attr) {
-      diagnostics.push({
-        code: spec.code,
-        severity: "error",
-        message: spec.message + ` (\`${element.id}\`)`,
-        span: element.idSpan,
-        help: spec.help,
-      });
-    } else if (!spec.values.includes(element.attr.value)) {
-      const suggestion = nearest(element.attr.value, spec.values);
-      diagnostics.push({
-        code: spec.code,
-        severity: "error",
-        message: `invalid ${spec.kind} value \`${element.attr.value}\` (\`${element.id}\`)`,
-        span: element.attr.span,
-        note: `allowed: ${spec.values.join(", ")}`,
-        help: suggestion ? `did you mean \`${suggestion}\`?` : spec.help,
-      });
-    }
-  }
-  return diagnostics;
-}
-
-function checkTrustBoundaries(model: Model, view: View): Diagnostic[] {
-  if (!view.boundaryLint && !view.crossZoneTechRecommended) return [];
-  const diagnostics: Diagnostic[] = [];
-
-  const zoneOf = (id: string): Element | undefined => {
-    for (let ancestor = model.index.get(id)?.parent; ancestor; ancestor = ancestor.parent)
-      if (ancestor.kind === "trust-zone") return ancestor;
-    return undefined;
-  };
-  const trustLevelOf = (id: string): number => {
-    const level = zoneOf(id)?.attr?.value;
-    return level && view.trustOrder?.[level] !== undefined ? view.trustOrder[level] : -1;
-  };
-  const lint = view.boundaryLint;
-  const isSecurityNode = (id: string) =>
-    lint !== undefined && model.index.get(id)?.kind === lint.nodeKind;
-
-  for (const flow of model.flows) {
-    if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;
-    const crossesZone = zoneOf(flow.from) !== zoneOf(flow.to);
-    const boundaryViolation =
-      lint !== undefined &&
-      trustLevelOf(flow.to) > trustLevelOf(flow.from) &&
-      !isSecurityNode(flow.from) &&
-      !isSecurityNode(flow.to);
-    if (boundaryViolation) {
-      diagnostics.push({
-        code: lint!.code,
-        severity: "warning",
-        message: lint!.message,
-        span: flow.span,
-        note: `flow enters a more-trusted zone without passing a \`${lint!.nodeKind}\``,
-        help: lint!.help,
-      });
-    }
-    if (view.crossZoneTechRecommended && crossesZone && !flow.tech?.protocol) {
-      diagnostics.push({
-        code: view.crossZoneTechRecommended.code,
-        severity: "warning",
-        message: view.crossZoneTechRecommended.message,
-        span: flow.span,
-        note: "inter-zone flow — state how the traffic is protected",
-        help: view.crossZoneTechRecommended.help,
       });
     }
   }

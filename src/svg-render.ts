@@ -45,13 +45,6 @@ const LABEL_HALO = 4;
  * Changing it shifts band geometry — see the determinism note in AGENTS.md#non-negotiable-invariants.
  */
 const RENDER_CHAR_WIDTH = 0.52;
-const SEC_LEVEL_FR: Record<string, string> = {
-  public: "public",
-  internal: "interne",
-  restricted: "restreint",
-  secret: "secret",
-};
-
 const dashArray = (lineStyle?: string) =>
   lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : undefined;
 
@@ -61,7 +54,6 @@ const round1 = (n: number) => Math.round(n * 10) / 10;
 interface ElementStyleEntry {
   id: string;
   style: StyleProps | undefined;
-  attrValue: string | undefined;
   logo: Element["logo"];
 }
 
@@ -81,10 +73,10 @@ function assignSourceHues(model: Model, hues: string[]): Map<string, string> {
   return sourceHue;
 }
 
-/** Flattened per-element style/attr entries for `elements` and all their descendants, pre-order. */
+/** Flattened per-element style entries for `elements` and all their descendants, pre-order. */
 function collectElementStyles(elements: Model["elements"]): ElementStyleEntry[] {
   return elements.flatMap((element) => [
-    { id: element.id, style: element.style, attrValue: element.attr?.value, logo: element.logo },
+    { id: element.id, style: element.style, logo: element.logo },
     ...collectElementStyles(element.children),
   ]);
 }
@@ -436,12 +428,9 @@ function logoSvg(mark: {
 /** Everything the node shapes paint with: theme colours, fonts and per-element style. */
 interface NodePaint {
   palette: ReturnType<typeof themeFor>["palette"];
-  style: Model["style"];
-  annot: { tag: number };
   nodeFontSize: number;
   containerFontSize: number;
   resolveStyle: (kind: string, id: string) => StyleProps;
-  elementAttr: Map<string, string | undefined>;
   elementLogo: Map<string, Element["logo"]>;
   /** `id` → inlined `data:` URI, filled in by whoever could read the files. */
   resolvedLogos: Map<string, string> | undefined;
@@ -483,17 +472,8 @@ function createNodeLabelHelpers(nodeFontSize: number) {
 
 /** One function per node kind, plus the container frame. */
 function createNodeRenderers(paint: NodePaint) {
-  const {
-    palette,
-    style,
-    annot,
-    nodeFontSize,
-    containerFontSize,
-    resolveStyle,
-    elementAttr,
-    elementLogo,
-    resolvedLogos,
-  } = paint;
+  const { palette, nodeFontSize, containerFontSize, resolveStyle, elementLogo, resolvedLogos } =
+    paint;
   /** The logo mark for a node, already placed and coloured. `""` when it has none. */
   const logoFor = (node: SceneNode, stroke: string, inset?: { right?: number; top?: number }) =>
     logoSvg({ logo: elementLogo.get(node.id), resolved: resolvedLogos, node, stroke, inset });
@@ -511,11 +491,6 @@ function createNodeRenderers(paint: NodePaint) {
       svg += `<text x="${node.x + 10}" y="${node.y + 18 + index * 14}" font-size="${containerFontSize}" font-weight="bold" fill="${text}">${esc(line)}</text>\n`;
     });
     svg += logoFor(node, stroke);
-    const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : undefined;
-    if (level) {
-      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
-      svg += `<text x="${node.x + node.width - 9}" y="${node.y + node.height - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>\n`;
-    }
     return svg;
   };
 
@@ -1286,11 +1261,9 @@ export function render(
     chipTextDy: round1(11 * fonts.scale),
   };
   const scaled = (n: number) => round1(n * fonts.scale);
-  const {
-    palette,
-    kinds: kindDefaults,
-    levels: levelDefaults,
-  } = options?.theme ? themeFromSpec(options.theme, view) : themeFor(style.theme, view);
+  const { palette, kinds: kindDefaults } = options?.theme
+    ? themeFromSpec(options.theme, view)
+    : themeFor(style.theme, view);
   // A spec carries its own darkness; a name is looked up. Nothing about the
   // colours themselves says which flow palette to use.
   const onDarkGround = options?.theme ? options.theme.dark === true : isDarkTheme(style.theme);
@@ -1326,18 +1299,14 @@ export function render(
   const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
 
   const elementStyle = new Map<string, StyleProps | undefined>();
-  const elementAttr = new Map<string, string | undefined>();
   const elementLogo = new Map<string, Element["logo"]>();
   for (const entry of collectElementStyles(model.elements)) {
     elementStyle.set(entry.id, entry.style);
-    elementAttr.set(entry.id, entry.attrValue);
     if (entry.logo) elementLogo.set(entry.id, entry.logo);
   }
 
   const resolveStyle = (kind: string, id: string): StyleProps => {
-    let base = kindDefaults[kind] ?? {};
-    const level = elementAttr.get(id);
-    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
+    const base = kindDefaults[kind] ?? {};
     const perKind = style.kind[kind] ?? {};
     const inline = elementStyle.get(id) ?? {};
     return {
@@ -1382,12 +1351,9 @@ export function render(
 
   const { renderContainerNode, renderLeafNode } = createNodeRenderers({
     palette,
-    style,
-    annot,
     nodeFontSize,
     containerFontSize,
     resolveStyle,
-    elementAttr,
     elementLogo,
     resolvedLogos: options?.logos,
   });

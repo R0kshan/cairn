@@ -12,7 +12,7 @@ A file is one diagram. The first statement declares which view it is, and the
 view decides every element kind the rest of the file may use:
 
 ```text
-diagram <logical|application|infrastructure|security> "Title"
+diagram <logical|application|infrastructure> "Title"
 ```
 
 Everything else is optional and order-free: elements, flows, an optional
@@ -22,7 +22,7 @@ Everything else is optional and order-free: elements, flows, an optional
 ### Grammar shared by every view
 
 ```text
-<kind> <ID> "<Label>" (<attr>)? { …statements… }      # element
+<kind> <ID> "<Label>" { …statements… }                # element
 <ID> -> <ID> : "<label>" (TECH) [BO_REFS] { style }   # flow
 ```
 
@@ -35,9 +35,6 @@ Everything else is optional and order-free: elements, flows, an optional
   it and the element renders as its bare ID, with a **W0502** warning. *Flow*
   labels are a separate matter, required in some views and optional in others
   (per view, below).
-- **`(<attr>)` after the label** carries a kind-specific attribute — currently
-  only the `trust-zone` sensitivity level in the `security` view, e.g.
-  `trust-zone DMZ "DMZ" (public)`.
 - **An element body** holds child elements plus the statements `order:`,
   `logo:` and `style { … }` (see [Positioning controls](#positioning-controls)
   and §2).
@@ -64,7 +61,6 @@ inside an inline block is **E0104**.
 | `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (**logical-view only** — a `business-object` elsewhere is **E0222**) |
 | `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — C4 container-diagram practice) |
 | `infrastructure` | actor, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
-| `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a level (`public\|internal\|restricted\|secret`, **E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**) |
 
 Nesting is checked against the rules each view declares (**E0210–E0218**); a
 combination no rule names is accepted. In the per-view tables below, a
@@ -318,11 +314,9 @@ Elements in the same partition stay aligned across the reading direction.
 | `logical` | actor-groups (0) · systems (1) · externals (2) |
 | `application` | actor-groups (0) · systems / applications / queues / datastores (1) · externals (2) |
 | `infrastructure` | sites / zones in declaration order · externals last |
-| `security` | zones in declaration order (exposed → protected) |
 
 Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
-`-I` infrastructure, `-S` security — which writes a commented starter file for
-that view.
+`-I` infrastructure — which writes a commented starter file for that view.
 
 ### Positioning controls
 
@@ -512,7 +506,6 @@ Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS 
 |---|---|---|
 | `infrastructure` | No. · Source · Destination · Protocol · Port · Flow | `network-zone`, `site` |
 | `application` | No. · Source · Destination · Protocol · Flow | `application`, `system` |
-| `security` | No. · Source · Destination · Protocol · Flow | `trust-zone` |
 | `logical` | No. · Source · Destination · Flow | `layer`, `system` |
 
 Infrastructure is the reference shape — the deliverable the format was designed around. There the protocol/port pair is split from the infra tail `(HTTPS/443)`, and with `lang: fr` its headers read **N° · Source · Destination · Protocole · Port · Nature du flux**. Application takes the protocol half of the C4 tail `(API_REST, JSON)` and no port; logical flows carry no technical tail at all, so its table is who exchanges what with whom.
@@ -563,7 +556,7 @@ cairn build my-system.cairn --theme ./my-theme.json
 ```
 
 A spec **extends a built-in and overrides only what it names**, so a usable theme
-is a few keys rather than the fifty-odd colours a full palette holds. Five keys
+is a few keys rather than the fifty-odd colours a full palette holds. Four keys
 exist, all optional:
 
 | Key | Holds | Notes |
@@ -572,13 +565,12 @@ exist, all optional:
 | `dark` | `true` \| `false` | whether the palette sits on a dark ground. Selects the flow colour set, and **cannot be inferred** from the colours: a dark palette that omits it draws light flow hues |
 | `pal` | canvas and chrome colours | `bg`, `text`, `sub`, `muted`, `cFill`, `cStroke`, `nFill`, `nStroke`, `edge`, `div`, `halo`, `aStroke`, `aText`, `chip`, `badge` |
 | `accentColors` | per-kind fills and strokes | 34 keys in stroke/fill pairs, the fill suffixed `F`: `blue`/`blueF`, `amber`, `app`, `gold`, `violet`, `red`, `purple`, `green`, `node`, `auth`, `idp`, `fw`, `authn` follow that shape; `siteS`/`siteF`, `leafS`/`leafF`, `aiS`/`aiF` and `serverS`/`serverF` suffix the stroke `S` |
-| `lv` | security-view sensitivity levels | `public`, `internal`, `restricted`, `secret`, each a `[fill, stroke]` pair |
 
 Merging is one level deep, which is as deep as a palette goes — naming
 `pal.bg` leaves every other `pal` entry inherited. Most entries are a single
-colour; the exceptions are `pal.chip` (`[fill, stroke, text]`), `pal.badge`
-(`[fill, stroke]`) and every `lv` entry (`[fill, stroke]`), which are replaced
-whole and must carry exactly that many colours.
+colour; the exceptions are `pal.chip` (`[fill, stroke, text]`) and `pal.badge`
+(`[fill, stroke]`), which are replaced whole and must carry exactly that many
+colours.
 
 A colour is a hex value (3, 4, 6 or 8 digits), an `rgb()`/`rgba()` or
 `hsl()`/`hsla()` call in either the legacy comma form or the modern

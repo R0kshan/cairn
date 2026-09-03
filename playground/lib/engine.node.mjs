@@ -92421,11 +92421,9 @@ var KIND_ROLE_MAP = {
   site: "site",
   "network-zone": "networkZone",
   server: "server",
-  "app-instance": "appInstance",
-  "security-node": "securityNode",
-  asset: "leaf"
+  "app-instance": "appInstance"
 };
-var roleForKind = (kind, viewName) => viewName === "security" && kind === "external" ? "untrusted" : KIND_ROLE_MAP[kind] ?? "leaf";
+var roleForKind = (kind) => KIND_ROLE_MAP[kind] ?? "leaf";
 var buildTheme = (spec) => {
   const paletteSpec = spec.pal, accentColors = spec.accentColors;
   const palette = {
@@ -92461,14 +92459,12 @@ var buildTheme = (spec) => {
       application: containerStyle(accentColors.appF, accentColors.app),
       layer: containerStyle(accentColors.goldF, accentColors.gold, false, 1),
       external: containerStyle(accentColors.violetF, accentColors.violet, true),
-      untrusted: containerStyle(accentColors.redF, accentColors.red, true, 1.3),
       leaf: leafStyle(accentColors.leafF, accentColors.leafS),
       datastore: leafStyle(accentColors.purpleF, accentColors.purple),
       site: containerStyle(accentColors.siteF, accentColors.siteS, false, 1.4),
       networkZone: containerStyle(accentColors.greenF, accentColors.green, true),
       server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
       appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
-      securityNode: leafStyle(accentColors.nodeF, accentColors.node, 1.6),
       // Accent keys predate the roles that read them: `auth`/`authF` is the
       // gateway's orange, `authn`/`authnF` the auth middleware's blue. The two
       // used to share the `node` orange, which is what made a gateway and an
@@ -92477,12 +92473,6 @@ var buildTheme = (spec) => {
       firewall: leafStyle(accentColors.fwF, accentColors.fw, 1.6),
       auth: leafStyle(accentColors.authnF, accentColors.authn, 1.5),
       identityProvider: leafStyle(accentColors.idpF, accentColors.idp)
-    },
-    levels: {
-      public: containerStyle(spec.lv.public[0], spec.lv.public[1], false, 1.4),
-      internal: containerStyle(spec.lv.internal[0], spec.lv.internal[1], false, 1.4),
-      restricted: containerStyle(spec.lv.restricted[0], spec.lv.restricted[1], false, 1.4),
-      secret: containerStyle(spec.lv.secret[0], spec.lv.secret[1], false, 1.4)
     }
   };
 };
@@ -92540,12 +92530,6 @@ var THEME_SPECS = {
       fwF: "#fdecea",
       authn: "#2f6fb5",
       authnF: "#e8f1fb"
-    },
-    lv: {
-      public: ["#fdeceb", "#d0463f"],
-      internal: ["#fef2e2", "#cf9436"],
-      restricted: ["#e9f2fb", "#2f7cc4"],
-      secret: ["#efe9f7", "#7a55a8"]
     }
   },
   dark: {
@@ -92602,12 +92586,6 @@ var THEME_SPECS = {
       fwF: "#33211f",
       authn: "#6fa8e0",
       authnF: "#1d2735"
-    },
-    lv: {
-      public: ["#3a2422", "#c25a54"],
-      internal: ["#332a1c", "#c08a44"],
-      restricted: ["#1f2a37", "#4a86b8"],
-      secret: ["#291f33", "#8a6cb0"]
     }
   },
   slate: {
@@ -92663,12 +92641,6 @@ var THEME_SPECS = {
       fwF: "#f9e9e6",
       authn: "#3a6ea5",
       authnF: "#e9f0f8"
-    },
-    lv: {
-      public: ["#f7ece9", "#c05a4a"],
-      internal: ["#f3efe6", "#a8823f"],
-      restricted: ["#e8eff6", "#3b6ea5"],
-      secret: ["#efecf5", "#7d6ba8"]
     }
   },
   sand: {
@@ -92724,12 +92696,6 @@ var THEME_SPECS = {
       fwF: "#f8e8e0",
       authn: "#3a6b9a",
       authnF: "#e9eff7"
-    },
-    lv: {
-      public: ["#f7e2da", "#c0562a"],
-      internal: ["#f6ecd2", "#b0842e"],
-      restricted: ["#e6f0f1", "#3f7a8c"],
-      secret: ["#f0e8ef", "#8a5f7a"]
     }
   },
   contrast: {
@@ -92785,12 +92751,6 @@ var THEME_SPECS = {
       fwF: "#fbe3df",
       authn: "#00408f",
       authnF: "#dfe8fb"
-    },
-    lv: {
-      public: ["#f9dcd6", "#c0341a"],
-      internal: ["#f6e6c8", "#9a6a00"],
-      restricted: ["#e0edf7", "#005a9c"],
-      secret: ["#eee0f7", "#6a2fa0"]
     }
   },
   nord: {
@@ -92847,12 +92807,6 @@ var THEME_SPECS = {
       fwF: "#3b2f34",
       authn: "#81a1c1",
       authnF: "#333c4a"
-    },
-    lv: {
-      public: ["#3a2a2d", "#bf616a"],
-      internal: ["#3a3524", "#d0a85f"],
-      restricted: ["#2f3a44", "#81a1c1"],
-      secret: ["#312a3a", "#a38bbd"]
     }
   },
   solarized: {
@@ -92908,12 +92862,6 @@ var THEME_SPECS = {
       fwF: "#f7e3dd",
       authn: "#268bd2",
       authnF: "#e3edf5"
-    },
-    lv: {
-      public: ["#f7ddd6", "#dc322f"],
-      internal: ["#f2e6c8", "#b58900"],
-      restricted: ["#e3edf3", "#268bd2"],
-      secret: ["#e8e6f2", "#6c71c4"]
     }
   }
 };
@@ -92925,18 +92873,8 @@ function isDarkTheme(name) {
   return name === "classic-dark" || THEME_SPECS[name]?.dark === true;
 }
 function themeFor(name, view) {
-  if (name === "classic")
-    return {
-      palette: lightPalette,
-      kinds: view.defaults,
-      levels: view.levelDefaults ?? {}
-    };
-  if (name === "classic-dark")
-    return {
-      palette: darkPalette,
-      kinds: view.defaultsDark,
-      levels: view.levelDefaultsDark ?? {}
-    };
+  if (name === "classic") return { palette: lightPalette, kinds: view.defaults };
+  if (name === "classic-dark") return { palette: darkPalette, kinds: view.defaultsDark };
   return applyTheme(themes[name] ?? themes.light, view);
 }
 function themeFromSpec(spec, view) {
@@ -92952,8 +92890,8 @@ function paletteFromSpec(spec) {
 }
 function applyTheme(theme, view) {
   const kinds = {};
-  for (const kind of view.kinds) kinds[kind] = theme.roles[roleForKind(kind, view.name)] ?? {};
-  return { palette: theme.palette, kinds, levels: theme.levels };
+  for (const kind of view.kinds) kinds[kind] = theme.roles[roleForKind(kind)] ?? {};
+  return { palette: theme.palette, kinds };
 }
 
 // src/element-tree.ts
@@ -93071,7 +93009,7 @@ function parseFlow(p, sourceToken) {
   model.flows.push(flow);
 }
 function parseElement(p, sourceToken, parent) {
-  const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
+  const { matchToken, advance, reportError, syncToNextLine, model } = p;
   if (!matchToken("id")) {
     reportError(
       `invalid declaration: \`${sourceToken.text}\` alone on this line`,
@@ -93091,28 +93029,6 @@ function parseElement(p, sourceToken, parent) {
     parent: parent ?? void 0
   };
   if (matchToken("str")) element.label = advance().text;
-  if (matchToken("lparen")) {
-    advance();
-    if (matchToken("id")) {
-      const token = advance();
-      element.attr = {
-        value: token.text,
-        span: token.span
-      };
-    } else
-      reportError(
-        "attribute value expected after `(`",
-        lookAhead().span,
-        'e.g. `trust-zone DMZ "DMZ" (public)`'
-      );
-    if (matchToken("rparen")) advance();
-    else
-      reportError(
-        "`)` expected to close the attribute",
-        lookAhead().span,
-        'e.g. `trust-zone DMZ "DMZ" (public)`'
-      );
-  }
   if (matchToken("lbrace")) {
     advance();
     p.parseElementBody(element);
@@ -94168,185 +94084,10 @@ var infrastructureView = {
     }
   }
 };
-var SEC_LEVELS = ["public", "internal", "restricted", "secret"];
-var securityView = {
-  name: "security",
-  kinds: ["trust-zone", "security-node", "asset", "actor-group", "actor", "external"],
-  containerKinds: ["trust-zone", "actor-group"],
-  // Security flows state their encryption (W0561) but no port; the trust zone
-  // an endpoint sits in is the point of the view, so it annotates every row.
-  matrix: {
-    zoneKinds: ["trust-zone"],
-    columns: ["num", "source", "dest", "proto", "nature"]
-  },
-  legendNames: {
-    "trust-zone": "Trust zone (sensitivity)",
-    "security-node": "Filtering / security node",
-    asset: "Sensitive asset",
-    "actor-group": "Actor group",
-    actor: "Actor",
-    external: "Untrusted external"
-  },
-  legendNamesFr: {
-    "trust-zone": "Zone de confiance (sensibilit\xE9)",
-    "security-node": "N\u0153ud de filtrage / s\xE9curit\xE9",
-    asset: "Actif sensible",
-    "actor-group": "Groupe d'acteurs",
-    actor: "Acteur",
-    external: "Externe non ma\xEEtris\xE9"
-  },
-  bandTitles: {
-    flows: "FLOWS",
-    objects: "BUSINESS OBJECTS",
-    legend: "LEGEND"
-  },
-  legendFlowLabel: "Security flow \u2014 cross-zone flows should be filtered and encrypted",
-  legendFlowLabelFr: "Flux de s\xE9curit\xE9 \u2014 les flux inter-zones doivent \xEAtre filtr\xE9s et chiffr\xE9s",
-  partitions: {},
-  partitionByOrder: true,
-  flowLabelRequired: {
-    code: "E0203",
-    message: "flow without a label",
-    help: 'add a label describing the exchange: `A -> B : "\u2026" (TLS1.3)`'
-  },
-  flowTechRequired: null,
-  flowTechRecommended: null,
-  attrSpec: {
-    kind: "trust-zone",
-    values: SEC_LEVELS,
-    code: "E0250",
-    message: "trust zone without a valid sensitivity level",
-    help: 'set a level in parentheses: `trust-zone DMZ "DMZ" (public)` \u2014 one of public, internal, restricted, secret'
-  },
-  trustOrder: { public: 0, internal: 1, restricted: 2, secret: 3 },
-  boundaryLint: {
-    code: "W0560",
-    nodeKind: "security-node",
-    message: "unfiltered trust-boundary crossing",
-    help: "route this flow through a `security-node` (firewall/WAF/bastion), or confirm the direct path is intended"
-  },
-  crossZoneTechRecommended: {
-    code: "W0561",
-    message: "cross-zone flow without stated encryption/protocol",
-    help: 'add the protocol/encryption on inter-zone flows: `A -> B : "\u2026" (TLS1.3)`'
-  },
-  nesting: [
-    {
-      code: "E0217",
-      child: "asset",
-      parents: ["trust-zone"],
-      message: "sensitive asset outside any trust zone",
-      help: "move this `asset` inside a `trust-zone`"
-    },
-    {
-      code: "E0218",
-      child: "security-node",
-      parents: ["trust-zone"],
-      message: "security node outside any trust zone",
-      help: "place this `security-node` inside a `trust-zone` (typically the exposed one it protects)"
-    },
-    {
-      code: "E0211",
-      child: "actor",
-      parents: ["actor-group"],
-      message: "actor outside any group",
-      help: "move this `actor` inside an `actor-group`"
-    }
-  ],
-  minCounts: [],
-  isolatedWarn: {
-    code: "W0510",
-    kinds: ["asset"],
-    message: "isolated element: no incoming or outgoing flow"
-  },
-  defaults: {
-    "trust-zone": {
-      fill: "#f5f5f4",
-      stroke: { color: "#8a8a85", style: "solid", width: 1.3 }
-    },
-    "security-node": {
-      fill: "#fff7e6",
-      stroke: { color: "#c46b2a", style: "solid", width: 1.6 }
-    },
-    asset: {
-      fill: "#ffffff",
-      stroke: { color: "#55606b", style: "solid", width: 1.3 }
-    },
-    "actor-group": {
-      fill: "#eef4fb",
-      stroke: { color: "#7a9cc4", style: "dashed", width: 1.2 }
-    },
-    external: {
-      fill: "#fdecea",
-      stroke: { color: "#d9534f", style: "dashed", width: 1.3 }
-    },
-    actor: {}
-  },
-  defaultsDark: {
-    "trust-zone": {
-      fill: "#26261f",
-      stroke: { color: "#8a8a72", style: "solid", width: 1.3 }
-    },
-    "security-node": {
-      fill: "#2e2717",
-      stroke: { color: "#c46b2a", style: "solid", width: 1.6 }
-    },
-    asset: {
-      fill: "#252a31",
-      stroke: { color: "#6b7885", style: "solid", width: 1.3 }
-    },
-    "actor-group": {
-      fill: "#232a33",
-      stroke: { color: "#5c7fa8", style: "dashed", width: 1.2 }
-    },
-    external: {
-      fill: "#3a2422",
-      stroke: { color: "#c25a54", style: "dashed", width: 1.3 }
-    },
-    actor: {}
-  },
-  levelDefaults: {
-    public: {
-      fill: "#fdecea",
-      stroke: { color: "#d9534f", style: "solid", width: 1.4 }
-    },
-    internal: {
-      fill: "#fff4e5",
-      stroke: { color: "#e0a458", style: "solid", width: 1.4 }
-    },
-    restricted: {
-      fill: "#e8f1f8",
-      stroke: { color: "#5b8db8", style: "solid", width: 1.4 }
-    },
-    secret: {
-      fill: "#ece8f5",
-      stroke: { color: "#7a5fae", style: "solid", width: 1.4 }
-    }
-  },
-  levelDefaultsDark: {
-    public: {
-      fill: "#3a2422",
-      stroke: { color: "#c25a54", style: "solid", width: 1.4 }
-    },
-    internal: {
-      fill: "#332a1c",
-      stroke: { color: "#c08a44", style: "solid", width: 1.4 }
-    },
-    restricted: {
-      fill: "#1f2a33",
-      stroke: { color: "#4a7ba6", style: "solid", width: 1.4 }
-    },
-    secret: {
-      fill: "#2a2433",
-      stroke: { color: "#7a5f9e", style: "solid", width: 1.4 }
-    }
-  }
-};
 var views = {
   logical: logicalView,
   application: applicationView,
-  infrastructure: infrastructureView,
-  security: securityView
+  infrastructure: infrastructureView
 };
 
 // src/logos.ts
@@ -94521,9 +94262,7 @@ function validate(model) {
     ...checkMissingLabels(elements),
     ...checkNesting(elements, view),
     ...checkFlows(model, view),
-    ...checkElementAttributes(elements, view),
     ...checkLogos(elements, view),
-    ...checkTrustBoundaries(model, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
     ...checkIsolatedElements(model, view, elements)
@@ -94693,75 +94432,6 @@ function checkFlows(model, view) {
         note: `the \`${view.name}\` view forbids unlabelled arrows`,
         help: view.flowLabelRequired.help,
         fix: { insert: ' : "\u2026"', atEndOfLine: true }
-      });
-    }
-  }
-  return diagnostics;
-}
-function checkElementAttributes(elements, view) {
-  const spec = view.attrSpec;
-  if (!spec) return [];
-  const diagnostics = [];
-  for (const element of elements) {
-    if (element.kind !== spec.kind) continue;
-    if (!element.attr) {
-      diagnostics.push({
-        code: spec.code,
-        severity: "error",
-        message: spec.message + ` (\`${element.id}\`)`,
-        span: element.idSpan,
-        help: spec.help
-      });
-    } else if (!spec.values.includes(element.attr.value)) {
-      const suggestion = nearest(element.attr.value, spec.values);
-      diagnostics.push({
-        code: spec.code,
-        severity: "error",
-        message: `invalid ${spec.kind} value \`${element.attr.value}\` (\`${element.id}\`)`,
-        span: element.attr.span,
-        note: `allowed: ${spec.values.join(", ")}`,
-        help: suggestion ? `did you mean \`${suggestion}\`?` : spec.help
-      });
-    }
-  }
-  return diagnostics;
-}
-function checkTrustBoundaries(model, view) {
-  if (!view.boundaryLint && !view.crossZoneTechRecommended) return [];
-  const diagnostics = [];
-  const zoneOf2 = (id) => {
-    for (let ancestor = model.index.get(id)?.parent; ancestor; ancestor = ancestor.parent)
-      if (ancestor.kind === "trust-zone") return ancestor;
-    return void 0;
-  };
-  const trustLevelOf = (id) => {
-    const level = zoneOf2(id)?.attr?.value;
-    return level && view.trustOrder?.[level] !== void 0 ? view.trustOrder[level] : -1;
-  };
-  const lint = view.boundaryLint;
-  const isSecurityNode = (id) => lint !== void 0 && model.index.get(id)?.kind === lint.nodeKind;
-  for (const flow of model.flows) {
-    if (!model.index.has(flow.from) || !model.index.has(flow.to)) continue;
-    const crossesZone = zoneOf2(flow.from) !== zoneOf2(flow.to);
-    const boundaryViolation = lint !== void 0 && trustLevelOf(flow.to) > trustLevelOf(flow.from) && !isSecurityNode(flow.from) && !isSecurityNode(flow.to);
-    if (boundaryViolation) {
-      diagnostics.push({
-        code: lint.code,
-        severity: "warning",
-        message: lint.message,
-        span: flow.span,
-        note: `flow enters a more-trusted zone without passing a \`${lint.nodeKind}\``,
-        help: lint.help
-      });
-    }
-    if (view.crossZoneTechRecommended && crossesZone && !flow.tech?.protocol) {
-      diagnostics.push({
-        code: view.crossZoneTechRecommended.code,
-        severity: "warning",
-        message: view.crossZoneTechRecommended.message,
-        span: flow.span,
-        note: "inter-zone flow \u2014 state how the traffic is protected",
-        help: view.crossZoneTechRecommended.help
       });
     }
   }
@@ -100069,12 +99739,6 @@ var escAttr = (text) => esc(text).replace(/"/g, "&quot;");
 var HOP_RADIUS = 5;
 var LABEL_HALO = 4;
 var RENDER_CHAR_WIDTH = 0.52;
-var SEC_LEVEL_FR = {
-  public: "public",
-  internal: "interne",
-  restricted: "restreint",
-  secret: "secret"
-};
 var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
 var round1 = (n) => Math.round(n * 10) / 10;
 function assignSourceHues(model, hues) {
@@ -100087,7 +99751,7 @@ function assignSourceHues(model, hues) {
 }
 function collectElementStyles(elements) {
   return elements.flatMap((element) => [
-    { id: element.id, style: element.style, attrValue: element.attr?.value, logo: element.logo },
+    { id: element.id, style: element.style, logo: element.logo },
     ...collectElementStyles(element.children)
   ]);
 }
@@ -100237,17 +99901,7 @@ function createNodeLabelHelpers(nodeFontSize) {
   return { centeredNodeLabel, centerLinesY, glyphLabelCenterX, logoLabelCenterX };
 }
 function createNodeRenderers(paint) {
-  const {
-    palette,
-    style,
-    annot,
-    nodeFontSize,
-    containerFontSize,
-    resolveStyle,
-    elementAttr,
-    elementLogo,
-    resolvedLogos
-  } = paint;
+  const { palette, nodeFontSize, containerFontSize, resolveStyle, elementLogo, resolvedLogos } = paint;
   const logoFor = (node, stroke, inset) => logoSvg({ logo: elementLogo.get(node.id), resolved: resolvedLogos, node, stroke, inset });
   const { centeredNodeLabel, centerLinesY, glyphLabelCenterX, logoLabelCenterX } = createNodeLabelHelpers(nodeFontSize);
   const renderContainerNode = (node) => {
@@ -100261,12 +99915,6 @@ function createNodeRenderers(paint) {
 `;
     });
     svg += logoFor(node, stroke);
-    const level = node.kind === "trust-zone" ? elementAttr.get(node.id) : void 0;
-    if (level) {
-      const word = (style.lang === "fr" ? SEC_LEVEL_FR[level] : level) ?? level;
-      svg += `<text x="${node.x + node.width - 9}" y="${node.y + node.height - 6}" font-size="${annot.tag}" text-anchor="end" font-weight="bold" fill="${stroke}" letter-spacing="0.5">${esc(word.toUpperCase())}</text>
-`;
-    }
     return svg;
   };
   const renderActor = (node, nodeStyle, lines) => {
@@ -100769,11 +100417,7 @@ function render(model, view, scene, options) {
     chipTextDy: round1(11 * fonts.scale)
   };
   const scaled = (n) => round1(n * fonts.scale);
-  const {
-    palette,
-    kinds: kindDefaults,
-    levels: levelDefaults
-  } = options?.theme ? themeFromSpec(options.theme, view) : themeFor(style.theme, view);
+  const { palette, kinds: kindDefaults } = options?.theme ? themeFromSpec(options.theme, view) : themeFor(style.theme, view);
   const onDarkGround = options?.theme ? options.theme.dark === true : isDarkTheme(style.theme);
   const defaultEdgeColor = style.flowStrokeColorSet ? style.flowStroke.color : style.accent ?? palette.edge;
   const sourceHue = style.flowColor === "by-source" ? assignSourceHues(model, flowPalette[onDarkGround ? "dark" : "light"]) : /* @__PURE__ */ new Map();
@@ -100794,17 +100438,13 @@ function render(model, view, scene, options) {
   const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
   const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
   const elementStyle = /* @__PURE__ */ new Map();
-  const elementAttr = /* @__PURE__ */ new Map();
   const elementLogo = /* @__PURE__ */ new Map();
   for (const entry of collectElementStyles(model.elements)) {
     elementStyle.set(entry.id, entry.style);
-    elementAttr.set(entry.id, entry.attrValue);
     if (entry.logo) elementLogo.set(entry.id, entry.logo);
   }
   const resolveStyle = (kind, id) => {
-    let base = kindDefaults[kind] ?? {};
-    const level = elementAttr.get(id);
-    if (kind === "trust-zone" && level && levelDefaults?.[level]) base = levelDefaults[level];
+    const base = kindDefaults[kind] ?? {};
     const perKind = style.kind[kind] ?? {};
     const inline = elementStyle.get(id) ?? {};
     return {
@@ -100841,12 +100481,9 @@ function render(model, view, scene, options) {
   compactVertical(scene);
   const { renderContainerNode, renderLeafNode } = createNodeRenderers({
     palette,
-    style,
-    annot,
     nodeFontSize,
     containerFontSize,
     resolveStyle,
-    elementAttr,
     elementLogo,
     resolvedLogos: options?.logos
   });
@@ -101085,9 +100722,8 @@ var merge = (base, patch) => {
   }
   return merged;
 };
-var SECTIONS = ["pal", "accentColors", "lv"];
+var SECTIONS = ["pal", "accentColors"];
 var arityOf = (section, key) => {
-  if (section === "lv") return 2;
   if (section === "pal") return key === "chip" ? 3 : key === "badge" ? 2 : 1;
   return 1;
 };

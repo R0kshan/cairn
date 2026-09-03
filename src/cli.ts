@@ -33,8 +33,6 @@ const TYPE_FLAGS: Record<string, string> = {
   "-A": "application",
   "--infrastructure-architecture": "infrastructure",
   "-I": "infrastructure",
-  "--security-architecture": "security",
-  "-S": "security",
 };
 
 const TEMPLATE_LOGICAL = `diagram logical "Diagram title"
@@ -160,40 +158,10 @@ CORE_I   -> PARTNER : "Nightly export" (SFTP/22)
 # Add \`style { lang: fr }\` above to get French column headers (N°, Protocole…).
 `;
 
-const TEMPLATE_SECURITY = `diagram security "Diagram title"
-
-# A security diagram shows trust zones (each with a sensitivity level), the
-# filtering/security nodes between them, and the sensitive assets they protect.
-# Zones band left→right in declaration order (most exposed → most protected).
-# Levels, least→most trusted: public | internal | restricted | secret.
-
-trust-zone INTERNET "Internet" (public) {
-  security-node WAF "WAF / reverse proxy"
-}
-
-trust-zone LAN "Internal zone" (internal) {
-  asset APP "Business application"
-}
-
-trust-zone DATA "Data zone" (restricted) {
-  asset DB "Customer database"
-}
-
-external USERS "End users"
-
-# ---- security flows (cross-zone flows should be filtered + encrypted) ----
-USERS -> WAF : "HTTPS access" (TLS1.3)
-WAF   -> APP : "Filtered traffic" (mTLS)
-APP   -> DB  : "Read/write" (TLS1.3)
-
-# W0560 warns on any flow entering a more-trusted zone without a security-node.
-`;
-
 const TEMPLATES: Record<string, string> = {
   logical: TEMPLATE_LOGICAL,
   application: TEMPLATE_APPLICATION,
   infrastructure: TEMPLATE_INFRASTRUCTURE,
-  security: TEMPLATE_SECURITY,
 };
 
 const args = process.argv.slice(2);
@@ -229,9 +197,9 @@ function usage(): never {
   console.log(`cairn — architecture diagrams as code
 
 Usage:
-  cairn new (--logical-architecture|-L|-A|-I|-S) <file.cairn>   scaffold a typed template
+  cairn new (--logical-architecture|-L|-A|-I) <file.cairn>      scaffold a typed template
                                                       (-L logical, -A application,
-                                                       -I infrastructure, -S security)
+                                                       -I infrastructure)
   cairn validate <file.cairn> [--format json] [--strict]
   cairn build <file.cairn> [-o output.svg] [--theme <name|file.json>]
   cairn matrix <file.cairn> [--format csv|md|svg] [-o out] [--theme <name|file.json>]
