@@ -27,15 +27,31 @@ VERSION="$(node -p "require('./package.json').version")"
 DEFINE_VERSION="--define:CAIRN_BUILD_VERSION=\"$VERSION\""
 
 echo "• building browser bundle → playground/cairn-engine.js"
+# Both bundles inline elkjs, so both redistribute EPL-2.0 code. `--minify`
+# strips its plain block-comment header, so the notice is attached explicitly
+# (scripts/notice-banner.sh) rather than relying on upstream punctuation.
+. "$(dirname "$0")/notice-banner.sh"
+
 $ESBUILD src/playground.ts \
   --bundle --format=esm --platform=browser --minify "$DEFINE_VERSION" \
+  --banner:js="$NOTICE_BANNER" \
+  --legal-comments=eof \
   --outfile=playground/cairn-engine.js --log-level=warning
 
 echo "• building node bundle    → playground/lib/engine.node.mjs"
 mkdir -p playground/lib
 $ESBUILD src/playground.ts \
   --bundle --format=esm --platform=node "$DEFINE_VERSION" \
+  --banner:js="$NOTICE_BANNER" \
+  --legal-comments=eof \
   --outfile=playground/lib/engine.node.mjs --log-level=warning
+
+# The deployed page serves a bundle that inlines elkjs (EPL-2.0) and the Simple
+# Icons artwork, so the licence texts are part of what the site distributes.
+# Copied rather than symlinked: Vercel deploys this directory as static files.
+echo "• copying licence texts   → playground/"
+cp LICENSE THIRD-PARTY-NOTICES.md playground/
+cp licenses/elkjs-EPL-2.0.md licenses/simple-icons-CC0-1.0.md playground/
 
 echo "✓ browser: $(du -h playground/cairn-engine.js | cut -f1)  node: $(du -h playground/lib/engine.node.mjs | cut -f1)"
 echo "  local static preview:  npx serve playground"

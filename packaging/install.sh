@@ -101,6 +101,27 @@ mkdir -p "$INSTALL_DIR"
 mv "$tmp/cairn" "$INSTALL_DIR/cairn"
 chmod +x "$INSTALL_DIR/cairn"
 
+# --- the licence texts travel with the binary ---------------------------------
+# It inlines elkjs (EPL-2.0) and the Simple Icons artwork, so the notices are
+# part of what this script distributes: EPL-2.0 §3.1(b) wants a copy of the
+# Agreement alongside each copy of the program, and six of the vendored icons
+# carry terms that require attribution. Best-effort — a missing notice must not
+# leave a half-installed binary behind, so a failed fetch warns and moves on.
+DOC_DIR="${CAIRN_DOC_DIR:-$INSTALL_DIR/../share/doc/cairn}"
+if mkdir -p "$DOC_DIR" 2>/dev/null; then
+  missing=""
+  for doc in LICENSE THIRD-PARTY-NOTICES.md elkjs-EPL-2.0.md simple-icons-CC0-1.0.md; do
+    curl -fsSL -o "$DOC_DIR/$doc" "$base/$doc" 2>/dev/null || missing="$missing $doc"
+  done
+  if [ -n "$missing" ]; then
+    echo "note: could not fetch:$missing — read them at https://github.com/$REPO" >&2
+  else
+    echo "✓ licences: $DOC_DIR"
+  fi
+else
+  echo "note: could not write $DOC_DIR — licences are at https://github.com/$REPO" >&2
+fi
+
 # macOS quarantines files downloaded via curl; strip it so Gatekeeper doesn't
 # block the unsigned binary on first run. (Homebrew does this automatically.)
 if [ "$os" = darwin ]; then

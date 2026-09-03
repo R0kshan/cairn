@@ -22,6 +22,7 @@
   .diag:hover { background:var(--bg); }
   .diag b.e { color:var(--err); } .diag b.w { color:var(--warn); }
   .diag .help { color:var(--dim); display:block; }
+  a.note { color:var(--dim); text-decoration:underline; }
   .right { flex:1; display:flex; flex-direction:column; min-width:0; }
   #preview { flex:1; overflow:auto; background:#ffffff; display:flex; align-items:flex-start; position:relative; }
   #preview svg { max-width:none; }
@@ -60,6 +61,10 @@
   </select>
   <button id="download-matrix" title="The flows of this diagram as a table — the matrice des flux techniques">Download matrix</button>
   <span class="note" id="note"></span>
+  <!-- The engine bundle inlines elkjs (EPL-2.0) and the Simple Icons artwork,
+       so serving this page distributes them: the notices have to be reachable
+       from it. build-playground.sh copies the texts in beside the bundle. -->
+  <a class="note" id="licences" href="./THIRD-PARTY-NOTICES.md">licences</a>
 </header>
 <main>
   <div class="left">

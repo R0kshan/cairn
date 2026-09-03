@@ -2,20 +2,46 @@
   "version": "0.1.0",
   "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
   "homepage": "https://github.com/R0kshan/cairn",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "architecture": {
     "64bit": {
-      "url": "https://github.com/R0kshan/cairn/releases/download/v0.1.0/cairn-0.1.0-windows-x64.exe",
-      "hash": "REPLACED_BY_RELEASE_WORKFLOW"
+      "url": [
+        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/cairn-0.1.0-windows-x64.exe",
+        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/LICENSE",
+        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/THIRD-PARTY-NOTICES.md",
+        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/elkjs-EPL-2.0.md",
+        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/simple-icons-CC0-1.0.md"
+      ],
+      "hash": [
+        "REPLACED_BY_RELEASE_WORKFLOW",
+        "REPLACED_BY_RELEASE_WORKFLOW",
+        "REPLACED_BY_RELEASE_WORKFLOW",
+        "REPLACED_BY_RELEASE_WORKFLOW",
+        "REPLACED_BY_RELEASE_WORKFLOW"
+      ]
     }
   },
-  "bin": [["cairn-0.1.0-windows-x64.exe", "cairn"]],
-  "checkver": { "github": "https://github.com/R0kshan/cairn" },
+  "bin": [
+    [
+      "cairn-0.1.0-windows-x64.exe",
+      "cairn"
+    ]
+  ],
+  "checkver": {
+    "github": "https://github.com/R0kshan/cairn"
+  },
   "autoupdate": {
     "architecture": {
       "64bit": {
-        "url": "https://github.com/R0kshan/cairn/releases/download/v$version/cairn-$version-windows-x64.exe"
+        "url": [
+          "https://github.com/R0kshan/cairn/releases/download/v$version/cairn-$version-windows-x64.exe",
+          "https://github.com/R0kshan/cairn/releases/download/v$version/LICENSE",
+          "https://github.com/R0kshan/cairn/releases/download/v$version/THIRD-PARTY-NOTICES.md",
+          "https://github.com/R0kshan/cairn/releases/download/v$version/elkjs-EPL-2.0.md",
+          "https://github.com/R0kshan/cairn/releases/download/v$version/simple-icons-CC0-1.0.md"
+        ]
       }
     }
-  }
+  },
+  "notes": "cairn is Apache-2.0. The binary inlines elkjs (EPL-2.0) and Simple Icons artwork; LICENSE, THIRD-PARTY-NOTICES.md and the full licence texts are installed alongside it."
 }

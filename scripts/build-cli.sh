@@ -30,10 +30,17 @@ OUT=bin/cairn.mjs
 # JS expression, hence the embedded quotes.
 VERSION="$(node -p "require('./package.json').version")"
 
+# The bundle inlines elkjs, so it redistributes EPL-2.0 code: the banner carries
+# the notice (scripts/notice-banner.sh) behind the shebang, which must stay the
+# very first line. See THIRD-PARTY-NOTICES.md.
+. "$(dirname "$0")/notice-banner.sh"
+
 npx --no-install esbuild src/cli-npm.ts \
   --bundle --format=esm --platform=node \
   --define:CAIRN_BUILD_VERSION="\"$VERSION\"" \
-  --banner:js='#!/usr/bin/env node' \
+  --banner:js="#!/usr/bin/env node
+$NOTICE_BANNER" \
+  --legal-comments=eof \
   --log-level=warning \
   --outfile="$OUT"
 

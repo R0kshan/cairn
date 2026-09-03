@@ -4,17 +4,8 @@ cairn is Apache-2.0 (`LICENSE`). Its shipped artifacts — the npm tarball's
 `bin/cairn.mjs`, the release binaries, the playground bundles — additionally
 *contain* third-party code, so this notice travels with them.
 
-Build-only tools (esbuild, biome, typescript) are not listed: nothing of theirs
-is distributed. Bun is a different case — `bun build --compile` embeds its
-runtime in every release binary — and has its own section below.
-
-Where each artifact carries this notice:
-
-| Artifact | How the notices travel |
-|---|---|
-| npm tarball | `files` ships `LICENSE`, this file and `licenses/`; both bundles also carry a banner naming what they inline |
-| release binaries | uploaded as release assets beside the binaries; installed into `share/doc/cairn` by `packaging/install.sh`, and into the formula's `doc` by the Homebrew tap and the app directory by the Scoop manifest |
-| playground | served from the deployed site next to the bundle, linked from the page header; the bundle carries the same banner |
+Build-only tools (esbuild, Bun, biome, typescript) are not listed: nothing of
+theirs is distributed.
 
 ## elkjs
 
@@ -37,26 +28,6 @@ ties it back to.
 
 cairn asserts no ownership over elkjs and does not relicense it. Apache-2.0
 covers cairn's own code only.
-
-## Bun
-
-The release binaries are built with `bun build --compile`
-(`scripts/build-binaries.sh`), which packages cairn's code **together with the
-Bun runtime** into one executable. So unlike esbuild, biome and typescript, Bun
-is not merely a build tool here: part of it is distributed in every binary
-cairn publishes. The npm bundles and the playground are built with esbuild and
-carry none of it.
-
-Bun itself is MIT. Its runtime embeds further components with their own terms —
-JavaScriptCore, from WebKit, is the significant one, carrying LGPL-2.1 terms for
-part of its source alongside BSD-licensed portions. **Bun's own `LICENSE.md` is
-the authoritative enumeration** of what a compiled binary carries, upstream at
-https://github.com/oven-sh/bun/blob/main/LICENSE.md, and it is the document to
-consult before shipping a binary release.
-
-This section states the fact that the runtime is embedded. It does not attempt
-to reproduce that enumeration, and nothing here is legal advice about how the
-LGPL components should be handled for a statically linked executable.
 
 ## simple-icons
 

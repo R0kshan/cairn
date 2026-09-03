@@ -1,3 +1,12 @@
+/*! cairn — Apache-2.0 — https://github.com/R0kshan/cairn
+ * Bundles elkjs 0.12.0, (c) 2017 Kiel University and others.
+ *   EPL-2.0 OR GPL-3.0-or-later; cairn elects EPL-2.0.
+ *   License: https://www.eclipse.org/legal/epl-2.0
+ * Embeds Simple Icons artwork (CC0-1.0), some icons under their own
+ *   MIT, BSD-3-Clause, CC-BY-4.0 or Apache-2.0 terms.
+ * Full license texts and per-icon attribution: THIRD-PARTY-NOTICES.md,
+ *   https://github.com/R0kshan/cairn/blob/main/THIRD-PARTY-NOTICES.md
+ */
 var __create = Object.create;
 var __defProp = Object.defineProperty;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
