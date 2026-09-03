@@ -67,8 +67,10 @@ inside an inline block is **E0104**.
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a level (`public\|internal\|restricted\|secret`, **E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**) |
 
 Nesting is checked against the rules each view declares (**E0210–E0218**); a
-combination no rule names is accepted, so the per-view tables below mark what is
-*enforced* and what is convention.
+combination no rule names is accepted. In the per-view tables below, a
+**Placement** cell in bold and naming a diagnostic code is enforced by the
+validator — anything else is convention the validator does not check, so a
+`queue` declared inside an `application` parses and renders.
 
 ### 1.1 Logical view — `diagram logical`
 
@@ -76,7 +78,7 @@ What the system does, in functional terms: who uses it, which functional blocks
 it is made of, and what data circulates between them. No technology, no
 deployment.
 
-| Kind | Stands for | Container? | Enforced placement | Drawn as |
+| Kind | Stands for | Container? | Placement | Drawn as |
 |---|---|---|---|---|
 | `actor-group` | a population of roles | yes (holds `actor`) | root | dashed box, band 0 |
 | `actor` | one role or person | no | **inside an `actor-group`** (**E0211**) | person glyph |
@@ -150,7 +152,7 @@ legend {
 Which applications exist, what they are built with, and which technical
 exchanges connect them — the C4 container level.
 
-| Kind | Stands for | Container? | Enforced placement | `logo:` | Drawn as |
+| Kind | Stands for | Container? | Placement | `logo:` | Drawn as |
 |---|---|---|---|---|---|
 | `actor-group` | a population of roles | yes (holds `actor`) | root | no | dashed box, band 0 |
 | `actor` | one role or person | no | **inside an `actor-group`** (**E0211**) | no | person glyph |
@@ -180,10 +182,11 @@ rejected here (**E0222**). An unconnected `module`, `gateway`, `auth`, `idp`,
 `queue` or `datastore` warns (**W0510**).
 
 `gateway`, `auth` and `idp` are three of the kinds the infrastructure view has,
-drawn identically — same colours, same corner glyph. An API gateway, an auth
-middleware and an identity provider are containers at the C4 level in their own
-right, and the glyph is what tells them apart from a plain `application` at a
-glance. Use `idp` for a provider that belongs to the landscape being described —
+drawn identically — same colours, same corner placement, each with its own
+glyph: a gate, a padlock, a badge. An API gateway, an auth middleware and an
+identity provider are containers at the C4 level in their own right, and the
+glyph is what tells them apart from a plain `application`, and from each other,
+at a glance. Use `idp` for a provider that belongs to the landscape being described —
 a self-hosted Keycloak, the group's SSO — and `external` for one owned by
 someone else, the way any third party is drawn. `firewall` stays out of this
 view on purpose: it is a network device with no application meaning. None of the
@@ -237,7 +240,7 @@ servers, deployed instances, the boxes in the path (gateway, firewall, auth,
 IdP), and every flow's protocol and port. This is the view the *matrice des flux
 techniques* is built from.
 
-| Kind | Stands for | Container? | Enforced placement | Drawn as |
+| Kind | Stands for | Container? | Placement | Drawn as |
 |---|---|---|---|---|
 | `actor` | a user or consumer of the infrastructure | no | root (**no `actor-group` in this view**) | person glyph, entry side |
 | `site` | a site or data center | yes | root | box with title |
