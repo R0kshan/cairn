@@ -16,7 +16,15 @@ import type { Model, Element } from "./models/ast.ts";
 import type { ELK, ElkNode } from "elkjs/lib/elk.bundled.js";
 import type { View } from "./views.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel, LaidOutNode } from "./scene-layout.ts";
-import { measure, wrapText, nodeSize, flowLabelBox, techText, fontSizes } from "./text-metrics.ts";
+import {
+  measure,
+  wrapText,
+  nodeSize,
+  flowLabelBox,
+  techText,
+  fontSizes,
+  GLYPH_GUTTER,
+} from "./text-metrics.ts";
 import type { Box, Point } from "./geometry.ts";
 import { subtreeElements, indexElementsById } from "./element-tree.ts";
 
@@ -84,14 +92,17 @@ interface FoldStyle {
   scale: number;
   chipsOf: (flow: { objects?: { id: string }[] }) => string[];
   numLabel: (flow: { id: string }) => { text: string; width: number; height: number };
+  /** Kinds drawn with a corner glyph — see `View.glyphKinds`. */
+  glyphKinds: ReadonlySet<string>;
 }
 
-function foldStyle(model: Model): FoldStyle {
+function foldStyle(model: Model, view: View): FoldStyle {
   const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";
   const { edge, node, cont, scale } = fontSizes(model.style.font.size);
   return {
     numbered,
+    glyphKinds: new Set(view.glyphKinds ?? []),
     edge,
     node,
     cont,
@@ -110,8 +121,23 @@ function foldStyle(model: Model): FoldStyle {
   };
 }
 
+/**
+ * The size of one leaf box. Every leaf in the folded layout is measured here so
+ * a glyph kind reserves its gutter on this path too — the main layout does the
+ * same in `scene-layout.ts`, and the two must agree or a glyph would be drawn
+ * over a label the folded path had sized without room for it.
+ */
+function leafSize(element: Element, style: FoldStyle) {
+  return nodeSize(
+    element.kind,
+    element.label ?? element.id,
+    style.node,
+    style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0,
+  );
+}
+
 /** Converts an `Element` (and its children, recursively) into elk's input node shape. */
-function toElkNode(element: Element, containerFontSize: number, nodeFontSize: number): ElkNode {
+function toElkNode(element: Element, style: FoldStyle): ElkNode {
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
     return {
@@ -122,13 +148,13 @@ function toElkNode(element: Element, containerFontSize: number, nodeFontSize: nu
       labels: [
         {
           text: element.label ?? element.id,
-          ...measure(element.label ?? element.id, containerFontSize),
+          ...measure(element.label ?? element.id, style.cont),
         },
       ],
-      children: element.children.map((child) => toElkNode(child, containerFontSize, nodeFontSize)),
+      children: element.children.map((child) => toElkNode(child, style)),
     };
   }
-  const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
+  const size = leafSize(element, style);
   return { id: element.id, width: size.width, height: size.height };
 }
 
@@ -257,7 +283,7 @@ function internalFlowLabels(flow: Flow, style: FoldStyle) {
  * stitches those stubs onto the connector it routes by hand.
  */
 function buildGroupGraph(group: Element, style: FoldStyle, fg: FoldGraph): ElkNode {
-  const node = toElkNode(group, style.cont, style.node);
+  const node = toElkNode(group, style);
   const nodeChildren = (node.children ??= []);
   for (const flow of fg.interFlows) {
     if (fg.rootOf.get(flow.from) === group) {
@@ -325,7 +351,7 @@ function buildGroupGraph(group: Element, style: FoldStyle, fg: FoldGraph): ElkNo
 function layoutColumn(elements: Element[], style: FoldStyle): ColGroup[] {
   return elements.map((group) => {
     const blocks = group.children.map((child) => {
-      const size = nodeSize(child.kind, child.label ?? child.id, style.node);
+      const size = leafSize(child, style);
       return { element: child, width: size.width, height: size.height, x: 0, y: 0 };
     });
     const columnWidth =
@@ -400,7 +426,7 @@ function layoutMiddleRows(
     const result = middleResults.get(element.id) ?? null;
     const size = result
       ? { width: result.children![0].width, height: result.children![0].height }
-      : nodeSize(element.kind, element.label ?? element.id, style.node);
+      : leafSize(element, style);
     rows.push({
       element,
       box: { x: geom.xMiddle, y: yCursor, width: size.width, height: size.height },
@@ -642,7 +668,7 @@ const sideMid = (box: Box, side: "left" | "right"): Point => ({
 
 export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<Scene | null> {
   const roots = model.elements;
-  const style = foldStyle(model);
+  const style = foldStyle(model, view);
   const partitionOf = (element: Element) => view.partitions[element.kind] ?? 1;
   const sources = roots.filter((element) => partitionOf(element) === 0);
   const middles = roots.filter((element) => partitionOf(element) === 1);
@@ -700,7 +726,7 @@ export async function foldedLayout(model: Model, view: View, elk: ELK): Promise<
     ...middles.map((element) =>
       element.children.length
         ? middleResults.get(element.id)!.children![0].width
-        : nodeSize(element.kind, element.label ?? element.id, style.node).width,
+        : leafSize(element, style).width,
     ),
   );
   const widthSink = Math.max(0, ...sinkColumns.map((col) => col.width));

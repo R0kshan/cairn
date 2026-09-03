@@ -951,10 +951,11 @@ function buildElkGraph(
   options?: GraphOptions,
 ): ElkNode {
   const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
-  // `slide-fold.ts` sizes nodes on its own path and does not reserve the
-  // gutter: `foldedLayout` bails out on any `partitionByOrder` view, which is
-  // every view that declares `glyphKinds`. Declaring glyph kinds on a view
-  // without `partitionByOrder` means teaching that path the gutter too.
+  // `slide-fold.ts` sizes nodes on its own path, so it reserves the same gutter
+  // there (`leafSize`). The two must stay in step: a view that declares
+  // `glyphKinds` without `partitionByOrder` — the application view — is laid out
+  // by `foldedLayout` on slides, and a gutter reserved in only one of the two
+  // paths puts a glyph on top of a label.
   const glyphKinds = new Set(view.glyphKinds ?? []);
   const graph: ElkNode = {
     id: "root",

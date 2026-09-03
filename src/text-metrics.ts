@@ -100,16 +100,25 @@ export const flowLabelBox = (opts: {
   };
 };
 
-/** Calculates node dimensions based on kind, label text, and font size. */
+/**
+ * Calculates node dimensions based on kind, label text, and font size.
+ *
+ * `gutter` is horizontal room the label must not use — `GLYPH_GUTTER` for a
+ * kind the renderer draws with a corner glyph. It is added inside the minimum,
+ * not after it, so a short label keeps the normal minimum width and only a
+ * label long enough to reach the glyph widens the box. `actor` ignores it: an
+ * actor is drawn as a figure, never with a glyph.
+ */
 export const nodeSize = (
   kind: string,
   label: string,
   fontSize: number = DEFAULT_FONT_SIZE_NODE,
+  gutter = 0,
 ) => {
   const isActor = kind === "actor";
   const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
   return {
-    width: isActor ? Math.max(64, measured.width + 8) : Math.max(140, measured.width + 16),
+    width: isActor ? Math.max(64, measured.width + 8) : Math.max(140, measured.width + 16 + gutter),
     height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18),
   };
 };

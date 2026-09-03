@@ -226,6 +226,8 @@ const applicationView: View = {
     "system",
     "application",
     "module",
+    "gateway",
+    "auth",
     "queue",
     "datastore",
     "external",
@@ -233,8 +235,15 @@ const applicationView: View = {
   containerKinds: ["actor-group", "system", "application", "external"],
   // A logo says what a thing is built with, so it belongs to the kinds that run
   // code. `actor` and `actor-group` are people; `system` is a grouping whose
-  // children carry their own stacks.
+  // children carry their own stacks. `gateway` and `auth` are left out on
+  // purpose: they are drawn with a corner glyph, and the glyph renderer has no
+  // logo slot — a logo on them would reserve width and draw nothing.
   logoKinds: ["application", "module", "queue", "datastore", "external"],
+  // Same two kinds as the infrastructure view, drawn the same way: an API
+  // gateway and an auth middleware are containers in their own right at the
+  // application level, and the glyph is what tells them apart from a plain
+  // `application` at a glance.
+  glyphKinds: ["gateway", "auth"],
   // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
   // `zoneOf` walks ancestors nearest-first, so an endpoint inside an application
   // still reads `Name (App)`; the system only annotates what sits directly in it.
@@ -246,6 +255,8 @@ const applicationView: View = {
     "actor-group": 0,
     system: 1,
     application: 1,
+    gateway: 1,
+    auth: 1,
     queue: 1,
     datastore: 1,
     external: 2,
@@ -256,6 +267,8 @@ const applicationView: View = {
     system: "System",
     application: "Application",
     module: "Application module",
+    gateway: "Gateway / reverse proxy",
+    auth: "Auth middleware",
     queue: "Message queue / broker",
     datastore: "Datastore / registry",
     external: "External system",
@@ -266,6 +279,8 @@ const applicationView: View = {
     system: "Syst\u00e8me",
     application: "Application",
     module: "Module applicatif",
+    gateway: "Passerelle / proxy",
+    auth: "Middleware d'authentification",
     queue: "File de messages / broker",
     datastore: "Entrep\u00f4t / r\u00e9f\u00e9rentiel",
     external: "Syst\u00e8me externe",
@@ -303,7 +318,7 @@ const applicationView: View = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["module", "queue", "datastore"],
+    kinds: ["module", "gateway", "auth", "queue", "datastore"],
     message: "isolated element: no incoming or outgoing flow",
   },
   defaults: {
@@ -324,6 +339,16 @@ const applicationView: View = {
     module: {
       fill: "#ffffff",
       stroke: { color: "#5b7a99", style: "solid", width: 1.3 },
+    },
+    // Same colours as the infrastructure view's `gateway` and `auth`: one thing
+    // drawn one way, whichever view it appears in.
+    gateway: {
+      fill: "#f5e6dd",
+      stroke: { color: "#bf5530", style: "solid", width: 1.6 },
+    },
+    auth: {
+      fill: "#e8f1fb",
+      stroke: { color: "#2f6fb5", style: "solid", width: 1.5 },
     },
     queue: {
       fill: "#f3eef8",
@@ -355,6 +380,14 @@ const applicationView: View = {
     module: {
       fill: "#252a31",
       stroke: { color: "#5f7f9e", style: "solid", width: 1.3 },
+    },
+    gateway: {
+      fill: "#332218",
+      stroke: { color: "#c96a4a", style: "solid", width: 1.6 },
+    },
+    auth: {
+      fill: "#1d2735",
+      stroke: { color: "#6fa8e0", style: "solid", width: 1.5 },
     },
     queue: {
       fill: "#2a2433",

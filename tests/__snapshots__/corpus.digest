@@ -1,5 +1,6 @@
 application-compact.cairn  dim:1122x429 n:18 e:13 ov:0  geom:880e6c80ddda color:faa346f52c48 text:25578bcb9ca8
 application-fr.cairn  dim:1202x457 n:18 e:13 ov:0  geom:816c1246a4d8 color:47e9040f5fd3 text:1ace99f2a170
+application-gateway-auth.cairn  dim:1072x252 n:11 e:7 ov:0  geom:6a0b7834f3be color:415b919e776a text:facf503c9ca1
 application-large-fr.cairn  dim:2511x557 n:29 e:27 ov:0  geom:e4d821a7ff3a color:0be1af82f77e text:7b730e88cea4
 application-large.cairn  dim:2417x557 n:29 e:27 ov:0  geom:f085cd8e5000 color:0be1af82f77e text:e7b5efed635e
 application-medium.cairn  dim:1568x475 n:19 e:15 ov:0  geom:ad221021d6a2 color:3543dbca6679 text:8a751a12523a

@@ -93797,6 +93797,8 @@ var applicationView = {
     "system",
     "application",
     "module",
+    "gateway",
+    "auth",
     "queue",
     "datastore",
     "external"
@@ -93804,8 +93806,15 @@ var applicationView = {
   containerKinds: ["actor-group", "system", "application", "external"],
   // A logo says what a thing is built with, so it belongs to the kinds that run
   // code. `actor` and `actor-group` are people; `system` is a grouping whose
-  // children carry their own stacks.
+  // children carry their own stacks. `gateway` and `auth` are left out on
+  // purpose: they are drawn with a corner glyph, and the glyph renderer has no
+  // logo slot — a logo on them would reserve width and draw nothing.
   logoKinds: ["application", "module", "queue", "datastore", "external"],
+  // Same two kinds as the infrastructure view, drawn the same way: an API
+  // gateway and an auth middleware are containers in their own right at the
+  // application level, and the glyph is what tells them apart from a plain
+  // `application` at a glance.
+  glyphKinds: ["gateway", "auth"],
   // C4-style `(API_REST, JSON)`: the protocol half is worth tabulating, the port is not.
   // `zoneOf` walks ancestors nearest-first, so an endpoint inside an application
   // still reads `Name (App)`; the system only annotates what sits directly in it.
@@ -93817,6 +93826,8 @@ var applicationView = {
     "actor-group": 0,
     system: 1,
     application: 1,
+    gateway: 1,
+    auth: 1,
     queue: 1,
     datastore: 1,
     external: 2
@@ -93827,6 +93838,8 @@ var applicationView = {
     system: "System",
     application: "Application",
     module: "Application module",
+    gateway: "Gateway / reverse proxy",
+    auth: "Auth middleware",
     queue: "Message queue / broker",
     datastore: "Datastore / registry",
     external: "External system"
@@ -93837,6 +93850,8 @@ var applicationView = {
     system: "Syst\xE8me",
     application: "Application",
     module: "Module applicatif",
+    gateway: "Passerelle / proxy",
+    auth: "Middleware d'authentification",
     queue: "File de messages / broker",
     datastore: "Entrep\xF4t / r\xE9f\xE9rentiel",
     external: "Syst\xE8me externe"
@@ -93874,7 +93889,7 @@ var applicationView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["module", "queue", "datastore"],
+    kinds: ["module", "gateway", "auth", "queue", "datastore"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
@@ -93895,6 +93910,16 @@ var applicationView = {
     module: {
       fill: "#ffffff",
       stroke: { color: "#5b7a99", style: "solid", width: 1.3 }
+    },
+    // Same colours as the infrastructure view's `gateway` and `auth`: one thing
+    // drawn one way, whichever view it appears in.
+    gateway: {
+      fill: "#f5e6dd",
+      stroke: { color: "#bf5530", style: "solid", width: 1.6 }
+    },
+    auth: {
+      fill: "#e8f1fb",
+      stroke: { color: "#2f6fb5", style: "solid", width: 1.5 }
     },
     queue: {
       fill: "#f3eef8",
@@ -93926,6 +93951,14 @@ var applicationView = {
     module: {
       fill: "#252a31",
       stroke: { color: "#5f7f9e", style: "solid", width: 1.3 }
+    },
+    gateway: {
+      fill: "#332218",
+      stroke: { color: "#c96a4a", style: "solid", width: 1.6 }
+    },
+    auth: {
+      fill: "#1d2735",
+      stroke: { color: "#6fa8e0", style: "solid", width: 1.5 }
     },
     queue: {
       fill: "#2a2433",
@@ -94931,11 +94964,11 @@ var flowLabelBox = (opts) => {
     height: measured.height + (tech ? 12 * scale : 0) + (chipNames.length ? CHIP_HEIGHT * scale : 0)
   };
 };
-var nodeSize = (kind, label, fontSize = DEFAULT_FONT_SIZE_NODE) => {
+var nodeSize = (kind, label, fontSize = DEFAULT_FONT_SIZE_NODE, gutter = 0) => {
   const isActor = kind === "actor";
   const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
   return {
-    width: isActor ? Math.max(64, measured.width + 8) : Math.max(140, measured.width + 16),
+    width: isActor ? Math.max(64, measured.width + 8) : Math.max(140, measured.width + 16 + gutter),
     height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18)
   };
 };
@@ -94963,12 +94996,13 @@ var LaneAllocator = class {
     return this.lanes.length - 1;
   }
 };
-function foldStyle(model) {
+function foldStyle(model, view) {
   const businessObjectNames = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";
   const { edge, node, cont, scale } = fontSizes(model.style.font.size);
   return {
     numbered,
+    glyphKinds: new Set(view.glyphKinds ?? []),
     edge,
     node,
     cont,
@@ -94983,7 +95017,15 @@ function foldStyle(model) {
     })
   };
 }
-function toElkNode(element, containerFontSize, nodeFontSize) {
+function leafSize(element, style) {
+  return nodeSize(
+    element.kind,
+    element.label ?? element.id,
+    style.node,
+    style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0
+  );
+}
+function toElkNode(element, style) {
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
     return {
@@ -94994,13 +95036,13 @@ function toElkNode(element, containerFontSize, nodeFontSize) {
       labels: [
         {
           text: element.label ?? element.id,
-          ...measure(element.label ?? element.id, containerFontSize)
+          ...measure(element.label ?? element.id, style.cont)
         }
       ],
-      children: element.children.map((child) => toElkNode(child, containerFontSize, nodeFontSize))
+      children: element.children.map((child) => toElkNode(child, style))
     };
   }
-  const size = nodeSize(element.kind, element.label ?? element.id, nodeFontSize);
+  const size = leafSize(element, style);
   return { id: element.id, width: size.width, height: size.height };
 }
 function walkFoldedNodes(elkNode, offset, elementById, syntheticIds) {
@@ -95079,7 +95121,7 @@ function internalFlowLabels(flow, style) {
   ];
 }
 function buildGroupGraph(group, style, fg) {
-  const node = toElkNode(group, style.cont, style.node);
+  const node = toElkNode(group, style);
   const nodeChildren = node.children ??= [];
   for (const flow of fg.interFlows) {
     if (fg.rootOf.get(flow.from) === group) {
@@ -95137,7 +95179,7 @@ function buildGroupGraph(group, style, fg) {
 function layoutColumn(elements, style) {
   return elements.map((group) => {
     const blocks = group.children.map((child) => {
-      const size = nodeSize(child.kind, child.label ?? child.id, style.node);
+      const size = leafSize(child, style);
       return { element: child, width: size.width, height: size.height, x: 0, y: 0 };
     });
     const columnWidth = Math.max(
@@ -95175,7 +95217,7 @@ function layoutMiddleRows(middles, middleResults, geom, style) {
   let yCursor = 16 + geom.gutterHeight(0);
   middles.forEach((element, index) => {
     const result = middleResults.get(element.id) ?? null;
-    const size = result ? { width: result.children[0].width, height: result.children[0].height } : nodeSize(element.kind, element.label ?? element.id, style.node);
+    const size = result ? { width: result.children[0].width, height: result.children[0].height } : leafSize(element, style);
     rows.push({
       element,
       box: { x: geom.xMiddle, y: yCursor, width: size.width, height: size.height },
@@ -95339,7 +95381,7 @@ var sideMid = (box, side) => ({
 });
 async function foldedLayout(model, view, elk) {
   const roots = model.elements;
-  const style = foldStyle(model);
+  const style = foldStyle(model, view);
   const partitionOf = (element) => view.partitions[element.kind] ?? 1;
   const sources = roots.filter((element) => partitionOf(element) === 0);
   const middles = roots.filter((element) => partitionOf(element) === 1);
@@ -95386,7 +95428,7 @@ async function foldedLayout(model, view, elk) {
   const widthSource = Math.max(0, ...sourceColumns.map((col) => col.width));
   const widthMiddle = Math.max(
     ...middles.map(
-      (element) => element.children.length ? middleResults.get(element.id).children[0].width : nodeSize(element.kind, element.label ?? element.id, style.node).width
+      (element) => element.children.length ? middleResults.get(element.id).children[0].width : leafSize(element, style).width
     )
   );
   const widthSink = Math.max(0, ...sinkColumns.map((col) => col.width));
