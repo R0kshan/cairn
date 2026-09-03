@@ -62,13 +62,15 @@ inside an inline block is **E0104**.
 | View | Element kinds | Flow rules |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (**logical-view only** — a `business-object` elsewhere is **E0222**) |
-| `application` | actor-group, actor, system, application, module, gateway, auth, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — C4 container-diagram practice) |
+| `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — C4 container-diagram practice) |
 | `infrastructure` | actor, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a level (`public\|internal\|restricted\|secret`, **E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**) |
 
 Nesting is checked against the rules each view declares (**E0210–E0218**); a
-combination no rule names is accepted, so the per-view tables below mark what is
-*enforced* and what is convention.
+combination no rule names is accepted. In the per-view tables below, a
+**Placement** cell in bold and naming a diagnostic code is enforced by the
+validator — anything else is convention the validator does not check, so a
+`queue` declared inside an `application` parses and renders.
 
 ### 1.1 Logical view — `diagram logical`
 
@@ -76,7 +78,7 @@ What the system does, in functional terms: who uses it, which functional blocks
 it is made of, and what data circulates between them. No technology, no
 deployment.
 
-| Kind | Stands for | Container? | Enforced placement | Drawn as |
+| Kind | Stands for | Container? | Placement | Drawn as |
 |---|---|---|---|---|
 | `actor-group` | a population of roles | yes (holds `actor`) | root | dashed box, band 0 |
 | `actor` | one role or person | no | **inside an `actor-group`** (**E0211**) | person glyph |
@@ -150,7 +152,7 @@ legend {
 Which applications exist, what they are built with, and which technical
 exchanges connect them — the C4 container level.
 
-| Kind | Stands for | Container? | Enforced placement | `logo:` | Drawn as |
+| Kind | Stands for | Container? | Placement | `logo:` | Drawn as |
 |---|---|---|---|---|---|
 | `actor-group` | a population of roles | yes (holds `actor`) | root | no | dashed box, band 0 |
 | `actor` | one role or person | no | **inside an `actor-group`** (**E0211**) | no | person glyph |
@@ -159,6 +161,7 @@ exchanges connect them — the C4 container level.
 | `module` | a component inside an application | no | **inside an `application`** (**E0213**) | yes | plain box |
 | `gateway` | an API gateway or reverse proxy | no | root, or inside a `system` | no | box + gate glyph |
 | `auth` | an auth middleware | no | root, or inside a `system` | no | box + padlock glyph |
+| `idp` | an identity provider | no | root, or inside a `system` | no | box + badge glyph |
 | `queue` | a message queue or broker | no | root, or inside a `system` | yes | horizontal cylinder |
 | `datastore` | a database or registry | no | root, or inside a `system` | yes | vertical cylinder |
 | `external` | a third-party system | yes | root | yes | dashed box, band 2 |
@@ -175,18 +178,20 @@ is the technical tail `(PROTOCOL, FORMAT)` — `(API_REST, JSON)`, `(MQ, JSON)`,
 both and the tail renders as a smaller grey sub-line. A flow between two
 non-actor elements with no tail warns (**W0540**); flows from an `actor` are
 exempt. The matrix keeps the protocol and drops the format. Business objects are
-rejected here (**E0222**). An unconnected `module`, `gateway`, `auth`, `queue`
-or `datastore` warns (**W0510**).
+rejected here (**E0222**). An unconnected `module`, `gateway`, `auth`, `idp`,
+`queue` or `datastore` warns (**W0510**).
 
-`gateway` and `auth` are the same two kinds the infrastructure view has, drawn
-identically — same colours, same corner glyph. An API gateway and an auth
-middleware are containers at the C4 level in their own right, and the glyph is
-what tells them apart from a plain `application` at a glance. The other three
-infrastructure boxes stay out of this view on purpose: `firewall` is a network
-device with no application meaning, and an `idp` in an application diagram is
-almost always third-party, which `external` already says. Neither `gateway` nor
-`auth` takes a `logo:` (**E0108**) — the glyph occupies the corner a logo would
-use.
+`gateway`, `auth` and `idp` are three of the kinds the infrastructure view has,
+drawn identically — same colours, same corner placement, each with its own
+glyph: a gate, a padlock, a badge. An API gateway, an auth middleware and an
+identity provider are containers at the C4 level in their own right, and the
+glyph is what tells them apart from a plain `application`, and from each other,
+at a glance. Use `idp` for a provider that belongs to the landscape being described —
+a self-hosted Keycloak, the group's SSO — and `external` for one owned by
+someone else, the way any third party is drawn. `firewall` stays out of this
+view on purpose: it is a network device with no application meaning. None of the
+three glyph kinds takes a `logo:` (**E0108**) — the glyph occupies the corner a
+logo would use.
 
 `logo:` marks the technology a component runs on — see
 [Positioning controls](#positioning-controls) for the full rules.
@@ -213,11 +218,13 @@ application CRM "Customer CRM" { logo: dotnet
 
 gateway EDGE "Public API\ngateway"
 auth SSO "SSO\nmiddleware"
+idp SSO_IDP "Group SSO\nprovider"
 
 external CARRIER "Carrier tracking\n(third party)"
 
 CLERK    -> EDGE                           # actor flow: no tail needed
 EDGE     -> SSO (API_REST, JSON)
+SSO      -> SSO_IDP (OIDC, JWT)
 SSO      -> CAPTURE (API_REST, JSON)
 CAPTURE  -> VALIDATE (API_REST, JSON)
 VALIDATE -> ORDER_DB (JDBC)
@@ -233,7 +240,7 @@ servers, deployed instances, the boxes in the path (gateway, firewall, auth,
 IdP), and every flow's protocol and port. This is the view the *matrice des flux
 techniques* is built from.
 
-| Kind | Stands for | Container? | Enforced placement | Drawn as |
+| Kind | Stands for | Container? | Placement | Drawn as |
 |---|---|---|---|---|
 | `actor` | a user or consumer of the infrastructure | no | root (**no `actor-group` in this view**) | person glyph, entry side |
 | `site` | a site or data center | yes | root | box with title |

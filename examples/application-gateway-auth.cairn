@@ -1,4 +1,4 @@
-diagram application "Billing platform — API edge (gateway and authentication)"
+diagram application "Billing platform — API edge (gateway, authentication, identity)"
 style {
   disposition: wide
 }
@@ -13,10 +13,11 @@ actor-group CONSUMERS "External consumers" {
 
 # ============================================================================
 # API EDGE
-# Every call from outside crosses the gateway, then the auth middleware. Both
-# kinds are shared with the infrastructure view and drawn the same way there —
-# the difference is what they stand for: here they are containers in the C4
-# sense, not boxes on a network path.
+# Every call from outside crosses the gateway, then the auth middleware, which
+# validates the token against the group's own identity provider. All three kinds
+# are shared with the infrastructure view and drawn the same way there — the
+# difference is what they stand for: here they are containers in the C4 sense,
+# not boxes on a network path.
 # ============================================================================
 gateway EDGE "Public API\ngateway" { order: 1 }
 auth SSO "OAuth2\nmiddleware" { order: 2 }
@@ -32,9 +33,12 @@ system BILLING_SYS "Billing system" { order: 3
   datastore REF_CUSTOMERS "Customer\nrepository" { logo: postgresql }
 }
 
-# An identity provider is third party at this level, so it is an `external`.
-# `idp` is an infrastructure-view kind: it belongs where the deployment is drawn.
-external IDP "Corporate IdP\n(third party)"
+# `idp` is for a provider that belongs to the landscape being described — the
+# group's own SSO, a self-hosted Keycloak. One owned by somebody else stays an
+# `external`, the way any third party is drawn.
+idp SSO_IDP "Group SSO\nprovider" { order: 4 }
+
+external PSP "Payment service\nprovider (third party)"
 
 # ============================================================================
 # FLOWS — the edge is the only way in
@@ -42,7 +46,8 @@ external IDP "Corporate IdP\n(third party)"
 PARTNER -> EDGE
 MOBILE -> EDGE
 EDGE -> SSO (API_REST, JSON)
-SSO -> IDP (OIDC, JWT)
+SSO -> SSO_IDP (OIDC, JWT)
 EDGE -> BILL_ENGINE (API_REST, JSON)
 EDGE -> BILL_ISSUE (API_REST, JSON)
 BILL_ENGINE -> REF_CUSTOMERS (JDBC)
+BILL_ISSUE -> PSP (API_REST, JSON)

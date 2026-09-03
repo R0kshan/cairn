@@ -1101,16 +1101,17 @@ test("infrastructure protocol stays mandatory (E0240) even when the label is omi
   assert.ok(!codes.includes("E0203")); // label omission is fine; only the protocol is flagged
 });
 
-test("gateway and auth are valid in infrastructure and application; idp is infrastructure only", () => {
+test("gateway, auth and idp are valid in infrastructure and application", () => {
   const infra =
     'diagram infrastructure "t"\nsite S "s" { network-zone Z "z" { gateway GW "Gateway"\nauth OAUTH2 "Auth"\nidp IDP "IdP" } }\n';
   assert.ok(!check(infra).codes.includes("E0201"));
-  // An API gateway and an auth middleware are containers at the application
-  // level too, so the application view takes them.
-  const app = 'diagram application "t"\ngateway GW "Gateway"\nauth OAUTH2 "Auth"\n';
+  // A gateway, an auth middleware and an identity provider are containers at
+  // the application level too, so the application view takes all three. A
+  // self-hosted IdP is one of them; a third-party one is still an `external`.
+  const app = 'diagram application "t"\ngateway GW "Gateway"\nauth OAUTH2 "Auth"\nidp IDP "IdP"\n';
   assert.ok(!check(app).codes.includes("E0201"));
-  // An identity provider is third-party in an application view — `external` covers it.
-  assert.ok(check('diagram application "t"\nidp IDP "IdP"\n').codes.includes("E0201"));
+  // `firewall` stays infrastructure-only: it has no application meaning.
+  assert.ok(check('diagram application "t"\nfirewall FW "Firewall"\n').codes.includes("E0201"));
   // rejected in logical and security
   for (const v of ["logical", "security"]) {
     assert.ok(check(`diagram ${v} "t"\ngateway GW "Gateway"\n`).codes.includes("E0201"));
@@ -1119,12 +1120,12 @@ test("gateway and auth are valid in infrastructure and application; idp is infra
   }
 });
 
-test("application-view gateway and auth carry the same glyph and colours as infrastructure", async () => {
+test("application-view gateway, auth and idp carry the same glyph and colours as infrastructure", async () => {
   const app = await build(
-    'diagram application "t"\ngateway GW "Gateway"\nauth OAUTH2 "OAuth2"\nGW -> OAUTH2 (API_REST, JSON)\n',
+    'diagram application "t"\ngateway GW "Gateway"\nauth OAUTH2 "OAuth2"\nidp IDP "IdP"\nGW -> OAUTH2 (API_REST, JSON)\nOAUTH2 -> IDP (OIDC, JWT)\n',
   );
   const infra = await build(
-    'diagram infrastructure "t"\ngateway GW "Gateway"\nauth OAUTH2 "OAuth2"\nGW -> OAUTH2 : (HTTPS/443)\n',
+    'diagram infrastructure "t"\ngateway GW "Gateway"\nauth OAUTH2 "OAuth2"\nidp IDP "IdP"\nGW -> OAUTH2 : (HTTPS/443)\nOAUTH2 -> IDP : (LDAPS/636)\n',
   );
   assert.equal(app.overlapsAfter, 0);
   const nodeStyles = (svg: string) =>
@@ -1138,14 +1139,18 @@ test("application-view gateway and auth carry the same glyph and colours as infr
   assert.deepEqual(nodeStyles(app.svg), nodeStyles(infra.svg));
   assert.match(app.svg, /l 3 3 l -3 3/); // the gateway's gate glyph
   assert.match(app.svg, /<circle cx="\d+" cy="\d+" r="1.5"/); // the auth padlock's keyhole
+  assert.match(app.svg, /<circle cx="\d+" cy="\d+" r="2"/); // the idp badge's head
 });
 
-test("a logo is refused on an application-view gateway or auth", () => {
-  // Both are drawn with a corner glyph, and the glyph renderer has no logo slot.
+test("a logo is refused on an application-view gateway, auth or idp", () => {
+  // All three are drawn with a corner glyph, and the glyph renderer has no logo slot.
   const codes = check('diagram application "t"\ngateway GW "Gateway" { logo: nginx }\n').codes;
   assert.ok(codes.includes("E0108"));
   assert.ok(
     check('diagram application "t"\nauth A "Auth" { logo: keycloak }\n').codes.includes("E0108"),
+  );
+  assert.ok(
+    check('diagram application "t"\nidp I "IdP" { logo: vault }\n').codes.includes("E0108"),
   );
 });
 
