@@ -1,0 +1,48 @@
+diagram application "Billing platform — API edge (gateway and authentication)"
+style {
+  disposition: wide
+}
+
+# ============================================================================
+# CONSUMERS
+# ============================================================================
+actor-group CONSUMERS "External consumers" {
+  actor PARTNER "Partner\nintegrator"
+  actor MOBILE "Mobile\nclient"
+}
+
+# ============================================================================
+# API EDGE
+# Every call from outside crosses the gateway, then the auth middleware. Both
+# kinds are shared with the infrastructure view and drawn the same way there —
+# the difference is what they stand for: here they are containers in the C4
+# sense, not boxes on a network path.
+# ============================================================================
+gateway EDGE "Public API\ngateway" { order: 1 }
+auth SSO "OAuth2\nmiddleware" { order: 2 }
+
+# ============================================================================
+# BILLING SYSTEM
+# ============================================================================
+system BILLING_SYS "Billing system" { order: 3
+  application BILLING "Billing" { logo: spring
+    module BILL_ENGINE "Billing\nengine"
+    module BILL_ISSUE "Invoice issuing\nand sending"
+  }
+  datastore REF_CUSTOMERS "Customer\nrepository" { logo: postgresql }
+}
+
+# An identity provider is third party at this level, so it is an `external`.
+# `idp` is an infrastructure-view kind: it belongs where the deployment is drawn.
+external IDP "Corporate IdP\n(third party)"
+
+# ============================================================================
+# FLOWS — the edge is the only way in
+# ============================================================================
+PARTNER -> EDGE
+MOBILE -> EDGE
+EDGE -> SSO (API_REST, JSON)
+SSO -> IDP (OIDC, JWT)
+EDGE -> BILL_ENGINE (API_REST, JSON)
+EDGE -> BILL_ISSUE (API_REST, JSON)
+BILL_ENGINE -> REF_CUSTOMERS (JDBC)

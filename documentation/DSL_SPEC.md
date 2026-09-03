@@ -62,7 +62,7 @@ inside an inline block is **E0104**.
 | View | Element kinds | Flow rules |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (**logical-view only** — a `business-object` elsewhere is **E0222**) |
-| `application` | actor-group, actor, system, application, module, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — C4 container-diagram practice) |
+| `application` | actor-group, actor, system, application, module, gateway, auth, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — C4 container-diagram practice) |
 | `infrastructure` | actor, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 | `security` | trust-zone `(level)`, security-node, asset, actor-group, actor, external | label required; each `trust-zone` carries a level (`public\|internal\|restricted\|secret`, **E0250**); a flow entering a more-trusted zone without a `security-node` warns (**W0560**); cross-zone flows should state encryption (**W0561**) |
 
@@ -157,6 +157,8 @@ exchanges connect them — the C4 container level.
 | `system` | a C4 system boundary grouping applications | yes | root, **never required** | no | box with title, band 1 |
 | `application` | one deployable application | yes (holds `module`) | root or inside a `system` | yes | box with title, band 1 |
 | `module` | a component inside an application | no | **inside an `application`** (**E0213**) | yes | plain box |
+| `gateway` | an API gateway or reverse proxy | no | root, or inside a `system` | no | box + gate glyph |
+| `auth` | an auth middleware | no | root, or inside a `system` | no | box + padlock glyph |
 | `queue` | a message queue or broker | no | root, or inside a `system` | yes | horizontal cylinder |
 | `datastore` | a database or registry | no | root, or inside a `system` | yes | vertical cylinder |
 | `external` | a third-party system | yes | root | yes | dashed box, band 2 |
@@ -173,8 +175,18 @@ is the technical tail `(PROTOCOL, FORMAT)` — `(API_REST, JSON)`, `(MQ, JSON)`,
 both and the tail renders as a smaller grey sub-line. A flow between two
 non-actor elements with no tail warns (**W0540**); flows from an `actor` are
 exempt. The matrix keeps the protocol and drops the format. Business objects are
-rejected here (**E0222**). An unconnected `module`, `queue` or `datastore` warns
-(**W0510**).
+rejected here (**E0222**). An unconnected `module`, `gateway`, `auth`, `queue`
+or `datastore` warns (**W0510**).
+
+`gateway` and `auth` are the same two kinds the infrastructure view has, drawn
+identically — same colours, same corner glyph. An API gateway and an auth
+middleware are containers at the C4 level in their own right, and the glyph is
+what tells them apart from a plain `application` at a glance. The other three
+infrastructure boxes stay out of this view on purpose: `firewall` is a network
+device with no application meaning, and an `idp` in an application diagram is
+almost always third-party, which `external` already says. Neither `gateway` nor
+`auth` takes a `logo:` (**E0108**) — the glyph occupies the corner a logo would
+use.
 
 `logo:` marks the technology a component runs on — see
 [Positioning controls](#positioning-controls) for the full rules.
@@ -199,9 +211,14 @@ application CRM "Customer CRM" { logo: dotnet
   module CUSTOMER "Customer\nrecords"
 }
 
+gateway EDGE "Public API\ngateway"
+auth SSO "SSO\nmiddleware"
+
 external CARRIER "Carrier tracking\n(third party)"
 
-CLERK    -> CAPTURE                        # actor flow: no tail needed
+CLERK    -> EDGE                           # actor flow: no tail needed
+EDGE     -> SSO (API_REST, JSON)
+SSO      -> CAPTURE (API_REST, JSON)
 CAPTURE  -> VALIDATE (API_REST, JSON)
 VALIDATE -> ORDER_DB (JDBC)
 VALIDATE -> EVENTS (MQ, JSON)
