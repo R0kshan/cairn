@@ -27,6 +27,7 @@ import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
+import { normalize } from "./corpus.ts";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const EX = join(HERE, "..", "examples");
@@ -68,9 +69,8 @@ const THEMES = [
 // Read a file and normalize line endings.
 const load = (dir: string, f: string) => readFileSync(join(dir, f), "utf8").replace(/\r\n/g, "\n");
 
-// Round every decimal to 1dp; leave integers untouched. Absorbs cross-platform Math.hypot drift.
-const normalize = (svg: string): string =>
-  svg.replace(/-?\d+\.\d+/g, (m) => (Math.round(parseFloat(m) * 10) / 10).toString());
+// Rounds every decimal to 1dp, comments excepted — shared with the corpus
+// digest so the two baselines cannot normalize differently.
 
 // Parse and validate a source string. Asserts zero errors as a snapshot precondition.
 const parseAndValidate = (src: string) => {

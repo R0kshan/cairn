@@ -28,6 +28,7 @@ import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
 import { inspect } from "./readability.ts";
 import { chipW, techText, wrapText, fontSizes, GLYPH_GUTTER, LOGO_GUTTER } from "./text-metrics.ts";
+import { logoAttributionComment } from "./logo-attribution.ts";
 import { LOGOS } from "./logos.ts";
 
 const HOP_RADIUS = 5;
@@ -401,10 +402,18 @@ function logoSvg(mark: {
   resolved: Map<string, string> | undefined;
   node: SceneNode;
   stroke: string;
+  /**
+   * Collects the built-in slugs this render actually paints, so the document's
+   * attribution names those and nothing else. Written here rather than derived
+   * from the model because only this function knows which marks survived: a
+   * file logo the caller never resolved, or a name with no built-in behind it,
+   * draws nothing and owes nothing.
+   */
+  drawn: Set<string>;
   /** Shapes with a curved corner push the mark clear of it. */
   inset?: { right?: number; top?: number };
 }): string {
-  const { logo, resolved, node, stroke, inset = {} } = mark;
+  const { logo, resolved, node, stroke, drawn, inset = {} } = mark;
   if (!logo) return "";
   const x = round1(node.x + node.width - (inset.right ?? LOGO_BOX.right) - LOGO_BOX.size);
   const y = round1(node.y + (inset.top ?? LOGO_BOX.top));
@@ -418,6 +427,7 @@ function logoSvg(mark: {
   // Own entries only — an inherited `Object.prototype` member is not a logo.
   const builtin = Object.hasOwn(LOGOS, logo.value) ? LOGOS[logo.value] : undefined;
   if (!builtin) return "";
+  drawn.add(logo.value);
   // 24 is the authored viewBox edge. Rounded to four places through integer
   // maths so the attribute is a short, stable decimal rather than the raw
   // binary quotient (§2: no drifting floats in the output path).
@@ -434,6 +444,8 @@ interface NodePaint {
   elementLogo: Map<string, Element["logo"]>;
   /** `id` → inlined `data:` URI, filled in by whoever could read the files. */
   resolvedLogos: Map<string, string> | undefined;
+  /** Filled in as marks are painted; read once the body is built. */
+  drawnLogos: Set<string>;
 }
 
 /** The text-placement maths every node shape shares: line stacking, vertical centring, glyph gutter. */
@@ -472,11 +484,25 @@ function createNodeLabelHelpers(nodeFontSize: number) {
 
 /** One function per node kind, plus the container frame. */
 function createNodeRenderers(paint: NodePaint) {
-  const { palette, nodeFontSize, containerFontSize, resolveStyle, elementLogo, resolvedLogos } =
-    paint;
+  const {
+    palette,
+    nodeFontSize,
+    containerFontSize,
+    resolveStyle,
+    elementLogo,
+    resolvedLogos,
+    drawnLogos,
+  } = paint;
   /** The logo mark for a node, already placed and coloured. `""` when it has none. */
   const logoFor = (node: SceneNode, stroke: string, inset?: { right?: number; top?: number }) =>
-    logoSvg({ logo: elementLogo.get(node.id), resolved: resolvedLogos, node, stroke, inset });
+    logoSvg({
+      logo: elementLogo.get(node.id),
+      resolved: resolvedLogos,
+      node,
+      stroke,
+      drawn: drawnLogos,
+      inset,
+    });
   const { centeredNodeLabel, centerLinesY, glyphLabelCenterX, logoLabelCenterX } =
     createNodeLabelHelpers(nodeFontSize);
 
@@ -1222,8 +1248,20 @@ function svgDocument(args: {
   markerSize: number;
   body: string;
   bandsSvg: string;
+  /** Third-party artwork notice for the licensed logos drawn, or `""`. */
+  attribution: string;
 }): string {
-  const { width, height, fontFamily, background, arrowMarkers, markerSize, body, bandsSvg } = args;
+  const {
+    width,
+    height,
+    fontFamily,
+    background,
+    arrowMarkers,
+    markerSize,
+    body,
+    bandsSvg,
+    attribution,
+  } = args;
   const markers = [...arrowMarkers]
     .map(
       ([color, markerName]) =>
@@ -1232,7 +1270,7 @@ function svgDocument(args: {
     .join("\n");
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" font-family="${escAttr(fontFamily)},Arial,sans-serif">
-<defs>${markers}</defs>
+${attribution}<defs>${markers}</defs>
 <rect width="${width}" height="${height}" fill="${escAttr(background)}"/>\n` +
     body +
     bandsSvg +
@@ -1349,6 +1387,10 @@ export function render(
   // No-op when settling stranded nothing, the common case.
   compactVertical(scene);
 
+  // Which licensed marks this render actually paints, and so what the document
+  // has to attribute. Declared here because the renderers fill it and the
+  // document reads it — the body has to exist before the notice can be honest.
+  const drawnLogos = new Set<string>();
   const { renderContainerNode, renderLeafNode } = createNodeRenderers({
     palette,
     nodeFontSize,
@@ -1356,6 +1398,7 @@ export function render(
     resolveStyle,
     elementLogo,
     resolvedLogos: options?.logos,
+    drawnLogos,
   });
 
   const { renderEdgePath, renderEdgeLabels } = createEdgePainter({
@@ -1413,6 +1456,9 @@ export function render(
     markerSize: style.arrows === "large" ? round1(11 * fonts.scale) : 7,
     body,
     bandsSvg,
+    // Read after the body is built, so it names the marks that were painted
+    // rather than the ones the model asked for.
+    attribution: logoAttributionComment(drawnLogos),
   });
   return { svg, overlapsBefore, overlapsAfter };
 }

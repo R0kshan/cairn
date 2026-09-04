@@ -97,6 +97,12 @@ module BILLING "Billing" { logo: "./logos/acme.svg" }
 
 <p align="center"><img src="examples/application-tech-stack.svg" alt="Application view with technology logos" width="760"></p>
 
+Six of the 37 built-in logos keep their own licence rather than simple-icons'
+CC0-1.0. A diagram that draws one embeds that artwork, so the SVG carries an
+attribution comment naming the mark, its source and its licence — keep it in
+the file, and check that an SVG optimiser is not set to strip comments. The
+other 31 add nothing. See [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
+
 ### Infrastructure view diagram examples from small to large
 
 <p align="center"><img src="examples/infrastructure-small.svg" alt="Small infrastructure view" width="760"></p>

@@ -125,6 +125,55 @@ const LICENSE_TEXTS = {
 };
 
 /**
+ * Where each licence's text lives on the public web. cairn keeps this map
+ * because simple-icons does not: its `license.url` field is populated only for
+ * `custom` licences, and every icon cairn vendors declares an SPDX id instead —
+ * so upstream records the identifier and nothing to link to. Verified against
+ * simple-icons 16.29.0.
+ *
+ * A rendered SVG travels on its own, with no `licenses/` directory beside it,
+ * so the relative links the notice table uses are useless there. These absolute
+ * ones are what an exported diagram can actually carry.
+ *
+ * The publisher's own URL is preferred where there is one. MIT and BSD-3-Clause
+ * have no single publisher — they are templates instantiated per rights-holder —
+ * so those point at the SPDX registry, and the holder's own copyright line is
+ * carried separately (see `copyrightLineOf`).
+ */
+const LICENSE_URLS = {
+  MIT: "https://spdx.org/licenses/MIT.html",
+  "BSD-3-Clause": "https://spdx.org/licenses/BSD-3-Clause.html",
+  "CC-BY-4.0": "https://creativecommons.org/licenses/by/4.0/legalcode",
+  "Apache-2.0": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+};
+
+/**
+ * The rights-holder's own copyright line, read out of the licence text cairn
+ * ships rather than retyped — one source, so the two cannot disagree.
+ *
+ * MIT and BSD-3-Clause ask for the copyright notice itself to travel with a
+ * copy, which a link to a licence template does not supply. Returns null when
+ * the shipped text carries no real line: `licenses/BSD-3-Clause.txt` is the
+ * SPDX template with `<year> <owner>` left as upstream wrote them, because the
+ * OpenJDK artwork publishes no copyright notice anywhere reachable (see
+ * SOURCE_NOTES). Attribution for that mark is to its source URL instead.
+ */
+function copyrightLineOf(licenseType) {
+  const text = LICENSE_TEXTS[licenseType];
+  if (!text) return null;
+  const lines = readFileSync(new URL(`../${text}`, import.meta.url), "utf8").split("\n");
+  const line = lines.find((candidate) => /^Copyright\b/.test(candidate.trim()))?.trim() ?? null;
+  // A template's placeholder is not a copyright line. `licenses/BSD-3-Clause.txt`
+  // leaves `<year> <owner>` as SPDX wrote them, and Apache-2.0's appendix shows
+  // `[yyyy] [name of copyright owner]` as an example for a licensor to fill in —
+  // neither names a holder, and emitting one as attribution would be a lie.
+  // A filled-in notice states a year; a placeholder spells one. Testing for the
+  // year rather than for brackets keeps the holder's own `<email>` intact.
+  if (!line || !/\b\d{4}\b/.test(line)) return null;
+  return line.replace(/\s+$/, "").replace(/\.$/, "");
+}
+
+/**
  * Supplementary notes for icons whose recorded `source` no longer tells the
  * whole story. simple-icons' data is a snapshot: a URL that resolved when the
  * icon was added can rot, and a rotted attribution URL is a broken attribution.
@@ -137,14 +186,33 @@ const LICENSE_TEXTS = {
  */
 const SOURCE_NOTES = {
   openjdk:
-    "simple-icons records a `hg.openjdk.java.net` URL, and that Mercurial host has " +
-    "been retired. The same file is live at " +
-    "<https://github.com/openjdk/duke/blob/master/vector/Agent.svg>. Checked " +
+    "simple-icons records <https://hg.openjdk.java.net/duke/duke/file/ca00f100dafc/" +
+    "vector/Agent.svg>, and that Mercurial host has been retired — it answers 403. " +
+    "The attribution above therefore names the live GitHub location of the same " +
+    "file, recorded in SOURCE_OVERRIDES rather than silently swapped. Checked " +
     "2026-09-04: that repository has no LICENSE file, the GitHub API reports no " +
     "licence for it, and `vector/Agent.svg` carries no copyright notice of its own. " +
     "So there is no upstream copyright line to reproduce, which is why " +
     "`licenses/BSD-3-Clause.txt` keeps the SPDX `<year> <owner>` fields blank and " +
     "attribution for this mark is to the source URL.",
+};
+
+/**
+ * Live replacements for a recorded `source` that has since died.
+ *
+ * simple-icons' data is a snapshot, and attribution for these marks *is* the
+ * URL — there is no copyright line behind them — so a rotted one is a broken
+ * attribution, not a cosmetic blemish. It reaches further than the notice now
+ * that a rendered SVG carries the source of every licensed mark it draws: a
+ * dead link here ships inside every diagram that uses the logo.
+ *
+ * An override is a verified claim, not a guess: check that the replacement
+ * serves the same artwork before adding one, and record what upstream says in
+ * SOURCE_NOTES so the substitution stays visible rather than looking like
+ * upstream data.
+ */
+const SOURCE_OVERRIDES = {
+  openjdk: "https://github.com/openjdk/duke/blob/master/vector/Agent.svg",
 };
 
 const work = mkdtempSync(join(tmpdir(), "cairn-logos-"));
@@ -160,6 +228,16 @@ try {
   const icons = Array.isArray(data) ? data : (data.icons ?? Object.values(data));
   const titleBySlug = new Map(icons.map((icon) => [icon.slug, icon.title]));
   const bySlug = new Map(icons.map((icon) => [icon.slug, icon]));
+
+  for (const slug of Object.keys(SOURCE_OVERRIDES)) {
+    if (!SOURCE_NOTES[slug]) {
+      throw new Error(
+        `\`${slug}\` has a SOURCE_OVERRIDES entry but no SOURCE_NOTES entry — an ` +
+          `attribution that does not match what upstream records has to say so, or ` +
+          `the next reader cannot tell a verified correction from a typo`,
+      );
+    }
+  }
 
   const rows = [];
   for (const slug of [...CURATED].sort()) {
@@ -203,6 +281,17 @@ try {
             `an icon that needs it`,
         );
       }
+      // The notice table can cite a relative path because it sits next to
+      // `licenses/`. An exported SVG cannot: it travels alone, so the only
+      // attribution it can carry is an absolute URL. Missing one would ship a
+      // diagram whose attribution names a licence it cannot point at.
+      if (!LICENSE_URLS[license.type]) {
+        throw new Error(
+          `\`${slug}\` is ${license.type}, which is permitted but has no public URL in ` +
+            `LICENSE_URLS — an exported SVG has no \`licenses/\` beside it, so register ` +
+            `the licence's canonical address before vendoring an icon that needs it`,
+        );
+      }
     }
     if (license && !PERMITTED_LICENSES.has(license.type)) {
       throw new Error(
@@ -219,7 +308,11 @@ try {
     // whose rights-holder publishes no copyright line anywhere machine-readable
     // it is the only honest thing to point a reader at. Carried into the notice
     // rather than dropped here.
-    const source = bySlug.get(slug)?.source ?? null;
+    const recordedSource = bySlug.get(slug)?.source ?? null;
+    // An override replaces a dead URL, so it must not stand in for a missing
+    // one: without a recorded source there is nothing to have verified the
+    // replacement against, and the check below has to keep failing.
+    const source = recordedSource ? (SOURCE_OVERRIDES[slug] ?? recordedSource) : null;
     if (license && license.type !== "CC0-1.0" && !source) {
       // An icon under its own MIT/BSD/CC-BY/Apache terms owes attribution, and
       // attribution has to identify *something*. Without a source there is
@@ -236,18 +329,44 @@ try {
       );
     }
 
+    const ownLicense = license && license.type !== "CC0-1.0" ? license.type : null;
     rows.push({
       slug,
       title,
       d,
-      license: license?.type ?? null,
-      licenseUrl: license?.url ?? null,
+      license: ownLicense,
+      // Upstream's own URL wins when it has one — only `custom` licences carry
+      // it today, and none of those get past PERMITTED_LICENSES, but a future
+      // simple-icons release populating it should not be second-guessed here.
+      licenseUrl: ownLicense ? (license.url ?? LICENSE_URLS[ownLicense]) : null,
+      copyright: ownLicense ? copyrightLineOf(ownLicense) : null,
       source,
     });
   }
 
+  // Only the icons that carry their own terms get the extra fields. Emitting
+  // `license: null` for the other 31 would cost bytes in every artifact to say
+  // nothing — the project-wide CC0-1.0 already covers them, and CC0 asks for no
+  // attribution at all.
   const body = rows
-    .map((row) => `  ${row.slug}: { title: "${row.title}", d: "${row.d}" },`)
+    .map((row) => {
+      const fields = [`title: "${row.title}"`, `d: "${row.d}"`];
+      if (row.license) {
+        for (const [name, value] of [
+          ["license", row.license],
+          ["licenseUrl", row.licenseUrl],
+          ["source", row.source],
+          ["copyright", row.copyright],
+        ]) {
+          if (!value) continue;
+          if (value.includes('"') || value.includes("\\")) {
+            throw new Error(`\`${row.slug}\` ${name} needs escaping: ${value}`);
+          }
+          fields.push(`${name}: "${value}"`);
+        }
+      }
+      return `  ${row.slug}: { ${fields.join(", ")} },`;
+    })
     .join("\n");
 
   writeFileSync(
@@ -261,8 +380,12 @@ try {
  *
  * Each entry is the single \`d\` of a \`0 0 24 24\` path carrying no colour of
  * its own, so the renderer scales it into the logo box and paints it in the
- * node's stroke colour like the kind glyphs. Attribution and the licence live
- * in THIRD-PARTY-NOTICES.md.
+ * node's stroke colour like the kind glyphs.
+ *
+ * An icon that carries its own licence also carries the attribution data that
+ * licence asks for, because a rendered SVG leaves \`licenses/\` behind and has
+ * to say for itself what artwork it contains. The full texts stay in
+ * THIRD-PARTY-NOTICES.md.
  */
 
 export interface Logo {
@@ -270,6 +393,19 @@ export interface Logo {
   title: string;
   /** Path data in a \`0 0 24 24\` box. */
   d: string;
+  /**
+   * SPDX id of the artwork's own licence. Absent for most icons, which the
+   * project-wide CC0-1.0 covers and which owe no attribution. Present means a
+   * diagram drawing this mark redistributes licensed artwork, so the export
+   * has to say so — see \`logo-attribution.ts\`.
+   */
+  license?: string;
+  /** Public address of that licence's text, for an SVG that travels alone. */
+  licenseUrl?: string;
+  /** The artwork's origin, which is what attribution identifies. */
+  source?: string;
+  /** The rights-holder's own copyright line, where one is published. */
+  copyright?: string;
 }
 
 export const LOGOS: Record<string, Logo> = {

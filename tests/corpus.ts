@@ -55,18 +55,40 @@ export const relName = (file: string): string =>
 
 const h = (s: string): string => createHash("sha1").update(s).digest("hex").slice(0, 12);
 
+const roundDecimals = (text: string): string =>
+  text.replace(/-?\d+\.\d+/g, (m) => (Math.round(parseFloat(m) * 10) / 10).toString());
+
+/** Splits on XML comments: even indices are markup, odd ones are whole comments. */
+const aroundComments = (svg: string): string[] => svg.split(/(<!--[\s\S]*?-->)/);
+
 /**
  * Round every decimal to 1dp — absorbs the one cross-platform wobble
  * (Math.hypot in numbered-flow label placement) so the digest is stable across
  * OSes / Node versions. Integers (the bulk of the output) are untouched.
+ *
+ * Comments are left alone: the artwork attribution lives in one, and rounding
+ * would turn `Apache-2.0` into `Apache-2` and the CC-BY link into
+ * `by/4/legalcode` — licence identifiers that do not exist.
  */
 export const normalize = (svg: string): string =>
-  svg.replace(/-?\d+\.\d+/g, (m) => (Math.round(parseFloat(m) * 10) / 10).toString());
+  aroundComments(svg)
+    .map((part, index) => (index % 2 === 1 ? part : roundDecimals(part)))
+    .join("");
 
-// Geom fingerprint: the normalized SVG with colour values and text content blanked out — everything positional/structural, nothing else.
+/**
+ * Geom fingerprint: the normalized SVG with comments, colour values and text
+ * content taken out — everything positional/structural, nothing else.
+ *
+ * Comments go because the artwork attribution is one. Rewording it moves no
+ * pixel, and a digest that reported it as a geometry change would spend the
+ * one signal this file exists to give: geometry is the risky kind of change,
+ * so it has to mean geometry.
+ */
 const geomHash = (svg: string): string =>
   h(
-    normalize(svg)
+    aroundComments(normalize(svg))
+      .filter((_, index) => index % 2 === 0)
+      .join("")
       .replace(/(fill|stroke|stop-color|color)="[^"]*"/g, '$1=""')
       .replace(/>[^<]*</g, "><"),
   );

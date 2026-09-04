@@ -18,6 +18,8 @@ import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { notice, BUN_VERSION, ELKJS_VERSION, SIMPLE_ICONS_VERSION } from "../src/notice.ts";
+import { compile } from "../src/api.ts";
+import { LOGOS } from "../src/logos.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const read = (...parts: string[]) => readFileSync(join(ROOT, ...parts), "utf8");
@@ -211,4 +213,62 @@ test("the reader-facing summary agrees with the generated icon table", () => {
       `summary omits \`${slug}\`, which carries its own licence per the generated table`,
     );
   }
+});
+
+/**
+ * A one-component diagram drawing `logo`, rendered through the public surface
+ * an embedder and the playground both use — the export path the attribution
+ * has to survive, not an internal call the CLI alone takes.
+ */
+const renderWithLogo = async (logo: string): Promise<string> => {
+  const { svg } = await compile(
+    `diagram application "Attribution"\n\napplication A "Alpha" { logo: ${logo} }\n`,
+  );
+  assert.ok(svg, `compile() rendered no SVG for logo: ${logo}`);
+  return svg;
+};
+
+test("a diagram drawing licensed artwork carries its attribution", async () => {
+  // `angular` is CC-BY-4.0. A shared SVG is a redistribution of that artwork,
+  // and it travels without `licenses/`, so the notice has to be in the file.
+  const svg = await renderWithLogo("angular");
+  assert.match(svg, /https:\/\/angular\.dev\/press-kit/);
+});
+
+test("the attribution links the licence text, which an exported SVG cannot ship", async () => {
+  const svg = await renderWithLogo("angular");
+  assert.match(svg, /https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/legalcode/);
+});
+
+test("a rights-holder's own copyright line travels with the mark", async () => {
+  // MIT asks for the copyright notice itself, which a link to a licence
+  // template does not supply. `javascript` is the one vendored icon that
+  // publishes such a line.
+  const svg = await renderWithLogo("javascript");
+  assert.match(svg, /Copyright \(c\) 2011 Christopher Williams/);
+});
+
+test("a CC0 mark adds no attribution, because CC0 asks for none", async () => {
+  const svg = await renderWithLogo("postgresql");
+  assert.ok(!svg.includes("third-party artwork"), "CC0-only diagram carries an attribution block");
+});
+
+test("the attribution names only the artwork the diagram actually drew", async () => {
+  // The vendored table is not tree-shaken, so every artifact holds all 37
+  // paths. An SVG holds the ones it painted — claiming more would attribute
+  // artwork the file does not contain.
+  const svg = await renderWithLogo("angular");
+  assert.ok(!svg.includes("Apache Kafka"), "attribution names a mark the diagram never drew");
+});
+
+test("every licensed logo can be attributed from the data alone", async () => {
+  // `scripts/update-logos.mjs` refuses to vendor a licensed icon without a
+  // source and a public licence URL. This is that guard as an assertion: the
+  // generator can only fail when someone reruns it, and a hand-edit of the
+  // generated file would slip past it entirely.
+  const incomplete = Object.entries(LOGOS)
+    .filter(([, logo]) => logo.license)
+    .filter(([, logo]) => !logo.source || !logo.licenseUrl)
+    .map(([slug]) => slug);
+  assert.deepEqual(incomplete, [], "licensed logos with nothing to attribute to");
 });

@@ -44,9 +44,25 @@ nothing. Six carry their own terms and ask for attribution:
 | `openjdk` | BSD-3-Clause |
 
 A diagram that uses none of those six carries no third-party artwork with
-conditions attached. One that does is a redistribution of that artwork, and the
-SVG does not carry a notice of its own — the per-icon table further down this
-file is the attribution, and it names the artwork source for each.
+conditions attached, and cairn writes nothing extra into it. One that does is a
+redistribution of that artwork, so the SVG carries its own attribution: an XML
+comment after the opening `<svg>` tag naming each licensed mark it drew, the
+artwork's source, the rights-holder's copyright line where one is published,
+and a URL for the licence text. Only the marks actually painted are named.
+
+**Keep that comment in the file.** It is the attribution those four licences
+ask for, and an exported SVG travels without the `licenses/` directory that
+discharges this everywhere else. An optimiser set to strip comments — `svgo`
+does by default — removes the only notice the diagram carries. The per-icon
+table further down this file says the same thing at more length, for anyone
+who has the repository rather than a lone SVG.
+
+One limit worth stating: Apache-2.0 §4(a) asks that recipients be given "a copy
+of the License", and a comment of that size in every diagram is not practical,
+so the SVG links the text rather than embedding it. CC-BY-4.0 §3(a)(3) permits
+a link outright; MIT and BSD-3-Clause get the holder's copyright line inline
+where one exists. If you need a diagram to carry the texts themselves, ship
+`licenses/` beside it.
 
 Separately from copyright: the brands these logos depict are their owners'
 trademarks. Drawing one in a diagram is not an endorsement, and cairn grants no
@@ -66,7 +82,7 @@ strip those files out of what you publish.
 **cairn bundled into your artifact** — a webpack/rollup/esbuild bundle, a
 Docker image, an Electron app, a single-file CLI. Now cairn's code, and the
 elkjs inside it, are part of what you hand someone. You take on cairn's
-Apache-2.0 (`LICENSE`), elkjs' EPL-2.0 (§3.1(b) wants a copy of the Agreement
+Apache-2.0 (`LICENSE`), elkjs' EPL-2.0 (§3.2(b) wants a copy of the Agreement
 with each copy of the program), and the per-icon attribution. In practice that
 is copying `LICENSE`, this file and `licenses/` out of the installed package
 into your own distribution.
@@ -91,14 +107,17 @@ EPL-2.0 from elkjs' dual offer rather than GPL-3.0-or-later.
 Republishing the binaries, mirroring the release assets, or shipping a cairn
 executable inside something else. This is the heavy case, and it is what most
 of this file exists for: the binaries additionally embed the Bun runtime, which
-statically links JavaScriptCore under LGPL-2.1 in part, along with everything
+statically links JavaScriptCore under the LGPL in part, along with everything
 else in `licenses/bun-LICENSE.md`.
 
 The short version is that the licence texts have to travel with the binary.
-Every installer cairn publishes already does this for you — if you are passing
-along an artifact one of them produced, the notices are already beside it. If
-you are building your own, read the Bun and JavaScriptCore sections below
-before you ship.
+Every installer cairn publishes already puts them on disk for you, but not next
+to the executable: the curl installer unpacks them into `share/doc/cairn`
+beside the `bin/` it installs into, Homebrew stages them into the formula's
+`doc` directory, and Scoop unpacks them into the app directory. Copying just
+the binary out of an install therefore leaves the notices behind — take those
+files with it. If you are building your own, read the Bun and JavaScriptCore
+sections below before you ship.
 
 ## elkjs
 
@@ -110,8 +129,9 @@ copy of elkjs' own `LICENSE.md`, upstream at https://www.eclipse.org/legal/epl-2
 
 That copy is vendored rather than referenced because elkjs is a *devDependency*:
 the published package installs zero dependencies, so `node_modules/elkjs/` never
-reaches a consumer while the inlined code does. EPL-2.0 §3.1(b) requires the
-license to travel with the distributed form, so `files` ships it in the tarball.
+reaches a consumer while the inlined code does. The inlined form is source
+code, so EPL-2.0 §3.2(b) requires a copy of the Agreement with each copy of it,
+and `files` ships that copy in the tarball.
 
 Per EPL-2.0 §3.1(a): the source code for elkjs is available under the EPL-2.0,
 and can be obtained from https://github.com/kieler/elkjs or from the published
@@ -145,12 +165,17 @@ enumeration of them, and it is reproduced verbatim at
 than whatever upstream `main` says today. That file, not this section, is the
 notice for everything Bun links; it is shipped with every binary.
 
-### JavaScriptCore and LGPL-2.1
+### JavaScriptCore and the LGPL
 
 The component that carries real obligations is JavaScriptCore, from WebKit,
-which Bun links statically and which is LGPL-2.1 for part of its source. The
-full text is at [`licenses/LGPL-2.1.txt`](./licenses/LGPL-2.1.txt). tinycc,
-also in Bun's list, is LGPL-2.1 as well.
+which Bun links statically and which is under the GNU Lesser (originally
+Library) General Public License for part of its source. Which version takes a
+sentence to state, because the sources disagree in wording rather than in
+substance: Bun's `LICENSE.md` labels it `LGPL-2`, while WebKit's own file
+headers offer "version 2 of the License, or (at your option) any later
+version". cairn takes that offer at **2.1** — that is the text shipped at
+[`licenses/LGPL-2.1.txt`](./licenses/LGPL-2.1.txt), and the §6 offer below is
+written against it. tinycc, also in Bun's list, is LGPL v2.1 outright.
 
 LGPL-2.1 §6 permits distributing a work that statically links the library
 provided the recipient can modify the library and relink. cairn discharges that
@@ -225,7 +250,7 @@ applies to that icon's artwork instead:
 | Apache Kafka (`apachekafka`) | Apache-2.0 | [`Apache-2.0.txt`](./licenses/Apache-2.0.txt) | <https://apache.org/logos> |
 | Apache Spark (`apachespark`) | Apache-2.0 | [`Apache-2.0.txt`](./licenses/Apache-2.0.txt) | <https://apache.org/logos> |
 | JavaScript (`javascript`) | MIT | [`MIT-javascript-logo.js.txt`](./licenses/MIT-javascript-logo.js.txt) | <https://github.com/voodootikigod/logo.js/blob/1544bdeed6d618a6cfe4f0650d04ab8d9cfa76d9/js.svg> |
-| OpenJDK (`openjdk`) | BSD-3-Clause | [`BSD-3-Clause.txt`](./licenses/BSD-3-Clause.txt) | <https://hg.openjdk.java.net/duke/duke/file/ca00f100dafc/vector/Agent.svg> |
+| OpenJDK (`openjdk`) | BSD-3-Clause | [`BSD-3-Clause.txt`](./licenses/BSD-3-Clause.txt) | <https://github.com/openjdk/duke/blob/master/vector/Agent.svg> |
 
 Each permits commercial redistribution and asks for attribution, which this
 table and the shipped licence texts are. **Attribution is to the artwork
@@ -237,7 +262,7 @@ the `<year> <owner>` fields as upstream left them; see `licenses/README.md`.
 
 Source notes:
 
-- **OpenJDK (`openjdk`)** — simple-icons records a `hg.openjdk.java.net` URL, and that Mercurial host has been retired. The same file is live at <https://github.com/openjdk/duke/blob/master/vector/Agent.svg>. Checked 2026-09-04: that repository has no LICENSE file, the GitHub API reports no licence for it, and `vector/Agent.svg` carries no copyright notice of its own. So there is no upstream copyright line to reproduce, which is why `licenses/BSD-3-Clause.txt` keeps the SPDX `<year> <owner>` fields blank and attribution for this mark is to the source URL.
+- **OpenJDK (`openjdk`)** — simple-icons records <https://hg.openjdk.java.net/duke/duke/file/ca00f100dafc/vector/Agent.svg>, and that Mercurial host has been retired — it answers 403. The attribution above therefore names the live GitHub location of the same file, recorded in SOURCE_OVERRIDES rather than silently swapped. Checked 2026-09-04: that repository has no LICENSE file, the GitHub API reports no licence for it, and `vector/Agent.svg` carries no copyright notice of its own. So there is no upstream copyright line to reproduce, which is why `licenses/BSD-3-Clause.txt` keeps the SPDX `<year> <owner>` fields blank and attribution for this mark is to the source URL.
 
 Three kinds of terms are refused by the generator instead, and never reach
 `src/logos.ts`, for three different reasons:
