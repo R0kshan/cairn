@@ -12,9 +12,9 @@ Where each artifact carries this notice:
 
 | Artifact | How the notices travel |
 |---|---|
-| npm tarball | `files` ships `LICENSE`, this file and `licenses/`; both bundles also carry a banner naming what they inline |
-| release binaries | uploaded as release assets beside the binaries; installed into `share/doc/cairn` by `packaging/install.sh`, and into the formula's `doc` by the Homebrew tap and the app directory by the Scoop manifest |
-| playground | served from the deployed site next to the bundle, linked from the page header; the bundle carries the same banner |
+| npm tarball | `files` ships `LICENSE`, this file and `licenses/`; both bundles also carry a `/*!` banner naming what they inline |
+| release binaries | `cairn licenses` prints the notice from inside the binary; the texts also ship as a `cairn-<version>-licenses.tar.gz` release asset, unpacked into `share/doc/cairn` by `packaging/install.sh`, into the formula's `doc` by the Homebrew tap, and into the app directory by the Scoop manifest |
+| playground | `LICENSE`, this file and `licenses/` are served from the deployed site beside the bundle and linked from the page header; the bundle carries the same banner |
 
 ## elkjs
 
@@ -45,18 +45,57 @@ The release binaries are built with `bun build --compile`
 Bun runtime** into one executable. So unlike esbuild, biome and typescript, Bun
 is not merely a build tool here: part of it is distributed in every binary
 cairn publishes. The npm bundles and the playground are built with esbuild and
-carry none of it.
+carry none of it, and `cairn licenses` says so per artifact — the binaries
+print the Bun paragraph, the npm CLI does not.
 
-Bun itself is MIT. Its runtime embeds further components with their own terms —
-JavaScriptCore, from WebKit, is the significant one, carrying LGPL-2.1 terms for
-part of its source alongside BSD-licensed portions. **Bun's own `LICENSE.md` is
-the authoritative enumeration** of what a compiled binary carries, upstream at
-https://github.com/oven-sh/bun/blob/main/LICENSE.md, and it is the document to
-consult before shipping a binary release.
+**Version 1.4.0.** The release workflow pins `bun-version`
+(`.github/workflows/release.yml`) rather than tracking `latest`, because a
+notice that cannot name the runtime it shipped is not a notice. The same pin is
+recorded in `src/notice.ts` as `BUN_VERSION`.
 
-This section states the fact that the runtime is embedded. It does not attempt
-to reproduce that enumeration, and nothing here is legal advice about how the
-LGPL components should be handled for a statically linked executable.
+Bun itself is MIT. Its runtime statically links a long list of further
+components with their own terms. Bun's own `LICENSE.md` is the authoritative
+enumeration of them, and it is reproduced verbatim at
+[`licenses/bun-LICENSE.md`](./licenses/bun-LICENSE.md) — fetched from the
+`bun-v1.4.0` tag, so it enumerates the runtime cairn actually embeds rather
+than whatever upstream `main` says today. That file, not this section, is the
+notice for everything Bun links; it is shipped with every binary.
+
+### JavaScriptCore and LGPL-2.1
+
+The component that carries real obligations is JavaScriptCore, from WebKit,
+which Bun links statically and which is LGPL-2.1 for part of its source. The
+full text is at [`licenses/LGPL-2.1.txt`](./licenses/LGPL-2.1.txt). tinycc,
+also in Bun's list, is LGPL-2.1 as well.
+
+LGPL-2.1 §6 permits distributing a work that statically links the library
+provided the recipient can modify the library and relink. cairn discharges that
+as follows, and everything named here is published:
+
+- **The library's source.** JavaScriptCore as Bun links it is at
+  <https://github.com/oven-sh/webkit>, at the revision Bun pins in
+  `WEBKIT_VERSION`. Bun's `LICENSE.md` gives the relink procedure verbatim.
+- **cairn's own source, which is the rest of the work.** Apache-2.0, at
+  <https://github.com/R0kshan/cairn>, at the tag the binary was built from —
+  `cairn version` prints that tag, and the release carries a build-provenance
+  attestation tying the binary to that commit.
+- **The build that combines them.** `scripts/build-binaries.sh`, in the same
+  repository, is the whole of it: one `bun build --compile` invocation against
+  a pinned Bun. Anyone who relinks a modified JavaScriptCore into Bun by
+  upstream's procedure can rerun that script and obtain an equivalent cairn
+  binary.
+
+Requests for anything in this list that you cannot obtain from those URLs
+should be opened as an issue on the cairn repository.
+
+> **This is a good-faith implementation, not a legal opinion.** Static linking
+> of LGPL-2.1 code is an area where reasonable lawyers differ, particularly on
+> whether an offer of source-plus-build-script is equivalent to the "object
+> format" §6 speaks of. The facts above are accurate and the materials are
+> genuinely published; whether they are sufficient for a given jurisdiction or
+> distribution is a question for counsel. If you need certainty without that
+> question, the npm and playground artifacts contain no Bun and no LGPL code at
+> all.
 
 ## simple-icons
 
@@ -89,18 +128,25 @@ Most of the 37 vendored icons carry no licence of their own and are
 covered by the project-wide CC0-1.0 above. These declare their own, which
 applies to that icon's artwork instead:
 
-| Icon | Licence |
-| --- | --- |
-| Angular (`angular`) | CC-BY-4.0 |
-| Apache (`apache`) | Apache-2.0 |
-| Apache Kafka (`apachekafka`) | Apache-2.0 |
-| Apache Spark (`apachespark`) | Apache-2.0 |
-| JavaScript (`javascript`) | MIT |
-| OpenJDK (`openjdk`) | BSD-3-Clause |
+| Icon | Licence | Full text | Artwork source |
+| --- | --- | --- | --- |
+| Angular (`angular`) | CC-BY-4.0 | [`CC-BY-4.0.txt`](./licenses/CC-BY-4.0.txt) | <https://angular.dev/press-kit> |
+| Apache (`apache`) | Apache-2.0 | [`Apache-2.0.txt`](./licenses/Apache-2.0.txt) | <https://www.apache.org/foundation/press/kit> |
+| Apache Kafka (`apachekafka`) | Apache-2.0 | [`Apache-2.0.txt`](./licenses/Apache-2.0.txt) | <https://apache.org/logos> |
+| Apache Spark (`apachespark`) | Apache-2.0 | [`Apache-2.0.txt`](./licenses/Apache-2.0.txt) | <https://apache.org/logos> |
+| JavaScript (`javascript`) | MIT | [`MIT-javascript-logo.js.txt`](./licenses/MIT-javascript-logo.js.txt) | <https://github.com/voodootikigod/logo.js/blob/1544bdeed6d618a6cfe4f0650d04ab8d9cfa76d9/js.svg> |
+| OpenJDK (`openjdk`) | BSD-3-Clause | [`BSD-3-Clause.txt`](./licenses/BSD-3-Clause.txt) | <https://hg.openjdk.java.net/duke/duke/file/ca00f100dafc/vector/Agent.svg> |
 
-Each permits commercial redistribution and asks only for attribution, which
-this table is. Three kinds of terms are refused by the generator instead, and
-never reach `src/logos.ts`, for three different reasons:
+Each permits commercial redistribution and asks for attribution, which this
+table and the shipped licence texts are. **Attribution is to the artwork
+source named above.** Where a rights-holder publishes no copyright line at
+that source — as is the case for several of these marks — cairn identifies
+the origin by that URL rather than assert a copyright holder it cannot
+verify. `licenses/BSD-3-Clause.txt` is consequently the SPDX template, with
+the `<year> <owner>` fields as upstream left them; see `licenses/README.md`.
+
+Three kinds of terms are refused by the generator instead, and never reach
+`src/logos.ts`, for three different reasons:
 
 - **NonCommercial** bars the commercial use cairn's own Apache-2.0 grants
   downstream, so cairn would be promising a right it does not hold.
@@ -130,6 +176,13 @@ of the marks it shows.
 ---
 
 If the set of inlined dependencies changes, update this file **and** `licenses/`
-in the same commit — a notice that names a license text the tarball doesn't carry
-is the failure mode this section exists to prevent. `files` in `package.json`
-ships both with the npm package.
+**and** `src/notice.ts` in the same commit — a notice that names a license text
+the tarball doesn't carry is the failure mode this section exists to prevent.
+`files` in `package.json` ships them with the npm package.
+
+`src/notice.ts` is the single source for the short form: the bundle banners
+(`scripts/notice-banner.sh`) and `cairn licenses` both render from it, so they
+cannot drift apart. `tests/notice.test.ts` fails the build if a checked-in
+artifact's banner no longer matches. The long form — full texts, per-icon
+attribution, the LGPL relink offer — is this file, and `licenses/README.md`
+records where each text was fetched from.

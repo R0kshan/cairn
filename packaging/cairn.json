@@ -7,15 +7,9 @@
     "64bit": {
       "url": [
         "https://github.com/R0kshan/cairn/releases/download/v0.1.0/cairn-0.1.0-windows-x64.exe",
-        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/LICENSE",
-        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/THIRD-PARTY-NOTICES.md",
-        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/elkjs-EPL-2.0.md",
-        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/simple-icons-CC0-1.0.md"
+        "https://github.com/R0kshan/cairn/releases/download/v0.1.0/cairn-0.1.0-licenses.tar.gz"
       ],
       "hash": [
-        "REPLACED_BY_RELEASE_WORKFLOW",
-        "REPLACED_BY_RELEASE_WORKFLOW",
-        "REPLACED_BY_RELEASE_WORKFLOW",
         "REPLACED_BY_RELEASE_WORKFLOW",
         "REPLACED_BY_RELEASE_WORKFLOW"
       ]
@@ -35,13 +29,20 @@
       "64bit": {
         "url": [
           "https://github.com/R0kshan/cairn/releases/download/v$version/cairn-$version-windows-x64.exe",
-          "https://github.com/R0kshan/cairn/releases/download/v$version/LICENSE",
-          "https://github.com/R0kshan/cairn/releases/download/v$version/THIRD-PARTY-NOTICES.md",
-          "https://github.com/R0kshan/cairn/releases/download/v$version/elkjs-EPL-2.0.md",
-          "https://github.com/R0kshan/cairn/releases/download/v$version/simple-icons-CC0-1.0.md"
+          "https://github.com/R0kshan/cairn/releases/download/v$version/cairn-$version-licenses.tar.gz"
+        ],
+        "hash": [
+          {
+            "url": "https://github.com/R0kshan/cairn/releases/download/v$version/cairn-$version-checksums.txt",
+            "regex": "$sha256\\s+\\*?cairn-$version-windows-x64\\.exe"
+          },
+          {
+            "url": "https://github.com/R0kshan/cairn/releases/download/v$version/cairn-$version-checksums.txt",
+            "regex": "$sha256\\s+\\*?cairn-$version-licenses\\.tar\\.gz"
+          }
         ]
       }
     }
   },
-  "notes": "cairn is Apache-2.0. The binary inlines elkjs (EPL-2.0) and Simple Icons artwork; LICENSE, THIRD-PARTY-NOTICES.md and the full licence texts are installed alongside it."
+  "notes": "cairn is Apache-2.0. The binary inlines elkjs (EPL-2.0) and Simple Icons artwork, and embeds the Bun runtime (which statically links LGPL-2.1 JavaScriptCore). LICENSE, THIRD-PARTY-NOTICES.md and licenses/ are unpacked into this app directory; `cairn licenses` prints the short notice."
 }

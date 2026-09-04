@@ -36,8 +36,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with: { persist-credentials: false }
+      # Pinned, not `latest`: `bun build --compile` embeds this runtime in every
+      # binary, so the version is part of what cairn redistributes and has to be
+      # nameable in the notice. Keep in step with BUN_VERSION in src/notice.ts and
+      # the copy of Bun's LICENSE.md in licenses/.
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
-        with: { no-cache: true }
+        with: { bun-version: 1.4.0, no-cache: true }
       - run: bun install
       # The tag is the version, not package.json — keeps binaries, checksums and
       # the taps job's checksums lookup in sync even if package.json wasn't bumped.
@@ -54,19 +58,19 @@ jobs:
             dist/cairn-*
             !dist/*.txt
 
-      # The binaries inline elkjs (EPL-2.0) and the Simple Icons artwork, so the
-      # licence texts and the attribution table are part of what a release
-      # distributes — EPL-2.0 §3.1(b), and the per-icon MIT / BSD-3-Clause /
-      # CC-BY-4.0 / Apache-2.0 terms. The npm tarball ships them through
-      # `files`; this is the same duty for the binary channel.
+      # `dist/cairn-*` already includes cairn-<version>-licenses.tar.gz, built by
+      # build-binaries.sh and attested above: the binaries inline elkjs (EPL-2.0)
+      # and the Simple Icons artwork and embed the Bun runtime, so the notices are
+      # part of what a release distributes. LICENSE and THIRD-PARTY-NOTICES.md go
+      # up loose as well — not for compliance, which the tarball covers, but so a
+      # reader can check the terms from the releases page without downloading an
+      # archive first.
       - uses: softprops/action-gh-release@3d0d9888cb7fd7b750713d6e236d1fcb99157228 # v3.0.2
         with:
           files: |
             dist/cairn-*
             LICENSE
             THIRD-PARTY-NOTICES.md
-            licenses/elkjs-EPL-2.0.md
-            licenses/simple-icons-CC0-1.0.md
           generate_release_notes: true
 
       # Hand the built binaries + checksums to the taps job.

@@ -49,9 +49,17 @@ $ESBUILD src/playground.ts \
 # The deployed page serves a bundle that inlines elkjs (EPL-2.0) and the Simple
 # Icons artwork, so the licence texts are part of what the site distributes.
 # Copied rather than symlinked: Vercel deploys this directory as static files.
+#
+# The directory layout has to be preserved, not flattened. THIRD-PARTY-NOTICES.md
+# links its licence texts as `./licenses/<name>` — flat copies beside it would
+# leave every one of those links 404ing on the deployed site, which is precisely
+# the obligation the copy exists to discharge. `rm -rf` first so a licence text
+# deleted upstream does not linger here forever.
 echo "• copying licence texts   → playground/"
+rm -rf playground/licenses
+mkdir -p playground/licenses
 cp LICENSE THIRD-PARTY-NOTICES.md playground/
-cp licenses/elkjs-EPL-2.0.md licenses/simple-icons-CC0-1.0.md playground/
+cp licenses/* playground/licenses/
 
 echo "✓ browser: $(du -h playground/cairn-engine.js | cut -f1)  node: $(du -h playground/lib/engine.node.mjs | cut -f1)"
 echo "  local static preview:  npx serve playground"

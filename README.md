@@ -18,6 +18,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Installation](#installation)
 - [Commands](#commands)
 - [More](#more)
+- [License](#license)
 
 ## Why cairn?
 
@@ -376,6 +377,16 @@ E0240 — The infrastructure view requires every flow to carry its protocol (and
 relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)` after the label.
 ```
 
+### Read the third-party notices
+
+```sh
+cairn licenses
+```
+
+Prints what this build of cairn actually contains — elkjs under EPL-2.0, the Simple Icons artwork, and (for the released binaries only) the embedded Bun runtime and its LGPL-2.1 JavaScriptCore. It reads from inside the artifact, so it is accurate for the copy you are running rather than for whatever the repository says today.
+
+The full texts live beside the binary: `share/doc/cairn/` for the curl installer and Homebrew, the app directory for Scoop, and the package root for npm. [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) is the long form.
+
 ### Check your version
 
 ```sh
@@ -391,3 +402,11 @@ Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) p
 - [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
 - [`documentation/`](documentation/) — architecture, invariants, DSL and internals.
+
+## License
+
+cairn is [Apache-2.0](LICENSE).
+
+Its shipped artifacts also *contain* third-party code, which Apache-2.0 does not cover: elkjs (EPL-2.0) is inlined into every bundle and binary, a curated set of Simple Icons paths is vendored into the logos, and the release binaries embed the Bun runtime, which statically links LGPL-2.1 JavaScriptCore. Every one of those is enumerated in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), with full texts in [`licenses/`](licenses/) and their provenance in [`licenses/README.md`](licenses/README.md).
+
+Practically, for someone shipping cairn output or embedding cairn: diagrams you produce are yours, cairn claims nothing in them. If you redistribute a cairn *binary* you take on the notices above — `cairn licenses` prints them and the installers put the texts next to the binary, so in the normal case this is already done for you. The brands drawn by the built-in logos remain their owners' trademarks; a logo in a diagram is not an endorsement.

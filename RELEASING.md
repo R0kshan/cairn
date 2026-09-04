@@ -40,8 +40,27 @@ git push origin vX.Y.Z
 
 Then watch **repo → Actions → the `release` run**. Jobs run `test → binaries →`
 then `publish` and `taps` in parallel. On success you get a GitHub Release with
-5 binaries + a checksums file, fresh commits in `R0kshan/homebrew-tap` and
-`R0kshan/scoop-bucket`, and `@r0kshan/cairn` on npm.
+5 binaries, a `cairn-X.Y.Z-licenses.tar.gz` bundle and a checksums file, fresh
+commits in `R0kshan/homebrew-tap` and `R0kshan/scoop-bucket`, and
+`@r0kshan/cairn` on npm.
+
+## The licence bundle
+
+`scripts/build-licenses.sh` (called by `build-binaries.sh`) packs `LICENSE`,
+`THIRD-PARTY-NOTICES.md` and `licenses/` into `dist/cairn-X.Y.Z-licenses.tar.gz`,
+which is checksummed and attested alongside the binaries. Every install channel
+unpacks it — Homebrew into the formula's `doc`, Scoop into the app directory,
+`packaging/install.sh` into `share/doc/cairn` after verifying its sha256 — and
+`cairn licenses` prints the short form from inside the binary itself.
+
+This is one asset on purpose. The binaries inline elkjs (EPL-2.0), vendor Simple
+Icons artwork and embed the Bun runtime with its LGPL-2.1 JavaScriptCore, so the
+notices are not optional; a per-file list would mean editing four packaging files
+every time a licence text is added, and forgetting is silent. **Bun is pinned**
+(`bun-version` in `release.yml`) because the binaries redistribute that exact
+runtime — keep it in step with `BUN_VERSION` in `src/notice.ts` and the copy of
+Bun's `LICENSE.md` in `licenses/`. `tests/notice.test.ts` fails the build if
+those drift apart.
 
 ## The npm channel
 
@@ -153,7 +172,7 @@ npm i -g @r0kshan/cairn@unstable
 ## Local dry-run of the packaging step
 
 ```sh
-npm run build:binaries                       # needs Bun; writes dist/cairn-* + checksums
+npm run build:binaries                       # needs Bun; writes dist/cairn-* + licences + checksums
 node scripts/render-packaging.mjs X.Y.Z dist/cairn-X.Y.Z-checksums.txt
 # inspect dist/cairn.rb (Homebrew) and dist/cairn.json (Scoop)
 ```

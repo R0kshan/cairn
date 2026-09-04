@@ -70,11 +70,28 @@ BIN_TARGET="$PKG_DIR/$BIN_REL"
 # copy to fall back on. A `files` typo publishes cleanly and only shows up as a
 # licensing gap, so assert the paperwork actually shipped. See
 # THIRD-PARTY-NOTICES.md.
-for LICENSE_FILE in LICENSE THIRD-PARTY-NOTICES.md licenses/elkjs-EPL-2.0.md; do
+for LICENSE_FILE in LICENSE THIRD-PARTY-NOTICES.md; do
   [ -f "$PKG_DIR/$LICENSE_FILE" ] || {
     echo "✗ $LICENSE_FILE missing from the tarball — check \`files\` in package.json"; exit 1;
   }
 done
+
+# Every text in licenses/, not just elkjs': the notice cites all of them, and a
+# cited text that didn't ship is exactly the gap this check exists to catch.
+# Compared against the working tree so adding a licence never means editing this
+# list — `files` ships the directory, so the two must match entry for entry.
+for LICENSE_FILE in licenses/*; do
+  [ -f "$PKG_DIR/$LICENSE_FILE" ] || {
+    echo "✗ $LICENSE_FILE missing from the tarball — check \`files\` in package.json"; exit 1;
+  }
+done
+
+# The bundle's own `/*!` banner is the notice that travels with the code itself,
+# and `--minify` is what strips this kind of comment. If it is gone, the tarball
+# ships EPL-2.0 code with nothing attached to it.
+head -c 4096 "$BIN_TARGET" | grep -q "EPL-2.0" || {
+  echo "✗ $BIN_REL has no third-party notice banner — see scripts/notice-banner.sh"; exit 1;
+}
 
 BIN="$TMP/consumer/node_modules/.bin/cairn"
 case "$(uname -s)" in
@@ -98,7 +115,9 @@ esac
 # Reuse the binary smoke: it drives build → matrix → explain (+ version) through
 # whatever executable it's handed, so the npm CLI is held to the same bar as the
 # compiled binaries.
-bash scripts/smoke-binary.sh "$BIN" "$EXPECTED_VERSION"
+# The npm bundles are built with esbuild, not `bun build --compile`, so this
+# artifact embeds no Bun runtime and its notice must not claim one.
+CAIRN_SMOKE_EMBEDS_BUN=0 bash scripts/smoke-binary.sh "$BIN" "$EXPECTED_VERSION"
 
 # The package has two surfaces — the `cairn` command and the `.` import — and
 # nothing else. Both halves are asserted here because both fail silently: a

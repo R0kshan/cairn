@@ -102,24 +102,40 @@ mv "$tmp/cairn" "$INSTALL_DIR/cairn"
 chmod +x "$INSTALL_DIR/cairn"
 
 # --- the licence texts travel with the binary ---------------------------------
-# It inlines elkjs (EPL-2.0) and the Simple Icons artwork, so the notices are
+# The binary inlines elkjs (EPL-2.0) and the Simple Icons artwork, and embeds the
+# Bun runtime, which statically links LGPL-2.1 JavaScriptCore. So the notices are
 # part of what this script distributes: EPL-2.0 §3.1(b) wants a copy of the
-# Agreement alongside each copy of the program, and six of the vendored icons
-# carry terms that require attribution. Best-effort — a missing notice must not
-# leave a half-installed binary behind, so a failed fetch warns and moves on.
+# Agreement alongside each copy of the program, LGPL-2.1 §6 wants the relink
+# offer, and six of the vendored icons carry terms that require attribution.
+#
+# One tarball, verified against the same checksums file as the binary — a notice
+# is worth nothing if it arrives tampered with. Best-effort on *delivery* only: a
+# missing or unverifiable bundle must not leave a half-installed binary behind,
+# so it warns and points at the canonical copy. `cairn licenses` still prints the
+# short notice from inside the binary regardless.
 DOC_DIR="${CAIRN_DOC_DIR:-$INSTALL_DIR/../share/doc/cairn}"
-if mkdir -p "$DOC_DIR" 2>/dev/null; then
-  missing=""
-  for doc in LICENSE THIRD-PARTY-NOTICES.md elkjs-EPL-2.0.md simple-icons-CC0-1.0.md; do
-    curl -fsSL -o "$DOC_DIR/$doc" "$base/$doc" 2>/dev/null || missing="$missing $doc"
-  done
-  if [ -n "$missing" ]; then
-    echo "note: could not fetch:$missing — read them at https://github.com/$REPO" >&2
-  else
-    echo "✓ licences: $DOC_DIR"
-  fi
+licenses="cairn-${version}-licenses.tar.gz"
+notices_url="https://github.com/$REPO/blob/main/THIRD-PARTY-NOTICES.md"
+
+if ! mkdir -p "$DOC_DIR" 2>/dev/null; then
+  echo "note: could not write $DOC_DIR — licences are at $notices_url" >&2
+elif ! curl -fsSL -o "$tmp/$licenses" "$base/$licenses" 2>/dev/null; then
+  echo "note: could not fetch $licenses — licences are at $notices_url" >&2
 else
-  echo "note: could not write $DOC_DIR — licences are at https://github.com/$REPO" >&2
+  lic_expected=$(awk -v f="$licenses" '{n=$2; sub(/^\*/,"",n); if (n==f) print $1}' "$tmp/$sums" | head -n1)
+  if command -v sha256sum >/dev/null 2>&1; then
+    lic_actual=$(sha256sum "$tmp/$licenses" | awk '{print $1}')
+  else
+    lic_actual=$(shasum -a 256 "$tmp/$licenses" | awk '{print $1}')
+  fi
+  if [ -z "$lic_expected" ] || [ "$lic_expected" != "$lic_actual" ]; then
+    echo "note: $licenses failed checksum verification — not installed." >&2
+    echo "      read the notices at $notices_url" >&2
+  elif tar -xzf "$tmp/$licenses" -C "$DOC_DIR" 2>/dev/null; then
+    echo "✓ licences: $DOC_DIR"
+  else
+    echo "note: could not unpack $licenses — licences are at $notices_url" >&2
+  fi
 fi
 
 # macOS quarantines files downloaded via curl; strip it so Gatekeeper doesn't

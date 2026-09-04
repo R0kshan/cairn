@@ -25,6 +25,7 @@ import { resolveLogoFiles } from "./logo-files.ts";
 import { loadThemeFile } from "./theme-file.ts";
 import { registerTheme, themeNames } from "./themes.ts";
 import { LOGO_NAMES } from "./logos.ts";
+import { notice } from "./notice.ts";
 
 const TYPE_FLAGS: Record<string, string> = {
   "--logical-architecture": "logical",
@@ -212,6 +213,7 @@ Usage:
   cairn explain <code>                                rule rationale (e.g. E0203)
   cairn logos                                         list the built-in \`logo:\` names
   cairn themes                                        list the built-in theme names
+  cairn licenses                                      third-party notices this build carries
   cairn version | --version | -v                      print the installed version
 `);
   process.exit(2);
@@ -444,6 +446,14 @@ if (command === "version" || command === "--version" || command === "-v") {
           .trimEnd(),
     );
   console.log('\nAnything else: point at a file — `logo: "./logos/name.svg"`.');
+} else if (command === "licenses") {
+  // A compiled binary has nowhere to put a notice a user can read: there is no
+  // tarball to browse and no banner comment survives `bun build --compile
+  // --minify`. So the notice is source, embedded like any other string, and
+  // this is where it surfaces. `src/notice.ts` tailors it to what the running
+  // artifact actually contains — the binaries also embed the Bun runtime, the
+  // npm bundles do not.
+  console.log(notice());
 } else if (command === "themes") {
   // The counterpart of `cairn logos`: you cannot pass `--theme` sensibly
   // without knowing what the names are, and they live in source, not in a doc

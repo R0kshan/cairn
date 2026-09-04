@@ -9,7 +9,6 @@
 // Usage: node scripts/render-packaging.mjs <version> <checksums-file>
 //   e.g. node scripts/render-packaging.mjs 0.1.0 dist/cairn-0.1.0-checksums.txt
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -33,18 +32,11 @@ for (const line of readFileSync(checksumsFile, 'utf8').split('\n')) {
   if (/^[0-9a-f]{64}$/i.test(sha)) sums[name] = sha.toLowerCase();
 }
 
-// The licence texts are release assets too — the binaries inline elkjs
-// (EPL-2.0) and the Simple Icons artwork, so the notices have to reach whoever
-// installs one. Their checksums are computed from the files in the repo, which
-// are byte-for-byte what release.yml uploads.
-const NOTICE_ASSETS = {
-  LICENSE: 'LICENSE',
-  'THIRD-PARTY-NOTICES.md': 'THIRD-PARTY-NOTICES.md',
-  'elkjs-EPL-2.0.md': 'licenses/elkjs-EPL-2.0.md',
-  'simple-icons-CC0-1.0.md': 'licenses/simple-icons-CC0-1.0.md',
-};
-const noticeSha = (asset) =>
-  createHash('sha256').update(readFileSync(join(root, NOTICE_ASSETS[asset]))).digest('hex');
+// The licence bundle is a release asset like the binaries, so its checksum
+// comes out of the same checksums file rather than being recomputed here. That
+// matters: hashing the repo's copy would attest to what the tree said at render
+// time, not to the bytes a user actually downloads.
+const licensesAsset = `cairn-${version}-licenses.tar.gz`;
 
 const shaFor = (asset) => {
   const sha = sums[asset];
@@ -66,12 +58,12 @@ const rbOut = rbLines.map((line) => {
   const v = line.replace(/version\s+"[^"]*"/, `version "${version}"`);
   const m = line.match(/cairn-#\{version\}-([a-z0-9-]+)"/);
   if (m) { pendingSuffix = m[1]; return v; }
-  // A `resource` block's url names a notice file rather than a binary; its
-  // checksum comes from the repo copy that gets uploaded as that same asset.
-  const n = line.match(/\/v#\{version\}\/([^"]+)"/);
-  if (n && NOTICE_ASSETS[n[1]]) { pendingNotice = n[1]; return v; }
+  // The `resource "licenses"` block's url names the notice tarball, not a
+  // binary, so the suffix regex above deliberately misses it (`.tar.gz` has
+  // dots). Match it explicitly and fill the next sha256 from the same file.
+  if (/cairn-#\{version\}-licenses\.tar\.gz"/.test(line)) { pendingNotice = true; return v; }
   if (pendingNotice && /sha256\s+"[^"]*"/.test(line)) {
-    const out = line.replace(/sha256\s+"[^"]*"/, `sha256 "${noticeSha(pendingNotice)}"`);
+    const out = line.replace(/sha256\s+"[^"]*"/, `sha256 "${shaFor(licensesAsset)}"`);
     pendingNotice = null;
     return out;
   }
@@ -90,18 +82,14 @@ const manifest = JSON.parse(readFileSync(join(root, 'packaging/cairn.json'), 'ut
 const winAsset = `cairn-${version}-windows-x64.exe`;
 const releaseBase = `https://github.com/R0kshan/cairn/releases/download/v${version}`;
 manifest.version = version;
-// The exe first, then the notices it has to travel with; scoop drops every URL
-// into the app directory, so `bin` still points at the exe alone.
-const noticeNames = Object.keys(NOTICE_ASSETS);
+// The exe first, then the licence bundle it has to travel with. Scoop unpacks
+// every archive it downloads into the app directory, so `bin` still points at
+// the exe alone and the notices land beside it.
 manifest.architecture['64bit'].url = [
   `${releaseBase}/${winAsset}`,
-  ...noticeNames.map((name) => `${releaseBase}/${name}`),
+  `${releaseBase}/${licensesAsset}`,
 ];
-manifest.architecture['64bit'].hash = [shaFor(winAsset), ...noticeNames.map(noticeSha)];
-manifest.autoupdate.architecture['64bit'].url = [
-  `https://github.com/R0kshan/cairn/releases/download/v$version/cairn-$version-windows-x64.exe`,
-  ...noticeNames.map((name) => `https://github.com/R0kshan/cairn/releases/download/v$version/${name}`),
-];
+manifest.architecture['64bit'].hash = [shaFor(winAsset), shaFor(licensesAsset)];
 manifest.bin = [[winAsset, 'cairn']];
 writeFileSync(join(root, 'dist/cairn.json'), JSON.stringify(manifest, null, 2) + '\n');
 

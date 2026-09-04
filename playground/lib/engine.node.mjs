@@ -1,10 +1,20 @@
-/*! cairn — Apache-2.0 — https://github.com/R0kshan/cairn
- * Bundles elkjs 0.12.0, (c) 2017 Kiel University and others.
- *   EPL-2.0 OR GPL-3.0-or-later; cairn elects EPL-2.0.
- *   License: https://www.eclipse.org/legal/epl-2.0
- * Embeds Simple Icons artwork (CC0-1.0), some icons under their own
- *   MIT, BSD-3-Clause, CC-BY-4.0 or Apache-2.0 terms.
- * Full license texts and per-icon attribution: THIRD-PARTY-NOTICES.md,
+/*!
+ * cairn — Apache-2.0 — https://github.com/R0kshan/cairn
+ * Copyright 2026 Røkshan.
+ *
+ * This artifact contains third-party code and artwork:
+ *
+ * elkjs 0.12.0 — (c) 2017 Kiel University and others.
+ *   Dual-licensed EPL-2.0 OR GPL-3.0-or-later; cairn elects EPL-2.0.
+ *   Full text: licenses/elkjs-EPL-2.0.md — https://www.eclipse.org/legal/epl-2.0
+ *
+ * Simple Icons 16.29.0 artwork — CC0-1.0 project-wide.
+ *   Six of the vendored icons carry their own terms instead — MIT,
+ *   BSD-3-Clause, CC-BY-4.0 or Apache-2.0 — and are attributed individually.
+ *   Full texts: licenses/
+ *
+ * Per-icon attribution and the full licence texts:
+ *   THIRD-PARTY-NOTICES.md and licenses/ beside this artifact,
  *   https://github.com/R0kshan/cairn/blob/main/THIRD-PARTY-NOTICES.md
  */
 var __create = Object.create;

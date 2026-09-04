@@ -6,28 +6,18 @@ class Cairn < Formula
   version "0.1.0"
   license "Apache-2.0"
 
-  # The binary inlines elkjs (EPL-2.0) and the Simple Icons artwork, so the
-  # licence texts travel with it: EPL-2.0 §3.1(b) wants a copy of the Agreement
-  # alongside each copy of the program, and six of the vendored icons are under
-  # terms that require attribution. Rendered with their checksums by
-  # scripts/render-packaging.mjs, same as the binaries.
-  resource "LICENSE" do
-    url "https://github.com/R0kshan/cairn/releases/download/v#{version}/LICENSE"
-    sha256 "REPLACED_BY_RELEASE_WORKFLOW"
-  end
-
-  resource "THIRD-PARTY-NOTICES.md" do
-    url "https://github.com/R0kshan/cairn/releases/download/v#{version}/THIRD-PARTY-NOTICES.md"
-    sha256 "REPLACED_BY_RELEASE_WORKFLOW"
-  end
-
-  resource "elkjs-EPL-2.0.md" do
-    url "https://github.com/R0kshan/cairn/releases/download/v#{version}/elkjs-EPL-2.0.md"
-    sha256 "REPLACED_BY_RELEASE_WORKFLOW"
-  end
-
-  resource "simple-icons-CC0-1.0.md" do
-    url "https://github.com/R0kshan/cairn/releases/download/v#{version}/simple-icons-CC0-1.0.md"
+  # The binary inlines elkjs (EPL-2.0) and the Simple Icons artwork, and
+  # `bun build --compile` embeds the Bun runtime — which statically links
+  # JavaScriptCore, LGPL-2.1 in part. So the notices are not optional extras:
+  # EPL-2.0 §3.1(b) wants a copy of the Agreement alongside each copy of the
+  # program, LGPL-2.1 §6 wants the relink offer, and six vendored icons carry
+  # terms that require attribution.
+  #
+  # One tarball rather than a resource per text, so adding a licence never means
+  # editing this formula. Rendered with its checksum by
+  # scripts/render-packaging.mjs, from the same checksums file as the binaries.
+  resource "licenses" do
+    url "https://github.com/R0kshan/cairn/releases/download/v#{version}/cairn-#{version}-licenses.tar.gz"
     sha256 "REPLACED_BY_RELEASE_WORKFLOW"
   end
 
@@ -55,9 +45,10 @@ class Cairn < Formula
 
   def install
     bin.install Dir["cairn-*"].first => "cairn"
-    %w[LICENSE THIRD-PARTY-NOTICES.md elkjs-EPL-2.0.md simple-icons-CC0-1.0.md].each do |name|
-      resource(name).stage { doc.install name }
-    end
+    # The archive is flat — LICENSE, THIRD-PARTY-NOTICES.md and licenses/ — so
+    # `brew list cairn` shows the notices under share/doc/cairn. `cairn licenses`
+    # prints the short form from inside the binary either way.
+    resource("licenses").stage { doc.install Dir["*"] }
   end
 
   test do

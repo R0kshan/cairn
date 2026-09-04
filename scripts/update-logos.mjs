@@ -106,6 +106,24 @@ const CURATED = [
   "graphql",
 ];
 
+/**
+ * Where the full text of each per-icon licence lives in `licenses/`. MIT and
+ * BSD-3-Clause require the text itself to travel with a redistribution, not
+ * just the identifier, and CC-BY-4.0 requires the licence be linked — an SPDX
+ * id in a table discharges none of that on its own.
+ *
+ * `MIT` resolves to logo.js' own LICENSE, copyright line intact, because the
+ * only MIT-licensed icon cairn vendors is the JavaScript mark from that repo.
+ * If a second MIT icon is ever curated, this must become per-icon: an MIT text
+ * carries its holder's name, so one file cannot stand in for two holders.
+ */
+const LICENSE_TEXTS = {
+  MIT: "licenses/MIT-javascript-logo.js.txt",
+  "BSD-3-Clause": "licenses/BSD-3-Clause.txt",
+  "CC-BY-4.0": "licenses/CC-BY-4.0.txt",
+  "Apache-2.0": "licenses/Apache-2.0.txt",
+};
+
 const work = mkdtempSync(join(tmpdir(), "cairn-logos-"));
 try {
   execFileSync("npm", ["pack", `simple-icons@${SIMPLE_ICONS_VERSION}`, "--silent"], {
@@ -151,6 +169,18 @@ try {
     // is no copyright grant at all. An icon with no licence field is covered by
     // the project-wide CC0.
     const license = bySlug.get(slug)?.license;
+    if (license && PERMITTED_LICENSES.has(license.type) && license.type !== "CC0-1.0") {
+      // Permitting a licence is only half of it: its text has to be in
+      // `licenses/` or the generated table would cite a file that does not
+      // ship, and the attribution it claims to make would be a dead link.
+      if (!LICENSE_TEXTS[license.type]) {
+        throw new Error(
+          `\`${slug}\` is ${license.type}, which is permitted but has no text in ` +
+            `licenses/ — add it and register it in LICENSE_TEXTS before vendoring ` +
+            `an icon that needs it`,
+        );
+      }
+    }
     if (license && !PERMITTED_LICENSES.has(license.type)) {
       throw new Error(
         `\`${slug}\` is ${license.type}, which cairn cannot pass on under Apache-2.0 — ` +
@@ -160,7 +190,20 @@ try {
       );
     }
 
-    rows.push({ slug, title, d, license: license?.type ?? null });
+    // `source` is the upstream artwork URL simple-icons records — the page the
+    // mark actually came from. For an icon whose own licence requires
+    // attribution it is the attributable identification of origin, and for one
+    // whose rights-holder publishes no copyright line anywhere machine-readable
+    // it is the only honest thing to point a reader at. Carried into the notice
+    // rather than dropped here.
+    rows.push({
+      slug,
+      title,
+      d,
+      license: license?.type ?? null,
+      licenseUrl: license?.url ?? null,
+      source: bySlug.get(slug)?.source ?? null,
+    });
   }
 
   const body = rows
@@ -249,13 +292,25 @@ export const LOGO_NAMES: string[] = Object.keys(LOGOS);
     "covered by the project-wide CC0-1.0 above. These declare their own, which",
     "applies to that icon's artwork instead:",
     "",
-    "| Icon | Licence |",
-    "| --- | --- |",
-    ...licensed.map((row) => `| ${row.title} (\`${row.slug}\`) | ${row.license} |`),
+    "| Icon | Licence | Full text | Artwork source |",
+    "| --- | --- | --- | --- |",
+    ...licensed.map((row) => {
+      const text = LICENSE_TEXTS[row.license];
+      const link = text ? `[\`${text.replace("licenses/", "")}\`](./${text})` : "—";
+      const source = row.source ? `<${row.source}>` : "—";
+      return `| ${row.title} (\`${row.slug}\`) | ${row.license} | ${link} | ${source} |`;
+    }),
     "",
-    "Each permits commercial redistribution and asks only for attribution, which",
-    "this table is. Three kinds of terms are refused by the generator instead, and",
-    "never reach `src/logos.ts`, for three different reasons:",
+    "Each permits commercial redistribution and asks for attribution, which this",
+    "table and the shipped licence texts are. **Attribution is to the artwork",
+    "source named above.** Where a rights-holder publishes no copyright line at",
+    "that source — as is the case for several of these marks — cairn identifies",
+    "the origin by that URL rather than assert a copyright holder it cannot",
+    "verify. `licenses/BSD-3-Clause.txt` is consequently the SPDX template, with",
+    "the `<year> <owner>` fields as upstream left them; see `licenses/README.md`.",
+    "",
+    "Three kinds of terms are refused by the generator instead, and never reach",
+    "`src/logos.ts`, for three different reasons:",
     "",
     "- **NonCommercial** bars the commercial use cairn's own Apache-2.0 grants",
     "  downstream, so cairn would be promising a right it does not hold.",
