@@ -13,8 +13,9 @@
  *   BSD-3-Clause, CC-BY-4.0 or Apache-2.0 — and are attributed individually.
  *   Full texts: licenses/
  *
- * Per-icon attribution and the full licence texts:
- *   THIRD-PARTY-NOTICES.md and licenses/ beside this artifact,
+ * Per-icon attribution and the full licence texts ship with this artifact:
+ *   the package root (npm), the app directory (Scoop), or
+ *   share/doc/cairn (Homebrew, install.sh). Also at
  *   https://github.com/R0kshan/cairn/blob/main/THIRD-PARTY-NOTICES.md
  */
 var __create = Object.create;

@@ -6,9 +6,10 @@ top of every bundle); the reasoning and the per-icon attribution are in
 [`../THIRD-PARTY-NOTICES.md`](../THIRD-PARTY-NOTICES.md). This file records
 where each text came from, so a reader can check it is verbatim.
 
-Every file here is byte-for-byte upstream. Nothing in this directory is
-edited — provenance notes live in this README precisely so the texts stay
-unmodified.
+Every licence text here is byte-for-byte upstream, and none of them is edited —
+provenance notes live in this README precisely so the texts stay unmodified.
+This README is the one exception, and the only cairn-authored file in the
+directory: it is metadata about the texts, not one of them.
 
 | File | Applies to | Fetched from |
 | --- | --- | --- |

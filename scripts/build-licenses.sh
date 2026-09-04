@@ -27,10 +27,17 @@ mkdir -p "$OUT"
 
 ARCHIVE="$OUT/cairn-${VERSION}-licenses.tar.gz"
 
-# The notice is generated from src/notice.ts, so a stale checked-in copy cannot
-# ship: regenerate nothing here, just refuse to bundle a tree whose notice does
-# not match its source. (`npm test` runs the same assertion.)
-node --experimental-strip-types scripts/print-notice.mjs >/dev/null
+# Refuse to bundle a tree whose notices are already inconsistent. These are the
+# same assertions `npm test` runs — stale bundle banners, a playground copy that
+# has drifted from the root, a licence text cited but not shipped, a version pin
+# that no longer agrees with the lockfile — re-run here because this is the last
+# point before the notices become a release asset somebody installs.
+#
+# Rendering the notice and discarding it would prove only that the module still
+# parses. THIRD-PARTY-NOTICES.md is deliberately NOT the rendered short form
+# (it is the long form: full texts, per-icon table, the LGPL relink offer), so
+# there is no diff between the two to take.
+node --experimental-strip-types --test tests/notice.test.ts >/dev/null
 
 tar -czf "$ARCHIVE" LICENSE THIRD-PARTY-NOTICES.md licenses
 

@@ -48,10 +48,16 @@ commits in `R0kshan/homebrew-tap` and `R0kshan/scoop-bucket`, and
 
 `scripts/build-licenses.sh` (called by `build-binaries.sh`) packs `LICENSE`,
 `THIRD-PARTY-NOTICES.md` and `licenses/` into `dist/cairn-X.Y.Z-licenses.tar.gz`,
-which is checksummed and attested alongside the binaries. Every install channel
-unpacks it — Homebrew into the formula's `doc`, Scoop into the app directory,
-`packaging/install.sh` into `share/doc/cairn` after verifying its sha256 — and
-`cairn licenses` prints the short form from inside the binary itself.
+which is checksummed and attested alongside the binaries. The three binary
+channels unpack it — Homebrew into the formula's `doc`, Scoop into the app
+directory, `packaging/install.sh` into `share/doc/cairn` after verifying its
+sha256 — and `cairn licenses` prints the short form from inside the binary
+itself.
+
+npm is the exception and needs no bundle: `files` already ships `LICENSE`,
+`THIRD-PARTY-NOTICES.md` and `licenses/` at the package root, so a consumer has
+the texts the moment they install. The tarball exists for the channels that
+distribute a bare executable with nothing alongside it.
 
 This is one asset on purpose. The binaries inline elkjs (EPL-2.0), vendor Simple
 Icons artwork and embed the Bun runtime with its LGPL-2.1 JavaScriptCore, so the

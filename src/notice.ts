@@ -70,9 +70,17 @@ Bun ${BUN_VERSION} runtime — MIT — embedded by \`bun build --compile\`.
   enumerates all of them verbatim: licenses/bun-LICENSE.md
   Relinking under LGPL-2.1 §6: see THIRD-PARTY-NOTICES.md.`;
 
+/**
+ * Deliberately does not say the texts sit *beside* the binary: only npm and
+ * Scoop put them there. The curl installer and Homebrew put them under
+ * share/doc/cairn, so an adjacency claim would send two of the four channels'
+ * users looking in the wrong directory. Naming the channels costs three lines
+ * and is true for all of them.
+ */
 const FOOTER = `
-Per-icon attribution and the full licence texts:
-  THIRD-PARTY-NOTICES.md and licenses/ beside this artifact,
+Per-icon attribution and the full licence texts ship with this artifact:
+  the package root (npm), the app directory (Scoop), or
+  share/doc/cairn (Homebrew, install.sh). Also at
   ${NOTICES_URL}`;
 
 /**

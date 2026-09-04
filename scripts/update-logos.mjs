@@ -219,13 +219,29 @@ try {
     // whose rights-holder publishes no copyright line anywhere machine-readable
     // it is the only honest thing to point a reader at. Carried into the notice
     // rather than dropped here.
+    const source = bySlug.get(slug)?.source ?? null;
+    if (license && license.type !== "CC0-1.0" && !source) {
+      // An icon under its own MIT/BSD/CC-BY/Apache terms owes attribution, and
+      // attribution has to identify *something*. Without a source there is
+      // nothing to name — the generated table would print an em dash and the
+      // notice would claim an attribution it does not actually make. Stop, the
+      // same way an unpermitted licence stops the build, rather than publish a
+      // table with a hole in it.
+      throw new Error(
+        `\`${slug}\` is ${license.type} but simple-icons records no \`source\` for it — ` +
+          `there is no artwork provenance to attribute to. Drop it from CURATED, or ` +
+          `add the source to SOURCE_NOTES once you have established where the mark ` +
+          `actually comes from`,
+      );
+    }
+
     rows.push({
       slug,
       title,
       d,
       license: license?.type ?? null,
       licenseUrl: license?.url ?? null,
-      source: bySlug.get(slug)?.source ?? null,
+      source,
     });
   }
 
