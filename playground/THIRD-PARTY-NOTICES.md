@@ -73,8 +73,14 @@ provided the recipient can modify the library and relink. cairn discharges that
 as follows, and everything named here is published:
 
 - **The library's source.** JavaScriptCore as Bun links it is at
-  <https://github.com/oven-sh/webkit>, at the revision Bun pins in
-  `WEBKIT_VERSION`. Bun's `LICENSE.md` gives the relink procedure verbatim.
+  <https://github.com/oven-sh/webkit>, at revision
+  `0f966e81b78c84bb23213e391bc679c4ef83e56b` — the `WEBKIT_VERSION` pinned in
+  `scripts/build/deps/webkit.ts` at Bun's `bun-v1.4.0` tag, which is the Bun
+  the release workflow is pinned to. Naming the revision rather than the
+  repository is the point: "the version Bun happens to use" is not something a
+  recipient can check, and a relink has to start from the same source the
+  binary was built against. Bun's `LICENSE.md` gives the relink procedure
+  verbatim, and it is reproduced at `licenses/bun-LICENSE.md`.
 - **cairn's own source, which is the rest of the work.** Apache-2.0, at
   <https://github.com/R0kshan/cairn>, at the tag the binary was built from —
   `cairn version` prints that tag, and the release carries a build-provenance
@@ -144,6 +150,10 @@ that source — as is the case for several of these marks — cairn identifies
 the origin by that URL rather than assert a copyright holder it cannot
 verify. `licenses/BSD-3-Clause.txt` is consequently the SPDX template, with
 the `<year> <owner>` fields as upstream left them; see `licenses/README.md`.
+
+Source notes:
+
+- **OpenJDK (`openjdk`)** — simple-icons records a `hg.openjdk.java.net` URL, and that Mercurial host has been retired. The same file is live at <https://github.com/openjdk/duke/blob/master/vector/Agent.svg>. Checked 2026-09-04: that repository has no LICENSE file, the GitHub API reports no licence for it, and `vector/Agent.svg` carries no copyright notice of its own. So there is no upstream copyright line to reproduce, which is why `licenses/BSD-3-Clause.txt` keeps the SPDX `<year> <owner>` fields blank and attribution for this mark is to the source URL.
 
 Three kinds of terms are refused by the generator instead, and never reach
 `src/logos.ts`, for three different reasons:

@@ -31,13 +31,19 @@ Keeping them as two files stops the root `LICENSE` from being read as though it
 covered the marks.
 
 **`BSD-3-Clause.txt` still has the SPDX `<year> <owner>` placeholders.** The
-`openjdk` icon is declared BSD-3-Clause by simple-icons, and the artwork source
-it records — a Mercurial URL on the now-retired `hg.openjdk.java.net` — does
-not publish a copyright line, so there is no upstream notice to reproduce.
-Filling the placeholders in would mean asserting a rights-holder and a year
-that cairn cannot verify, which is worse than leaving them visibly blank.
-Attribution for that icon is therefore to the artwork source URL named in
-`THIRD-PARTY-NOTICES.md`.
+`openjdk` icon is declared BSD-3-Clause by simple-icons. The artwork source it
+records is a Mercurial URL on the retired `hg.openjdk.java.net`; the same file
+is live at <https://github.com/openjdk/duke/blob/master/vector/Agent.svg>.
 
-If you are reviewing this for a release and want the placeholders resolved,
-that is a question for the OpenJDK project, not something to guess at.
+Checked on 2026-09-04, there is no upstream copyright notice to reproduce:
+`openjdk/duke` carries no LICENSE file, the GitHub API reports no licence for
+the repository, and `vector/Agent.svg` contains no copyright comment. Filling
+the placeholders in would mean asserting a rights-holder and a year cairn
+cannot verify, which is worse than leaving them visibly blank. Attribution for
+that icon is therefore to the artwork source URL named in
+`THIRD-PARTY-NOTICES.md`, under the source notes.
+
+Resolving the placeholders is a question for the OpenJDK project, not something
+to guess at. Third-party icon directories that republish this mark carry the
+same simple-icons metadata and add no copyright line, so they do not settle it
+either.

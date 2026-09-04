@@ -1,25 +1,10 @@
 # Homebrew formula — lives in the tap repo (R0kshan/homebrew-tap).
 # The release workflow rewrites version, URLs and sha256 on every tag.
 class Cairn < Formula
-  desc "Architecture diagrams as code — typed views, semantic layout, overlap-free labels"
+  desc "Architecture diagrams as code — typed views, semantic layout, no label overlap"
   homepage "https://github.com/R0kshan/cairn"
   version "0.1.0"
   license "Apache-2.0"
-
-  # The binary inlines elkjs (EPL-2.0) and the Simple Icons artwork, and
-  # `bun build --compile` embeds the Bun runtime — which statically links
-  # JavaScriptCore, LGPL-2.1 in part. So the notices are not optional extras:
-  # EPL-2.0 §3.1(b) wants a copy of the Agreement alongside each copy of the
-  # program, LGPL-2.1 §6 wants the relink offer, and six vendored icons carry
-  # terms that require attribution.
-  #
-  # One tarball rather than a resource per text, so adding a licence never means
-  # editing this formula. Rendered with its checksum by
-  # scripts/render-packaging.mjs, from the same checksums file as the binaries.
-  resource "licenses" do
-    url "https://github.com/R0kshan/cairn/releases/download/v#{version}/cairn-#{version}-licenses.tar.gz"
-    sha256 "REPLACED_BY_RELEASE_WORKFLOW"
-  end
 
   on_macos do
     on_arm do
@@ -41,6 +26,21 @@ class Cairn < Formula
       url "https://github.com/R0kshan/cairn/releases/download/v#{version}/cairn-#{version}-linux-x64"
       sha256 "REPLACED_BY_RELEASE_WORKFLOW"
     end
+  end
+
+  # The binary inlines elkjs (EPL-2.0) and the Simple Icons artwork, and
+  # `bun build --compile` embeds the Bun runtime — which statically links
+  # JavaScriptCore, LGPL-2.1 in part. So the notices are not optional extras:
+  # EPL-2.0 §3.1(b) wants a copy of the Agreement alongside each copy of the
+  # program, LGPL-2.1 §6 wants the relink offer, and six vendored icons carry
+  # terms that require attribution.
+  #
+  # One tarball rather than a resource per text, so adding a licence never means
+  # editing this formula. Rendered with its checksum by
+  # scripts/render-packaging.mjs, from the same checksums file as the binaries.
+  resource "licenses" do
+    url "https://github.com/R0kshan/cairn/releases/download/v#{version}/cairn-#{version}-licenses.tar.gz"
+    sha256 "REPLACED_BY_RELEASE_WORKFLOW"
   end
 
   def install

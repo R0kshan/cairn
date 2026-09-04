@@ -124,6 +124,29 @@ const LICENSE_TEXTS = {
   "Apache-2.0": "licenses/Apache-2.0.txt",
 };
 
+/**
+ * Supplementary notes for icons whose recorded `source` no longer tells the
+ * whole story. simple-icons' data is a snapshot: a URL that resolved when the
+ * icon was added can rot, and a rotted attribution URL is a broken attribution.
+ *
+ * These are written by hand because they are the result of a search a script
+ * cannot do — checking whether a rights-holder publishes a copyright notice
+ * anywhere reachable. Recording the negative result matters as much as a
+ * positive one: it stops the next reviewer repeating the hunt, and it is the
+ * justification for attributing to a URL rather than to a named holder.
+ */
+const SOURCE_NOTES = {
+  openjdk:
+    "simple-icons records a `hg.openjdk.java.net` URL, and that Mercurial host has " +
+    "been retired. The same file is live at " +
+    "<https://github.com/openjdk/duke/blob/master/vector/Agent.svg>. Checked " +
+    "2026-09-04: that repository has no LICENSE file, the GitHub API reports no " +
+    "licence for it, and `vector/Agent.svg` carries no copyright notice of its own. " +
+    "So there is no upstream copyright line to reproduce, which is why " +
+    "`licenses/BSD-3-Clause.txt` keeps the SPDX `<year> <owner>` fields blank and " +
+    "attribution for this mark is to the source URL.",
+};
+
 const work = mkdtempSync(join(tmpdir(), "cairn-logos-"));
 try {
   execFileSync("npm", ["pack", `simple-icons@${SIMPLE_ICONS_VERSION}`, "--silent"], {
@@ -309,6 +332,16 @@ export const LOGO_NAMES: string[] = Object.keys(LOGOS);
     "verify. `licenses/BSD-3-Clause.txt` is consequently the SPDX template, with",
     "the `<year> <owner>` fields as upstream left them; see `licenses/README.md`.",
     "",
+    ...(() => {
+      const noted = licensed.filter((row) => SOURCE_NOTES[row.slug]);
+      if (noted.length === 0) return [];
+      return [
+        "Source notes:",
+        "",
+        ...noted.map((row) => `- **${row.title} (\`${row.slug}\`)** — ${SOURCE_NOTES[row.slug]}`),
+        "",
+      ];
+    })(),
     "Three kinds of terms are refused by the generator instead, and never reach",
     "`src/logos.ts`, for three different reasons:",
     "",
