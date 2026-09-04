@@ -111,7 +111,7 @@ chmod +x "$INSTALL_DIR/cairn"
 # One tarball, verified against the same checksums file as the binary — a notice
 # is worth nothing if it arrives tampered with. Best-effort on *delivery* only: a
 # missing or unverifiable bundle must not leave a half-installed binary behind,
-# so it warns and points at the canonical copy. `cairn licenses` still prints the
+# so it warns and points at the canonical copy. `cairn version --licenses` prints the
 # short notice from inside the binary regardless.
 DOC_DIR="${CAIRN_DOC_DIR:-$INSTALL_DIR/../share/doc/cairn}"
 licenses="cairn-${version}-licenses.tar.gz"

@@ -8,7 +8,7 @@
 # depending on an upstream comment's punctuation.
 #
 # The text is NOT written here: `src/notice.ts` is the single source shared with
-# `cairn licenses`, so the bundles and the binaries cannot drift apart. Source
+# `cairn version --licenses`, so bundles and binaries cannot drift apart. Source
 # this file, then pass "$NOTICE_BANNER" to `--banner:js`.
 NOTICE_BANNER="$(node --experimental-strip-types \
   "$(dirname "${BASH_SOURCE[0]}")/print-notice.mjs" --banner)"

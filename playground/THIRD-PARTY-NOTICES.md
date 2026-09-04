@@ -13,7 +13,7 @@ Where each artifact carries this notice:
 | Artifact | How the notices travel |
 |---|---|
 | npm tarball | `files` ships `LICENSE`, this file and `licenses/`; both bundles also carry a `/*!` banner naming what they inline |
-| release binaries | `cairn licenses` prints the notice from inside the binary; the texts also ship as a `cairn-<version>-licenses.tar.gz` release asset, unpacked into `share/doc/cairn` by `packaging/install.sh`, into the formula's `doc` by the Homebrew tap, and into the app directory by the Scoop manifest |
+| release binaries | the texts ship as a `cairn-<version>-licenses.tar.gz` release asset, unpacked into `share/doc/cairn` by `packaging/install.sh`, into the formula's `doc` by the Homebrew tap, and into the app directory by the Scoop manifest — that is what carries the licences. `cairn version --licenses` prints the short notice from inside the binary as a backstop, for the one path that cannot guarantee delivery: `install.sh` warns and continues on a failed notice fetch rather than abandoning a half-installed binary |
 | playground | `LICENSE`, this file and `licenses/` are served from the deployed site beside the bundle and linked from the page header; the bundle carries the same banner |
 
 ## elkjs
@@ -45,7 +45,7 @@ The release binaries are built with `bun build --compile`
 Bun runtime** into one executable. So unlike esbuild, biome and typescript, Bun
 is not merely a build tool here: part of it is distributed in every binary
 cairn publishes. The npm bundles and the playground are built with esbuild and
-carry none of it, and `cairn licenses` says so per artifact — the binaries
+carry none of it, and `cairn version --licenses` says so per artifact — the binaries
 print the Bun paragraph, the npm CLI does not.
 
 **Version 1.4.0.** The release workflow pins `bun-version`
@@ -191,8 +191,8 @@ the tarball doesn't carry is the failure mode this section exists to prevent.
 `files` in `package.json` ships them with the npm package.
 
 `src/notice.ts` is the single source for the short form: the bundle banners
-(`scripts/notice-banner.sh`) and `cairn licenses` both render from it, so they
-cannot drift apart. `tests/notice.test.ts` fails the build if a checked-in
+(`scripts/notice-banner.sh`) and `cairn version --licenses` both render from it,
+so they cannot drift apart. `tests/notice.test.ts` fails the build if a checked-in
 artifact's banner no longer matches. The long form — full texts, per-icon
 attribution, the LGPL relink offer — is this file, and `licenses/README.md`
 records where each text was fetched from.

@@ -44,5 +44,5 @@
       }
     }
   },
-  "notes": "cairn is Apache-2.0. The binary inlines elkjs (EPL-2.0) and Simple Icons artwork, and embeds the Bun runtime (which statically links LGPL-2.1 JavaScriptCore). LICENSE, THIRD-PARTY-NOTICES.md and licenses/ are unpacked into this app directory; `cairn licenses` prints the short notice."
+  "notes": "cairn is Apache-2.0. The binary inlines elkjs (EPL-2.0) and Simple Icons artwork, and embeds the Bun runtime (which statically links LGPL-2.1 JavaScriptCore). LICENSE, THIRD-PARTY-NOTICES.md and licenses/ are unpacked into this app directory; `cairn version --licenses` prints the short notice."
 }

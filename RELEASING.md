@@ -51,8 +51,8 @@ commits in `R0kshan/homebrew-tap` and `R0kshan/scoop-bucket`, and
 which is checksummed and attested alongside the binaries. The three binary
 channels unpack it — Homebrew into the formula's `doc`, Scoop into the app
 directory, `packaging/install.sh` into `share/doc/cairn` after verifying its
-sha256 — and `cairn licenses` prints the short form from inside the binary
-itself.
+sha256 — and `cairn version --licenses` prints the short form from inside the
+binary itself.
 
 npm is the exception and needs no bundle: `files` already ships `LICENSE`,
 `THIRD-PARTY-NOTICES.md` and `licenses/` at the package root, so a consumer has

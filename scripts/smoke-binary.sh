@@ -30,7 +30,7 @@ if [ -z "$BIN" ]; then
   bun install >/dev/null 2>&1 || true
   BIN="$TMP/cairn"
   # Same --define as build-binaries.sh: any `--compile` binary embeds the Bun
-  # runtime, so it must say so under `cairn licenses`. Without this a locally
+  # runtime, so it must say so under `cairn version --licenses`. Without this a locally
   # compiled binary would print the npm variant of the notice and under-report
   # what it actually contains — and the check below would not catch it.
   bun build --compile --minify --define CAIRN_EMBEDS_BUN="true" \
@@ -58,12 +58,13 @@ head -c 5 "$TMP/out.svg" | grep -q "<svg" || fail "build output is not an SVG"
 #    artifact with nowhere else to carry a notice, so if this regresses the
 #    release is non-compliant with no other signal. Assert both halves: the
 #    common text, and the Bun/LGPL paragraph that only a compiled binary owes.
+#    (`cairn version --licenses`; there is no standalone `licenses` subcommand.)
 #    The Bun half cuts both ways, which is why it is a variable rather than a
 #    constant: this script is also run by smoke-npm.sh against the npm CLI, and
 #    that artifact contains no Bun at all. Claiming LGPL content it does not
 #    carry would be as wrong as omitting it from a binary that does.
 EMBEDS_BUN="${CAIRN_SMOKE_EMBEDS_BUN:-1}"
-notices="$("$BIN" licenses)" || fail "licenses exited non-zero"
+notices="$("$BIN" version --licenses)" || fail "version --licenses exited non-zero"
 echo "$notices" | grep -q "EPL-2.0" || fail "licenses output does not mention elkjs' EPL-2.0"
 echo "$notices" | grep -q "Simple Icons" || fail "licenses output does not mention Simple Icons"
 if [ "$EMBEDS_BUN" = 1 ]; then

@@ -377,23 +377,18 @@ E0240 — The infrastructure view requires every flow to carry its protocol (and
 relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)` after the label.
 ```
 
-### Read the third-party notices
-
-```sh
-cairn licenses
-```
-
-Prints what this build of cairn actually contains — elkjs under EPL-2.0, the Simple Icons artwork, and (for the released binaries only) the embedded Bun runtime and its LGPL-2.1 JavaScriptCore. It reads from inside the artifact, so it is accurate for the copy you are running rather than for whatever the repository says today.
-
-The full texts live beside the binary: `share/doc/cairn/` for the curl installer and Homebrew, the app directory for Scoop, and the package root for npm. [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) is the long form.
-
-### Check your version
+### Check your version, and what it contains
 
 ```sh
 cairn version    # or --version / -v
+cairn version --licenses
 ```
 
-Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) print the exact tag they were built from. Running from a clone via `npm run cairn` prints `package.json`'s version instead.
+Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) print the exact tag they were built from. Running from a clone via `npm run cairn` prints `package.json`'s version instead. The bare form prints one line and nothing else, so it stays safe to parse in a script.
+
+`--licenses` adds the third-party notices for that exact build — elkjs under EPL-2.0, the Simple Icons artwork, and, for the released binaries only, the embedded Bun runtime and its LGPL-2.1 JavaScriptCore. It reads from inside the artifact, so it describes the copy you are running rather than whatever the repository says today.
+
+That output is a convenience, not the licence itself. The full texts are installed with cairn: `share/doc/cairn/` for the curl installer and Homebrew, the app directory for Scoop, the package root for npm. [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) is the long form, with per-icon attribution and the LGPL relink offer.
 
 ## More
 
@@ -409,4 +404,4 @@ cairn is [Apache-2.0](LICENSE).
 
 Its shipped artifacts also *contain* third-party code, which Apache-2.0 does not cover: elkjs (EPL-2.0) is inlined into every bundle and binary, a curated set of Simple Icons paths is vendored into the logos, and the release binaries embed the Bun runtime, which statically links LGPL-2.1 JavaScriptCore. Every one of those is enumerated in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), with full texts in [`licenses/`](licenses/) and their provenance in [`licenses/README.md`](licenses/README.md).
 
-Practically, for someone shipping cairn output or embedding cairn: diagrams you produce are yours, cairn claims nothing in them. If you redistribute a cairn *binary* you take on the notices above — `cairn licenses` prints them and the installers put the texts next to the binary, so in the normal case this is already done for you. The brands drawn by the built-in logos remain their owners' trademarks; a logo in a diagram is not an endorsement.
+Practically, for someone shipping cairn output or embedding cairn: diagrams you produce are yours, cairn claims nothing in them. If you redistribute a cairn *binary* you take on the notices above — every installer puts the full texts on disk with it (`share/doc/cairn`, the app directory, or the package root, depending on the channel), and `cairn version --licenses` prints the short form from inside the binary, so in the normal case this is already done for you. The brands drawn by the built-in logos remain their owners' trademarks; a logo in a diagram is not an endorsement.

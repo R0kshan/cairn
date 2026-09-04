@@ -7,7 +7,7 @@
  *
  *   - the JavaScript bundles, through the `/*!` banner esbuild prepends
  *     (`scripts/notice-banner.sh` renders this text into that form);
- *   - the compiled binaries, through `cairn licenses`, since a single-file
+ *   - the compiled binaries, through `cairn version --licenses`, since a single-file
  *     executable has nowhere else to put a notice a user can actually read;
  *   - `THIRD-PARTY-NOTICES.md`, which carries the long form — the full licence
  *     texts, the per-icon attribution table, the LGPL relink offer.
@@ -97,7 +97,7 @@ export const embedsBun = (): boolean =>
 
 /**
  * The notice as plain text, tailored to what this artifact actually contains.
- * `cairn licenses` prints this; the bundle banner renders the `embedsBun:false`
+ * `cairn version --licenses` prints this; the banner renders the `embedsBun:false`
  * form, since no esbuild bundle carries Bun.
  */
 export function notice({ bun = embedsBun() }: { bun?: boolean } = {}): string {

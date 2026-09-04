@@ -46,8 +46,9 @@ class Cairn < Formula
   def install
     bin.install Dir["cairn-*"].first => "cairn"
     # The archive is flat — LICENSE, THIRD-PARTY-NOTICES.md and licenses/ — so
-    # `brew list cairn` shows the notices under share/doc/cairn. `cairn licenses`
-    # prints the short form from inside the binary either way.
+    # `brew list cairn` shows the notices under share/doc/cairn.
+    # `cairn version --licenses` prints the short form from inside the binary
+    # either way.
     resource("licenses").stage { doc.install Dir["*"] }
   end
 

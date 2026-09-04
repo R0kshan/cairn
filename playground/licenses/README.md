@@ -1,7 +1,7 @@
 # Licence texts
 
 Full texts of every third-party licence that reaches a cairn artifact. The
-short notice is in each artifact itself (`cairn licenses`, or the banner at the
+short notice is in each artifact itself (`cairn version --licenses`, or the banner at the
 top of every bundle); the reasoning and the per-icon attribution are in
 [`../THIRD-PARTY-NOTICES.md`](../THIRD-PARTY-NOTICES.md). This file records
 where each text came from, so a reader can check it is verbatim.

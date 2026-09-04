@@ -27,7 +27,7 @@ for t in "${TARGETS[@]}"; do
   # CAIRN_BUILD_VERSION is baked into the binary at compile time (see the
   # `declare const` in src/cli.ts) so `cairn version` reports this exact
   # VERSION — the tag, not whatever package.json happened to say.
-  # CAIRN_EMBEDS_BUN is what makes `cairn licenses` tell the truth per artifact.
+  # CAIRN_EMBEDS_BUN is what makes `cairn version --licenses` tell the truth per artifact.
   # `--compile` packages the Bun runtime into the executable, so these binaries
   # redistribute JavaScriptCore's LGPL-2.1 portions; the esbuild-built npm and
   # playground bundles do not, and must not claim to. See src/notice.ts.

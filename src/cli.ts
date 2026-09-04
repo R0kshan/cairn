@@ -213,8 +213,8 @@ Usage:
   cairn explain <code>                                rule rationale (e.g. E0203)
   cairn logos                                         list the built-in \`logo:\` names
   cairn themes                                        list the built-in theme names
-  cairn licenses                                      third-party notices this build carries
   cairn version | --version | -v                      print the installed version
+  cairn version --licenses                            third-party notices this build carries
 `);
   process.exit(2);
 }
@@ -324,7 +324,24 @@ function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): voi
 }
 
 if (command === "version" || command === "--version" || command === "-v") {
-  console.log(`cairn v${version}`);
+  if (args.includes("--licenses")) {
+    // A compiled binary has nowhere else to carry a notice a user can read:
+    // no tarball to browse, and `bun build --compile --minify` strips the kind
+    // of banner comment the npm bundles rely on. The installers do put the full
+    // texts on disk, and that is what discharges the licences — this is the
+    // backstop for the one path that cannot guarantee it, `packaging/install.sh`,
+    // where a failed notice fetch warns rather than abandoning a half-installed
+    // binary. The version goes first so the notice is tied to a specific build.
+    console.log(`cairn v${version}\n`);
+    console.log(notice());
+  } else {
+    console.log(`cairn v${version}`);
+    // TTY only, so the line a human needs never lands in a pipe. `cairn version`
+    // is parsed — scripts/smoke-binary.sh asserts it equals `cairn v<tag>` exactly
+    // — and stdout is not a TTY when captured, so this cannot reach them.
+    if (process.stdout.isTTY)
+      console.log("Apache-2.0, and bundles third-party code — `cairn version --licenses`");
+  }
 } else if (command === "validate") {
   const file = positionalFile();
   if (!file) usage();
@@ -446,14 +463,6 @@ if (command === "version" || command === "--version" || command === "-v") {
           .trimEnd(),
     );
   console.log('\nAnything else: point at a file — `logo: "./logos/name.svg"`.');
-} else if (command === "licenses") {
-  // A compiled binary has nowhere to put a notice a user can read: there is no
-  // tarball to browse and no banner comment survives `bun build --compile
-  // --minify`. So the notice is source, embedded like any other string, and
-  // this is where it surfaces. `src/notice.ts` tailors it to what the running
-  // artifact actually contains — the binaries also embed the Bun runtime, the
-  // npm bundles do not.
-  console.log(notice());
 } else if (command === "themes") {
   // The counterpart of `cairn logos`: you cannot pass `--theme` sensibly
   // without knowing what the names are, and they live in source, not in a doc
