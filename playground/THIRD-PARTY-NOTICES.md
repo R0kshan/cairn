@@ -13,7 +13,7 @@ Where each artifact carries this notice:
 | Artifact | How the notices travel |
 |---|---|
 | npm tarball | `files` ships `LICENSE`, this file and `licenses/`; both bundles also carry a `/*!` banner naming what they inline |
-| release binaries | the texts ship as a `cairn-<version>-licenses.tar.gz` release asset, unpacked into `share/doc/cairn` by `packaging/install.sh`, into the formula's `doc` by the Homebrew tap, and into the app directory by the Scoop manifest — that is what carries the licences. `cairn version --licenses` prints the short notice from inside the binary as a backstop, for the one path that cannot guarantee delivery: `install.sh` warns and continues on a failed notice fetch rather than abandoning a half-installed binary |
+| release binaries | the texts ship as a `cairn-<version>-licenses.tar.gz` release asset, unpacked into `share/doc/cairn` by `packaging/install.sh`, into the formula's `doc` by the Homebrew tap, and into the app directory by the Scoop manifest — that is what carries the licences, and every one of those paths is fail-closed: `install.sh` verifies the bundle against the release checksums and installs nothing at all if it cannot. `cairn version --licenses` additionally prints the short notice from inside the binary, so a copy separated from its directory still says what it contains |
 | playground | `LICENSE`, this file and `licenses/` are served from the deployed site beside the bundle and linked from the page header; the bundle carries the same banner |
 
 ## elkjs

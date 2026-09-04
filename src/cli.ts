@@ -341,13 +341,21 @@ if (command === "version" || command === "--version" || command === "-v") {
     process.exit(2);
   }
   if (args.some((arg) => LICENCE_FLAGS.has(arg))) {
-    // A compiled binary has nowhere else to carry a notice a user can read:
-    // no tarball to browse, and `bun build --compile --minify` strips the kind
-    // of banner comment the npm bundles rely on. The installers do put the full
-    // texts on disk, and that is what discharges the licences — this is the
-    // backstop for the one path that cannot guarantee it, `packaging/install.sh`,
-    // where a failed notice fetch warns rather than abandoning a half-installed
-    // binary. The version goes first so the notice is tied to a specific build.
+    // Not what discharges the licences — the files every installer puts on disk
+    // do that, and all four paths are fail-closed about it. None of the eight
+    // licences cairn redistributes under requires a runtime display: EPL-2.0
+    // §3.1(b), MIT and Apache-2.0 §4 want a copy included with the distribution,
+    // BSD-3-Clause names "the documentation and/or other materials", CC-BY-4.0
+    // accepts a URI, CC0 asks nothing. LGPL-2.1 §6 is the only one that mentions
+    // execution at all, and conditionally: *if* the work displays copyright
+    // notices while running, the Library's must appear among them with a
+    // reference to the License. This output does both, so it satisfies that
+    // clause rather than triggering it.
+    //
+    // It is here because a single-file binary gets separated from its doc
+    // directory — copied to another machine, dropped in a container image — and
+    // then nothing else in the artifact says what it contains. The version goes
+    // first so the notice is tied to a specific build.
     console.log(`cairn v${version}\n`);
     console.log(notice());
   } else {
