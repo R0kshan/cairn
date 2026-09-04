@@ -232,12 +232,15 @@ test("a diagram drawing licensed artwork carries its attribution", async () => {
   // `angular` is CC-BY-4.0. A shared SVG is a redistribution of that artwork,
   // and it travels without `licenses/`, so the notice has to be in the file.
   const svg = await renderWithLogo("angular");
-  assert.match(svg, /https:\/\/angular\.dev\/press-kit/);
+  assert.ok(svg.includes("https://angular.dev/press-kit"), "no artwork source for angular");
 });
 
 test("the attribution links the licence text, which an exported SVG cannot ship", async () => {
   const svg = await renderWithLogo("angular");
-  assert.match(svg, /https:\/\/creativecommons\.org\/licenses\/by\/4\.0\/legalcode/);
+  assert.ok(
+    svg.includes("https://creativecommons.org/licenses/by/4.0/legalcode"),
+    "no licence link for angular",
+  );
 });
 
 test("a rights-holder's own copyright line travels with the mark", async () => {
@@ -245,7 +248,10 @@ test("a rights-holder's own copyright line travels with the mark", async () => {
   // template does not supply. `javascript` is the one vendored icon that
   // publishes such a line.
   const svg = await renderWithLogo("javascript");
-  assert.match(svg, /Copyright \(c\) 2011 Christopher Williams/);
+  assert.ok(
+    svg.includes("Copyright (c) 2011 Christopher Williams"),
+    "the JavaScript mark lost its copyright line",
+  );
 });
 
 test("a CC0 mark adds no attribution, because CC0 asks for none", async () => {
