@@ -324,7 +324,23 @@ function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): voi
 }
 
 if (command === "version" || command === "--version" || command === "-v") {
-  if (args.includes("--licenses")) {
+  // Reject unknown flags rather than ignoring them. Silently dropping one means
+  // `cairn version --licence` prints the plain version and exits 0, which looks
+  // exactly like the flag being broken — and both spellings are in use in this
+  // repo's own prose, so that typo is the likely one. Accept either, refuse the
+  // rest.
+  const LICENCE_FLAGS = new Set(["--licenses", "--licences"]);
+  const unknown = args
+    .slice(1)
+    .filter((arg) => arg.startsWith("-") && !LICENCE_FLAGS.has(arg));
+  if (unknown.length) {
+    console.error(
+      `unknown flag${unknown.length > 1 ? "s" : ""} for \`cairn version\`: ${unknown.join(", ")}\n` +
+        "the only one it takes is `--licenses` (third-party notices for this build)",
+    );
+    process.exit(2);
+  }
+  if (args.some((arg) => LICENCE_FLAGS.has(arg))) {
     // A compiled binary has nowhere else to carry a notice a user can read:
     // no tarball to browse, and `bun build --compile --minify` strips the kind
     // of banner comment the npm bundles rely on. The installers do put the full

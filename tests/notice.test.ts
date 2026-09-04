@@ -14,6 +14,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync, readdirSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { notice, BUN_VERSION, ELKJS_VERSION, SIMPLE_ICONS_VERSION } from "../src/notice.ts";
@@ -125,4 +126,48 @@ test("the npm tarball is configured to ship what the notice promises", () => {
   for (const required of ["LICENSE", "THIRD-PARTY-NOTICES.md", "licenses/"]) {
     assert.ok(files.includes(required), `package.json \`files\` omits ${required}`);
   }
+});
+
+/**
+ * `cairn version` is the only way a released binary hands a user its notices,
+ * so its argument handling is part of the licensing surface rather than a CLI
+ * detail. These spawn the real CLI: the parsing lives in module-level code in
+ * `cli.ts`, which cannot be imported without running it.
+ */
+const runCli = (...argv: string[]) => {
+  const result = spawnSync(
+    process.execPath,
+    ["--experimental-strip-types", join(ROOT, "src/cli.ts"), ...argv],
+    { encoding: "utf8" },
+  );
+  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
+};
+
+test("`cairn version` prints exactly one parseable line", () => {
+  // scripts/smoke-binary.sh asserts this equals `cairn v<tag>` for a released
+  // binary, and the release workflow depends on that. The TTY-only attribution
+  // line must never reach a pipe, which is what this spawn is.
+  const { status, stdout } = runCli("version");
+  assert.equal(status, 0);
+  assert.equal(stdout.trimEnd().split("\n").length, 1, `expected one line, got: ${stdout}`);
+  assert.match(stdout, /^cairn v.+\n$/);
+});
+
+test("`cairn version --licenses` prints the notice, in both spellings", () => {
+  for (const flag of ["--licenses", "--licences"]) {
+    const { status, stdout } = runCli("version", flag);
+    assert.equal(status, 0, `${flag} exited ${status}`);
+    for (const line of notice({ bun: false }).split("\n").filter(Boolean)) {
+      assert.ok(stdout.includes(line), `${flag} output is missing: ${line}`);
+    }
+  }
+});
+
+test("`cairn version` refuses an unknown flag instead of ignoring it", () => {
+  // Silently dropping it prints the bare version and exits 0, which is
+  // indistinguishable from the flag being broken — the report that prompted this.
+  const { status, stdout, stderr } = runCli("version", "--licens");
+  assert.equal(status, 2, "a misspelt flag must not exit 0");
+  assert.equal(stdout, "", "a rejected invocation must print no version line");
+  assert.match(stderr, /unknown flag/);
 });
