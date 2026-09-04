@@ -6,44 +6,57 @@ style {
 
 # ============================================================================
 # CENTRE DE SUPERVISION (SYS_CENTRE)
+#
+# `order:` fixe la bande de lecture (gauche vers droite en disposition `wide`) :
+# poste au centre 10, authentification 20, IdP 30, IHM 40, backend centre 50,
+# base et poste en station 60, files centre <-> station 70, backend station 80,
+# afficheurs 90, files temps réel 90 (côté SI tiers). Les systèmes externes
+# restent dans la dernière partition, quoi qu'il arrive.
+# À l'intérieur d'un conteneur, `order:` empile les modules du haut vers le bas.
 # ============================================================================
-auth AUTH_CENTRE "Reverse proxy\n(OIDC)"
-idp IDP_GROUPE "SSO du groupe"
+auth AUTH_CENTRE "Reverse proxy\n(OIDC)" { order: 20 }
+idp IDP_GROUPE "SSO du groupe" { order: 30 }
 
-application POSTE_CENTRE "Poste opérateur\nau centre"
-application POSTE_STATION "Poste opérateur\nen station"
-application IHM_CENTRE "IHM\ncentre" { logo: angular }
-application AFFICHEURS "Afficheurs\nde quai"
+application POSTE_CENTRE "Poste opérateur\nau centre" { order: 10 }
+application POSTE_STATION "Poste opérateur\nen station" { order: 60 }
+application IHM_CENTRE "IHM\ncentre" { logo: angular
+  order: 40
+}
+application AFFICHEURS "Afficheurs\nde quai" { order: 90 }
 
-datastore BDD_CENTRE "Base centrale" { logo: postgresql }
+datastore BDD_CENTRE "Base centrale" { logo: postgresql
+  order: 60
+}
 
 # Modules du backend centre
 application BACK_CENTRE "Backend centre" {
   logo: spring
-  module MOD_SUIVI_CENTRE "Suivi des circulations\ncentre"
-  module MOD_MSG_CENTRE "Messagerie\ncentre"
-  module MOD_DONNEES_CENTRE "Gestion des données"
-  module MOD_SYSTEME_CENTRE "Gestion du système"
+  order: 50
+  module MOD_SUIVI_CENTRE "Suivi des circulations\ncentre" { order: 4 }
+  module MOD_MSG_CENTRE "Messagerie\ncentre" { order: 2 }
+  module MOD_DONNEES_CENTRE "Gestion des données" { order: 1 }
+  module MOD_SYSTEME_CENTRE "Gestion du système" { order: 3 }
 }
 
 # ============================================================================
 # FILES DE MESSAGES
 # ============================================================================
-queue Q_TEMPS_REEL_CENTRE "CENTRE_TEMPS_REEL"
-queue Q_TEMPS_REEL_TIERS "TIERS_TEMPS_REEL"
-queue Q_NOTIF_TRAFIC "NOTIF_TRAFIC"
-queue Q_CENTRE_SUIVI "CENTRE_SUIVI"
-queue Q_STATION_SUIVI "STATION_SUIVI"
+queue Q_TEMPS_REEL_CENTRE "CENTRE_TEMPS_REEL" { order: 90 }
+queue Q_TEMPS_REEL_TIERS "TIERS_TEMPS_REEL" { order: 90 }
+queue Q_NOTIF_TRAFIC "NOTIF_TRAFIC" { order: 70 }
+queue Q_CENTRE_SUIVI "CENTRE_SUIVI" { order: 70 }
+queue Q_STATION_SUIVI "STATION_SUIVI" { order: 70 }
 
 # ============================================================================
 # SYSTÈME EN STATION (SYS_STATION)
 # ============================================================================
 application BACK_STATION "Backend station" {
   logo: spring
-  module MOD_IHM_STATION "IHM station"
-  module MOD_SUIVI_STATION "Suivi des circulations\nstation"
-  module MOD_MSG_STATION "Messagerie\nstation"
-  module MOD_SECURITE "Sécurité\napplicative"
+  order: 80
+  module MOD_IHM_STATION "IHM station" { order: 3 }
+  module MOD_SUIVI_STATION "Suivi des circulations\nstation" { order: 1 }
+  module MOD_MSG_STATION "Messagerie\nstation" { order: 2 }
+  module MOD_SECURITE "Sécurité\napplicative" { order: 4 }
 }
 
 # ============================================================================
@@ -78,17 +91,22 @@ MOD_SUIVI_CENTRE -> MOD_DONNEES_CENTRE (in-process)
 MOD_DONNEES_CENTRE -> BDD_CENTRE (TCP/IP)
 
 # Flux entre backend centre et SI tiers
-SUPERVISION_TIERS -> MOD_SUIVI_CENTRE (HTTPS/REST)
-PREVISION -> Q_TEMPS_REEL_TIERS.left (AMQP/topic)
-MOD_MSG_CENTRE -> Q_TEMPS_REEL_TIERS.right (AMQP/topic)
+# Le SI tiers est à droite : la supervision entre par le haut du module plutôt
+# que de traverser le backend.
+SUPERVISION_TIERS.left -> MOD_SUIVI_CENTRE.top (HTTPS/REST)
+PREVISION -> Q_TEMPS_REEL_TIERS.right (AMQP/topic)
+MOD_MSG_CENTRE -> Q_TEMPS_REEL_TIERS.left (AMQP/topic)
 MOD_DONNEES_CENTRE -> Q_TEMPS_REEL_CENTRE (AMQP/fanout)
 NOTIF_TRAFIC -> Q_TEMPS_REEL_CENTRE (AMQP/fanout)
 
 # Flux centre <-> station (via files de messages)
-MOD_MSG_CENTRE -> Q_CENTRE_SUIVI.left (AMQP/direct)
-MOD_MSG_STATION -> Q_CENTRE_SUIVI.right (AMQP/direct)
-MOD_MSG_STATION -> Q_STATION_SUIVI.left (AMQP/direct)
-MOD_MSG_CENTRE -> Q_STATION_SUIVI.right (AMQP/direct)
+# Les côtés épinglés suivent l'axe de lecture : le backend centre (bande 50)
+# aborde la file par la gauche, le backend station (bande 80) par la droite.
+# Épinglées seulement là où le routage automatique se croisait.
+MOD_MSG_CENTRE -> Q_CENTRE_SUIVI (AMQP/direct)
+MOD_MSG_STATION -> Q_CENTRE_SUIVI (AMQP/direct)
+MOD_MSG_STATION -> Q_STATION_SUIVI.right (AMQP/direct)
+MOD_MSG_CENTRE -> Q_STATION_SUIVI.left (AMQP/direct)
 MOD_MSG_STATION -> MOD_MSG_CENTRE (HTTP/REST)
 
 # Flux entre modules du backend station
@@ -99,5 +117,5 @@ MOD_IHM_STATION -> MOD_MSG_STATION (in-process)
 
 # Flux entre backend station et SI tiers
 AFFICHAGE_DEST -> MOD_SUIVI_STATION (TCP/Socket)
-NOTIF_TRAFIC -> Q_NOTIF_TRAFIC (AMQP/fanout)
-MOD_MSG_STATION -> Q_NOTIF_TRAFIC (AMQP/fanout)
+NOTIF_TRAFIC -> Q_NOTIF_TRAFIC.right (AMQP/fanout)
+MOD_MSG_STATION -> Q_NOTIF_TRAFIC.left (AMQP/fanout)
