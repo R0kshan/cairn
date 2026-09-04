@@ -100,12 +100,18 @@ done
 # pipeline runs in a subshell, where `exit 1` ends the subshell and not the
 # script — a check that cannot fail the run is not a check.
 #
+# `--input-type=module` with `await import()`, not `require()`: package.json
+# declares `engines: >=22.6`, and `require()` of an ESM module only became
+# unflagged in Node 22.12. On 22.6-22.11 a `require("./src/notice.ts")` here
+# would throw before comparing anything — the check would fail the run for the
+# wrong reason, or worse, be "fixed" by deleting it.
+#
 # `bun: false` is the right expectation here: the npm bundles are built with
 # esbuild and embed no Bun runtime. Path is relative because the script cd's to
 # the repo root up top and both later cd's are subshell-scoped.
-node --experimental-strip-types -e '
-  const { readFileSync } = require("node:fs");
-  const { notice } = require("./src/notice.ts");
+node --experimental-strip-types --input-type=module -e '
+  const { readFileSync } = await import("node:fs");
+  const { notice } = await import("./src/notice.ts");
   const head = readFileSync(process.argv[1], "utf8").slice(0, 4096);
   const missing = notice({ bun: false }).split("\n").filter(Boolean).filter((l) => !head.includes(l));
   if (missing.length) {

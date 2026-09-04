@@ -230,8 +230,9 @@ try {
       throw new Error(
         `\`${slug}\` is ${license.type} but simple-icons records no \`source\` for it — ` +
           `there is no artwork provenance to attribute to. Drop it from CURATED, or ` +
-          `add the source to SOURCE_NOTES once you have established where the mark ` +
-          `actually comes from`,
+          `get the \`source\` field populated upstream in simple-icons. Adding a ` +
+          `SOURCE_NOTES entry will NOT clear this: that map only annotates a source ` +
+          `that already exists, so generation would keep failing here`,
       );
     }
 
