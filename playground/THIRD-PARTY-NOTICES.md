@@ -16,6 +16,90 @@ Where each artifact carries this notice:
 | release binaries | the texts ship as a `cairn-<version>-licenses.tar.gz` release asset, unpacked into `share/doc/cairn` by `packaging/install.sh`, into the formula's `doc` by the Homebrew tap, and into the app directory by the Scoop manifest — that is what carries the licences. `install.sh` is fail-closed in its own code: it verifies the bundle against the release checksums and installs nothing at all, binary included, if it cannot. Homebrew and Scoop are given the same checksums by `scripts/render-packaging.mjs` and abort on a mismatch through their own resource verification rather than through anything cairn does. `cairn version --licenses` additionally prints the short notice from inside the binary, so a copy separated from its directory still says what it contains |
 | playground | `LICENSE`, this file and `licenses/` are served from the deployed site beside the bundle and linked from the page header; the bundle carries the same banner |
 
+## What this means for you
+
+The rest of this file records what cairn owes and to whom. This section is the
+other direction: what, if anything, *you* take on. It is a plain reading of the
+licence texts in `licenses/`, not legal advice, and the summary below is not a
+substitute for the terms themselves.
+
+Three situations, in increasing order of what they ask of you.
+
+### You generate diagrams with cairn
+
+Nothing. Using a tool is not redistributing it, and every obligation in this
+file attaches to distributing copies. cairn claims nothing in the diagrams you
+produce.
+
+One thing worth knowing, because it is the only case where a third party's
+terms reach your output: **a rendered SVG embeds the icon artwork it draws.**
+31 of the 37 built-in logos are CC0-1.0, which waives copyright and asks for
+nothing. Six carry their own terms and ask for attribution:
+
+| Logo | Licence |
+|---|---|
+| `angular` | CC-BY-4.0 |
+| `apache`, `apachekafka`, `apachespark` | Apache-2.0 |
+| `javascript` | MIT |
+| `openjdk` | BSD-3-Clause |
+
+A diagram that uses none of those six carries no third-party artwork with
+conditions attached. One that does is a redistribution of that artwork, and the
+SVG does not carry a notice of its own — the per-icon table further down this
+file is the attribution, and it names the artwork source for each.
+
+Separately from copyright: the brands these logos depict are their owners'
+trademarks. Drawing one in a diagram is not an endorsement, and cairn grants no
+rights in the marks themselves.
+
+### You use cairn as an npm package
+
+Two quite different cases, and which one you are in depends on how your own
+thing is distributed.
+
+**cairn as a dependency.** Your package declares `@r0kshan/cairn` in
+`dependencies` and your users' `npm install` fetches it from the registry, with
+`LICENSE`, this file and `licenses/` intact in `node_modules`. You are
+distributing no copies of cairn, so nothing here attaches to you. Just don't
+strip those files out of what you publish.
+
+**cairn bundled into your artifact** — a webpack/rollup/esbuild bundle, a
+Docker image, an Electron app, a single-file CLI. Now cairn's code, and the
+elkjs inside it, are part of what you hand someone. You take on cairn's
+Apache-2.0 (`LICENSE`), elkjs' EPL-2.0 (§3.1(b) wants a copy of the Agreement
+with each copy of the program), and the per-icon attribution. In practice that
+is copying `LICENSE`, this file and `licenses/` out of the installed package
+into your own distribution.
+
+`bin/cairn.mjs` and `dist/cairn.mjs` each begin with a `/*!` banner naming what
+they contain, and most minifiers preserve `/*!` by default. **Check your
+bundler's comment settings**: one configured to strip all comments removes the
+only notice the code itself carries.
+
+Note that the icon artwork is in the bundle whether or not you ever use a
+`logo:` — the table is not tree-shaken. So for redistribution the six licensed
+icons above apply regardless; it is only your *output* that depends on which
+logos you actually draw.
+
+**EPL-2.0 does not reach your code.** Its copyleft covers modifications to the
+EPL'd work; cairn does not modify elkjs, and bundling is not modification. Your
+own code stays under whatever licence you choose. This is why cairn elects
+EPL-2.0 from elkjs' dual offer rather than GPL-3.0-or-later.
+
+### You redistribute cairn itself
+
+Republishing the binaries, mirroring the release assets, or shipping a cairn
+executable inside something else. This is the heavy case, and it is what most
+of this file exists for: the binaries additionally embed the Bun runtime, which
+statically links JavaScriptCore under LGPL-2.1 in part, along with everything
+else in `licenses/bun-LICENSE.md`.
+
+The short version is that the licence texts have to travel with the binary.
+Every installer cairn publishes already does this for you — if you are passing
+along an artifact one of them produced, the notices are already beside it. If
+you are building your own, read the Bun and JavaScriptCore sections below
+before you ship.
+
 ## elkjs
 
 Version 0.12.0, inlined unmodified. Upstream: https://github.com/kieler/elkjs
