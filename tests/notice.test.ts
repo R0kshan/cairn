@@ -228,17 +228,46 @@ const renderWithLogo = async (logo: string): Promise<string> => {
   return svg;
 };
 
+/**
+ * The attribution comment's lines, trimmed — `[]` when the diagram carries no
+ * such comment.
+ *
+ * Tests compare whole lines against the values in `logos.ts` rather than
+ * searching the SVG for a URL. It is the stronger assertion: a substring test
+ * passes on a line that merely contains the address, while this one fails if
+ * the label, the spacing or the field name drifts. It also keeps the licence
+ * URLs written down in exactly one place, which is the generated data.
+ */
+const attributionLines = (svg: string): string[] => {
+  const comment = svg.match(/<!--([\s\S]*?)-->/)?.[1];
+  if (!comment) return [];
+  return comment
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+};
+
+/** A vendored logo's field, asserted present so a test failure names the gap rather than printing `undefined`. */
+const logoField = (slug: string, field: "source" | "licenseUrl" | "copyright"): string => {
+  const value = LOGOS[slug]?.[field];
+  assert.ok(value, `LOGOS.${slug} has no ${field}`);
+  return value;
+};
+
 test("a diagram drawing licensed artwork carries its attribution", async () => {
   // `angular` is CC-BY-4.0. A shared SVG is a redistribution of that artwork,
   // and it travels without `licenses/`, so the notice has to be in the file.
-  const svg = await renderWithLogo("angular");
-  assert.ok(svg.includes("https://angular.dev/press-kit"), "no artwork source for angular");
+  const lines = attributionLines(await renderWithLogo("angular"));
+  assert.ok(
+    lines.includes(`artwork: ${logoField("angular", "source")}`),
+    "no artwork source for angular",
+  );
 });
 
 test("the attribution links the licence text, which an exported SVG cannot ship", async () => {
-  const svg = await renderWithLogo("angular");
+  const lines = attributionLines(await renderWithLogo("angular"));
   assert.ok(
-    svg.includes("https://creativecommons.org/licenses/by/4.0/legalcode"),
+    lines.includes(`licence: ${logoField("angular", "licenseUrl")}`),
     "no licence link for angular",
   );
 });
@@ -247,24 +276,25 @@ test("a rights-holder's own copyright line travels with the mark", async () => {
   // MIT asks for the copyright notice itself, which a link to a licence
   // template does not supply. `javascript` is the one vendored icon that
   // publishes such a line.
-  const svg = await renderWithLogo("javascript");
+  const lines = attributionLines(await renderWithLogo("javascript"));
   assert.ok(
-    svg.includes("Copyright (c) 2011 Christopher Williams"),
+    lines.includes(logoField("javascript", "copyright")),
     "the JavaScript mark lost its copyright line",
   );
 });
 
 test("a CC0 mark adds no attribution, because CC0 asks for none", async () => {
-  const svg = await renderWithLogo("postgresql");
-  assert.ok(!svg.includes("third-party artwork"), "CC0-only diagram carries an attribution block");
+  const lines = attributionLines(await renderWithLogo("postgresql"));
+  assert.deepEqual(lines, [], "CC0-only diagram carries an attribution block");
 });
 
 test("the attribution names only the artwork the diagram actually drew", async () => {
   // The vendored table is not tree-shaken, so every artifact holds all 37
   // paths. An SVG holds the ones it painted — claiming more would attribute
   // artwork the file does not contain.
-  const svg = await renderWithLogo("angular");
-  assert.ok(!svg.includes("Apache Kafka"), "attribution names a mark the diagram never drew");
+  const lines = attributionLines(await renderWithLogo("angular"));
+  const named = lines.filter((line) => line.startsWith("Apache Kafka"));
+  assert.deepEqual(named, [], "attribution names a mark the diagram never drew");
 });
 
 test("every licensed logo can be attributed from the data alone", async () => {
