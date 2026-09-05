@@ -13,6 +13,13 @@
   header .dim { color:var(--dim); font-size:12px; }
   header select, header button { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:12.5px; cursor:pointer; }
   header button:hover, header select:hover { border-color:var(--accent); }
+  /* The zoom controls live at the right end of the navbar, alongside the other
+     actions — in the preview's own footer they went unnoticed. Narrower than
+     the rest so the group reads as one control, not four more buttons. */
+  #zoom { margin-left:auto; display:flex; gap:4px; align-items:center; }
+  #zoom button { width:28px; padding:5px 0; border-radius:4px; }
+  #zoom-level { width:54px; font-variant-numeric:tabular-nums; }
+  #zoom-fit { width:auto; padding:5px 10px; }
   main { flex:1; display:flex; min-height:0; }
   .left { width:44%; min-width:320px; display:flex; flex-direction:column; border-right:1px solid var(--border); }
   #editor { flex:1; resize:none; border:0; outline:0; padding:12px 14px; background:var(--bg); color:var(--text); font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre; tab-size:2; }
@@ -38,11 +45,6 @@
   .err-panel .err-p { margin-top:8px; font-size:13.5px; line-height:1.6; color:#8a5a5a; }
   #status { padding:6px 14px; background:var(--panel); border-top:1px solid var(--border); font-size:12px; color:var(--dim); display:flex; gap:16px; align-items:center; }
   #status .ok { color:var(--ok); } #status .err { color:var(--err); }
-  #zoom { margin-left:auto; display:flex; gap:6px; align-items:center; }
-  #zoom button { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:4px; width:26px; cursor:pointer; }
-  #zoom button:hover { border-color:var(--accent); }
-  #zoom-level { width:52px; font-variant-numeric:tabular-nums; }
-  #zoom-fit { width:auto; padding:0 8px; }
   .note { color:var(--dim); font-size:12px; }
 </style>
 </head>
@@ -68,6 +70,12 @@
   </select>
   <button id="download-matrix" title="The flows of this diagram as a table — the matrice des flux techniques">Download matrix</button>
   <span class="note" id="note"></span>
+  <span id="zoom">
+    <button data-zoom="out" title="Zoom out (−)">−</button>
+    <button data-zoom="reset" id="zoom-level" title="Reset to 100% (0)">100%</button>
+    <button data-zoom="in" title="Zoom in (+)">+</button>
+    <button data-zoom="fit" id="zoom-fit" title="Fit the whole diagram in the pane">fit</button>
+  </span>
   <!-- The engine bundle inlines elkjs (EPL-2.0) and the Simple Icons artwork,
        so serving this page distributes them: the notices have to be reachable
        from it. build-playground.sh copies THIRD-PARTY-NOTICES.md in beside the
@@ -82,14 +90,7 @@
   </div>
   <div class="right">
     <div id="preview" title="Drag to pan · ctrl/⌘ + wheel to zoom"></div>
-    <div id="status"><span id="stat">loading engine…</span>
-      <span id="zoom">
-        <button data-zoom="out" title="Zoom out (−)">−</button>
-        <button data-zoom="reset" id="zoom-level" title="Reset to 100% (0)">100%</button>
-        <button data-zoom="in" title="Zoom in (+)">+</button>
-        <button data-zoom="fit" id="zoom-fit" title="Fit the whole diagram in the pane">fit</button>
-      </span>
-    </div>
+    <div id="status"><span id="stat">loading engine…</span></div>
   </div>
 </main>
 
@@ -169,6 +170,12 @@ const b64decode = s => new TextDecoder().decode(Uint8Array.from(atob(s), c => c.
 // switches to a clear error state and points at the error list below.
 let running = false, pending = false;
 
+// A diagram that arrived whole — pasted in, picked from the templates menu, or
+// carried by a shared link — is one nobody has framed yet, so the next render
+// fits it to the pane. Ordinary edits leave the reader's own zoom and pan be.
+// The first render is a load, hence the initial `true`.
+let fitOnNextRender = true;
+
 function schedule() {
   preview.classList.add('stale');
   clearTimeout(schedule._t);
@@ -200,7 +207,14 @@ async function run() {
       const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
       if (bg) preview.style.background = bg;
       applyZoom();
-      preview.scrollTo(scrollLeft, scrollTop);
+      // Cleared only here, so a paste that does not compile is still fitted
+      // once the errors are fixed and it finally renders.
+      if (fitOnNextRender) {
+        fitOnNextRender = false;
+        fitToPane();
+      } else {
+        preview.scrollTo(scrollLeft, scrollTop);
+      }
       stat.innerHTML = `<span class="ok">✓</span> ${r.metrics.width}×${r.metrics.height} · layout ${r.metrics.layoutMs} ms${nw ? ` · <span style="color:var(--warn)">${nw} warning${nw > 1 ? 's' : ''}</span>` : ''} · engine v${version}`;
     } else {
       // errors: do NOT render the diagram at all — clear it and show a clear
@@ -226,6 +240,17 @@ async function run() {
 
 editor.addEventListener('input', schedule);
 
+// Fit after a paste that replaces the whole source — dropping a diagram in
+// wholesale. `paste` fires before the value changes, so the selection here is
+// still the range about to be overwritten; covering the whole value (an empty
+// editor included) means the pasted text becomes the entire diagram. Pasting a
+// fragment into an existing diagram is an ordinary edit and keeps the framing.
+editor.addEventListener('paste', () => {
+  const replacesWholeSource =
+    editor.selectionStart === 0 && editor.selectionEnd === editor.value.length;
+  if (replacesWholeSource) fitOnNextRender = true;
+});
+
 diagsEl.addEventListener('click', e => {
   const line = e.target.closest('.diag')?.dataset.line;
   if (!line) return;
@@ -236,7 +261,7 @@ diagsEl.addEventListener('click', e => {
 // --- Templates --------------------------------------------------------------
 document.getElementById('templates').addEventListener('change', e => {
   const t = TEMPLATES[e.target.value];
-  if (t) { editor.value = t; run(); }
+  if (t) { editor.value = t; fitOnNextRender = true; run(); }
   e.target.value = '';
 });
 
@@ -291,7 +316,10 @@ document.getElementById('download-matrix').addEventListener('click', () => {
 // with a multiplier, zooming in then out lands on 0.99975 rather than 1, and a
 // step that clamps at the top loses the levels above it on the way back down.
 // Ladder stops are exact, so any in/out sequence returns to where it started.
-const ZOOM_STOPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+// The floor has to be low enough to frame the widest views cairn is built for:
+// examples/large-fr.cairn renders 3995px wide and needs about 20% to fit a
+// half-window pane, so a floor above that would leave "fit" still overflowing.
+const ZOOM_STOPS = [0.1, 0.15, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 const ZOOM_MIN = ZOOM_STOPS[0];
 const ZOOM_MAX = ZOOM_STOPS[ZOOM_STOPS.length - 1];
 // Wheel deltas are in pixels; this turns one notch (~100px on most mice) into
@@ -311,13 +339,24 @@ function nextZoomStop(direction) {
   return stops.find(isBeyondCurrent) ?? zoom;
 }
 
-/** The zoom level at which the whole diagram fits inside the preview pane. */
-function fitToPaneZoom() {
+/**
+ * The zoom level at which the whole diagram fits inside the preview pane.
+ * Shrinks only — magnifying a three-box starter to fill the pane is not what
+ * "fit" means here, and this also runs unattended on load, where jumping a
+ * small diagram to 400% would be startling rather than helpful.
+ */
+function paneFitZoom() {
   const box = svgViewBox();
   if (!box) return zoom;
   const width = preview.clientWidth - FIT_PADDING_PX;
   const height = preview.clientHeight - FIT_PADDING_PX;
-  return clampZoom(Math.min(width / box.width, height / box.height));
+  return clampZoom(Math.min(width / box.width, height / box.height, 1));
+}
+
+/** Frame the whole diagram: fitted, and scrolled back to its top-left corner. */
+function fitToPane() {
+  setZoom(paneFitZoom());
+  preview.scrollTo(0, 0);
 }
 
 function svgViewBox() {
@@ -360,7 +399,7 @@ const ZOOM_ACTIONS = {
   in:    () => setZoom(nextZoomStop(1)),
   out:   () => setZoom(nextZoomStop(-1)),
   reset: () => setZoom(1),
-  fit:   () => { setZoom(fitToPaneZoom()); preview.scrollTo(0, 0); },
+  fit:   fitToPane,
 };
 
 document.getElementById('zoom').addEventListener('click', e => {

@@ -75,11 +75,17 @@ Architecture views get wide, so the preview pane pans and zooms:
 | Zoom in / out | The `−` and `+` buttons, or the `-` and `+` keys |
 | Zoom at the pointer | `ctrl`/`⌘` + mouse wheel, or a trackpad pinch |
 | Back to 100% | Click the percentage readout, or press `0` |
-| Fit the whole diagram | The `fit` button |
+| Shrink an oversized diagram to fit | The `fit` button |
 | Pan | Drag the diagram, or use the pane's scrollbars |
 
-The zoom level and the panned position both survive a re-render, so editing the
-source does not throw away the spot you were looking at.
+A diagram that arrives whole — pasted over the editor's contents, picked from
+the templates menu, or opened from a share link — is fitted to the pane
+automatically, so a wide view lands on screen in one piece. `fit` only ever
+shrinks; it will not magnify a small diagram to fill the pane.
+
+While you edit, the zoom level and the panned position both survive a
+re-render, so changing the source does not throw away the spot you were
+looking at.
 
 ## Preview
 
