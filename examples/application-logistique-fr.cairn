@@ -1,0 +1,92 @@
+diagram application "Préparation de commandes — vue applicative"
+style {
+  lang: fr
+  disposition: slide
+  flow-text: numbered
+}
+
+
+system SYS_SIEGE "Système siège" { order: 1
+  auth PROXY_AUTH "Reverse proxy\n(OIDC)" { order: 2 }
+  idp ANNUAIRE "Annuaire du groupe" { order: 3 }
+  application POSTE_SIEGE "Poste superviseur\nau siège" { order: 1 }
+  application CONSOLE_SIEGE "Console\nsiège" { logo: angular order: 4 }
+  application BACK_SIEGE "Backend siège" {
+    logo: spring
+    order: 5
+    module MOD_SUIVI_SIEGE "Suivi des commandes\nsiège" { order: 4 }
+    module MOD_MSG_SIEGE "Messagerie\nsiège" { order: 2 }
+    module MOD_REFERENTIEL "Gestion du référentiel" { order: 1 }
+    module MOD_ADMIN "Administration" { order: 3 }
+  }
+  datastore BDD_SIEGE "Base du siège" { logo: postgresql order: 6 }
+}
+
+queue Q_STOCK_TEMPS_REEL "STOCK_TEMPS_REEL" { order: 3 }
+queue Q_TIERS_TEMPS_REEL "TIERS_TEMPS_REEL" { order: 3 }
+queue Q_ALERTES "ALERTES_TRANSPORT" { order: 3 }
+queue Q_SIEGE_CMD "SIEGE_COMMANDES" { order: 3 }
+queue Q_SITE_CMD "SITE_COMMANDES" { order: 3 }
+
+
+  application POSTE_SITE "Poste opérateur\nsur site" { order: 3 }
+application BACK_SITE "Backend site" {
+  logo: spring
+  order: 3
+  module MOD_IHM_SITE "IHM site" { order: 3 }
+  module MOD_SUIVI_SITE "Suivi des commandes\nsite" { order: 1 }
+  module MOD_MSG_SITE "Messagerie\nsite" { order: 2 }
+  module MOD_SECURITE "Sécurité\napplicative" { order: 4 }
+}
+application ETIQUETEUSES "Étiqueteuses\nd'atelier" { order: 2 }
+
+
+external SI_TIERS "SI tiers" {
+  external ERP_GROUPE "ERP du\ngroupe"
+  external PREVISION "Prévision de\ndemande"
+  external TRANSPORTEUR "Alertes du\ntransporteur"
+  external ETIQUETAGE "Référentiel\nd'étiquetage"
+}
+
+# ============================================================================
+# FLUX
+# ============================================================================
+
+
+POSTE_SIEGE -> PROXY_AUTH (HTTPS)
+PROXY_AUTH -> ANNUAIRE (HTTPS)
+PROXY_AUTH -> CONSOLE_SIEGE (HTTPS)
+CONSOLE_SIEGE -> MOD_ADMIN (HTTPS/REST)
+CONSOLE_SIEGE -> MOD_MSG_SIEGE (HTTPS/REST)
+MOD_MSG_SIEGE -> CONSOLE_SIEGE (SSE)
+MOD_ADMIN -> CONSOLE_SIEGE (SSE)
+POSTE_SITE -> MOD_SECURITE (HTTPS)
+MOD_SECURITE -> ANNUAIRE (OIDC, JWT)
+MOD_SECURITE -> MOD_IHM_SITE (HTTPS)
+
+MOD_SUIVI_SIEGE -> MOD_MSG_SIEGE (in-process)
+MOD_SUIVI_SIEGE -> MOD_REFERENTIEL (in-process)
+MOD_REFERENTIEL -> BDD_SIEGE (TCP/IP)
+
+ERP_GROUPE.left -> MOD_SUIVI_SIEGE.top (HTTPS/REST)
+PREVISION -> Q_TIERS_TEMPS_REEL (AMQP/topic)
+MOD_MSG_SIEGE -> Q_TIERS_TEMPS_REEL (AMQP/topic)
+MOD_REFERENTIEL -> Q_STOCK_TEMPS_REEL (AMQP/fanout)
+TRANSPORTEUR -> Q_STOCK_TEMPS_REEL (AMQP/fanout)
+
+MOD_MSG_SIEGE -> Q_SIEGE_CMD (AMQP/direct)
+MOD_MSG_SITE -> Q_SIEGE_CMD (AMQP/direct)
+MOD_MSG_SITE -> Q_SITE_CMD.right (AMQP/direct)
+MOD_MSG_SIEGE -> Q_SITE_CMD.left (AMQP/direct)
+MOD_MSG_SITE -> MOD_MSG_SIEGE (HTTP/REST)
+
+
+MOD_SUIVI_SITE -> MOD_MSG_SITE (in-process)
+MOD_MSG_SITE -> MOD_IHM_SITE (SSE)
+MOD_SUIVI_SITE -> ETIQUETEUSES (RS422)
+MOD_IHM_SITE -> MOD_MSG_SITE (in-process)
+
+
+ETIQUETAGE -> MOD_SUIVI_SITE (TCP/Socket)
+TRANSPORTEUR -> Q_ALERTES.right (AMQP/fanout)
+MOD_MSG_SITE -> Q_ALERTES.left (AMQP/fanout)
