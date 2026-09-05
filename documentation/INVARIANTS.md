@@ -499,9 +499,12 @@ are others, and neither has been taught the rule.
 
 ## 5. Security
 
-All user text is escaped before SVG emission (`esc()` / `escAttr()`). Reserved
-keys (`__proto__`, `constructor`, `prototype`) are rejected at parse time.
-Every security fix ships with its exploit as a regression test.
+All user text is escaped before SVG emission (`esc()` / `escAttr()`), and text
+placed in an XML comment through `escComment()` instead — comment content is not
+parsed, so escaping `&` there would corrupt the attribution URLs it carries,
+while `--` and a trailing `-` would end the comment early. Reserved keys
+(`__proto__`, `constructor`, `prototype`) are rejected at parse time. Every
+security fix ships with its exploit as a regression test.
 
 ## 6. Diagnostics are coded, never thrown
 

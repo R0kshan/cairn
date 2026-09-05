@@ -29,9 +29,16 @@ mkdir -p dist
 # package.json manifest out of the bundle. See src/api.ts for why.
 VERSION="$(node -p "require('./package.json').version")"
 
+# The bundle inlines elkjs, so it redistributes EPL-2.0 code: `--banner:js`
+# attaches the notice (scripts/notice-banner.sh) and `--legal-comments=eof`
+# keeps any dependency's own marked header. See THIRD-PARTY-NOTICES.md.
+. "$(dirname "$0")/notice-banner.sh"
+
 npx --no-install esbuild src/playground.ts \
   --bundle --format=esm --platform=browser \
   --define:CAIRN_BUILD_VERSION="\"$VERSION\"" \
+  --banner:js="$NOTICE_BANNER" \
+  --legal-comments=eof \
   --log-level=warning \
   --outfile="$OUT"
 

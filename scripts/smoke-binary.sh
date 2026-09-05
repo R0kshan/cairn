@@ -29,7 +29,12 @@ if [ -z "$BIN" ]; then
   echo "• compiling host binary with bun…"
   bun install >/dev/null 2>&1 || true
   BIN="$TMP/cairn"
-  bun build --compile --minify src/cli.ts --outfile "$BIN"
+  # Same --define as build-binaries.sh: any `--compile` binary embeds the Bun
+  # runtime, so it must say so under `cairn version --licenses`. Without this a locally
+  # compiled binary would print the npm variant of the notice and under-report
+  # what it actually contains — and the check below would not catch it.
+  bun build --compile --minify --define CAIRN_EMBEDS_BUN="true" \
+    src/cli.ts --outfile "$BIN"
 fi
 
 [ -x "$BIN" ] || { echo "✗ binary not found or not executable: $BIN"; exit 1; }
@@ -48,7 +53,31 @@ head -c 5 "$TMP/out.svg" | grep -q "<svg" || fail "build output is not an SVG"
 # 3) explain — exercises the diagnostics table
 "$BIN" explain E0203 >/dev/null || fail "explain exited non-zero"
 
-# 4) version — for a released binary this MUST report the tag it was built from
+# 4) licenses — the notice has to survive `--compile --minify`, which is exactly
+#    what strips a bundled dependency's own comment header. A binary is the one
+#    artifact with nowhere else to carry a notice, so if this regresses the
+#    release is non-compliant with no other signal. Assert both halves: the
+#    common text, and the Bun/LGPL paragraph that only a compiled binary owes.
+#    (`cairn version --licenses`; there is no standalone `licenses` subcommand.)
+#    The Bun half cuts both ways, which is why it is a variable rather than a
+#    constant: this script is also run by smoke-npm.sh against the npm CLI, and
+#    that artifact contains no Bun at all. Claiming LGPL content it does not
+#    carry would be as wrong as omitting it from a binary that does.
+EMBEDS_BUN="${CAIRN_SMOKE_EMBEDS_BUN:-1}"
+notices="$("$BIN" version --licenses)" || fail "version --licenses exited non-zero"
+echo "$notices" | grep -q "EPL-2.0" || fail "licenses output does not mention elkjs' EPL-2.0"
+echo "$notices" | grep -q "Simple Icons" || fail "licenses output does not mention Simple Icons"
+if [ "$EMBEDS_BUN" = 1 ]; then
+  echo "$notices" | grep -q "LGPL-2.1" ||
+    fail "licenses output omits the Bun/LGPL-2.1 paragraph — was --define CAIRN_EMBEDS_BUN dropped?"
+elif echo "$notices" | grep -q "LGPL-2.1"; then
+  # Written as an `elif`, not `grep && fail`: under `set -e` an AND-list whose
+  # first command fails is exempt from the errexit rule only by a subtlety of
+  # POSIX, and a check that silently stops checking is worse than no check.
+  fail "licenses output claims embedded Bun/LGPL content this artifact does not contain"
+fi
+
+# 5) version — for a released binary this MUST report the tag it was built from
 #    (CAIRN_BUILD_VERSION, baked in via `bun build --define`), not package.json.
 #    Skipped when no expected version is given (plain local compiles, `npm run test:binary`).
 if [ -n "$EXPECTED_VERSION" ]; then
@@ -56,4 +85,4 @@ if [ -n "$EXPECTED_VERSION" ]; then
   [ "$reported" = "cairn v$EXPECTED_VERSION" ] || fail "version mismatch: binary reported '$reported', expected 'cairn v$EXPECTED_VERSION'"
 fi
 
-echo "✓ binary smoke passed — layout, render, matrix, explain$([ -n "$EXPECTED_VERSION" ] && echo ", and version") all work in the compiled binary"
+echo "✓ binary smoke passed — layout, render, matrix, explain, licenses$([ -n "$EXPECTED_VERSION" ] && echo ", and version") all work in the compiled binary"

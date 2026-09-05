@@ -1,7 +1,7 @@
 {
   "name": "@r0kshan/cairn",
   "version": "1.0.0-RC13",
-  "description": "Architecture diagrams as code — typed views, semantic layout, overlap-free labels",
+  "description": "Architecture diagrams as code — typed views, semantic layout, no label overlap",
   "license": "Apache-2.0",
   "homepage": "https://github.com/R0kshan/cairn#readme",
   "repository": {
