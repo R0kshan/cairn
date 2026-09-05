@@ -1,0 +1,106 @@
+diagram application "Grid operations — technical stack"
+style {
+  disposition: wide
+}
+
+# The same `logo:` convention as `application-tech-stack.cairn`, on a landscape
+# big enough to show what it is for: two backends built on the same framework,
+# each with its own modules, talking through a broker to third parties nobody
+# here owns. The corner marks are what tell them apart at a glance.
+
+# ============================================================================
+# CONTROL ROOM
+# ============================================================================
+auth EDGE_PROXY "Reverse proxy\n(OIDC)"
+idp IDP "Corporate SSO"
+
+application WS_CONTROL "Control room\nworkstation" { logo: javascript }
+application WS_FIELD "Field site\nworkstation" { logo: javascript }
+application CONSOLE "Operations\nconsole" { logo: angular }
+application DISPLAYS "Platform\ndisplays"
+
+datastore CONTROL_DB "Control database" { logo: postgresql }
+
+application CONTROL_BACK "Control backend" {
+  logo: spring
+  module TRACKING "Movement\ntracking" { logo: openjdk }
+  module MESSAGING "Messaging hub" { logo: kotlin }
+  module REFERENCE "Reference data" { logo: openjdk }
+  module SYSTEM_MGMT "System\nmanagement" { logo: kotlin }
+}
+
+# ============================================================================
+# MESSAGE BROKER
+# ============================================================================
+queue Q_CONTROL_LIVE "CONTROL_LIVE" { logo: rabbitmq }
+queue Q_FORECAST_LIVE "FORECAST_LIVE" { logo: rabbitmq }
+queue Q_INCIDENT_FEED "INCIDENT_FEED" { logo: rabbitmq }
+queue Q_CONTROL_TRACK "CONTROL_TRACK" { logo: rabbitmq }
+queue Q_FIELD_TRACK "FIELD_TRACK" { logo: rabbitmq }
+
+# ============================================================================
+# FIELD SITE
+# ============================================================================
+application FIELD_BACK "Field backend" {
+  logo: spring
+  module FIELD_UI "Field console" { logo: typescript }
+  module FIELD_TRACKING "Movement tracking\n(field)" { logo: openjdk }
+  module FIELD_MESSAGING "Messaging\n(field)" { logo: kotlin }
+  module FIELD_SECURITY "Access control" { logo: vault }
+}
+
+# ============================================================================
+# THIRD PARTIES
+# ============================================================================
+external PARTNERS "Partner systems" {
+  external SCADA "Field telemetry" { logo: python }
+  external FORECAST "Load forecasting"
+  external INCIDENTS "Incident feed"
+  external SIGNAGE_FEED "Display\nscheduling"
+}
+
+# ---- console and control backend ----
+WS_CONTROL -> EDGE_PROXY (HTTPS)
+EDGE_PROXY -> IDP (OIDC, JWT)
+EDGE_PROXY -> CONSOLE (HTTPS)
+CONSOLE -> SYSTEM_MGMT (API_REST, JSON)
+CONSOLE -> MESSAGING (API_REST, JSON)
+MESSAGING -> CONSOLE (SSE)
+SYSTEM_MGMT -> CONSOLE (SSE)
+WS_FIELD -> FIELD_SECURITY (HTTPS)
+FIELD_SECURITY -> IDP (OIDC, JWT)
+FIELD_SECURITY -> FIELD_UI (HTTPS)
+
+# ---- inside the control backend ----
+TRACKING -> MESSAGING (in-process)
+TRACKING -> REFERENCE (in-process)
+REFERENCE -> CONTROL_DB (JDBC)
+
+# ---- control backend and partner systems ----
+SCADA -> TRACKING (API_REST, JSON)
+FORECAST -> Q_FORECAST_LIVE (AMQP/topic)
+MESSAGING -> Q_FORECAST_LIVE (AMQP/topic)
+REFERENCE -> Q_CONTROL_LIVE (AMQP/fanout)
+INCIDENTS -> Q_CONTROL_LIVE (AMQP/fanout)
+
+# ---- control room and field site, through the broker ----
+MESSAGING -> Q_CONTROL_TRACK (AMQP/direct)
+FIELD_MESSAGING -> Q_CONTROL_TRACK (AMQP/direct)
+FIELD_MESSAGING -> Q_FIELD_TRACK (AMQP/direct)
+MESSAGING -> Q_FIELD_TRACK (AMQP/direct)
+FIELD_MESSAGING -> MESSAGING (API_REST, JSON)
+
+# ---- inside the field backend ----
+FIELD_TRACKING -> FIELD_MESSAGING (in-process)
+FIELD_MESSAGING -> FIELD_UI (SSE)
+FIELD_TRACKING -> DISPLAYS (RS422)
+FIELD_UI -> FIELD_MESSAGING (in-process)
+
+# ---- field backend and partner systems ----
+SIGNAGE_FEED -> FIELD_TRACKING (TCP/Socket)
+INCIDENTS -> Q_INCIDENT_FEED (AMQP/fanout)
+FIELD_MESSAGING -> Q_INCIDENT_FEED (AMQP/fanout)
+
+legend {
+  note "Corner marks name the technology each component is built on."
+}

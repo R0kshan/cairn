@@ -99203,20 +99203,20 @@ function selectionExtras(scene, model) {
   }
   return extra;
 }
-function relayoutVerdict(before, after) {
+function tallyProfile(profile) {
   const normalize = (key) => key.replace(/@[-\d.,]+$/, "").replace(/:\d+(?=@|$)/, "");
-  const tally = (profile) => {
-    const out = /* @__PURE__ */ new Map();
-    for (const [key, tier] of profile) {
-      const id = normalize(key);
-      const entry = out.get(id) ?? { tier, count: 0 };
-      entry.count++;
-      out.set(id, entry);
-    }
-    return out;
-  };
-  const was = tally(before);
-  const now = tally(after);
+  const out = /* @__PURE__ */ new Map();
+  for (const [key, tier] of profile) {
+    const id = normalize(key);
+    const entry = out.get(id) ?? { tier, count: 0 };
+    entry.count++;
+    out.set(id, entry);
+  }
+  return out;
+}
+function relayoutVerdict(before, after) {
+  const was = tallyProfile(before);
+  const now = tallyProfile(after);
   for (let tier = 0; tier < 5; tier++) {
     let gained = false;
     let lost = false;
@@ -99231,6 +99231,62 @@ function relayoutVerdict(before, after) {
     if (lost) return tier;
   }
   return -1;
+}
+function noLadderRegression(before, after) {
+  const perTier = (profile) => {
+    const totals = [0, 0, 0, 0, 0];
+    for (const { tier, count } of tallyProfile(profile).values()) totals[tier] += count;
+    return totals;
+  };
+  const was = perTier(before);
+  const now = perTier(after);
+  return now.every((count, tier) => count <= was[tier]);
+}
+function nodeCoverage(scene) {
+  if (!scene.nodes.length) return 1;
+  const left = Math.min(...scene.nodes.map((n) => n.x));
+  const top = Math.min(...scene.nodes.map((n) => n.y));
+  const right = Math.max(...scene.nodes.map((n) => n.x + n.width));
+  const bottom = Math.max(...scene.nodes.map((n) => n.y + n.height));
+  const width = right - left;
+  const height = bottom - top;
+  if (width <= 0 || height <= 0) return 1;
+  const COLUMNS = 32;
+  const ROWS = 16;
+  let covered = 0;
+  for (let row = 0; row < ROWS; row++) {
+    for (let column = 0; column < COLUMNS; column++) {
+      const cellLeft = left + column * width / COLUMNS;
+      const cellRight = left + (column + 1) * width / COLUMNS;
+      const cellTop = top + row * height / ROWS;
+      const cellBottom = top + (row + 1) * height / ROWS;
+      if (scene.nodes.some(
+        (n) => n.x < cellRight && n.x + n.width > cellLeft && n.y < cellBottom && n.y + n.height > cellTop
+      ))
+        covered++;
+    }
+  }
+  return covered / (COLUMNS * ROWS);
+}
+async function denserLayout(base, elkPass) {
+  const densitySpecs = [
+    { minLayers: true, dense: true },
+    { placement: "LINEAR_SEGMENTS", dense: true }
+  ];
+  const laidOut = await Promise.allSettled(densitySpecs.map((spec) => elkPass.layout(spec)));
+  const areaOf = (scene) => scene.width * scene.height;
+  const baseProfile = elkPass.profile(base);
+  let bestArea = areaOf(base) * DENSITY_GAIN;
+  let winner = null;
+  for (const [index, settled] of laidOut.entries()) {
+    if (settled.status !== "fulfilled") continue;
+    const candidate = elkPass.toScene(settled.value);
+    if (areaOf(candidate) > bestArea) continue;
+    if (!noLadderRegression(baseProfile, elkPass.profile(candidate))) continue;
+    bestArea = areaOf(candidate);
+    winner = { scene: candidate, options: densitySpecs[index] };
+  }
+  return winner;
 }
 var centerOf = (n) => ({ x: n.x + n.width / 2, y: n.y + n.height / 2 });
 function sideToward(from, to) {
@@ -99293,6 +99349,8 @@ function constrainPorts(graph, scene, flagged, model) {
     elkNode.ports = [...elkNode.ports ?? [], ...ports];
   }
 }
+var DENSE_ENOUGH = 0.6;
+var DENSITY_GAIN = 0.95;
 var INGRESS_PARTITION = -1;
 var EGRESS_PARTITION = 900;
 var COMPACT_WRAP = 10;
@@ -99501,7 +99559,18 @@ function buildElkGraph(ctx, direction, options) {
         "elk.spacing.edgeNode": "18",
         "elk.layered.thoroughness": "80",
         "elk.layered.nodePlacement.favorStraightEdges": "true"
-      } : {}
+      } : {},
+      // Spread last, after every spacing default above, because overriding them
+      // is the whole point — a density candidate that lands before them is
+      // silently shadowed and lays out exactly like the layout it was meant to
+      // beat.
+      ...options?.dense ? {
+        "elk.layered.spacing.nodeNodeBetweenLayers": "14",
+        "elk.spacing.nodeNode": "10",
+        "elk.spacing.edgeEdge": "8",
+        "elk.spacing.edgeNode": "9"
+      } : {},
+      ...options?.placement ? { "elk.layered.nodePlacement.strategy": options.placement } : {}
     },
     children: model.elements.map((element, index) => {
       const elkNode = toElkNode2(element, { compact, fonts, glyphKinds }, true);
@@ -99658,16 +99727,27 @@ async function layout(model, view) {
     result = await elk.layout(makeGraph(winnerDirection));
   }
   const layoutMs = Date.now() - startTime;
-  const base = sceneFromResult(result, layoutMs);
-  const skipPortPass = !!globalThis.process?.env?.CAIRN_NO_PORT_PASS;
-  if (skipPortPass) return base;
+  let base = sceneFromResult(result, layoutMs);
   const layoutProfile = (candidate) => {
     const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
     const profile = inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, /* @__PURE__ */ new Map());
     for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
     return profile;
   };
+  if (!aspectTarget && nodeCoverage(base) < DENSE_ENOUGH) {
+    const denser = await denserLayout(base, {
+      layout: (spec) => elk.layout(makeGraph(winnerDirection, spec)),
+      toScene: (laidOut) => sceneFromResult(laidOut, Date.now() - startTime),
+      profile: layoutProfile
+    });
+    if (denser) {
+      base = denser.scene;
+      winnerOptions = denser.options;
+    }
+  }
   const baseProfile = layoutProfile(base);
+  const skipPortPass = !!globalThis.process?.env?.CAIRN_NO_PORT_PASS;
+  if (skipPortPass) return base;
   let current = base;
   let best = null;
   for (let round = 0; round < PORT_PASS_ROUNDS; round++) {
