@@ -14,7 +14,13 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
-import { layout, attachSideDiagnostics, beatsRelayout } from "../src/scene-layout.ts";
+import {
+  layout,
+  attachSideDiagnostics,
+  beatsRelayout,
+  noLadderRegression,
+  nodeCoverage,
+} from "../src/scene-layout.ts";
 import { isLongDetour } from "../src/geometry.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
@@ -567,6 +573,90 @@ test("a relayout round is chosen by tier first, then by the wraps the verdict ca
   // A dead heat keeps the round already accepted, so the choice cannot depend
   // on how many rounds ran (§2, byte-deterministic output).
   assert.equal(beatsRelayout(round(1, 1), round(1, 1)), false);
+});
+
+test("a denser layout is taken only when no ladder tier pays for the space it saves", () => {
+  const profile = (entries: [string, number][]) => new Map(entries);
+  const base = profile([
+    ["crossing:A|B@10,10", 2],
+    ["crossing:C|D@20,20", 2],
+    ["turn:E@30,30", 3],
+  ]);
+  // Same defects at different addresses: two whole layouts never share
+  // coordinates, so this has to read as unchanged, not as three gains.
+  assert.equal(
+    noLadderRegression(
+      base,
+      profile([
+        ["crossing:A|B@99,99", 2],
+        ["crossing:C|D@88,88", 2],
+        ["turn:E@77,77", 3],
+      ]),
+    ),
+    true,
+  );
+  // Strictly fewer at one tier, none added anywhere: the candidate to keep.
+  assert.equal(
+    noLadderRegression(
+      base,
+      profile([
+        ["crossing:A|B@10,10", 2],
+        ["turn:E@30,30", 3],
+      ]),
+    ),
+    true,
+  );
+  // One more crossing is a tier-2 gain — refused however much area it saves.
+  assert.equal(
+    noLadderRegression(
+      base,
+      profile([
+        ["crossing:A|B@10,10", 2],
+        ["crossing:C|D@20,20", 2],
+        ["crossing:E|F@40,40", 2],
+        ["turn:E@30,30", 3],
+      ]),
+    ),
+    false,
+  );
+  // And a win at a better tier does not buy a loss at a worse one: page area is
+  // not on the ladder, so this choice may not trade a weave for it.
+  assert.equal(
+    noLadderRegression(
+      base,
+      profile([
+        ["crossing:A|B@10,10", 2],
+        ["turn:E@30,30", 3],
+        ["turn:F@50,50", 3],
+      ]),
+    ),
+    false,
+  );
+});
+
+test("node coverage reads how much of the page has something on it", () => {
+  const node = (x: number, y: number, width: number, height: number) => ({
+    id: `${x},${y}`,
+    kind: "application",
+    label: "",
+    container: false,
+    x,
+    y,
+    width,
+    height,
+  });
+  const scene = (nodes: ReturnType<typeof node>[]) => ({
+    width: 400,
+    height: 400,
+    nodes,
+    edges: [],
+    layoutMs: 0,
+  });
+  // One box is its own bounding box: nothing around it is empty.
+  assert.equal(nodeCoverage(scene([node(0, 0, 100, 100)])), 1);
+  // Two boxes on a diagonal leave both other quadrants blank — the ribbon shape
+  // the density pass exists to catch.
+  assert.ok(nodeCoverage(scene([node(0, 0, 100, 100), node(300, 300, 100, 100)])) < 0.6);
 });
 
 // ---------- dispositions ----------

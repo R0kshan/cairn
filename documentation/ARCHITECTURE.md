@@ -32,7 +32,7 @@ pipeline — see §5.
 | 1. Lex | [`lexer.ts`](../src/lexer.ts) | `.cairn` source → `Token[]` | Every token carries a `Span`; scanning always completes, even on malformed input (errors become `E0101` diagnostics, not exceptions) |
 | 2. Parse | [`parser.ts`](../src/parser.ts) | `Token[]` → `Model` | Recovers from a syntax error via `syncToNextLine` — a broken file still yields a partial `Model`; rejects `__proto__`/`constructor`/`prototype` as element IDs |
 | 3. Validate | [`validator.ts`](../src/validator.ts) | `Model` (+ active `View`) → `Diagnostic[]` | Purely diagnostic — never mutates the model; drives every check off the `views` registry, not hardcoded per-view logic. |
-| 4. Layout | [`scene-layout.ts`](../src/scene-layout.ts) | `Model` → `Scene` | Delegates to elkjs; tries multiple candidate layouts for `slide`/`page` and keeps the best fit; transposes the scene for DOWN layouts around stage 4a (§3). Orchestrates sub-passes 4a–4c below internally — the CLI calls `layout()` once, not each sub-pass separately |
+| 4. Layout | [`scene-layout.ts`](../src/scene-layout.ts) | `Model` → `Scene` | Delegates to elkjs; tries multiple candidate layouts for `slide`/`page` and keeps the best fit, and for a sparse `wide`/`tall` drawing tries two denser ones and keeps the smallest that costs no tier (`denserLayout`, §2.1); transposes the scene for DOWN layouts around stage 4a (§3). Orchestrates sub-passes 4a–4c below internally — the CLI calls `layout()` once, not each sub-pass separately |
 | 4a. Reroute | [`route-detour.ts`](../src/route-detour.ts) | `Scene` → `Scene` | No-op (byte-identical) when no edge qualifies as a wrap-around detour |
 | 4b. Tidy | [`edge-tidy.ts`](../src/edge-tidy.ts) | `Scene` → `Scene` | Every flow individually traceable: collapses sub-pixel jogs, separates flows sharing a node side to `MIN_ATTACH_GAP` |
 | 4c. Compact | [`compact.ts`](../src/compact.ts) | `Scene` → `Scene` | Removes only bands with zero pinning content (no node, label, or horizontal segment) — never distorts a container or reintroduces an overlap |
@@ -40,6 +40,28 @@ pipeline — see §5.
 
 `scripts/sweep.ts` runs stages 1–5 over every example × every disposition and
 counts violations of the invariants stages 4–4c exist to guarantee — see §5.
+
+### 2.1 Choosing between whole layouts
+
+Two places in stage 4 pick one layout out of several, and they answer different
+questions.
+
+**`slide` / `page` choose on fit.** Those dispositions target a physical frame,
+so the candidates (label wrapping, tighter spacing, fewer layers) are scored by
+how large the drawing can be scaled to fit 1280×720 or an A4 page, and the folded
+layout (`slide-fold.ts`) competes with the winner.
+
+**`wide` / `tall` choose on emptiness.** They have no frame to fit, so before
+this they kept whatever elk drew first — and for a sparse graph that is a ribbon:
+one small box per layer, its column empty above and below. `denserLayout` re-lays
+the same graph out with two knobs (`LONGEST_PATH` layering, `LINEAR_SEGMENTS`
+placement, both with tighter spacing) and keeps the smallest result that does not
+worsen **any** ladder tier, measured with the same `inspect` profile the port
+pass uses. Page area is not on the ladder, so it never buys area with a defect;
+it only takes a drawing that is smaller *and* no worse. Two guards keep it cheap
+and quiet: it runs only when `nodeCoverage` says the drawing is empty enough to
+have something to win (`DENSE_ENOUGH`), and it only swaps for a canvas at least
+5% smaller (`DENSITY_GAIN`), so a layout does not churn for rounding.
 
 ## 3. The data model
 

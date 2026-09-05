@@ -532,20 +532,27 @@ function selectionExtras(scene: Scene, model: Model): Profile {
  * crossing is still a gain. The rule is unchanged: walk tiers, refuse on any
  * gain, accept at the first tier that only lost.
  */
-function relayoutVerdict(before: Profile, after: Profile): number {
+/**
+ * A profile counted by defect *identity* — position and segment index dropped,
+ * multiplicity kept — which is what comparing two whole layouts needs: every
+ * coordinate shifts between them, so an address-keyed diff reads one unmoved
+ * crossing as both a gain and a loss.
+ */
+function tallyProfile(profile: Profile): Map<string, { tier: number; count: number }> {
   const normalize = (key: string) => key.replace(/@[-\d.,]+$/, "").replace(/:\d+(?=@|$)/, "");
-  const tally = (profile: Profile) => {
-    const out = new Map<string, { tier: number; count: number }>();
-    for (const [key, tier] of profile) {
-      const id = normalize(key);
-      const entry = out.get(id) ?? { tier, count: 0 };
-      entry.count++;
-      out.set(id, entry);
-    }
-    return out;
-  };
-  const was = tally(before);
-  const now = tally(after);
+  const out = new Map<string, { tier: number; count: number }>();
+  for (const [key, tier] of profile) {
+    const id = normalize(key);
+    const entry = out.get(id) ?? { tier, count: 0 };
+    entry.count++;
+    out.set(id, entry);
+  }
+  return out;
+}
+
+function relayoutVerdict(before: Profile, after: Profile): number {
+  const was = tallyProfile(before);
+  const now = tallyProfile(after);
   for (let tier = 0; tier < 5; tier++) {
     let gained = false;
     let lost = false;
@@ -562,6 +569,124 @@ function relayoutVerdict(before: Profile, after: Profile): number {
     if (lost) return tier;
   }
   return -1;
+}
+
+/**
+ * Does `after` cost the reader nothing the ladder can see? `relayoutVerdict`
+ * answers a different question — it demands a *strict* win, because a repair
+ * that changes nothing is not worth taking. A denser layout is: a candidate that
+ * ties on every tier and draws the same diagram in two thirds of the area is the
+ * one to keep, so ties count as admissible here and only a gain refuses.
+ */
+export function noLadderRegression(before: Profile, after: Profile): boolean {
+  const perTier = (profile: Profile) => {
+    const totals = [0, 0, 0, 0, 0];
+    for (const { tier, count } of tallyProfile(profile).values()) totals[tier] += count;
+    return totals;
+  };
+  const was = perTier(before);
+  const now = perTier(after);
+  // Tier *totals*, not per-defect identity: two independent layouts share almost
+  // no defect addresses, so a key-by-key rule refuses even a candidate that
+  // halves the crossings.
+  //
+  // And every tier must hold, not merely the first that differs. The ladder's
+  // trade rule prices a *repair* that pays for itself; this is a whole drawing
+  // swapped for a smaller one, and page area is not on the ladder at all — so a
+  // candidate may not weave one flow to buy it. Measured, too: allowing the
+  // trade sent the corpus `turnHeavy` and `nearParallel` ratchets through their
+  // ceilings while the area it bought was a few percent.
+  return now.every((count, tier) => count <= was[tier]);
+}
+
+/**
+ * Fraction of the drawing's own bounding box that node boxes touch, on a coarse
+ * grid. Counting area would double-count a container over its children and call
+ * a nest of boxes dense; the grid asks the reader's question instead — how much
+ * of the page has *something* on it. Drives one decision only: whether a layout
+ * is empty enough to be worth re-laying out for density (`DENSE_ENOUGH`).
+ */
+export function nodeCoverage(scene: Scene): number {
+  if (!scene.nodes.length) return 1;
+  const left = Math.min(...scene.nodes.map((n) => n.x));
+  const top = Math.min(...scene.nodes.map((n) => n.y));
+  const right = Math.max(...scene.nodes.map((n) => n.x + n.width));
+  const bottom = Math.max(...scene.nodes.map((n) => n.y + n.height));
+  const width = right - left;
+  const height = bottom - top;
+  if (width <= 0 || height <= 0) return 1;
+  const COLUMNS = 32;
+  const ROWS = 16;
+  let covered = 0;
+  for (let row = 0; row < ROWS; row++) {
+    for (let column = 0; column < COLUMNS; column++) {
+      const cellLeft = left + (column * width) / COLUMNS;
+      const cellRight = left + ((column + 1) * width) / COLUMNS;
+      const cellTop = top + (row * height) / ROWS;
+      const cellBottom = top + ((row + 1) * height) / ROWS;
+      if (
+        scene.nodes.some(
+          (n) =>
+            n.x < cellRight &&
+            n.x + n.width > cellLeft &&
+            n.y < cellBottom &&
+            n.y + n.height > cellTop,
+        )
+      )
+        covered++;
+    }
+  }
+  return covered / (COLUMNS * ROWS);
+}
+
+/**
+ * `slide` and `page` already choose between candidate layouts — on scale-to-fit,
+ * which is this same pressure under another name. `wide` and `tall` have no
+ * frame to fit into, so they kept whatever elk drew first, and for a sparse
+ * graph that is a ribbon: one small box per layer, its column empty above and
+ * below, the reader's eye crossing a page of nothing between two boxes that talk
+ * to each other.
+ *
+ * So re-lay the same graph out with the knobs that pull the cross axis in, and
+ * take the smallest drawing that costs the reader nothing the ladder can see.
+ * Elk runs the candidates in parallel, the way the `slide` path prices its own.
+ * Returns `null` when nothing beat the layout it was given.
+ */
+async function denserLayout(
+  base: Scene,
+  elkPass: {
+    layout: (spec: GraphOptions) => Promise<unknown>;
+    toScene: (laidOut: LaidOutNode) => Scene;
+    profile: (scene: Scene) => Profile;
+  },
+): Promise<{ scene: Scene; options: GraphOptions } | null> {
+  /**
+   * Two knobs, both measured against the whole corpus: fewer layers, or a
+   * placement that stops straightening edges through the cross axis. Tighter
+   * spacing on its own and elk's `SIMPLE` placement were tried too — the first
+   * never won a drawing, the second only ever won one the ladder then refused.
+   */
+  const densitySpecs: GraphOptions[] = [
+    { minLayers: true, dense: true },
+    { placement: "LINEAR_SEGMENTS", dense: true },
+  ];
+  const laidOut = await Promise.allSettled(densitySpecs.map((spec) => elkPass.layout(spec)));
+  const areaOf = (scene: Scene) => scene.width * scene.height;
+  const baseProfile = elkPass.profile(base);
+  let bestArea = areaOf(base) * DENSITY_GAIN;
+  let winner: { scene: Scene; options: GraphOptions } | null = null;
+  for (const [index, settled] of laidOut.entries()) {
+    // Placement strategies and port constraints alike reach elk paths that throw
+    // on some models (see the port pass in `layout`); a candidate that fails to
+    // lay out is simply not a candidate.
+    if (settled.status !== "fulfilled") continue;
+    const candidate = elkPass.toScene(settled.value as LaidOutNode);
+    if (areaOf(candidate) > bestArea) continue;
+    if (!noLadderRegression(baseProfile, elkPass.profile(candidate))) continue;
+    bestArea = areaOf(candidate);
+    winner = { scene: candidate, options: densitySpecs[index] };
+  }
+  return winner;
 }
 
 type ElkSide = "NORTH" | "SOUTH" | "EAST" | "WEST";
@@ -690,7 +815,27 @@ interface GraphOptions {
   labelWrap?: number;
   tight?: boolean;
   minLayers?: boolean;
+  /** elk node-placement strategy override (cross-axis spread). */
+  placement?: string;
+  /** Tighter spacing between layers and nodes — for the density candidates. */
+  dense?: boolean;
 }
+
+/**
+ * Node coverage (`nodeCoverage`) at or above which a drawing is dense enough
+ * that the density candidates are not worth their layouts. Calibrated by running
+ * the corpus with the gate forced open: every drawing that a denser candidate
+ * could improve measured below 0.57, and nothing above it changed at all, so the
+ * line sits just clear of the last win and the dense half of the corpus pays
+ * nothing for a re-layout with nothing to find.
+ */
+const DENSE_ENOUGH = 0.6;
+/**
+ * How much smaller a candidate must be before it is worth swapping the layout
+ * for. A few percent is layout noise, not a page the reader takes in faster,
+ * and churning the corpus for it would make every diff a re-render.
+ */
+const DENSITY_GAIN = 0.95;
 
 const INGRESS_PARTITION = -1;
 const EGRESS_PARTITION = 900;
@@ -997,6 +1142,19 @@ function buildElkGraph(
             "elk.layered.nodePlacement.favorStraightEdges": "true",
           }
         : {}),
+      // Spread last, after every spacing default above, because overriding them
+      // is the whole point — a density candidate that lands before them is
+      // silently shadowed and lays out exactly like the layout it was meant to
+      // beat.
+      ...(options?.dense
+        ? {
+            "elk.layered.spacing.nodeNodeBetweenLayers": "14",
+            "elk.spacing.nodeNode": "10",
+            "elk.spacing.edgeEdge": "8",
+            "elk.spacing.edgeNode": "9",
+          }
+        : {}),
+      ...(options?.placement ? { "elk.layered.nodePlacement.strategy": options.placement } : {}),
     },
     children: model.elements.map((element, index) => {
       const elkNode = toElkNode(element, { compact, fonts, glyphKinds }, true);
@@ -1259,13 +1417,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     result = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
   }
   const layoutMs = Date.now() - startTime;
-  const base = sceneFromResult(result, layoutMs);
-  // The playground bundles this module for the browser, where `process` does
-  // not exist; reach it through `globalThis` so the switch is simply absent
-  // there instead of a ReferenceError. CLI-only debug aid — see CONTRIBUTING.md.
-  const skipPortPass = !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
-    .process?.env?.CAIRN_NO_PORT_PASS;
-  if (skipPortPass) return base;
+  let base = sceneFromResult(result, layoutMs);
   /** What a whole-layout choice is judged on: the ladder plus the gate's blind spots. */
   const layoutProfile = (candidate: Scene): Profile => {
     const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
@@ -1273,7 +1425,24 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
     return profile;
   };
+  if (!aspectTarget && nodeCoverage(base) < DENSE_ENOUGH) {
+    const denser = await denserLayout(base, {
+      layout: (spec) => elk.layout(makeGraph(winnerDirection, spec)) as Promise<unknown>,
+      toScene: (laidOut) => sceneFromResult(laidOut, Date.now() - startTime),
+      profile: layoutProfile,
+    });
+    if (denser) {
+      base = denser.scene;
+      winnerOptions = denser.options;
+    }
+  }
   const baseProfile = layoutProfile(base);
+  // The playground bundles this module for the browser, where `process` does
+  // not exist; reach it through `globalThis` so the switch is simply absent
+  // there instead of a ReferenceError. CLI-only debug aid — see CONTRIBUTING.md.
+  const skipPortPass = !!(globalThis as { process?: { env?: Record<string, string | undefined> } })
+    .process?.env?.CAIRN_NO_PORT_PASS;
+  if (skipPortPass) return base;
   // `route-detour` only claims the wrap-arounds wasteful enough to deserve a
   // channel, leaving the merely-bad wrapped. Re-run the winning config with
   // those flows pinned to ports facing their counterpart, judged by the house
