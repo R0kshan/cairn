@@ -67,8 +67,8 @@ const aroundComments = (svg: string): string[] => svg.split(/(<!--[\s\S]*?-->)/)
  * OSes / Node versions. Integers (the bulk of the output) are untouched.
  *
  * Comments are left alone: the artwork attribution lives in one, and rounding
- * would turn `Apache-2.0` into `Apache-2` and the CC-BY link into
- * `by/4/legalcode` — licence identifiers that do not exist.
+ * would turn `Apache-2.0` into `Apache-2` — a licence identifier that does not
+ * exist.
  */
 export const normalize = (svg: string): string =>
   aroundComments(svg)
@@ -79,10 +79,8 @@ export const normalize = (svg: string): string =>
  * Geom fingerprint: the normalized SVG with comments, colour values and text
  * content taken out — everything positional/structural, nothing else.
  *
- * Comments go because the artwork attribution is one. Rewording it moves no
- * pixel, and a digest that reported it as a geometry change would spend the
- * one signal this file exists to give: geometry is the risky kind of change,
- * so it has to mean geometry.
+ * Comments go because the artwork attribution is one, and rewording it moves no
+ * pixel. Geometry is the risky kind of change, so the digest has to mean it.
  */
 const geomHash = (svg: string): string =>
   h(

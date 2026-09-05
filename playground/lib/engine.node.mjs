@@ -100631,8 +100631,7 @@ function render(model, view, scene, options) {
     markerSize: style.arrows === "large" ? round1(11 * fonts.scale) : 7,
     body,
     bandsSvg,
-    // Read after the body is built, so it names the marks that were painted
-    // rather than the ones the model asked for.
+    // Named after the body is built: what was painted, not what was asked for.
     attribution: logoAttributionComment(drawnLogos)
   });
   return { svg, overlapsBefore, overlapsAfter };

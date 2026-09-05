@@ -9,10 +9,9 @@
  * its own, so the renderer scales it into the logo box and paints it in the
  * node's stroke colour like the kind glyphs.
  *
- * An icon that carries its own licence also carries the attribution data that
- * licence asks for, because a rendered SVG leaves `licenses/` behind and has
- * to say for itself what artwork it contains. The full texts stay in
- * THIRD-PARTY-NOTICES.md.
+ * An icon with its own licence also carries the attribution data that licence
+ * asks for: a rendered SVG leaves `licenses/` behind and has to say for itself
+ * what artwork it holds. Full texts stay in THIRD-PARTY-NOTICES.md.
  */
 
 export interface Logo {
@@ -21,10 +20,9 @@ export interface Logo {
   /** Path data in a `0 0 24 24` box. */
   d: string;
   /**
-   * SPDX id of the artwork's own licence. Absent for most icons, which the
-   * project-wide CC0-1.0 covers and which owe no attribution. Present means a
-   * diagram drawing this mark redistributes licensed artwork, so the export
-   * has to say so — see `logo-attribution.ts`.
+   * SPDX id of the artwork's own licence. Absent for the icons CC0-1.0 covers,
+   * which owe no attribution; present means a diagram drawing this mark
+   * redistributes licensed artwork — see `logo-attribution.ts`.
    */
   license?: string;
   /** Public address of that licence's text, for an SVG that travels alone. */

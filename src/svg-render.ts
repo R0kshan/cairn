@@ -403,10 +403,9 @@ function logoSvg(mark: {
   node: SceneNode;
   stroke: string;
   /**
-   * Collects the built-in slugs this render actually paints, so the document's
-   * attribution names those and nothing else. Written here rather than derived
-   * from the model because only this function knows which marks survived: a
-   * file logo the caller never resolved, or a name with no built-in behind it,
+   * Built-in slugs this render actually paints. Collected here rather than
+   * derived from the model because only this function knows which marks
+   * survived — an unresolved file logo, or a name with no built-in behind it,
    * draws nothing and owes nothing.
    */
   drawn: Set<string>;
@@ -1387,9 +1386,8 @@ export function render(
   // No-op when settling stranded nothing, the common case.
   compactVertical(scene);
 
-  // Which licensed marks this render actually paints, and so what the document
-  // has to attribute. Declared here because the renderers fill it and the
-  // document reads it — the body has to exist before the notice can be honest.
+  // Filled by the renderers, read by the document: the body has to exist before
+  // the notice can name what it actually contains.
   const drawnLogos = new Set<string>();
   const { renderContainerNode, renderLeafNode } = createNodeRenderers({
     palette,
@@ -1456,8 +1454,7 @@ export function render(
     markerSize: style.arrows === "large" ? round1(11 * fonts.scale) : 7,
     body,
     bandsSvg,
-    // Read after the body is built, so it names the marks that were painted
-    // rather than the ones the model asked for.
+    // Named after the body is built: what was painted, not what was asked for.
     attribution: logoAttributionComment(drawnLogos),
   });
   return { svg, overlapsBefore, overlapsAfter };

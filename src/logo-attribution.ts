@@ -1,33 +1,25 @@
 /**
- * The attribution block a rendered SVG carries for the licensed artwork it
- * draws.
+ * The attribution block a rendered SVG carries for the licensed artwork it draws.
  *
- * Most built-in logos are covered by simple-icons' project-wide CC0-1.0, which
- * waives copyright and asks for nothing. Six are not: they keep their own MIT,
- * BSD-3-Clause, CC-BY-4.0 or Apache-2.0 terms, and each of those asks for
- * attribution from whoever passes a copy along. A diagram that draws one *is*
+ * Six of the built-in logos keep their own MIT, BSD-3-Clause, CC-BY-4.0 or
+ * Apache-2.0 terms instead of simple-icons' project-wide CC0-1.0, and each asks
+ * for attribution from whoever passes a copy along. A diagram that draws one is
  * such a copy — the path data is in the file — and it travels without the
- * `licenses/` directory that discharges this everywhere else, so it has to say
- * for itself what it contains and where the terms are.
+ * `licenses/` directory that discharges this on every other channel.
  *
- * Only what was actually drawn is named. The vendored table is not tree-shaken,
- * so every artifact carries all 37 paths, but an SVG carries only the marks it
- * painted — claiming otherwise would attribute artwork the file does not hold.
+ * Only marks actually painted are named: the vendored table is not tree-shaken,
+ * so an artifact holds all 37 paths while an SVG holds what it drew.
  */
 import { LOGOS } from "./logos.ts";
 import { escComment } from "./xml-escape.ts";
 
 /**
- * Written into every block that has anything to say, so the reader knows the
- * notice is load-bearing.
+ * Opens every block that has something to say.
  *
- * The modification sentence is not a courtesy. CC-BY-4.0 §3(a)(1)(B) asks that
- * a modification be indicated and that previous ones be retained, and
- * Apache-2.0 §4(b) asks that a changed file say so. Both apply: simple-icons
- * redrew each brand mark as a single monochrome path before cairn vendored it,
- * and cairn paints that path in the node's own colour rather than the mark's.
- * It sits in the preamble rather than under each entry because it is true of
- * every built-in logo, without exception.
+ * The modification sentence is required, not courtesy: CC-BY-4.0 §3(a)(1)(B)
+ * asks that a modification be indicated and previous ones retained, Apache-2.0
+ * §4(b) that a changed file say so. Both apply to every built-in without
+ * exception, which is why it sits here rather than under each entry.
  */
 const PREAMBLE = [
   "This diagram contains third-party artwork under its own licence.",
@@ -39,10 +31,10 @@ const PREAMBLE = [
 
 /**
  * The XML comment for `drawn`, or `""` when nothing drawn carries its own
- * licence — which is the common case, and costs an unlicensed diagram nothing.
+ * licence — the common case, which costs such a diagram nothing.
  *
- * Entries are ordered by slug rather than by paint order so the same diagram
- * always renders the same bytes (INVARIANTS §2).
+ * Sorted by slug, not paint order, so the same diagram renders the same bytes
+ * (INVARIANTS §2).
  */
 export function logoAttributionComment(drawn: ReadonlySet<string>): string {
   const licensed = [...drawn]

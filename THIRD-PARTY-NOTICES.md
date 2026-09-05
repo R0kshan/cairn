@@ -50,33 +50,28 @@ comment after the opening `<svg>` tag naming each licensed mark it drew, the
 artwork's source, the rights-holder's copyright line where one is published,
 and a URL for the licence text. Only the marks actually painted are named.
 
-That comment also records that the artwork is **modified**, because it is:
-simple-icons redrew each brand mark as a single monochrome path before cairn
-vendored it, and cairn paints that path in the node's colour rather than the
-mark's own. CC-BY-4.0 §3(a)(1)(B) asks that a modification be indicated and
-previous ones retained; Apache-2.0 §4(b) asks that a changed file say so.
+It also records that the artwork is **modified**, because it is: simple-icons
+redrew each mark as a single monochrome path before cairn vendored it, and cairn
+paints that path in the node's colour rather than the mark's own. CC-BY-4.0
+§3(a)(1)(B) asks that a modification be indicated and previous ones retained;
+Apache-2.0 §4(b) asks that a changed file say so.
 
-**Keep that comment in the file.** It is the attribution those four licences
-ask for, and an exported SVG travels without the `licenses/` directory that
-discharges this everywhere else. An optimiser set to strip comments — `svgo`
-does by default — removes the only notice the diagram carries. The per-icon
-table further down this file says the same thing at more length, for anyone
-who has the repository rather than a lone SVG.
+**Keep that comment in the file.** It is the whole attribution, since an
+exported SVG travels without the `licenses/` directory that discharges this
+elsewhere. An optimiser set to strip comments — `svgo` does by default — removes
+it.
 
 **When the diagram stops being an SVG, the comment stops travelling.** Pasted
-into a slide deck, a wiki page or a PDF, or converted to PNG, it is gone — and
-that is how most diagrams reach an audience. The artwork is still there, so the
-attribution still has to be somewhere: a credits slide, a caption, a colophon,
-or `licenses/` shipped alongside. The per-icon table further down this file is
-the text to copy; `cairn version --licenses` prints a shorter pointer to it.
-This is the one case cairn cannot do for you, because nothing of cairn's is
-left in the artifact by then.
+into a deck, a wiki or a PDF, or converted to PNG, it is gone, and that is how
+most diagrams reach an audience. The artwork remains, so the attribution has to
+go somewhere you control: a caption, a credits slide, or `licenses/` shipped
+alongside. Copy it from the per-icon table below. This is the one case cairn
+cannot do for you — nothing of cairn's is left in the artifact by then.
 
-One limit worth stating: Apache-2.0 §4(a) asks that recipients be given "a copy
-of the License", and a comment of that size in every diagram is not practical,
-so the SVG links the text rather than embedding it. CC-BY-4.0 §3(a)(3) permits
-a link outright; MIT and BSD-3-Clause get the holder's copyright line inline
-where one exists. If you need a diagram to carry the texts themselves, ship
+One limit: Apache-2.0 §4(a) asks that recipients be given "a copy of the
+License", which is not practical inline, so the SVG links it. CC-BY-4.0 §3(a)(3)
+permits a link outright; MIT and BSD-3-Clause carry the holder's copyright line
+where one exists. For a diagram that carries the texts themselves, ship
 `licenses/` beside it.
 
 Separately from copyright: the brands these logos depict are their owners'
@@ -125,13 +120,11 @@ of this file exists for: the binaries additionally embed the Bun runtime, which
 statically links JavaScriptCore under the LGPL in part, along with everything
 else in `licenses/bun-LICENSE.md`.
 
-The short version is that the licence texts have to travel with the binary.
-Every installer cairn publishes already puts them on disk for you, but not next
-to the executable: the curl installer unpacks them into `share/doc/cairn`
-beside the `bin/` it installs into, Homebrew stages them into the formula's
-`doc` directory, and Scoop unpacks them into the app directory. Copying just
-the binary out of an install therefore leaves the notices behind — take those
-files with it.
+The licence texts have to travel with the binary. Every installer already puts
+them on disk, though not beside the executable: `share/doc/cairn` for the curl
+installer, the formula's `doc` for Homebrew, the app directory for Scoop.
+Copying just the binary out of an install leaves them behind — take them with
+it.
 
 If you are building your own, this is what has to travel with it:
 
@@ -296,7 +289,7 @@ the `<year> <owner>` fields as upstream left them; see `licenses/README.md`.
 
 Source notes:
 
-- **OpenJDK (`openjdk`)** — simple-icons records <https://hg.openjdk.java.net/duke/duke/file/ca00f100dafc/vector/Agent.svg>, and that Mercurial host has been retired — it answers 403. The attribution above therefore names the live GitHub location of the same file, recorded in SOURCE_OVERRIDES rather than silently swapped. Checked 2026-09-04: that repository has no LICENSE file, the GitHub API reports no licence for it, and `vector/Agent.svg` carries no copyright notice of its own. So there is no upstream copyright line to reproduce, which is why `licenses/BSD-3-Clause.txt` keeps the SPDX `<year> <owner>` fields blank and attribution for this mark is to the source URL.
+- **OpenJDK (`openjdk`)** — simple-icons records <https://hg.openjdk.java.net/duke/duke/file/ca00f100dafc/vector/Agent.svg>; that Mercurial host is retired and answers 403, so the attribution above names the live GitHub location of the same file. Checked 2026-09-04: `openjdk/duke` has no LICENSE file, the GitHub API reports no licence for it, and `vector/Agent.svg` carries no copyright notice. With no upstream line to reproduce, `licenses/BSD-3-Clause.txt` keeps the SPDX `<year> <owner>` fields blank and attribution is to the source URL.
 
 Three kinds of terms are refused by the generator instead, and never reach
 `src/logos.ts`, for three different reasons:

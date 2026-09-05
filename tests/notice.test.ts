@@ -217,8 +217,8 @@ test("the reader-facing summary agrees with the generated icon table", () => {
 
 /**
  * A one-component diagram drawing `logo`, rendered through the public surface
- * an embedder and the playground both use — the export path the attribution
- * has to survive, not an internal call the CLI alone takes.
+ * the playground and embedders use — the export path the attribution has to
+ * survive, not an internal call only the CLI takes.
  */
 const renderWithLogo = async (logo: string): Promise<string> => {
   const { svg } = await compile(
@@ -229,14 +229,11 @@ const renderWithLogo = async (logo: string): Promise<string> => {
 };
 
 /**
- * The attribution comment's lines, trimmed — `[]` when the diagram carries no
- * such comment.
+ * The attribution comment's lines, trimmed — `[]` when there is no such comment.
  *
- * Tests compare whole lines against the values in `logos.ts` rather than
- * searching the SVG for a URL. It is the stronger assertion: a substring test
- * passes on a line that merely contains the address, while this one fails if
- * the label, the spacing or the field name drifts. It also keeps the licence
- * URLs written down in exactly one place, which is the generated data.
+ * Tests compare whole lines against `logos.ts` rather than searching the SVG for
+ * a URL: a substring test passes on any line merely containing the address, and
+ * this keeps the URLs written down in one place — the generated data.
  */
 const attributionLines = (svg: string): string[] => {
   const comment = svg.match(/<!--([\s\S]*?)-->/)?.[1];
@@ -289,19 +286,18 @@ test("a CC0 mark adds no attribution, because CC0 asks for none", async () => {
 });
 
 test("the attribution names only the artwork the diagram actually drew", async () => {
-  // The vendored table is not tree-shaken, so every artifact holds all 37
-  // paths. An SVG holds the ones it painted — claiming more would attribute
-  // artwork the file does not contain.
+  // The vendored table is not tree-shaken, so an artifact holds all 37 paths.
+  // An SVG holds what it painted; naming more would attribute artwork the file
+  // does not contain.
   const lines = attributionLines(await renderWithLogo("angular"));
   const named = lines.filter((line) => line.startsWith("Apache Kafka"));
   assert.deepEqual(named, [], "attribution names a mark the diagram never drew");
 });
 
 test("every licensed logo can be attributed from the data alone", async () => {
-  // `scripts/update-logos.mjs` refuses to vendor a licensed icon without a
-  // source and a public licence URL. This is that guard as an assertion: the
-  // generator can only fail when someone reruns it, and a hand-edit of the
-  // generated file would slip past it entirely.
+  // `scripts/update-logos.mjs` refuses a licensed icon with no source or public
+  // licence URL, but only when someone reruns it — a hand-edit of the generated
+  // file would slip past. This is that guard as an assertion.
   const incomplete = Object.entries(LOGOS)
     .filter(([, logo]) => logo.license)
     .filter(([, logo]) => !logo.source || !logo.licenseUrl)
