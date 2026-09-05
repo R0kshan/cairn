@@ -427,4 +427,4 @@ Diagrams you produce are yours — cairn claims nothing in them. The brands draw
 - [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
 - [`documentation/`](documentation/) — architecture, invariants, DSL and internals.
-- [`THIRD-PARTY-NOTICES.md/`](THIRD-PARTY-NOTICES.md) - Third party license notices.
+- [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) — third-party licence notices, with per-icon attribution.
