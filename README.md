@@ -66,6 +66,21 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
 
 Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/).
 
+### Reading a diagram in the playground
+
+Architecture views get wide, so the preview pane pans and zooms:
+
+| Action | How |
+|---|---|
+| Zoom in / out | The `−` and `+` buttons, or the `-` and `+` keys |
+| Zoom at the pointer | `ctrl`/`⌘` + mouse wheel, or a trackpad pinch |
+| Back to 100% | Click the percentage readout, or press `0` |
+| Fit the whole diagram | The `fit` button |
+| Pan | Drag the diagram, or use the pane's scrollbars |
+
+The zoom level and the panned position both survive a re-render, so editing the
+source does not throw away the spot you were looking at.
+
 ## Preview
 
 Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/`](examples/) — plain SVG, zero label overlaps.

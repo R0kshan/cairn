@@ -24,8 +24,12 @@
   .diag .help { color:var(--dim); display:block; }
   a.note { color:var(--dim); text-decoration:underline; }
   .right { flex:1; display:flex; flex-direction:column; min-width:0; }
-  #preview { flex:1; overflow:auto; background:#ffffff; display:flex; align-items:flex-start; position:relative; }
-  #preview svg { max-width:none; }
+  #preview { flex:1; overflow:auto; background:#ffffff; display:flex; align-items:flex-start; position:relative; cursor:grab; }
+  #preview.panning { cursor:grabbing; }
+  #preview.error { cursor:default; }
+  /* flex:none — a zoomed-in diagram is wider than the pane, and the default
+     flex-shrink would squeeze it back to fit instead of letting it overflow. */
+  #preview svg { max-width:none; flex:none; }
   #preview.stale svg { opacity:.45; transition:opacity .1s; }
   #preview.error { background:#fff5f5; }
   .err-panel { margin:auto; max-width:460px; padding:32px; text-align:center; }
@@ -34,8 +38,11 @@
   .err-panel .err-p { margin-top:8px; font-size:13.5px; line-height:1.6; color:#8a5a5a; }
   #status { padding:6px 14px; background:var(--panel); border-top:1px solid var(--border); font-size:12px; color:var(--dim); display:flex; gap:16px; align-items:center; }
   #status .ok { color:var(--ok); } #status .err { color:var(--err); }
-  #zoom { margin-left:auto; display:flex; gap:6px; }
+  #zoom { margin-left:auto; display:flex; gap:6px; align-items:center; }
   #zoom button { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:4px; width:26px; cursor:pointer; }
+  #zoom button:hover { border-color:var(--accent); }
+  #zoom-level { width:52px; font-variant-numeric:tabular-nums; }
+  #zoom-fit { width:auto; padding:0 8px; }
   .note { color:var(--dim); font-size:12px; }
 </style>
 </head>
@@ -74,9 +81,14 @@
     <div id="diags"></div>
   </div>
   <div class="right">
-    <div id="preview"></div>
+    <div id="preview" title="Drag to pan · ctrl/⌘ + wheel to zoom"></div>
     <div id="status"><span id="stat">loading engine…</span>
-      <span id="zoom"><button data-z="0.75">−</button><button data-z="1">1×</button><button data-z="1.333">+</button></span>
+      <span id="zoom">
+        <button data-zoom="out" title="Zoom out (−)">−</button>
+        <button data-zoom="reset" id="zoom-level" title="Reset to 100% (0)">100%</button>
+        <button data-zoom="in" title="Zoom in (+)">+</button>
+        <button data-zoom="fit" id="zoom-fit" title="Fit the whole diagram in the pane">fit</button>
+      </span>
     </div>
   </div>
 </main>
@@ -135,6 +147,7 @@ const diagsEl = document.getElementById('diags');
 const stat    = document.getElementById('stat');
 const note    = document.getElementById('note');
 const themeSel = document.getElementById('theme');
+const zoomLevel = document.getElementById('zoom-level');
 let lastSvg = null, lastMatrix = null, zoom = 1, currentTheme = '';
 
 // Populate the theme dropdown from the engine's theme list.
@@ -179,11 +192,15 @@ async function run() {
     if (r.svg) {
       lastSvg = r.svg;
       preview.classList.remove('error');
+      // Replacing the SVG resets the pane's scroll, which would throw away the
+      // reader's pan on every keystroke. Put it back after the new one is sized.
+      const { scrollLeft, scrollTop } = preview;
       preview.innerHTML = r.svg;
       // match the preview backdrop to the theme's canvas colour
       const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
       if (bg) preview.style.background = bg;
       applyZoom();
+      preview.scrollTo(scrollLeft, scrollTop);
       stat.innerHTML = `<span class="ok">✓</span> ${r.metrics.width}×${r.metrics.height} · layout ${r.metrics.layoutMs} ms${nw ? ` · <span style="color:var(--warn)">${nw} warning${nw > 1 ? 's' : ''}</span>` : ''} · engine v${version}`;
     } else {
       // errors: do NOT render the diagram at all — clear it and show a clear
@@ -269,19 +286,135 @@ document.getElementById('download-matrix').addEventListener('click', () => {
   download(format(lastMatrix), mime, 'diagram.flow.' + ext);
 });
 
-document.getElementById('zoom').addEventListener('click', e => {
-  const z = e.target.dataset.z;
-  if (!z) return;
-  zoom = z === '1' ? 1 : Math.min(4, Math.max(0.2, zoom * parseFloat(z)));
-  applyZoom();
-});
-function applyZoom() {
-  const svg = preview.querySelector('svg');
-  if (!svg || !svg.viewBox || !svg.viewBox.baseVal) return;
-  const vb = svg.viewBox.baseVal;
-  svg.style.width = (vb.width * zoom) + 'px';
-  svg.style.height = (vb.height * zoom) + 'px';
+// --- Zoom and pan -----------------------------------------------------------
+// The buttons step through a fixed ladder instead of multiplying by a factor:
+// with a multiplier, zooming in then out lands on 0.99975 rather than 1, and a
+// step that clamps at the top loses the levels above it on the way back down.
+// Ladder stops are exact, so any in/out sequence returns to where it started.
+const ZOOM_STOPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
+const ZOOM_MIN = ZOOM_STOPS[0];
+const ZOOM_MAX = ZOOM_STOPS[ZOOM_STOPS.length - 1];
+// Wheel deltas are in pixels; this turns one notch (~100px on most mice) into
+// roughly a 16% change, small enough that zooming feels continuous.
+const WHEEL_ZOOM_SENSITIVITY = 0.0015;
+// Breathing room left around a fitted diagram, so it doesn't touch the edges.
+const FIT_PADDING_PX = 24;
+// Fit and wheel zoom land between stops; tolerate that when picking the next.
+const ZOOM_EPSILON = 1e-4;
+
+const clampZoom = z => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
+
+/** The ladder stop just above (`direction` 1) or below (-1) the current zoom. */
+function nextZoomStop(direction) {
+  const stops = direction > 0 ? ZOOM_STOPS : ZOOM_STOPS.slice().reverse();
+  const isBeyondCurrent = stop => direction * (stop - zoom) > ZOOM_EPSILON;
+  return stops.find(isBeyondCurrent) ?? zoom;
 }
+
+/** The zoom level at which the whole diagram fits inside the preview pane. */
+function fitToPaneZoom() {
+  const box = svgViewBox();
+  if (!box) return zoom;
+  const width = preview.clientWidth - FIT_PADDING_PX;
+  const height = preview.clientHeight - FIT_PADDING_PX;
+  return clampZoom(Math.min(width / box.width, height / box.height));
+}
+
+function svgViewBox() {
+  const svg = preview.querySelector('svg');
+  return svg?.viewBox?.baseVal?.width ? svg.viewBox.baseVal : null;
+}
+
+/**
+ * Zoom to `next`, keeping the diagram point under `anchor` (a mouse event, or
+ * the centre of the pane when omitted) on the same pixel. Scaling without an
+ * anchor slides the diagram out from under wherever you were looking.
+ */
+function setZoom(next, anchor) {
+  const previous = zoom;
+  zoom = clampZoom(next);
+  if (zoom === previous) return;
+  const pane = preview.getBoundingClientRect();
+  const anchorX = anchor ? anchor.clientX - pane.left : preview.clientWidth / 2;
+  const anchorY = anchor ? anchor.clientY - pane.top : preview.clientHeight / 2;
+  const scrollLeft = preview.scrollLeft, scrollTop = preview.scrollTop;
+  const ratio = zoom / previous;
+  applyZoom();
+  // The diagram sits flush with the pane's top-left corner at every zoom level
+  // (`align-items:flex-start`, no justify-content), so the offset of a point
+  // inside the scrolled content is simply scroll + anchor, and scales with it.
+  preview.scrollLeft = (scrollLeft + anchorX) * ratio - anchorX;
+  preview.scrollTop = (scrollTop + anchorY) * ratio - anchorY;
+}
+
+function applyZoom() {
+  zoomLevel.textContent = Math.round(zoom * 100) + '%';
+  const box = svgViewBox();
+  if (!box) return;
+  const svg = preview.querySelector('svg');
+  svg.style.width = (box.width * zoom) + 'px';
+  svg.style.height = (box.height * zoom) + 'px';
+}
+
+const ZOOM_ACTIONS = {
+  in:    () => setZoom(nextZoomStop(1)),
+  out:   () => setZoom(nextZoomStop(-1)),
+  reset: () => setZoom(1),
+  fit:   () => { setZoom(fitToPaneZoom()); preview.scrollTo(0, 0); },
+};
+
+document.getElementById('zoom').addEventListener('click', e => {
+  ZOOM_ACTIONS[e.target.dataset.zoom]?.();
+});
+
+// ctrl/⌘ + wheel zooms at the pointer; a bare wheel still scrolls the pane.
+// Browsers report a trackpad pinch as a ctrl+wheel event, so pinch works too.
+preview.addEventListener('wheel', e => {
+  if (!e.ctrlKey && !e.metaKey) return;
+  e.preventDefault();
+  setZoom(zoom * Math.exp(-e.deltaY * WHEEL_ZOOM_SENSITIVITY), e);
+}, { passive: false });
+
+// Drag to pan. Touch is left to the browser, which already pans this scroll
+// container natively — handling it here as well would move it twice.
+let panStart = null;
+
+preview.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || e.pointerType === 'touch' || !svgViewBox()) return;
+  e.preventDefault();   // otherwise the browser starts dragging the SVG itself
+  panStart = { x: e.clientX, y: e.clientY, left: preview.scrollLeft, top: preview.scrollTop };
+  preview.setPointerCapture(e.pointerId);
+  preview.classList.add('panning');
+});
+
+preview.addEventListener('pointermove', e => {
+  if (!panStart) return;
+  preview.scrollLeft = panStart.left - (e.clientX - panStart.x);
+  preview.scrollTop = panStart.top - (e.clientY - panStart.y);
+});
+
+function endPan(e) {
+  if (!panStart) return;
+  panStart = null;
+  preview.releasePointerCapture(e.pointerId);
+  preview.classList.remove('panning');
+}
+preview.addEventListener('pointerup', endPan);
+preview.addEventListener('pointercancel', endPan);
+
+const ZOOM_KEYS = { '+': 'in', '=': 'in', '-': 'out', '_': 'out', '0': 'reset' };
+
+const TYPING_TAGS = new Set(['TEXTAREA', 'INPUT', 'SELECT']);
+
+// Never while a field has focus, where these are just characters or list keys,
+// and never with a modifier held — ctrl/⌘ +/-/0 is the browser's own page zoom.
+document.addEventListener('keydown', e => {
+  if (TYPING_TAGS.has(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
+  const action = ZOOM_KEYS[e.key];
+  if (!action) return;
+  e.preventDefault();
+  ZOOM_ACTIONS[action]();
+});
 
 // load: shared link > logical starter
 const m = location.hash.match(/src=([^&]+)/);
