@@ -17,8 +17,8 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Preview](#preview)
 - [Installation](#installation)
 - [Commands](#commands)
-- [More](#more)
 - [License](#license)
+- [More](#more)
 
 ## Why cairn?
 
@@ -396,14 +396,6 @@ Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) p
 
 That output is a convenience, not the licence itself. The full texts are installed with cairn: `share/doc/cairn/` for the curl installer and Homebrew, the app directory for Scoop, the package root for npm. [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) is the long form, with per-icon attribution and the LGPL relink offer.
 
-## More
-
-- [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
-- [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
-- [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
-- [`documentation/`](documentation/) — architecture, invariants, DSL and internals.
-
 ## License
 
 cairn is [Apache-2.0](LICENSE). Its shipped artifacts also *contain* third-party code Apache-2.0 does not cover: elkjs (EPL-2.0) inlined into every bundle and binary, a curated set of Simple Icons paths vendored into the logos, and — in the release binaries only — the Bun runtime, which statically links JavaScriptCore under the LGPL.
@@ -423,7 +415,16 @@ Find your row. Most people are in the first one, and owe nothing.
 
 **Two things worth knowing:**
 
-- **Six of the 37 built-in logos** — `angular`, `apache`, `apachekafka`, `apachespark`, `javascript`, `openjdk` — keep their own licence instead of the project-wide CC0-1.0. The other 31 ask for nothing.
+- **6 of the 37 built-in logos** — `angular`, `apache`, `apachekafka`, `apachespark`, `javascript`, `openjdk` — keep their own licence instead of the project-wide CC0-1.0. The other 31 ask for nothing.
 - **Converting a diagram to PNG, or pasting it into a slide deck, drops the attribution comment.** The artwork is still there, so the attribution has to go somewhere you control: a caption, a credits slide, or `licenses/` shipped alongside. This is the one case cairn cannot handle for you.
 
-Diagrams you produce are yours — cairn claims nothing in them. The brands drawn by the built-in logos remain their owners' trademarks; a logo in a diagram is not an endorsement.
+Diagrams you produce are yours — cairn claims nothing in them. The brands drawn by the built-in logos remain their owners' trademarks.
+
+## More
+
+- [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
+- [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
+- [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
+- [`documentation/`](documentation/) — architecture, invariants, DSL and internals.
+- [`THIRD-PARTY-NOTICES.md/`](THIRD-PARTY-NOTICES.md) - Third party license notices.
