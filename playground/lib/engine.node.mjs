@@ -99778,7 +99778,10 @@ var escComment = (text) => text.replace(/-{2,}/g, (run) => [...run].join(" ")).r
 // src/logo-attribution.ts
 var PREAMBLE = [
   "This diagram contains third-party artwork under its own licence.",
-  "Keep this notice with the file \u2014 it is the attribution those licences ask for."
+  "Keep this notice with the file \u2014 it is the attribution those licences ask for.",
+  "",
+  "Every mark below is modified from the original: simple-icons redrew it as a",
+  "single monochrome path, and cairn paints that path in the diagram's colours."
 ];
 function logoAttributionComment(drawn) {
   const licensed = [...drawn].sort().map((slug) => ({ slug, logo: LOGOS[slug] })).filter((entry) => entry.logo?.license);

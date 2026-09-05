@@ -3,6 +3,9 @@
   This diagram contains third-party artwork under its own licence.
   Keep this notice with the file — it is the attribution those licences ask for.
 
+  Every mark below is modified from the original: simple-icons redrew it as a
+  single monochrome path, and cairn paints that path in the diagram's colours.
+
   Apache Kafka (apachekafka) — Apache-2.0
     artwork: https://apache.org/logos
     licence: https://www.apache.org/licenses/LICENSE-2.0.txt

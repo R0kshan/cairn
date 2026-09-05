@@ -17,10 +17,24 @@
 import { LOGOS } from "./logos.ts";
 import { escComment } from "./xml-escape.ts";
 
-/** Written into every block that has anything to say, so the reader knows the notice is load-bearing. */
+/**
+ * Written into every block that has anything to say, so the reader knows the
+ * notice is load-bearing.
+ *
+ * The modification sentence is not a courtesy. CC-BY-4.0 §3(a)(1)(B) asks that
+ * a modification be indicated and that previous ones be retained, and
+ * Apache-2.0 §4(b) asks that a changed file say so. Both apply: simple-icons
+ * redrew each brand mark as a single monochrome path before cairn vendored it,
+ * and cairn paints that path in the node's own colour rather than the mark's.
+ * It sits in the preamble rather than under each entry because it is true of
+ * every built-in logo, without exception.
+ */
 const PREAMBLE = [
   "This diagram contains third-party artwork under its own licence.",
   "Keep this notice with the file — it is the attribution those licences ask for.",
+  "",
+  "Every mark below is modified from the original: simple-icons redrew it as a",
+  "single monochrome path, and cairn paints that path in the diagram's colours.",
 ];
 
 /**

@@ -50,12 +50,27 @@ comment after the opening `<svg>` tag naming each licensed mark it drew, the
 artwork's source, the rights-holder's copyright line where one is published,
 and a URL for the licence text. Only the marks actually painted are named.
 
+That comment also records that the artwork is **modified**, because it is:
+simple-icons redrew each brand mark as a single monochrome path before cairn
+vendored it, and cairn paints that path in the node's colour rather than the
+mark's own. CC-BY-4.0 §3(a)(1)(B) asks that a modification be indicated and
+previous ones retained; Apache-2.0 §4(b) asks that a changed file say so.
+
 **Keep that comment in the file.** It is the attribution those four licences
 ask for, and an exported SVG travels without the `licenses/` directory that
 discharges this everywhere else. An optimiser set to strip comments — `svgo`
 does by default — removes the only notice the diagram carries. The per-icon
 table further down this file says the same thing at more length, for anyone
 who has the repository rather than a lone SVG.
+
+**When the diagram stops being an SVG, the comment stops travelling.** Pasted
+into a slide deck, a wiki page or a PDF, or converted to PNG, it is gone — and
+that is how most diagrams reach an audience. The artwork is still there, so the
+attribution still has to be somewhere: a credits slide, a caption, a colophon,
+or `licenses/` shipped alongside. The per-icon table further down this file is
+the text to copy; `cairn version --licenses` prints a shorter pointer to it.
+This is the one case cairn cannot do for you, because nothing of cairn's is
+left in the artifact by then.
 
 One limit worth stating: Apache-2.0 §4(a) asks that recipients be given "a copy
 of the License", and a comment of that size in every diagram is not practical,
@@ -116,8 +131,27 @@ to the executable: the curl installer unpacks them into `share/doc/cairn`
 beside the `bin/` it installs into, Homebrew stages them into the formula's
 `doc` directory, and Scoop unpacks them into the app directory. Copying just
 the binary out of an install therefore leaves the notices behind — take those
-files with it. If you are building your own, read the Bun and JavaScriptCore
-sections below before you ship.
+files with it.
+
+If you are building your own, this is what has to travel with it:
+
+| What | Where it is | Why |
+|---|---|---|
+| `LICENSE` | repo root | cairn's own Apache-2.0, §4(a) |
+| `THIRD-PARTY-NOTICES.md` | repo root | this file — the per-icon attribution and the §6 offer |
+| `licenses/elkjs-EPL-2.0.md` | `licenses/` | EPL-2.0 §3.2(b), a copy with each copy |
+| `licenses/simple-icons-CC0-1.0.md` and the four icon texts | `licenses/` | the six marks that carry their own terms |
+| `licenses/bun-LICENSE.md` and `licenses/LGPL-2.1.txt` | `licenses/` | the runtime the binary embeds |
+
+Shipping the whole `licenses/` directory plus those two root files is the
+simplest way to get all of it, and is what every installer above does.
+
+Two things a copied directory does not give you. The LGPL-2.1 §6 offer names a
+specific WebKit revision, a specific cairn tag and a specific build script — if
+you build against a different Bun, that offer is wrong and you must restate it
+for what you actually linked. And `cairn version --licenses` prints from inside
+the binary, so a build of your own prints your build's notice, not this one.
+Read the Bun and JavaScriptCore sections below before you ship.
 
 ## elkjs
 
