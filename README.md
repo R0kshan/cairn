@@ -406,8 +406,24 @@ That output is a convenience, not the licence itself. The full texts are install
 
 ## License
 
-cairn is [Apache-2.0](LICENSE).
+cairn is [Apache-2.0](LICENSE). Its shipped artifacts also *contain* third-party code Apache-2.0 does not cover: elkjs (EPL-2.0) inlined into every bundle and binary, a curated set of Simple Icons paths vendored into the logos, and — in the release binaries only — the Bun runtime, which statically links JavaScriptCore under the LGPL.
 
-Its shipped artifacts also *contain* third-party code, which Apache-2.0 does not cover: elkjs (EPL-2.0) is inlined into every bundle and binary, a curated set of Simple Icons paths is vendored into the logos, and the release binaries embed the Bun runtime, which statically links LGPL-2.1 JavaScriptCore. Every one of those is enumerated in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md), with full texts in [`licenses/`](licenses/) and their provenance in [`licenses/README.md`](licenses/README.md).
+Full texts live in [`licenses/`](licenses/), their provenance in [`licenses/README.md`](licenses/README.md), and the long form in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
 
-Practically, for someone shipping cairn output or embedding cairn: diagrams you produce are yours, cairn claims nothing in them. The one exception is artwork — six of the 37 built-in logos (`angular`, `apache`, `apachekafka`, `apachespark`, `javascript`, `openjdk`) keep their own licence rather than the project-wide CC0-1.0, and a diagram that draws one embeds that artwork. cairn writes the attribution those licences ask for into the SVG itself, so sharing the file as an SVG needs nothing from you beyond leaving the comment in place; converting it to PNG or pasting it into a slide deck drops the comment, and then the attribution has to go somewhere you control. The other 31 logos ask for nothing. If you redistribute a cairn *binary* you take on the notices above — every installer puts the full texts on disk with it (`share/doc/cairn`, the app directory, or the package root, depending on the channel), and `cairn version --licenses` prints the short form from inside the binary, so in the normal case this is already done for you. Depending on `@r0kshan/cairn` from npm without bundling it attaches nothing at all. The brands drawn by the built-in logos remain their owners' trademarks; a logo in a diagram is not an endorsement. [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) sets out all three cases in full.
+### What that means for you
+
+Find your row. Most people are in the first one, and owe nothing.
+
+| What you are doing | What you owe |
+|---|---|
+| **Sharing a diagram** | Nothing — unless it draws one of the six licensed logos below, and then cairn has already written the attribution into the SVG. Leave the comment in place. |
+| **Depending on `@r0kshan/cairn`** from npm | Nothing. You distribute no copy of cairn; `npm install` fetches it with its notices intact. |
+| **Bundling cairn** into your own artifact (webpack, Docker, Electron, single-file CLI) | Copy `LICENSE`, `THIRD-PARTY-NOTICES.md` and `licenses/` out of the installed package into your distribution. |
+| **Redistributing a cairn binary** | The same three files — and every installer has already put them on disk beside it (`share/doc/cairn`, the app directory, or the package root, by channel). |
+
+**Two things worth knowing:**
+
+- **Six of the 37 built-in logos** — `angular`, `apache`, `apachekafka`, `apachespark`, `javascript`, `openjdk` — keep their own licence instead of the project-wide CC0-1.0. The other 31 ask for nothing.
+- **Converting a diagram to PNG, or pasting it into a slide deck, drops the attribution comment.** The artwork is still there, so the attribution has to go somewhere you control: a caption, a credits slide, or `licenses/` shipped alongside. This is the one case cairn cannot handle for you.
+
+Diagrams you produce are yours — cairn claims nothing in them. The brands drawn by the built-in logos remain their owners' trademarks; a logo in a diagram is not an endorsement.
