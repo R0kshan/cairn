@@ -13,9 +13,6 @@
   header .dim { color:var(--dim); font-size:12px; }
   header select, header button { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:12.5px; cursor:pointer; }
   header button:hover, header select:hover { border-color:var(--accent); }
-  /* The zoom controls live at the right end of the navbar, alongside the other
-     actions — in the preview's own footer they went unnoticed. Narrower than
-     the rest so the group reads as one control, not four more buttons. */
   #zoom { margin-left:auto; display:flex; gap:4px; align-items:center; }
   #zoom button { width:28px; padding:5px 0; border-radius:4px; }
   #zoom-level { width:54px; font-variant-numeric:tabular-nums; }
@@ -34,8 +31,7 @@
   #preview { flex:1; overflow:auto; background:#ffffff; display:flex; align-items:flex-start; position:relative; cursor:grab; }
   #preview.panning { cursor:grabbing; }
   #preview.error { cursor:default; }
-  /* flex:none — a zoomed-in diagram is wider than the pane, and the default
-     flex-shrink would squeeze it back to fit instead of letting it overflow. */
+  /* flex:none, or a zoomed-in diagram gets shrunk back to the pane width. */
   #preview svg { max-width:none; flex:none; }
   #preview.stale svg { opacity:.45; transition:opacity .1s; }
   #preview.error { background:#fff5f5; }
@@ -170,10 +166,8 @@ const b64decode = s => new TextDecoder().decode(Uint8Array.from(atob(s), c => c.
 // switches to a clear error state and points at the error list below.
 let running = false, pending = false;
 
-// A diagram that arrived whole — pasted in, picked from the templates menu, or
-// carried by a shared link — is one nobody has framed yet, so the next render
-// fits it to the pane. Ordinary edits leave the reader's own zoom and pan be.
-// The first render is a load, hence the initial `true`.
+// A diagram that arrived whole — pasted, templated, or carried by a shared
+// link — is one nobody has framed yet. Ordinary edits keep the reader's framing.
 let fitOnNextRender = true;
 
 function schedule() {
@@ -199,16 +193,14 @@ async function run() {
     if (r.svg) {
       lastSvg = r.svg;
       preview.classList.remove('error');
-      // Replacing the SVG resets the pane's scroll, which would throw away the
-      // reader's pan on every keystroke. Put it back after the new one is sized.
+      // Replacing the SVG resets the pane's scroll — restore it once resized.
       const { scrollLeft, scrollTop } = preview;
       preview.innerHTML = r.svg;
       // match the preview backdrop to the theme's canvas colour
       const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
       if (bg) preview.style.background = bg;
       applyZoom();
-      // Cleared only here, so a paste that does not compile is still fitted
-      // once the errors are fixed and it finally renders.
+      // Cleared only here, so a paste that does not compile is fitted once fixed.
       if (fitOnNextRender) {
         fitOnNextRender = false;
         fitToPane();
@@ -240,11 +232,8 @@ async function run() {
 
 editor.addEventListener('input', schedule);
 
-// Fit after a paste that replaces the whole source — dropping a diagram in
-// wholesale. `paste` fires before the value changes, so the selection here is
-// still the range about to be overwritten; covering the whole value (an empty
-// editor included) means the pasted text becomes the entire diagram. Pasting a
-// fragment into an existing diagram is an ordinary edit and keeps the framing.
+// `paste` fires before the value changes, so the selection is still the range
+// about to be overwritten: covering all of it means the paste is the diagram.
 editor.addEventListener('paste', () => {
   const replacesWholeSource =
     editor.selectionStart === 0 && editor.selectionEnd === editor.value.length;
@@ -312,39 +301,28 @@ document.getElementById('download-matrix').addEventListener('click', () => {
 });
 
 // --- Zoom and pan -----------------------------------------------------------
-// The buttons step through a fixed ladder instead of multiplying by a factor:
-// with a multiplier, zooming in then out lands on 0.99975 rather than 1, and a
-// step that clamps at the top loses the levels above it on the way back down.
-// Ladder stops are exact, so any in/out sequence returns to where it started.
-// The floor has to be low enough to frame the widest views cairn is built for:
-// examples/large-fr.cairn renders 3995px wide and needs about 20% to fit a
-// half-window pane, so a floor above that would leave "fit" still overflowing.
+// A ladder of exact stops, not a multiplier: `zoom *= 1.333` then `*= 0.75`
+// lands on 0.99975, never back on 100%. The floor is low because
+// examples/large-fr.cairn is 3995px wide and needs ~20% to fit a half window.
 const ZOOM_STOPS = [0.1, 0.15, 0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4];
 const ZOOM_MIN = ZOOM_STOPS[0];
 const ZOOM_MAX = ZOOM_STOPS[ZOOM_STOPS.length - 1];
-// Wheel deltas are in pixels; this turns one notch (~100px on most mice) into
-// roughly a 16% change, small enough that zooming feels continuous.
+// One wheel notch (~100px) is about a 16% change.
 const WHEEL_ZOOM_SENSITIVITY = 0.0015;
-// Breathing room left around a fitted diagram, so it doesn't touch the edges.
 const FIT_PADDING_PX = 24;
-// Fit and wheel zoom land between stops; tolerate that when picking the next.
+// Fit and wheel zoom land between stops, so "beyond current" needs slack.
 const ZOOM_EPSILON = 1e-4;
 
 const clampZoom = z => Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, z));
 
-/** The ladder stop just above (`direction` 1) or below (-1) the current zoom. */
 function nextZoomStop(direction) {
   const stops = direction > 0 ? ZOOM_STOPS : ZOOM_STOPS.slice().reverse();
   const isBeyondCurrent = stop => direction * (stop - zoom) > ZOOM_EPSILON;
   return stops.find(isBeyondCurrent) ?? zoom;
 }
 
-/**
- * The zoom level at which the whole diagram fits inside the preview pane.
- * Shrinks only — magnifying a three-box starter to fill the pane is not what
- * "fit" means here, and this also runs unattended on load, where jumping a
- * small diagram to 400% would be startling rather than helpful.
- */
+/** Shrinks only: this runs unattended on load, where blowing a starter
+    template up to 400% would startle rather than help. */
 function paneFitZoom() {
   const box = svgViewBox();
   if (!box) return zoom;
@@ -353,7 +331,6 @@ function paneFitZoom() {
   return clampZoom(Math.min(width / box.width, height / box.height, 1));
 }
 
-/** Frame the whole diagram: fitted, and scrolled back to its top-left corner. */
 function fitToPane() {
   setZoom(paneFitZoom());
   preview.scrollTo(0, 0);
@@ -364,11 +341,8 @@ function svgViewBox() {
   return svg?.viewBox?.baseVal?.width ? svg.viewBox.baseVal : null;
 }
 
-/**
- * Zoom to `next`, keeping the diagram point under `anchor` (a mouse event, or
- * the centre of the pane when omitted) on the same pixel. Scaling without an
- * anchor slides the diagram out from under wherever you were looking.
- */
+/** Zooms with the point under `anchor` (a mouse event, else the pane centre)
+    pinned to the same pixel, so the diagram does not slide out from under it. */
 function setZoom(next, anchor) {
   const previous = zoom;
   zoom = clampZoom(next);
@@ -379,9 +353,8 @@ function setZoom(next, anchor) {
   const scrollLeft = preview.scrollLeft, scrollTop = preview.scrollTop;
   const ratio = zoom / previous;
   applyZoom();
-  // The diagram sits flush with the pane's top-left corner at every zoom level
-  // (`align-items:flex-start`, no justify-content), so the offset of a point
-  // inside the scrolled content is simply scroll + anchor, and scales with it.
+  // Valid only while the SVG sits flush with the pane's top-left corner: any
+  // centring in #preview's flex rules puts an offset between them.
   preview.scrollLeft = (scrollLeft + anchorX) * ratio - anchorX;
   preview.scrollTop = (scrollTop + anchorY) * ratio - anchorY;
 }
@@ -406,16 +379,15 @@ document.getElementById('zoom').addEventListener('click', e => {
   ZOOM_ACTIONS[e.target.dataset.zoom]?.();
 });
 
-// ctrl/⌘ + wheel zooms at the pointer; a bare wheel still scrolls the pane.
-// Browsers report a trackpad pinch as a ctrl+wheel event, so pinch works too.
+// A trackpad pinch reaches the page as a ctrl+wheel event, so this covers both.
 preview.addEventListener('wheel', e => {
   if (!e.ctrlKey && !e.metaKey) return;
   e.preventDefault();
   setZoom(zoom * Math.exp(-e.deltaY * WHEEL_ZOOM_SENSITIVITY), e);
 }, { passive: false });
 
-// Drag to pan. Touch is left to the browser, which already pans this scroll
-// container natively — handling it here as well would move it twice.
+// Touch is left to the browser, which already pans this scroll container —
+// handling it here too would move it twice.
 let panStart = null;
 
 preview.addEventListener('pointerdown', e => {
@@ -445,8 +417,7 @@ const ZOOM_KEYS = { '+': 'in', '=': 'in', '-': 'out', '_': 'out', '0': 'reset' }
 
 const TYPING_TAGS = new Set(['TEXTAREA', 'INPUT', 'SELECT']);
 
-// Never while a field has focus, where these are just characters or list keys,
-// and never with a modifier held — ctrl/⌘ +/-/0 is the browser's own page zoom.
+// Modifier held means the browser's own page zoom (ctrl/⌘ +/-/0), not ours.
 document.addEventListener('keydown', e => {
   if (TYPING_TAGS.has(e.target.tagName) || e.ctrlKey || e.metaKey || e.altKey) return;
   const action = ZOOM_KEYS[e.key];
