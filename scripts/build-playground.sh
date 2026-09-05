@@ -27,15 +27,39 @@ VERSION="$(node -p "require('./package.json').version")"
 DEFINE_VERSION="--define:CAIRN_BUILD_VERSION=\"$VERSION\""
 
 echo "• building browser bundle → playground/cairn-engine.js"
+# Both bundles inline elkjs, so both redistribute EPL-2.0 code. `--minify`
+# strips its plain block-comment header, so the notice is attached explicitly
+# (scripts/notice-banner.sh) rather than relying on upstream punctuation.
+. "$(dirname "$0")/notice-banner.sh"
+
 $ESBUILD src/playground.ts \
   --bundle --format=esm --platform=browser --minify "$DEFINE_VERSION" \
+  --banner:js="$NOTICE_BANNER" \
+  --legal-comments=eof \
   --outfile=playground/cairn-engine.js --log-level=warning
 
 echo "• building node bundle    → playground/lib/engine.node.mjs"
 mkdir -p playground/lib
 $ESBUILD src/playground.ts \
   --bundle --format=esm --platform=node "$DEFINE_VERSION" \
+  --banner:js="$NOTICE_BANNER" \
+  --legal-comments=eof \
   --outfile=playground/lib/engine.node.mjs --log-level=warning
+
+# The deployed page serves a bundle that inlines elkjs (EPL-2.0) and the Simple
+# Icons artwork, so the licence texts are part of what the site distributes.
+# Copied rather than symlinked: Vercel deploys this directory as static files.
+#
+# The directory layout has to be preserved, not flattened. THIRD-PARTY-NOTICES.md
+# links its licence texts as `./licenses/<name>` — flat copies beside it would
+# leave every one of those links 404ing on the deployed site, which is precisely
+# the obligation the copy exists to discharge. `rm -rf` first so a licence text
+# deleted upstream does not linger here forever.
+echo "• copying licence texts   → playground/"
+rm -rf playground/licenses
+mkdir -p playground/licenses
+cp LICENSE THIRD-PARTY-NOTICES.md playground/
+cp licenses/* playground/licenses/
 
 echo "✓ browser: $(du -h playground/cairn-engine.js | cut -f1)  node: $(du -h playground/lib/engine.node.mjs | cut -f1)"
 echo "  local static preview:  npx serve playground"

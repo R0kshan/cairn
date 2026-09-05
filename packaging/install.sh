@@ -97,6 +97,69 @@ if [ "$expected" != "$actual" ]; then
 fi
 echo "✓ sha256 verified"
 
+# --- the licence texts, fetched and verified BEFORE anything is installed -----
+# The binary inlines elkjs (EPL-2.0) and the Simple Icons artwork, and embeds the
+# Bun runtime, which statically links LGPL-2.1 JavaScriptCore. So the notices are
+# part of what this script distributes: EPL-2.0 §3.1(b) wants a copy of the
+# Agreement alongside each copy of the program, LGPL-2.1 §6 wants a copy of the
+# License supplied with the work, and six of the vendored icons carry terms that
+# require attribution in the materials shipped with the distribution.
+#
+# Fail-closed: if the notices cannot be delivered, nothing is installed. This
+# used to warn and continue, on the reasoning that a missing notice should not
+# leave a half-installed binary behind — but that traded a compliance gap for a
+# tidiness one. Doing the work here, while the binary is still in $tmp, removes
+# the trade: an abort now leaves the machine exactly as it was found.
+#
+# Verified against the same checksums file as the binary. A notice that arrives
+# tampered with is worth no more than one that does not arrive.
+DOC_DIR="${CAIRN_DOC_DIR:-$INSTALL_DIR/../share/doc/cairn}"
+licenses="cairn-${version}-licenses.tar.gz"
+notices_url="https://github.com/$REPO/blob/main/THIRD-PARTY-NOTICES.md"
+
+if ! curl -fsSL -o "$tmp/$licenses" "$base/$licenses" 2>/dev/null; then
+  echo "error: could not fetch $licenses from $tag — aborting, nothing installed" >&2
+  echo "  cairn redistributes elkjs (EPL-2.0), Simple Icons artwork and the Bun" >&2
+  echo "  runtime (LGPL-2.1 in part); their licences have to travel with it." >&2
+  echo "  Releases before the one that introduced this asset do not carry it." >&2
+  echo "  Read the notices at $notices_url" >&2
+  exit 1
+fi
+
+lic_expected=$(awk -v f="$licenses" '{n=$2; sub(/^\*/,"",n); if (n==f) print $1}' "$tmp/$sums" | head -n1)
+if command -v sha256sum >/dev/null 2>&1; then
+  lic_actual=$(sha256sum "$tmp/$licenses" | awk '{print $1}')
+else
+  lic_actual=$(shasum -a 256 "$tmp/$licenses" | awk '{print $1}')
+fi
+[ -n "$lic_expected" ] || { echo "error: $licenses not listed in $sums — aborting" >&2; exit 1; }
+if [ "$lic_expected" != "$lic_actual" ]; then
+  echo "error: checksum mismatch for $licenses — refusing to install" >&2
+  echo "  expected: $lic_expected" >&2
+  echo "  actual:   $lic_actual" >&2
+  exit 1
+fi
+
+# Unpack into $tmp first: a tarball that fails to extract must not leave a
+# half-populated doc directory on the user's disk either.
+mkdir -p "$tmp/doc"
+if ! tar -xzf "$tmp/$licenses" -C "$tmp/doc" 2>/dev/null; then
+  echo "error: could not unpack $licenses — aborting, nothing installed" >&2
+  exit 1
+fi
+if ! mkdir -p "$DOC_DIR" 2>/dev/null; then
+  echo "error: could not create $DOC_DIR for the licence texts — aborting" >&2
+  echo "  set CAIRN_DOC_DIR to a writable path, or install via Homebrew." >&2
+  exit 1
+fi
+echo "✓ licences verified"
+
+# --- install: notices first, then the binary they describe --------------------
+# Everything above is verified and staged in $tmp, so both of these are local
+# moves. The notices go first so no cairn binary can exist on disk without them.
+cp -R "$tmp/doc/." "$DOC_DIR/"
+echo "✓ licences: $DOC_DIR"
+
 mkdir -p "$INSTALL_DIR"
 mv "$tmp/cairn" "$INSTALL_DIR/cairn"
 chmod +x "$INSTALL_DIR/cairn"

@@ -25,6 +25,7 @@ import { resolveLogoFiles } from "./logo-files.ts";
 import { loadThemeFile } from "./theme-file.ts";
 import { registerTheme, themeNames } from "./themes.ts";
 import { LOGO_NAMES } from "./logos.ts";
+import { notice } from "./notice.ts";
 
 const TYPE_FLAGS: Record<string, string> = {
   "--logical-architecture": "logical",
@@ -213,6 +214,7 @@ Usage:
   cairn logos                                         list the built-in \`logo:\` names
   cairn themes                                        list the built-in theme names
   cairn version | --version | -v                      print the installed version
+  cairn version --licenses                            third-party notices this build carries
 `);
   process.exit(2);
 }
@@ -322,7 +324,48 @@ function exitIfErrors(file: string, src: string, diagnostics: Diagnostic[]): voi
 }
 
 if (command === "version" || command === "--version" || command === "-v") {
-  console.log(`cairn v${version}`);
+  // Reject unknown flags rather than ignoring them. Silently dropping one means
+  // `cairn version --licence` prints the plain version and exits 0, which looks
+  // exactly like the flag being broken — and both spellings are in use in this
+  // repo's own prose, so that typo is the likely one. Accept either, refuse the
+  // rest.
+  const LICENCE_FLAGS = new Set(["--licenses", "--licences"]);
+  const unknown = args
+    .slice(1)
+    .filter((arg) => arg.startsWith("-") && !LICENCE_FLAGS.has(arg));
+  if (unknown.length) {
+    console.error(
+      `unknown flag${unknown.length > 1 ? "s" : ""} for \`cairn version\`: ${unknown.join(", ")}\n` +
+        "the only one it takes is `--licenses` (third-party notices for this build)",
+    );
+    process.exit(2);
+  }
+  if (args.some((arg) => LICENCE_FLAGS.has(arg))) {
+    // Not what discharges the licences — the files every installer puts on disk
+    // do that, and all four paths are fail-closed about it. None of the eight
+    // licences cairn redistributes under requires a runtime display: EPL-2.0
+    // §3.1(b), MIT and Apache-2.0 §4 want a copy included with the distribution,
+    // BSD-3-Clause names "the documentation and/or other materials", CC-BY-4.0
+    // accepts a URI, CC0 asks nothing. LGPL-2.1 §6 is the only one that mentions
+    // execution at all, and conditionally: *if* the work displays copyright
+    // notices while running, the Library's must appear among them with a
+    // reference to the License. This output does both, so it satisfies that
+    // clause rather than triggering it.
+    //
+    // It is here because a single-file binary gets separated from its doc
+    // directory — copied to another machine, dropped in a container image — and
+    // then nothing else in the artifact says what it contains. The version goes
+    // first so the notice is tied to a specific build.
+    console.log(`cairn v${version}\n`);
+    console.log(notice());
+  } else {
+    console.log(`cairn v${version}`);
+    // TTY only, so the line a human needs never lands in a pipe. `cairn version`
+    // is parsed — scripts/smoke-binary.sh asserts it equals `cairn v<tag>` exactly
+    // — and stdout is not a TTY when captured, so this cannot reach them.
+    if (process.stdout.isTTY)
+      console.log("Apache-2.0, and bundles third-party code — `cairn version --licenses`");
+  }
 } else if (command === "validate") {
   const file = positionalFile();
   if (!file) usage();

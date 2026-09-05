@@ -17,6 +17,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Preview](#preview)
 - [Installation](#installation)
 - [Commands](#commands)
+- [License](#license)
 - [More](#more)
 
 ## Why cairn?
@@ -95,6 +96,12 @@ module BILLING "Billing" { logo: "./logos/acme.svg" }
 ```
 
 <p align="center"><img src="examples/application-tech-stack.svg" alt="Application view with technology logos" width="760"></p>
+
+Six of the 37 built-in logos keep their own licence rather than simple-icons'
+CC0-1.0. A diagram that draws one embeds that artwork, so the SVG carries an
+attribution comment naming the mark, its source and its licence — keep it in
+the file, and check that an SVG optimiser is not set to strip comments. The
+other 31 add nothing. See [THIRD-PARTY-NOTICES.md](./THIRD-PARTY-NOTICES.md).
 
 ### Infrastructure view diagram examples from small to large
 
@@ -376,13 +383,42 @@ E0240 — The infrastructure view requires every flow to carry its protocol (and
 relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)` after the label.
 ```
 
-### Check your version
+### Check your version, and what it contains
 
 ```sh
 cairn version    # or --version / -v
+cairn version --licenses
 ```
 
-Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) print the exact tag they were built from. Running from a clone via `npm run cairn` prints `package.json`'s version instead.
+Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) print the exact tag they were built from. Running from a clone via `npm run cairn` prints `package.json`'s version instead. The bare form prints one line and nothing else, so it stays safe to parse in a script.
+
+`--licenses` adds the third-party notices for that exact build — elkjs under EPL-2.0, the Simple Icons artwork, and, for the released binaries only, the embedded Bun runtime and its LGPL-2.1 JavaScriptCore. It reads from inside the artifact, so it describes the copy you are running rather than whatever the repository says today.
+
+That output is a convenience, not the licence itself. The full texts are installed with cairn: `share/doc/cairn/` for the curl installer and Homebrew, the app directory for Scoop, the package root for npm. [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) is the long form, with per-icon attribution and the LGPL relink offer.
+
+## License
+
+cairn is [Apache-2.0](LICENSE). Its shipped artifacts also *contain* third-party code Apache-2.0 does not cover: elkjs (EPL-2.0) inlined into every bundle and binary, a curated set of Simple Icons paths vendored into the logos, and — in the release binaries only — the Bun runtime, which statically links JavaScriptCore under the LGPL.
+
+Full texts live in [`licenses/`](licenses/), their provenance in [`licenses/README.md`](licenses/README.md), and the long form in [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md).
+
+### What that means for you
+
+Find your row. Most people are in the first one, and owe nothing.
+
+| What you are doing | What you owe |
+|---|---|
+| **Sharing a diagram** | Nothing — unless it draws one of the six licensed logos below, and then cairn has already written the attribution into the SVG. Leave the comment in place. |
+| **Depending on `@r0kshan/cairn`** from npm | Nothing. You distribute no copy of cairn; `npm install` fetches it with its notices intact. |
+| **Bundling cairn** into your own artifact (webpack, Docker, Electron, single-file CLI) | Copy `LICENSE`, `THIRD-PARTY-NOTICES.md` and `licenses/` out of the installed package into your distribution. |
+| **Redistributing a cairn binary** | The same three files — and every installer has already put them on disk beside it (`share/doc/cairn`, the app directory, or the package root, by channel). |
+
+**Two things worth knowing:**
+
+- **6 of the 37 built-in logos** — `angular`, `apache`, `apachekafka`, `apachespark`, `javascript`, `openjdk` — keep their own licence instead of the project-wide CC0-1.0. The other 31 ask for nothing.
+- **Converting a diagram to PNG, or pasting it into a slide deck, drops the attribution comment.** The artwork is still there, so the attribution has to go somewhere you control: a caption, a credits slide, or `licenses/` shipped alongside. This is the one case cairn cannot handle for you.
+
+Diagrams you produce are yours — cairn claims nothing in them. The brands drawn by the built-in logos remain their owners' trademarks.
 
 ## More
 
@@ -391,3 +427,4 @@ Released binaries (the ones from Homebrew, Scoop, or the GitHub Releases page) p
 - [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
 - [`documentation/`](documentation/) — architecture, invariants, DSL and internals.
+- [`THIRD-PARTY-NOTICES.md`](THIRD-PARTY-NOTICES.md) — third-party licence notices, with per-icon attribution.

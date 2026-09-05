@@ -1,4 +1,24 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2150 897" font-family="Helvetica,Arial,sans-serif">
+<!--
+  This diagram contains third-party artwork under its own licence.
+  Keep this notice with the file — it is the attribution those licences ask for.
+
+  Every mark below is modified from the original: simple-icons redrew it as a
+  single monochrome path, and cairn paints that path in the diagram's colours.
+
+  Angular (angular) — CC-BY-4.0
+    artwork: https://angular.dev/press-kit
+    licence: https://creativecommons.org/licenses/by/4.0/legalcode
+
+  JavaScript (javascript) — MIT
+    Copyright (c) 2011 Christopher Williams <chris@iterativedesigns.com>
+    artwork: https://github.com/voodootikigod/logo.js/blob/1544bdeed6d618a6cfe4f0650d04ab8d9cfa76d9/js.svg
+    licence: https://spdx.org/licenses/MIT.html
+
+  OpenJDK (openjdk) — BSD-3-Clause
+    artwork: https://github.com/openjdk/duke/blob/master/vector/Agent.svg
+    licence: https://spdx.org/licenses/BSD-3-Clause.html
+-->
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="2150" height="897" fill="#ffffff"/>
