@@ -32,6 +32,14 @@ export interface View {
    * view rather than something every kind silently inherits.
    */
   logoKinds?: string[];
+  /**
+   * Kinds whose top-level instances are seated in one lane across the reading
+   * axis — a column under `wide`/`slide`, a row under `tall`/`page`. Opt-in per
+   * view: only kinds that are genuinely peers belong here. A kind whose
+   * instances flow into one another is skipped automatically, since siblings on
+   * a chain must occupy different layers.
+   */
+  laneKinds?: string[];
   /** Which columns the flow matrix emits for this view, and what annotates an endpoint. */
   matrix: MatrixSpec;
   legendNames: Record<string, string>;
@@ -76,6 +84,7 @@ export interface View {
 
 const logicalView: View = {
   name: "logical",
+  laneKinds: ["external"],
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
   containerKinds: ["actor-group", "system", "layer", "external"],
   // Logical flows carry no technical detail (flowTech* are null below), so the
@@ -199,6 +208,7 @@ const logicalView: View = {
 
 const applicationView: View = {
   name: "application",
+  laneKinds: ["external"],
   kinds: [
     "actor-group",
     "actor",
@@ -398,6 +408,7 @@ const applicationView: View = {
 
 const infrastructureView: View = {
   name: "infrastructure",
+  laneKinds: ["external"],
   kinds: [
     "actor",
     "site",

@@ -49,9 +49,9 @@
 <ellipse cx="208" cy="227" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
 <text x="208" y="243.75" font-size="12.5" text-anchor="middle" fill="#17202c">Offer</text>
 <text x="208" y="258.25" font-size="12.5" text-anchor="middle" fill="#17202c">catalog</text>
-<rect x="632" y="161" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="686" y="181.25" font-size="12.5" text-anchor="middle" fill="#17202c">Partner EDI</text>
-<text x="686" y="195.75" font-size="12.5" text-anchor="middle" fill="#17202c">platform</text>
+<rect x="1020" y="161" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1074" y="181.25" font-size="12.5" text-anchor="middle" fill="#17202c">Partner EDI</text>
+<text x="1074" y="195.75" font-size="12.5" text-anchor="middle" fill="#17202c">platform</text>
 <rect x="1020" y="22" width="158" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1099" y="42.25" font-size="12.5" text-anchor="middle" fill="#17202c">Electronic-invoicing</text>
 <text x="1099" y="56.75" font-size="12.5" text-anchor="middle" fill="#17202c">portal (PPF)</text>
@@ -60,8 +60,8 @@
 <path d="M 686.5 386 L 482.3333333333333 386 L 482.3333333333333 269 L 470.3333333333333 269" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 262 244 L 362.3333333333333 243.66666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 470.3333333333333 251.5 L 618 251.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 481 202.5 L 525 202.5 L 525 218 L 737 218 L 737 252 L 727 252" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 481 190.5 L 505 190.5 L 632 190.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 481 202.5 L 750 202.5 L 750 234 L 726 234" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 481 190.5 L 505 190.5 L 1020 190.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 481 166.5 L 525 166.5 L 525 46 L 1020 46" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 481 178.5 L 491 178.5 L 491 180.4 L 535 180 L 535 120 L 646 120" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 473 318.5 L 477.3333333333333 318.5 A 5 5 0 0 1 487.3333333333333 318.5 L 497 318.5 L 497 354 L 675 354" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -72,8 +72,8 @@
 <text x="584.4166666666666" y="389.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="312.16666666666663" y="247.08333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <text x="544.1666666666666" y="254.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="631" y="221.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="582.5" y="193.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
+<text x="615.5" y="205.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="762.5" y="193.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
 <text x="772.5" y="49.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
 <text x="590.5" y="123.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="586" y="357.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>

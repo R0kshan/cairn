@@ -1201,12 +1201,189 @@ function recordRepairs(scene: Scene, routesBefore: Map<string, Point[]>): void {
  * the invariants require. Title bands are re-derived before each pass that reads
  * them, never carried across one that moves nodes.
  */
+/** Do two axis-aligned segments properly cross? Shared endpoints do not count. */
+function segmentsCross(a1: Point, a2: Point, b1: Point, b2: Point): boolean {
+  const aH = Math.abs(a1.y - a2.y) < 0.5;
+  const bH = Math.abs(b1.y - b2.y) < 0.5;
+  if (aH === bH) return false;
+  const [h1, h2, v1, v2] = aH ? [a1, a2, b1, b2] : [b1, b2, a1, a2];
+  const hy = h1.y;
+  const vx = v1.x;
+  return (
+    vx > Math.min(h1.x, h2.x) + 0.5 && vx < Math.max(h1.x, h2.x) - 0.5 &&
+    hy > Math.min(v1.y, v2.y) + 0.5 && hy < Math.max(v1.y, v2.y) - 0.5
+  );
+}
+
+/**
+ * Interior runs short enough to read as a kink rather than a turn — the same
+ * `jog<=20` the sweep counts. Endpoints are excluded: only a segment with a run
+ * on either side of it is a jog.
+ */
+function shortJogs(edges: SceneEdge[]): number {
+  let total = 0;
+  for (const edge of edges)
+    for (let i = 1; i + 2 < edge.pts.length; i++) {
+      const run =
+        Math.abs(edge.pts[i + 1].x - edge.pts[i].x) + Math.abs(edge.pts[i + 1].y - edge.pts[i].y);
+      if (run > 0 && run <= 20) total++;
+    }
+  return total;
+}
+
+/** Crossings between the given edges and every edge in the scene. */
+function crossingsAround(scene: Scene, subject: SceneEdge[]): number {
+  let total = 0;
+  const subjectIds = new Set(subject.map((edge) => edge.id));
+  for (const edge of subject)
+    for (const other of scene.edges) {
+      if (other.id === edge.id) continue;
+      if (subjectIds.has(other.id) && other.id < edge.id) continue;
+      for (let i = 1; i < edge.pts.length; i++)
+        for (let j = 1; j < other.pts.length; j++)
+          if (segmentsCross(edge.pts[i - 1], edge.pts[i], other.pts[j - 1], other.pts[j])) total++;
+    }
+  return total;
+}
+
+/** Leaf boxes a run must not cross — the same set `sweep`'s `throughBox` tests. */
+function leafBoxesOf(scene: Scene): SceneNode[] {
+  return scene.nodes.filter((node) => !node.container);
+}
+
+/** Does any segment of `edge` cross a leaf box it is not attached to? */
+function crossesLeaf(edge: SceneEdge, leaves: SceneNode[], attached: Set<string>): boolean {
+  for (let i = 1; i < edge.pts.length; i++) {
+    const a = edge.pts[i - 1];
+    const b = edge.pts[i];
+    const horizontal = Math.abs(a.y - b.y) < 0.5;
+    const vertical = Math.abs(a.x - b.x) < 0.5;
+    if (!horizontal && !vertical) continue;
+    const at = horizontal ? a.y : a.x;
+    const lo = horizontal ? Math.min(a.x, b.x) : Math.min(a.y, b.y);
+    const hi = horizontal ? Math.max(a.x, b.x) : Math.max(a.y, b.y);
+    for (const node of leaves) {
+      if (attached.has(node.id)) continue;
+      const struck = horizontal
+        ? at > node.y + 1 && at < node.y + node.height - 1 &&
+          lo < node.x + node.width - 1 && hi > node.x + 1
+        : at > node.x + 1 && at < node.x + node.width - 1 &&
+          lo < node.y + node.height - 1 && hi > node.y + 1;
+      if (struck) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Snaps nodes sharing a lane id onto one coordinate along the reading axis.
+ * Reads a geometry-keyed map and a `container` boolean only — no kind, no view
+ * name (invariant §16), the same shape as the `pinned` flag.
+ *
+ * Every snap is *proposed, verified and kept or rolled back*: a move whose edges
+ * would strike a leaf box, overlap a leaf or a container, add a crossing, tilt a
+ * run off the orthogonal, or kink one into a jog is undone, so the pass cannot
+ * introduce the defects it was measured to introduce. A lane that cannot be
+ * seated cleanly simply stays as elk drew it — a fallback, not a weakened
+ * threshold.
+ */
+function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): void {
+  if (!laneOf.size) return;
+  const leaves = leafBoxesOf(scene);
+  /**
+   * Segments running on neither axis. A snap shifts only the points that sat
+   * inside the old box, so a segment straddling its edge comes out tilted — and
+   * `crossesLeaf` skips non-orthogonal runs, so a tilt it introduced would slip
+   * past the gate and reach the squaring passes with geometry nothing judged.
+   * Counted before and after like the crossings and the jogs, never asserted
+   * outright: elk emits slanted segments of its own, and refusing those refuses
+   * lanes for geometry the move never touched.
+   */
+  const tilted = (edges: SceneEdge[]) =>
+    edges.reduce(
+      (total, edge) =>
+        total +
+        edge.pts.filter((point, i) =>
+          i > 0 &&
+          Math.abs(point.x - edge.pts[i - 1].x) >= 0.5 &&
+          Math.abs(point.y - edge.pts[i - 1].y) >= 0.5).length,
+      0,
+    );
+  const touching = new Map<string, SceneEdge[]>();
+  const attachedTo = new Map<string, Set<string>>();
+  for (const edge of scene.edges) {
+    const ends = new Set<string>();
+    for (const point of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+      if (!point) continue;
+      for (const node of scene.nodes)
+        if (point.x >= node.x - 1 && point.x <= node.x + node.width + 1 &&
+            point.y >= node.y - 1 && point.y <= node.y + node.height + 1) {
+          ends.add(node.id);
+          if (!touching.has(node.id)) touching.set(node.id, []);
+          touching.get(node.id)!.push(edge);
+        }
+    }
+    attachedTo.set(edge.id, ends);
+  }
+
+  const byLane = new Map<number, SceneNode[]>();
+  for (const node of scene.nodes) {
+    const lane = laneOf.get(node.id);
+    if (lane === undefined) continue;
+    if (!byLane.has(lane)) byLane.set(lane, []);
+    byLane.get(lane)!.push(node);
+  }
+
+  for (const members of [...byLane.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1])) {
+    if (members.length < 2) continue;
+    // Forward along the reading direction: a node pulled backwards would cross
+    // its own source and turn a forward flow into a backward one.
+    const target = Math.max(...members.map((node) => node[axis]));
+    for (const node of members) {
+      const delta = target - node[axis];
+      if (!delta) continue;
+      const box = { x: node.x, y: node.y, w: node.width, h: node.height };
+      const edges = touching.get(node.id) ?? [];
+      const before = edges.map((edge) => edge.pts.map((point) => ({ ...point })));
+      const crossingsBefore = crossingsAround(scene, edges);
+      const jogsBefore = shortJogs(edges);
+      const tiltsBefore = tilted(edges);
+      node[axis] = target;
+      for (const edge of edges)
+        for (const point of edge.pts)
+          if (point.x >= box.x - 1 && point.x <= box.x + box.w + 1 &&
+              point.y >= box.y - 1 && point.y <= box.y + box.h + 1)
+            point[axis] += delta;
+      const broke =
+        crossingsAround(scene, edges) > crossingsBefore ||
+        shortJogs(edges) > jogsBefore ||
+        tilted(edges) > tiltsBefore ||
+        edges.some((edge) => crossesLeaf(edge, leaves, attachedTo.get(edge.id) ?? new Set())) ||
+        // Containers included: a lane member is top-level, so it has no
+        // legitimate container ancestor and may not land on one.
+        scene.nodes.some((other) =>
+          other !== node && !node.container &&
+          other.x < node.x + node.width && node.x < other.x + other.width &&
+          other.y < node.y + node.height && node.y < other.y + other.height);
+      if (broke) {
+        node[axis] = target - delta;
+        edges.forEach((edge, i) => { edge.pts = before[i]; });
+      }
+    }
+  }
+  const maxX = Math.max(...scene.nodes.map((node) => node.x + node.width));
+  const maxY = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  scene.width = Math.max(scene.width, Math.ceil(maxX) + 10);
+  scene.height = Math.max(scene.height, Math.ceil(maxY) + 10);
+}
+
 function runGeometryPasses(
   scene: Scene,
   model: Model,
-  options: { numbered: boolean; sideways: boolean },
+  options: { numbered: boolean; sideways: boolean; laneOf?: Map<string, number> },
 ): void {
   const { numbered, sideways } = options;
+  if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   // Issue #26 applies to every disposition. A DOWN layout wraps its backward
   // flows around the sides rather than the top, so it is routed through the
   // same pass with the scene mirrored across the diagonal.
@@ -1274,6 +1451,92 @@ function runGeometryPasses(
   swapCrossingSiblingSeats(scene);
 }
 
+/**
+ * Which top-level elements share a lane, keyed by element id. Registry-driven
+ * and computed before any `Scene` exists, exactly as `partitions` is: a lane is
+ * an opt-in `laneKinds` entry (§9) whose instances are leaves and are not
+ * transitively linked by a flow. Chained siblings are excluded because a chain
+ * must occupy successive layers by construction, so seating it in one lane would
+ * fight the flows rather than tidy them.
+ */
+function laneAssignment(model: Model, view: View): Map<string, number> {
+  const laneOf = new Map<string, number>();
+  const laneKinds = new Set(view.laneKinds ?? []);
+  // `compact` is an explicit request to spend whitespace on density. Seating a
+  // lane spends it the other way, so the two do not both get their way: compact
+  // wins, and a compact drawing renders exactly as it did before lanes existed.
+  if (!laneKinds.size || model.style.compact) return laneOf;
+
+  const rootOf = new Map<string, string>();
+  const walk = (element: Element, root: string) => {
+    rootOf.set(element.id, root);
+    for (const child of element.children ?? []) walk(child, root);
+  };
+  for (const element of model.elements) walk(element, element.id);
+
+  const adjacency = new Map<string, Set<string>>();
+  for (const flow of model.flows) {
+    const from = rootOf.get(flow.from);
+    const to = rootOf.get(flow.to);
+    if (!from || !to || from === to) continue;
+    if (!adjacency.has(from)) adjacency.set(from, new Set());
+    adjacency.get(from)!.add(to);
+  }
+  const reaches = (from: string, to: string) => {
+    const seen = new Set([from]);
+    const queue = [from];
+    while (queue.length) {
+      for (const next of adjacency.get(queue.pop()!) ?? []) {
+        if (next === to) return true;
+        if (!seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    return false;
+  };
+
+  const byKind = new Map<string, Element[]>();
+  for (const element of model.elements) {
+    if (!laneKinds.has(element.kind)) continue;
+    if ((element.children ?? []).length) continue;
+    if (!byKind.has(element.kind)) byKind.set(element.kind, []);
+    byKind.get(element.kind)!.push(element);
+  }
+  // An author pin is an explicit instruction about where an edge meets a box.
+  // Seating the box in a lane would move that meeting point, so the pin wins and
+  // the lane goes untaken — the same precedence §17 gives every opt-in hint.
+  const pinned = new Set<string>();
+  for (const flow of model.flows) {
+    if (!flow.fromSide && !flow.toSide) continue;
+    // Both ends: a pin fixes where the run leaves *and* meets, so moving either
+    // box bends a route the author placed deliberately.
+    pinned.add(rootOf.get(flow.from) ?? flow.from);
+    pinned.add(rootOf.get(flow.to) ?? flow.to);
+  }
+
+  let laneId = 0;
+  for (const members of byKind.values()) {
+    if (members.length < 2) continue;
+    if (members.some((member) => pinned.has(member.id))) continue;
+    // `order:` on a top-level element is a partition band along the reading
+    // axis — the very axis a snap moves along, so seating the lane would
+    // override the sequence the author asked for. Same precedence as a pin.
+    if (members.some((member) => member.order)) continue;
+    if (members.some((a) => members.some((b) => a !== b && reaches(a.id, b.id)))) continue;
+    laneId++;
+    for (const member of members) laneOf.set(member.id, laneId);
+  }
+  return laneOf;
+}
+
+/** Aspect ratio each framed disposition is fitted to. */
+const ASPECT_TARGETS: Record<string, number | undefined> = {
+  slide: 16 / 9,
+  page: 0.71,
+};
+
 export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -1287,10 +1550,6 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   } = fontSizes(model.style.font.size);
 
   const disposition = model.style.disposition;
-  const ASPECT_TARGETS: Record<string, number | undefined> = {
-    slide: 16 / 9,
-    page: 0.71,
-  };
   const aspectTarget = ASPECT_TARGETS[disposition];
 
   const ingressExternalElements = view.partitionByOrder
@@ -1317,7 +1576,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
 
   const kindOf = new Map(indexElementsById(model.elements));
 
-  const sceneFromResult = (result: LaidOutNode, layoutMs: number): Scene => {
+  const sceneFromResult = (result: LaidOutNode, layoutMs: number, lanes = true): Scene => {
     const origins: Record<string, { x: number; y: number }> = {
       root: { x: 0, y: 0 },
     };
@@ -1348,10 +1607,13 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     runGeometryPasses(scene, model, {
       numbered,
       sideways: disposition === "page" || disposition === "tall",
+      laneOf: lanes ? laneOf : undefined,
     });
     return scene;
   };
 
+
+  const laneOf = laneAssignment(model, view);
   const startTime = Date.now();
   let result: LaidOutNode;
   let winnerDirection: "RIGHT" | "DOWN";
