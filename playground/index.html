@@ -18,7 +18,21 @@
   #zoom-level { width:54px; font-variant-numeric:tabular-nums; }
   #zoom-fit { width:auto; padding:5px 10px; }
   main { flex:1; display:flex; min-height:0; }
-  .left { width:44%; min-width:320px; display:flex; flex-direction:column; border-right:1px solid var(--border); }
+  /* The split is one variable so the drag handle has a single thing to write
+     to, and the stylesheet keeps the default for a browser with no stored one. */
+  :root { --left-w:44%; }
+  .left { width:var(--left-w); min-width:320px; display:flex; flex-direction:column; }
+  /* The handle replaces the border the editor pane used to draw rather than
+     sitting beside it — two lines a pixel apart read as a rendering fault. It is
+     wider than the seam it paints so the pointer has something to catch. */
+  #splitter { flex:none; width:9px; margin-right:-4px; cursor:col-resize;
+              border-left:1px solid var(--border); background:transparent;
+              transition:border-color .12s; touch-action:none; }
+  #splitter:hover, #splitter.dragging { border-left-color:var(--accent); }
+  /* While dragging, everything else stays out of the way: an unguarded drag
+     selects the editor's text and leaves the preview showing a grab cursor. */
+  body.resizing { user-select:none; }
+  body.resizing #preview { cursor:col-resize; }
   #editor { flex:1; resize:none; border:0; outline:0; padding:12px 14px; background:var(--bg); color:var(--text); font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre; tab-size:2; }
   #diags { max-height:32%; overflow:auto; border-top:1px solid var(--border); background:var(--panel); font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; }
   #diags:empty { display:none; }
@@ -85,6 +99,7 @@
     <textarea id="editor" spellcheck="false"></textarea>
     <div id="diags"></div>
   </div>
+  <div id="splitter" title="Drag to resize · double-click to reset"></div>
   <div class="right">
     <div id="preview" title="Drag to pan · ctrl/⌘ + wheel to zoom"></div>
     <div id="status"><span id="stat">loading engine…</span></div>
@@ -473,6 +488,61 @@ document.addEventListener('keydown', e => {
   if (!action) return;
   e.preventDefault();
   ZOOM_ACTIONS[action]();
+});
+
+// --- Resizable split --------------------------------------------------------
+// The editor pane's width, dragged rather than fixed at 44%. It writes the
+// `--left-w` variable the stylesheet reads, so there is one source of truth and
+// the default still stands for anyone who has never touched the handle.
+const splitter = document.getElementById('splitter');
+const mainEl = document.querySelector('main');
+const DEFAULT_SPLIT = '44%';
+// The preview needs room to stay a preview; the editor has its own CSS floor.
+const MIN_LEFT_PX = 320, MIN_RIGHT_PX = 360;
+const SPLIT_KEY = 'cairn:split';
+
+const setSplit = value => document.documentElement.style.setProperty('--left-w', value);
+
+// Stored as a percentage rather than pixels: a split dragged on a wide monitor
+// should still leave both panes usable when the page is reopened on a laptop.
+try {
+  const saved = localStorage.getItem(SPLIT_KEY);
+  if (saved) setSplit(saved);
+} catch { /* private mode, or storage disabled — the default stands */ }
+
+splitter.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  splitter.setPointerCapture(e.pointerId);
+  splitter.classList.add('dragging');
+  document.body.classList.add('resizing');
+});
+
+splitter.addEventListener('pointermove', e => {
+  if (!splitter.hasPointerCapture(e.pointerId)) return;
+  const bounds = mainEl.getBoundingClientRect();
+  // On a narrow window the two floors can overlap; the editor's wins, and the
+  // clamp stays a clamp instead of inverting into an empty range.
+  const max = Math.max(bounds.width - MIN_RIGHT_PX, MIN_LEFT_PX);
+  const px = Math.min(Math.max(e.clientX - bounds.left, MIN_LEFT_PX), max);
+  setSplit((px / bounds.width * 100).toFixed(2) + '%');
+});
+
+function endResize(e) {
+  if (!splitter.hasPointerCapture(e.pointerId)) return;
+  splitter.releasePointerCapture(e.pointerId);
+  splitter.classList.remove('dragging');
+  document.body.classList.remove('resizing');
+  try {
+    localStorage.setItem(SPLIT_KEY, document.documentElement.style.getPropertyValue('--left-w'));
+  } catch { /* nothing to do: the split still holds for this session */ }
+}
+splitter.addEventListener('pointerup', endResize);
+splitter.addEventListener('pointercancel', endResize);
+
+// A dragged split is easy to lose track of; double-click puts it back.
+splitter.addEventListener('dblclick', () => {
+  setSplit(DEFAULT_SPLIT);
+  try { localStorage.removeItem(SPLIT_KEY); } catch { /* see above */ }
 });
 
 // load: shared link > logical starter
