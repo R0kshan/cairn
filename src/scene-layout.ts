@@ -1281,14 +1281,34 @@ function crossesLeaf(edge: SceneEdge, leaves: SceneNode[], attached: Set<string>
  * name (invariant §16), the same shape as the `pinned` flag.
  *
  * Every snap is *proposed, verified and kept or rolled back*: a move whose edges
- * would strike a leaf box, overlap a leaf, add a crossing, or kink a run into a
- * jog is undone, so the pass cannot introduce the defects it was measured to
- * introduce. A lane that cannot be seated cleanly simply stays
- * as elk drew it — a fallback, not a weakened threshold.
+ * would strike a leaf box, overlap a leaf or a container, add a crossing, tilt a
+ * run off the orthogonal, or kink one into a jog is undone, so the pass cannot
+ * introduce the defects it was measured to introduce. A lane that cannot be
+ * seated cleanly simply stays as elk drew it — a fallback, not a weakened
+ * threshold.
  */
 function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): void {
   if (!laneOf.size) return;
   const leaves = leafBoxesOf(scene);
+  /**
+   * Segments running on neither axis. A snap shifts only the points that sat
+   * inside the old box, so a segment straddling its edge comes out tilted — and
+   * `crossesLeaf` skips non-orthogonal runs, so a tilt it introduced would slip
+   * past the gate and reach the squaring passes with geometry nothing judged.
+   * Counted before and after like the crossings and the jogs, never asserted
+   * outright: elk emits slanted segments of its own, and refusing those refuses
+   * lanes for geometry the move never touched.
+   */
+  const tilted = (edges: SceneEdge[]) =>
+    edges.reduce(
+      (total, edge) =>
+        total +
+        edge.pts.filter((point, i) =>
+          i > 0 &&
+          Math.abs(point.x - edge.pts[i - 1].x) >= 0.5 &&
+          Math.abs(point.y - edge.pts[i - 1].y) >= 0.5).length,
+      0,
+    );
   const touching = new Map<string, SceneEdge[]>();
   const attachedTo = new Map<string, Set<string>>();
   for (const edge of scene.edges) {
@@ -1327,6 +1347,7 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
       const before = edges.map((edge) => edge.pts.map((point) => ({ ...point })));
       const crossingsBefore = crossingsAround(scene, edges);
       const jogsBefore = shortJogs(edges);
+      const tiltsBefore = tilted(edges);
       node[axis] = target;
       for (const edge of edges)
         for (const point of edge.pts)
@@ -1336,9 +1357,12 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
       const broke =
         crossingsAround(scene, edges) > crossingsBefore ||
         shortJogs(edges) > jogsBefore ||
+        tilted(edges) > tiltsBefore ||
         edges.some((edge) => crossesLeaf(edge, leaves, attachedTo.get(edge.id) ?? new Set())) ||
+        // Containers included: a lane member is top-level, so it has no
+        // legitimate container ancestor and may not land on one.
         scene.nodes.some((other) =>
-          other !== node && !other.container && !node.container &&
+          other !== node && !node.container &&
           other.x < node.x + node.width && node.x < other.x + other.width &&
           other.y < node.y + node.height && node.y < other.y + other.height);
       if (broke) {
@@ -1496,6 +1520,10 @@ function laneAssignment(model: Model, view: View): Map<string, number> {
   for (const members of byKind.values()) {
     if (members.length < 2) continue;
     if (members.some((member) => pinned.has(member.id))) continue;
+    // `order:` on a top-level element is a partition band along the reading
+    // axis — the very axis a snap moves along, so seating the lane would
+    // override the sequence the author asked for. Same precedence as a pin.
+    if (members.some((member) => member.order)) continue;
     if (members.some((a) => members.some((b) => a !== b && reaches(a.id, b.id)))) continue;
     laneId++;
     for (const member of members) laneOf.set(member.id, laneId);
