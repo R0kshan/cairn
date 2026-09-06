@@ -1215,6 +1215,22 @@ function segmentsCross(a1: Point, a2: Point, b1: Point, b2: Point): boolean {
   );
 }
 
+/**
+ * Interior runs short enough to read as a kink rather than a turn — the same
+ * `jog<=20` the sweep counts. Endpoints are excluded: only a segment with a run
+ * on either side of it is a jog.
+ */
+function shortJogs(edges: SceneEdge[]): number {
+  let total = 0;
+  for (const edge of edges)
+    for (let i = 1; i + 2 < edge.pts.length; i++) {
+      const run =
+        Math.abs(edge.pts[i + 1].x - edge.pts[i].x) + Math.abs(edge.pts[i + 1].y - edge.pts[i].y);
+      if (run > 0 && run <= 20) total++;
+    }
+  return total;
+}
+
 /** Crossings between the given edges and every edge in the scene. */
 function crossingsAround(scene: Scene, subject: SceneEdge[]): number {
   let total = 0;
@@ -1265,8 +1281,9 @@ function crossesLeaf(edge: SceneEdge, leaves: SceneNode[], attached: Set<string>
  * name (invariant §16), the same shape as the `pinned` flag.
  *
  * Every snap is *proposed, verified and kept or rolled back*: a move whose edges
- * would strike a leaf box, overlap a leaf, or add a crossing is undone, so the
- * pass cannot introduce the defects it was measured to introduce. A lane that cannot be seated cleanly simply stays
+ * would strike a leaf box, overlap a leaf, add a crossing, or kink a run into a
+ * jog is undone, so the pass cannot introduce the defects it was measured to
+ * introduce. A lane that cannot be seated cleanly simply stays
  * as elk drew it — a fallback, not a weakened threshold.
  */
 function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): void {
@@ -1309,6 +1326,7 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
       const edges = touching.get(node.id) ?? [];
       const before = edges.map((edge) => edge.pts.map((point) => ({ ...point })));
       const crossingsBefore = crossingsAround(scene, edges);
+      const jogsBefore = shortJogs(edges);
       node[axis] = target;
       for (const edge of edges)
         for (const point of edge.pts)
@@ -1317,6 +1335,7 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
             point[axis] += delta;
       const broke =
         crossingsAround(scene, edges) > crossingsBefore ||
+        shortJogs(edges) > jogsBefore ||
         edges.some((edge) => crossesLeaf(edge, leaves, attachedTo.get(edge.id) ?? new Set())) ||
         scene.nodes.some((other) =>
           other !== node && !other.container && !node.container &&
