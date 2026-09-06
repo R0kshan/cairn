@@ -61,7 +61,16 @@ const rbOut = rbLines.map((line) => {
   // The `resource "licenses"` block's url names the notice tarball, not a
   // binary, so the suffix regex above deliberately misses it (`.tar.gz` has
   // dots). Match it explicitly and fill the next sha256 from the same file.
-  if (/cairn-#\{version\}-licenses\.tar\.gz"/.test(line)) { pendingNotice = true; return v; }
+  //
+  // Its `#{version}` is also expanded here rather than left to Ruby, because a
+  // `resource` block is evaluated against the Resource, not the Formula: inside
+  // it, `version` is the resource's own (unset) version and interpolates to the
+  // empty string. The binary urls above sit in formula scope and resolve fine,
+  // which is why only this one has to be written out in full.
+  if (/cairn-#\{version\}-licenses\.tar\.gz"/.test(line)) {
+    pendingNotice = true;
+    return v.replace(/#\{version\}/g, version);
+  }
   if (pendingNotice && /sha256\s+"[^"]*"/.test(line)) {
     const out = line.replace(/sha256\s+"[^"]*"/, `sha256 "${shaFor(licensesAsset)}"`);
     pendingNotice = null;
