@@ -207,7 +207,8 @@ async function run() {
       // match the preview backdrop to the theme's canvas colour
       const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
       if (bg) preview.style.background = bg;
-      publishView({ type: 'svg', svg: r.svg, bg, title: (src.match(/^\s*diagram\s+\w+\s+"([^"]*)"/m) || [])[1] });
+      publishView({ type: 'svg', svg: r.svg, bg, status: stat.innerHTML,
+        title: (src.match(/^\s*diagram\s+\w+\s+"([^"]*)"/m) || [])[1] });
       applyZoom();
       // Cleared only here, so a paste that does not compile is fitted once fixed.
       if (fitOnNextRender) {
@@ -225,7 +226,7 @@ async function run() {
         + `<div class="err-h">${ne} error${ne > 1 ? 's' : ''} — diagram not rendered</div>`
         + `<div class="err-p">Fix the ${ne > 1 ? 'errors' : 'error'} listed below the editor and the diagram will render again automatically.</div></div>`;
       stat.innerHTML = `<span class="err">✗ ${ne} error${ne > 1 ? 's' : ''}</span> — fix them to render`;
-      publishView({ type: 'error', heading: `${ne} error${ne > 1 ? 's' : ''} — diagram not rendered` });
+      publishView({ type: 'error', heading: `${ne} error${ne > 1 ? 's' : ''} — diagram not rendered`, status: stat.innerHTML });
     }
   } catch (e) {
     preview.classList.add('error');
@@ -233,7 +234,7 @@ async function run() {
       + `<div class="err-h">Engine error — diagram not rendered</div>`
       + `<div class="err-p">${escapeHtml(e.message)}</div></div>`;
     stat.innerHTML = `<span class="err">engine error: ${escapeHtml(e.message)}</span>`;
-    publishView({ type: 'error', heading: 'Engine error — diagram not rendered' });
+    publishView({ type: 'error', heading: 'Engine error — diagram not rendered', status: stat.innerHTML });
   } finally {
     running = false;
     preview.classList.remove('stale');

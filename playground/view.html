@@ -5,13 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>cairn — diagram</title>
 <style>
-  :root { --fg:#17202c; --sub:#5b6b7c; --warn:#b45309; }
+  /* Diagram-side colours, and the playground's own status colours — its panel
+     chrome stays dark whatever theme the diagram itself uses, so the same line
+     reads the same in both places. */
+  :root { --fg:#17202c; --sub:#5b6b7c;
+          --panel:#252a31; --border:#3a4149; --dim:#8b97a3;
+          --err:#ff7b72; --warn:#e3b341; --ok:#7ee787; }
   html, body { margin:0; height:100%; }
-  body { background:#ffffff; color:var(--fg);
+  /* Column: the drawing takes the height that is left, the status line keeps
+     its own at the bottom of the window rather than after the diagram. */
+  body { display:flex; flex-direction:column; background:#ffffff; color:var(--fg);
          font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  #view { flex:1; min-height:0; overflow:auto; display:flex; align-items:flex-start; }
   /* Fit a wide diagram to the window and let the browser's own zoom take it
      from there — that is the whole point of a tab of its own. */
-  #view { min-height:100%; display:flex; align-items:flex-start; }
   #view svg { max-width:100%; height:auto; }
   /* Same signal the playground's preview uses while a compile is in flight. */
   #view.stale svg { opacity:.45; transition:opacity .1s; }
@@ -20,6 +27,10 @@
   .panel h1 { font-size:1rem; margin:.4rem 0; color:var(--fg); }
   .panel p { margin:.2rem 0; }
   .panel.warn h1 { color:var(--warn); }
+  #status { flex:none; padding:6px 14px; background:var(--panel);
+            border-top:1px solid var(--border); font-size:12px; color:var(--dim);
+            display:flex; gap:16px; align-items:center; }
+  #status .ok { color:var(--ok); } #status .err { color:var(--err); }
 </style>
 </head>
 <body>
@@ -30,6 +41,7 @@
     <p>Keep the playground tab open — this view follows its edits.</p>
   </div>
 </div>
+<div id="status"><span id="stat">waiting for the playground…</span></div>
 <script type="module">
 // A read-only window onto the playground's current diagram.
 //
@@ -43,6 +55,12 @@
 // reloads it, and several of these tabs can watch one playground at once.
 const channel = new BroadcastChannel('cairn-view');
 const view = document.getElementById('view');
+const stat = document.getElementById('stat');
+
+// The playground composes this line once and sends the finished markup, so the
+// dimensions, layout time, warning count and engine version cannot drift
+// between the two panes — there is only ever one formatter.
+const setStatus = html => { if (html) stat.innerHTML = html; };
 
 const panel = (icon, heading, detail, cls = '') =>
   `<div class="panel ${cls}"><div class="icon">${icon}</div>`
@@ -56,6 +74,7 @@ channel.onmessage = ({ data }) => {
   view.classList.remove('stale');
 
   if (data.type === 'svg') {
+    setStatus(data.status);
     view.innerHTML = data.svg;
     // Match the page to the diagram's own canvas colour, so a dark theme does
     // not sit in a white margin.
@@ -65,6 +84,7 @@ channel.onmessage = ({ data }) => {
   }
 
   if (data.type === 'error') {
+    setStatus(data.status);
     // The playground clears its preview on a DSL error rather than showing a
     // stale drawing; this view says the same thing for the same reason.
     document.body.style.background = '#fff5f5';
@@ -74,6 +94,7 @@ channel.onmessage = ({ data }) => {
   }
 
   if (data.type === 'bye') {
+    stat.textContent = 'playground closed — this view is no longer following it';
     document.body.style.background = '#ffffff';
     view.innerHTML = panel('🔌', 'The playground tab was closed',
       'Reopen the playground and click “Open in new tab” again.');
