@@ -746,14 +746,31 @@ never forced into an unreadable route, and never silently ignored.
 **A side cairn derived is not a pin.** Flows into a `queue` are given a left
 port and flows out of one a right port before layout (§16, `hubFlowSides`) —
 left and right in *every* disposition, because the glyph is a cylinder lying on
-its side and a terminal anywhere but its two caps reads as missing the box. That
-is the whole of it: the terminal is not marked `pinned`, so every pass above may still
-move it and `attachAway` still counts it in both the layout's own tally and
-`scripts/sweep.ts`. Exempting it would let a side *cairn itself* chose disappear
+its side and a terminal anywhere but its two caps reads as missing the box.
+
+The terminal is **not** marked `pinned`. It is marked `hubSided`, which buys one
+thing and refuses another. It buys standing down from the *route repair*:
+`optimiseRoutes` was moving a queue's second consumer off the cap elk gave it
+onto the cylinder's flat bottom to save a turn, and a cap the reader is meant to
+read as a grouping is worth more than that turn. It refuses the pin's exemption
+from `attachAway` — the §4c re-side, the re-aim and the unweave all still own a
+derived terminal, and both the layout's own tally and `scripts/sweep.ts` still
+count it. Exempting it would let a side *cairn itself* chose disappear
 from the gate that measures the defect it may have caused — a guard that stops
-measuring what the invariant measures (§3a). Two consequences follow. An author
-pin always wins, because the derived side is only ever applied to an endpoint no
-pin names. And nothing is reported when a derived side does not survive: there is
+measuring what the invariant measures (§3a). Measured, too: standing the other
+passes down as well sent the corpus `turnHeavy` through its ceiling and
+`attachAway` from 284 to 317, so the route repair is the only one that yields.
+
+Two consequences follow. An author pin always wins, because the derived side is
+only ever applied to an endpoint no pin names — and an endpoint *role*
+(`INDEXER.consumer -> EVENTS`, DSL_SPEC § Positioning controls) is not a
+competing side but a statement about the exchange: it names the cap directly,
+and the flow keeps the direction the author drew it in. Only elk sees the data
+direction, so it can seat a consumer past the queue rather than before it
+(`elkEnds`); the polyline is traversed back the way it was written before any
+geometry pass runs, so the arrowhead is the author's.
+
+And nothing is reported when a derived side does not survive: there is
 no span to report against and nothing was promised, so `W0570` stays what it has
 always been — an author's request the drawing could not honor.
 

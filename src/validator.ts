@@ -39,6 +39,7 @@ export function validate(model: Model): Diagnostic[] {
     ...checkMissingLabels(elements),
     ...checkNesting(elements, view),
     ...checkFlows(model, view),
+    ...checkEndpointRoles(model, view),
     ...checkLogos(elements, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
@@ -177,6 +178,51 @@ function checkNesting(elements: Element[], view: View): Diagnostic[] {
           help: rule.help,
         });
       }
+    }
+  }
+  return diagnostics;
+}
+
+/**
+ * `CAPTURE.producer -> EVENTS` says what this element does with the *queue* at
+ * the other end, so two things have to hold: that other end really is one of the
+ * view's `hubKinds`, and it does not also carry a declared side — a role already
+ * answers which cap the flow touches, and two answers to one question is a
+ * contradiction the author should resolve rather than a precedence rule to
+ * remember (INVARIANTS §17).
+ */
+function checkEndpointRoles(model: Model, view: View): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  const hubKinds = new Set(view.hubKinds ?? []);
+  const isHub = (id: string) => hubKinds.has(model.index.get(id)?.kind ?? "");
+  for (const flow of model.flows) {
+    for (const [role, hubId, hubSide] of [
+      [flow.fromRole, flow.to, flow.toSide],
+      [flow.toRole, flow.from, flow.fromSide],
+    ] as const) {
+      if (!role) continue;
+      if (!model.index.has(hubId)) continue; // E0220 already reports the reference
+      if (!isHub(hubId)) {
+        const kinds = [...hubKinds];
+        diagnostics.push({
+          code: "E0224",
+          severity: "error",
+          message: `\`${role.value}\` needs a ${kinds.join(" or ") || "queue"} at the other end of the flow`,
+          span: role.span,
+          note: `\`${hubId}\` is ${model.index.get(hubId)?.kind ? `a \`${model.index.get(hubId)!.kind}\`` : "not one"}`,
+          help: "a role says what this element does with a queue — between two ordinary elements the arrow already says it",
+        });
+        continue;
+      }
+      if (hubSide)
+        diagnostics.push({
+          code: "E0225",
+          severity: "error",
+          message: `\`${hubId}.${hubSide.value}\` and \`${role.value}\` both decide where this flow meets the queue`,
+          span: hubSide.span,
+          note: "`producer` means the queue's left cap and `consumer` its right",
+          help: "keep the role and drop the side, or keep the side and drop the role",
+        });
     }
   }
   return diagnostics;

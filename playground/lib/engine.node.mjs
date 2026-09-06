@@ -92323,6 +92323,7 @@ function lex(src, diagnostics) {
 
 // src/models/ast.ts
 var ATTACH_SIDES = ["left", "right", "top", "bottom"];
+var ATTACH_ROLES = ["producer", "consumer"];
 var defaultDiagramStyle = () => ({
   crossingHops: true,
   compact: false,
@@ -93055,56 +93056,60 @@ function parseElement(p, sourceToken, parent) {
   }
   (parent ? parent.children : model.elements).push(element);
 }
-function splitEndpoint(token, flow, role) {
+function splitEndpoint(token, flow, end) {
   const dot = token.text.lastIndexOf(".");
   if (dot <= 0 || dot === token.text.length - 1) return null;
   const base = token.text.slice(0, dot);
-  const side = token.text.slice(dot + 1);
+  const suffix = token.text.slice(dot + 1);
   return {
     flow,
-    role,
+    end,
     raw: token.text,
     rawSpan: token.span,
     base,
     baseSpan: { line: token.span.line, col: token.span.col, len: base.length },
-    side,
-    sideSpan: { line: token.span.line, col: token.span.col + dot + 1, len: side.length }
+    suffix,
+    suffixSpan: { line: token.span.line, col: token.span.col + dot + 1, len: suffix.length }
   };
 }
-function resolveAttachSides(splits, model, diagnostics) {
+function resolveEndpointSuffixes(splits, model, diagnostics) {
   for (const split of splits) {
+    const isSide = ATTACH_SIDES.includes(split.suffix);
+    const isRole = ATTACH_ROLES.includes(split.suffix);
     if (model.index.has(split.raw)) {
-      if (ATTACH_SIDES.includes(split.side))
+      if (isSide || isRole)
         diagnostics.push({
           code: "W0571",
           severity: "warning",
-          message: `\`${split.raw}\` is a declared element, so \`.${split.side}\` is not read as an attachment side`,
+          message: `\`${split.raw}\` is a declared element, so \`.${split.suffix}\` is not read as ${isSide ? "an attachment side" : "a role"}`,
           span: split.rawSpan,
           note: "a declared id always wins over the `ID.side` reading",
-          help: `rename the element if you meant to attach the flow to the ${split.side} side of \`${split.base}\``
+          help: isSide ? `rename the element if you meant to attach the flow to the ${split.suffix} side of \`${split.base}\`` : `rename the element if you meant \`${split.base}\` to be the ${split.suffix} of the queue at the other end`
         });
       continue;
     }
     if (!model.index.has(split.base)) continue;
-    const known = ATTACH_SIDES.includes(split.side);
-    if (!known)
+    if (!isSide && !isRole)
       diagnostics.push({
         code: "E0223",
         severity: "error",
-        message: `unknown attachment side \`${split.side}\``,
-        span: split.sideSpan,
-        note: "sides are named as the diagram is read",
-        help: "use `left`, `right`, `top` or `bottom`, e.g. `APP.right -> DB.left`"
+        message: `unknown endpoint suffix \`${split.suffix}\``,
+        span: split.suffixSpan,
+        note: "an endpoint names either the side it attaches to, as the diagram is read, or its role towards a queue",
+        help: "use `left`, `right`, `top` or `bottom` \u2014 `APP.right -> DB.left` \u2014 or `producer` / `consumer`, e.g. `CAPTURE.producer -> EVENTS`"
       });
-    const side = known ? { value: split.side, span: split.sideSpan } : void 0;
-    if (split.role === "from") {
+    const side = isSide ? { value: split.suffix, span: split.suffixSpan } : void 0;
+    const role = isRole ? { value: split.suffix, span: split.suffixSpan } : void 0;
+    if (split.end === "from") {
       split.flow.from = split.base;
       split.flow.fromSpan = split.baseSpan;
       split.flow.fromSide = side;
+      split.flow.fromRole = role;
     } else {
       split.flow.to = split.base;
       split.flow.toSpan = split.baseSpan;
       split.flow.toSide = side;
+      split.flow.toRole = role;
     }
   }
 }
@@ -93381,7 +93386,7 @@ function parse(src) {
   for (const [id, element] of indexElementsById(model.elements)) {
     if (!model.index.has(id)) model.index.set(id, element);
   }
-  resolveAttachSides(endpointSplits, model, diagnostics);
+  resolveEndpointSuffixes(endpointSplits, model, diagnostics);
   return { model, diags: diagnostics };
 }
 var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
@@ -94322,6 +94327,7 @@ function validate(model) {
     ...checkMissingLabels(elements),
     ...checkNesting(elements, view),
     ...checkFlows(model, view),
+    ...checkEndpointRoles(model, view),
     ...checkLogos(elements, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
@@ -94436,6 +94442,42 @@ function checkNesting(elements, view) {
           help: rule.help
         });
       }
+    }
+  }
+  return diagnostics;
+}
+function checkEndpointRoles(model, view) {
+  const diagnostics = [];
+  const hubKinds = new Set(view.hubKinds ?? []);
+  const isHub = (id) => hubKinds.has(model.index.get(id)?.kind ?? "");
+  for (const flow of model.flows) {
+    for (const [role, hubId, hubSide] of [
+      [flow.fromRole, flow.to, flow.toSide],
+      [flow.toRole, flow.from, flow.fromSide]
+    ]) {
+      if (!role) continue;
+      if (!model.index.has(hubId)) continue;
+      if (!isHub(hubId)) {
+        const kinds = [...hubKinds];
+        diagnostics.push({
+          code: "E0224",
+          severity: "error",
+          message: `\`${role.value}\` needs a ${kinds.join(" or ") || "queue"} at the other end of the flow`,
+          span: role.span,
+          note: `\`${hubId}\` is ${model.index.get(hubId)?.kind ? `a \`${model.index.get(hubId).kind}\`` : "not one"}`,
+          help: "a role says what this element does with a queue \u2014 between two ordinary elements the arrow already says it"
+        });
+        continue;
+      }
+      if (hubSide)
+        diagnostics.push({
+          code: "E0225",
+          severity: "error",
+          message: `\`${hubId}.${hubSide.value}\` and \`${role.value}\` both decide where this flow meets the queue`,
+          span: hubSide.span,
+          note: "`producer` means the queue's left cap and `consumer` its right",
+          help: "keep the role and drop the side, or keep the side and drop the role"
+        });
     }
   }
   return diagnostics;
@@ -96347,6 +96389,7 @@ function ladderVerdict(before, after) {
 }
 
 // src/edge-tidy.ts
+var sideFixed = (edge, end) => !!(edge.pinned?.[end] || edge.hubSided?.[end]);
 var ORTHOGONAL_EPSILON = 0.5;
 var MIN_HUG_SPAN = 24;
 var CHANNEL_INSET = 24;
@@ -98740,8 +98783,8 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
       const subject = { ends, edge };
       const out = [];
       const seen = /* @__PURE__ */ new Set();
-      const aSides = edge.pinned?.start ? [ends[0].side] : SIDES;
-      const bSides = edge.pinned?.end ? [ends[1].side] : SIDES;
+      const aSides = sideFixed(edge, "start") ? [ends[0].side] : SIDES;
+      const bSides = sideFixed(edge, "end") ? [ends[1].side] : SIDES;
       for (const aSide of aSides)
         for (const bSide of bSides) {
           const sides = { a: aSide, b: bSide };
@@ -99468,13 +99511,15 @@ function readingSlots(model, view, ingressExternal) {
   }
   return slotOf;
 }
+function elkEnds(flow) {
+  return laidOutReversed(flow) ? { sources: [flow.to], targets: [flow.from] } : { sources: [flow.from], targets: [flow.to] };
+}
 function elkFlowEdge(flow, ctx, labelWrap) {
   const { compact, numbered, fonts, businessObjectName } = ctx;
   if (numbered)
     return {
       id: flow.id,
-      sources: [flow.from],
-      targets: [flow.to],
+      ...elkEnds(flow),
       labels: [
         {
           text: String(parseInt(flow.id.slice(1), 10)),
@@ -99499,8 +99544,7 @@ function elkFlowEdge(flow, ctx, labelWrap) {
   });
   return {
     id: flow.id,
-    sources: [flow.from],
-    targets: [flow.to],
+    ...elkEnds(flow),
     labels: text || chips.length ? [{ text, ...labelBox }] : []
   };
 }
@@ -99510,6 +99554,17 @@ var SIDE_TO_ELK = {
   top: "NORTH",
   bottom: "SOUTH"
 };
+function laidOutReversed(flow) {
+  return flow.fromRole?.value === "consumer" || flow.toRole?.value === "producer";
+}
+function roleCap(flow) {
+  const declared = flow.fromRole ?? flow.toRole;
+  if (!declared) return null;
+  return {
+    hub: flow.fromRole ? "to" : "from",
+    cap: declared.value === "producer" ? "left" : "right"
+  };
+}
 function hubFlowSides(model, view) {
   const derived = /* @__PURE__ */ new Map();
   const hubKinds = new Set(view.hubKinds ?? []);
@@ -99520,8 +99575,10 @@ function hubFlowSides(model, view) {
   if (!hubs.size) return derived;
   for (const flow of model.flows) {
     const sides = {};
-    if (hubs.has(flow.to) && !flow.toSide) sides.to = "left";
-    if (hubs.has(flow.from) && !flow.fromSide) sides.from = "right";
+    const role = roleCap(flow);
+    if (hubs.has(flow.to) && !flow.toSide) sides.to = role?.hub === "to" ? role.cap : "left";
+    if (hubs.has(flow.from) && !flow.fromSide)
+      sides.from = role?.hub === "from" ? role.cap : "right";
     if (sides.to || sides.from) derived.set(flow.id, sides);
   }
   return derived;
@@ -99547,7 +99604,7 @@ function applyDeclaredPorts(graph, model, derived) {
       if (!declared) continue;
       const elkNode = elkById.get(nodeId);
       if (!elkNode) continue;
-      const portId = `${flow.id}#${role}`;
+      const portId = `${flow.id}#${role === "out" !== laidOutReversed(flow) ? "out" : "in"}`;
       elkNode.ports = [
         ...elkNode.ports ?? [],
         {
@@ -99558,7 +99615,7 @@ function applyDeclaredPorts(graph, model, derived) {
         }
       ];
       elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
-      if (role === "out") elkEdge.sources = [portId];
+      if (role === "out" !== laidOutReversed(flow)) elkEdge.sources = [portId];
       else elkEdge.targets = [portId];
     }
   }
@@ -99899,6 +99956,18 @@ async function withHubPortFallback(elk, makeGraph, direction, options) {
     throw error;
   }
 }
+function markDeclaredTerminals(edges, model, view) {
+  const pinnedFlows = new Map(
+    model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }])
+  );
+  const hubSides = hubFlowSides(model, view);
+  for (const edge of edges) {
+    const pinned = pinnedFlows.get(edge.id);
+    if (pinned) edge.pinned = { ...pinned };
+    const hub = hubSides.get(edge.id);
+    if (hub) edge.hubSided = { start: !!hub.from, end: !!hub.to };
+  }
+}
 async function layout(model, view) {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -99938,13 +100007,9 @@ async function layout(model, view) {
     const nodes = walkedNodes.map((walked) => walked.node);
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
     const edges = collectSceneEdges(result2, origins, numbered, edgeFontSize);
-    const pinnedFlows = new Map(
-      model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }])
-    );
-    for (const edge of edges) {
-      const pinned = pinnedFlows.get(edge.id);
-      if (pinned) edge.pinned = { ...pinned };
-    }
+    const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
+    for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
+    markDeclaredTerminals(edges, model, view);
     const scene = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),

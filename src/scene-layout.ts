@@ -104,6 +104,20 @@ export interface SceneEdge {
    */
   pinned?: { start?: boolean; end?: boolean };
   /**
+   * Which of this flow's terminals took a side *this stage* chose rather than
+   * the author — the queue caps of `hubFlowSides`. Re-siding stands down for it
+   * exactly as it does for a pin, because a side the reader is meant to read as
+   * a grouping is worth as much as one the author asked for; elk had already put
+   * both consumers on the right cap of a queue and the re-aim was moving the
+   * second one to the bottom.
+   *
+   * What it deliberately does **not** buy is the pin's exemption from
+   * `attachAway`, in the layout's own count or in `scripts/sweep.ts`: a side
+   * cairn chose must stay measurable by the gate that judges it (invariant §3a).
+   * Geometry only, like `pinned` — which end, never which kind (§16).
+   */
+  hubSided?: { start?: boolean; end?: boolean };
+  /**
    * The route this flow had before `optimiseRoutes` moved it. Kept so the
    * renderer can undo a repair that cost some label its seat — that verdict is
    * only reachable after label settling, which happens during rendering.
@@ -967,14 +981,20 @@ function readingSlots(model: Model, view: View, ingressExternal: Set<string>): M
   return slotOf;
 }
 
+/** The flow's ends as elk needs them: data direction, which a role may reverse. */
+function elkEnds(flow: Model["flows"][number]): { sources: string[]; targets: string[] } {
+  return laidOutReversed(flow)
+    ? { sources: [flow.to], targets: [flow.from] }
+    : { sources: [flow.from], targets: [flow.to] };
+}
+
 /** The elk edge for one flow, with the label it carries already measured. */
 function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, labelWrap?: number) {
   const { compact, numbered, fonts, businessObjectName } = ctx;
   if (numbered)
     return {
       id: flow.id,
-      sources: [flow.from],
-      targets: [flow.to],
+      ...elkEnds(flow),
       labels: [
         {
           text: String(parseInt(flow.id.slice(1), 10)),
@@ -999,8 +1019,7 @@ function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, labelWrap?
   });
   return {
     id: flow.id,
-    sources: [flow.from],
-    targets: [flow.to],
+    ...elkEnds(flow),
     labels: text || chips.length ? [{ text, ...labelBox }] : [],
   };
 }
@@ -1034,6 +1053,11 @@ interface DerivedSides {
  * graphs carrying WEST/EAST ports, which is what `withHubPortFallback` climbs
  * down from.
  *
+ * Which cap a flow gets is read from the arrow: into the queue is a producer,
+ * out of it a consumer. An endpoint *role* (`INDEXER.consumer -> EVENTS`) needs
+ * nothing here — `orientRoleFlows` has already turned that dependency into the
+ * exchange it stands for, so the arrow tells the truth by the time this runs.
+ *
  * Three limits keep this a layout hint rather than a promise:
  *
  * - **The author outranks it.** An endpoint carrying an `ID.side` pin is left
@@ -1046,6 +1070,30 @@ interface DerivedSides {
  * - **It is opt-in per view.** A view without `hubKinds`, or a diagram without a
  *   hub element, produces an empty map and builds the graph it always built.
  */
+/**
+ * Does this flow have to be handed to elk the other way round?
+ *
+ * A role names what the annotated element does with the queue at the other end,
+ * and both roles are *written* pointing at the queue — `A.producer -> Q` and
+ * `B.consumer -> Q` — because that is how a reader looks at a bus: everything
+ * touches it. Only elk needs the data direction, to seat a consumer *after* the
+ * queue instead of before it; the drawn polyline is flipped back afterwards, so
+ * the arrowhead lands where the author put it (`sceneFromResult`).
+ */
+function laidOutReversed(flow: Model["flows"][number]): boolean {
+  return flow.fromRole?.value === "consumer" || flow.toRole?.value === "producer";
+}
+
+/** The queue cap a role asks for: a producer's flow meets the left one, a consumer's the right. */
+function roleCap(flow: Model["flows"][number]): { hub: "from" | "to"; cap: AttachSide } | null {
+  const declared = flow.fromRole ?? flow.toRole;
+  if (!declared) return null;
+  return {
+    hub: flow.fromRole ? "to" : "from",
+    cap: declared.value === "producer" ? "left" : "right",
+  };
+}
+
 function hubFlowSides(model: Model, view: View): Map<string, DerivedSides> {
   const derived = new Map<string, DerivedSides>();
   const hubKinds = new Set(view.hubKinds ?? []);
@@ -1058,8 +1106,12 @@ function hubFlowSides(model: Model, view: View): Map<string, DerivedSides> {
   if (!hubs.size) return derived;
   for (const flow of model.flows) {
     const sides: DerivedSides = {};
-    if (hubs.has(flow.to) && !flow.toSide) sides.to = "left";
-    if (hubs.has(flow.from) && !flow.fromSide) sides.from = "right";
+    // A role decides the cap outright; without one the arrow does — into the
+    // queue is a producer, out of it a consumer.
+    const role = roleCap(flow);
+    if (hubs.has(flow.to) && !flow.toSide) sides.to = role?.hub === "to" ? role.cap : "left";
+    if (hubs.has(flow.from) && !flow.fromSide)
+      sides.from = role?.hub === "from" ? role.cap : "right";
     if (sides.to || sides.from) derived.set(flow.id, sides);
   }
   return derived;
@@ -1108,7 +1160,9 @@ function applyDeclaredPorts(
       if (!declared) continue;
       const elkNode = elkById.get(nodeId);
       if (!elkNode) continue;
-      const portId = `${flow.id}#${role}`;
+      // `#out` / `#in` name the *elk* ends, which a role may have swapped
+      // (`elkEnds`), so a reversed flow's source port is its authored target's.
+      const portId = `${flow.id}#${(role === "out") !== laidOutReversed(flow) ? "out" : "in"}`;
       elkNode.ports = [
         ...(elkNode.ports ?? []),
         {
@@ -1119,7 +1173,7 @@ function applyDeclaredPorts(
         },
       ];
       elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
-      if (role === "out") elkEdge.sources = [portId];
+      if ((role === "out") !== laidOutReversed(flow)) elkEdge.sources = [portId];
       else elkEdge.targets = [portId];
     }
   }
@@ -1668,6 +1722,28 @@ async function withHubPortFallback(
   }
 }
 
+/**
+ * Before any geometry pass runs: which terminals were *decided* rather than
+ * guessed. `pinned` is the author's own `ID.side`; `hubSided` is the queue cap
+ * `hubFlowSides` chose. The passes read them the same way when they consider
+ * re-siding a terminal and differently when they count defects — see
+ * `SceneEdge.hubSided`.
+ */
+function markDeclaredTerminals(edges: SceneEdge[], model: Model, view: View): void {
+  const pinnedFlows = new Map(
+    model.flows
+      .filter((flow) => flow.fromSide || flow.toSide)
+      .map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }] as const),
+  );
+  const hubSides = hubFlowSides(model, view);
+  for (const edge of edges) {
+    const pinned = pinnedFlows.get(edge.id);
+    if (pinned) edge.pinned = { ...pinned };
+    const hub = hubSides.get(edge.id);
+    if (hub) edge.hubSided = { start: !!hub.from, end: !!hub.to };
+  }
+}
+
 export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -1716,17 +1792,13 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     for (const walked of walkedNodes) origins[walked.id] = { x: walked.x, y: walked.y };
 
     const edges = collectSceneEdges(result, origins, numbered, edgeFontSize);
-    // Before any geometry pass runs: `pinned` is what tells them the terminal
-    // side is the author's, not elk's guess.
-    const pinnedFlows = new Map(
-      model.flows
-        .filter((flow) => flow.fromSide || flow.toSide)
-        .map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }] as const),
-    );
-    for (const edge of edges) {
-      const pinned = pinnedFlows.get(edge.id);
-      if (pinned) edge.pinned = { ...pinned };
-    }
+    // Flip back what `elkEnds` handed elk reversed: the author drew both a
+    // producer's and a consumer's flow *at* the queue, and that is what the
+    // arrowhead has to show. Geometry is untouched — only the direction it is
+    // traversed in.
+    const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
+    for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
+    markDeclaredTerminals(edges, model, view);
 
     const scene: Scene = {
       width: Math.ceil(result.width),

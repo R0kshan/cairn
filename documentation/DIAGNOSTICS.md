@@ -41,7 +41,9 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0210–E0218 | error | Nesting violations, per view (blocks / actors / layers / modules / servers / app-instances / network-zones) |
 | E0220 / E0221 | error | Unknown flow reference / unknown business-object reference |
 | E0222 | error | Business object used outside the logical view (business objects are logical-view only) |
-| E0223 | error | Unknown attachment side on a flow endpoint (`A.middle -> B`) |
+| E0223 | error | Unknown suffix on a flow endpoint — neither a side nor a role (`A.middle -> B`) |
+| E0224 | error | Endpoint role without a queue at the other end of the flow (`A.producer -> B`) |
+| E0225 | error | A flow's queue endpoint carries both a declared side and a role (`A.producer -> Q.right`) |
 | E0240 | error | Infrastructure flow without a protocol (required in this view, even when the label is omitted) |
 | W0501 | warning | No actor declared (logical) |
 | W0502 | warning | Element without a label (its ID is displayed as-is) |
@@ -50,7 +52,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | W0530 | warning | Business object never carried by any flow |
 | W0540 | warning | Application system-to-system flow without a protocol (actor flows exempt) |
 | W0570 | warning | Declared attachment side the layout could not honor |
-| W0571 | warning | Endpoint resolved as a declared id, so its `.side` reading was dropped |
+| W0571 | warning | Endpoint resolved as a declared id, so its `.side` / `.role` reading was dropped |
 
 ## Exit codes
 

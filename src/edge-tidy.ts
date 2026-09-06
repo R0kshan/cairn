@@ -26,6 +26,22 @@ import {
   pathLength as sharedPathLength,
 } from "./geometry.ts";
 
+/**
+ * A terminal the route repair may not re-side: the author pinned it (§17), or
+ * `hubFlowSides` put it on a queue's producer or consumer cap. Both say *where a
+ * flow should be read from*, and `optimiseRoutes` was trading that away — it
+ * moved the second consumer of a queue off the cap elk had given it onto the
+ * cylinder's flat bottom, for one turn.
+ *
+ * Only the repair's candidate generation consults this. The §4c re-side, the
+ * re-aim and the unweave still own a derived terminal, which is what keeps its
+ * `attachAway` count honest (`SceneEdge.hubSided`) — and measured: gating them
+ * too sent the corpus `turnHeavy` through its ceiling. Plain booleans on the
+ * edge, so nothing here learns what a queue is (§16).
+ */
+const sideFixed = (edge: SceneEdge, end: "start" | "end"): boolean =>
+  !!(edge.pinned?.[end] || edge.hubSided?.[end]);
+
 /** A coordinate delta this small is float noise, not a real offset — the
  *  tolerance every axis-alignment / collinearity check in this file uses. */
 const ORTHOGONAL_EPSILON = 0.5;
@@ -4063,11 +4079,13 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
       const subject: RouteSubject = { ends, edge };
       const out: Point[][] = [];
       const seen = new Set<string>();
-      // A pinned end is only ever offered the side it already sits on: the
-      // repair may straighten a pinned flow's body, never move the terminal the
-      // author placed. The free end of a half-pinned flow keeps the full search.
-      const aSides: Side[] = edge.pinned?.start ? [ends[0].side] : SIDES;
-      const bSides: Side[] = edge.pinned?.end ? [ends[1].side] : SIDES;
+      // A fixed end is only ever offered the side it already sits on: the repair
+      // may straighten such a flow's body, never move the terminal that was
+      // decided for it — the author's pin, or the queue cap `hubFlowSides` chose,
+      // which is where the reader looks for the producers and the consumers. The
+      // free end of a half-fixed flow keeps the full search.
+      const aSides: Side[] = sideFixed(edge, "start") ? [ends[0].side] : SIDES;
+      const bSides: Side[] = sideFixed(edge, "end") ? [ends[1].side] : SIDES;
       for (const aSide of aSides)
         for (const bSide of bSides) {
           const sides = { a: aSide, b: bSide };

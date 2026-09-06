@@ -1537,6 +1537,60 @@ test("the derived queue sides stay left and right in a `tall` drawing", async ()
   assert.equal(sideOfTerminal(scene, flowFrom("Q").id, "Q", "start"), "right");
 });
 
+test("`.producer` / `.consumer` put a flow on the queue cap its role names", async () => {
+  // Both flows are drawn *at* the queue, which is how a reader looks at a bus:
+  // everything touches it. The roles say which cap each one meets.
+  const { scene, model } = await build(
+    'diagram application "t"\napplication PROD "Producers" {\n  module A "Producer A"\n}\nqueue QUEUE_NOTIF "Notifications"\napplication CONS "Consumers" {\n  module B "Consumer B"\n}\nA.producer -> QUEUE_NOTIF (AMQP)\nB.consumer -> QUEUE_NOTIF (AMQP)\n',
+  );
+  const published = model.flows.find((flow) => flow.from === "A")!;
+  const consumed = model.flows.find((flow) => flow.from === "B")!;
+  // Neither flow was re-pointed: the arrowheads stay where the author put them.
+  assert.equal(consumed.to, "QUEUE_NOTIF");
+  assert.equal(consumed.fromRole?.value, "consumer");
+  assert.equal(sideOfTerminal(scene, published.id, "QUEUE_NOTIF", "finish"), "left");
+  assert.equal(sideOfTerminal(scene, consumed.id, "QUEUE_NOTIF", "finish"), "right");
+  // And the consumer is seated *past* the queue, so its arrow runs back into the
+  // right cap rather than around the box.
+  const queue = scene.nodes.find((node) => node.id === "QUEUE_NOTIF")!;
+  const consumer = scene.nodes.find((node) => node.id === "B")!;
+  assert.ok(
+    consumer.x > queue.x + queue.width,
+    `consumer at x=${consumer.x} should sit past the queue ending at x=${queue.x + queue.width}`,
+  );
+});
+
+test("a role reads the same written on either endpoint", async () => {
+  // `Q -> B.consumer` draws the delivery, `B.consumer -> Q` draws the
+  // dependency. Different arrows, same cap.
+  for (const source of [
+    'diagram application "t"\napplication CONS "Consumers" {\n  module B "Consumer B"\n}\nqueue Q "Notifications"\nQ -> B.consumer (AMQP)\n',
+    'diagram application "t"\napplication CONS "Consumers" {\n  module B "Consumer B"\n}\nqueue Q "Notifications"\nB.consumer -> Q (AMQP)\n',
+  ]) {
+    const { scene, model } = await build(source);
+    const flow = model.flows[0];
+    const end = flow.from === "Q" ? "start" : "finish";
+    assert.equal(sideOfTerminal(scene, flow.id, "Q", end), "right");
+  }
+});
+
+test("a role needs a queue at the other end (E0224), and never a side with it (E0225)", () => {
+  const noQueue = check(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nA.producer -> B (API_REST, JSON)\n',
+  );
+  assert.ok(noQueue.codes.includes("E0224"));
+
+  const both = check(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n}\nqueue Q "Notifications"\nA.producer -> Q.right (AMQP)\n',
+  );
+  assert.ok(both.codes.includes("E0225"));
+
+  const unknown = check(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n}\nqueue Q "Notifications"\nA.publishes -> Q (AMQP)\n',
+  );
+  assert.ok(unknown.codes.includes("E0223"));
+});
+
 test("a derived queue side yields to an author pin, and is never pinned itself", async () => {
   const { scene, model } = await build(
     'diagram application "t"\napplication APP "App" {\n  module P1 "Producer one"\n  module C1 "Consumer one"\n}\nqueue Q "Events"\nP1 -> Q.bottom (MQ, JSON)\nQ -> C1 (MQ, JSON)\n',

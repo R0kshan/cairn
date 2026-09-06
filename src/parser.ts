@@ -16,10 +16,11 @@ import type {
   StyleProps,
   DiagramStyle,
   Span,
+  AttachRole,
   AttachSide,
 } from "./models/ast.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
-import { defaultDiagramStyle, ATTACH_SIDES } from "./models/ast.ts";
+import { defaultDiagramStyle, ATTACH_ROLES, ATTACH_SIDES } from "./models/ast.ts";
 import { themeNames } from "./themes.ts";
 import { indexElementsById } from "./element-tree.ts";
 
@@ -172,86 +173,96 @@ function parseElement(p: Parser, sourceToken: Token, parent: Element | null): vo
 }
 
 /**
- * An endpoint written `ID.side` — `.` is a legal id character, so the split is
- * only a *candidate* here: `resolveAttachSides` decides against `model.index`
- * whether the whole text is an id or an id plus an attachment side.
+ * An endpoint written `ID.suffix` — `.` is a legal id character, so the split is
+ * only a *candidate* here: `resolveEndpointSuffixes` decides against
+ * `model.index` whether the whole text is an id, or an id plus an attachment
+ * side (`APP.right`) or a role (`CAPTURE.producer`).
  */
 interface EndpointSplit {
   flow: Flow;
-  role: "from" | "to";
+  end: "from" | "to";
   raw: string;
   rawSpan: Span;
   base: string;
   baseSpan: Span;
-  side: string;
-  sideSpan: Span;
+  suffix: string;
+  suffixSpan: Span;
 }
 
 /** Splits `ID.suffix` on the last `.`; null when there is no dot to split on. */
-function splitEndpoint(token: Token, flow: Flow, role: "from" | "to"): EndpointSplit | null {
+function splitEndpoint(token: Token, flow: Flow, end: "from" | "to"): EndpointSplit | null {
   const dot = token.text.lastIndexOf(".");
   if (dot <= 0 || dot === token.text.length - 1) return null;
   const base = token.text.slice(0, dot);
-  const side = token.text.slice(dot + 1);
+  const suffix = token.text.slice(dot + 1);
   return {
     flow,
-    role,
+    end,
     raw: token.text,
     rawSpan: token.span,
     base,
     baseSpan: { line: token.span.line, col: token.span.col, len: base.length },
-    side,
-    sideSpan: { line: token.span.line, col: token.span.col + dot + 1, len: side.length },
+    suffix,
+    suffixSpan: { line: token.span.line, col: token.span.col + dot + 1, len: suffix.length },
   };
 }
 
 /**
- * Decides, per endpoint written with a dot, whether it names an element or an
- * element plus an attachment side. A declared id always wins — an element may
- * legitimately be called `API.right` — so the side reading only applies when the
- * whole text is unknown and the base is known.
+ * Decides, per endpoint written with a dot, whether it names an element, an
+ * element plus an attachment side (`APP.right`), or an element plus a role
+ * towards the queue at the other end (`CAPTURE.producer`). A declared id always
+ * wins — an element may legitimately be called `API.right` — so the suffix
+ * reading only applies when the whole text is unknown and the base is known.
  */
-function resolveAttachSides(
+function resolveEndpointSuffixes(
   splits: EndpointSplit[],
   model: Model,
   diagnostics: Diagnostic[],
 ): void {
   for (const split of splits) {
+    const isSide = ATTACH_SIDES.includes(split.suffix as AttachSide);
+    const isRole = ATTACH_ROLES.includes(split.suffix as AttachRole);
     if (model.index.has(split.raw)) {
-      if (ATTACH_SIDES.includes(split.side as AttachSide))
+      if (isSide || isRole)
         diagnostics.push({
           code: "W0571",
           severity: "warning",
-          message: `\`${split.raw}\` is a declared element, so \`.${split.side}\` is not read as an attachment side`,
+          message: `\`${split.raw}\` is a declared element, so \`.${split.suffix}\` is not read as ${
+            isSide ? "an attachment side" : "a role"
+          }`,
           span: split.rawSpan,
           note: "a declared id always wins over the `ID.side` reading",
-          help: `rename the element if you meant to attach the flow to the ${split.side} side of \`${split.base}\``,
+          help: isSide
+            ? `rename the element if you meant to attach the flow to the ${split.suffix} side of \`${split.base}\``
+            : `rename the element if you meant \`${split.base}\` to be the ${split.suffix} of the queue at the other end`,
         });
       continue;
     }
     if (!model.index.has(split.base)) continue; // unknown either way — E0220 reports it
-    const known = ATTACH_SIDES.includes(split.side as AttachSide);
-    if (!known)
+    if (!isSide && !isRole)
       diagnostics.push({
         code: "E0223",
         severity: "error",
-        message: `unknown attachment side \`${split.side}\``,
-        span: split.sideSpan,
-        note: "sides are named as the diagram is read",
-        help: "use `left`, `right`, `top` or `bottom`, e.g. `APP.right -> DB.left`",
+        message: `unknown endpoint suffix \`${split.suffix}\``,
+        span: split.suffixSpan,
+        note: "an endpoint names either the side it attaches to, as the diagram is read, or its role towards a queue",
+        help: "use `left`, `right`, `top` or `bottom` — `APP.right -> DB.left` — or `producer` / `consumer`, e.g. `CAPTURE.producer -> EVENTS`",
       });
-    // The endpoint is rebound to the base either way: with an unknown side the
+    // The endpoint is rebound to the base either way: with an unknown suffix the
     // element is still identified, so E0223 reports the real problem alone
     // instead of trailing an `unknown reference` for the same text.
-    const side = known ? { value: split.side as AttachSide, span: split.sideSpan } : undefined;
-    if (split.role === "from") {
+    const side = isSide ? { value: split.suffix as AttachSide, span: split.suffixSpan } : undefined;
+    const role = isRole ? { value: split.suffix as AttachRole, span: split.suffixSpan } : undefined;
+    if (split.end === "from") {
       split.flow.from = split.base;
       split.flow.fromSpan = split.baseSpan;
       split.flow.fromSide = side;
+      split.flow.fromRole = role;
     } else {
       split.flow.to = split.base;
       split.flow.toSpan = split.baseSpan;
       split.flow.toSide = side;
+      split.flow.toRole = role;
     }
   }
 }
@@ -575,7 +586,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   }
   // Needs the finished index: an endpoint may be written before the element it
   // names, and `ID.side` is only a side when `ID.side` is not itself an element.
-  resolveAttachSides(endpointSplits, model, diagnostics);
+  resolveEndpointSuffixes(endpointSplits, model, diagnostics);
 
   return { model, diags: diagnostics };
 }

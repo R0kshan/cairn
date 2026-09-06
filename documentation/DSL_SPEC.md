@@ -434,7 +434,8 @@ pinned ends where the author put them.
 **A queue's flows are sided for you.** One placement decision needs no control
 at all: a `queue` is a hand-off between two halves of a drawing, so everything
 published *into* one attaches on its **left** side and everything read *out of*
-one leaves on its **right** side. Left and right in every disposition, including
+one leaves on its **right** side — the arrow direction is what says which,
+unless a role says so instead (below). Left and right in every disposition, including
 `tall` and `page`: a queue is drawn as a cylinder lying on its side, and its
 mouth is the left and right cap, so a flow touching the flat top reads as
 missing the box even where the drawing itself runs downward. It applies in the
@@ -457,6 +458,40 @@ passes attach it on the near side instead. Nothing is reported when that happens
 — you declared nothing, so nothing was dropped. Pin the endpoint by hand if you
 want the side regardless.
 
+**`ID.producer` / `ID.consumer` — which side of the exchange this element is
+on.** Written in the same slot as a side pin, on the element *opposite* the
+queue, and it names a relationship rather than a geometry: `producer` puts the
+flow on the queue's left cap, `consumer` on its right.
+
+```cairn
+CAPTURE.producer -> QUEUE_NOTIF (AMQP)
+INDEXER.consumer -> QUEUE_NOTIF (AMQP)
+```
+
+Both arrows point **at** the queue, which is how a reader looks at a bus:
+everything touches it. The role is what separates the two sides of the exchange,
+and the drawing follows — the producer arrives on the left cap, the consumer is
+seated past the queue and its arrow runs back into the right cap. What you wrote
+is what is drawn: the arrowhead stays on the queue for both.
+
+Roles are optional. Writing the arrow the way the data runs —
+`QUEUE_NOTIF -> INDEXER` — needs no role at all and lands the flow on the same
+cap; the role exists for diagrams drawn as *dependencies*, where every arrow
+points at the thing it talks to and direction alone cannot say who publishes and
+who reads. A role may also be written on either endpoint:
+`QUEUE_NOTIF -> INDEXER.consumer` is the delivery drawn out of the queue, and it
+meets the same right cap.
+
+The flow matrix exports what you wrote, so a consumer drawn at the queue is
+tabulated `INDEXER → QUEUE_NOTIF`. If the table matters more than the picture,
+draw that flow the way the data runs.
+
+Three rules bound it. The other end must be a queue (**E0224**) — between two
+ordinary elements the arrow already says everything a role would. The queue end
+must not also carry a side (**E0225**): `producer` *means* the left cap, so a
+side there is a second answer to a settled question. And an unknown suffix is
+**E0223**, the same error a misspelt side gets.
+
 **Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
 `..>` dotted. Whitespace before the arrow is required, as it always has been
 (`A->B` does not parse: `-` is a legal id character). Precedence follows the
@@ -469,11 +504,12 @@ ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
 
-Four files in [`examples/placement/`](../examples/placement) show these
+Five files in [`examples/placement/`](../examples/placement) show these
 controls: `baseline.cairn` declares none, `sides.cairn` is the same shape with
 `ID.side` pins on its flows, `reading-order.cairn` sequences two backends along
-the length with `order:`, and `queue-sides.cairn` declares nothing at all — its
-producer and consumer sides are the ones the layout derives.
+the length with `order:`, `queue-sides.cairn` declares nothing at all — its
+producer and consumer sides are the ones the layout derives — and
+`queue-roles.cairn` draws every flow *at* the queue and names the roles instead.
 
 ## 2. Styling — three levels, most specific wins
 

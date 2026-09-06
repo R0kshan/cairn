@@ -64,7 +64,7 @@
 <path d="M 941.1666666666666 161.91161752604162 L 1063.0833333333333 161.91161752604162 L 1063.0833333333333 130.21357672578213 L 1185 130.21357672578213" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 922 175.57828419270828 L 922 198.7703421885025 L 1155 198.7703421885025" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 941.1666666666666 140.57828419270828 L 957 140.57828419270828 L 957 22.040000000000006 L 536 22.040000000000006 L 536 50.040000000000006 L 546 50.040000000000006" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 631.5 69.03999999999999 L 631.5 85.57828419270827 L 800 85.57828419270827" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 680 37.04 L 922 37.04 L 922 79.57828419270827" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 947 98.57828419270828 L 952 98.57828419270828 A 5 5 0 0 1 962 98.57828419270828 L 1031 98.57828419270827 L 1031 62.880243392448804 L 1155 62.880243392448804" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 941.1666666666666 151.24495085937494 L 967 151.24495085937494 L 967 139.24495085937497 L 1041 139.24495085937497 L 1041 75.54691005911548 L 1155 75.54691005911548" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 941.1666666666666 172.57828419270828 L 1143.5833333333333 172.57828419270828 L 1143.5833333333333 145.2135767257821 L 1346 145.2135767257821" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -73,8 +73,8 @@
 <text x="740.5833333333333" y="160.03368836920066" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="1002.125" y="165.16161752604162" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="1038.5" y="202.0203421885025" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="746.5" y="25.290000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="715.75" y="88.82828419270827" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="877.75" y="25.290000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="801" y="40.29" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="1010" y="57.82828419270828" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS, JSON)</text>
 <text x="1098" y="78.79691005911548" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS, JSON)</text>
 <text x="1143.5833333333333" y="159.92975359251363" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
