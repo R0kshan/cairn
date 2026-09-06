@@ -18,7 +18,21 @@
   #zoom-level { width:54px; font-variant-numeric:tabular-nums; }
   #zoom-fit { width:auto; padding:5px 10px; }
   main { flex:1; display:flex; min-height:0; }
-  .left { width:44%; min-width:320px; display:flex; flex-direction:column; border-right:1px solid var(--border); }
+  /* The split is one variable so the drag handle has a single thing to write
+     to, and the stylesheet keeps the default for a browser with no stored one. */
+  :root { --left-w:44%; }
+  .left { width:var(--left-w); min-width:320px; display:flex; flex-direction:column; }
+  /* The handle replaces the border the editor pane used to draw rather than
+     sitting beside it — two lines a pixel apart read as a rendering fault. It is
+     wider than the seam it paints so the pointer has something to catch. */
+  #splitter { flex:none; width:9px; margin-right:-4px; cursor:col-resize;
+              border-left:1px solid var(--border); background:transparent;
+              transition:border-color .12s; touch-action:none; }
+  #splitter:hover, #splitter.dragging { border-left-color:var(--accent); }
+  /* While dragging, everything else stays out of the way: an unguarded drag
+     selects the editor's text and leaves the preview showing a grab cursor. */
+  body.resizing { user-select:none; }
+  body.resizing #preview { cursor:col-resize; }
   #editor { flex:1; resize:none; border:0; outline:0; padding:12px 14px; background:var(--bg); color:var(--text); font:13px/1.55 ui-monospace,Menlo,Consolas,monospace; white-space:pre; tab-size:2; }
   #diags { max-height:32%; overflow:auto; border-top:1px solid var(--border); background:var(--panel); font:12px/1.5 ui-monospace,Menlo,Consolas,monospace; }
   #diags:empty { display:none; }
@@ -59,6 +73,7 @@
   <button id="share">Copy share link</button>
   <button id="embed" title="A live SVG URL served by /api/svg — embed it in a README or docs">Copy embed URL</button>
   <button id="download">Download SVG</button>
+  <button id="open-tab" title="Open the rendered diagram in a new tab — full window, browser zoom, nothing to save">Open in new tab</button>
   <select id="matrix-format" title="Flow-matrix export format — same as `cairn matrix --format`">
     <option value="csv">matrix: csv</option>
     <option value="md">matrix: md</option>
@@ -84,6 +99,7 @@
     <textarea id="editor" spellcheck="false"></textarea>
     <div id="diags"></div>
   </div>
+  <div id="splitter" title="Drag to resize · double-click to reset"></div>
   <div class="right">
     <div id="preview" title="Drag to pan · ctrl/⌘ + wheel to zoom"></div>
     <div id="status"><span id="stat">loading engine…</span></div>
@@ -146,6 +162,12 @@ const note    = document.getElementById('note');
 const themeSel = document.getElementById('theme');
 const zoomLevel = document.getElementById('zoom-level');
 let lastSvg = null, lastMatrix = null, zoom = 1, currentTheme = '';
+// The bus to the `view.html` tabs, and the last thing published on it. Declared
+// here rather than beside its click handler further down because the render
+// loop below publishes to it — a `const` reached forward into is a trap the
+// first person to move the initial `run()` call would spring.
+const viewChannel = new BroadcastChannel('cairn-view');
+let viewState = null;
 
 // Populate the theme dropdown from the engine's theme list.
 for (const t of themeNames) {
@@ -172,6 +194,7 @@ let fitOnNextRender = true;
 
 function schedule() {
   preview.classList.add('stale');
+  viewChannel.postMessage({ type: 'stale' });
   clearTimeout(schedule._t);
   schedule._t = setTimeout(run, 120);
 }
@@ -199,6 +222,8 @@ async function run() {
       // match the preview backdrop to the theme's canvas colour
       const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
       if (bg) preview.style.background = bg;
+      publishView({ type: 'svg', svg: r.svg, bg, status: stat.innerHTML,
+        title: (src.match(/^\s*diagram\s+\w+\s+"([^"]*)"/m) || [])[1] });
       applyZoom();
       // Cleared only here, so a paste that does not compile is fitted once fixed.
       if (fitOnNextRender) {
@@ -216,6 +241,7 @@ async function run() {
         + `<div class="err-h">${ne} error${ne > 1 ? 's' : ''} — diagram not rendered</div>`
         + `<div class="err-p">Fix the ${ne > 1 ? 'errors' : 'error'} listed below the editor and the diagram will render again automatically.</div></div>`;
       stat.innerHTML = `<span class="err">✗ ${ne} error${ne > 1 ? 's' : ''}</span> — fix them to render`;
+      publishView({ type: 'error', heading: `${ne} error${ne > 1 ? 's' : ''} — diagram not rendered`, status: stat.innerHTML });
     }
   } catch (e) {
     preview.classList.add('error');
@@ -223,6 +249,7 @@ async function run() {
       + `<div class="err-h">Engine error — diagram not rendered</div>`
       + `<div class="err-p">${escapeHtml(e.message)}</div></div>`;
     stat.innerHTML = `<span class="err">engine error: ${escapeHtml(e.message)}</span>`;
+    publishView({ type: 'error', heading: 'Engine error — diagram not rendered', status: stat.innerHTML });
   } finally {
     running = false;
     preview.classList.remove('stale');
@@ -285,6 +312,43 @@ document.getElementById('download').addEventListener('click', () => {
   if (!lastSvg) return;
   download(lastSvg, 'image/svg+xml', 'diagram.svg');
 });
+
+// `view.html` in a tab of its own, following this one's edits.
+//
+// A snapshot would have been a `blob:` URL of `lastSvg` and two lines long, but
+// a blob is frozen bytes: nothing can push a new render into one. So the tab
+// gets a real page instead, and every render outcome is broadcast to it — the
+// view mirrors this preview rather than copying it once.
+//
+// The window is opened by name, so clicking again refocuses the tab that is
+// already watching instead of spawning another. `noopener` is deliberately
+// absent: it forces a fresh context every time and would defeat that reuse.
+document.getElementById('open-tab').addEventListener('click', () => {
+  // Synchronous: an `await` before `window.open` spends the user gesture and
+  // the popup blocker takes the tab.
+  if (!window.open('view.html', 'cairn-view')) {
+    flash('the browser blocked the new tab — allow pop-ups for this site');
+    return;
+  }
+  flash('opened — the view follows your edits');
+});
+
+// A view tab announces itself on load, and on every reload. It cannot ask the
+// engine for a render, so whatever this tab last produced is replayed to it.
+viewChannel.onmessage = ({ data }) => {
+  if (data.type === 'hello') publishView();
+};
+
+// The one place that knows what the view should currently show. Called after
+// each render outcome, and again whenever a fresh view tab says hello.
+function publishView(next) {
+  if (next) viewState = next;
+  if (viewState) viewChannel.postMessage(viewState);
+}
+
+// A closing playground leaves its views saying so, rather than showing a
+// drawing that has silently stopped following anything.
+addEventListener('pagehide', () => viewChannel.postMessage({ type: 'bye' }));
 
 const MATRIX_FORMATS = {
   csv: { mime: 'text/csv',         format: matrixCsv },
@@ -424,6 +488,61 @@ document.addEventListener('keydown', e => {
   if (!action) return;
   e.preventDefault();
   ZOOM_ACTIONS[action]();
+});
+
+// --- Resizable split --------------------------------------------------------
+// The editor pane's width, dragged rather than fixed at 44%. It writes the
+// `--left-w` variable the stylesheet reads, so there is one source of truth and
+// the default still stands for anyone who has never touched the handle.
+const splitter = document.getElementById('splitter');
+const mainEl = document.querySelector('main');
+const DEFAULT_SPLIT = '44%';
+// The preview needs room to stay a preview; the editor has its own CSS floor.
+const MIN_LEFT_PX = 320, MIN_RIGHT_PX = 360;
+const SPLIT_KEY = 'cairn:split';
+
+const setSplit = value => document.documentElement.style.setProperty('--left-w', value);
+
+// Stored as a percentage rather than pixels: a split dragged on a wide monitor
+// should still leave both panes usable when the page is reopened on a laptop.
+try {
+  const saved = localStorage.getItem(SPLIT_KEY);
+  if (saved) setSplit(saved);
+} catch { /* private mode, or storage disabled — the default stands */ }
+
+splitter.addEventListener('pointerdown', e => {
+  e.preventDefault();
+  splitter.setPointerCapture(e.pointerId);
+  splitter.classList.add('dragging');
+  document.body.classList.add('resizing');
+});
+
+splitter.addEventListener('pointermove', e => {
+  if (!splitter.hasPointerCapture(e.pointerId)) return;
+  const bounds = mainEl.getBoundingClientRect();
+  // On a narrow window the two floors can overlap; the editor's wins, and the
+  // clamp stays a clamp instead of inverting into an empty range.
+  const max = Math.max(bounds.width - MIN_RIGHT_PX, MIN_LEFT_PX);
+  const px = Math.min(Math.max(e.clientX - bounds.left, MIN_LEFT_PX), max);
+  setSplit((px / bounds.width * 100).toFixed(2) + '%');
+});
+
+function endResize(e) {
+  if (!splitter.hasPointerCapture(e.pointerId)) return;
+  splitter.releasePointerCapture(e.pointerId);
+  splitter.classList.remove('dragging');
+  document.body.classList.remove('resizing');
+  try {
+    localStorage.setItem(SPLIT_KEY, document.documentElement.style.getPropertyValue('--left-w'));
+  } catch { /* nothing to do: the split still holds for this session */ }
+}
+splitter.addEventListener('pointerup', endResize);
+splitter.addEventListener('pointercancel', endResize);
+
+// A dragged split is easy to lose track of; double-click puts it back.
+splitter.addEventListener('dblclick', () => {
+  setSplit(DEFAULT_SPLIT);
+  try { localStorage.removeItem(SPLIT_KEY); } catch { /* see above */ }
 });
 
 // load: shared link > logical starter
