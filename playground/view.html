@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>cairn — diagram</title>
+<style>
+  :root { --fg:#17202c; --sub:#5b6b7c; --warn:#b45309; }
+  html, body { margin:0; height:100%; }
+  body { background:#ffffff; color:var(--fg);
+         font:14px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  /* Fit a wide diagram to the window and let the browser's own zoom take it
+     from there — that is the whole point of a tab of its own. */
+  #view { min-height:100%; display:flex; align-items:flex-start; }
+  #view svg { max-width:100%; height:auto; }
+  /* Same signal the playground's preview uses while a compile is in flight. */
+  #view.stale svg { opacity:.45; transition:opacity .1s; }
+  .panel { margin:auto; padding:2rem; text-align:center; color:var(--sub); }
+  .panel .icon { font-size:1.6rem; }
+  .panel h1 { font-size:1rem; margin:.4rem 0; color:var(--fg); }
+  .panel p { margin:.2rem 0; }
+  .panel.warn h1 { color:var(--warn); }
+</style>
+</head>
+<body>
+<div id="view">
+  <div class="panel">
+    <div class="icon">⏳</div>
+    <h1>Waiting for the playground…</h1>
+    <p>Keep the playground tab open — this view follows its edits.</p>
+  </div>
+</div>
+<script type="module">
+// A read-only window onto the playground's current diagram.
+//
+// The playground renders in its own tab and broadcasts the result; this page
+// only paints what arrives. That split is deliberate: the engine bundle is
+// 1.6 MB and elkjs lays out in-process, so a second copy here would mean a
+// second download and a second layout of the same source on every keystroke.
+//
+// BroadcastChannel rather than `window.opener`/postMessage because it is
+// origin-scoped and relationship-free: this page keeps working when the reader
+// reloads it, and several of these tabs can watch one playground at once.
+const channel = new BroadcastChannel('cairn-view');
+const view = document.getElementById('view');
+
+const panel = (icon, heading, detail, cls = '') =>
+  `<div class="panel ${cls}"><div class="icon">${icon}</div>`
+  + `<h1>${heading}</h1><p>${detail}</p></div>`;
+
+const escapeHtml = s => s.replace(/[&<>"']/g, c =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+
+channel.onmessage = ({ data }) => {
+  if (data.type === 'stale') { view.classList.add('stale'); return; }
+  view.classList.remove('stale');
+
+  if (data.type === 'svg') {
+    view.innerHTML = data.svg;
+    // Match the page to the diagram's own canvas colour, so a dark theme does
+    // not sit in a white margin.
+    document.body.style.background = data.bg || '#ffffff';
+    if (data.title) document.title = `cairn — ${data.title}`;
+    return;
+  }
+
+  if (data.type === 'error') {
+    // The playground clears its preview on a DSL error rather than showing a
+    // stale drawing; this view says the same thing for the same reason.
+    document.body.style.background = '#fff5f5';
+    view.innerHTML = panel('⚠', escapeHtml(data.heading),
+      'Fix it in the playground tab — this view updates by itself.', 'warn');
+    return;
+  }
+
+  if (data.type === 'bye') {
+    document.body.style.background = '#ffffff';
+    view.innerHTML = panel('🔌', 'The playground tab was closed',
+      'Reopen the playground and click “Open in new tab” again.');
+  }
+};
+
+// Ask for the current diagram: this tab may be opened, or reloaded, long after
+// the last render, and the playground only broadcasts when something changes.
+channel.postMessage({ type: 'hello' });
+</script>
+</body>
+</html>
