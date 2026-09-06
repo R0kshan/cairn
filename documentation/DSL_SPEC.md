@@ -251,14 +251,6 @@ techniques* is built from.
 | `idp` | identity provider | no | inside a zone or site (convention, not enforced) | box + badge glyph |
 | `external` | a partner system | no | root | dashed box, exit side |
 
-**`actor` or `device`?** Both sit on the entry side and both originate flows,
-but they answer different questions. An `actor` is a population of people with
-no machine worth naming — *Internet visitors*, *Customers*. A `device` is one
-named client machine — *Branch kiosk*, *User workstations*. Pick whichever the
-diagram is really about; do not draw a flow from an `actor` to a `device`. A
-person operating their own screen is not a technical flow, and **E0240** would
-demand a protocol for it that does not exist.
-
 Flows: **the protocol is mandatory** (**E0240**), the label is optional. The tail
 is one token, `PROTOCOL/PORT`:
 
@@ -322,7 +314,7 @@ Elements in the same partition stay aligned across the reading direction.
 |---|---|
 | `logical` | actor-groups (0) · systems (1) · externals (2) |
 | `application` | actor-groups (0) · systems / applications / queues / datastores (1) · externals (2) |
-| `infrastructure` | actors / devices first · sites / zones in declaration order · externals last |
+| `infrastructure` | devices first · sites / zones in declaration order · externals last |
 
 Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 `-I` infrastructure — which writes a commented starter file for that view.
