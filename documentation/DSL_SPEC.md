@@ -59,7 +59,7 @@ inside an inline block is **E0104**.
 | View | Element kinds | Flow rules |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (**logical-view only** — a `business-object` elsewhere is **E0222**) |
-| `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — C4 container-diagram practice) |
+| `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — a person is not a protocol endpoint) |
 | `infrastructure` | actor, device, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 
 Nesting is checked against the rules each view declares (**E0210–E0218**); a
@@ -146,13 +146,13 @@ legend {
 ### 1.2 Application view — `diagram application`
 
 Which applications exist, what they are built with, and which technical
-exchanges connect them — the C4 container level.
+exchanges connect them.
 
 | Kind | Stands for | Container? | Placement | `logo:` | Drawn as |
 |---|---|---|---|---|---|
 | `actor-group` | a population of roles | yes (holds `actor`) | root | no | dashed box, band 0 |
 | `actor` | one role or person | no | **inside an `actor-group`** (**E0211**) | no | person glyph |
-| `system` | a C4 system boundary grouping applications | yes | root, **never required** | no | box with title, band 1 |
+| `system` | a boundary grouping applications | yes | root, **never required** | no | box with title, band 1 |
 | `application` | one deployable application | yes (holds `module`) | root or inside a `system` | yes | box with title, band 1 |
 | `module` | a component inside an application | no | **inside an `application`** (**E0213**) | yes | plain box |
 | `gateway` | an API gateway or reverse proxy | no | root, or inside a `system` | no | box + gate glyph |
@@ -162,7 +162,7 @@ exchanges connect them — the C4 container level.
 | `datastore` | a database or registry | no | root, or inside a `system` | yes | vertical cylinder |
 | `external` | a third-party system | yes | root | yes | dashed box, band 2 |
 
-`system` is the one kind here that carries no meaning of its own: it draws a C4
+`system` is the one kind here that carries no meaning of its own: it draws a
 boundary around the applications, queues and datastores that belong to one
 system, and the flow matrix then annotates an endpoint with its nearest
 container — a module reads `Name (App)`, a queue sitting directly in the system
@@ -180,7 +180,7 @@ rejected here (**E0222**). An unconnected `module`, `gateway`, `auth`, `idp`,
 `gateway`, `auth` and `idp` are three of the kinds the infrastructure view has,
 drawn identically — same colours, same corner placement, each with its own
 glyph: a gate, a padlock, a badge. An API gateway, an auth middleware and an
-identity provider are containers at the C4 level in their own right, and the
+identity provider are containers in their own right, and the
 glyph is what tells them apart from a plain `application`, and from each other,
 at a glance. Use `idp` for a provider that belongs to the landscape being described —
 a self-hosted Keycloak, the group's SSO — and `external` for one owned by
@@ -267,8 +267,8 @@ port (`(LDAPS)`) fills Protocol and leaves Port empty.
 Layout: this view has no fixed bands for the containers — sites and zones are
 placed in **declaration order** along the reading direction, so the file's order
 is the diagram's order, with `external` pushed to the far side. An unconnected
-`app-instance`, `queue`, `gateway`, `firewall`, `auth` or `idp` warns
-(**W0510**).
+`app-instance`, `device`, `queue`, `gateway`, `firewall`, `auth` or `idp`
+warns (**W0510**).
 
 ```cairn
 diagram infrastructure "Order platform — infrastructure view"
@@ -313,8 +313,17 @@ Elements in the same partition stay aligned across the reading direction.
 | View | Partitions (in reading order) |
 |---|---|
 | `logical` | actor-groups (0) · systems (1) · externals (2) |
-| `application` | actor-groups (0) · systems / applications / queues / datastores (1) · externals (2) |
-| `infrastructure` | devices first · sites / zones in declaration order · externals last |
+| `application` | actor-groups (0) · systems / applications / gateways / auths / idps / queues / datastores (1) · externals (2) |
+| `infrastructure` | actors / devices first · sites / zones in declaration order · externals last |
+
+**Lanes.** Within a partition, the `external` elements of every view are seated
+in one lane across the reading axis — a column under `wide`/`slide`, a row under
+`tall`/`page` — instead of being scattered over the layers the flows happen to
+give them. Two exclusions keep it from fighting the drawing: an external that is
+a container, or one transitively linked to another by a flow, keeps its own
+layer, because a chain has to occupy successive layers by construction. Lanes
+are also skipped entirely under `compact: on`, which is a request to spend
+whitespace on density rather than on alignment.
 
 Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 `-I` infrastructure — which writes a commented starter file for that view.
@@ -509,7 +518,7 @@ Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS 
 | `application` | No. · Source · Destination · Protocol · Flow | `application`, `system` |
 | `logical` | No. · Source · Destination · Flow | `layer`, `system` |
 
-Infrastructure is the reference shape — the deliverable the format was designed around. There the protocol/port pair is split from the infra tail `(HTTPS/443)`, and with `lang: fr` its headers read **N° · Source · Destination · Protocole · Port · Nature du flux**. Application takes the protocol half of the C4 tail `(API_REST, JSON)` and no port; logical flows carry no technical tail at all, so its table is who exchanges what with whom.
+Infrastructure is the reference shape — the deliverable the format was designed around. There the protocol/port pair is split from the infra tail `(HTTPS/443)`, and with `lang: fr` its headers read **N° · Source · Destination · Protocole · Port · Nature du flux**. Application takes the protocol half of the tail `(API_REST, JSON)` and no port; logical flows carry no technical tail at all, so its table is who exchanges what with whom.
 
 `csv`/`md` produce an editable table for the architecture dossier; `svg` a theme-aware, paste-ready table image. Headers follow `style { lang }`. Output defaults to `<file>.flow.<ext>`.
 
