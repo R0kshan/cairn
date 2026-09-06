@@ -93605,6 +93605,7 @@ function applyStyleEntry(entry) {
 // src/views.ts
 var logicalView = {
   name: "logical",
+  laneKinds: ["external"],
   kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
   containerKinds: ["actor-group", "system", "layer", "external"],
   // Logical flows carry no technical detail (flowTech* are null below), so the
@@ -93727,6 +93728,7 @@ var logicalView = {
 };
 var applicationView = {
   name: "application",
+  laneKinds: ["external"],
   kinds: [
     "actor-group",
     "actor",
@@ -93925,8 +93927,10 @@ var applicationView = {
 };
 var infrastructureView = {
   name: "infrastructure",
+  laneKinds: ["external"],
   kinds: [
     "actor",
+    "device",
     "site",
     "network-zone",
     "server",
@@ -93939,7 +93943,10 @@ var infrastructureView = {
     "external"
   ],
   containerKinds: ["site", "network-zone", "server"],
-  glyphKinds: ["gateway", "firewall", "auth", "idp"],
+  glyphKinds: ["gateway", "firewall", "auth", "idp", "device"],
+  // A `device` is a flow origin, so it belongs on the entry side with the
+  // actors rather than in a declaration-order band with the zones.
+  ingressKinds: ["actor", "actor-group", "device"],
   // The reference shape: the matrice des flux techniques as an EA dossier expects it.
   matrix: {
     zoneKinds: ["network-zone", "site"],
@@ -93950,6 +93957,7 @@ var infrastructureView = {
   actorLegend: true,
   legendNames: {
     actor: "User / consumer",
+    device: "Device / workstation",
     site: "Site / data center",
     "network-zone": "Network zone",
     server: "Server / VM",
@@ -93963,6 +93971,7 @@ var infrastructureView = {
   },
   legendNamesFr: {
     actor: "Utilisateur / consommateur",
+    device: "Poste de travail",
     site: "Site / centre de donn\xE9es",
     "network-zone": "Zone r\xE9seau",
     server: "Serveur / VM",
@@ -94014,7 +94023,7 @@ var infrastructureView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp"],
+    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp", "device"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
@@ -94030,6 +94039,12 @@ var infrastructureView = {
     server: {
       fill: "#ffffff",
       stroke: { color: "#55606b", style: "solid", width: 1.5 }
+    },
+    // The server's grey: a workstation is hardware like a server is, and the
+    // monitor glyph is what tells the two apart.
+    device: {
+      fill: "#eef0f2",
+      stroke: { color: "#55606b", style: "solid", width: 1.3 }
     },
     "app-instance": {
       fill: "#fff7e6",
@@ -94073,6 +94088,10 @@ var infrastructureView = {
     server: {
       fill: "#252a31",
       stroke: { color: "#6b7885", style: "solid", width: 1.5 }
+    },
+    device: {
+      fill: "#242a30",
+      stroke: { color: "#6b7885", style: "solid", width: 1.3 }
     },
     "app-instance": {
       fill: "#2e2717",
@@ -99391,12 +99410,14 @@ function constrainPorts(graph, scene, flagged, model) {
 var DENSE_ENOUGH = 0.6;
 var DENSITY_GAIN = 0.95;
 var INGRESS_PARTITION = -1;
+var DEFAULT_INGRESS_KINDS = ["actor", "actor-group"];
 var EGRESS_PARTITION = 900;
 var COMPACT_WRAP = 10;
 var SLOT_SCALE = 1e3;
 function elkPartitionOf(element, index, view, ingressExternal) {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
-  if (element.kind === "actor" || element.kind === "actor-group") return INGRESS_PARTITION;
+  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind))
+    return INGRESS_PARTITION;
   if (element.kind === "external")
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== void 0) return 90 + view.partitions[element.kind];
@@ -99638,8 +99659,123 @@ function recordRepairs(scene, routesBefore) {
     if (moved) edge.repairedFrom = original;
   }
 }
+function segmentsCross2(a1, a2, b1, b2) {
+  const aH = Math.abs(a1.y - a2.y) < 0.5;
+  const bH = Math.abs(b1.y - b2.y) < 0.5;
+  if (aH === bH) return false;
+  const [h1, h2, v1, v2] = aH ? [a1, a2, b1, b2] : [b1, b2, a1, a2];
+  const hy = h1.y;
+  const vx = v1.x;
+  return vx > Math.min(h1.x, h2.x) + 0.5 && vx < Math.max(h1.x, h2.x) - 0.5 && hy > Math.min(v1.y, v2.y) + 0.5 && hy < Math.max(v1.y, v2.y) - 0.5;
+}
+function shortJogs(edges) {
+  let total = 0;
+  for (const edge of edges)
+    for (let i = 1; i + 2 < edge.pts.length; i++) {
+      const run = Math.abs(edge.pts[i + 1].x - edge.pts[i].x) + Math.abs(edge.pts[i + 1].y - edge.pts[i].y);
+      if (run > 0 && run <= 20) total++;
+    }
+  return total;
+}
+function crossingsAround(scene, subject) {
+  let total = 0;
+  const subjectIds = new Set(subject.map((edge) => edge.id));
+  for (const edge of subject)
+    for (const other of scene.edges) {
+      if (other.id === edge.id) continue;
+      if (subjectIds.has(other.id) && other.id < edge.id) continue;
+      for (let i = 1; i < edge.pts.length; i++)
+        for (let j = 1; j < other.pts.length; j++)
+          if (segmentsCross2(edge.pts[i - 1], edge.pts[i], other.pts[j - 1], other.pts[j])) total++;
+    }
+  return total;
+}
+function leafBoxesOf(scene) {
+  return scene.nodes.filter((node) => !node.container);
+}
+function crossesLeaf(edge, leaves, attached) {
+  for (let i = 1; i < edge.pts.length; i++) {
+    const a = edge.pts[i - 1];
+    const b = edge.pts[i];
+    const horizontal = Math.abs(a.y - b.y) < 0.5;
+    const vertical = Math.abs(a.x - b.x) < 0.5;
+    if (!horizontal && !vertical) continue;
+    const at = horizontal ? a.y : a.x;
+    const lo = horizontal ? Math.min(a.x, b.x) : Math.min(a.y, b.y);
+    const hi = horizontal ? Math.max(a.x, b.x) : Math.max(a.y, b.y);
+    for (const node of leaves) {
+      if (attached.has(node.id)) continue;
+      const struck = horizontal ? at > node.y + 1 && at < node.y + node.height - 1 && lo < node.x + node.width - 1 && hi > node.x + 1 : at > node.x + 1 && at < node.x + node.width - 1 && lo < node.y + node.height - 1 && hi > node.y + 1;
+      if (struck) return true;
+    }
+  }
+  return false;
+}
+function snapLanes(scene, laneOf, axis) {
+  if (!laneOf.size) return;
+  const leaves = leafBoxesOf(scene);
+  const tilted = (edges) => edges.reduce(
+    (total, edge) => total + edge.pts.filter((point, i) => i > 0 && Math.abs(point.x - edge.pts[i - 1].x) >= 0.5 && Math.abs(point.y - edge.pts[i - 1].y) >= 0.5).length,
+    0
+  );
+  const touching = /* @__PURE__ */ new Map();
+  const attachedTo = /* @__PURE__ */ new Map();
+  for (const edge of scene.edges) {
+    const ends = /* @__PURE__ */ new Set();
+    for (const point of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+      if (!point) continue;
+      for (const node of scene.nodes)
+        if (point.x >= node.x - 1 && point.x <= node.x + node.width + 1 && point.y >= node.y - 1 && point.y <= node.y + node.height + 1) {
+          ends.add(node.id);
+          if (!touching.has(node.id)) touching.set(node.id, []);
+          touching.get(node.id).push(edge);
+        }
+    }
+    attachedTo.set(edge.id, ends);
+  }
+  const byLane = /* @__PURE__ */ new Map();
+  for (const node of scene.nodes) {
+    const lane = laneOf.get(node.id);
+    if (lane === void 0) continue;
+    if (!byLane.has(lane)) byLane.set(lane, []);
+    byLane.get(lane).push(node);
+  }
+  for (const members of [...byLane.entries()].sort((a, b) => a[0] - b[0]).map((e) => e[1])) {
+    if (members.length < 2) continue;
+    const target = Math.max(...members.map((node) => node[axis]));
+    for (const node of members) {
+      const delta = target - node[axis];
+      if (!delta) continue;
+      const box = { x: node.x, y: node.y, w: node.width, h: node.height };
+      const edges = touching.get(node.id) ?? [];
+      const before = edges.map((edge) => edge.pts.map((point) => ({ ...point })));
+      const crossingsBefore = crossingsAround(scene, edges);
+      const jogsBefore = shortJogs(edges);
+      const tiltsBefore = tilted(edges);
+      node[axis] = target;
+      for (const edge of edges)
+        for (const point of edge.pts)
+          if (point.x >= box.x - 1 && point.x <= box.x + box.w + 1 && point.y >= box.y - 1 && point.y <= box.y + box.h + 1)
+            point[axis] += delta;
+      const broke = crossingsAround(scene, edges) > crossingsBefore || shortJogs(edges) > jogsBefore || tilted(edges) > tiltsBefore || edges.some((edge) => crossesLeaf(edge, leaves, attachedTo.get(edge.id) ?? /* @__PURE__ */ new Set())) || // Containers included: a lane member is top-level, so it has no
+      // legitimate container ancestor and may not land on one.
+      scene.nodes.some((other) => other !== node && !node.container && other.x < node.x + node.width && node.x < other.x + other.width && other.y < node.y + node.height && node.y < other.y + other.height);
+      if (broke) {
+        node[axis] = target - delta;
+        edges.forEach((edge, i) => {
+          edge.pts = before[i];
+        });
+      }
+    }
+  }
+  const maxX = Math.max(...scene.nodes.map((node) => node.x + node.width));
+  const maxY = Math.max(...scene.nodes.map((node) => node.y + node.height));
+  scene.width = Math.max(scene.width, Math.ceil(maxX) + 10);
+  scene.height = Math.max(scene.height, Math.ceil(maxY) + 10);
+}
 function runGeometryPasses(scene, model, options) {
   const { numbered, sideways } = options;
+  if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   const titleBoxes = titleBoxesOf(scene, model);
   if (sideways) transpose(scene, titleBoxes);
   rerouteDetours(scene, model, numbered, titleBoxes);
@@ -99659,6 +99795,66 @@ function runGeometryPasses(scene, model, options) {
   anchorFlowLabels(scene, settledTitles);
   swapCrossingSiblingSeats(scene);
 }
+function laneAssignment(model, view) {
+  const laneOf = /* @__PURE__ */ new Map();
+  const laneKinds = new Set(view.laneKinds ?? []);
+  if (!laneKinds.size || model.style.compact) return laneOf;
+  const rootOf = /* @__PURE__ */ new Map();
+  const walk = (element, root) => {
+    rootOf.set(element.id, root);
+    for (const child of element.children ?? []) walk(child, root);
+  };
+  for (const element of model.elements) walk(element, element.id);
+  const adjacency = /* @__PURE__ */ new Map();
+  for (const flow of model.flows) {
+    const from = rootOf.get(flow.from);
+    const to = rootOf.get(flow.to);
+    if (!from || !to || from === to) continue;
+    if (!adjacency.has(from)) adjacency.set(from, /* @__PURE__ */ new Set());
+    adjacency.get(from).add(to);
+  }
+  const reaches = (from, to) => {
+    const seen = /* @__PURE__ */ new Set([from]);
+    const queue = [from];
+    while (queue.length) {
+      for (const next of adjacency.get(queue.pop()) ?? []) {
+        if (next === to) return true;
+        if (!seen.has(next)) {
+          seen.add(next);
+          queue.push(next);
+        }
+      }
+    }
+    return false;
+  };
+  const byKind = /* @__PURE__ */ new Map();
+  for (const element of model.elements) {
+    if (!laneKinds.has(element.kind)) continue;
+    if ((element.children ?? []).length) continue;
+    if (!byKind.has(element.kind)) byKind.set(element.kind, []);
+    byKind.get(element.kind).push(element);
+  }
+  const pinned = /* @__PURE__ */ new Set();
+  for (const flow of model.flows) {
+    if (!flow.fromSide && !flow.toSide) continue;
+    pinned.add(rootOf.get(flow.from) ?? flow.from);
+    pinned.add(rootOf.get(flow.to) ?? flow.to);
+  }
+  let laneId = 0;
+  for (const members of byKind.values()) {
+    if (members.length < 2) continue;
+    if (members.some((member) => pinned.has(member.id))) continue;
+    if (members.some((member) => member.order)) continue;
+    if (members.some((a) => members.some((b) => a !== b && reaches(a.id, b.id)))) continue;
+    laneId++;
+    for (const member of members) laneOf.set(member.id, laneId);
+  }
+  return laneOf;
+}
+var ASPECT_TARGETS = {
+  slide: 16 / 9,
+  page: 0.71
+};
 async function layout(model, view) {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -99671,10 +99867,6 @@ async function layout(model, view) {
     scale: fontScale
   } = fontSizes(model.style.font.size);
   const disposition = model.style.disposition;
-  const ASPECT_TARGETS = {
-    slide: 16 / 9,
-    page: 0.71
-  };
   const aspectTarget = ASPECT_TARGETS[disposition];
   const ingressExternalElements = view.partitionByOrder ? computeIngressExternalElements(model) : /* @__PURE__ */ new Set();
   const graphContext = {
@@ -99694,7 +99886,7 @@ async function layout(model, view) {
   };
   const makeGraph = (direction, options) => buildElkGraph(graphContext, direction, options);
   const kindOf = new Map(indexElementsById(model.elements));
-  const sceneFromResult = (result2, layoutMs2) => {
+  const sceneFromResult = (result2, layoutMs2, lanes = true) => {
     const origins = {
       root: { x: 0, y: 0 }
     };
@@ -99718,10 +99910,12 @@ async function layout(model, view) {
     };
     runGeometryPasses(scene, model, {
       numbered,
-      sideways: disposition === "page" || disposition === "tall"
+      sideways: disposition === "page" || disposition === "tall",
+      laneOf: lanes ? laneOf : void 0
     });
     return scene;
   };
+  const laneOf = laneAssignment(model, view);
   const startTime = Date.now();
   let result;
   let winnerDirection;
@@ -100001,7 +100195,11 @@ var GLYPHS = {
   // ID badge: an identity provider issues who-you-are, it does not check it.
   idp: ({ x, y, r, line }) => `<rect x="${x(3)}" y="${y(2)}" width="${r(12)}" height="${r(13)}" rx="${r(2)}" ${line}/><path d="M ${x(7)} ${y(2)} H ${x(11)}" ${line}/><circle cx="${x(9)}" cy="${y(7)}" r="${r(2)}" ${line}/><path d="M ${x(5)} ${y(13)} q ${r(4)} ${-r(4)} ${r(8)} 0" ${line}/>`,
   // Brick wall: a firewall is a barrier, and no other kind reads as one.
-  firewall: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/><path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/><path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`
+  firewall: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/><path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/><path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`,
+  // Monitor on a stand: a device is the machine a person works at. The screen is
+  // left empty on purpose — that is what separates it from the firewall's wall
+  // at legend size, where both are a rectangle and little else survives.
+  device: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(1)}" width="${r(14)}" height="${r(9)}" rx="${r(1)}" ${line}/><path d="M ${x(9)} ${y(10)} V ${y(13)}" ${line}/><path d="M ${x(4)} ${y(13)} H ${x(14)}" ${line}/>`
 };
 function glyphSvg(kind, stroke, box) {
   const glyph = GLYPHS[kind];
