@@ -332,7 +332,8 @@ Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 
 Layout is automatic. These three controls exist for the cases where it gets a
 diagram wrong; each is opt-in, and a file that uses none of them renders exactly
-as it did before they existed.
+as it did before they existed. One placement rule needs no control because it is
+applied for you — where a queue's producers and consumers attach, below.
 
 **`order: <n>` — where an element sits in the reading order.** A statement in the
 element's body, not a style property (placement is layout, not cosmetics). Lower
@@ -430,6 +431,32 @@ terminal — pin one end and the other is still re-aimed, unwoven and measured a
 usual — while the route itself is still tidied along shapes that leave the
 pinned ends where the author put them.
 
+**A queue's flows are sided for you.** One placement decision needs no control
+at all: a `queue` is a hand-off between two halves of a drawing, so everything
+published *into* one attaches on its **left** side and everything read *out of*
+one leaves on its **right** side. Left and right in every disposition, including
+`tall` and `page`: a queue is drawn as a cylinder lying on its side, and its
+mouth is the left and right cap, so a flow touching the flat top reads as
+missing the box even where the drawing itself runs downward. It applies in the
+two views that have queues, `application` and `infrastructure`, and needs nothing
+in the source:
+
+```cairn
+queue EVENTS "Order event bus"
+
+CAPTURE  -> EVENTS (MQ, JSON)   # producer — arrives on the upstream side
+EVENTS   -> INDEXER (MQ, JSON)  # consumer — leaves on the downstream side
+```
+
+Two limits are worth knowing. **Your pin wins:** name a side yourself
+(`CAPTURE -> EVENTS.top`) and that endpoint is yours; only endpoints you left
+free are sided for you. And **it is a preference, not a pin:** the derived side
+is handed to the layout engine, but a producer the layout draws to the *right* of
+its queue would have to wrap around the box to reach the left cap, so the routing
+passes attach it on the near side instead. Nothing is reported when that happens
+— you declared nothing, so nothing was dropped. Pin the endpoint by hand if you
+want the side regardless.
+
 **Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
 `..>` dotted. Whitespace before the arrow is required, as it always has been
 (`A->B` does not parse: `-` is a legal id character). Precedence follows the
@@ -442,10 +469,11 @@ ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
 
-Three files in [`examples/placement/`](../examples/placement) show the two
-controls: `baseline.cairn` declares neither, `sides.cairn` is the same shape with
-`ID.side` pins on its flows, and `reading-order.cairn` sequences two backends
-along the length with `order:`.
+Four files in [`examples/placement/`](../examples/placement) show these
+controls: `baseline.cairn` declares none, `sides.cairn` is the same shape with
+`ID.side` pins on its flows, `reading-order.cairn` sequences two backends along
+the length with `order:`, and `queue-sides.cairn` declares nothing at all — its
+producer and consumer sides are the ones the layout derives.
 
 ## 2. Styling — three levels, most specific wins
 

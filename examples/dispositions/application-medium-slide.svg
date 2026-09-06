@@ -37,10 +37,10 @@
 <rect x="646" y="96" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="700" y="116.25" font-size="12.5" text-anchor="middle" fill="#17202c">Accounts</text>
 <text x="700" y="130.75" font-size="12.5" text-anchor="middle" fill="#17202c">receivable</text>
-<path d="M 626 228 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="626" cy="251.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="676" y="248.25" font-size="12.5" text-anchor="middle" fill="#17202c">Billing</text>
-<text x="676" y="262.75" font-size="12.5" text-anchor="middle" fill="#17202c">event bus</text>
+<path d="M 627 228 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="627" cy="251.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="677" y="248.25" font-size="12.5" text-anchor="middle" fill="#17202c">Billing</text>
+<text x="677" y="262.75" font-size="12.5" text-anchor="middle" fill="#17202c">event bus</text>
 <path d="M 962 320 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
 <ellipse cx="1016" cy="320" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
 <text x="1016" y="336.75" font-size="12.5" text-anchor="middle" fill="#17202c">Customer</text>
@@ -60,7 +60,7 @@
 <path d="M 686.5 386 L 482.3333333333333 386 L 482.3333333333333 269 L 470.3333333333333 269" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 262 244 L 362.3333333333333 243.66666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 470.3333333333333 251.5 L 618 251.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 481 202.5 L 750 202.5 L 750 234 L 726 234" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 481 202.5 L 751 202.5 L 751 234 L 727 234" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 481 190.5 L 505 190.5 L 1020 190.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 481 166.5 L 525 166.5 L 525 46 L 1020 46" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 481 178.5 L 491 178.5 L 491 180.4 L 535 180 L 535 120 L 646 120" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -72,7 +72,7 @@
 <text x="584.4166666666666" y="389.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="312.16666666666663" y="247.08333333333334" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <text x="544.1666666666666" y="254.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="615.5" y="205.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="616" y="205.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="762.5" y="193.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AS4, UBL)</text>
 <text x="772.5" y="49.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, FacturX)</text>
 <text x="590.5" y="123.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>

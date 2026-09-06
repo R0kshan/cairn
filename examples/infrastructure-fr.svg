@@ -35,10 +35,10 @@
 <rect x="770" y="80.5" width="114" height="38" rx="4" fill="#e0f0f0" stroke="#3a8f8f" stroke-width="1.3"/>
 <rect x="779" y="89.5" width="12" height="13" rx="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 783 89.5 H 787" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><circle cx="785" cy="94.5" r="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 781 100.5 q 4 -4 8 0" fill="none" stroke="#3a8f8f" stroke-width="1.3"/>
 <text x="840" y="103.5" font-size="12.5" text-anchor="middle" fill="#17202c">LDAP / IdP</text>
-<path d="M 778 225.5 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="778" cy="249" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="828" y="245.75" font-size="12.5" text-anchor="middle" fill="#17202c">Broker de</text>
-<text x="828" y="260.25" font-size="12.5" text-anchor="middle" fill="#17202c">messages</text>
+<path d="M 779 225.5 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="779" cy="249" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="829" y="245.75" font-size="12.5" text-anchor="middle" fill="#17202c">Broker de</text>
+<text x="829" y="260.25" font-size="12.5" text-anchor="middle" fill="#17202c">messages</text>
 <rect x="511" y="264" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
 <text x="565" y="287" font-size="12.5" text-anchor="middle" fill="#17202c">Facturation</text>
 <rect x="524.3333333333333" y="170" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
@@ -64,7 +64,7 @@
 <path d="M 619 284 L 1069 284 L 1069 205" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 632.3333333333333 181.33333333333331 L 1063 181.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 619 272 L 663 272 L 663 249 L 770 249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 632.3333333333333 195.33333333333334 L 894 195.33333333333331 L 894 249 L 879 249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 632.3333333333333 195.33333333333334 L 894 195.33333333333331 L 894 249 L 880 249" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 619 296 L 867.125 296 L 867.125 293.5 L 1115.25 293.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1223.25 293.5 L 1538 293.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1180 167 L 1291 167" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>

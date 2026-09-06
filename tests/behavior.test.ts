@@ -1507,6 +1507,54 @@ test("W0570 reports a pin the finished drawing does not show", async () => {
   assert.deepEqual(diags[0].span, flow.fromSide!.span);
 });
 
+test("a queue's producers and consumers attach on opposite sides of it", async () => {
+  // The application view declares `queue` in `hubKinds`, so what is produced
+  // into the queue arrives on its upstream side and what is consumed out of it
+  // leaves downstream — producers read as one group, consumers as another.
+  const { scene, model } = await build(
+    'diagram application "t"\napplication PROD "Producers" {\n  module P1 "Producer one"\n  module P2 "Producer two"\n}\nqueue Q "Events"\napplication CONS "Consumers" {\n  module C1 "Consumer one"\n  module C2 "Consumer two"\n}\nP1 -> Q (MQ, JSON)\nP2 -> Q (MQ, JSON)\nQ -> C1 (MQ, JSON)\nQ -> C2 (MQ, JSON)\n',
+  );
+  const flowTo = (from: string, to: string) =>
+    model.flows.find((flow) => flow.from === from && flow.to === to)!;
+  assert.equal(sideOfTerminal(scene, flowTo("P1", "Q").id, "Q", "finish"), "left");
+  assert.equal(sideOfTerminal(scene, flowTo("P2", "Q").id, "Q", "finish"), "left");
+  assert.equal(sideOfTerminal(scene, flowTo("Q", "C1").id, "Q", "start"), "right");
+  assert.equal(sideOfTerminal(scene, flowTo("Q", "C2").id, "Q", "start"), "right");
+});
+
+test("the derived queue sides stay left and right in a `tall` drawing", async () => {
+  // A queue is drawn as a cylinder lying on its side in every disposition
+  // (`renderQueue`), so its mouth is the left and right cap: a producer entering
+  // the flat top would read as missing the box even here, where the drawing
+  // itself runs downward. elk refuses WEST/EAST ports on some hierarchical
+  // graphs laid out downward — `withHubPortFallback` is what climbs down from
+  // that, and it is why this holds rather than crashing.
+  const { scene, model } = await build(
+    'diagram application "t"\nstyle {\n  disposition: tall\n}\napplication PROD "Producers" {\n  module P1 "Producer one"\n}\nqueue Q "Events"\napplication CONS "Consumers" {\n  module C1 "Consumer one"\n}\nP1 -> Q (MQ, JSON)\nQ -> C1 (MQ, JSON)\n',
+  );
+  const flowFrom = (from: string) => model.flows.find((flow) => flow.from === from)!;
+  assert.equal(sideOfTerminal(scene, flowFrom("P1").id, "Q", "finish"), "left");
+  assert.equal(sideOfTerminal(scene, flowFrom("Q").id, "Q", "start"), "right");
+});
+
+test("a derived queue side yields to an author pin, and is never pinned itself", async () => {
+  const { scene, model } = await build(
+    'diagram application "t"\napplication APP "App" {\n  module P1 "Producer one"\n  module C1 "Consumer one"\n}\nqueue Q "Events"\nP1 -> Q.bottom (MQ, JSON)\nQ -> C1 (MQ, JSON)\n',
+  );
+  const produced = model.flows.find((flow) => flow.from === "P1")!;
+  const consumed = model.flows.find((flow) => flow.from === "Q")!;
+  // The author asked for the bottom, so the derived upstream side stands down.
+  assert.equal(sideOfTerminal(scene, produced.id, "Q", "finish"), "bottom");
+  // A side this stage chose itself is an elk port and nothing more: the repair
+  // passes still own the terminal and `attachAway` still counts it, so it must
+  // not be recorded as pinned — and nothing about it is reportable as W0570.
+  assert.equal(scene.edges.find((edge) => edge.id === consumed.id)!.pinned, undefined);
+  assert.deepEqual(
+    attachSideDiagnostics(scene, model).filter((diag) => diag.code === "W0570"),
+    [],
+  );
+});
+
 test("arrow glyphs carry the line style, inline `{ stroke: … }` overrides them", async () => {
   const { svg } = await build(
     'diagram application "t"\napplication APP "a" {\n  module M1 "one"\n  module M2 "two"\n  module M3 "three"\n  module M4 "four"\n}\nM1 -> M2 (API_REST, JSON)\nM1 --> M3 (MQ, JSON)\nM1 ..> M4 (MQ, JSON)\nM2 --> M4 (MQ, JSON) { stroke: solid }\n',

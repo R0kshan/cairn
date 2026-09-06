@@ -93729,6 +93729,7 @@ var logicalView = {
 var applicationView = {
   name: "application",
   laneKinds: ["external"],
+  hubKinds: ["queue"],
   kinds: [
     "actor-group",
     "actor",
@@ -93928,6 +93929,7 @@ var applicationView = {
 var infrastructureView = {
   name: "infrastructure",
   laneKinds: ["external"],
+  hubKinds: ["queue"],
   kinds: [
     "actor",
     "device",
@@ -99508,8 +99510,25 @@ var SIDE_TO_ELK = {
   top: "NORTH",
   bottom: "SOUTH"
 };
-function applyDeclaredPorts(graph, model) {
-  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide);
+function hubFlowSides(model, view) {
+  const derived = /* @__PURE__ */ new Map();
+  const hubKinds = new Set(view.hubKinds ?? []);
+  if (!hubKinds.size) return derived;
+  const hubs = new Set(
+    indexElementsById(model.elements).filter(([, element]) => hubKinds.has(element.kind)).map(([id]) => id)
+  );
+  if (!hubs.size) return derived;
+  for (const flow of model.flows) {
+    const sides = {};
+    if (hubs.has(flow.to) && !flow.toSide) sides.to = "left";
+    if (hubs.has(flow.from) && !flow.fromSide) sides.from = "right";
+    if (sides.to || sides.from) derived.set(flow.id, sides);
+  }
+  return derived;
+}
+var sideRequest = (side) => side ? { value: side } : void 0;
+function applyDeclaredPorts(graph, model, derived) {
+  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide || derived.has(flow.id));
   if (!pinned.length) return;
   const elkById = /* @__PURE__ */ new Map();
   const register = (node) => {
@@ -99520,9 +99539,10 @@ function applyDeclaredPorts(graph, model) {
   for (const flow of pinned) {
     const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
     if (!elkEdge) continue;
+    const hub = derived.get(flow.id);
     for (const [role, declared, nodeId] of [
-      ["out", flow.fromSide, flow.from],
-      ["in", flow.toSide, flow.to]
+      ["out", flow.fromSide ?? sideRequest(hub?.from), flow.from],
+      ["in", flow.toSide ?? sideRequest(hub?.to), flow.to]
     ]) {
       if (!declared) continue;
       const elkNode = elkById.get(nodeId);
@@ -99600,7 +99620,7 @@ function buildElkGraph(ctx, direction, options) {
       "elk.edgeRouting": "ORTHOGONAL",
       "elk.partitioning.activate": "true",
       "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
-      "elk.layered.compaction.postCompaction.strategy": "EDGE_LENGTH",
+      "elk.layered.compaction.postCompaction.strategy": options?.postCompaction ?? "EDGE_LENGTH",
       "elk.layered.feedbackEdges": "true",
       "elk.layered.thoroughness": "30",
       "elk.separateConnectedComponents": "false",
@@ -99646,7 +99666,11 @@ function buildElkGraph(ctx, direction, options) {
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap))
   };
-  applyDeclaredPorts(graph, model);
+  applyDeclaredPorts(
+    graph,
+    model,
+    options?.hubPorts === false ? /* @__PURE__ */ new Map() : hubFlowSides(model, view)
+  );
   return graph;
 }
 function recordRepairs(scene, routesBefore) {
@@ -99855,6 +99879,26 @@ var ASPECT_TARGETS = {
   slide: 16 / 9,
   page: 0.71
 };
+async function withHubPortFallback(elk, makeGraph, direction, options) {
+  const run = async (spec) => await elk.layout(makeGraph(direction, spec));
+  const rungs = options?.hubPorts === false ? [] : [
+    { ...options, postCompaction: "EDGE_LENGTH_CONSTRAINT_LOCKING" },
+    { ...options, postCompaction: "NONE" },
+    { ...options, hubPorts: false }
+  ];
+  try {
+    return { result: await run(options), options };
+  } catch (error) {
+    for (const [index, rung] of rungs.entries()) {
+      try {
+        return { result: await run(rung), options: rung };
+      } catch (rungError) {
+        if (index === rungs.length - 1) throw rungError;
+      }
+    }
+    throw error;
+  }
+}
 async function layout(model, view) {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -99917,6 +99961,7 @@ async function layout(model, view) {
   };
   const laneOf = laneAssignment(model, view);
   const startTime = Date.now();
+  const layoutGraph = (direction, options) => withHubPortFallback(elk, makeGraph, direction, options);
   let result;
   let winnerDirection;
   let winnerOptions;
@@ -99927,9 +99972,10 @@ async function layout(model, view) {
       { direction: "RIGHT", options: { labelWrap: 14, tight: true } },
       { direction: "RIGHT", options: { labelWrap: 14, tight: true, minLayers: true } }
     ] : [{ direction: "DOWN" }, { direction: "DOWN", options: { labelWrap: 16 } }];
-    const candidates = await Promise.all(
-      graphSpecs.map((spec) => elk.layout(makeGraph(spec.direction, spec.options)))
+    const laidOutSpecs = await Promise.all(
+      graphSpecs.map((spec) => layoutGraph(spec.direction, spec.options))
     );
+    const candidates = laidOutSpecs.map((laidOut) => laidOut.result);
     const preferWide = disposition === "slide";
     const orientedLayouts = candidates.map((layoutResult, index) => ({ layoutResult, index })).filter(
       ({ layoutResult }) => preferWide ? layoutResult.width >= layoutResult.height : layoutResult.height >= layoutResult.width
@@ -99942,7 +99988,7 @@ async function layout(model, view) {
     );
     result = winner.layoutResult;
     winnerDirection = graphSpecs[winner.index].direction;
-    winnerOptions = graphSpecs[winner.index].options;
+    winnerOptions = laidOutSpecs[winner.index].options;
     if (disposition === "slide") {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
@@ -99956,8 +100002,7 @@ async function layout(model, view) {
     }
   } else {
     winnerDirection = disposition === "tall" ? "DOWN" : "RIGHT";
-    winnerOptions = void 0;
-    result = await elk.layout(makeGraph(winnerDirection));
+    ({ result, options: winnerOptions } = await layoutGraph(winnerDirection));
   }
   const layoutMs = Date.now() - startTime;
   let base = sceneFromResult(result, layoutMs);

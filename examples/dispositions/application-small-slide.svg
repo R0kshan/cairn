@@ -18,10 +18,10 @@
 <rect x="350" y="100" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="404" y="120.25" font-size="12.5" text-anchor="middle" fill="#17202c">Approval</text>
 <text x="404" y="134.75" font-size="12.5" text-anchor="middle" fill="#17202c">workflow</text>
-<path d="M 597 158 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<ellipse cx="597" cy="181.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
-<text x="647" y="178.25" font-size="12.5" text-anchor="middle" fill="#17202c">Notification</text>
-<text x="647" y="192.75" font-size="12.5" text-anchor="middle" fill="#17202c">bus</text>
+<path d="M 598 158 h 92 a 8 23.5 0 0 1 0 47 h -92 a 8 23.5 0 0 1 0 -47" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="598" cy="181.5" rx="8" ry="23.5" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="648" y="178.25" font-size="12.5" text-anchor="middle" fill="#17202c">Notification</text>
+<text x="648" y="192.75" font-size="12.5" text-anchor="middle" fill="#17202c">bus</text>
 <path d="M 585 107 v 33 a 54 7 0 0 0 108 0 v -33" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
 <ellipse cx="639" cy="107" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
 <text x="639" y="123.75" font-size="12.5" text-anchor="middle" fill="#17202c">HR</text>
@@ -34,12 +34,12 @@
 <path d="M 83 59 L 386 59 L 386 100" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 458 123.75 L 585 123.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 458 135.75 L 492 135.75 L 492 182 L 589 182" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 239 158 L 249 158 L 249 215 L 708 215 L 708 182 L 698 182" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 239 158 L 249 158 L 249 215 L 709 215 L 709 182 L 699 182" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 458 111.75 L 482 112 L 482 89 L 709 89" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="287" y="109.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(internal)</text>
 <text x="521.5" y="127" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <text x="540.5" y="185.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="478.5" y="218.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
+<text x="479" y="218.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="595.5" y="92.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
 <line x1="20" y1="257" x2="807" y2="257" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="279" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>

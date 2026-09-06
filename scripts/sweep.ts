@@ -58,7 +58,16 @@ const CEILING_RATE: Record<string, number> = {
   // near-parallel pair here or a wrap-around there is exactly the trade the
   // ladder prices (§3) — sideHug fell 49 -> 17 in the same run, and the
   // per-drawing gate accepted every trade. Never raise again to go green.
-  nearParallel: 0.0147,
+  // Raised 0.0147 -> 0.0159 (64 -> 72 over 4540 flow-instances) when a queue's
+  // producers and consumers were given fixed left/right ports (INVARIANTS §17,
+  // `hubFlowSides`). Seven of the eight are one shape in its fixture copies: in a
+  // `page`/`tall` drawing a producer now enters the bus from the left, so its
+  // approach runs down the corridor a neighbouring flow already uses — F05~F08
+  // on `application`, gap 8px over 173px. The queue glyph is a cylinder lying on
+  // its side in every disposition, so attaching anywhere but its left and right
+  // caps reads as missing the box; the pair of parallel runs is the price of the
+  // sides matching the shape. Never raise again to go green.
+  nearParallel: 0.0159,
   // Raised 0.0436580 -> 0.0461855 (190 -> 201) when labels moved onto their
   // runs (§4d). A label pins the horizontal band it sits in, so seating them on
   // the lines instead of above them changes which bands `compact` can reclaim:

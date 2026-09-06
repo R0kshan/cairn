@@ -819,6 +819,19 @@ interface GraphOptions {
   placement?: string;
   /** Tighter spacing between layers and nodes — for the density candidates. */
   dense?: boolean;
+  /**
+   * `false` builds the graph without the derived hub ports (`hubFlowSides`) —
+   * the last retry after elk refuses to lay a hub-ported graph out. Anything
+   * else, `undefined` included, keeps them.
+   */
+  hubPorts?: boolean;
+  /**
+   * Overrides elk's post-compaction strategy. Only the hub-port retry sets it:
+   * the scanline failure elk raises on a hub-ported graph comes from that phase,
+   * and a differently-compacted layout that honors the ports beats one that
+   * drops them (`withHubPortFallback`).
+   */
+  postCompaction?: "EDGE_LENGTH_CONSTRAINT_LOCKING" | "NONE";
 }
 
 /**
@@ -1000,10 +1013,70 @@ const SIDE_TO_ELK: Record<AttachSide, "NORTH" | "SOUTH" | "EAST" | "WEST"> = {
   bottom: "SOUTH",
 };
 
+/** An attachment side this stage derived for a flow's ends, rather than the author. */
+interface DerivedSides {
+  from?: AttachSide;
+  to?: AttachSide;
+}
+
 /**
- * Gives every author-pinned flow terminal an elk port on the requested side.
+ * Where the flows of a *hub* — a `queue`, the one kind any view declares in
+ * `View.hubKinds` today — attach: everything produced into it arrives on the
+ * upstream side, everything consumed out of it leaves on the downstream side, so
+ * a reader sees producers on one edge of the box and consumers on the other
+ * instead of one undifferentiated fan.
  *
- * Only the pinned terminals get a port: the node goes to `FIXED_SIDE`, but its
+ * Left and right in **every** disposition, because the queue's own glyph is a
+ * cylinder lying on its side (`renderQueue`): its mouth is the left and right
+ * cap, so a terminal on the flat top reads as missing the box even when the
+ * drawing itself runs top to bottom. A DOWN layout does pay for it — elk throws
+ * `Invalid hitboxes for scanline constraint calculation` on some hierarchical
+ * graphs carrying WEST/EAST ports, which is what `withHubPortFallback` climbs
+ * down from.
+ *
+ * Three limits keep this a layout hint rather than a promise:
+ *
+ * - **The author outranks it.** An endpoint carrying an `ID.side` pin is left
+ *   alone — a derived side never overrides declared intent (INVARIANTS §17).
+ * - **It is an elk port and nothing else.** The terminal is not marked
+ *   `pinned`, so every repair pass may still move it and `attachAway` still
+ *   counts it. Marking it would exempt a side *cairn itself* chose from the gate
+ *   that measures it (INVARIANTS §3a), and no `W0570` is reported for it either:
+ *   nothing was declared, so nothing was dropped.
+ * - **It is opt-in per view.** A view without `hubKinds`, or a diagram without a
+ *   hub element, produces an empty map and builds the graph it always built.
+ */
+function hubFlowSides(model: Model, view: View): Map<string, DerivedSides> {
+  const derived = new Map<string, DerivedSides>();
+  const hubKinds = new Set(view.hubKinds ?? []);
+  if (!hubKinds.size) return derived;
+  const hubs = new Set(
+    indexElementsById(model.elements)
+      .filter(([, element]) => hubKinds.has(element.kind))
+      .map(([id]) => id),
+  );
+  if (!hubs.size) return derived;
+  for (const flow of model.flows) {
+    const sides: DerivedSides = {};
+    if (hubs.has(flow.to) && !flow.toSide) sides.to = "left";
+    if (hubs.has(flow.from) && !flow.fromSide) sides.from = "right";
+    if (sides.to || sides.from) derived.set(flow.id, sides);
+  }
+  return derived;
+}
+
+/**
+ * A derived side in the shape the port loop reads author pins in. It carries no
+ * `span`, which is the point: only a declared side has a place in the source to
+ * report a dropped pin against (`attachSideDiagnostics`).
+ */
+const sideRequest = (side: AttachSide | undefined) => (side ? { value: side } : undefined);
+
+/**
+ * Gives every author-pinned flow terminal — and every terminal `hubFlowSides`
+ * derived a side for — an elk port on that side.
+ *
+ * Only those terminals get a port: the node goes to `FIXED_SIDE`, but its
  * other edges stay portless and elk keeps choosing their sides, which measured
  * identical to the unpinned layout. The 1×1 size is deliberate — a 0×0 port
  * breaks elk's scanline constraint on hierarchical graphs (see `constrainPorts`).
@@ -1011,8 +1084,12 @@ const SIDE_TO_ELK: Record<AttachSide, "NORTH" | "SOUTH" | "EAST" | "WEST"> = {
  * A DOWN layout is not transposed on the way out (`runGeometryPasses` mirrors in
  * and back), so elk's compass is the rendered side in every disposition.
  */
-function applyDeclaredPorts(graph: ElkNode, model: Model): void {
-  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide);
+function applyDeclaredPorts(
+  graph: ElkNode,
+  model: Model,
+  derived: Map<string, DerivedSides>,
+): void {
+  const pinned = model.flows.filter((flow) => flow.fromSide || flow.toSide || derived.has(flow.id));
   if (!pinned.length) return;
   const elkById = new Map<string, ElkNode>();
   const register = (node: ElkNode) => {
@@ -1023,9 +1100,10 @@ function applyDeclaredPorts(graph: ElkNode, model: Model): void {
   for (const flow of pinned) {
     const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
     if (!elkEdge) continue;
+    const hub = derived.get(flow.id);
     for (const [role, declared, nodeId] of [
-      ["out", flow.fromSide, flow.from],
-      ["in", flow.toSide, flow.to],
+      ["out", flow.fromSide ?? sideRequest(hub?.from), flow.from],
+      ["in", flow.toSide ?? sideRequest(hub?.to), flow.to],
     ] as const) {
       if (!declared) continue;
       const elkNode = elkById.get(nodeId);
@@ -1127,7 +1205,7 @@ function buildElkGraph(
       "elk.edgeRouting": "ORTHOGONAL",
       "elk.partitioning.activate": "true",
       "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
-      "elk.layered.compaction.postCompaction.strategy": "EDGE_LENGTH",
+      "elk.layered.compaction.postCompaction.strategy": options?.postCompaction ?? "EDGE_LENGTH",
       "elk.layered.feedbackEdges": "true",
       "elk.layered.thoroughness": "30",
       "elk.separateConnectedComponents": "false",
@@ -1177,7 +1255,11 @@ function buildElkGraph(
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap)),
   };
-  applyDeclaredPorts(graph, model);
+  applyDeclaredPorts(
+    graph,
+    model,
+    options?.hubPorts === false ? new Map() : hubFlowSides(model, view),
+  );
   return graph;
 }
 
@@ -1544,6 +1626,48 @@ const ASPECT_TARGETS: Record<string, number | undefined> = {
   page: 0.71,
 };
 
+/**
+ * One elk layout, retried once without the derived hub ports (`hubFlowSides`)
+ * if elk refuses them. Port constraints reach an elk path that throws on some
+ * hierarchical models — the scanline hitbox failure `constrainPorts` documents —
+ * and a hub side is a preference about where producers attach, never a reason to
+ * fail a drawing. The options that actually produced the result come back with
+ * it, so every later pass rebuilds the same graph rather than the one that was
+ * asked for.
+ */
+async function withHubPortFallback(
+  elk: { layout: (graph: ElkNode) => Promise<unknown> },
+  makeGraph: (direction: "RIGHT" | "DOWN", options?: GraphOptions) => ElkNode,
+  direction: "RIGHT" | "DOWN",
+  options?: GraphOptions,
+): Promise<{ result: LaidOutNode; options?: GraphOptions }> {
+  const run = async (spec?: GraphOptions) =>
+    (await elk.layout(makeGraph(direction, spec))) as LaidOutNode;
+  // Loosen post-compaction first — locking its constraints, then skipping it —
+  // and drop the ports only if neither lays out: a slightly roomier drawing that
+  // attaches where a queue reads beats a tighter one that does not.
+  const rungs: GraphOptions[] =
+    options?.hubPorts === false
+      ? []
+      : [
+          { ...options, postCompaction: "EDGE_LENGTH_CONSTRAINT_LOCKING" },
+          { ...options, postCompaction: "NONE" },
+          { ...options, hubPorts: false },
+        ];
+  try {
+    return { result: await run(options), options };
+  } catch (error) {
+    for (const [index, rung] of rungs.entries()) {
+      try {
+        return { result: await run(rung), options: rung };
+      } catch (rungError) {
+        if (index === rungs.length - 1) throw rungError;
+      }
+    }
+    throw error;
+  }
+}
+
 export async function layout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
@@ -1622,13 +1746,15 @@ export async function layout(model: Model, view: View): Promise<Scene> {
 
   const laneOf = laneAssignment(model, view);
   const startTime = Date.now();
+  const layoutGraph = (direction: "RIGHT" | "DOWN", options?: GraphOptions) =>
+    withHubPortFallback(elk, makeGraph, direction, options);
   let result: LaidOutNode;
   let winnerDirection: "RIGHT" | "DOWN";
-  let winnerOptions: { labelWrap?: number; tight?: boolean; minLayers?: boolean } | undefined;
+  let winnerOptions: GraphOptions | undefined;
   if (aspectTarget) {
     const graphSpecs: {
       direction: "RIGHT" | "DOWN";
-      options?: { labelWrap?: number; tight?: boolean; minLayers?: boolean };
+      options?: GraphOptions;
     }[] =
       disposition === "slide"
         ? [
@@ -1638,9 +1764,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
             { direction: "RIGHT", options: { labelWrap: 14, tight: true, minLayers: true } },
           ]
         : [{ direction: "DOWN" }, { direction: "DOWN", options: { labelWrap: 16 } }];
-    const candidates = (await Promise.all(
-      graphSpecs.map((spec) => elk.layout(makeGraph(spec.direction, spec.options))),
-    )) as unknown as LaidOutNode[];
+    const laidOutSpecs = await Promise.all(
+      graphSpecs.map((spec) => layoutGraph(spec.direction, spec.options)),
+    );
+    const candidates = laidOutSpecs.map((laidOut) => laidOut.result);
     const preferWide = disposition === "slide";
     const orientedLayouts = candidates
       .map((layoutResult, index) => ({ layoutResult, index }))
@@ -1663,7 +1790,9 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     );
     result = winner.layoutResult;
     winnerDirection = graphSpecs[winner.index].direction;
-    winnerOptions = graphSpecs[winner.index].options;
+    // What the spec laid out with, not what it asked for: hub ports elk refused
+    // were retried without them.
+    winnerOptions = laidOutSpecs[winner.index].options;
     if (disposition === "slide") {
       const folded = await foldedLayout(model, view, elk);
       if (folded && fitScore(result) >= fitScore(folded) * 1.1) {
@@ -1682,8 +1811,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     }
   } else {
     winnerDirection = disposition === "tall" ? "DOWN" : "RIGHT";
-    winnerOptions = undefined;
-    result = (await elk.layout(makeGraph(winnerDirection))) as unknown as LaidOutNode;
+    ({ result, options: winnerOptions } = await layoutGraph(winnerDirection));
   }
   const layoutMs = Date.now() - startTime;
   let base = sceneFromResult(result, layoutMs);
