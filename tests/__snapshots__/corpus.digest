@@ -50,7 +50,7 @@ infrastructure-fr.cairn  dim:1665x486 n:20 e:13 ov:0  geom:f8fcf7b9e155 color:7e
 infrastructure-large-fr.cairn  dim:2144x550 n:29 e:19 ov:0  geom:75a25ec05598 color:3ecef52caa94 text:b97011ab9f2a
 infrastructure-large.cairn  dim:2141x550 n:29 e:19 ov:0  geom:e7803c2ec2a4 color:3ecef52caa94 text:b779da9fa79f
 infrastructure-medium.cairn  dim:1626x482 n:19 e:11 ov:0  geom:eb331a290a2b color:09f006af5b4d text:6e4734acd5f1
-infrastructure-security-edge.cairn  dim:2094x183 n:14 e:8 ov:0  geom:c2d6e3e0f96b color:dc2a623450d0 text:a7b081d3ca64
+infrastructure-security-edge.cairn  dim:2136x196 n:15 e:9 ov:0  geom:acb758c1cc45 color:9cf7e621136c text:fe5f4e681e74
 infrastructure-small.cairn  dim:855x213 n:9 e:3 ov:0  geom:aa0ed7281806 color:631023102134 text:e2a5f48a9f40
 infrastructure.cairn  dim:1656x486 n:20 e:13 ov:0  geom:984e94d6258e color:7e897b6c63aa text:1fd718bb606e
 large-fr.cairn  dim:3995x1386 n:47 e:42 ov:0  geom:4f48d048d163 color:59a033bd004f text:e9f7720010f7

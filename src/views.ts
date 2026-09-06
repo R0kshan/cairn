@@ -33,6 +33,13 @@ export interface View {
    */
   logoKinds?: string[];
   /**
+   * Kinds that enter the drawing from the ingress edge, ahead of every banded
+   * element. Only consulted by a view that bands by declaration order
+   * (`partitionByOrder`); a view that omits the field seats its actors there,
+   * which is what every view did when the rule was hardcoded in `scene-layout`.
+   */
+  ingressKinds?: string[];
+  /**
    * Kinds whose top-level instances are seated in one lane across the reading
    * axis — a column under `wide`/`slide`, a row under `tall`/`page`. Opt-in per
    * view: only kinds that are genuinely peers belong here. A kind whose
@@ -411,6 +418,7 @@ const infrastructureView: View = {
   laneKinds: ["external"],
   kinds: [
     "actor",
+    "device",
     "site",
     "network-zone",
     "server",
@@ -423,7 +431,10 @@ const infrastructureView: View = {
     "external",
   ],
   containerKinds: ["site", "network-zone", "server"],
-  glyphKinds: ["gateway", "firewall", "auth", "idp"],
+  glyphKinds: ["gateway", "firewall", "auth", "idp", "device"],
+  // A `device` is a flow origin, so it belongs on the entry side with the
+  // actors rather than in a declaration-order band with the zones.
+  ingressKinds: ["actor", "actor-group", "device"],
   // The reference shape: the matrice des flux techniques as an EA dossier expects it.
   matrix: {
     zoneKinds: ["network-zone", "site"],
@@ -434,6 +445,7 @@ const infrastructureView: View = {
   actorLegend: true,
   legendNames: {
     actor: "User / consumer",
+    device: "Device / workstation",
     site: "Site / data center",
     "network-zone": "Network zone",
     server: "Server / VM",
@@ -447,6 +459,7 @@ const infrastructureView: View = {
   },
   legendNamesFr: {
     actor: "Utilisateur / consommateur",
+    device: "Poste de travail",
     site: "Site / centre de donn\u00e9es",
     "network-zone": "Zone r\u00e9seau",
     server: "Serveur / VM",
@@ -498,7 +511,7 @@ const infrastructureView: View = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp"],
+    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp", "device"],
     message: "isolated element: no incoming or outgoing flow",
   },
   defaults: {
@@ -514,6 +527,12 @@ const infrastructureView: View = {
     server: {
       fill: "#ffffff",
       stroke: { color: "#55606b", style: "solid", width: 1.5 },
+    },
+    // The server's grey: a workstation is hardware like a server is, and the
+    // monitor glyph is what tells the two apart.
+    device: {
+      fill: "#eef0f2",
+      stroke: { color: "#55606b", style: "solid", width: 1.3 },
     },
     "app-instance": {
       fill: "#fff7e6",
@@ -557,6 +576,10 @@ const infrastructureView: View = {
     server: {
       fill: "#252a31",
       stroke: { color: "#6b7885", style: "solid", width: 1.5 },
+    },
+    device: {
+      fill: "#242a30",
+      stroke: { color: "#6b7885", style: "solid", width: 1.3 },
     },
     "app-instance": {
       fill: "#2e2717",

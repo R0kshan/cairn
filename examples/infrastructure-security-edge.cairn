@@ -1,8 +1,5 @@
 diagram infrastructure "Payments platform — security edge"
 
-# The four kinds this view draws with a glyph, side by side at a zone edge:
-# firewall (barrier), gateway (routing), auth (check), idp (issuer).
-
 site DC "Main data center" {
   network-zone EDGE "Perimeter" {
     firewall FW_EXT "Perimeter\nfirewall"
@@ -22,10 +19,12 @@ site DC "Main data center" {
 }
 
 actor USERS "Customers"
+device KIOSK "Branch\nkiosk"
 external PSP "Card processor"
 
 # ---- technical flows (protocol REQUIRED) ----
 USERS -> FW_EXT : (HTTPS/443)
+KIOSK -> FW_EXT : (HTTPS/443)
 FW_EXT -> RP : (HTTPS/443)
 RP -> FW_INT : (HTTPS/8443)
 FW_INT -> OAUTH2 : (HTTPS/8443)
