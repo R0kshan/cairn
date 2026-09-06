@@ -93930,6 +93930,7 @@ var infrastructureView = {
   laneKinds: ["external"],
   kinds: [
     "actor",
+    "device",
     "site",
     "network-zone",
     "server",
@@ -93942,7 +93943,10 @@ var infrastructureView = {
     "external"
   ],
   containerKinds: ["site", "network-zone", "server"],
-  glyphKinds: ["gateway", "firewall", "auth", "idp"],
+  glyphKinds: ["gateway", "firewall", "auth", "idp", "device"],
+  // A `device` is a flow origin, so it belongs on the entry side with the
+  // actors rather than in a declaration-order band with the zones.
+  ingressKinds: ["actor", "actor-group", "device"],
   // The reference shape: the matrice des flux techniques as an EA dossier expects it.
   matrix: {
     zoneKinds: ["network-zone", "site"],
@@ -93953,6 +93957,7 @@ var infrastructureView = {
   actorLegend: true,
   legendNames: {
     actor: "User / consumer",
+    device: "Device / workstation",
     site: "Site / data center",
     "network-zone": "Network zone",
     server: "Server / VM",
@@ -93966,6 +93971,7 @@ var infrastructureView = {
   },
   legendNamesFr: {
     actor: "Utilisateur / consommateur",
+    device: "Poste de travail",
     site: "Site / centre de donn\xE9es",
     "network-zone": "Zone r\xE9seau",
     server: "Serveur / VM",
@@ -94017,7 +94023,7 @@ var infrastructureView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp"],
+    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp", "device"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
@@ -94033,6 +94039,12 @@ var infrastructureView = {
     server: {
       fill: "#ffffff",
       stroke: { color: "#55606b", style: "solid", width: 1.5 }
+    },
+    // The server's grey: a workstation is hardware like a server is, and the
+    // monitor glyph is what tells the two apart.
+    device: {
+      fill: "#eef0f2",
+      stroke: { color: "#55606b", style: "solid", width: 1.3 }
     },
     "app-instance": {
       fill: "#fff7e6",
@@ -94076,6 +94088,10 @@ var infrastructureView = {
     server: {
       fill: "#252a31",
       stroke: { color: "#6b7885", style: "solid", width: 1.5 }
+    },
+    device: {
+      fill: "#242a30",
+      stroke: { color: "#6b7885", style: "solid", width: 1.3 }
     },
     "app-instance": {
       fill: "#2e2717",
@@ -99394,12 +99410,14 @@ function constrainPorts(graph, scene, flagged, model) {
 var DENSE_ENOUGH = 0.6;
 var DENSITY_GAIN = 0.95;
 var INGRESS_PARTITION = -1;
+var DEFAULT_INGRESS_KINDS = ["actor", "actor-group"];
 var EGRESS_PARTITION = 900;
 var COMPACT_WRAP = 10;
 var SLOT_SCALE = 1e3;
 function elkPartitionOf(element, index, view, ingressExternal) {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
-  if (element.kind === "actor" || element.kind === "actor-group") return INGRESS_PARTITION;
+  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind))
+    return INGRESS_PARTITION;
   if (element.kind === "external")
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== void 0) return 90 + view.partitions[element.kind];
@@ -100177,7 +100195,11 @@ var GLYPHS = {
   // ID badge: an identity provider issues who-you-are, it does not check it.
   idp: ({ x, y, r, line }) => `<rect x="${x(3)}" y="${y(2)}" width="${r(12)}" height="${r(13)}" rx="${r(2)}" ${line}/><path d="M ${x(7)} ${y(2)} H ${x(11)}" ${line}/><circle cx="${x(9)}" cy="${y(7)}" r="${r(2)}" ${line}/><path d="M ${x(5)} ${y(13)} q ${r(4)} ${-r(4)} ${r(8)} 0" ${line}/>`,
   // Brick wall: a firewall is a barrier, and no other kind reads as one.
-  firewall: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/><path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/><path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`
+  firewall: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/><path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/><path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`,
+  // Monitor on a stand: a device is the machine a person works at. The screen is
+  // left empty on purpose — that is what separates it from the firewall's wall
+  // at legend size, where both are a rectangle and little else survives.
+  device: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(1)}" width="${r(14)}" height="${r(9)}" rx="${r(1)}" ${line}/><path d="M ${x(9)} ${y(10)} V ${y(13)}" ${line}/><path d="M ${x(4)} ${y(13)} H ${x(14)}" ${line}/>`
 };
 function glyphSvg(kind, stroke, box) {
   const glyph = GLYPHS[kind];

@@ -316,7 +316,7 @@ function settleOneLabel(s: Settler, label: SceneLabel): void {
  * The corner glyphs that tell the infrastructure kinds apart at a glance.
  *
  * Each is stroke-only, in the kind's own stroke colour, drawn inside one 18x16
- * box so the four read as a family. A pen receives that box already placed and
+ * box so they read as a family. A pen receives that box already placed and
  * scaled: `x`/`y` map box-relative coordinates, `r` scales a length, and
  * `line` is the shared stroke attributes. `GLYPH_GUTTER` (text-metrics) is the
  * width the layout reserves for the box, so no label can run underneath it.
@@ -358,6 +358,13 @@ const GLYPHS: Record<string, (pen: GlyphPen) => string> = {
     `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/>` +
     `<path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/>` +
     `<path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`,
+  // Monitor on a stand: a device is the machine a person works at. The screen is
+  // left empty on purpose — that is what separates it from the firewall's wall
+  // at legend size, where both are a rectangle and little else survives.
+  device: ({ x, y, r, line }) =>
+    `<rect x="${x(2)}" y="${y(1)}" width="${r(14)}" height="${r(9)}" rx="${r(1)}" ${line}/>` +
+    `<path d="M ${x(9)} ${y(10)} V ${y(13)}" ${line}/>` +
+    `<path d="M ${x(4)} ${y(13)} H ${x(14)}" ${line}/>`,
 };
 
 /**

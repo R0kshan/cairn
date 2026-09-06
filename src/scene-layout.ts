@@ -838,6 +838,12 @@ const DENSE_ENOUGH = 0.6;
 const DENSITY_GAIN = 0.95;
 
 const INGRESS_PARTITION = -1;
+/**
+ * The entry-side kinds of a view that does not name its own. Actors were the
+ * only ones until `ingressKinds` existed, so this keeps a view that omits the
+ * field drawing exactly as it did before.
+ */
+const DEFAULT_INGRESS_KINDS = ["actor", "actor-group"];
 const EGRESS_PARTITION = 900;
 const COMPACT_WRAP = 10;
 
@@ -859,7 +865,8 @@ function elkPartitionOf(
   ingressExternal: Set<string>,
 ): number {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
-  if (element.kind === "actor" || element.kind === "actor-group") return INGRESS_PARTITION;
+  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind))
+    return INGRESS_PARTITION;
   if (element.kind === "external")
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== undefined) return 90 + view.partitions[element.kind];

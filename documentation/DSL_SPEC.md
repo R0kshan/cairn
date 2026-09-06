@@ -60,7 +60,7 @@ inside an inline block is **E0104**.
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (**logical-view only** — a `business-object` elsewhere is **E0222**) |
 | `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — C4 container-diagram practice) |
-| `infrastructure` | actor, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
+| `infrastructure` | actor, device, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 
 Nesting is checked against the rules each view declares (**E0210–E0218**); a
 combination no rule names is accepted. In the per-view tables below, a
@@ -239,6 +239,7 @@ techniques* is built from.
 | Kind | Stands for | Container? | Placement | Drawn as |
 |---|---|---|---|---|
 | `actor` | a user or consumer of the infrastructure | no | root (**no `actor-group` in this view**) | person glyph, entry side |
+| `device` | a client machine: workstation, laptop, phone, kiosk | no | root | box + monitor glyph, entry side |
 | `site` | a site or data center | yes | root | box with title |
 | `network-zone` | a network zone | yes | **inside a `site`, or nested in another zone** (**E0216**) | box with title, banded in declaration order |
 | `server` | a server or VM | yes (holds `app-instance`) | **inside a `network-zone` or `site`** (**E0214**) | box with title |
@@ -313,7 +314,7 @@ Elements in the same partition stay aligned across the reading direction.
 |---|---|
 | `logical` | actor-groups (0) · systems (1) · externals (2) |
 | `application` | actor-groups (0) · systems / applications / queues / datastores (1) · externals (2) |
-| `infrastructure` | sites / zones in declaration order · externals last |
+| `infrastructure` | devices first · sites / zones in declaration order · externals last |
 
 Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 `-I` infrastructure — which writes a commented starter file for that view.
