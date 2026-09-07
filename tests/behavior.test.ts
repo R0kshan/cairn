@@ -811,6 +811,28 @@ test("legend + registry bands render, and legend: off removes the legend only", 
   assert.match(off.svg, /BUSINESS OBJECTS/);
 });
 
+test("the legend keys only what the drawing actually holds", async () => {
+  // Kind keys already followed the scene; the flow key did not. A diagram
+  // without a single flow was still told what a flow looks like.
+  const noFlows = await build(
+    'diagram infrastructure "t"\nsite S "Site" {\n  network-zone Z "Zone" {\n    server SRV "srv-01"\n  }\n}\n',
+  );
+  assert.match(noFlows.svg, />Server \/ VM</);
+  assert.doesNotMatch(noFlows.svg, /Technical flow/);
+
+  // Same rule for the chip key in the BUSINESS OBJECTS band: it explains the
+  // chips drawn on the flows, so an object no flow carries earns no key.
+  const uncarried = await build(
+    'diagram logical "t"\nbusiness-object CLAIM "Claim" "the case file"\nsystem S "System" {\n  block A "A"\n  block B "B"\n}\nA -> B : "hand over"\n',
+  );
+  assert.match(uncarried.svg, />Claim</); // the object is still registered
+  assert.doesNotMatch(uncarried.svg, /carried by the flow/);
+  const carried = await build(
+    'diagram logical "t"\nbusiness-object CLAIM "Claim" "the case file"\nsystem S "System" {\n  block A "A"\n  block B "B"\n}\nA -> B : "hand over" [CLAIM]\n',
+  );
+  assert.match(carried.svg, /carried by the flow/);
+});
+
 test("the legend keys every line style the drawing uses, and none it does not", async () => {
   // `->` solid, `-->` dashed, `..>` dotted carry a reading borrowed from
   // ArchiMate and C4 practice (`View.legendLineStyles`); a drawing that mixes

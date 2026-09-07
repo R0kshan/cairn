@@ -48,6 +48,11 @@ Everything else is optional and order-free: elements, flows, an optional
   an `A -> B` / `B -> A` pair is drawn as two separated edges.
 - **`legend { note "…" }`** appends free lines to the auto-generated legend band
   below the canvas. `style { legend: off }` drops the band entirely.
+- **The legend keys only what the drawing holds.** Element keys come from the
+  elements actually placed, the flow key only from a diagram that has flows, the
+  line-style keys only from the styles its flows use, and the business-object
+  chip key only when a flow carries one. A key for something the reader cannot
+  find on the canvas is noise, so nothing in the band is unconditional.
 
 **Inline style restriction:** per-element and per-flow `{ style { … } }` blocks
 support four properties — `fill`, `stroke`, `text`, `label`. Diagram-level
@@ -506,7 +511,6 @@ M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 
 Each glyph carries a reading, and the legend states it — a drawing that uses
 more than one line style gets a key per style, in the view's own vocabulary
-(`View.legendLineStyles` in [`views.ts`](../src/views.ts)):
 
 | Glyph | Logical | Application | Infrastructure |
 |---|---|---|---|

@@ -901,6 +901,64 @@ interface BandPaint {
 }
 
 /**
+ * The kinds this drawing actually places, in the order their keys are drawn.
+ * A key for a kind the reader cannot find on the canvas is noise, so the legend
+ * is derived from the scene rather than from the view's vocabulary. `actor` is
+ * the one kind a view opts into (`View.actorLegend`): elsewhere a person glyph
+ * needs no key.
+ */
+const legendKinds = (paint: BandPaint): string[] =>
+  [...new Set(paint.scene.nodes.map((node) => node.kind))].filter(
+    (kind) => paint.legendNames[kind] && (kind !== "actor" || paint.view.actorLegend),
+  );
+
+/**
+ * The legend's element keys: one swatch per kind, drawn from the same `glyphSvg`
+ * the nodes are, so a key and the shape it stands for cannot drift apart.
+ * Returns where the band now ends — `y` unchanged when there is nothing to key.
+ */
+function kindKeysSvg(
+  paint: BandPaint,
+  kinds: string[],
+  y: number,
+  x: number,
+): { svg: string; bandY: number } {
+  const { scene, palette, legendNames, scaled, resolveStyle } = paint;
+  let svg = "";
+  let keyX = x;
+  let bandY = y;
+  for (const kind of kinds) {
+    const nodeStyle = resolveStyle(kind, "");
+    if (kind === "actor") {
+      const stroke = nodeStyle.stroke?.color ?? palette.actorStroke;
+      svg += `<circle cx="${keyX + scaled(13)}" cy="${bandY + scaled(5)}" r="${scaled(3)}" fill="none" stroke="${stroke}" stroke-width="1.2"/>\n`;
+      svg += `<path d="M ${keyX + scaled(8)} ${bandY + scaled(15)} q ${scaled(5)} ${scaled(-7)} ${scaled(10)} 0" fill="none" stroke="${stroke}" stroke-width="1.2"/>\n`;
+    } else {
+      const dash = dashArray(nodeStyle.stroke?.style);
+      const stroke = nodeStyle.stroke?.color ?? palette.nodeStroke;
+      svg += `<rect x="${keyX}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${escAttr(stroke)}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>\n`;
+      // A kind drawn with a glyph shows that glyph in its key, from the same
+      // function the node renderer calls. The glyph is scaled to sit inside the
+      // swatch with a 2px margin.
+      const glyphScale = (scaled(14) - scaled(4)) / GLYPH_BOX.height;
+      svg += glyphSvg(kind, escAttr(stroke), {
+        x: keyX + (scaled(26) - GLYPH_BOX.width * glyphScale) / 2,
+        y: bandY + 2 + (scaled(14) - GLYPH_BOX.height * glyphScale) / 2,
+        scale: glyphScale,
+      });
+    }
+    const name = legendNames[kind];
+    svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>\n`;
+    keyX += scaled(40) + Math.ceil(name.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
+    if (keyX > scene.width - 220) {
+      keyX = x;
+      bandY += scaled(22);
+    }
+  }
+  return { svg, bandY: kinds.length ? bandY + scaled(24) : bandY };
+}
+
+/**
  * The legend's line-style keys: what each arrow glyph means in this view
  * (`View.legendLineStyles`), one key per style the drawing actually uses. The
  * swatch is drawn from `dashArray`, the same function the edges are, so a key
@@ -947,16 +1005,13 @@ function createBandRenderers(paint: BandPaint) {
   const {
     scene,
     model,
-    view,
     style,
     palette,
     annot,
     ui,
-    legendNames,
     legendFlowLabel,
     scaled,
     objectName,
-    resolveStyle,
     defaultEdgeColor,
     markerName,
     numbered,
@@ -1049,62 +1104,42 @@ function createBandRenderers(paint: BandPaint) {
       bandY += scaled(24);
     }
     // What a chip means belongs with the objects it describes, not among the
-    // legend's shape keys.
-    const keyChip = chip(contentX, bandY + 2, ui.businessObject);
-    bandsSvg += keyChip.svg;
-    bandsSvg += `<text x="${contentX + keyChip.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(ui.carriedByFlow)}</text>\n`;
-    bandY += scaled(24) + 6;
+    // legend's shape keys — and only when the drawing has chips to explain.
+    if (model.flows.some((flow) => flow.objects?.length)) {
+      const keyChip = chip(contentX, bandY + 2, ui.businessObject);
+      bandsSvg += keyChip.svg;
+      bandsSvg += `<text x="${contentX + keyChip.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(ui.carriedByFlow)}</text>\n`;
+      bandY += scaled(24);
+    }
+    bandY += 6;
   };
 
   const renderLegendBand = () => {
+    const kinds = legendKinds(paint);
+    // Every key this band can carry is conditional on what the drawing holds, so
+    // the band itself is too — a legend of nothing is worse than no legend.
+    if (!kinds.length && !model.flows.length && !model.legendNotes.length) return;
     beginBand(ui.legend);
-    let lx = contentX;
-    const kindsUsed = [...new Set(scene.nodes.map((node) => node.kind))].filter(
-      (kind) => legendNames[kind] && (kind !== "actor" || view.actorLegend),
-    );
-    for (const kind of kindsUsed) {
-      const nodeStyle = resolveStyle(kind, "");
-      if (kind === "actor") {
-        const stroke = nodeStyle.stroke?.color ?? palette.actorStroke;
-        bandsSvg += `<circle cx="${lx + scaled(13)}" cy="${bandY + scaled(5)}" r="${scaled(3)}" fill="none" stroke="${stroke}" stroke-width="1.2"/>\n`;
-        bandsSvg += `<path d="M ${lx + scaled(8)} ${bandY + scaled(15)} q ${scaled(5)} ${scaled(-7)} ${scaled(10)} 0" fill="none" stroke="${stroke}" stroke-width="1.2"/>\n`;
-      } else {
-        const dash = dashArray(nodeStyle.stroke?.style);
-        const stroke = nodeStyle.stroke?.color ?? palette.nodeStroke;
-        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${escAttr(stroke)}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>\n`;
-        // A kind drawn with a glyph shows that glyph in its key, from the same
-        // function the node renderer calls — key and node cannot drift apart.
-        // The glyph is scaled to sit inside the swatch with a 2px margin.
-        const glyphScale = (scaled(14) - scaled(4)) / GLYPH_BOX.height;
-        bandsSvg += glyphSvg(kind, escAttr(stroke), {
-          x: lx + (scaled(26) - GLYPH_BOX.width * glyphScale) / 2,
-          y: bandY + 2 + (scaled(14) - GLYPH_BOX.height * glyphScale) / 2,
-          scale: glyphScale,
-        });
-      }
-      const name = legendNames[kind];
-      bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>\n`;
-      lx += scaled(40) + Math.ceil(name.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
-      if (lx > scene.width - 220) {
-        lx = contentX;
-        bandY += scaled(22);
-      }
+    const kindKeys = kindKeysSvg(paint, kinds, bandY, contentX);
+    bandsSvg += kindKeys.svg;
+    bandY = kindKeys.bandY;
+    // The arrow key describes flows, so a diagram without any gets none.
+    if (model.flows.length) {
+      bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3" marker-end="url(#${markerName(defaultEdgeColor)})"/>\n`;
+      const flowLabelText =
+        (numbered ? legendFlowLabel + " — " + ui.numberedSuffix : legendFlowLabel) +
+        (style.flowColor === "by-source"
+          ? style.lang === "fr"
+            ? " — couleur = source"
+            : " — colour = source"
+          : "");
+      bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>\n`;
+      bandY += scaled(24);
+      // What each arrow glyph means, keyed under the flow it qualifies.
+      const lineStyleKeys = lineStyleKeysSvg(paint, bandY, contentX);
+      bandsSvg += lineStyleKeys.svg;
+      bandY = lineStyleKeys.bandY;
     }
-    bandY += scaled(24);
-    bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3" marker-end="url(#${markerName(defaultEdgeColor)})"/>\n`;
-    const flowLabelText =
-      (numbered ? legendFlowLabel + " — " + ui.numberedSuffix : legendFlowLabel) +
-      (style.flowColor === "by-source"
-        ? style.lang === "fr"
-          ? " — couleur = source"
-          : " — colour = source"
-        : "");
-    bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>\n`;
-    bandY += scaled(24);
-    // What each arrow glyph means, keyed under the flow it qualifies.
-    const lineStyleKeys = lineStyleKeysSvg(paint, bandY, contentX);
-    bandsSvg += lineStyleKeys.svg;
-    bandY = lineStyleKeys.bandY;
     for (const note of model.legendNotes) {
       bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>\n`;
       bandY += scaled(20);
