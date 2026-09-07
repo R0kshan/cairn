@@ -9,6 +9,8 @@
 
 import type { Model, StyleProps, Flow, Element } from "./models/ast.ts";
 import type { View } from "./views.ts";
+import { LINE_STYLES } from "./views.ts";
+import type { LineStyle } from "./views.ts";
 import { themeFor, themeFromSpec, flowPalette, isDarkTheme } from "./themes.ts";
 import type { ThemeSpec } from "./themes.ts";
 import { UI } from "./localization.ts";
@@ -48,6 +50,16 @@ const LABEL_HALO = 4;
 const RENDER_CHAR_WIDTH = 0.52;
 const dashArray = (lineStyle?: string) =>
   lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : undefined;
+
+/**
+ * Which line style a flow is actually drawn with. Most specific wins, as
+ * everywhere else in the style model: an inline `{ stroke: dashed }` overrides
+ * the arrow glyph, which overrides the diagram-level `flow-stroke`. Shared with
+ * the legend so it keys the styles the drawing really carries — a key for a
+ * style no edge uses is worse than no key at all.
+ */
+const lineStyleOf = (flow: Flow | undefined, style: Model["style"]) =>
+  flow?.style?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style;
 
 /** One decimal place — SVG coordinates stay short and byte-stable across runs. */
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -879,12 +891,51 @@ interface BandPaint {
   ui: (typeof UI)[keyof typeof UI];
   legendNames: View["legendNames"];
   legendFlowLabel: View["legendFlowLabel"];
+  legendLineStyles: View["legendLineStyles"];
   scaled: (n: number) => number;
   objectName: Map<string, string>;
   resolveStyle: (kind: string, id: string) => StyleProps;
   defaultEdgeColor: string;
   markerName: (color: string) => string;
   numbered: boolean;
+}
+
+/**
+ * The legend's line-style keys: what each arrow glyph means in this view
+ * (`View.legendLineStyles`), one key per style the drawing actually uses. The
+ * swatch is drawn from `dashArray`, the same function the edges are, so a key
+ * and the lines it stands for cannot drift apart. Returns where the band now
+ * ends — `y` unchanged when there is nothing to key.
+ */
+function lineStyleKeysSvg(paint: BandPaint, y: number, x: number): { svg: string; bandY: number } {
+  const { scene, model, style, palette, legendLineStyles, scaled, defaultEdgeColor, markerName } =
+    paint;
+  const styles: LineStyle[] = LINE_STYLES.filter((lineStyle) =>
+    model.flows.some((flow) => lineStyleOf(flow, style) === lineStyle),
+  );
+  // One style throughout distinguishes nothing, and the flow key above already
+  // says what a flow is in this view: a legend is there to tell things apart.
+  if (styles.length < 2) return { svg: "", bandY: y };
+  const maxX = scene.width - 20;
+  let svg = "";
+  let keyX = x;
+  let bandY = y;
+  for (const lineStyle of styles) {
+    const meaning = legendLineStyles[lineStyle];
+    const keyWidth =
+      scaled(40) + Math.ceil(meaning.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
+    // Wrap before drawing rather than after: these readings are sentences, and
+    // one started near the right edge would run off it.
+    if (keyX > x && keyX + keyWidth > maxX) {
+      keyX = x;
+      bandY += scaled(22);
+    }
+    const dash = dashArray(lineStyle);
+    svg += `<line x1="${keyX}" y1="${bandY + 8}" x2="${keyX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(defaultEdgeColor)})"/>\n`;
+    svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(meaning)}</text>\n`;
+    keyX += keyWidth;
+  }
+  return { svg, bandY: bandY + scaled(24) };
 }
 
 /**
@@ -1050,6 +1101,10 @@ function createBandRenderers(paint: BandPaint) {
         : "");
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>\n`;
     bandY += scaled(24);
+    // What each arrow glyph means, keyed under the flow it qualifies.
+    const lineStyleKeys = lineStyleKeysSvg(paint, bandY, contentX);
+    bandsSvg += lineStyleKeys.svg;
+    bandY = lineStyleKeys.bandY;
     for (const note of model.legendNotes) {
       bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>\n`;
       bandY += scaled(20);
@@ -1197,10 +1252,7 @@ function createEdgePainter(paint: EdgePaint) {
     const flowStyle = flow?.style;
     const color = flowColorOf(flow);
     const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
-    // Most specific wins, as everywhere else in the style model: an inline
-    // `{ stroke: dashed }` overrides the arrow glyph, which overrides the
-    // diagram-level `flow-stroke`.
-    const dash = dashArray(flowStyle?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style);
+    const dash = dashArray(lineStyleOf(flow, style));
     const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
     return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>\n`;
   };
@@ -1342,6 +1394,7 @@ export function render(
   const ui = UI[style.lang] ?? UI.en;
   const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
   const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
+  const legendLineStyles = style.lang === "fr" ? view.legendLineStylesFr : view.legendLineStyles;
 
   const elementStyle = new Map<string, StyleProps | undefined>();
   const elementLogo = new Map<string, Element["logo"]>();
@@ -1439,6 +1492,7 @@ export function render(
     ui,
     legendNames,
     legendFlowLabel,
+    legendLineStyles,
     scaled,
     objectName,
     resolveStyle,

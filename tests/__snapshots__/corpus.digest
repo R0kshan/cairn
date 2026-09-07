@@ -39,9 +39,9 @@ dispositions/large-tall.cairn  dim:2564x2230 n:47 e:42 ov:0  geom:cf730cdfeec8 c
 dispositions/medium-page.cairn  dim:935x1323 n:23 e:19 ov:0  geom:3a0c90bebb73 color:9dbbaf9e834f text:5a1b3c31eafc
 dispositions/medium-slide.cairn  dim:2112x558 n:23 e:19 ov:0  geom:21bf14021900 color:83dcb39448c1 text:f67fa494ab32
 dispositions/medium-tall.cairn  dim:981x1238 n:23 e:19 ov:0  geom:2b92fa5323e6 color:6a2fa9616faf text:68e487464509
-dispositions/positioning-sides-page.cairn  dim:865x719 n:12 e:10 ov:0  geom:202cbe356d7c color:d029d0fcbc88 text:6d35fb19dfd0
-dispositions/positioning-sides-slide.cairn  dim:1514x301 n:12 e:10 ov:0  geom:554b181dfe53 color:d029d0fcbc88 text:6d35fb19dfd0
-dispositions/positioning-sides-tall.cairn  dim:814x721 n:12 e:10 ov:0  geom:6ef57c98dbfb color:d029d0fcbc88 text:6d35fb19dfd0
+dispositions/positioning-sides-page.cairn  dim:865x719 n:12 e:10 ov:0  geom:8ebef4a4e969 color:a2ca1ff5d080 text:4f25bcb657ce
+dispositions/positioning-sides-slide.cairn  dim:1514x301 n:12 e:10 ov:0  geom:e081ffd45848 color:a2ca1ff5d080 text:4f25bcb657ce
+dispositions/positioning-sides-tall.cairn  dim:814x721 n:12 e:10 ov:0  geom:dcbf09b6443c color:a2ca1ff5d080 text:4f25bcb657ce
 dispositions/small-page.cairn  dim:429x723 n:12 e:6 ov:0  geom:e077208b7ae7 color:6fd24f7e4bcc text:f052cb74382b
 dispositions/small-slide.cairn  dim:1157x281 n:12 e:6 ov:0  geom:8693953c57c9 color:2e4a353ea2a1 text:02f87b07ab0d
 dispositions/small-tall.cairn  dim:429x723 n:12 e:6 ov:0  geom:e077208b7ae7 color:6fd24f7e4bcc text:f052cb74382b
@@ -66,8 +66,8 @@ placement/queue-roles.cairn  dim:574x182 n:6 e:4 ov:0  geom:b48211b80b01 color:2
 placement/queue-sides.cairn  dim:601x182 n:6 e:4 ov:0  geom:ce330c91fcb8 color:6c57091d3e57 text:f4d6fe26b076
 placement/reading-order.cairn  dim:503x203 n:6 e:4 ov:0  geom:2c9b12a9e17c color:60851c0ca209 text:3d0eff13230c
 placement/sides.cairn  dim:1311x241 n:14 e:6 ov:0  geom:6f719fb867cc color:4d06ef3531ab text:fa3340e6308b
-positioning-sides.cairn  dim:1567x323 n:12 e:10 ov:0  geom:0df05a9c60c3 color:d029d0fcbc88 text:6d35fb19dfd0
-positioning.cairn  dim:1181x282 n:12 e:7 ov:0  geom:4d6d3f57a6a2 color:4206a26d45da text:ad300725a272
+positioning-sides.cairn  dim:1567x323 n:12 e:10 ov:0  geom:98ad80364795 color:a2ca1ff5d080 text:4f25bcb657ce
+positioning.cairn  dim:1181x282 n:12 e:7 ov:0  geom:05d78e486fe0 color:c3d97904bacc text:6643f6b3a9ab
 small.cairn  dim:1302x261 n:12 e:6 ov:0  geom:f9507b5f31d4 color:b048c640e696 text:f052cb74382b
 theme-dark.cairn  dim:1256x169 n:10 e:4 ov:0  geom:8d9e038cd189 color:118c91b3f490 text:a3e28e66b9e1
 theme-light.cairn  dim:1256x169 n:10 e:4 ov:0  geom:8d9e038cd189 color:21a74bb867a3 text:a3e28e66b9e1

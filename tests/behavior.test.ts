@@ -811,6 +811,43 @@ test("legend + registry bands render, and legend: off removes the legend only", 
   assert.match(off.svg, /BUSINESS OBJECTS/);
 });
 
+test("the legend keys every line style the drawing uses, and none it does not", async () => {
+  // `->` solid, `-->` dashed, `..>` dotted carry a reading borrowed from
+  // ArchiMate and C4 practice (`View.legendLineStyles`); a drawing that mixes
+  // them has to say which is which.
+  const mixed = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nqueue Q "Bus"\ndatastore DB "Store"\nA -> B (API_REST, JSON)\nA --> Q (MQ, JSON)\nB ..> DB (SQL)\n',
+  );
+  assert.match(mixed.svg, /Synchronous call/);
+  assert.match(mixed.svg, /Asynchronous exchange/);
+  assert.match(mixed.svg, /Dependency/);
+  // One key per style used, drawn with the dash pattern the edges themselves use.
+  assert.equal(mixed.svg.match(/stroke-dasharray="5 3"/g)?.length, 2); // the flow + its key
+  assert.equal(mixed.svg.match(/stroke-dasharray="2 2.5"/g)?.length, 2);
+
+  // One style throughout distinguishes nothing, so the row is absent: the flow
+  // key above it already says what a flow is in this view.
+  const solidOnly = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nA -> B (API_REST, JSON)\n',
+  );
+  assert.doesNotMatch(solidOnly.svg, /Synchronous call/);
+
+  // An inline `{ stroke: … }` is what the reader sees, so it is what gets keyed.
+  const overridden = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nA --> B (API_REST, JSON) { stroke: solid }\n',
+  );
+  assert.doesNotMatch(overridden.svg, /Asynchronous exchange/);
+});
+
+test("the line-style keys speak the diagram's language", async () => {
+  const { svg } = await build(
+    'diagram application "t"\nstyle {\n  lang: fr\n}\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nqueue Q "Bus"\nA -> B (API_REST, JSON)\nA --> Q (MQ, JSON)\n',
+  );
+  assert.match(svg, /Appel synchrone/);
+  assert.match(svg, /Échange asynchrone/);
+  assert.doesNotMatch(svg, /Synchronous call/);
+});
+
 test("flow-text: numbered produces badges + FLUX band", async () => {
   const { svg } = await build(load("large-numbered.cairn"));
   assert.match(svg, />FLOWS</);

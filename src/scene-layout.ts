@@ -892,8 +892,7 @@ function elkPartitionOf(
   ingressExternal: Set<string>,
 ): number {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
-  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind))
-    return INGRESS_PARTITION;
+  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind)) return INGRESS_PARTITION;
   if (element.kind === "external")
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== undefined) return 90 + view.partitions[element.kind];
@@ -1353,8 +1352,10 @@ function segmentsCross(a1: Point, a2: Point, b1: Point, b2: Point): boolean {
   const hy = h1.y;
   const vx = v1.x;
   return (
-    vx > Math.min(h1.x, h2.x) + 0.5 && vx < Math.max(h1.x, h2.x) - 0.5 &&
-    hy > Math.min(v1.y, v2.y) + 0.5 && hy < Math.max(v1.y, v2.y) - 0.5
+    vx > Math.min(h1.x, h2.x) + 0.5 &&
+    vx < Math.max(h1.x, h2.x) - 0.5 &&
+    hy > Math.min(v1.y, v2.y) + 0.5 &&
+    hy < Math.max(v1.y, v2.y) - 0.5
   );
 }
 
@@ -1408,10 +1409,14 @@ function crossesLeaf(edge: SceneEdge, leaves: SceneNode[], attached: Set<string>
     for (const node of leaves) {
       if (attached.has(node.id)) continue;
       const struck = horizontal
-        ? at > node.y + 1 && at < node.y + node.height - 1 &&
-          lo < node.x + node.width - 1 && hi > node.x + 1
-        : at > node.x + 1 && at < node.x + node.width - 1 &&
-          lo < node.y + node.height - 1 && hi > node.y + 1;
+        ? at > node.y + 1 &&
+          at < node.y + node.height - 1 &&
+          lo < node.x + node.width - 1 &&
+          hi > node.x + 1
+        : at > node.x + 1 &&
+          at < node.x + node.width - 1 &&
+          lo < node.y + node.height - 1 &&
+          hi > node.y + 1;
       if (struck) return true;
     }
   }
@@ -1446,10 +1451,12 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
     edges.reduce(
       (total, edge) =>
         total +
-        edge.pts.filter((point, i) =>
-          i > 0 &&
-          Math.abs(point.x - edge.pts[i - 1].x) >= 0.5 &&
-          Math.abs(point.y - edge.pts[i - 1].y) >= 0.5).length,
+        edge.pts.filter(
+          (point, i) =>
+            i > 0 &&
+            Math.abs(point.x - edge.pts[i - 1].x) >= 0.5 &&
+            Math.abs(point.y - edge.pts[i - 1].y) >= 0.5,
+        ).length,
       0,
     );
   const touching = new Map<string, SceneEdge[]>();
@@ -1459,8 +1466,12 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
     for (const point of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
       if (!point) continue;
       for (const node of scene.nodes)
-        if (point.x >= node.x - 1 && point.x <= node.x + node.width + 1 &&
-            point.y >= node.y - 1 && point.y <= node.y + node.height + 1) {
+        if (
+          point.x >= node.x - 1 &&
+          point.x <= node.x + node.width + 1 &&
+          point.y >= node.y - 1 &&
+          point.y <= node.y + node.height + 1
+        ) {
           ends.add(node.id);
           if (!touching.has(node.id)) touching.set(node.id, []);
           touching.get(node.id)!.push(edge);
@@ -1494,8 +1505,12 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
       node[axis] = target;
       for (const edge of edges)
         for (const point of edge.pts)
-          if (point.x >= box.x - 1 && point.x <= box.x + box.w + 1 &&
-              point.y >= box.y - 1 && point.y <= box.y + box.h + 1)
+          if (
+            point.x >= box.x - 1 &&
+            point.x <= box.x + box.w + 1 &&
+            point.y >= box.y - 1 &&
+            point.y <= box.y + box.h + 1
+          )
             point[axis] += delta;
       const broke =
         crossingsAround(scene, edges) > crossingsBefore ||
@@ -1504,13 +1519,20 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
         edges.some((edge) => crossesLeaf(edge, leaves, attachedTo.get(edge.id) ?? new Set())) ||
         // Containers included: a lane member is top-level, so it has no
         // legitimate container ancestor and may not land on one.
-        scene.nodes.some((other) =>
-          other !== node && !node.container &&
-          other.x < node.x + node.width && node.x < other.x + other.width &&
-          other.y < node.y + node.height && node.y < other.y + other.height);
+        scene.nodes.some(
+          (other) =>
+            other !== node &&
+            !node.container &&
+            other.x < node.x + node.width &&
+            node.x < other.x + other.width &&
+            other.y < node.y + node.height &&
+            node.y < other.y + other.height,
+        );
       if (broke) {
         node[axis] = target - delta;
-        edges.forEach((edge, i) => { edge.pts = before[i]; });
+        edges.forEach((edge, i) => {
+          edge.pts = before[i];
+        });
       }
     }
   }
@@ -1831,7 +1853,6 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     });
     return scene;
   };
-
 
   const laneOf = laneAssignment(model, view);
   const startTime = Date.now();

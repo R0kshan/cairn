@@ -504,6 +504,24 @@ ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
 
+Each glyph carries a reading, and the legend states it — a drawing that uses
+more than one line style gets a key per style, in the view's own vocabulary
+(`View.legendLineStyles` in [`views.ts`](../src/views.ts)):
+
+| Glyph | Logical | Application | Infrastructure |
+|---|---|---|---|
+| `->` solid | direct exchange | synchronous call (request / response) | permanent link — nominal traffic |
+| `-->` dashed | asynchronous or event-driven exchange | asynchronous exchange (message, event) | asynchronous or intermittent link |
+| `..>` dotted | dependency — no data exchanged | dependency — no direct call | dependency — outside nominal traffic |
+
+These are not cairn's invention: ArchiMate draws its *flow* relationship dashed
+and its *access* and *realization* relationships dotted against a solid
+*triggering* line, and C4 — which prescribes no notation but does ask every
+diagram for a key — dashes its asynchronous relationships by convention. Nothing
+enforces the reading; the parser records a line style and the renderer draws it.
+A diagram that uses one style throughout gets no key row, since there is nothing
+to tell apart.
+
 Five files in [`examples/placement/`](../examples/placement) show these
 controls: `baseline.cairn` declares none, `sides.cairn` is the same shape with
 `ID.side` pins on its flows, `reading-order.cairn` sequences two backends along
