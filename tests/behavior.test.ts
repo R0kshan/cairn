@@ -834,9 +834,9 @@ test("the legend keys only what the drawing actually holds", async () => {
 });
 
 test("the legend keys every line style the drawing uses, and none it does not", async () => {
-  // `->` solid, `-->` dashed, `..>` dotted carry a reading borrowed from
-  // ArchiMate and C4 practice (`View.legendLineStyles`); a drawing that mixes
-  // them has to say which is which.
+  // `->` solid, `-->` dashed, `..>` dotted each carry a stated reading
+  // (`View.legendLineStyles`); a drawing that mixes them has to say which is
+  // which.
   const mixed = await build(
     'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nqueue Q "Bus"\ndatastore DB "Store"\nA -> B (API_REST, JSON)\nA --> Q (MQ, JSON)\nB ..> DB (SQL)\n',
   );
@@ -859,6 +859,33 @@ test("the legend keys every line style the drawing uses, and none it does not", 
     'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nA --> B (API_REST, JSON) { stroke: solid }\n',
   );
   assert.doesNotMatch(overridden.svg, /Asynchronous exchange/);
+});
+
+test("a line-style key too wide for the band wraps instead of running off it", async () => {
+  // The bands grow the drawing's height, never its width (`svgDocument`), so a
+  // reading with no row wide enough for it is broken across lines rather than
+  // past the canvas edge, where it would simply be clipped.
+  const narrow = await build(
+    'diagram application "t"\nstyle {\n  disposition: tall\n}\napplication APP "App" {\n  module A "Module A"\n  module B "Module B"\n}\nqueue Q "Bus"\nA -> B (REST)\nA --> Q (MQ)\n',
+  );
+  const canvasWidth = Number(/viewBox="0 0 ([\d.]+)/.exec(narrow.svg)?.[1]);
+  assert.ok(canvasWidth < 400, `expected a narrow canvas, got ${canvasWidth}`);
+  assert.doesNotMatch(narrow.svg, />Asynchronous exchange \(message, event\)</);
+  assert.match(narrow.svg, />Asynchronous</);
+  // Every fragment it broke into stays inside the canvas.
+  for (const [, x, size, text] of narrow.svg.matchAll(
+    /<text x="([\d.]+)"[^>]*font-size="([\d.]+)"[^>]*>(Asynchronous|exchange|\(message,|event\))</g,
+  ))
+    assert.ok(
+      Number(x) + text.length * Number(size) * 0.52 <= canvasWidth,
+      `\`${text}\` at x=${x} runs past the ${canvasWidth}px canvas`,
+    );
+
+  // A band with room keeps the reading on one line.
+  const wide = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "Module A"\n  module B "Module B"\n}\nqueue Q "Bus"\nA -> B (REST)\nA --> Q (MQ)\n',
+  );
+  assert.match(wide.svg, />Asynchronous exchange \(message, event\)</);
 });
 
 test("the line-style keys speak the diagram's language", async () => {

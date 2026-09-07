@@ -978,7 +978,8 @@ function lineStyleKeysSvg(paint: BandPaint, y: number, x: number): { svg: string
   let svg = "";
   let keyX = x;
   let bandY = y;
-  for (const lineStyle of styles) {
+  const LINE_H = scaled(12);
+  for (const [index, lineStyle] of styles.entries()) {
     const meaning = legendLineStyles[lineStyle];
     const keyWidth =
       scaled(40) + Math.ceil(meaning.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
@@ -990,8 +991,26 @@ function lineStyleKeysSvg(paint: BandPaint, y: number, x: number): { svg: string
     }
     const dash = dashArray(lineStyle);
     svg += `<line x1="${keyX}" y1="${bandY + 8}" x2="${keyX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(defaultEdgeColor)})"/>\n`;
-    svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(meaning)}</text>\n`;
-    keyX += keyWidth;
+    // A reading with no row wide enough for it is broken across lines rather
+    // than over the canvas edge: the bands grow the drawing's height, never its
+    // width (`svgDocument`), so whatever reaches past `maxX` is simply clipped.
+    const room = maxX - keyX - scaled(40);
+    const lines = wrapText(
+      meaning,
+      Math.max(8, Math.floor(room / (scaled(10) * RENDER_CHAR_WIDTH))),
+    ).split("\n");
+    for (const [row, line] of lines.entries())
+      svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(12) + row * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>\n`;
+    if (lines.length === 1) {
+      keyX += keyWidth;
+      continue;
+    }
+    // A wrapped reading owns its row — nothing else fits beside it anyway.
+    bandY += (lines.length - 1) * LINE_H;
+    if (index < styles.length - 1) {
+      bandY += scaled(22);
+      keyX = x;
+    }
   }
   return { svg, bandY: bandY + scaled(24) };
 }

@@ -82,15 +82,16 @@ export interface View {
    * `-->` dashed, `..>` dotted (`DSL_SPEC.md`).
    *
    * cairn attaches no semantics to the glyphs itself: the parser records a line
-   * style and the renderer draws it. What it does do is name the reading the
-   * notations it borrows from already carry, so a diagram is not left with three
-   * line styles and no key. ArchiMate draws its *flow* relationship dashed and
-   * its *access* and *realization* relationships dotted, against a solid
-   * *triggering* line; C4 prescribes no notation at all but asks every diagram
-   * for a key, and dashes its asynchronous relationships by convention. The
-   * three readings below are those same three ideas in each view's own words:
-   * solid is direct, dashed is asynchronous, dotted is a dependency that carries
-   * nothing.
+   * style and the renderer draws it. What the readings below do is give the
+   * three glyphs a stated meaning, so a diagram is not left with three line
+   * styles and no key — cairn's own definitions, not a standard's, informed by
+   * two notations that do separate relationships this way. ArchiMate draws its
+   * *flow* relationship dashed and its *access* relationship dotted, against a
+   * solid *triggering* line. C4 prescribes no line styles at all, but asks every
+   * diagram for a key; drawing asynchronous relationships dashed is a convention
+   * among its users rather than part of the model. The same three ideas are said
+   * in each view's own words: solid is direct, dashed is asynchronous, dotted is
+   * a dependency that carries nothing.
    *
    * A key is drawn only for the styles a drawing actually uses, and only when it
    * uses more than one — a legend is there to tell things apart
