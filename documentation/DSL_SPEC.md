@@ -48,6 +48,11 @@ Everything else is optional and order-free: elements, flows, an optional
   an `A -> B` / `B -> A` pair is drawn as two separated edges.
 - **`legend { note "…" }`** appends free lines to the auto-generated legend band
   below the canvas. `style { legend: off }` drops the band entirely.
+- **The legend keys only what the drawing holds.** Element keys come from the
+  elements actually placed, the flow key only from a diagram that has flows, the
+  line-style keys only from the styles its flows use, and the business-object
+  chip key only when a flow carries one. A key for something the reader cannot
+  find on the canvas is noise, so nothing in the band is unconditional.
 
 **Inline style restriction:** per-element and per-flow `{ style { … } }` blocks
 support four properties — `fill`, `stroke`, `text`, `label`. Diagram-level
@@ -503,6 +508,26 @@ ROUTING --> SETTLE (MQ, JSON)          # dashed
 ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
+
+Each glyph carries a reading, and the legend states it — a drawing that uses
+more than one line style gets a key per style, in the view's own vocabulary:
+
+| Glyph | Logical | Application | Infrastructure |
+|---|---|---|---|
+| `->` solid | direct exchange | synchronous call (request / response) | permanent link — nominal traffic |
+| `-->` dashed | asynchronous or event-driven exchange | asynchronous exchange (message, event) | asynchronous or intermittent link |
+| `..>` dotted | dependency — no data exchanged | dependency — no direct call | dependency — outside nominal traffic |
+
+cairn defines these readings — they are not lifted from a standard — informed by
+two that do distinguish relationships this way. ArchiMate separates its
+relationships by line style, drawing *flow* dashed and *access* dotted against a
+solid *triggering* line. C4 prescribes no notation at all, but asks every diagram
+for a key, which is what this band is; drawing asynchronous relationships dashed
+is a convention among its users, not part of the model.
+
+Nothing enforces the reading: the parser records a line style and the renderer
+draws it. A diagram that uses one style throughout gets no key row, since there
+is nothing to tell apart.
 
 Five files in [`examples/placement/`](../examples/placement) show these
 controls: `baseline.cairn` declares none, `sides.cairn` is the same shape with

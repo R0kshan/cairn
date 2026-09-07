@@ -811,6 +811,92 @@ test("legend + registry bands render, and legend: off removes the legend only", 
   assert.match(off.svg, /BUSINESS OBJECTS/);
 });
 
+test("the legend keys only what the drawing actually holds", async () => {
+  // Kind keys already followed the scene; the flow key did not. A diagram
+  // without a single flow was still told what a flow looks like.
+  const noFlows = await build(
+    'diagram infrastructure "t"\nsite S "Site" {\n  network-zone Z "Zone" {\n    server SRV "srv-01"\n  }\n}\n',
+  );
+  assert.match(noFlows.svg, />Server \/ VM</);
+  assert.doesNotMatch(noFlows.svg, /Technical flow/);
+
+  // Same rule for the chip key in the BUSINESS OBJECTS band: it explains the
+  // chips drawn on the flows, so an object no flow carries earns no key.
+  const uncarried = await build(
+    'diagram logical "t"\nbusiness-object CLAIM "Claim" "the case file"\nsystem S "System" {\n  block A "A"\n  block B "B"\n}\nA -> B : "hand over"\n',
+  );
+  assert.match(uncarried.svg, />Claim</); // the object is still registered
+  assert.doesNotMatch(uncarried.svg, /carried by the flow/);
+  const carried = await build(
+    'diagram logical "t"\nbusiness-object CLAIM "Claim" "the case file"\nsystem S "System" {\n  block A "A"\n  block B "B"\n}\nA -> B : "hand over" [CLAIM]\n',
+  );
+  assert.match(carried.svg, /carried by the flow/);
+});
+
+test("the legend keys every line style the drawing uses, and none it does not", async () => {
+  // `->` solid, `-->` dashed, `..>` dotted each carry a stated reading
+  // (`View.legendLineStyles`); a drawing that mixes them has to say which is
+  // which.
+  const mixed = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nqueue Q "Bus"\ndatastore DB "Store"\nA -> B (API_REST, JSON)\nA --> Q (MQ, JSON)\nB ..> DB (SQL)\n',
+  );
+  assert.match(mixed.svg, /Synchronous call/);
+  assert.match(mixed.svg, /Asynchronous exchange/);
+  assert.match(mixed.svg, /Dependency/);
+  // One key per style used, drawn with the dash pattern the edges themselves use.
+  assert.equal(mixed.svg.match(/stroke-dasharray="5 3"/g)?.length, 2); // the flow + its key
+  assert.equal(mixed.svg.match(/stroke-dasharray="2 2.5"/g)?.length, 2);
+
+  // One style throughout distinguishes nothing, so the row is absent: the flow
+  // key above it already says what a flow is in this view.
+  const solidOnly = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nA -> B (API_REST, JSON)\n',
+  );
+  assert.doesNotMatch(solidOnly.svg, /Synchronous call/);
+
+  // An inline `{ stroke: … }` is what the reader sees, so it is what gets keyed.
+  const overridden = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nA --> B (API_REST, JSON) { stroke: solid }\n',
+  );
+  assert.doesNotMatch(overridden.svg, /Asynchronous exchange/);
+});
+
+test("a line-style key too wide for the band wraps instead of running off it", async () => {
+  // The bands grow the drawing's height, never its width (`svgDocument`), so a
+  // reading with no row wide enough for it is broken across lines rather than
+  // past the canvas edge, where it would simply be clipped.
+  const narrow = await build(
+    'diagram application "t"\nstyle {\n  disposition: tall\n}\napplication APP "App" {\n  module A "Module A"\n  module B "Module B"\n}\nqueue Q "Bus"\nA -> B (REST)\nA --> Q (MQ)\n',
+  );
+  const canvasWidth = Number(/viewBox="0 0 ([\d.]+)/.exec(narrow.svg)?.[1]);
+  assert.ok(canvasWidth < 400, `expected a narrow canvas, got ${canvasWidth}`);
+  assert.doesNotMatch(narrow.svg, />Asynchronous exchange \(message, event\)</);
+  assert.match(narrow.svg, />Asynchronous</);
+  // Every fragment it broke into stays inside the canvas.
+  for (const [, x, size, text] of narrow.svg.matchAll(
+    /<text x="([\d.]+)"[^>]*font-size="([\d.]+)"[^>]*>(Asynchronous|exchange|\(message,|event\))</g,
+  ))
+    assert.ok(
+      Number(x) + text.length * Number(size) * 0.52 <= canvasWidth,
+      `\`${text}\` at x=${x} runs past the ${canvasWidth}px canvas`,
+    );
+
+  // A band with room keeps the reading on one line.
+  const wide = await build(
+    'diagram application "t"\napplication APP "App" {\n  module A "Module A"\n  module B "Module B"\n}\nqueue Q "Bus"\nA -> B (REST)\nA --> Q (MQ)\n',
+  );
+  assert.match(wide.svg, />Asynchronous exchange \(message, event\)</);
+});
+
+test("the line-style keys speak the diagram's language", async () => {
+  const { svg } = await build(
+    'diagram application "t"\nstyle {\n  lang: fr\n}\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nqueue Q "Bus"\nA -> B (API_REST, JSON)\nA --> Q (MQ, JSON)\n',
+  );
+  assert.match(svg, /Appel synchrone/);
+  assert.match(svg, /Échange asynchrone/);
+  assert.doesNotMatch(svg, /Synchronous call/);
+});
+
 test("flow-text: numbered produces badges + FLUX band", async () => {
   const { svg } = await build(load("large-numbered.cairn"));
   assert.match(svg, />FLOWS</);

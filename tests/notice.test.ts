@@ -99,7 +99,10 @@ test("no licence text ships unexplained, and none is cited without shipping", ()
       notices.includes(file) || provenance.includes(file),
       `licenses/${file} is shipped but named in neither THIRD-PARTY-NOTICES.md nor licenses/README.md`,
     );
-    assert.ok(provenance.includes(file), `licenses/${file} has no provenance row in licenses/README.md`);
+    assert.ok(
+      provenance.includes(file),
+      `licenses/${file} has no provenance row in licenses/README.md`,
+    );
   }
 });
 

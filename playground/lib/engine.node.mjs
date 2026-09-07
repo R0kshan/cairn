@@ -93608,6 +93608,7 @@ function applyStyleEntry(entry) {
 }
 
 // src/views.ts
+var LINE_STYLES2 = ["solid", "dashed", "dotted"];
 var logicalView = {
   name: "logical",
   laneKinds: ["external"],
@@ -93639,6 +93640,16 @@ var logicalView = {
   },
   legendFlowLabel: "Functional flow (label = exchanged data)",
   legendFlowLabelFr: "Flux fonctionnel (libell\xE9 = donn\xE9es \xE9chang\xE9es)",
+  legendLineStyles: {
+    solid: "Direct exchange",
+    dashed: "Asynchronous or event-driven exchange",
+    dotted: "Dependency \u2014 no data exchanged"
+  },
+  legendLineStylesFr: {
+    solid: "\xC9change direct",
+    dashed: "\xC9change asynchrone ou \xE9v\xE9nementiel",
+    dotted: "D\xE9pendance \u2014 aucune donn\xE9e \xE9chang\xE9e"
+  },
   flowTechRequired: null,
   flowTechRecommended: null,
   businessObjects: true,
@@ -93811,6 +93822,16 @@ var applicationView = {
   },
   legendFlowLabel: "Application flow \u2014 (protocol, format) under the label",
   legendFlowLabelFr: "Flux applicatif \u2014 (protocole, format) sous le libell\xE9",
+  legendLineStyles: {
+    solid: "Synchronous call (request / response)",
+    dashed: "Asynchronous exchange (message, event)",
+    dotted: "Dependency \u2014 no direct call"
+  },
+  legendLineStylesFr: {
+    solid: "Appel synchrone (requ\xEAte / r\xE9ponse)",
+    dashed: "\xC9change asynchrone (message, \xE9v\xE9nement)",
+    dotted: "D\xE9pendance \u2014 sans appel direct"
+  },
   flowLabelRequired: null,
   flowTechRequired: null,
   flowTechRecommended: {
@@ -93997,6 +94018,16 @@ var infrastructureView = {
   },
   legendFlowLabel: "Technical flow (protocol, port)",
   legendFlowLabelFr: "Flux technique (protocole, port)",
+  legendLineStyles: {
+    solid: "Permanent link \u2014 nominal traffic",
+    dashed: "Asynchronous or intermittent link",
+    dotted: "Dependency \u2014 outside nominal traffic"
+  },
+  legendLineStylesFr: {
+    solid: "Lien permanent \u2014 trafic nominal",
+    dashed: "Lien asynchrone ou intermittent",
+    dotted: "D\xE9pendance \u2014 hors trafic nominal"
+  },
   flowLabelRequired: null,
   flowTechRecommended: null,
   flowTechRequired: {
@@ -99461,8 +99492,7 @@ var COMPACT_WRAP = 10;
 var SLOT_SCALE = 1e3;
 function elkPartitionOf(element, index, view, ingressExternal) {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
-  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind))
-    return INGRESS_PARTITION;
+  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind)) return INGRESS_PARTITION;
   if (element.kind === "external")
     return ingressExternal.has(element.id) ? INGRESS_PARTITION : EGRESS_PARTITION;
   if (view.partitions[element.kind] !== void 0) return 90 + view.partitions[element.kind];
@@ -99790,7 +99820,9 @@ function snapLanes(scene, laneOf, axis) {
   if (!laneOf.size) return;
   const leaves = leafBoxesOf(scene);
   const tilted = (edges) => edges.reduce(
-    (total, edge) => total + edge.pts.filter((point, i) => i > 0 && Math.abs(point.x - edge.pts[i - 1].x) >= 0.5 && Math.abs(point.y - edge.pts[i - 1].y) >= 0.5).length,
+    (total, edge) => total + edge.pts.filter(
+      (point, i) => i > 0 && Math.abs(point.x - edge.pts[i - 1].x) >= 0.5 && Math.abs(point.y - edge.pts[i - 1].y) >= 0.5
+    ).length,
     0
   );
   const touching = /* @__PURE__ */ new Map();
@@ -99834,7 +99866,9 @@ function snapLanes(scene, laneOf, axis) {
             point[axis] += delta;
       const broke = crossingsAround(scene, edges) > crossingsBefore || shortJogs(edges) > jogsBefore || tilted(edges) > tiltsBefore || edges.some((edge) => crossesLeaf(edge, leaves, attachedTo.get(edge.id) ?? /* @__PURE__ */ new Set())) || // Containers included: a lane member is top-level, so it has no
       // legitimate container ancestor and may not land on one.
-      scene.nodes.some((other) => other !== node && !node.container && other.x < node.x + node.width && node.x < other.x + other.width && other.y < node.y + node.height && node.y < other.y + other.height);
+      scene.nodes.some(
+        (other) => other !== node && !node.container && other.x < node.x + node.width && node.x < other.x + other.width && other.y < node.y + node.height && node.y < other.y + other.height
+      );
       if (broke) {
         node[axis] = target - delta;
         edges.forEach((edge, i) => {
@@ -100184,6 +100218,7 @@ var HOP_RADIUS = 5;
 var LABEL_HALO = 4;
 var RENDER_CHAR_WIDTH = 0.52;
 var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
+var lineStyleOf = (flow, style) => flow?.style?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style;
 var round1 = (n) => Math.round(n * 10) / 10;
 function assignSourceHues(model, hues) {
   const sourceHue = /* @__PURE__ */ new Map();
@@ -100586,6 +100621,32 @@ function createLabelSettler(deps) {
     settleLabelPositions
   };
 }
+function lineStyleKeysSvg(paint, y, x) {
+  const { scene, model, style, palette, legendLineStyles, scaled, defaultEdgeColor, markerName } = paint;
+  const styles = LINE_STYLES2.filter(
+    (lineStyle) => model.flows.some((flow) => lineStyleOf(flow, style) === lineStyle)
+  );
+  if (styles.length < 2) return { svg: "", bandY: y };
+  const maxX = scene.width - 20;
+  let svg = "";
+  let keyX = x;
+  let bandY = y;
+  for (const lineStyle of styles) {
+    const meaning = legendLineStyles[lineStyle];
+    const keyWidth = scaled(40) + Math.ceil(meaning.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
+    if (keyX > x && keyX + keyWidth > maxX) {
+      keyX = x;
+      bandY += scaled(22);
+    }
+    const dash = dashArray(lineStyle);
+    svg += `<line x1="${keyX}" y1="${bandY + 8}" x2="${keyX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(defaultEdgeColor)})"/>
+`;
+    svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(meaning)}</text>
+`;
+    keyX += keyWidth;
+  }
+  return { svg, bandY: bandY + scaled(24) };
+}
 function createBandRenderers(paint) {
   const {
     scene,
@@ -100736,6 +100797,9 @@ function createBandRenderers(paint) {
     bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
 `;
     bandY += scaled(24);
+    const lineStyleKeys = lineStyleKeysSvg(paint, bandY, contentX);
+    bandsSvg += lineStyleKeys.svg;
+    bandY = lineStyleKeys.bandY;
     for (const note of model.legendNotes) {
       bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>
 `;
@@ -100838,7 +100902,7 @@ function createEdgePainter(paint) {
     const flowStyle = flow?.style;
     const color = flowColorOf(flow);
     const headColor = style.flowColor === "by-source" ? color : defaultEdgeColor;
-    const dash = dashArray(flowStyle?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style);
+    const dash = dashArray(lineStyleOf(flow, style));
     const width = flowStyle?.stroke?.width ?? style.flowStroke.width;
     return `<path d="${edgePath(edge.pts)}" fill="none" stroke="${escAttr(color)}" stroke-width="${width}"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(headColor)})"/>
 `;
@@ -100911,6 +100975,7 @@ function render(model, view, scene, options) {
   const ui = UI[style.lang] ?? UI.en;
   const legendNames = style.lang === "fr" ? view.legendNamesFr : view.legendNames;
   const legendFlowLabel = style.lang === "fr" ? view.legendFlowLabelFr : view.legendFlowLabel;
+  const legendLineStyles = style.lang === "fr" ? view.legendLineStylesFr : view.legendLineStyles;
   const elementStyle = /* @__PURE__ */ new Map();
   const elementLogo = /* @__PURE__ */ new Map();
   for (const entry of collectElementStyles(model.elements)) {
@@ -100992,6 +101057,7 @@ function render(model, view, scene, options) {
     ui,
     legendNames,
     legendFlowLabel,
+    legendLineStyles,
     scaled,
     objectName,
     resolveStyle,

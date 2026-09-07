@@ -92,8 +92,7 @@ Per-icon attribution and the full licence texts ship with this artifact:
 declare const CAIRN_EMBEDS_BUN: boolean | undefined;
 
 /** True when running from a `bun build --compile` binary that embeds the runtime. */
-export const embedsBun = (): boolean =>
-  typeof CAIRN_EMBEDS_BUN !== "undefined" && CAIRN_EMBEDS_BUN;
+export const embedsBun = (): boolean => typeof CAIRN_EMBEDS_BUN !== "undefined" && CAIRN_EMBEDS_BUN;
 
 /**
  * The notice as plain text, tailored to what this artifact actually contains.

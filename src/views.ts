@@ -9,6 +9,17 @@
 import type { StyleProps } from "./models/ast.ts";
 import type { MatrixSpec } from "./models/matrix.ts";
 
+/**
+ * A flow's line style — the arrow glyph that declared it (`->`, `-->`, `..>`) or
+ * a `stroke:` override. Named here because the legend keys them
+ * (`View.legendLineStyles`); the value union itself lives on `StyleProps` and
+ * `Flow.lineStyle` in `models/ast.ts`.
+ */
+export type LineStyle = "solid" | "dashed" | "dotted";
+
+/** The order the legend keys line styles in: plainest first. */
+export const LINE_STYLES: LineStyle[] = ["solid", "dashed", "dotted"];
+
 interface NestingRule {
   code: string;
   child: string;
@@ -66,6 +77,28 @@ export interface View {
   actorLegend?: boolean;
   legendFlowLabel: string;
   legendFlowLabelFr: string;
+  /**
+   * What each arrow glyph means, in this view's vocabulary — `->` solid,
+   * `-->` dashed, `..>` dotted (`DSL_SPEC.md`).
+   *
+   * cairn attaches no semantics to the glyphs itself: the parser records a line
+   * style and the renderer draws it. What the readings below do is give the
+   * three glyphs a stated meaning, so a diagram is not left with three line
+   * styles and no key — cairn's own definitions, not a standard's, informed by
+   * two notations that do separate relationships this way. ArchiMate draws its
+   * *flow* relationship dashed and its *access* relationship dotted, against a
+   * solid *triggering* line. C4 prescribes no line styles at all, but asks every
+   * diagram for a key; drawing asynchronous relationships dashed is a convention
+   * among its users rather than part of the model. The same three ideas are said
+   * in each view's own words: solid is direct, dashed is asynchronous, dotted is
+   * a dependency that carries nothing.
+   *
+   * A key is drawn only for the styles a drawing actually uses, and only when it
+   * uses more than one — a legend is there to tell things apart
+   * (`renderLegendBand`).
+   */
+  legendLineStyles: Record<LineStyle, string>;
+  legendLineStylesFr: Record<LineStyle, string>;
   flowLabelRequired: {
     code: string;
     message: string;
@@ -129,6 +162,16 @@ const logicalView: View = {
   },
   legendFlowLabel: "Functional flow (label = exchanged data)",
   legendFlowLabelFr: "Flux fonctionnel (libell\u00e9 = donn\u00e9es \u00e9chang\u00e9es)",
+  legendLineStyles: {
+    solid: "Direct exchange",
+    dashed: "Asynchronous or event-driven exchange",
+    dotted: "Dependency — no data exchanged",
+  },
+  legendLineStylesFr: {
+    solid: "\u00c9change direct",
+    dashed: "\u00c9change asynchrone ou \u00e9v\u00e9nementiel",
+    dotted: "D\u00e9pendance — aucune donn\u00e9e \u00e9chang\u00e9e",
+  },
   flowTechRequired: null,
   flowTechRecommended: null,
   businessObjects: true,
@@ -302,6 +345,16 @@ const applicationView: View = {
   },
   legendFlowLabel: "Application flow — (protocol, format) under the label",
   legendFlowLabelFr: "Flux applicatif — (protocole, format) sous le libell\u00e9",
+  legendLineStyles: {
+    solid: "Synchronous call (request / response)",
+    dashed: "Asynchronous exchange (message, event)",
+    dotted: "Dependency — no direct call",
+  },
+  legendLineStylesFr: {
+    solid: "Appel synchrone (requ\u00eate / r\u00e9ponse)",
+    dashed: "\u00c9change asynchrone (message, \u00e9v\u00e9nement)",
+    dotted: "D\u00e9pendance — sans appel direct",
+  },
   flowLabelRequired: null,
   flowTechRequired: null,
   flowTechRecommended: {
@@ -489,6 +542,16 @@ const infrastructureView: View = {
   },
   legendFlowLabel: "Technical flow (protocol, port)",
   legendFlowLabelFr: "Flux technique (protocole, port)",
+  legendLineStyles: {
+    solid: "Permanent link — nominal traffic",
+    dashed: "Asynchronous or intermittent link",
+    dotted: "Dependency — outside nominal traffic",
+  },
+  legendLineStylesFr: {
+    solid: "Lien permanent — trafic nominal",
+    dashed: "Lien asynchrone ou intermittent",
+    dotted: "D\u00e9pendance — hors trafic nominal",
+  },
   flowLabelRequired: null,
   flowTechRecommended: null,
   flowTechRequired: {

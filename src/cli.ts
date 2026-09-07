@@ -330,9 +330,7 @@ if (command === "version" || command === "--version" || command === "-v") {
   // repo's own prose, so that typo is the likely one. Accept either, refuse the
   // rest.
   const LICENCE_FLAGS = new Set(["--licenses", "--licences"]);
-  const unknown = args
-    .slice(1)
-    .filter((arg) => arg.startsWith("-") && !LICENCE_FLAGS.has(arg));
+  const unknown = args.slice(1).filter((arg) => arg.startsWith("-") && !LICENCE_FLAGS.has(arg));
   if (unknown.length) {
     console.error(
       `unknown flag${unknown.length > 1 ? "s" : ""} for \`cairn version\`: ${unknown.join(", ")}\n` +
