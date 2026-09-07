@@ -11,8 +11,9 @@
   header { display:flex; align-items:center; gap:12px; padding:8px 14px; background:var(--panel); border-bottom:1px solid var(--border); flex-wrap:wrap; }
   header h1 { font-size:15px; margin:0; font-weight:600; }
   header .dim { color:var(--dim); font-size:12px; }
-  header select, header button { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:12.5px; cursor:pointer; }
-  header button:hover, header select:hover { border-color:var(--accent); }
+  header select, header button, header a.button { background:var(--bg); color:var(--text); border:1px solid var(--border); border-radius:6px; padding:5px 10px; font-size:12.5px; cursor:pointer; }
+  header a.button { text-decoration:none; font:inherit; font-size:12.5px; line-height:normal; }
+  header button:hover, header select:hover, header a.button:hover { border-color:var(--accent); }
   #zoom { margin-left:auto; display:flex; gap:4px; align-items:center; }
   #zoom button { width:28px; padding:5px 0; border-radius:4px; }
   #zoom-level { width:54px; font-variant-numeric:tabular-nums; }
@@ -73,7 +74,7 @@
   <button id="share">Copy share link</button>
   <button id="embed" title="A live SVG URL served by /api/svg — embed it in a README or docs">Copy embed URL</button>
   <button id="download">Download SVG</button>
-  <button id="open-tab" title="Open the rendered diagram in a new tab — full window, browser zoom, nothing to save">Open in new tab</button>
+  <a id="open-tab" class="button" href="view.html" target="cairn-view" title="Open the rendered diagram in a new tab — full window, browser zoom, nothing to save">Open in new tab</a>
   <select id="matrix-format" title="Flow-matrix export format — same as `cairn matrix --format`">
     <option value="csv">matrix: csv</option>
     <option value="md">matrix: md</option>
@@ -320,16 +321,14 @@ document.getElementById('download').addEventListener('click', () => {
 // gets a real page instead, and every render outcome is broadcast to it — the
 // view mirrors this preview rather than copying it once.
 //
-// The window is opened by name, so clicking again refocuses the tab that is
-// already watching instead of spawning another. `noopener` is deliberately
-// absent: it forces a fresh context every time and would defeat that reuse.
+// A real link, not `window.open`. A script-opened window is a pop-up as far as
+// the blocker is concerned, and origins that are not `localhost` are routinely
+// blocked by default; following an anchor the reader actually clicked is a
+// navigation, which no blocker intercepts. The `target` still names the window,
+// so clicking again refocuses the tab that is already watching instead of
+// spawning another. `rel="noopener"` is deliberately absent: it forces a fresh
+// context every time and would defeat that reuse.
 document.getElementById('open-tab').addEventListener('click', () => {
-  // Synchronous: an `await` before `window.open` spends the user gesture and
-  // the popup blocker takes the tab.
-  if (!window.open('view.html', 'cairn-view')) {
-    flash('the browser blocked the new tab — allow pop-ups for this site');
-    return;
-  }
   flash('opened — the view follows your edits');
 });
 
