@@ -1574,6 +1574,19 @@ test("a role reads the same written on either endpoint", async () => {
   }
 });
 
+test("a queue-to-queue flow reads the role at each end, not just the first one", async () => {
+  // Both endpoints are hubs, so both roles are legal (`checkEndpointRoles`) and
+  // each one names a cap on the queue *opposite* it: `A.consumer` puts the flow
+  // on B's consumer cap, `B.producer` puts it on A's producer cap. Reading only
+  // the first role left the other queue on its arrow-derived default.
+  const { scene, model } = await build(
+    'diagram application "t"\nqueue A "Inbox"\nqueue B "Outbox"\nA.consumer -> B.producer (AMQP)\n',
+  );
+  const flow = model.flows[0];
+  assert.equal(sideOfTerminal(scene, flow.id, "B", "finish"), "right");
+  assert.equal(sideOfTerminal(scene, flow.id, "A", "start"), "left");
+});
+
 test("a role needs a queue at the other end (E0224), and never a side with it (E0225)", () => {
   const noQueue = check(
     'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module B "B"\n}\nA.producer -> B (API_REST, JSON)\n',

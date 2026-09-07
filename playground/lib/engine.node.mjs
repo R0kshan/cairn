@@ -99557,13 +99557,9 @@ var SIDE_TO_ELK = {
 function laidOutReversed(flow) {
   return flow.fromRole?.value === "consumer" || flow.toRole?.value === "producer";
 }
-function roleCap(flow) {
-  const declared = flow.fromRole ?? flow.toRole;
-  if (!declared) return null;
-  return {
-    hub: flow.fromRole ? "to" : "from",
-    cap: declared.value === "producer" ? "left" : "right"
-  };
+function roleCap(role) {
+  if (!role) return null;
+  return role.value === "producer" ? "left" : "right";
 }
 function hubFlowSides(model, view) {
   const derived = /* @__PURE__ */ new Map();
@@ -99575,10 +99571,8 @@ function hubFlowSides(model, view) {
   if (!hubs.size) return derived;
   for (const flow of model.flows) {
     const sides = {};
-    const role = roleCap(flow);
-    if (hubs.has(flow.to) && !flow.toSide) sides.to = role?.hub === "to" ? role.cap : "left";
-    if (hubs.has(flow.from) && !flow.fromSide)
-      sides.from = role?.hub === "from" ? role.cap : "right";
+    if (hubs.has(flow.to) && !flow.toSide) sides.to = roleCap(flow.fromRole) ?? "left";
+    if (hubs.has(flow.from) && !flow.fromSide) sides.from = roleCap(flow.toRole) ?? "right";
     if (sides.to || sides.from) derived.set(flow.id, sides);
   }
   return derived;
@@ -99956,11 +99950,11 @@ async function withHubPortFallback(elk, makeGraph, direction, options) {
     throw error;
   }
 }
-function markDeclaredTerminals(edges, model, view) {
+function markDeclaredTerminals(edges, model, view, hubPorts) {
   const pinnedFlows = new Map(
     model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }])
   );
-  const hubSides = hubFlowSides(model, view);
+  const hubSides = hubPorts ? hubFlowSides(model, view) : /* @__PURE__ */ new Map();
   for (const edge of edges) {
     const pinned = pinnedFlows.get(edge.id);
     if (pinned) edge.pinned = { ...pinned };
@@ -99999,7 +99993,7 @@ async function layout(model, view) {
   };
   const makeGraph = (direction, options) => buildElkGraph(graphContext, direction, options);
   const kindOf = new Map(indexElementsById(model.elements));
-  const sceneFromResult = (result2, layoutMs2, lanes = true) => {
+  const sceneFromResult = (result2, layoutMs2, laidOutWith, lanes = true) => {
     const origins = {
       root: { x: 0, y: 0 }
     };
@@ -100009,7 +100003,7 @@ async function layout(model, view) {
     const edges = collectSceneEdges(result2, origins, numbered, edgeFontSize);
     const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
     for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
-    markDeclaredTerminals(edges, model, view);
+    markDeclaredTerminals(edges, model, view, laidOutWith?.hubPorts !== false);
     const scene = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),
@@ -100070,7 +100064,7 @@ async function layout(model, view) {
     ({ result, options: winnerOptions } = await layoutGraph(winnerDirection));
   }
   const layoutMs = Date.now() - startTime;
-  let base = sceneFromResult(result, layoutMs);
+  let base = sceneFromResult(result, layoutMs, winnerOptions);
   const layoutProfile = (candidate) => {
     const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
     const profile = inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, /* @__PURE__ */ new Map());
@@ -100080,6 +100074,8 @@ async function layout(model, view) {
   if (!aspectTarget && nodeCoverage(base) < DENSE_ENOUGH) {
     const denser = await denserLayout(base, {
       layout: (spec) => elk.layout(makeGraph(winnerDirection, spec)),
+      // Its specs carry the hub ports (none of them sets `hubPorts: false`), and
+      // a candidate elk refuses is dropped rather than retried without them.
       toScene: (laidOut) => sceneFromResult(laidOut, Date.now() - startTime),
       profile: layoutProfile
     });
@@ -100101,7 +100097,7 @@ async function layout(model, view) {
       const constrained = makeGraph(winnerDirection, winnerOptions);
       constrainPorts(constrained, current, flagged, model);
       const reresult = await elk.layout(constrained);
-      candidate = sceneFromResult(reresult, Date.now() - startTime);
+      candidate = sceneFromResult(reresult, Date.now() - startTime, winnerOptions);
     } catch {
       break;
     }

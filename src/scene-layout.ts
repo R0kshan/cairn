@@ -7,7 +7,7 @@
  * ELK result after layout (coordinates populated) and are shared with slide-fold.
  */
 
-import type { Model, Element, AttachSide } from "./models/ast.ts";
+import type { Model, Element, AttachSide, AttachRole } from "./models/ast.ts";
 import type { ElkNode, ElkEdgeSection } from "elkjs/lib/elk.bundled.js";
 import type { View } from "./views.ts";
 import {
@@ -1062,11 +1062,12 @@ interface DerivedSides {
  *
  * - **The author outranks it.** An endpoint carrying an `ID.side` pin is left
  *   alone — a derived side never overrides declared intent (INVARIANTS §17).
- * - **It is an elk port and nothing else.** The terminal is not marked
- *   `pinned`, so every repair pass may still move it and `attachAway` still
- *   counts it. Marking it would exempt a side *cairn itself* chose from the gate
- *   that measures it (INVARIANTS §3a), and no `W0570` is reported for it either:
- *   nothing was declared, so nothing was dropped.
+ * - **It is not a pin.** The terminal is marked `hubSided`, not `pinned`
+ *   (`markDeclaredTerminals`): the route repair stands down from re-siding it,
+ *   but `attachAway` still counts it — exempting a side *cairn itself* chose
+ *   from the gate that measures it would hide the cost (INVARIANTS §3a). No
+ *   `W0570` is reported for it either: nothing was declared, so nothing was
+ *   dropped.
  * - **It is opt-in per view.** A view without `hubKinds`, or a diagram without a
  *   hub element, produces an empty map and builds the graph it always built.
  */
@@ -1084,14 +1085,15 @@ function laidOutReversed(flow: Model["flows"][number]): boolean {
   return flow.fromRole?.value === "consumer" || flow.toRole?.value === "producer";
 }
 
-/** The queue cap a role asks for: a producer's flow meets the left one, a consumer's the right. */
-function roleCap(flow: Model["flows"][number]): { hub: "from" | "to"; cap: AttachSide } | null {
-  const declared = flow.fromRole ?? flow.toRole;
-  if (!declared) return null;
-  return {
-    hub: flow.fromRole ? "to" : "from",
-    cap: declared.value === "producer" ? "left" : "right",
-  };
+/**
+ * The queue cap a role asks for: a producer's flow meets the left one, a
+ * consumer's the right. Read per endpoint, from the role at the *other* end —
+ * `A.consumer -> B.producer` between two queues names a cap on each of them,
+ * and taking only the first would leave the second at its arrow-derived default.
+ */
+function roleCap(role: { value: AttachRole } | undefined): AttachSide | null {
+  if (!role) return null;
+  return role.value === "producer" ? "left" : "right";
 }
 
 function hubFlowSides(model: Model, view: View): Map<string, DerivedSides> {
@@ -1108,10 +1110,8 @@ function hubFlowSides(model: Model, view: View): Map<string, DerivedSides> {
     const sides: DerivedSides = {};
     // A role decides the cap outright; without one the arrow does — into the
     // queue is a producer, out of it a consumer.
-    const role = roleCap(flow);
-    if (hubs.has(flow.to) && !flow.toSide) sides.to = role?.hub === "to" ? role.cap : "left";
-    if (hubs.has(flow.from) && !flow.fromSide)
-      sides.from = role?.hub === "from" ? role.cap : "right";
+    if (hubs.has(flow.to) && !flow.toSide) sides.to = roleCap(flow.fromRole) ?? "left";
+    if (hubs.has(flow.from) && !flow.fromSide) sides.from = roleCap(flow.toRole) ?? "right";
     if (sides.to || sides.from) derived.set(flow.id, sides);
   }
   return derived;
@@ -1728,14 +1728,24 @@ async function withHubPortFallback(
  * `hubFlowSides` chose. The passes read them the same way when they consider
  * re-siding a terminal and differently when they count defects — see
  * `SceneEdge.hubSided`.
+ *
+ * `hubPorts` is whether the layout being described actually carried those ports.
+ * When `withHubPortFallback` climbed down from them, elk picked those sides
+ * unaided: marking them would fix an arbitrary side and stop `optimiseRoutes`
+ * from repairing what the fallback already cost.
  */
-function markDeclaredTerminals(edges: SceneEdge[], model: Model, view: View): void {
+function markDeclaredTerminals(
+  edges: SceneEdge[],
+  model: Model,
+  view: View,
+  hubPorts: boolean,
+): void {
   const pinnedFlows = new Map(
     model.flows
       .filter((flow) => flow.fromSide || flow.toSide)
       .map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }] as const),
   );
-  const hubSides = hubFlowSides(model, view);
+  const hubSides = hubPorts ? hubFlowSides(model, view) : new Map<string, DerivedSides>();
   for (const edge of edges) {
     const pinned = pinnedFlows.get(edge.id);
     if (pinned) edge.pinned = { ...pinned };
@@ -1783,7 +1793,14 @@ export async function layout(model: Model, view: View): Promise<Scene> {
 
   const kindOf = new Map(indexElementsById(model.elements));
 
-  const sceneFromResult = (result: LaidOutNode, layoutMs: number, lanes = true): Scene => {
+  const sceneFromResult = (
+    result: LaidOutNode,
+    layoutMs: number,
+    // What the result was *laid out* with, so the scene records hub caps only
+    // when elk was actually given them (`withHubPortFallback`).
+    laidOutWith?: GraphOptions,
+    lanes = true,
+  ): Scene => {
     const origins: Record<string, { x: number; y: number }> = {
       root: { x: 0, y: 0 },
     };
@@ -1798,7 +1815,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     // traversed in.
     const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
     for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
-    markDeclaredTerminals(edges, model, view);
+    markDeclaredTerminals(edges, model, view, laidOutWith?.hubPorts !== false);
 
     const scene: Scene = {
       width: Math.ceil(result.width),
@@ -1886,7 +1903,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     ({ result, options: winnerOptions } = await layoutGraph(winnerDirection));
   }
   const layoutMs = Date.now() - startTime;
-  let base = sceneFromResult(result, layoutMs);
+  let base = sceneFromResult(result, layoutMs, winnerOptions);
   /** What a whole-layout choice is judged on: the ladder plus the gate's blind spots. */
   const layoutProfile = (candidate: Scene): Profile => {
     const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
@@ -1897,6 +1914,8 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   if (!aspectTarget && nodeCoverage(base) < DENSE_ENOUGH) {
     const denser = await denserLayout(base, {
       layout: (spec) => elk.layout(makeGraph(winnerDirection, spec)) as Promise<unknown>,
+      // Its specs carry the hub ports (none of them sets `hubPorts: false`), and
+      // a candidate elk refuses is dropped rather than retried without them.
       toScene: (laidOut) => sceneFromResult(laidOut, Date.now() - startTime),
       profile: layoutProfile,
     });
@@ -1944,7 +1963,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       const constrained = makeGraph(winnerDirection, winnerOptions);
       constrainPorts(constrained, current, flagged, model);
       const reresult = (await elk.layout(constrained)) as unknown as LaidOutNode;
-      candidate = sceneFromResult(reresult, Date.now() - startTime);
+      candidate = sceneFromResult(reresult, Date.now() - startTime, winnerOptions);
     } catch {
       break;
     }
