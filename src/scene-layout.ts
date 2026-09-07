@@ -812,7 +812,8 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
 interface GraphContext {
   model: Model;
   view: View;
-  ingressExternal: Set<string>;
+  /** elk partition band per top-level element (`elkPartitions`). */
+  bandOf: Map<string, number>;
   /**
    * Reading-order slot per top-level element, resolved from the `order:` hints
    * (`readingSlots`). Empty for a diagram that declares none, and an empty map
@@ -899,6 +900,73 @@ function elkPartitionOf(
   return index;
 }
 
+/**
+ * Is this element's band the one `elkPartitionOf` has no rule for — its own
+ * declaration index? The entry and exit edges and the view's own kind bands are
+ * placements the view means; this is the fallthrough, and the only band an
+ * author's `order:` may rearrange.
+ */
+function bandedByDeclaration(element: Element, view: View): boolean {
+  if (!view.partitionByOrder) return false;
+  if ((view.ingressKinds ?? DEFAULT_INGRESS_KINDS).includes(element.kind)) return false;
+  if (element.kind === "external") return false;
+  return view.partitions[element.kind] === undefined;
+}
+
+/**
+ * The bands of the top-level elements a `partitionByOrder` view has no rule for,
+ * rearranged by their `order:`.
+ *
+ * Declaration order *is* the reading order in these views, and that left a
+ * top-level `order:` with nothing to do: the fallback gives every such element a
+ * band of its own, and `readingSlots` only sequences elements that *share* one.
+ * A band of one has nothing to sort, so `order: 1` on an `idp` and `order: 9` on
+ * a `site` laid out byte-identically to no `order:` at all — while
+ * [`DSL_SPEC.md`](../documentation/DSL_SPEC.md) says the hint sequences the
+ * drawing.
+ *
+ * So these elements swap bands instead of sorting inside one: the same set of
+ * band numbers, handed out in the order the author asked for. Two properties
+ * come from handing back the *same* numbers rather than fresh ranks — the bands
+ * keep their places relative to the entry edge, the kind bands and the exit edge
+ * (§9), and a diagram whose author declared no top-level `order:` gets the
+ * identity permutation, so it is byte-identical to one from before this existed
+ * (§17). An element without an `order:` keeps its declared position, which is
+ * what makes the hint a *correction* to the reading order rather than a switch
+ * that scrambles everything the author did not name.
+ */
+function orderedFallbackBands(model: Model, view: View): Map<string, number> {
+  const bands = new Map<string, number>();
+  const members = model.elements
+    .map((element, index) => ({ element, index }))
+    .filter(({ element }) => bandedByDeclaration(element, view));
+  if (!members.some(({ element }) => element.order)) return bands;
+  const seats = members.map(({ index }) => index);
+  const ranked = [...members].sort(
+    (a, b) =>
+      (a.element.order?.value ?? a.index) - (b.element.order?.value ?? b.index) || a.index - b.index,
+  );
+  ranked.forEach((member, seat) => bands.set(member.element.id, seats[seat]));
+  return bands;
+}
+
+/**
+ * The elk partition band of every top-level element, read once per layout: the
+ * view's rule (`elkPartitionOf`) across the model, with the declaration-order
+ * fallback rearranged by any `order:` the author put on it
+ * (`orderedFallbackBands`). Read once so the band a node is given and the band
+ * `readingSlots` sorts within cannot drift apart.
+ */
+function elkPartitions(model: Model, view: View, ingressExternal: Set<string>): Map<string, number> {
+  const ordered = orderedFallbackBands(model, view);
+  return new Map(
+    model.elements.map((element, index) => [
+      element.id,
+      ordered.get(element.id) ?? elkPartitionOf(element, index, view, ingressExternal),
+    ]),
+  );
+}
+
 /** The top-level ancestor of `id` — the element a flow endpoint is banded with. */
 function rootAncestorOf(model: Model, id: string): string | undefined {
   let element = model.index.get(id);
@@ -936,16 +1004,10 @@ function rootAncestorOf(model: Model, id: string): string | undefined {
  * leaves every partition exactly as it was — which is what keeps a diagram that
  * declares none byte-identical (§17).
  */
-function readingSlots(model: Model, view: View, ingressExternal: Set<string>): Map<string, number> {
+function readingSlots(model: Model, bandOf: Map<string, number>): Map<string, number> {
   const slotOf = new Map<string, number>();
   if (!model.elements.some((element) => element.order)) return slotOf;
 
-  const bandOf = new Map(
-    model.elements.map((element, index) => [
-      element.id,
-      elkPartitionOf(element, index, view, ingressExternal),
-    ]),
-  );
   const lowestOf = new Map<number, number>();
   for (const band of new Set(bandOf.values())) {
     const members = model.elements.filter((element) => bandOf.get(element.id) === band);
@@ -1233,7 +1295,7 @@ function buildElkGraph(
   direction: "RIGHT" | "DOWN",
   options?: GraphOptions,
 ): ElkNode {
-  const { model, view, ingressExternal, slotOf, compact, numbered, fonts } = ctx;
+  const { model, view, bandOf, slotOf, compact, numbered, fonts } = ctx;
   // `slide-fold.ts` sizes nodes on its own path, so it reserves the same gutter
   // there (`leafSize`). The two must stay in step: a view that declares
   // `glyphKinds` without `partitionByOrder` — the application view — is laid out
@@ -1294,9 +1356,9 @@ function buildElkGraph(
         : {}),
       ...(options?.placement ? { "elk.layered.nodePlacement.strategy": options.placement } : {}),
     },
-    children: model.elements.map((element, index) => {
+    children: model.elements.map((element) => {
       const elkNode = toElkNode(element, { compact, fonts, glyphKinds }, true);
-      const band = elkPartitionOf(element, index, view, ingressExternal);
+      const band = bandOf.get(element.id) ?? 1;
       const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
         ...elkNode.layoutOptions,
@@ -1791,15 +1853,17 @@ export async function layout(model: Model, view: View): Promise<Scene> {
   const disposition = model.style.disposition;
   const aspectTarget = ASPECT_TARGETS[disposition];
 
-  const ingressExternalElements = view.partitionByOrder
-    ? computeIngressExternalElements(model)
-    : new Set<string>();
+  const bandOf = elkPartitions(
+    model,
+    view,
+    view.partitionByOrder ? computeIngressExternalElements(model) : new Set<string>(),
+  );
 
   const graphContext: GraphContext = {
     model,
     view,
-    ingressExternal: ingressExternalElements,
-    slotOf: readingSlots(model, view, ingressExternalElements),
+    bandOf,
+    slotOf: readingSlots(model, bandOf),
     compact,
     numbered,
     fonts: {

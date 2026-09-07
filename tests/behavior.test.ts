@@ -1444,6 +1444,53 @@ test("at the diagram root, `order:` reads along the disposition's own direction"
   );
 });
 
+const SITES_SRC = (siteOrder: string) => `diagram infrastructure "t"
+site EDGE "Edge" {
+  order: 1
+  network-zone Z_EDGE "Edge zone" {
+    gateway GW "gw-01"
+  }
+}
+site CORE "Core" {
+  order: 3
+  network-zone Z_CORE "Core zone" {
+    server SRV_CORE "core-01"
+  }
+}
+site FIELD "Field" {
+  order: ${siteOrder}
+  network-zone Z_FIELD "Field zone" {
+    server SRV_FIELD "field-01"
+  }
+}
+GW -> SRV_CORE (HTTPS/443)
+SRV_FIELD -> GW (HTTPS/443)
+SRV_CORE -> SRV_FIELD (AMQP/5672)
+`;
+
+test("at the root of a declaration-ordered view, `order:` rearranges the sequence", async () => {
+  // `logical` and `infrastructure` read in declaration order, which gives every
+  // top-level element a band of its own — and left `order:` with nothing to sort,
+  // since a band of one has no members to sequence. It rearranges the bands
+  // themselves: the same set of places, handed out in the order asked for.
+  const last = await build(SITES_SRC("4"));
+  assert.ok(xOf(last.scene, "CORE") < xOf(last.scene, "FIELD"), "order 4: the field site reads last");
+  const middle = await build(SITES_SRC("2"));
+  assert.ok(
+    xOf(middle.scene, "EDGE") < xOf(middle.scene, "FIELD"),
+    "order 2: …and between the two others when asked",
+  );
+  assert.ok(xOf(middle.scene, "FIELD") < xOf(middle.scene, "CORE"));
+});
+
+test("a declaration-ordered view without any `order:` keeps declaration order", async () => {
+  // The permutation is the identity when nobody asked for one, which is what
+  // keeps every diagram written before the hint reached this view unchanged.
+  const { scene } = await build(SITES_SRC("2").replace(/\n *order: \d+/g, ""));
+  assert.ok(xOf(scene, "EDGE") < xOf(scene, "CORE"), "declared first reads first");
+  assert.ok(xOf(scene, "CORE") < xOf(scene, "FIELD"), "…and declared last reads last");
+});
+
 test("`order:` never moves an element out of its view partition", async () => {
   // The actor-group is banded ahead of the applications (§9). An order that says
   // otherwise orders it among its own band's members, and nothing more.

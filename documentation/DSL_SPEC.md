@@ -371,6 +371,17 @@ would otherwise be drawn side by side across the axis. Three rules bound it.
 - **A flow may end up running backwards.** Where the declared order contradicts
   the flow direction, the order wins and the flow is drawn as a backward edge.
 
+In the `logical` and `infrastructure` views, whose reading order *is* the
+declaration order, a top-level `order:` rearranges that sequence instead of
+sorting inside a band: the elements swap places with one another, and one you
+did not name keeps the position you declared it in. Which is what makes it a
+correction rather than a switch — `order:` on a single site moves that site and
+leaves the rest of the diagram alone. Reach for it when a box exchanges with
+elements on both sides of it and the declaration order left it at one end. Do
+measure the result: a sequence that shortens the flows can cost more in
+crossings than it saves in canvas, and `npm run sweep -- --only=<example>`
+prices both.
+
 **Inside a container `order:` sorts across the axis instead** — top to bottom in
 `wide`/`slide`, left to right in `tall`/`page`. A child's layer is fixed by the
 flows there and every layer constraint elk offers was measured to be a no-op

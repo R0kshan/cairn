@@ -1,0 +1,140 @@
+diagram infrastructure "Plateforme de télémétrie — noyau et sites secondaires (région unique)"
+style {
+  lang: fr
+  disposition: wide
+  compact: on
+  fill network-zone: #eef6ff
+}
+
+# ============================================================================
+# Périmètre : un domaine, une seule région cloud. Les échanges inter-régions et
+# inter-domaines sont hors périmètre.
+#
+# Convention de ports : les ports non précisés reprennent la valeur par défaut
+# du protocole (HTTPS/443, AMQP/5672, PostgreSQL/5432). Les flux sans port
+# normalisé (socket applicatif, liaison série) n'en portent pas.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# Postes de travail et accès d'astreinte
+# ---------------------------------------------------------------------------
+device POSTE_A "Poste d'exploitation A\nNavigateur client"
+device POSTE_B "Poste d'exploitation B\nNavigateur client"
+actor OPERATEUR_ASTREINTE "Opérateur distant\n(accès mobile)"
+
+# ---------------------------------------------------------------------------
+# Exposition publique — une seule adresse pour le service
+#
+# L'ordre de déclaration est l'ordre de lecture dans cette vue. Les six
+# permutations des trois sites ont été mesurées : celle-ci est la seule qui
+# tienne le barème de lisibilité (29 croisements contre 62 à 82 pour les
+# autres). Un `order:` explicite serait ici un no-op — voir DSL_SPEC.
+# ---------------------------------------------------------------------------
+site CLOUD_PUBLIC "Cloud — exposition publique" {
+  network-zone Z_EDGE "Zone d'exposition" {
+    gateway LB "Load Balancer\nplateforme.example (anti-DDoS)"
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Région cloud unique — zone noyau + zone de secours
+# ---------------------------------------------------------------------------
+site CLOUD_REGION "Cloud — région unique" {
+  network-zone Z_NOYAU "Zone réseau noyau (pare-feu)" {
+    server VM_RP "VM RP\nLinux LTS" {
+      app-instance RP_WEB "RP web + IHM\nPlateforme"
+    }
+    server VM_APP "VM applicative\nLinux LTS" {
+      app-instance BACK_NOYAU "Backend noyau\n(framework JVM)"
+    }
+    server VM_BROKER "VM broker\nLinux LTS" {
+      app-instance BROKER "Broker de messages\n(files quorum)"
+    }
+    server VM_DB "VM base de données\nLinux LTS" {
+      app-instance BDD_NOYAU "Base relationnelle\nPlateforme"
+    }
+    server VM_ORCH "VM orchestration\nLinux LTS" {
+      app-instance ORCH_SERVER "Nœud maître\nOrchestrateur"
+    }
+  }
+  network-zone Z_SECOURS "Zone de secours site" {
+    server VM_SECOURS "VM cloud de secours\nLinux LTS" {
+      app-instance BACK_SECOURS "Backend secours\n(sans interface série)"
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Zone locale d'un site secondaire — un site parmi N identiques
+# ---------------------------------------------------------------------------
+site SITE "Site secondaire (un des N du domaine)" {
+  network-zone Z_SITE "Réseau local site (pare-feu)" {
+    server SRV_SITE "Serveur secondaire\nLinux LTS" {
+      app-instance BACK_SITE "Backend secondaire\n(agent orchestrateur)"
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Fournisseur d'identité et systèmes amont
+# ---------------------------------------------------------------------------
+idp SSO "IdP interne\n(OAuth2 / OIDC)"
+
+external SI_AMONT_A "SI amont A\n(flux continu)"
+external SI_AMONT_B "SI amont B\n(événements)"
+external SI_AMONT_C "SI amont C\n(consultation)"
+external EQUIP_LOCAL "Équipement\nlocal (série)"
+external TERM_LOCAL "Terminal\nd'affichage"
+
+# ============================================================================
+# FLUX TECHNIQUES (protocole obligatoire)
+# ============================================================================
+
+# ---- Authentification et exposition ----
+POSTE_A -> LB : "AUTH_01 — accès au service (poste A)" (HTTPS/443)
+POSTE_B -> LB : "AUTH_01 — accès au service (poste B)" (HTTPS/443)
+LB -> RP_WEB : "AUTH_02 — vers le reverse proxy" (HTTPS/443)
+RP_WEB -> SSO : "AUTH_03 — OAuth2 / OIDC" (HTTPS/443)
+RP_WEB -> BACK_NOYAU : "IHM servie vers le backend" (HTTP/8080)
+
+# ---- Persistance ----
+BACK_NOYAU -> BDD_NOYAU : "DB_01 — persistance" (JDBC/5432)
+
+# ---- Systèmes amont vers le noyau via le load balancer ----
+SI_AMONT_A -> LB : "AMONT_01 — flux continu (10-15 s)" (TCP)
+SI_AMONT_B -> LB : "AMONT_02 — messages d'événement" (HTTPS/443)
+SI_AMONT_C -> LB : "AMONT_03 — consultation temps réel" (HTTPS/443)
+
+# ---- Systèmes amont vers le broker ----
+SI_AMONT_B -> BROKER.left : "MSG_01 — file Q_AMONT_B" (AMQP/5672)
+SI_AMONT_C -> BROKER.left : "MSG_02 — file Q_AMONT_C" (AMQP/5672)
+
+# ---- Noyau vers site et site vers noyau ----
+BACK_NOYAU -> BROKER : "NOYAU_SITE_01 — file Q_NOYAU_SORTIE" (AMQP/5672)
+BROKER -> BACK_SITE : "NOYAU_SITE_02 — réception sur site" (AMQP/5672)
+BACK_SITE -> BROKER : "SITE_NOYAU_01 — file Q_SITE" (AMQP/5672)
+BROKER -> BACK_NOYAU : "SITE_NOYAU_02 — réception au noyau" (AMQP/5672)
+BACK_SITE -> LB : "SITE_AMONT_01 — abonnement au flux amont" (HTTPS/443)
+
+# ---- Orchestration ----
+ORCH_SERVER -> BACK_SITE : "ORCH_01 — pilotage des N agents" (TCP/9000)
+BACK_SITE -> ORCH_SERVER : "ORCH_02 — heartbeat des agents" (TCP/9000)
+ORCH_SERVER ..> BACK_SECOURS : "Dégradé — déploiement VM de secours" (TCP/9000)
+
+# ---- Accès distant chiffré ----
+OPERATEUR_ASTREINTE ..> BACK_SECOURS : "TUN_01 — tunnel chiffré" (UDP/51820)
+BACK_SECOURS ..> OPERATEUR_ASTREINTE : "TUN_02 — réponse via le tunnel" (UDP/51820)
+
+# ---- Flux techniques locaux sur site ----
+BACK_SITE -> EQUIP_LOCAL : "SITE_INT_01 — commande équipement" (RS422)
+BACK_SITE -> TERM_LOCAL : "SITE_INT_02 — flux d'affichage local" (TCP)
+
+legend {
+  note "Vue mono-région : une seule région cloud représentée. La bascule inter-région (région A active / région B passive) est décrite dans la vue multi-région."
+  note "Vue par domaine : les échanges inter-domaines (noyau D1 <-> noyau D2) sortent du périmètre de ce schéma."
+  note "Traits pleins : flux nominaux. Pointillés : mode dégradé (VM cloud déployée par l'orchestrateur, accès par tunnel chiffré depuis un poste d'astreinte)."
+  note "Le nœud maître de l'orchestrateur n'est pas redondé : les agents sur site se reconnectent seuls et les jobs déjà lancés continuent de tourner."
+  note "Le pare-feu isole les zones noyau et site ; le reverse proxy n'accepte que les adresses IP du load balancer."
+  note "En mode dégradé, la VM cloud ne dispose pas d'interface série : l'équipement local reste inopérant jusqu'au rétablissement du site."
+  note "Ports non précisés au dossier : valeur par défaut du protocole. Matrice des flux techniques jointe au dossier d'architecture."
+}

@@ -46,6 +46,7 @@ dispositions/small-page.cairn  dim:429x723 n:12 e:6 ov:0  geom:e077208b7ae7 colo
 dispositions/small-slide.cairn  dim:1157x281 n:12 e:6 ov:0  geom:8693953c57c9 color:2e4a353ea2a1 text:02f87b07ab0d
 dispositions/small-tall.cairn  dim:429x723 n:12 e:6 ov:0  geom:e077208b7ae7 color:6fd24f7e4bcc text:f052cb74382b
 infrastructure-compact.cairn  dim:1560x460 n:20 e:13 ov:0  geom:daa103389aab color:6b8c718721eb text:35598ca57b8a
+infrastructure-field-sites-fr.cairn  dim:2556x831 n:31 e:23 ov:0  geom:59f89355763b color:a64d4af251f3 text:16f2c2e2e5df
 infrastructure-fr.cairn  dim:1665x486 n:20 e:13 ov:0  geom:0ef5df3413ef color:7e897b6c63aa text:d7fce515dc96
 infrastructure-large-fr.cairn  dim:2144x550 n:29 e:19 ov:0  geom:75a25ec05598 color:3ecef52caa94 text:b97011ab9f2a
 infrastructure-large.cairn  dim:2141x550 n:29 e:19 ov:0  geom:e7803c2ec2a4 color:3ecef52caa94 text:b779da9fa79f
