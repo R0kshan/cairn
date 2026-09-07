@@ -332,7 +332,8 @@ Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 
 Layout is automatic. These three controls exist for the cases where it gets a
 diagram wrong; each is opt-in, and a file that uses none of them renders exactly
-as it did before they existed.
+as it did before they existed. One placement rule needs no control because it is
+applied for you — where a queue's producers and consumers attach, below.
 
 **`order: <n>` — where an element sits in the reading order.** A statement in the
 element's body, not a style property (placement is layout, not cosmetics). Lower
@@ -430,6 +431,67 @@ terminal — pin one end and the other is still re-aimed, unwoven and measured a
 usual — while the route itself is still tidied along shapes that leave the
 pinned ends where the author put them.
 
+**A queue's flows are sided for you.** One placement decision needs no control
+at all: a `queue` is a hand-off between two halves of a drawing, so everything
+published *into* one attaches on its **left** side and everything read *out of*
+one leaves on its **right** side — the arrow direction is what says which,
+unless a role says so instead (below). Left and right in every disposition, including
+`tall` and `page`: a queue is drawn as a cylinder lying on its side, and its
+mouth is the left and right cap, so a flow touching the flat top reads as
+missing the box even where the drawing itself runs downward. It applies in the
+two views that have queues, `application` and `infrastructure`, and needs nothing
+in the source:
+
+```cairn
+queue EVENTS "Order event bus"
+
+CAPTURE  -> EVENTS (MQ, JSON)   # producer — arrives on the upstream side
+EVENTS   -> INDEXER (MQ, JSON)  # consumer — leaves on the downstream side
+```
+
+Two limits are worth knowing. **Your pin wins:** name a side yourself
+(`CAPTURE -> EVENTS.top`) and that endpoint is yours; only endpoints you left
+free are sided for you. And **it is a preference, not a pin:** the derived side
+is handed to the layout engine, but a producer the layout draws to the *right* of
+its queue would have to wrap around the box to reach the left cap, so the routing
+passes attach it on the near side instead. Nothing is reported when that happens
+— you declared nothing, so nothing was dropped. Pin the endpoint by hand if you
+want the side regardless.
+
+**`ID.producer` / `ID.consumer` — which side of the exchange this element is
+on.** Written in the same slot as a side pin, on the element *opposite* the
+queue, and it names a relationship rather than a geometry: `producer` puts the
+flow on the queue's left cap, `consumer` on its right.
+
+```cairn
+CAPTURE.producer -> QUEUE_NOTIF (AMQP)
+INDEXER.consumer -> QUEUE_NOTIF (AMQP)
+```
+
+Both arrows point **at** the queue, which is how a reader looks at a bus:
+everything touches it. The role is what separates the two sides of the exchange,
+and the drawing follows — the producer arrives on the left cap, the consumer is
+seated past the queue and its arrow runs back into the right cap. What you wrote
+is what is drawn: the arrowhead stays on the queue for both.
+
+Roles are optional. Writing the arrow the way the data runs —
+`QUEUE_NOTIF -> INDEXER` — needs no role at all and lands the flow on the same
+cap; the role exists for diagrams drawn as *dependencies*, where every arrow
+points at the thing it talks to and direction alone cannot say who publishes and
+who reads. A role may also be written on either endpoint:
+`QUEUE_NOTIF -> INDEXER.consumer` is the delivery drawn out of the queue, and it
+meets the same right cap.
+
+The flow matrix exports what you wrote, so a consumer drawn at the queue is
+tabulated `INDEXER → QUEUE_NOTIF`. If the table matters more than the picture,
+draw that flow the way the data runs.
+
+Three rules bound it. The other end must be a queue (**E0224**) — between two
+ordinary elements the arrow already says everything a role would. The queue end
+must not also carry a side (**E0225**): `producer` *means* the left cap, so a
+side there is a second answer to a settled question. And an unknown suffix is
+**E0223**, the same error a misspelt side gets.
+
 **Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
 `..>` dotted. Whitespace before the arrow is required, as it always has been
 (`A->B` does not parse: `-` is a legal id character). Precedence follows the
@@ -442,10 +504,12 @@ ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
 
-Three files in [`examples/placement/`](../examples/placement) show the two
-controls: `baseline.cairn` declares neither, `sides.cairn` is the same shape with
-`ID.side` pins on its flows, and `reading-order.cairn` sequences two backends
-along the length with `order:`.
+Five files in [`examples/placement/`](../examples/placement) show these
+controls: `baseline.cairn` declares none, `sides.cairn` is the same shape with
+`ID.side` pins on its flows, `reading-order.cairn` sequences two backends along
+the length with `order:`, `queue-sides.cairn` declares nothing at all — its
+producer and consumer sides are the ones the layout derives — and
+`queue-roles.cairn` draws every flow *at* the queue and names the roles instead.
 
 ## 2. Styling — three levels, most specific wins
 

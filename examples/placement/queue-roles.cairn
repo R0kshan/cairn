@@ -1,0 +1,28 @@
+diagram application "Notification bus — producers and consumers by role"
+
+# The same shape as `queue-sides.cairn`, drawn the other way round: every flow
+# points *at* the queue, the way a dependency diagram is usually drawn, and the
+# endpoint role says which side of the exchange each element is on. Producers
+# meet the queue's left cap, consumers its right; both arrowheads stay on the
+# queue, and the consumers are seated past it.
+# See documentation/DSL_SPEC.md § Positioning controls
+
+application ORDERS "Order platform" { logo: spring
+  module CAPTURE  "Order\ncapture"
+  module VALIDATE "Order\nvalidation"
+}
+
+queue QUEUE_NOTIF "Notification\nqueue" { logo: rabbitmq }
+
+application MAILER "Mail sender" { logo: nodedotjs }
+application PUSHER "Push sender" { logo: go }
+
+CAPTURE.producer  -> QUEUE_NOTIF (AMQP)
+VALIDATE.producer -> QUEUE_NOTIF (AMQP)
+
+MAILER.consumer -> QUEUE_NOTIF (AMQP)
+PUSHER.consumer -> QUEUE_NOTIF (AMQP)
+
+legend {
+  note "Every flow is written towards the queue; `.producer` and `.consumer` say which way the data runs"
+}

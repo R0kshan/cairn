@@ -1,0 +1,31 @@
+diagram application "Order events — queue producers and consumers"
+
+# This file declares no positioning control at all — no `ID.side` pin, no
+# `order:`. The sides below are the ones cairn derives on its own: a `queue` is
+# a hand-off between two halves of a drawing, so what is published *into* it
+# attaches on its left side and what is read *out of* it leaves on its right
+# side — in every disposition, because a queue is drawn as a cylinder lying on
+# its side and its mouth is the left and right cap.
+# See documentation/DSL_SPEC.md § Positioning controls
+
+application ORDERS "Order platform" { logo: spring
+  module CAPTURE  "Order\ncapture"
+  module VALIDATE "Order\nvalidation"
+}
+
+queue EVENTS "Order event\nbus" { logo: apachekafka }
+
+application INDEXER "Search\nindexer" { logo: elasticsearch }
+application INVOICE "Invoice\nissuing" { logo: dotnet }
+
+# Producers — published into the bus, so they arrive on its upstream side.
+CAPTURE  -> EVENTS (MQ, JSON)
+VALIDATE -> EVENTS (MQ, JSON)
+
+# Consumers — reading from the bus, so they leave its downstream side.
+EVENTS -> INDEXER (MQ, JSON)
+EVENTS -> INVOICE (MQ, JSON)
+
+legend {
+  note "The producer and consumer sides of the event bus are chosen by the layout, not declared"
+}

@@ -47,6 +47,15 @@ export interface View {
    * a chain must occupy different layers.
    */
   laneKinds?: string[];
+  /**
+   * Kinds that stand for a hand-off between two sides of a drawing — a message
+   * queue is the one that exists today. Flows *into* one attach on its upstream
+   * side and flows *out of* one leave on its downstream side, so producers and
+   * consumers read as two groups rather than one fan (`hubFlowSides` in
+   * `scene-layout.ts`). Opt-in per view; a view that omits the field lets elk
+   * choose every side, exactly as it did before the field existed.
+   */
+  hubKinds?: string[];
   /** Which columns the flow matrix emits for this view, and what annotates an endpoint. */
   matrix: MatrixSpec;
   legendNames: Record<string, string>;
@@ -216,6 +225,7 @@ const logicalView: View = {
 const applicationView: View = {
   name: "application",
   laneKinds: ["external"],
+  hubKinds: ["queue"],
   kinds: [
     "actor-group",
     "actor",
@@ -416,6 +426,7 @@ const applicationView: View = {
 const infrastructureView: View = {
   name: "infrastructure",
   laneKinds: ["external"],
+  hubKinds: ["queue"],
   kinds: [
     "actor",
     "device",

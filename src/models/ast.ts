@@ -83,16 +83,37 @@ export type AttachSide = "left" | "right" | "top" | "bottom";
 /** All possible attachment sides for flow endpoints. */
 export const ATTACH_SIDES: AttachSide[] = ["left", "right", "top", "bottom"];
 
+/**
+ * What an element does with the *hub* — a `queue` — at the other end of a flow
+ * (`CAPTURE.producer -> EVENTS`). A role says which cap of that queue the flow
+ * touches without the author naming a geometric side, which is what lets a
+ * consumer be drawn as an arrow *into* the queue (the dependency reading) and
+ * still attach where a consumer belongs.
+ */
+export type AttachRole = "producer" | "consumer";
+
+/** All possible endpoint roles. Nouns, like every other keyword in the DSL. */
+export const ATTACH_ROLES: AttachRole[] = ["producer", "consumer"];
+
 export interface Flow {
   id: string;
   from: string;
   fromSpan: Span;
   /** Author-declared attachment side on the source element, if any. */
   fromSide?: { value: AttachSide; span: Span };
+  /**
+   * Author-declared role of the source element towards the hub at the *other*
+   * end of this flow, if any (`CAPTURE.producer -> EVENTS`). Names a
+   * relationship, not a side: `scene-layout` resolves it into the queue's
+   * producer or consumer cap.
+   */
+  fromRole?: { value: AttachRole; span: Span };
   to: string;
   toSpan: Span;
   /** Author-declared attachment side on the target element, if any. */
   toSide?: { value: AttachSide; span: Span };
+  /** Author-declared role of the target element towards the hub at the source end. */
+  toRole?: { value: AttachRole; span: Span };
   /**
    * Line style carried by the arrow glyph: `->` leaves it unset (solid, the
    * default), `-->` is dashed, `..>` dotted. An inline `{ stroke: … }` is more
@@ -187,7 +208,11 @@ export const explanations: Record<string, string> = {
   W0540:
     'C4 container-diagram practice: inter-process relationships should be labelled with their technology/protocol ("the how, not just the what"). Human/actor interactions are exempt. Add `(API_REST, JSON)` after the label, or ignore if the diagram is intentionally functional-only.',
   E0223:
-    "Unknown attachment side. A flow endpoint may name the side it attaches to — `APP.right -> DB.left` — using the diagram as it is read: `left`, `right`, `top`, `bottom`. The side is a hint, not a guarantee: a side the layout cannot reach is dropped with a W0570 warning rather than forced.",
+    "Unknown endpoint suffix. A flow endpoint may name the side it attaches to — `APP.right -> DB.left` — using the diagram as it is read: `left`, `right`, `top`, `bottom`. It may instead name its role towards a queue at the other end: `producer` or `consumer`. A declared side is a hint, not a guarantee: one the layout cannot reach is dropped with a W0570 warning rather than forced.",
+  E0224:
+    "An endpoint role says what this element does with the *queue* at the other end of the flow (`CAPTURE.producer -> EVENTS`), so the other end has to be one. Point the flow at a queue, or drop the role — between two ordinary elements the arrow already says everything a role would.",
+  E0225:
+    "A flow's queue endpoint carries both a declared side and a role at the other end, and they are two answers to one question: `producer` already means the queue's left cap and `consumer` its right. Keep the role and drop the side, or keep the side and drop the role.",
   E0240:
     "The infrastructure view requires every flow to carry its protocol (and port if relevant): the flow matrix is the primary output of this view. Add `(HTTPS/443)` after the label.",
   E0221:

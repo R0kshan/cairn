@@ -672,6 +672,14 @@ attachment side becomes an elk port plus a plain `pinned` boolean on the
 as they already read `detour` — no kind, no view name, so a new view inherits
 the behavior for free.
 
+The one attachment side cairn derives itself — a queue's producers on its left
+cap, its consumers on its right (`hubFlowSides`) — obeys the same rule and is
+stricter about it. The kind it keys on comes from `View.hubKinds`, read in
+`scene-layout` like every other registry field, and what leaves that stage is an
+elk port: the `Scene` records *nothing*, not even a boolean. Every pass past
+layout therefore sees the terminal exactly as it sees one elk chose unaided,
+which is also what keeps the derived side measurable (§17).
+
 Not to be confused with declaration-order independence, which does **not**
 hold: reversing the flow declarations in `logical-archi.cairn` moves 48 path
 segments and 60 node boxes, because elk orders its layers by edge insertion.
@@ -734,3 +742,43 @@ the layout engine drew — measured at 5 turns and a 334px climb over a sibling
 container on `positioning-sides`, against 3 turns after.
 What the layout genuinely cannot deliver is dropped and reported as `W0570` —
 never forced into an unreadable route, and never silently ignored.
+
+**A side cairn derived is not a pin.** Flows into a `queue` are given a left
+port and flows out of one a right port before layout (§16, `hubFlowSides`) —
+left and right in *every* disposition, because the glyph is a cylinder lying on
+its side and a terminal anywhere but its two caps reads as missing the box.
+
+The terminal is **not** marked `pinned`. It is marked `hubSided`, which buys one
+thing and refuses another. It buys standing down from the *route repair*:
+`optimiseRoutes` was moving a queue's second consumer off the cap elk gave it
+onto the cylinder's flat bottom to save a turn, and a cap the reader is meant to
+read as a grouping is worth more than that turn. It refuses the pin's exemption
+from `attachAway` — the §4c re-side, the re-aim and the unweave all still own a
+derived terminal, and both the layout's own tally and `scripts/sweep.ts` still
+count it. Exempting it would let a side *cairn itself* chose disappear
+from the gate that measures the defect it may have caused — a guard that stops
+measuring what the invariant measures (§3a). Measured, too: standing the other
+passes down as well sent the corpus `turnHeavy` through its ceiling and
+`attachAway` from 284 to 317, so the route repair is the only one that yields.
+
+Two consequences follow. An author pin always wins, because the derived side is
+only ever applied to an endpoint no pin names — and an endpoint *role*
+(`INDEXER.consumer -> EVENTS`, DSL_SPEC § Positioning controls) is not a
+competing side but a statement about the exchange: it names the cap directly,
+and the flow keeps the direction the author drew it in. Only elk sees the data
+direction, so it can seat a consumer past the queue rather than before it
+(`elkEnds`); the polyline is traversed back the way it was written before any
+geometry pass runs, so the arrowhead is the author's.
+
+And nothing is reported when a derived side does not survive: there is
+no span to report against and nothing was promised, so `W0570` stays what it has
+always been — an author's request the drawing could not honor.
+
+Two costs come with it, both deliberate. A downward layout (`tall`/`page`) whose
+hierarchical nodes carry WEST/EAST ports makes elk throw `Invalid hitboxes for
+scanline constraint calculation`, so `withHubPortFallback` climbs a ladder —
+lock post-compaction's constraints, then skip post-compaction, and only then drop
+the hub ports — rather than failing the drawing or giving up the sides at the
+first refusal. And a producer entering from the left in a downward drawing runs
+its approach along a corridor a neighbour may already use, which raised the
+`nearParallel` ratchet once, on the record, in `scripts/sweep.ts`.

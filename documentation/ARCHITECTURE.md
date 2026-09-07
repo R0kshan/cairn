@@ -105,7 +105,14 @@ Adding a view, a diagnostic, a theme, or a style property starts here (or in
 The author's own positioning hints (`order:` on an element, `ID.side` on a flow
 endpoint — [`DSL_SPEC.md`](./DSL_SPEC.md)) enter at
 `scene-layout.ts` and nowhere else: they become elk layout options and ports
-before a `Scene` exists. A top-level `order:` is the one that changes the graph's
+before a `Scene` exists. The one attachment side cairn chooses for the author —
+a queue's producers on the upstream side, its consumers downstream — is another
+registry field (`hubKinds`) read in the same place: `hubFlowSides` turns it into
+elk ports before a `Scene` exists, and `markDeclaredTerminals` records the sides
+it chose on `SceneEdge.hubSided` — plain per-end booleans that `edge-tidy.ts`
+reads to stand down from re-siding a cap it did not choose, while still counting
+that terminal in `attachAway`. Which end, never which kind, so no routing pass
+learns what a queue is (INVARIANTS §16, §17). A top-level `order:` is the one that changes the graph's
 shape rather than an option on a node — `readingSlots` resolves it into a band of
 the element's view partition, which is what makes it read along `elk.direction`
 (INVARIANTS §9, §17). Past that point a pinned flow is only a `pinned` boolean
