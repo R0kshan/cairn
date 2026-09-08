@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 503 329" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 516 349" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="503" height="329" fill="#ffffff"/>
+<rect width="516" height="349" fill="#ffffff"/>
 <rect x="10" y="22" width="126" height="83" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
 <text x="20" y="40" font-size="13" font-weight="bold" fill="#17202c">Line 1 backend</text>
 <rect x="161" y="76" width="126" height="83" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
@@ -28,14 +28,14 @@
 <text x="385.5" y="139.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
 <text x="326" y="100.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
 <text x="313.5" y="206.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
-<line x1="20" y1="213" x2="483" y2="213" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="235" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="225" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
-<text x="182" y="236" font-size="10" fill="#17202c">Application</text>
-<rect x="272" y="225" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="304" y="236" font-size="10" fill="#17202c">Application module</text>
-<rect x="150" y="247" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="182" y="258" font-size="10" fill="#17202c">Message queue / broker</text>
-<line x1="150" y1="299" x2="176" y2="299" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="303" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+<line x1="20" y1="233" x2="496" y2="233" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="255" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="245" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="182" y="256" font-size="10" fill="#17202c">Application</text>
+<rect x="272" y="245" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="304" y="256" font-size="10" fill="#17202c">Application module</text>
+<rect x="150" y="267" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="182" y="278" font-size="10" fill="#17202c">Message queue / broker</text>
+<line x1="150" y1="319" x2="176" y2="319" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="323" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
 </svg>

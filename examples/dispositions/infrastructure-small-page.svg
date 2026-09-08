@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 222 819" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 244 819" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="222" height="819" fill="#ffffff"/>
+<rect width="244" height="819" fill="#ffffff"/>
 <rect x="10" y="114" width="202" height="502.5" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="20" y="132" font-size="13" font-weight="bold" fill="#17202c">Cloud host</text>
 <rect x="68" y="146" width="126" height="83" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -34,7 +34,7 @@
 <text x="149" y="438.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Read/write</text>
 <text x="149" y="453.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">content</text>
 <text x="149" y="467.75" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP/3306)</text>
-<line x1="20" y1="637" x2="202" y2="637" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="20" y1="637" x2="224" y2="637" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="659" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="649" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
 <text x="182" y="660" font-size="10" fill="#17202c">Site / data center</text>

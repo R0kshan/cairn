@@ -321,6 +321,40 @@ for (const f of [
   });
 }
 
+// The canvas is what the viewBox clips to, so anything outside it is simply not
+// drawn. `placement/reading-order.cairn` pins two flows to the far side of the
+// rightmost queue: they wrap around it, and before `fitCanvas` the tail of one
+// ran 3px past the edge and vanished.
+for (const f of [
+  "placement/reading-order.cairn",
+  "dispositions/medium-tall.cairn",
+  "large-numbered.cairn",
+]) {
+  test(`${f}: nothing drawn falls outside the canvas`, async () => {
+    const { scene } = await build(load(f));
+    for (const node of scene.nodes) {
+      assert.ok(node.x + node.width <= scene.width, `${node.id} past the right edge`);
+      assert.ok(node.y + node.height <= scene.height, `${node.id} past the bottom edge`);
+    }
+    for (const edge of scene.edges) {
+      for (const point of edge.pts) {
+        assert.ok(point.x <= scene.width, `${edge.id} routed past the right edge`);
+        assert.ok(point.y <= scene.height, `${edge.id} routed past the bottom edge`);
+      }
+      for (const label of edge.labels) {
+        assert.ok(
+          label.x + label.width <= scene.width,
+          `${edge.id}'s label is cut off on the right`,
+        );
+        assert.ok(
+          label.y + label.height <= scene.height,
+          `${edge.id}'s label is cut off at the bottom`,
+        );
+      }
+    }
+  });
+}
+
 test("every flow keeps a distinct edge (never merged)", async () => {
   const { model, scene } = await build(load("medium.cairn"));
   const sceneEdgeIds = new Set(scene.edges.map((e) => e.id));

@@ -24,7 +24,7 @@ import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
 import { type Box, type Point, type TitleBox, isLongDetour } from "./geometry.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
-import { compactVertical } from "./compact.ts";
+import { compactVertical, fitCanvas } from "./compact.ts";
 import {
   optimiseRoutes,
   clearSideHugs,
@@ -1614,6 +1614,9 @@ function runGeometryPasses(
   // renderer's batch audit, so an unrelated optimiser trade cannot revert the
   // swap. Only swaps that remove a crossing without shuffling it elsewhere.
   swapCrossingSiblingSeats(scene);
+  // Last, because every pass above moves routes and labels after the reroute's
+  // own resize.
+  fitCanvas(scene);
 }
 
 /**

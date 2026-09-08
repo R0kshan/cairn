@@ -24,7 +24,7 @@ import {
   boxToPolylineSq,
 } from "./geometry.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from "./scene-layout.ts";
-import { compactVertical } from "./compact.ts";
+import { compactVertical, fitCanvas } from "./compact.ts";
 import { labelsSeated } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
@@ -1500,6 +1500,11 @@ export function render(
   // reorders nothing, so it cannot create an overlap, a pierce or a collision.
   // No-op when settling stranded nothing, the common case.
   compactVertical(scene);
+  // Last word on the canvas size: settling moves labels, and a reverted repair
+  // restores the route it replaced, so both can land outside the frame layout
+  // sized. Before the bands are built, so the legend is laid out against the
+  // width the document ends up with.
+  fitCanvas(scene);
 
   // Which licensed marks this render actually paints, and so what the document
   // has to attribute. Declared here because the renderers fill it and the

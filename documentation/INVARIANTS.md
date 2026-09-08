@@ -33,6 +33,7 @@ These invariants must never be broken. Every change is verified against them.
 - [15. Flow matrix export invariants](#15-flow-matrix-export-invariants)
 - [16. Flow positioning is blind to the DSL](#16-flow-positioning-is-blind-to-the-dsl)
 - [17. Author positioning hints are honored, not negotiated](#17-author-positioning-hints-are-honored-not-negotiated)
+- [18. Nothing is drawn outside the canvas](#18-nothing-is-drawn-outside-the-canvas)
 
 ## At a glance
 
@@ -66,6 +67,7 @@ you what a violation looks like when you cause one.
 | 15 | Flow matrix export | `flow-matrix` | reference + test |
 | 16 | Flow positioning is blind to the DSL | `edge-tidy`, `route-detour`, `label-anchor`, `compact`, `readability` | structural + test |
 | 17 | Author positioning hints honored, not negotiated | `parser`, `scene-layout`, `edge-tidy` | reference + test |
+| 18 | Nothing is drawn outside the canvas | `compact` (`fitCanvas`), called by `scene-layout` and `svg-render` | test |
 
 Two rules cut across all of them:
 
@@ -782,3 +784,23 @@ the hub ports — rather than failing the drawing or giving up the sides at the
 first refusal. And a producer entering from the left in a downward drawing runs
 its approach along a corridor a neighbour may already use, which raised the
 `nearParallel` ratchet once, on the record, in `scripts/sweep.ts`.
+
+## 18. Nothing is drawn outside the canvas
+
+The `viewBox` is `0 0 width height`, so anything past `scene.width` or
+`scene.height` is clipped and simply not drawn — silently, with no warning and
+no gap in the SVG to notice. The scene is sized from the node extents, and every
+pass after that moves routes and labels: a flow pinned to the far side of the
+rightmost node (`MSG_L2 -> Q_L1.right`) wraps around it and lands past the right
+edge. `examples/placement/reading-order` lost the tail of its right-hand flow
+that way.
+
+`fitCanvas` (`compact.ts`) closes it: the canvas grows to hold every node, route
+point and label with a `CANVAS_MARGIN` (10px) to spare. It runs at the end of
+`runGeometryPasses` **and** again in the renderer, because label settling and a
+reverted route repair both move geometry after layout is done.
+
+It only ever grows. A drawing that already fits keeps the size it had, so this
+is a no-op everywhere it is not needed — which is what keeps §2 and the
+committed images honest. `tests/behavior.test.ts` gates it on the examples that
+were clipped.
