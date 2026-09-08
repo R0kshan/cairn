@@ -44,6 +44,27 @@ const EX = join(ROOT, "examples");
 // the point of the test is where the break falls.
 const allText = (svg: string): string =>
   [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((match) => match[1]).join(" ");
+// Every band reading — the 10px and 11px text under the drawing — sits inside
+// the frame, on both edges. The viewBox clips whatever does not, so a reading
+// that wrapped one row too far down is lost exactly as one that ran off the
+// right is. Width is estimated the way the renderer positions it, from
+// RENDER_CHAR_WIDTH; `y` is a baseline, so it is compared against the frame's
+// own bottom.
+const assertBandTextInside = (svg: string) => {
+  const [, width, height] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) ?? [];
+  for (const [, x, y, size, text] of svg.matchAll(
+    /<text x="([\d.]+)" y="([\d.]+)"[^>]*font-size="(10|11)"[^>]*>([^<]*)</g,
+  )) {
+    assert.ok(
+      Number(x) + text.length * Number(size) * 0.52 <= Number(width),
+      `\`${text}\` at x=${x} runs past the ${width}px canvas`,
+    );
+    assert.ok(
+      Number(y) <= Number(height),
+      `\`${text}\` at y=${y} sits below the ${height}px canvas`,
+    );
+  }
+};
 // Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.
 const load = (f: string) => readFileSync(join(EX, f), "utf8").replace(/\r\n/g, "\n");
 // Parse and validate `src`, returning the model, diagnostics, and diagnostic codes.
@@ -914,13 +935,17 @@ test("a line-style key too wide for the band wraps instead of running off it", a
   assert.doesNotMatch(narrow.svg, />Asynchronous exchange \(message, event\)</);
   assert.match(allText(narrow.svg), /Asynchronous exchange \(message, event\)/);
   // Every band reading stays inside the canvas, whichever line it broke onto.
-  for (const [, x, size, text] of narrow.svg.matchAll(
-    /<text x="([\d.]+)"[^>]*font-size="(10)"[^>]*>([^<]*)</g,
-  ))
-    assert.ok(
-      Number(x) + text.length * Number(size) * 0.52 <= canvasWidth,
-      `\`${text}\` at x=${x} runs past the ${canvasWidth}px canvas`,
-    );
+  assertBandTextInside(narrow.svg);
+
+  // A word with no space to break at is broken mid-token rather than left to run
+  // off the edge — an author's `legend note` can carry a URL, and the band has no
+  // width to give it.
+  const longWord = await build(
+    'diagram application "t"\nstyle {\n  disposition: tall\n}\nlegend {\n  note "See https://example.internal/architecture/decisions/0042-messaging-topology"\n}\napplication APP "App" {\n  module A "Module A"\n  module B "Module B"\n}\nA -> B (REST)\n',
+  );
+  assertBandTextInside(longWord.svg);
+  // Broken, not dropped: every character of the URL is still on the page.
+  assert.match(allText(longWord.svg).replace(/\s+/g, ""), /example\.internal\/architecture/);
 
   // A band with room keeps the reading on one line.
   const wide = await build(
@@ -944,13 +969,7 @@ for (const f of [
     // The bands take height, never width — the drawing keeps the frame layout
     // gave it, whatever the legend needs.
     assert.equal(canvasWidth, scene.width);
-    for (const [, x, size, text] of svg.matchAll(
-      /<text x="([\d.]+)"[^>]*font-size="(10|11)"[^>]*>([^<]*)</g,
-    ))
-      assert.ok(
-        Number(x) + text.length * Number(size) * 0.52 <= canvasWidth,
-        `\`${text}\` at x=${x} runs past the ${canvasWidth}px canvas`,
-      );
+    assertBandTextInside(svg);
   });
 }
 

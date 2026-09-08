@@ -70,7 +70,27 @@ const bandRightMargin = (scene: Scene) => scene.width - 20;
  */
 function bandLines(text: string, from: number, right: number, fontSize: number): string[] {
   const chars = Math.floor((right - from) / (fontSize * RENDER_CHAR_WIDTH));
-  return wrapText(text, Math.max(8, chars)).split("\n");
+  return bandWrap(text, Math.max(8, chars));
+}
+
+/**
+ * `wrapText` breaks between words and leaves a word longer than the row intact,
+ * which is the right call for a node label — the box is sized around it. A band
+ * has no such recourse: its width is the drawing's, so a URL or a long
+ * identifier in a `legend note` or an object description would run off the edge
+ * and be clipped. Here the word is broken mid-token instead, which at least
+ * leaves all of it on the page. Lines that already fit are untouched.
+ */
+function bandWrap(text: string, maxChars: number): string[] {
+  return wrapText(text, maxChars)
+    .split("\n")
+    .flatMap((line) => {
+      if (line.length <= maxChars) return [line];
+      const parts: string[] = [];
+      for (let index = 0; index < line.length; index += maxChars)
+        parts.push(line.slice(index, index + maxChars));
+      return parts;
+    });
 }
 
 const dashArray = (lineStyle?: string) =>
@@ -1125,7 +1145,7 @@ function createBandRenderers(paint: BandPaint) {
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
       const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * RENDER_CHAR_WIDTH)));
       const raw = (flow.label ?? "") + (tech ? "  " + tech : "");
-      const lines = raw.split("\n").flatMap((segment) => wrapText(segment, maxChars).split("\n"));
+      const lines = raw.split("\n").flatMap((segment) => bandWrap(segment, maxChars));
       return { flow, lines };
     });
 
