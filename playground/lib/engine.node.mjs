@@ -96102,6 +96102,27 @@ function compactVertical(scene) {
   }
   scene.height = Math.ceil(heightAfter + bottomMargin);
 }
+var CANVAS_MARGIN = 10;
+function fitCanvas(scene) {
+  let maxX = 0;
+  let maxY = 0;
+  for (const node of scene.nodes) {
+    maxX = Math.max(maxX, node.x + node.width);
+    maxY = Math.max(maxY, node.y + node.height);
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) {
+      maxX = Math.max(maxX, point.x);
+      maxY = Math.max(maxY, point.y);
+    }
+    for (const label of edge.labels) {
+      maxX = Math.max(maxX, label.x + label.width);
+      maxY = Math.max(maxY, label.y + label.height);
+    }
+  }
+  scene.width = Math.max(scene.width, Math.ceil(maxX) + CANVAS_MARGIN);
+  scene.height = Math.max(scene.height, Math.ceil(maxY) + CANVAS_MARGIN);
+}
 
 // src/readability.ts
 var FAN_REACH = 48;
@@ -99903,6 +99924,7 @@ function runGeometryPasses(scene, model, options) {
   clearSideHugs(scene, settledTitles);
   anchorFlowLabels(scene, settledTitles);
   swapCrossingSiblingSeats(scene);
+  fitCanvas(scene);
 }
 function laneAssignment(model, view) {
   const laneOf = /* @__PURE__ */ new Map();
@@ -100217,6 +100239,22 @@ ${lines.map((line) => escComment(`  ${line}`).trimEnd()).join("\n")}
 var HOP_RADIUS = 5;
 var LABEL_HALO = 4;
 var RENDER_CHAR_WIDTH = 0.52;
+var BAND_CONTENT_X = 150;
+var MIN_BAND_TEXT = 200;
+var bandRightMargin = (scene) => scene.width - 20;
+function bandLines(text, from, right, fontSize) {
+  const chars = Math.floor((right - from) / (fontSize * RENDER_CHAR_WIDTH));
+  return bandWrap(text, Math.max(8, chars));
+}
+function bandWrap(text, maxChars) {
+  return wrapText(text, maxChars).split("\n").flatMap((line) => {
+    if (line.length <= maxChars) return [line];
+    const parts = [];
+    for (let index = 0; index < line.length; index += maxChars)
+      parts.push(line.slice(index, index + maxChars));
+    return parts;
+  });
+}
 var dashArray = (lineStyle) => lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : void 0;
 var lineStyleOf = (flow, style) => flow?.style?.stroke?.style ?? flow?.lineStyle ?? style.flowStroke.style;
 var round1 = (n) => Math.round(n * 10) / 10;
@@ -100274,19 +100312,39 @@ function auditRouteRepairs(deps) {
     for (let tier = 0; tier < 5; tier++) if (a[tier] !== b[tier]) return a[tier] < b[tier];
     return false;
   };
+  const flowOfBreach = (key) => {
+    if (key.startsWith("adrift:"))
+      return labels[Number.parseInt(key.slice("adrift:".length), 10)]?.flowId ?? null;
+    const body = key.slice(key.indexOf(":") + 1);
+    const cut = body.search(/[~:]/);
+    return cut < 0 ? body : body.slice(0, cut);
+  };
   const withRepair = stateHarm();
   const breachesWith = breaches();
   const repairedRoutes = repaired.map((edge) => edge.pts);
-  for (const edge of repaired) edge.pts = edge.repairedFrom;
-  resettle();
-  const withoutRepair = stateHarm();
-  const breachesWithout = breaches();
-  const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
-  if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
+  const replacedRoutes = repaired.map((edge) => edge.repairedFrom);
+  const applyKeep = (keep2) => {
     repaired.forEach((edge, index) => {
-      edge.pts = repairedRoutes[index];
+      edge.pts = keep2[index] ? repairedRoutes[index] : replacedRoutes[index];
     });
     resettle();
+  };
+  applyKeep(repaired.map(() => false));
+  const withoutRepair = stateHarm();
+  const breachesWithout = breaches();
+  const broken = [...breachesWith].filter((key) => !breachesWithout.has(key));
+  if (!broken.length) {
+    if (!lessDamaged(withoutRepair, withRepair)) applyKeep(repaired.map(() => true));
+    for (const edge of repaired) edge.repairedFrom = void 0;
+    return;
+  }
+  const blamed = new Set(broken.map(flowOfBreach).filter((id) => id !== null));
+  const keep = repaired.map((edge) => !blamed.has(edge.id));
+  if (keep.some(Boolean) && keep.some((kept) => !kept)) {
+    applyKeep(keep);
+    const partly = stateHarm();
+    const stillBroken = [...breaches()].some((key) => !breachesWithout.has(key));
+    if (stillBroken || lessDamaged(withoutRepair, partly)) applyKeep(repaired.map(() => false));
   }
   for (const edge of repaired) edge.repairedFrom = void 0;
 }
@@ -100566,15 +100624,20 @@ function createLabelSettler(deps) {
       const a = edge.pts[index];
       const b = edge.pts[index + 1];
       const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-      const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-      const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
-      if (room === 0) continue;
-      for (const fraction of [-0.25, 0.25, -0.5, 0.5, -0.75, 0.75, -1, 1]) {
-        const shift = room * fraction;
-        seats.push(
-          vertical ? { x: (a.x + b.x) / 2 - label.width / 2, y: (a.y + b.y) / 2 + shift - lead } : { x: (a.x + b.x) / 2 + shift - label.width / 2, y: (a.y + b.y) / 2 - lead }
-        );
-      }
+      const size = vertical ? label.height : label.width;
+      const start = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+      const end = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+      const seat = vertical ? (a.y + b.y) / 2 - lead : (a.x + b.x) / 2 - label.width / 2;
+      const back = Math.max(0, seat - start);
+      const ahead = Math.max(0, end - size - seat);
+      if (back === 0 && ahead === 0) continue;
+      for (const fraction of [0.25, 0.5, 0.75, 1])
+        for (const room of [-back, ahead]) {
+          const shift = room * fraction;
+          seats.push(
+            vertical ? { x: (a.x + b.x) / 2 - label.width / 2, y: seat + shift } : { x: seat + shift, y: (a.y + b.y) / 2 - lead }
+          );
+        }
     }
     return seats;
   };
@@ -100621,6 +100684,49 @@ function createLabelSettler(deps) {
     settleLabelPositions
   };
 }
+var legendKinds = (paint) => [...new Set(paint.scene.nodes.map((node) => node.kind))].filter(
+  (kind) => paint.legendNames[kind] && (kind !== "actor" || paint.view.actorLegend)
+);
+function kindKeysSvg(paint, kinds, y, x) {
+  const { scene, palette, legendNames, scaled, resolveStyle } = paint;
+  let svg = "";
+  let keyX = x;
+  let bandY = y;
+  const LINE_H = scaled(12);
+  for (const kind of kinds) {
+    const nodeStyle = resolveStyle(kind, "");
+    if (kind === "actor") {
+      const stroke = nodeStyle.stroke?.color ?? palette.actorStroke;
+      svg += `<circle cx="${keyX + scaled(13)}" cy="${bandY + scaled(5)}" r="${scaled(3)}" fill="none" stroke="${stroke}" stroke-width="1.2"/>
+`;
+      svg += `<path d="M ${keyX + scaled(8)} ${bandY + scaled(15)} q ${scaled(5)} ${scaled(-7)} ${scaled(10)} 0" fill="none" stroke="${stroke}" stroke-width="1.2"/>
+`;
+    } else {
+      const dash = dashArray(nodeStyle.stroke?.style);
+      const stroke = nodeStyle.stroke?.color ?? palette.nodeStroke;
+      svg += `<rect x="${keyX}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${escAttr(stroke)}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
+`;
+      const glyphScale = (scaled(14) - scaled(4)) / GLYPH_BOX.height;
+      svg += glyphSvg(kind, escAttr(stroke), {
+        x: keyX + (scaled(26) - GLYPH_BOX.width * glyphScale) / 2,
+        y: bandY + 2 + (scaled(14) - GLYPH_BOX.height * glyphScale) / 2,
+        scale: glyphScale
+      });
+    }
+    const name = legendNames[kind];
+    const lines = bandLines(name, keyX + scaled(32), bandRightMargin(scene), scaled(10));
+    for (const [row, line] of lines.entries())
+      svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(13) + row * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>
+`;
+    keyX += scaled(40) + Math.ceil(name.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
+    bandY += (lines.length - 1) * LINE_H;
+    if (lines.length > 1 || keyX > scene.width - 220) {
+      keyX = x;
+      bandY += scaled(22);
+    }
+  }
+  return { svg, bandY: kinds.length ? bandY + scaled(24) : bandY };
+}
 function lineStyleKeysSvg(paint, y, x) {
   const { scene, model, style, palette, legendLineStyles, scaled, defaultEdgeColor, markerName } = paint;
   const styles = LINE_STYLES2.filter(
@@ -100631,7 +100737,8 @@ function lineStyleKeysSvg(paint, y, x) {
   let svg = "";
   let keyX = x;
   let bandY = y;
-  for (const lineStyle of styles) {
+  const LINE_H = scaled(12);
+  for (const [index, lineStyle] of styles.entries()) {
     const meaning = legendLineStyles[lineStyle];
     const keyWidth = scaled(40) + Math.ceil(meaning.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
     if (keyX > x && keyX + keyWidth > maxX) {
@@ -100641,9 +100748,19 @@ function lineStyleKeysSvg(paint, y, x) {
     const dash = dashArray(lineStyle);
     svg += `<line x1="${keyX}" y1="${bandY + 8}" x2="${keyX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(defaultEdgeColor)})"/>
 `;
-    svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(meaning)}</text>
+    const lines = bandLines(meaning, keyX + scaled(40), maxX, scaled(10));
+    for (const [row, line] of lines.entries())
+      svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(12) + row * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>
 `;
-    keyX += keyWidth;
+    if (lines.length === 1) {
+      keyX += keyWidth;
+      continue;
+    }
+    bandY += (lines.length - 1) * LINE_H;
+    if (index < styles.length - 1) {
+      bandY += scaled(22);
+      keyX = x;
+    }
   }
   return { svg, bandY: bandY + scaled(24) };
 }
@@ -100651,23 +100768,22 @@ function createBandRenderers(paint) {
   const {
     scene,
     model,
-    view,
     style,
     palette,
     annot,
     ui,
-    legendNames,
     legendFlowLabel,
     scaled,
     objectName,
-    resolveStyle,
     defaultEdgeColor,
     markerName,
     numbered
   } = paint;
   let bandY = scene.height;
   let bandsSvg = "";
-  const contentX = 150;
+  const rightMargin = bandRightMargin(scene);
+  const stackedTitle = rightMargin - BAND_CONTENT_X < MIN_BAND_TEXT;
+  const contentX = stackedTitle ? 20 : BAND_CONTENT_X;
   const chip = (x, y, name) => {
     const width = chipW(name, annot.scale);
     return {
@@ -100682,7 +100798,7 @@ function createBandRenderers(paint) {
 `;
     bandsSvg += `<text x="20" y="${bandY + scaled(32)}" font-size="${scaled(11)}" font-weight="bold" fill="${palette.bandTitle}">${esc(title)}</text>
 `;
-    bandY += scaled(20);
+    bandY += scaled(stackedTitle ? 34 : 20);
   };
   const flowChipsSvg = (flow, startX, startY) => {
     if (!flow.objects?.length) return "";
@@ -100714,7 +100830,7 @@ function createBandRenderers(paint) {
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
       const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * RENDER_CHAR_WIDTH)));
       const raw = (flow.label ?? "") + (tech ? "  " + tech : "");
-      const lines = raw.split("\n").flatMap((segment) => wrapText(segment, maxChars).split("\n"));
+      const lines = raw.split("\n").flatMap((segment) => bandWrap(segment, maxChars));
       return { flow, lines };
     });
     const rows = Math.ceil(entries.length / cols);
@@ -100741,69 +100857,50 @@ function createBandRenderers(paint) {
   };
   const renderObjectsBand = () => {
     beginBand(ui.objects);
-    for (const bo of model.businessObjects) {
-      const chipResult = chip(contentX, bandY + 2, bo.name);
+    const LINE_H = scaled(12);
+    const chipRow = (name, reading) => {
+      const chipResult = chip(contentX, bandY + 2, name);
       bandsSvg += chipResult.svg;
-      if (bo.description)
-        bandsSvg += `<text x="${contentX + chipResult.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">\u2014 ${esc(bo.description)}</text>
+      const textX = contentX + chipResult.width + 10;
+      const lines = reading ? bandLines(reading, textX, rightMargin, scaled(10)) : [];
+      for (const [row, line] of lines.entries())
+        bandsSvg += `<text x="${textX}" y="${bandY + scaled(13) + row * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(line)}</text>
 `;
-      bandY += scaled(24);
-    }
-    const keyChip = chip(contentX, bandY + 2, ui.businessObject);
-    bandsSvg += keyChip.svg;
-    bandsSvg += `<text x="${contentX + keyChip.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(ui.carriedByFlow)}</text>
-`;
-    bandY += scaled(24) + 6;
+      bandY += scaled(24) + Math.max(0, lines.length - 1) * LINE_H;
+    };
+    for (const bo of model.businessObjects)
+      chipRow(bo.name, bo.description ? `\u2014 ${bo.description}` : "");
+    if (model.flows.some((flow) => flow.objects?.length))
+      chipRow(ui.businessObject, ui.carriedByFlow);
+    bandY += 6;
   };
   const renderLegendBand = () => {
+    const kinds = legendKinds(paint);
+    if (!kinds.length && !model.flows.length && !model.legendNotes.length) return;
     beginBand(ui.legend);
-    let lx = contentX;
-    const kindsUsed = [...new Set(scene.nodes.map((node) => node.kind))].filter(
-      (kind) => legendNames[kind] && (kind !== "actor" || view.actorLegend)
-    );
-    for (const kind of kindsUsed) {
-      const nodeStyle = resolveStyle(kind, "");
-      if (kind === "actor") {
-        const stroke = nodeStyle.stroke?.color ?? palette.actorStroke;
-        bandsSvg += `<circle cx="${lx + scaled(13)}" cy="${bandY + scaled(5)}" r="${scaled(3)}" fill="none" stroke="${stroke}" stroke-width="1.2"/>
+    const kindKeys = kindKeysSvg(paint, kinds, bandY, contentX);
+    bandsSvg += kindKeys.svg;
+    bandY = kindKeys.bandY;
+    if (model.flows.length) {
+      bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3" marker-end="url(#${markerName(defaultEdgeColor)})"/>
 `;
-        bandsSvg += `<path d="M ${lx + scaled(8)} ${bandY + scaled(15)} q ${scaled(5)} ${scaled(-7)} ${scaled(10)} 0" fill="none" stroke="${stroke}" stroke-width="1.2"/>
+      const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + ui.numberedSuffix : legendFlowLabel) + (style.flowColor === "by-source" ? style.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
+      const flowKeyX = contentX + scaled(32);
+      const flowKeyLines = bandLines(flowLabelText, flowKeyX, rightMargin, scaled(10));
+      for (const [row, line] of flowKeyLines.entries())
+        bandsSvg += `<text x="${flowKeyX}" y="${bandY + scaled(12) + row * scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>
 `;
-      } else {
-        const dash = dashArray(nodeStyle.stroke?.style);
-        const stroke = nodeStyle.stroke?.color ?? palette.nodeStroke;
-        bandsSvg += `<rect x="${lx}" y="${bandY + 2}" width="${scaled(26)}" height="${scaled(14)}" rx="3" fill="${nodeStyle.fill ?? palette.nodeFill}" stroke="${escAttr(stroke)}"${dash ? ` stroke-dasharray="${dash}"` : ""}/>
-`;
-        const glyphScale = (scaled(14) - scaled(4)) / GLYPH_BOX.height;
-        bandsSvg += glyphSvg(kind, escAttr(stroke), {
-          x: lx + (scaled(26) - GLYPH_BOX.width * glyphScale) / 2,
-          y: bandY + 2 + (scaled(14) - GLYPH_BOX.height * glyphScale) / 2,
-          scale: glyphScale
-        });
-      }
-      const name = legendNames[kind];
-      bandsSvg += `<text x="${lx + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>
-`;
-      lx += scaled(40) + Math.ceil(name.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
-      if (lx > scene.width - 220) {
-        lx = contentX;
-        bandY += scaled(22);
-      }
+      bandY += scaled(24) + (flowKeyLines.length - 1) * scaled(12);
+      const lineStyleKeys = lineStyleKeysSvg(paint, bandY, contentX);
+      bandsSvg += lineStyleKeys.svg;
+      bandY = lineStyleKeys.bandY;
     }
-    bandY += scaled(24);
-    bandsSvg += `<line x1="${contentX}" y1="${bandY + 8}" x2="${contentX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3" marker-end="url(#${markerName(defaultEdgeColor)})"/>
-`;
-    const flowLabelText = (numbered ? legendFlowLabel + " \u2014 " + ui.numberedSuffix : legendFlowLabel) + (style.flowColor === "by-source" ? style.lang === "fr" ? " \u2014 couleur = source" : " \u2014 colour = source" : "");
-    bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>
-`;
-    bandY += scaled(24);
-    const lineStyleKeys = lineStyleKeysSvg(paint, bandY, contentX);
-    bandsSvg += lineStyleKeys.svg;
-    bandY = lineStyleKeys.bandY;
     for (const note of model.legendNotes) {
-      bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>
+      const lines = bandLines(note, contentX, rightMargin, scaled(10));
+      for (const [row, line] of lines.entries())
+        bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12) + row * scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(line)}</text>
 `;
-      bandY += scaled(20);
+      bandY += scaled(20) + (lines.length - 1) * scaled(12);
     }
   };
   return {
@@ -101018,6 +101115,7 @@ function render(model, view, scene, options) {
   });
   const overlapsAfter = countLabelOverlaps();
   compactVertical(scene);
+  fitCanvas(scene);
   const drawnLogos = /* @__PURE__ */ new Set();
   const { renderContainerNode, renderLeafNode } = createNodeRenderers({
     palette,
@@ -101507,7 +101605,7 @@ async function compile(source, options) {
 }
 
 // src/api.ts
-var version = true ? "1.0.0-RC14" : pkg.version;
+var version = true ? "1.0.0-RC15" : pkg.version;
 
 // src/playground.ts
 var ElkClass = import_elk_bundled.default;
