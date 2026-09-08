@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 401 737" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 401 749" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="401" height="737" fill="#ffffff"/>
+<rect width="401" height="749" fill="#ffffff"/>
 <rect x="54.971822427037864" y="22" width="166" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="64.97182242703786" y="40" font-size="13" font-weight="bold" fill="#17202c">HR actors</text>
 <rect x="86.97182242703786" y="142" width="184" height="188.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
@@ -56,5 +56,6 @@
 <rect x="150" y="655" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
 <text x="182" y="666" font-size="10" fill="#17202c">External system</text>
 <line x1="150" y1="707" x2="176" y2="707" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="711" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+<text x="182" y="711" font-size="10" fill="#17202c">Application flow — (protocol, format)</text>
+<text x="182" y="723" font-size="10" fill="#17202c">under the label</text>
 </svg>

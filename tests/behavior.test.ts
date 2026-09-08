@@ -38,6 +38,34 @@ const write = (dir: string, name: string, body: string): string => {
   return path;
 };
 const EX = join(ROOT, "examples");
+// Every `<text>` in a drawing, joined by spaces. A band reading is wrapped to
+// the room it has, so a phrase the reader sees as one sentence can be spread
+// over several nodes — assert against this, not against a single node, unless
+// the point of the test is where the break falls.
+const allText = (svg: string): string =>
+  [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((match) => match[1]).join(" ");
+// Every band reading — the 10px and 11px text under the drawing — sits inside
+// the frame, on all four edges. The viewBox clips whatever does not, so a
+// reading that wrapped one row too far down is lost exactly as one that ran off
+// the right is. Width is estimated the way the renderer positions it, from
+// RENDER_CHAR_WIDTH; `y` is a baseline, so it is compared against the frame's
+// own bottom. Coordinates are matched signed, so a reading pushed off the top or
+// the left fails the check rather than escaping it.
+const assertBandTextInside = (svg: string) => {
+  const [, width, height] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) ?? [];
+  for (const [, x, y, size, text] of svg.matchAll(
+    /<text x="(-?[\d.]+)" y="(-?[\d.]+)"[^>]*font-size="(10|11)"[^>]*>([^<]*)</g,
+  )) {
+    assert.ok(
+      Number(x) >= 0 && Number(x) + text.length * Number(size) * 0.52 <= Number(width),
+      `\`${text}\` at x=${x} falls outside the ${width}px canvas`,
+    );
+    assert.ok(
+      Number(y) >= 0 && Number(y) <= Number(height),
+      `\`${text}\` at y=${y} falls outside the ${height}px canvas`,
+    );
+  }
+};
 // Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.
 const load = (f: string) => readFileSync(join(EX, f), "utf8").replace(/\r\n/g, "\n");
 // Parse and validate `src`, returning the model, diagnostics, and diagnostic codes.
@@ -318,6 +346,40 @@ for (const f of [
   test(`${f}: zero label overlaps after post-pass`, async () => {
     const { overlapsAfter } = await build(load(f));
     assert.equal(overlapsAfter, 0);
+  });
+}
+
+// The canvas is what the viewBox clips to, so anything outside it is simply not
+// drawn. `placement/reading-order.cairn` pins two flows to the far side of the
+// rightmost queue: they wrap around it, and before `fitCanvas` the tail of one
+// ran 3px past the edge and vanished.
+for (const f of [
+  "placement/reading-order.cairn",
+  "dispositions/medium-tall.cairn",
+  "large-numbered.cairn",
+]) {
+  test(`${f}: nothing drawn falls outside the canvas`, async () => {
+    const { scene } = await build(load(f));
+    for (const node of scene.nodes) {
+      assert.ok(node.x + node.width <= scene.width, `${node.id} past the right edge`);
+      assert.ok(node.y + node.height <= scene.height, `${node.id} past the bottom edge`);
+    }
+    for (const edge of scene.edges) {
+      for (const point of edge.pts) {
+        assert.ok(point.x <= scene.width, `${edge.id} routed past the right edge`);
+        assert.ok(point.y <= scene.height, `${edge.id} routed past the bottom edge`);
+      }
+      for (const label of edge.labels) {
+        assert.ok(
+          label.x + label.width <= scene.width,
+          `${edge.id}'s label is cut off on the right`,
+        );
+        assert.ok(
+          label.y + label.height <= scene.height,
+          `${edge.id}'s label is cut off at the bottom`,
+        );
+      }
+    }
   });
 }
 
@@ -793,7 +855,7 @@ test("flow readability: endpoint number, larger arrows, color-by-source", async 
   const col = await build(base.replace("STYLE", "style { flow-color: by-source }"));
   assert.ok((col.svg.match(/<marker /g) ?? []).length >= 2, "a marker per source color");
   assert.match(col.svg, /stroke="#1f77b4"/); // first source hue
-  assert.match(col.svg, /colour = source/); // legend hint
+  assert.match(allText(col.svg), /colour = source/); // legend hint, wrapped or not
   assert.equal(col.overlapsAfter, 0);
   // A — numbered badge pinned near the target; must still be overlap-free
   const num = await build(base.replace("STYLE", "style { flow-text: numbered }"));
@@ -870,16 +932,24 @@ test("a line-style key too wide for the band wraps instead of running off it", a
   );
   const canvasWidth = Number(/viewBox="0 0 ([\d.]+)/.exec(narrow.svg)?.[1]);
   assert.ok(canvasWidth < 400, `expected a narrow canvas, got ${canvasWidth}`);
+  // Broken across nodes, but the reading is all still there.
   assert.doesNotMatch(narrow.svg, />Asynchronous exchange \(message, event\)</);
-  assert.match(narrow.svg, />Asynchronous</);
-  // Every fragment it broke into stays inside the canvas.
-  for (const [, x, size, text] of narrow.svg.matchAll(
-    /<text x="([\d.]+)"[^>]*font-size="([\d.]+)"[^>]*>(Asynchronous|exchange|\(message,|event\))</g,
-  ))
-    assert.ok(
-      Number(x) + text.length * Number(size) * 0.52 <= canvasWidth,
-      `\`${text}\` at x=${x} runs past the ${canvasWidth}px canvas`,
-    );
+  assert.match(allText(narrow.svg), /Asynchronous exchange \(message, event\)/);
+  // Every band reading stays inside the canvas, whichever line it broke onto.
+  assertBandTextInside(narrow.svg);
+
+  // A word with no space to break at is broken mid-token rather than left to run
+  // off the edge — an author's `legend note` can carry a URL, and the band has no
+  // width to give it.
+  const longWord = await build(
+    'diagram application "t"\nstyle {\n  disposition: tall\n}\nlegend {\n  note "See https://example.internal/architecture/decisions/0042-messaging-topology"\n}\napplication APP "App" {\n  module A "Module A"\n  module B "Module B"\n}\nA -> B (REST)\n',
+  );
+  assertBandTextInside(longWord.svg);
+  // Broken, not dropped: every character of the URL is still on the page.
+  assert.match(
+    allText(longWord.svg).replace(/\s+/g, ""),
+    /https:\/\/example\.internal\/architecture\/decisions\/0042-messaging-topology/,
+  );
 
   // A band with room keeps the reading on one line.
   const wide = await build(
@@ -887,6 +957,25 @@ test("a line-style key too wide for the band wraps instead of running off it", a
   );
   assert.match(wide.svg, />Asynchronous exchange \(message, event\)</);
 });
+
+// A `tall` infrastructure view is often ~200px wide and its legend says
+// "Technical flow (protocol, port)". Beside the title that key had 28px to
+// write in and ran off the canvas; under it, it has the whole width.
+for (const f of [
+  "dispositions/infrastructure-small-tall.cairn",
+  "dispositions/infrastructure-small-page.cairn",
+  "dispositions/application-small-tall.cairn",
+  "placement/queue-roles.cairn",
+]) {
+  test(`${f}: no band text runs off the canvas`, async () => {
+    const { svg, scene } = await build(load(f));
+    const canvasWidth = Number(/viewBox="0 0 ([\d.]+)/.exec(svg)?.[1]);
+    // The bands take height, never width — the drawing keeps the frame layout
+    // gave it, whatever the legend needs.
+    assert.equal(canvasWidth, scene.width);
+    assertBandTextInside(svg);
+  });
+}
 
 test("the line-style keys speak the diagram's language", async () => {
   const { svg } = await build(

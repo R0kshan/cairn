@@ -15,6 +15,11 @@
  *
  * Deterministic: integer shifts from existing coordinates, through a
  * monotone piecewise map.
+ *
+ * The canvas is this module's other job: `fitCanvas` grows it to hold whatever
+ * the passes above ended up drawing (INVARIANTS §18). Same subject, opposite
+ * direction — one reclaims height the drawing does not use, the other buys the
+ * width and height it does.
  */
 
 import type { Scene } from "./scene-layout.ts";
@@ -107,4 +112,50 @@ export function compactVertical(scene: Scene): void {
     for (const label of edge.labels) heightAfter = Math.max(heightAfter, label.y + label.height);
   }
   scene.height = Math.ceil(heightAfter + bottomMargin);
+}
+
+/**
+ * Padding kept between the outermost thing drawn and the canvas edge, matching
+ * the margin `route-detour` sizes its scenes with.
+ */
+const CANVAS_MARGIN = 10;
+
+/**
+ * Grows the canvas so nothing drawn falls outside it.
+ *
+ * The scene is sized from the node extents, and `route-detour` resizes it again
+ * from the routes it moved — but every pass after that one (re-siding, the route
+ * repair, attachment spreading, and the renderer's own label settling) keeps
+ * moving routes and labels. A flow pinned to the far side of the rightmost node
+ * wraps around it and can end up past the canvas edge, where the viewBox clips
+ * it: that is what cost `examples/placement/reading-order` the tail of its
+ * right-hand flow.
+ *
+ * Called twice for that reason — at the end of layout, and again in the renderer
+ * once labels have settled, which is the last thing that moves any of this.
+ *
+ * Grow only. A scene already large enough keeps the size it had, so this is a
+ * no-op for every drawing that was not clipped.
+ */
+export function fitCanvas(scene: Scene): void {
+  let maxX = 0;
+  let maxY = 0;
+  // Incremental max, not Math.max(...spread): a spread over every node, point
+  // and label in a large diagram can blow the call-stack argument limit.
+  for (const node of scene.nodes) {
+    maxX = Math.max(maxX, node.x + node.width);
+    maxY = Math.max(maxY, node.y + node.height);
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) {
+      maxX = Math.max(maxX, point.x);
+      maxY = Math.max(maxY, point.y);
+    }
+    for (const label of edge.labels) {
+      maxX = Math.max(maxX, label.x + label.width);
+      maxY = Math.max(maxY, label.y + label.height);
+    }
+  }
+  scene.width = Math.max(scene.width, Math.ceil(maxX) + CANVAS_MARGIN);
+  scene.height = Math.max(scene.height, Math.ceil(maxY) + CANVAS_MARGIN);
 }

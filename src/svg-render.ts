@@ -24,7 +24,7 @@ import {
   boxToPolylineSq,
 } from "./geometry.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from "./scene-layout.ts";
-import { compactVertical } from "./compact.ts";
+import { compactVertical, fitCanvas } from "./compact.ts";
 import { labelsSeated } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
@@ -48,6 +48,51 @@ const LABEL_HALO = 4;
  * Changing it shifts band geometry — see the determinism note in AGENTS.md#non-negotiable-invariants.
  */
 const RENDER_CHAR_WIDTH = 0.52;
+
+/** Where band content sits when it shares its row with the band's title. */
+const BAND_CONTENT_X = 150;
+/**
+ * Narrowest run of text worth laying beside a band title. Below it the title
+ * takes a row of its own and the content starts at the left margin instead: a
+ * legend beside the title on a 198px-wide drawing has 28px to write in, which
+ * wraps every key to one word per line.
+ */
+const MIN_BAND_TEXT = 200;
+/** Right margin every band writes up to. */
+const bandRightMargin = (scene: Scene) => scene.width - 20;
+
+/**
+ * A band's text is clipped by the frame, never reflowed by it — the bands grow
+ * the drawing's height, never its width (`svgDocument`). So everything a band
+ * writes is wrapped to the room between where it starts and the right margin.
+ * On a drawing narrower than its own legend that is the difference between a key
+ * that reads and a key that ends mid-word.
+ */
+function bandLines(text: string, from: number, right: number, fontSize: number): string[] {
+  const chars = Math.floor((right - from) / (fontSize * RENDER_CHAR_WIDTH));
+  return bandWrap(text, Math.max(8, chars));
+}
+
+/**
+ * `wrapText` breaks between words and leaves a word longer than the row intact,
+ * which is the right call for a node label — the box is sized around it. A band
+ * has no such recourse: its width is the drawing's, so a URL or a long
+ * identifier in a `legend note` or an object description would run off the edge
+ * and be clipped. Here the word is broken mid-token instead, which at least
+ * leaves all of it on the page. Lines that already fit are untouched.
+ */
+function bandWrap(text: string, maxChars: number): string[] {
+  return wrapText(text, maxChars)
+    .split("\n")
+    .flatMap((line) => {
+      if (line.length <= maxChars) return [line];
+      const parts: string[] = [];
+      for (let index = 0; index < line.length; index += maxChars)
+        parts.push(line.slice(index, index + maxChars));
+      return parts;
+    });
+}
+
 const dashArray = (lineStyle?: string) =>
   lineStyle === "dashed" ? "5 3" : lineStyle === "dotted" ? "2 2.5" : undefined;
 
@@ -927,6 +972,7 @@ function kindKeysSvg(
   let svg = "";
   let keyX = x;
   let bandY = y;
+  const LINE_H = scaled(12);
   for (const kind of kinds) {
     const nodeStyle = resolveStyle(kind, "");
     if (kind === "actor") {
@@ -948,9 +994,15 @@ function kindKeysSvg(
       });
     }
     const name = legendNames[kind];
-    svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(name)}</text>\n`;
+    // A name with room for it is one line, exactly as before wrapping existed.
+    const lines = bandLines(name, keyX + scaled(32), bandRightMargin(scene), scaled(10));
+    for (const [row, line] of lines.entries())
+      svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(13) + row * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>\n`;
     keyX += scaled(40) + Math.ceil(name.length * scaled(10) * RENDER_CHAR_WIDTH) + scaled(24);
-    if (keyX > scene.width - 220) {
+    // A key that wrapped owns its row: what follows would sit beside a block of
+    // text rather than beside a key.
+    bandY += (lines.length - 1) * LINE_H;
+    if (lines.length > 1 || keyX > scene.width - 220) {
       keyX = x;
       bandY += scaled(22);
     }
@@ -992,13 +1044,8 @@ function lineStyleKeysSvg(paint: BandPaint, y: number, x: number): { svg: string
     const dash = dashArray(lineStyle);
     svg += `<line x1="${keyX}" y1="${bandY + 8}" x2="${keyX + scaled(26)}" y2="${bandY + 8}" stroke="${escAttr(defaultEdgeColor)}" stroke-width="1.3"${dash ? ` stroke-dasharray="${dash}"` : ""} marker-end="url(#${markerName(defaultEdgeColor)})"/>\n`;
     // A reading with no row wide enough for it is broken across lines rather
-    // than over the canvas edge: the bands grow the drawing's height, never its
-    // width (`svgDocument`), so whatever reaches past `maxX` is simply clipped.
-    const room = maxX - keyX - scaled(40);
-    const lines = wrapText(
-      meaning,
-      Math.max(8, Math.floor(room / (scaled(10) * RENDER_CHAR_WIDTH))),
-    ).split("\n");
+    // than over the canvas edge.
+    const lines = bandLines(meaning, keyX + scaled(40), maxX, scaled(10));
     for (const [row, line] of lines.entries())
       svg += `<text x="${keyX + scaled(32)}" y="${bandY + scaled(12) + row * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>\n`;
     if (lines.length === 1) {
@@ -1038,7 +1085,15 @@ function createBandRenderers(paint: BandPaint) {
 
   let bandY = scene.height;
   let bandsSvg = "";
-  const contentX = 150;
+  const rightMargin = bandRightMargin(scene);
+  // A drawing can be narrower than the words under it — a `tall` infrastructure
+  // view is often 200px wide, and its legend says "Technical flow (protocol,
+  // port)". Where the column beside the title leaves too little to write in, the
+  // title takes its own row and the content starts at the left margin, which is
+  // the whole width rather than a seventh of it. The bands never widen the
+  // drawing to make room (`svgDocument`), so this is the only room there is.
+  const stackedTitle = rightMargin - BAND_CONTENT_X < MIN_BAND_TEXT;
+  const contentX = stackedTitle ? 20 : BAND_CONTENT_X;
 
   const chip = (x: number, y: number, name: string) => {
     const width = chipW(name, annot.scale);
@@ -1052,7 +1107,9 @@ function createBandRenderers(paint: BandPaint) {
   const beginBand = (title: string) => {
     bandsSvg += `<line x1="20" y1="${bandY + 10}" x2="${scene.width - 20}" y2="${bandY + 10}" stroke="${palette.divider}" stroke-width="1"/>\n`;
     bandsSvg += `<text x="20" y="${bandY + scaled(32)}" font-size="${scaled(11)}" font-weight="bold" fill="${palette.bandTitle}">${esc(title)}</text>\n`;
-    bandY += scaled(20);
+    // Beside the title, the first content row shares its baseline; under it, the
+    // content starts a row lower so the two do not collide.
+    bandY += scaled(stackedTitle ? 34 : 20);
   };
   /** Draws a flow's carried-object chips left-to-right starting at (startX, startY); "" when it carries none. */
   const flowChipsSvg = (flow: Flow, startX: number, startY: number): string => {
@@ -1088,7 +1145,7 @@ function createBandRenderers(paint: BandPaint) {
       const textW = Math.max(60, colW - BADGE - (chipsW ? chipsW + 6 : 0));
       const maxChars = Math.max(6, Math.floor(textW / (scaled(10) * RENDER_CHAR_WIDTH)));
       const raw = (flow.label ?? "") + (tech ? "  " + tech : "");
-      const lines = raw.split("\n").flatMap((segment) => wrapText(segment, maxChars).split("\n"));
+      const lines = raw.split("\n").flatMap((segment) => bandWrap(segment, maxChars));
       return { flow, lines };
     });
 
@@ -1115,21 +1172,23 @@ function createBandRenderers(paint: BandPaint) {
 
   const renderObjectsBand = () => {
     beginBand(ui.objects);
-    for (const bo of model.businessObjects) {
-      const chipResult = chip(contentX, bandY + 2, bo.name);
+    const LINE_H = scaled(12);
+    /** A chip and the reading beside it, wrapped to the room left of the margin. */
+    const chipRow = (name: string, reading: string) => {
+      const chipResult = chip(contentX, bandY + 2, name);
       bandsSvg += chipResult.svg;
-      if (bo.description)
-        bandsSvg += `<text x="${contentX + chipResult.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">— ${esc(bo.description)}</text>\n`;
-      bandY += scaled(24);
-    }
+      const textX = contentX + chipResult.width + 10;
+      const lines = reading ? bandLines(reading, textX, rightMargin, scaled(10)) : [];
+      for (const [row, line] of lines.entries())
+        bandsSvg += `<text x="${textX}" y="${bandY + scaled(13) + row * LINE_H}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(line)}</text>\n`;
+      bandY += scaled(24) + Math.max(0, lines.length - 1) * LINE_H;
+    };
+    for (const bo of model.businessObjects)
+      chipRow(bo.name, bo.description ? `— ${bo.description}` : "");
     // What a chip means belongs with the objects it describes, not among the
     // legend's shape keys — and only when the drawing has chips to explain.
-    if (model.flows.some((flow) => flow.objects?.length)) {
-      const keyChip = chip(contentX, bandY + 2, ui.businessObject);
-      bandsSvg += keyChip.svg;
-      bandsSvg += `<text x="${contentX + keyChip.width + 10}" y="${bandY + scaled(13)}" font-size="${scaled(10)}" fill="${palette.bandMuted}">${esc(ui.carriedByFlow)}</text>\n`;
-      bandY += scaled(24);
-    }
+    if (model.flows.some((flow) => flow.objects?.length))
+      chipRow(ui.businessObject, ui.carriedByFlow);
     bandY += 6;
   };
 
@@ -1152,16 +1211,21 @@ function createBandRenderers(paint: BandPaint) {
             ? " — couleur = source"
             : " — colour = source"
           : "");
-      bandsSvg += `<text x="${contentX + scaled(32)}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(flowLabelText)}</text>\n`;
-      bandY += scaled(24);
+      const flowKeyX = contentX + scaled(32);
+      const flowKeyLines = bandLines(flowLabelText, flowKeyX, rightMargin, scaled(10));
+      for (const [row, line] of flowKeyLines.entries())
+        bandsSvg += `<text x="${flowKeyX}" y="${bandY + scaled(12) + row * scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}">${esc(line)}</text>\n`;
+      bandY += scaled(24) + (flowKeyLines.length - 1) * scaled(12);
       // What each arrow glyph means, keyed under the flow it qualifies.
       const lineStyleKeys = lineStyleKeysSvg(paint, bandY, contentX);
       bandsSvg += lineStyleKeys.svg;
       bandY = lineStyleKeys.bandY;
     }
     for (const note of model.legendNotes) {
-      bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(note)}</text>\n`;
-      bandY += scaled(20);
+      const lines = bandLines(note, contentX, rightMargin, scaled(10));
+      for (const [row, line] of lines.entries())
+        bandsSvg += `<text x="${contentX}" y="${bandY + scaled(12) + row * scaled(12)}" font-size="${scaled(10)}" fill="${palette.bandText}" font-style="italic">${esc(line)}</text>\n`;
+      bandY += scaled(20) + (lines.length - 1) * scaled(12);
     }
   };
 
@@ -1500,6 +1564,11 @@ export function render(
   // reorders nothing, so it cannot create an overlap, a pierce or a collision.
   // No-op when settling stranded nothing, the common case.
   compactVertical(scene);
+  // Last word on the canvas size: settling moves labels, and a reverted repair
+  // restores the route it replaced, so both can land outside the frame layout
+  // sized. Before the bands are built, so the legend is laid out against the
+  // width the document ends up with.
+  fitCanvas(scene);
 
   // Which licensed marks this render actually paints, and so what the document
   // has to attribute. Declared here because the renderers fill it and the
