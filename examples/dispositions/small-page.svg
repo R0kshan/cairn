@@ -51,10 +51,10 @@
 <text x="372" y="292.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">slots</text>
 <rect x="353" y="300.75" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="372" y="311.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
-<text x="96" y="282" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment</text>
-<text x="96" y="296.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">confirmation</text>
-<rect x="58.5" y="304.5" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="96" y="315.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<text x="96" y="279.625" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment</text>
+<text x="96" y="294.125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">confirmation</text>
+<rect x="58.5" y="302.125" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="96" y="313.125" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
 <line x1="20" y1="733" x2="409" y2="733" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="755" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
 <rect x="150" y="745" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>

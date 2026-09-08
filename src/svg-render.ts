@@ -254,14 +254,36 @@ function auditRouteRepairs(deps: {
     return false;
   };
 
+  /**
+   * The flow a breach key names — `diag:F04:1`, `leaf:F04~db`, `adrift:7` — so a
+   * promise the batch broke can be charged to the repair that broke it instead
+   * of to all of them. `null` when the key belongs to no flow this pass moved,
+   * which is the case the batch revert still has to cover.
+   */
+  const flowOfBreach = (key: string): string | null => {
+    if (key.startsWith("adrift:"))
+      return labels[Number.parseInt(key.slice("adrift:".length), 10)]?.flowId ?? null;
+    const body = key.slice(key.indexOf(":") + 1);
+    const cut = body.search(/[~:]/);
+    return cut < 0 ? body : body.slice(0, cut);
+  };
+
   const withRepair = stateHarm();
   const breachesWith = breaches();
   const repairedRoutes = repaired.map((edge) => edge.pts);
-  for (const edge of repaired) edge.pts = edge.repairedFrom!;
-  resettle();
+  const replacedRoutes = repaired.map((edge) => edge.repairedFrom!);
+  /** Put the drawing into one keep/revert combination and settle it for real. */
+  const applyKeep = (keep: boolean[]) => {
+    repaired.forEach((edge, index) => {
+      edge.pts = keep[index] ? repairedRoutes[index] : replacedRoutes[index];
+    });
+    resettle();
+  };
+
+  applyKeep(repaired.map(() => false));
   const withoutRepair = stateHarm();
   const breachesWithout = breaches();
-  const breaksAPromise = [...breachesWith].some((key) => !breachesWithout.has(key));
+  const broken = [...breachesWith].filter((key) => !breachesWithout.has(key));
   // Two finished drawings, judged the same way; the less damaged one ships. Last
   // point where geometry and labels have both settled, so the only place either
   // state can be measured for real. Whole-drawing on purpose: the lifted label
@@ -272,11 +294,30 @@ function auditRouteRepairs(deps: {
   // equally-damaged repair is one whose gain this audit cannot see after
   // settling. An invariant the repair breaks and the revert does not is never
   // payable; everything below that is a trade.
-  if (!breaksAPromise && !lessDamaged(withoutRepair, withRepair)) {
-    repaired.forEach((edge, index) => {
-      edge.pts = repairedRoutes[index];
-    });
-    resettle();
+  if (!broken.length) {
+    if (!lessDamaged(withoutRepair, withRepair)) applyKeep(repaired.map(() => true));
+    for (const edge of repaired) edge.repairedFrom = undefined;
+    return;
+  }
+
+  // The veto is owed by the repair that broke the promise, not by the batch it
+  // arrived in. `repaired` is every route this render moved, so an all-or-
+  // nothing revert threw away the innocent ones too: on `infrastructure`
+  // (page and tall) one broken key discarded five repairs and put four runs back
+  // across container names — a tier-0 §4e strike bought with nothing.
+  //
+  // So revert only the flows the broken keys name, and judge what survives
+  // exactly as the whole-drawing comparison above judges: it ships only if it
+  // breaks no promise of its own and is no more damaged than the full revert.
+  // Keys naming a flow this pass never moved leave nothing to charge, and the
+  // full revert already applied stands.
+  const blamed = new Set(broken.map(flowOfBreach).filter((id): id is string => id !== null));
+  const keep = repaired.map((edge) => !blamed.has(edge.id));
+  if (keep.some(Boolean) && keep.some((kept) => !kept)) {
+    applyKeep(keep);
+    const partly = stateHarm();
+    const stillBroken = [...breaches()].some((key) => !breachesWithout.has(key));
+    if (stillBroken || lessDamaged(withoutRepair, partly)) applyKeep(repaired.map(() => false));
   }
   for (const edge of repaired) edge.repairedFrom = undefined;
 }
@@ -846,17 +887,29 @@ function createLabelSettler(deps: {
       const a = edge.pts[index];
       const b = edge.pts[index + 1];
       const vertical = Math.abs(a.x - b.x) < Math.abs(a.y - b.y);
-      const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
-      const room = Math.max(0, (span - (vertical ? label.height : label.width)) / 2);
-      if (room === 0) continue;
-      for (const fraction of [-0.25, 0.25, -0.5, 0.5, -0.75, 0.75, -1, 1]) {
-        const shift = room * fraction;
-        seats.push(
-          vertical
-            ? { x: (a.x + b.x) / 2 - label.width / 2, y: (a.y + b.y) / 2 + shift - lead }
-            : { x: (a.x + b.x) / 2 + shift - label.width / 2, y: (a.y + b.y) / 2 - lead },
-        );
-      }
+      // Measured on the box, in the direction it slides: the centred seat's
+      // leading edge, and how far that edge may travel each way with the whole
+      // box still on this run. Vertically the seat is anchored on the text's
+      // centre (`lead`) while the box is taller than the text, so the box sits
+      // off-centre on the run — one budget for both ends would then overshoot
+      // the far end by exactly the difference and leave that much unreachable
+      // at the near end. The two ends are measured separately for that reason.
+      const size = vertical ? label.height : label.width;
+      const start = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+      const end = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+      const seat = vertical ? (a.y + b.y) / 2 - lead : (a.x + b.x) / 2 - label.width / 2;
+      const back = Math.max(0, seat - start);
+      const ahead = Math.max(0, end - size - seat);
+      if (back === 0 && ahead === 0) continue;
+      for (const fraction of [0.25, 0.5, 0.75, 1])
+        for (const room of [-back, ahead]) {
+          const shift = room * fraction;
+          seats.push(
+            vertical
+              ? { x: (a.x + b.x) / 2 - label.width / 2, y: seat + shift }
+              : { x: seat + shift, y: (a.y + b.y) / 2 - lead },
+          );
+        }
     }
     return seats;
   };
