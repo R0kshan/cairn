@@ -45,23 +45,24 @@ const EX = join(ROOT, "examples");
 const allText = (svg: string): string =>
   [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((match) => match[1]).join(" ");
 // Every band reading — the 10px and 11px text under the drawing — sits inside
-// the frame, on both edges. The viewBox clips whatever does not, so a reading
-// that wrapped one row too far down is lost exactly as one that ran off the
-// right is. Width is estimated the way the renderer positions it, from
+// the frame, on all four edges. The viewBox clips whatever does not, so a
+// reading that wrapped one row too far down is lost exactly as one that ran off
+// the right is. Width is estimated the way the renderer positions it, from
 // RENDER_CHAR_WIDTH; `y` is a baseline, so it is compared against the frame's
-// own bottom.
+// own bottom. Coordinates are matched signed, so a reading pushed off the top or
+// the left fails the check rather than escaping it.
 const assertBandTextInside = (svg: string) => {
   const [, width, height] = /viewBox="0 0 ([\d.]+) ([\d.]+)"/.exec(svg) ?? [];
   for (const [, x, y, size, text] of svg.matchAll(
-    /<text x="([\d.]+)" y="([\d.]+)"[^>]*font-size="(10|11)"[^>]*>([^<]*)</g,
+    /<text x="(-?[\d.]+)" y="(-?[\d.]+)"[^>]*font-size="(10|11)"[^>]*>([^<]*)</g,
   )) {
     assert.ok(
-      Number(x) + text.length * Number(size) * 0.52 <= Number(width),
-      `\`${text}\` at x=${x} runs past the ${width}px canvas`,
+      Number(x) >= 0 && Number(x) + text.length * Number(size) * 0.52 <= Number(width),
+      `\`${text}\` at x=${x} falls outside the ${width}px canvas`,
     );
     assert.ok(
-      Number(y) <= Number(height),
-      `\`${text}\` at y=${y} sits below the ${height}px canvas`,
+      Number(y) >= 0 && Number(y) <= Number(height),
+      `\`${text}\` at y=${y} falls outside the ${height}px canvas`,
     );
   }
 };
@@ -945,7 +946,10 @@ test("a line-style key too wide for the band wraps instead of running off it", a
   );
   assertBandTextInside(longWord.svg);
   // Broken, not dropped: every character of the URL is still on the page.
-  assert.match(allText(longWord.svg).replace(/\s+/g, ""), /example\.internal\/architecture/);
+  assert.match(
+    allText(longWord.svg).replace(/\s+/g, ""),
+    /https:\/\/example\.internal\/architecture\/decisions\/0042-messaging-topology/,
+  );
 
   // A band with room keeps the reading on one line.
   const wide = await build(
