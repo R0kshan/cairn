@@ -1,0 +1,137 @@
+diagram infrastructure "HELIOS siège / agence (un réseau, région unique) — vue infrastructure"
+style {
+  lang: fr
+  disposition: wide
+  #flow-text: numbered
+  compact: on
+  fill network-zone: #eef6ff
+}
+
+# ============================================================================
+# Périmètre : un réseau, une seule région cloud. Les flux inter-régions
+# (LB_01/LB_02) et inter-réseaux (INTR_01/INTR_02) sont hors périmètre et
+# traités dans `infrastructure-helios-fr-multi-region.cairn`.
+#
+# Convention de ports : les ports non précisés par le dossier reprennent la
+# valeur par défaut du protocole (HTTPS/443, AMQP/5672, PostgreSQL/5432).
+# Les flux sans port normalisé (TCP/Socket applicatif, RS422) n'en portent pas.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# Postes de travail (NAV_CLIENT_SIEGE, NAV_CLIENT_AGENCE) et poste de secours
+# ---------------------------------------------------------------------------
+device NAV_CLIENT_SIEGE "Poste siège\nNavigateur client siège"
+device NAV_CLIENT_AGENCE "Poste agence\nNavigateur client agence"
+actor POSTE_OPERATEUR "Poste opérateur\nen agence (4G)"
+
+# ---------------------------------------------------------------------------
+# Exposition publique cloud — une seule IP pour helios.exemple.fr
+# ---------------------------------------------------------------------------
+site CLOUD_PUBLIC "Cloud — exposition publique" {
+  network-zone Z_EDGE "Zone d'exposition" {
+    gateway LB "Load Balancer managé\nhelios.exemple.fr (anti-DDoS)"
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Région cloud unique — zone siège + zone de secours agence
+# ---------------------------------------------------------------------------
+site CLOUD_REGION "Cloud — région unique" {
+  network-zone Z_SIEGE "Zone réseau siège (pare-feu)" {
+    server VM_RP "VM RP\nUbuntu 24.04 LTS" {
+      app-instance AUTH_RP_NGINX_OAUTH2 "RP Nginx + IHM\nHELIOS siège"
+    }
+    server VM_BACK "VM applicative\nUbuntu 24.04 LTS" {
+      app-instance APP_BACKEND_SIEGE "Backend HELIOS siège\n(Spring Boot)"
+    }
+    server VM_MQ "VM broker\nUbuntu 24.04 LTS" {
+      app-instance RABBITMQ "RabbitMQ\n(quorum queues)"
+    }
+    server VM_BDD "VM base de données\nUbuntu 24.04 LTS" {
+      app-instance BDD_SIEGE "PostgreSQL\nHELIOS siège"
+    }
+    server VM_ORCH "VM orchestration\nUbuntu 24.04 LTS" {
+      app-instance ORCH_SERVER "Nœud maître\norchestrateur"
+    }
+  }
+  network-zone Z_SECOURS_AGENCE "Zone de secours agence" {
+    server VM_FALLBACK_AGENCE "VM cloud de secours\nUbuntu 24.04 LTS" {
+      app-instance BACK_AGENCE_FALLBACK "Backend HELIOS Agence\n(Thymeleaf, sans RS422)"
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Zone locale en agence — 1 des 67 agences du réseau
+# ---------------------------------------------------------------------------
+site AGENCE "Agence (1 des 67 du réseau)" {
+  network-zone Z_AGENCE "Réseau local agence (pare-feu)" {
+    server SRV_LOCAL "Serveur local\nUbuntu 24.04 LTS" {
+      app-instance APP_BACK_AGENCE "Backend HELIOS Agence\n(agent orchestrateur)"
+    }
+  }
+}
+
+# ---------------------------------------------------------------------------
+# Fournisseur d'identité et SI tiers
+# ---------------------------------------------------------------------------
+idp SSO_INTERNE "SSO interne\n(OAuth2 / OIDC)"
+
+external SOCLE_2 "SI Socle 2\n(temps réel)"
+external ALPHA "ALPHA\n(incidents)"
+external BRAVO "BRAVO\n(temps réel)"
+external ECRANS "Écrans\nen agence (RS422)"
+external AFFICHAGE_ZONES "Affichage des\nzones"
+
+# ============================================================================
+# FLUX TECHNIQUES (protocole obligatoire)
+# ============================================================================
+
+# ---- Authentification et exposition (AUTH_01..03) ----
+NAV_CLIENT_SIEGE -> LB : "AUTH_01 — accès helios.exemple.fr (poste siège)" (HTTPS/443)
+NAV_CLIENT_AGENCE -> LB : "AUTH_01 — accès helios.exemple.fr (poste agence)" (HTTPS/443)
+LB -> AUTH_RP_NGINX_OAUTH2 : "AUTH_02 — vers le reverse proxy" (HTTPS/443)
+AUTH_RP_NGINX_OAUTH2 -> SSO_INTERNE : "AUTH_03 — OAuth2 / OIDC" (HTTPS/443)
+AUTH_RP_NGINX_OAUTH2 -> APP_BACKEND_SIEGE : "IHM servie vers le backend" (HTTP/8080)
+
+# ---- Persistance (DB_01) ----
+APP_BACKEND_SIEGE -> BDD_SIEGE : "DB_01 — persistance" (JDBC/5432)
+
+# ---- SI tiers vers le siège via le LB (TIER_01..03) ----
+SOCLE_2 -> LB : "TIER_01 — temps réel (10-15 s)" (TCP)
+ALPHA -> LB : "TIER_02 — messages d'incident" (HTTPS/443)
+BRAVO -> LB : "TIER_03 — consultation temps réel" (HTTPS/443)
+
+# ---- SI tiers vers RabbitMQ (RMQ_01..02) ----
+ALPHA -> RABBITMQ.left : "RMQ_01 — file Q_ALPHA" (AMQP/5672)
+BRAVO -> RABBITMQ.left : "RMQ_02 — file Q_BRAVO" (AMQP/5672)
+
+# ---- Siège vers agence et agence vers siège (SIEGE_AGENCE_01..02, AGENCE_SIEGE_01..02) ----
+APP_BACKEND_SIEGE -> RABBITMQ : "SIEGE_AGENCE_01 — file Q_SIEGE_GST" (AMQP/5672)
+RABBITMQ -> APP_BACK_AGENCE : "SIEGE_AGENCE_02 — réception en agence" (AMQP/5672)
+APP_BACK_AGENCE -> RABBITMQ : "AGENCE_SIEGE_01 — file Q_AGENCE_GST" (AMQP/5672)
+RABBITMQ -> APP_BACKEND_SIEGE : "AGENCE_SIEGE_02 — réception au siège" (AMQP/5672)
+APP_BACK_AGENCE -> LB : "AGENCE_BRAVO_01 — abonnement BRAVO" (HTTPS/443)
+
+# ---- Orchestration (ORCH_01..02) ----
+ORCH_SERVER -> APP_BACK_AGENCE : "ORCH_01 — pilotage des 67 agents" (TCP/4647)
+APP_BACK_AGENCE -> ORCH_SERVER : "ORCH_02 — heartbeat des agents" (TCP/4647)
+ORCH_SERVER ..> BACK_AGENCE_FALLBACK : "Niveau 4 — déploiement VM de secours" (TCP/4647)
+
+# ---- Accès distant par tunnel chiffré (VPN_01..02) ----
+POSTE_OPERATEUR ..> BACK_AGENCE_FALLBACK : "VPN_01 — tunnel WireGuard" (UDP/41641)
+BACK_AGENCE_FALLBACK ..> POSTE_OPERATEUR : "VPN_02 — réponse via le tunnel" (UDP/41641)
+
+# ---- Flux techniques locaux en agence (AGENCE_INT_01..02) ----
+APP_BACK_AGENCE -> ECRANS : "AGENCE_INT_01 — suivi des tournées" (RS422)
+APP_BACK_AGENCE -> AFFICHAGE_ZONES : "AGENCE_INT_02 — 6 prochaines tournées" (TCP)
+
+legend {
+  note "Vue mono-région : une seule région cloud représentée. La bascule inter-région (LB_01/LB_02, région A active / région B passive) est décrite dans la vue multi-région."
+  note "Vue par réseau : les flux inter-réseaux (INTR_01/INTR_02, siège R1 <-> siège R2) sortent du périmètre de ce schéma."
+  note "Traits pleins : flux nominaux. Pointillés : secours niveau 4 (VM cloud déployée par l'orchestrateur, accès par tunnel chiffré depuis le poste opérateur en 4G)."
+  note "Le serveur d'orchestration n'est pas redondé : les agents en agence se reconnectent seuls et les jobs déjà lancés continuent de tourner."
+  note "Le pare-feu isole les zones siège et agence ; Nginx n'accepte que les adresses IP du Load Balancer managé."
+  note "En niveau 4, la VM cloud ne dispose pas d'interface RS422 : les écrans en agence restent inopérants jusqu'au remplacement du matériel (SLA 4 h)."
+  note "Ports non précisés au dossier : valeur par défaut du protocole. Matrice des flux techniques jointe au dossier d'architecture."
+}
