@@ -38,6 +38,12 @@ const write = (dir: string, name: string, body: string): string => {
   return path;
 };
 const EX = join(ROOT, "examples");
+// Every `<text>` in a drawing, joined by spaces. A band reading is wrapped to
+// the room it has, so a phrase the reader sees as one sentence can be spread
+// over several nodes — assert against this, not against a single node, unless
+// the point of the test is where the break falls.
+const allText = (svg: string): string =>
+  [...svg.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((match) => match[1]).join(" ");
 // Read a `.cairn` example and normalize to LF — keeps the suite line-ending-agnostic on Windows.
 const load = (f: string) => readFileSync(join(EX, f), "utf8").replace(/\r\n/g, "\n");
 // Parse and validate `src`, returning the model, diagnostics, and diagnostic codes.
@@ -827,7 +833,7 @@ test("flow readability: endpoint number, larger arrows, color-by-source", async 
   const col = await build(base.replace("STYLE", "style { flow-color: by-source }"));
   assert.ok((col.svg.match(/<marker /g) ?? []).length >= 2, "a marker per source color");
   assert.match(col.svg, /stroke="#1f77b4"/); // first source hue
-  assert.match(col.svg, /colour = source/); // legend hint
+  assert.match(allText(col.svg), /colour = source/); // legend hint, wrapped or not
   assert.equal(col.overlapsAfter, 0);
   // A — numbered badge pinned near the target; must still be overlap-free
   const num = await build(base.replace("STYLE", "style { flow-text: numbered }"));
@@ -904,11 +910,12 @@ test("a line-style key too wide for the band wraps instead of running off it", a
   );
   const canvasWidth = Number(/viewBox="0 0 ([\d.]+)/.exec(narrow.svg)?.[1]);
   assert.ok(canvasWidth < 400, `expected a narrow canvas, got ${canvasWidth}`);
+  // Broken across nodes, but the reading is all still there.
   assert.doesNotMatch(narrow.svg, />Asynchronous exchange \(message, event\)</);
-  assert.match(narrow.svg, />Asynchronous</);
-  // Every fragment it broke into stays inside the canvas.
+  assert.match(allText(narrow.svg), /Asynchronous exchange \(message, event\)/);
+  // Every band reading stays inside the canvas, whichever line it broke onto.
   for (const [, x, size, text] of narrow.svg.matchAll(
-    /<text x="([\d.]+)"[^>]*font-size="([\d.]+)"[^>]*>(Asynchronous|exchange|\(message,|event\))</g,
+    /<text x="([\d.]+)"[^>]*font-size="(10)"[^>]*>([^<]*)</g,
   ))
     assert.ok(
       Number(x) + text.length * Number(size) * 0.52 <= canvasWidth,
@@ -921,6 +928,31 @@ test("a line-style key too wide for the band wraps instead of running off it", a
   );
   assert.match(wide.svg, />Asynchronous exchange \(message, event\)</);
 });
+
+// A `tall` infrastructure view is often ~200px wide and its legend says
+// "Technical flow (protocol, port)". Beside the title that key had 28px to
+// write in and ran off the canvas; under it, it has the whole width.
+for (const f of [
+  "dispositions/infrastructure-small-tall.cairn",
+  "dispositions/infrastructure-small-page.cairn",
+  "dispositions/application-small-tall.cairn",
+  "placement/queue-roles.cairn",
+]) {
+  test(`${f}: no band text runs off the canvas`, async () => {
+    const { svg, scene } = await build(load(f));
+    const canvasWidth = Number(/viewBox="0 0 ([\d.]+)/.exec(svg)?.[1]);
+    // The bands take height, never width — the drawing keeps the frame layout
+    // gave it, whatever the legend needs.
+    assert.equal(canvasWidth, scene.width);
+    for (const [, x, size, text] of svg.matchAll(
+      /<text x="([\d.]+)"[^>]*font-size="(10|11)"[^>]*>([^<]*)</g,
+    ))
+      assert.ok(
+        Number(x) + text.length * Number(size) * 0.52 <= canvasWidth,
+        `\`${text}\` at x=${x} runs past the ${canvasWidth}px canvas`,
+      );
+  });
+}
 
 test("the line-style keys speak the diagram's language", async () => {
   const { svg } = await build(

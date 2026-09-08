@@ -804,3 +804,18 @@ It only ever grows. A drawing that already fits keeps the size it had, so this
 is a no-op everywhere it is not needed — which is what keeps §2 and the
 committed images honest. `tests/behavior.test.ts` gates it on the examples that
 were clipped.
+
+The bands under the drawing are the other half of the rule, and they answer it
+the opposite way: they take height, never width (`svgDocument`), so a legend
+wider than the drawing has to fit itself into the frame layout already chose.
+Two things make that possible, both in `svg-render`:
+
+- **Every band reading wraps** to the room between where it starts and the right
+  margin (`bandLines`). A reading with room is one line, exactly as before.
+- **The title steps aside when the column is too narrow.** Band content normally
+  starts at `BAND_CONTENT_X` (150), sharing its row with `LEGEND` / `FLOWS` /
+  `BUSINESS OBJECTS` at x=20. Where that leaves less than `MIN_BAND_TEXT` (200px)
+  to write in — a `tall` infrastructure view is often 200px wide in total — the
+  title takes its own row and the content starts at the left margin instead.
+
+`tests/behavior.test.ts` gates both, on the narrow drawings that were clipped.
