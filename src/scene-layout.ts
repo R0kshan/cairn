@@ -864,6 +864,7 @@ const DENSE_ENOUGH = 0.6;
  */
 const DENSITY_GAIN = 0.95;
 
+const EXPERIMENT_FIRST_BAND = process.env.CAIRN_EXP_FIRST === "1";
 const INGRESS_PARTITION = -1;
 /**
  * The entry-side kinds of a view that does not name its own. Actors were the
@@ -1303,6 +1304,7 @@ function buildElkGraph(
         // Without an `order:` anywhere the band is emitted as it always was, so
         // the drawing is byte-identical to one from before the hint existed.
         "elk.partitioning.partition": String(slot === undefined ? band : band * SLOT_SCALE + slot),
+        ...(EXPERIMENT_FIRST_BAND && band === 0 ? { "elk.layered.layering.layerConstraint": "FIRST" } : {}),
       };
       return elkNode;
     }),

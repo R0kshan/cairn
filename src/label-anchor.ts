@@ -394,6 +394,13 @@ function seatLabelOnRoute(
   // then seats overlapping only a container title. A label on a title is a
   // §4e blemish, off its run breaks §4d. Without the second tier it reverted
   // to elk's placement and took two labels off their line in `security-fr`.
+  //
+  // Straddled seats (§4j) are dropped and stay dropped. Adding them as a third
+  // tier does clear the corridor deadlock `resolveLabelCollision` handles below,
+  // but it is not the cheapest way to: measured over the corpus it spent §4j 48
+  // times across 36 drawings, because the list is consulted whenever a *clean*
+  // seat is merely unavailable, not only when the pair is stuck. The paired move
+  // below fixes the same drawing and touches two.
   const alternatives: Box[] = [];
   const tolerated: Box[] = [];
   for (const segment of segmentOrder)
@@ -425,10 +432,21 @@ const labelsOverlap = (a: SceneLabel, b: SceneLabel) =>
 const seatArea = (entry: SeatedLabel) => entry.label.width * entry.label.height;
 
 /** Does moving this label to `at` clear every other seated label? */
-const clearAt = (seated: SeatedLabel[], entry: SeatedLabel, at: { x: number; y: number }) => {
+const clearAt = (
+  seated: SeatedLabel[],
+  entry: SeatedLabel,
+  at: { x: number; y: number },
+  /** Also skipped — the partner of a pair being moved together, judged separately. */
+  moving?: SeatedLabel,
+) => {
   const trial = { ...entry.label, x: at.x, y: at.y };
-  return !seated.some((other) => other !== entry && labelsOverlap(trial, other.label));
+  return !seated.some(
+    (other) => other !== entry && other !== moving && labelsOverlap(trial, other.label),
+  );
 };
+
+/** Every on-line and beside-the-run seat this label may still take, in escape order. */
+const escapeSeats = (entry: SeatedLabel) => [...entry.alternatives, ...entry.besideRun()];
 
 /**
  * Separate one overlapping pair, cheapest escape first; true when something
@@ -463,6 +481,36 @@ function resolveLabelCollision(seated: SeatedLabel[], a: SeatedLabel, b: SeatedL
       entry.label.y = free.y;
       return true;
     }
+  // Neither label can move on its own. That is not a shortage of seats, it is a
+  // deadlock: two flows a label-width apart put every slide of each one under
+  // the other, so each candidate is refused for the partner sitting exactly
+  // where it will not stay. `anonymized/infrastructure-helios-fr/tall` deadlocks
+  // its two RabbitMQ flows that way — F12's highest seat clears F15 by 0.2px and
+  // F15's lowest clears F13 by 4px — and the pair shipped overlapping, breaking
+  // invariant §1.
+  //
+  // So move both at once, judging each against everyone *except* its partner.
+  // Last rung on purpose: every single-label escape above is cheaper, and this
+  // one only ever fires on a pair that has run out of them. Bounded and
+  // deterministic — the two candidate lists are the ones already built, walked
+  // in their own order, larger label first.
+  const [first, second] = order;
+  for (const seatA of escapeSeats(first))
+    for (const seatB of escapeSeats(second)) {
+      // Only x/y are taken from a seat, here and in every rung above, so the
+      // trial boxes keep the labels' own measured size.
+      const trialA = { ...first.label, x: seatA.x, y: seatA.y };
+      const trialB = { ...second.label, x: seatB.x, y: seatB.y };
+      if (labelsOverlap(trialA, trialB)) continue;
+      if (!clearAt(seated, first, seatA, second)) continue;
+      if (!clearAt(seated, second, seatB, first)) continue;
+      first.label.x = seatA.x;
+      first.label.y = seatA.y;
+      second.label.x = seatB.x;
+      second.label.y = seatB.y;
+      return true;
+    }
+
   const giving = order.find((entry) => entry.own <= ADRIFT * ADRIFT);
   if (!giving) return false;
   giving.label.x = giving.from.x;
