@@ -108,17 +108,26 @@ export const flowLabelBox = (opts: {
  * not after it, so a short label keeps the normal minimum width and only a
  * label long enough to reach the glyph widens the box. `actor` ignores it: an
  * actor is drawn as a figure, never with a glyph.
+ *
+ * `sidePad` is `style { label-padding: <n> }` — room either side of the label,
+ * in place of the built-in 8. Setting it drops the uniform 140 minimum to the
+ * actor's 64 as well, because the minimum, not the padding, is what most boxes
+ * are actually sitting on; `scene-layout.ts` makes the same trade on its own
+ * sizing path and the two must agree.
  */
 export const nodeSize = (
   kind: string,
   label: string,
   fontSize: number = DEFAULT_FONT_SIZE_NODE,
-  gutter = 0,
+  room: { gutter?: number; sidePad?: number } = {},
 ) => {
+  const { gutter = 0, sidePad } = room;
   const isActor = kind === "actor";
   const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
   return {
-    width: isActor ? Math.max(64, measured.width + 8) : Math.max(140, measured.width + 16 + gutter),
+    width: isActor
+      ? Math.max(64, measured.width + 8)
+      : Math.max(sidePad === undefined ? 140 : 64, measured.width + (sidePad ?? 8) * 2 + gutter),
     height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18),
   };
 };

@@ -581,6 +581,9 @@ style {
   text block: #222233          # per-kind label/text color
   font: "Helvetica" 11         # family and size in one value
   font-size: 11                # size alone, leaving the family as it is
+  label-wrap: 14               # characters per line for element/container labels
+  container-padding: 4         # px inside a container: left, right, bottom
+  label-padding: 4             # px either side of a node label
 }
 
 block COM_CTR "Central communication module" {
@@ -588,6 +591,50 @@ block COM_CTR "Central communication module" {
 }
 COM_CTR -> OBS : "Alerts…" { label: below  stroke: dashed #a33  text: #a33 }
 ```
+
+### Density controls
+
+Three properties trade whitespace for compactness. Each is **opt-in and
+independent**: unset, the layout uses the spacing it always used, so a diagram
+that names none of them renders byte-identically to one built before they
+existed. They compose with `compact: on` rather than replacing it — `compact`
+retunes elk's spacing between elements, while these three work inside a box.
+
+| Property | Unit | Governs |
+|---|---|---|
+| `label-wrap: <n>` | characters, ≥ 1 | breaks element and container labels onto `n`-character lines |
+| `container-padding: <n>` | pixels, ≥ 0 | room inside a container on its left, right and bottom |
+| `label-padding: <n>` | pixels, ≥ 0 | room either side of a node's label |
+
+Anything but a whole number in range is **E0103**, reported rather than clamped.
+
+**`label-wrap: <n>` breaks the label, not the box.** A label is otherwise left
+exactly as written: a long name widens its box instead of stacking, and the only
+line breaks are the ones the author typed. Setting `label-wrap` re-flows every
+element and container label to `n` characters, which trades width for height —
+the usual reason a diagram is too wide to read is one long name. A word longer
+than `n` is left intact rather than cut mid-word.
+
+It is applied once, on the finished model, so the wrap reaches layout, rendering
+and the slide/page fold from a single place. Two things deliberately do *not*
+follow it: an element with no label at all keeps falling back to its id (writing
+one would silence **W0502**, the warning that the label is missing), and the flow
+matrix flattens the newlines back to spaces, because a table cell is one line.
+Flow labels are untouched — those wrap under `compact: on`, on their own rule.
+
+**`container-padding: <n>` covers three sides, not four.** The top of a container
+holds its own title, so its depth has to track the label's line count; a knob
+there would put the name on the first child. The left, right and bottom are pure
+whitespace and are what the property reclaims.
+
+**`label-padding: <n>` also drops the uniform minimum node width.** Nodes have a
+floor so that boxes with short labels come out the same width, and that floor —
+not the padding — is what most boxes are actually sitting on. Left in place it
+would mean the property narrowed nothing on the very diagrams it was asked for,
+so setting `label-padding` lowers the floor to the narrowest box the renderer
+already draws well (an actor's). The visible cost is that boxes stop being a
+uniform width: each one hugs its own label. Reach for `label-wrap` first if the
+diagram is wide because of one long name rather than many short ones.
 
 Colors: `theme` picks one of the nine built-in palettes (`light` is the default) and `background` overrides the canvas color; `accent` retints the flows on top of whichever palette is in force, and `flow-color: by-source` gives every source element its own hue instead. A per-flow inline `{ stroke: … }` still wins over both. Each element's colors are customizable at every level: `fill`, `stroke` and `text` (label color) work inline per element, per kind (`fill block: …`), or per diagram; flow color/width/style via `flow-stroke` and inline `{ stroke: … }`. Several properties may share one line: `{ fill: #a stroke: #b text: #c }`.
 

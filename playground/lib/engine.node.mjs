@@ -92946,6 +92946,71 @@ function indexElementsById(elements) {
   return result;
 }
 
+// src/text-metrics.ts
+var DEFAULT_FONT_SIZE_NODE = 12.5;
+var FONT_SIZE_BASE = 12.5;
+var CHAR_WIDTH = 0.56;
+var GLYPH_GUTTER = 26;
+var LOGO_GUTTER = 30;
+var fontSizes = (base) => {
+  const scale = base / FONT_SIZE_BASE;
+  return {
+    edge: base - 1,
+    node: base,
+    cont: base + 0.5,
+    scale,
+    tech: 9 * scale,
+    chip: 9.5 * scale,
+    tag: 9.5 * scale,
+    band: 10 * scale,
+    bandTitle: 11 * scale,
+    chipH: 19 * scale
+  };
+};
+var measure = (text, fontSize) => {
+  const lines = text.split("\n");
+  return {
+    lines,
+    width: Math.ceil(Math.max(...lines.map((line) => line.length)) * fontSize * CHAR_WIDTH) + 6,
+    height: lines.length * (fontSize + 3) + 4
+  };
+};
+function wrapText(text, maxChars) {
+  const words = text.replace(/\n/g, " ").split(/\s+/).filter(Boolean);
+  const lines = [];
+  let currentLine = "";
+  for (const word of words) {
+    if (currentLine && (currentLine + " " + word).length > maxChars) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else currentLine = currentLine ? currentLine + " " + word : word;
+  }
+  if (currentLine) lines.push(currentLine);
+  return lines.join("\n");
+}
+var CHIP_HEIGHT = 19;
+var chipW = (name, scale = 1) => Math.ceil(name.length * 9.5 * scale * CHAR_WIDTH) + Math.round(16 * scale);
+var techText = (tech) => tech?.protocol ? `(${tech.protocol}${tech.format ? ", " + tech.format : ""})` : "";
+var flowLabelBox = (opts) => {
+  const { text, chipNames, fontSize, tech, scale = 1 } = opts;
+  const measured = text ? measure(text, fontSize) : { width: 0, height: 0 };
+  const chips = chipNames.reduce((sum, name) => sum + chipW(name, scale) + 4, -4);
+  const techW = tech ? Math.ceil(tech.length * 9 * scale * CHAR_WIDTH) + 6 : 0;
+  return {
+    width: Math.max(measured.width, chips > 0 ? chips + 4 : 0, techW),
+    height: measured.height + (tech ? 12 * scale : 0) + (chipNames.length ? CHIP_HEIGHT * scale : 0)
+  };
+};
+var nodeSize = (kind, label, fontSize = DEFAULT_FONT_SIZE_NODE, room = {}) => {
+  const { gutter = 0, sidePad } = room;
+  const isActor = kind === "actor";
+  const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
+  return {
+    width: isActor ? Math.max(64, measured.width + 8) : Math.max(sidePad === void 0 ? 140 : 64, measured.width + (sidePad ?? 8) * 2 + gutter),
+    height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18)
+  };
+};
+
 // src/parser.ts
 function parseFlow(p, sourceToken) {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
@@ -93387,6 +93452,11 @@ function parse(src) {
     if (!model.index.has(id)) model.index.set(id, element);
   }
   resolveEndpointSuffixes(endpointSplits, model, diagnostics);
+  if (model.style.labelWrap) {
+    for (const [, element] of indexElementsById(model.elements)) {
+      if (element.label) element.label = wrapText(element.label, model.style.labelWrap);
+    }
+  }
   return { model, diags: diagnostics };
 }
 var LINE_STYLES = /* @__PURE__ */ new Set(["solid", "dashed", "dotted"]);
@@ -93596,13 +93666,35 @@ function applyStyleEntry(entry) {
       else reportBadValue(value ?? key, "a number, e.g. `font-size: 14`");
       break;
     }
+    // The three display dials. Each is a whole number and each is *optional* on
+    // `DiagramStyle`: left unset the layout uses the spacing it always used, so
+    // a file that names none of them renders exactly as it did before they
+    // existed. `label-wrap` counts characters, the other two count pixels.
+    case "label-wrap":
+    case "container-padding":
+    case "label-padding": {
+      const value = firstValue();
+      const amount = value?.kind === "num" ? parseFloat(value.text) : Number.NaN;
+      const floor = keyText === "label-wrap" ? 1 : 0;
+      if (Number.isInteger(amount) && amount >= floor) {
+        if (keyText === "label-wrap") target.labelWrap = amount;
+        else if (keyText === "container-padding") target.containerPadding = amount;
+        else target.labelPadding = amount;
+      } else {
+        reportBadValue(
+          value ?? key,
+          `a whole number \u2265 ${floor}, e.g. \`${keyText}: ${keyText === "label-wrap" ? 14 : 4}\``
+        );
+      }
+      break;
+    }
     default:
       diagnostics.push({
         code: "E0104",
         severity: "error",
         message: `unknown style property: \`${keyText}\``,
         span: key.span,
-        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size"
+        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size, label-wrap, container-padding, label-padding"
       });
   }
 }
@@ -94724,70 +94816,6 @@ function editDistance(wordA, wordB, cap) {
   return distances[wordA.length];
 }
 
-// src/text-metrics.ts
-var DEFAULT_FONT_SIZE_NODE = 12.5;
-var FONT_SIZE_BASE = 12.5;
-var CHAR_WIDTH = 0.56;
-var GLYPH_GUTTER = 26;
-var LOGO_GUTTER = 30;
-var fontSizes = (base) => {
-  const scale = base / FONT_SIZE_BASE;
-  return {
-    edge: base - 1,
-    node: base,
-    cont: base + 0.5,
-    scale,
-    tech: 9 * scale,
-    chip: 9.5 * scale,
-    tag: 9.5 * scale,
-    band: 10 * scale,
-    bandTitle: 11 * scale,
-    chipH: 19 * scale
-  };
-};
-var measure = (text, fontSize) => {
-  const lines = text.split("\n");
-  return {
-    lines,
-    width: Math.ceil(Math.max(...lines.map((line) => line.length)) * fontSize * CHAR_WIDTH) + 6,
-    height: lines.length * (fontSize + 3) + 4
-  };
-};
-function wrapText(text, maxChars) {
-  const words = text.replace(/\n/g, " ").split(/\s+/).filter(Boolean);
-  const lines = [];
-  let currentLine = "";
-  for (const word of words) {
-    if (currentLine && (currentLine + " " + word).length > maxChars) {
-      lines.push(currentLine);
-      currentLine = word;
-    } else currentLine = currentLine ? currentLine + " " + word : word;
-  }
-  if (currentLine) lines.push(currentLine);
-  return lines.join("\n");
-}
-var CHIP_HEIGHT = 19;
-var chipW = (name, scale = 1) => Math.ceil(name.length * 9.5 * scale * CHAR_WIDTH) + Math.round(16 * scale);
-var techText = (tech) => tech?.protocol ? `(${tech.protocol}${tech.format ? ", " + tech.format : ""})` : "";
-var flowLabelBox = (opts) => {
-  const { text, chipNames, fontSize, tech, scale = 1 } = opts;
-  const measured = text ? measure(text, fontSize) : { width: 0, height: 0 };
-  const chips = chipNames.reduce((sum, name) => sum + chipW(name, scale) + 4, -4);
-  const techW = tech ? Math.ceil(tech.length * 9 * scale * CHAR_WIDTH) + 6 : 0;
-  return {
-    width: Math.max(measured.width, chips > 0 ? chips + 4 : 0, techW),
-    height: measured.height + (tech ? 12 * scale : 0) + (chipNames.length ? CHIP_HEIGHT * scale : 0)
-  };
-};
-var nodeSize = (kind, label, fontSize = DEFAULT_FONT_SIZE_NODE, gutter = 0) => {
-  const isActor = kind === "actor";
-  const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
-  return {
-    width: isActor ? Math.max(64, measured.width + 8) : Math.max(140, measured.width + 16 + gutter),
-    height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18)
-  };
-};
-
 // src/slide-fold.ts
 var PAD_TOP = 30;
 var PAD = 12;
@@ -94818,6 +94846,8 @@ function foldStyle(model, view) {
   return {
     numbered,
     glyphKinds: new Set(view.glyphKinds ?? []),
+    containerPadding: model.style.containerPadding,
+    labelPadding: model.style.labelPadding,
     edge,
     node,
     cont,
@@ -94833,20 +94863,21 @@ function foldStyle(model, view) {
   };
 }
 function leafSize(element, style) {
-  return nodeSize(
-    element.kind,
-    element.label ?? element.id,
-    style.node,
-    style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0
-  );
+  return nodeSize(element.kind, element.label ?? element.id, style.node, {
+    gutter: style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0,
+    sidePad: style.labelPadding
+  });
 }
 function toElkNode(element, style) {
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
+    const side = style.containerPadding ?? PAD;
     return {
       id: element.id,
       layoutOptions: {
-        "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`
+        // Same split as `scene-layout`: the top is the title bar and tracks the
+        // label, the other three sides are whitespace the author may reclaim.
+        "elk.padding": `[top=${17 + lineCount * 13},left=${side},bottom=${side},right=${side}]`
       },
       labels: [
         {
@@ -99172,15 +99203,17 @@ function computeIngressExternalElements(model) {
 }
 var orderOption = (element) => element.order ? { "elk.position": `(0,${element.order.value})` } : {};
 var semiInteractiveOption = (children) => children.some((child) => child.order) ? { "elk.layered.crossingMinimization.semiInteractive": "true" } : {};
+var ACTOR_MIN_WIDTH = 64;
 function toElkNode2(element, sizing, root = false) {
-  const { compact, fonts, glyphKinds } = sizing;
+  const { compact, fonts, glyphKinds, containerPadding, labelPadding } = sizing;
   const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
+    const side = containerPadding ?? (compact ? 7 : 9);
     return {
       id: element.id,
       layoutOptions: {
-        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
+        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${side},bottom=${side},right=${side}]`,
         ...root ? {} : orderOption(element),
         ...semiInteractiveOption(element.children)
       },
@@ -99196,10 +99229,15 @@ function toElkNode2(element, sizing, root = false) {
   const measured = measure(element.label ?? element.id, nodeFontSize);
   const isActor = element.kind === "actor";
   const gutter = (glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0) + (element.logo ? LOGO_GUTTER : 0);
+  const sidePad = labelPadding ?? (compact ? 5 : 6);
+  const minWidth = labelPadding === void 0 ? compact ? 98 : 108 : ACTOR_MIN_WIDTH;
   return {
     id: element.id,
     ...element.order && !root ? { layoutOptions: orderOption(element) } : {},
-    width: isActor ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8) : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12) + gutter),
+    width: isActor ? Math.max(
+      ACTOR_MIN_WIDTH,
+      measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8
+    ) : Math.max(minWidth, measured.width + sidePad * 2 + gutter),
     height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
   };
 }
@@ -99755,7 +99793,17 @@ function buildElkGraph(ctx, direction, options) {
       ...options?.placement ? { "elk.layered.nodePlacement.strategy": options.placement } : {}
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode2(element, { compact, fonts, glyphKinds }, true);
+      const elkNode = toElkNode2(
+        element,
+        {
+          compact,
+          fonts,
+          glyphKinds,
+          containerPadding: model.style.containerPadding,
+          labelPadding: model.style.labelPadding
+        },
+        true
+      );
       const band = elkPartitionOf(element, index, view, ingressExternal);
       const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {
@@ -101441,7 +101489,8 @@ var columnLabel = (id, lang) => {
 function zoneOf(model, id, zoneKinds) {
   const element = model.index.get(id);
   for (let ancestor = element?.parent; ancestor; ancestor = ancestor.parent) {
-    if (zoneKinds.includes(ancestor.kind)) return ancestor.label ?? ancestor.id;
+    if (zoneKinds.includes(ancestor.kind))
+      return ancestor.label?.replace(/\n/g, " ") ?? ancestor.id;
   }
   return void 0;
 }

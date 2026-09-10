@@ -1984,3 +1984,90 @@ test("the shipped example theme is valid and documents the format", () => {
     "a colour it does not name is inherited from the theme it extends",
   );
 });
+
+/**
+ * The three display controls of issue #107. One test, because the thing worth
+ * protecting is a single property they share: each narrows the drawing when it
+ * is asked for, and none of them changes a diagram that never names it.
+ */
+test("`label-wrap`, `container-padding` and `label-padding` narrow the drawing, and only when asked", async () => {
+  const body = `
+system ORDERS "Order platform" {
+  application CORE "Order management platform"
+  datastore DB "Order persistence store"
+}
+external PARTNER "Partner platform"
+
+CORE -> DB      : "Queries" (TCP/5432)
+CORE -> PARTNER : "Nightly export" (SFTP/22)
+`;
+  const build = async (style: string) => {
+    const source = `diagram application "Display control"\n${style}\n${body}`;
+    const result = await compile(source);
+    assert.equal(
+      result.diagnostics.filter((diagnostic) => diagnostic.severity === "error").length,
+      0,
+      `unexpected errors for style: ${style}`,
+    );
+    return { svg: result.svg!, width: result.metrics!.width };
+  };
+
+  const base = await build("");
+  // An empty `style {}` block must land exactly where no block at all does:
+  // every control is optional on `DiagramStyle`, so an untouched diagram is
+  // byte-identical, not merely close.
+  assert.equal((await build("style {\n}")).svg, base.svg);
+
+  const wrapped = await build("style {\n  label-wrap: 12\n}");
+  const padded = await build("style {\n  container-padding: 2\n  label-padding: 2\n}");
+  const both = await build(
+    "style {\n  label-wrap: 12\n  container-padding: 2\n  label-padding: 2\n}",
+  );
+
+  for (const [name, variant] of [
+    ["label-wrap", wrapped],
+    ["padding", padded],
+    ["both", both],
+  ] as const) {
+    assert.ok(
+      variant.width < base.width,
+      `${name} should narrow the canvas: got ${variant.width}, base ${base.width}`,
+    );
+  }
+  assert.ok(
+    both.width < wrapped.width && both.width < padded.width,
+    `the controls should compose: both ${both.width}, wrap ${wrapped.width}, pad ${padded.width}`,
+  );
+
+  // `label-wrap` breaks the label itself, so the longest name arrives as
+  // separate text runs rather than one wide one.
+  assert.ok(base.svg.includes(">Order management platform<"));
+  assert.ok(!wrapped.svg.includes(">Order management platform<"));
+  assert.ok(wrapped.svg.includes(">management<"));
+
+  // A wrapped label must not leak its newlines into the flow matrix, whose
+  // cells are one line each.
+  const { model } = parse(
+    `diagram application "Display control"\nstyle {\n  label-wrap: 12\n}\n${body}`,
+  );
+  const matrix = buildFlowMatrix(model, views.application);
+  const cells = matrix.rows.flatMap((row) => row.cells);
+  assert.ok(cells.length > 0, "the fixture should produce matrix rows to check");
+  assert.ok(!cells.some((cell) => cell.includes("\n")), "matrix cells must stay single-line");
+  // The zone in parentheses is a *container* label, which `label-wrap` also
+  // breaks — it is the one the matrix used to pass through unflattened.
+  assert.ok(cells.some((cell) => cell.includes("(Order platform)")));
+
+  // Out-of-range values are refused rather than clamped.
+  for (const [style, code] of [
+    ["style {\n  label-wrap: 0\n}", "E0103"],
+    ["style {\n  label-padding: -3\n}", "E0103"],
+    ["style {\n  container-padding: 1.5\n}", "E0103"],
+  ] as const) {
+    const result = await compile(`diagram application "Display control"\n${style}\n${body}`);
+    assert.ok(
+      result.diagnostics.some((diagnostic) => diagnostic.code === code),
+      `expected ${code} for: ${style}`,
+    );
+  }
+});

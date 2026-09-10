@@ -2,6 +2,16 @@
 
 All notable changes to the cairn project will be documented in this file.
 
+## Unreleased
+
+### Added
+- `style { label-wrap: <n> }` breaks element and container labels onto `n`-character lines, trading width for height when one long name is what makes a diagram too wide ([#107](https://github.com/R0kshan/cairn/issues/107))
+- `style { container-padding: <n> }` reclaims the whitespace inside a container on its left, right and bottom ([#107](https://github.com/R0kshan/cairn/issues/107))
+- `style { label-padding: <n> }` tightens the room either side of a node's label, and drops the uniform minimum node width with it so boxes hug their own labels ([#107](https://github.com/R0kshan/cairn/issues/107))
+
+### Changed
+- The flow matrix flattens newlines out of container names as it already did for element names, so a wrapped label cannot break a table cell across lines
+
 ## [v1.0.0-RC15](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC15) - 2026-09-09
 
 ### Added

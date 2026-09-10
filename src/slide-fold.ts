@@ -94,6 +94,10 @@ interface FoldStyle {
   numLabel: (flow: { id: string }) => { text: string; width: number; height: number };
   /** Kinds drawn with a corner glyph — see `View.glyphKinds`. */
   glyphKinds: ReadonlySet<string>;
+  /** `style { container-padding: <n> }`, or undefined for this path's own `PAD`. */
+  containerPadding?: number;
+  /** `style { label-padding: <n> }`, or undefined for `nodeSize`'s own spacing. */
+  labelPadding?: number;
 }
 
 function foldStyle(model: Model, view: View): FoldStyle {
@@ -103,6 +107,8 @@ function foldStyle(model: Model, view: View): FoldStyle {
   return {
     numbered,
     glyphKinds: new Set(view.glyphKinds ?? []),
+    containerPadding: model.style.containerPadding,
+    labelPadding: model.style.labelPadding,
     edge,
     node,
     cont,
@@ -128,22 +134,23 @@ function foldStyle(model: Model, view: View): FoldStyle {
  * over a label the folded path had sized without room for it.
  */
 function leafSize(element: Element, style: FoldStyle) {
-  return nodeSize(
-    element.kind,
-    element.label ?? element.id,
-    style.node,
-    style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0,
-  );
+  return nodeSize(element.kind, element.label ?? element.id, style.node, {
+    gutter: style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0,
+    sidePad: style.labelPadding,
+  });
 }
 
 /** Converts an `Element` (and its children, recursively) into elk's input node shape. */
 function toElkNode(element: Element, style: FoldStyle): ElkNode {
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
+    const side = style.containerPadding ?? PAD;
     return {
       id: element.id,
       layoutOptions: {
-        "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`,
+        // Same split as `scene-layout`: the top is the title bar and tracks the
+        // label, the other three sides are whitespace the author may reclaim.
+        "elk.padding": `[top=${17 + lineCount * 13},left=${side},bottom=${side},right=${side}]`,
       },
       labels: [
         {

@@ -81,6 +81,9 @@ B1   -> EXT1 : "Data sent" [BO1]
 #   flow-color: none           # none | by-source (tint each flow + its arrowhead by origin)
 #   flow-label: on-line
 #   lang: en                   # en | fr (localizes rendered labels; keywords stay English)
+#   label-wrap: 14             # chars per line for element/container labels (unset = never wrap)
+#   container-padding: 4       # px inside a container: left, right, bottom (unset = default)
+#   label-padding: 4           # px either side of a node label (unset = default)
 # }
 `;
 
