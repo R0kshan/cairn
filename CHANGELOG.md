@@ -11,6 +11,13 @@ All notable changes to the cairn project will be documented in this file.
 - `E0109` for a malformed offset and `W0572` for an offset that lands something on something else
 - Hovering the playground preview highlights what can be dragged; a flow's path stays the router's, only its label is movable
 - A child element is held inside the container that holds it, reported as `W0573` when an offset is cut short
+
+### Fixed
+- A flow with both endpoints on offset elements no longer detaches from its target
+- `W0572` is now computed after rendering, so `compile()` and `cairn build` agree on it
+- An overlap a container's offset carried a child into is reported against that container's `offset:`, once
+- A diagram whose only offset is a `label-offset:` no longer draws the label outside the canvas
+- The playground writes `label-offset:` into the flow's own block when the label text contains a brace
 - An offset that moves a container reconnects its flows to the side that now faces their counterpart, and one reaching past the top-left corner slides the canvas rather than drawing outside it
 
 ## [v1.0.0-RC15](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC15) - 2026-09-09

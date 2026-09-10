@@ -81,10 +81,12 @@ export function watchCommand(file: string, outFile: string, theme?: string) {
         const view = views[model.type!];
         const scene = await layout(model, view);
         diags.push(...attachSideDiagnostics(scene, model));
-        diags.push(...offsetDiagnostics(scene, model));
         const { logos, diagnostics: logoDiagnostics } = resolveLogoFiles(model, file);
         diags.push(...logoDiagnostics);
         const { svg, overlapsAfter } = render(model, view, scene, { logos });
+        // After the render, like `cli.ts` and `compile.ts`: settling moves the
+        // labels W0572 judges.
+        diags.push(...offsetDiagnostics(scene, model));
         writeFileSync(outFile, svg);
         if (diags.length)
           console.log(renderHuman(file, src, diags, process.stdout.isTTY ?? false) + "\n");

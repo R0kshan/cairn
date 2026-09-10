@@ -221,6 +221,81 @@ test("a container's own offset is not clamped, and it carries its children", asy
   );
 });
 
+test("a flow with both ends offset stays attached at both ends", async () => {
+  // The elbow rebuilt for the first terminal grows `pts`, so a terminal index
+  // read before the loop names an interior point on the second pass — the
+  // target was shifted at the wrong index and the real endpoint left behind.
+  const { scene, model } = await build(
+    `diagram application "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+datastore A "Store A" {
+  offset: 0, 70
+}
+datastore B "Store B" {
+  offset: 0, -70
+}
+USER -> A : "Read"
+A -> B : "Sync"
+`,
+  );
+  const seated = (point: { x: number; y: number }, id: string) => {
+    const node = scene.nodes.find((n) => n.id === id)!;
+    return (
+      point.x >= node.x - 1 &&
+      point.x <= node.x + node.width + 1 &&
+      point.y >= node.y - 1 &&
+      point.y <= node.y + node.height + 1
+    );
+  };
+  for (const edge of scene.edges) {
+    const flow = model.flows.find((f) => f.id === edge.id)!;
+    assert.ok(seated(edge.pts[0], flow.from), `${edge.id} left ${flow.from}`);
+    assert.ok(
+      seated(edge.pts[edge.pts.length - 1], flow.to),
+      `${edge.id} detached from ${flow.to}`,
+    );
+  }
+});
+
+test("a label-only offset still draws inside the canvas", async () => {
+  // No node moves, so the element offset map is empty — the canvas guard has to
+  // see the label's own offset or the label lands off the top-left corner.
+  const { scene } = await build(OFFSET_SRC("", " { label-offset: -400, -300 }"));
+  for (const edge of scene.edges)
+    for (const label of edge.labels) {
+      assert.ok(label.x >= 0 && label.y >= 0, `${edge.id}'s label sits outside the canvas`);
+      assert.ok(label.x + label.width <= scene.width && label.y + label.height <= scene.height);
+    }
+});
+
+test("an overlap a container's offset carried a child into is reported once", async () => {
+  // The child has no `offset:` of its own; the container the author moved is
+  // what answers for where it landed.
+  const source = (dx: number) => `diagram application "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+application APP "App" {
+  offset: ${dx}, 0
+  module M1 "Mod one"
+}
+datastore DB "Store"
+USER -> M1 : "Request"
+M1 -> DB : "Write"
+`;
+  const plain = await build(source(0));
+  // Far enough right that `M1`, carried by its container, lands on `DB`.
+  const dx = Math.round(xOf(plain.scene, "DB") - xOf(plain.scene, "M1")) - 20;
+  const collided = await build(source(dx));
+  const reported = offsetDiagnostics(collided.scene, collided.model).filter(
+    (d) => d.code === "W0572",
+  );
+  assert.equal(reported.length, 1, "one warning per `offset:`, not one per element it carried");
+  assert.equal(reported[0].span.line, 6, "reported against the container's own `offset:` line");
+});
+
 test("an offset that reaches past the top-left corner still draws inside the canvas", async () => {
   // `fitCanvas` only ever grows right and down, so this is the one direction an
   // offset can leave the canvas in (INVARIANTS §18).

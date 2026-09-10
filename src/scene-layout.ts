@@ -1724,7 +1724,12 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void
 
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
-    for (const end of [0, edge.pts.length - 1]) {
+    // Recomputed per end, never snapshotted: the first iteration can splice an
+    // elbow in and grow `pts`, and a stale `length - 1` then names an interior
+    // point. An edge with both ends on moved nodes had its target shifted at the
+    // wrong index and left the real terminal behind, detached.
+    for (const which of [0, 1]) {
+      const end = which === 0 ? 0 : edge.pts.length - 1;
       const terminal = edge.pts[end];
       // Smallest box first: a terminal inside a container is seated on the leaf,
       // and only the leaf's own delta describes where it went.
@@ -1810,11 +1815,16 @@ function shiftIntoCanvas(scene: Scene): void {
  * business, not this warning's.
  */
 export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
+  // A descendant carried by its container's offset is answerable to *that*
+  // offset: the container is what the author moved, so an overlap its children
+  // cause is reported against the container's span, not passed over for having
+  // no `offset:` of its own.
   const spans = new Map<string, Span>();
-  const walk = (elements: Element[]): void => {
+  const walk = (elements: Element[], inherited?: Span): void => {
     for (const element of elements) {
-      if (element.offset) spans.set(element.id, element.offset.span);
-      walk(element.children);
+      const span = element.offset?.span ?? inherited;
+      if (span) spans.set(element.id, span);
+      walk(element.children, span);
     }
   };
   walk(model.elements);
@@ -1826,9 +1836,11 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
   const diagnostics: Diagnostic[] = [];
+  const reported = new Set<Span>();
   for (const id of scene.clampedOffsets ?? []) {
     const span = spans.get(id);
-    if (!span) continue;
+    if (!span || reported.has(span)) continue;
+    reported.add(span);
     diagnostics.push({
       code: "W0573",
       severity: "warning",
@@ -1840,7 +1852,9 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   }
   const report = (id: string, what: string) => {
     const span = spans.get(id);
-    if (!span) return;
+    // One warning per `offset:`, not one per element it carried into something.
+    if (!span || reported.has(span)) return;
+    reported.add(span);
     diagnostics.push({
       code: "W0572",
       severity: "warning",
@@ -1947,8 +1961,11 @@ function runGeometryPasses(
   // swap. Only swaps that remove a crossing without shuffling it elsewhere.
   swapCrossingSiblingSeats(scene);
   // An offset can push geometry off the top or left, which `fitCanvas` cannot
-  // answer — it only ever grows right and down.
-  if (offsets.size) shiftIntoCanvas(scene);
+  // answer — it only ever grows right and down. A `label-offset:` reaches there
+  // as easily as an element's, and moves no node, so the element map alone does
+  // not see it.
+  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
+  if (offsets.size || nudgedLabels) shiftIntoCanvas(scene);
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.
   fitCanvas(scene);

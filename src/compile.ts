@@ -109,10 +109,13 @@ export async function compile(source: string, options?: CompileOptions): Promise
   // Post-layout: whether a declared attachment side actually survived is only
   // knowable from the finished geometry (W0570).
   diags.push(...attachSideDiagnostics(scene, model));
-  diags.push(...offsetDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos, theme });
   // After `render`, not before: it settles every label that is free to move, so
-  // this is the first point where a label box is where the reader will see it.
+  // this is the first point where a label box is where the reader will see it —
+  // which is what W0572 has to judge, and what `layoutBoxes` reports. `cli.ts`
+  // has always ordered it this way; a diagnostic the CLI and an embedder
+  // disagree about is worse than either answer.
+  diags.push(...offsetDiagnostics(scene, model));
   return {
     svg,
     boxes: layoutBoxes(model, scene),

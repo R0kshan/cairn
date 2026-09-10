@@ -98,7 +98,7 @@ test("a drag writes DSL the parser reads back as the same offset", async () => {
   assert.equal(parse(twice).diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(parse(twice).model.flows[0].labelOffset?.dx, 15);
   assert.equal(parse(twice).model.flows[0].labelOffset?.dy, -3);
-  const styled = DRAG_SRC.replace("(", "(").replace(
+  const styled = DRAG_SRC.replace(
     'USER -> M1 : "Request"',
     'USER -> M1 : "Request" { stroke: dashed }',
   );
@@ -106,4 +106,11 @@ test("a drag writes DSL the parser reads back as the same offset", async () => {
   assert.equal(parse(both).diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(parse(both).model.flows[0].labelOffset?.dy, -6);
   assert.equal(parse(both).model.flows[0].style?.stroke?.style, "dashed");
+
+  // A label may itself contain a brace, and the inline block is the one after it.
+  const braced = DRAG_SRC.replace('"Request"', '"step {1}"');
+  const written = writeOffset(braced, { id: "F01", what: "label", line: 8 }, 12, -6);
+  assert.equal(parse(written).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(parse(written).model.flows[0].label, "step {1}", "the label was rewritten");
+  assert.equal(parse(written).model.flows[0].labelOffset?.dx, 12);
 });

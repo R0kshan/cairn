@@ -567,7 +567,9 @@ function writeOffset(source, box, dx, dy) {
   const indent = line.match(/^\s*/)[0];
   if (box.what === 'label') {
     // A flow's inline block is its style block; `label-offset` rides in it.
-    const brace = line.indexOf('{');
+    // Quoted text is blanked out first: `A -> B : "step {1}"` is a legal label,
+    // and splicing into the brace inside it would rewrite the label instead.
+    const brace = line.replace(/"(?:[^"\\]|\\.)*"/g, quoted => ' '.repeat(quoted.length)).indexOf('{');
     lines[index] = brace < 0
       ? `${line} { label-offset: ${dx}, ${dy} }`
       : `${line.slice(0, brace + 1)} label-offset: ${dx}, ${dy}${line.slice(brace + 1)}`;

@@ -100065,7 +100065,8 @@ function applyNodeOffsets(scene, offsetOf) {
   if (bands.length) scene.pinnedBands = bands;
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
-    for (const end of [0, edge.pts.length - 1]) {
+    for (const which of [0, 1]) {
+      const end = which === 0 ? 0 : edge.pts.length - 1;
       const terminal = edge.pts[end];
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || !seat.delta.dx && !seat.delta.dy) continue;
@@ -100124,10 +100125,11 @@ function shiftIntoCanvas(scene) {
 }
 function offsetDiagnostics(scene, model) {
   const spans = /* @__PURE__ */ new Map();
-  const walk = (elements) => {
+  const walk = (elements, inherited) => {
     for (const element of elements) {
-      if (element.offset) spans.set(element.id, element.offset.span);
-      walk(element.children);
+      const span = element.offset?.span ?? inherited;
+      if (span) spans.set(element.id, span);
+      walk(element.children, span);
     }
   };
   walk(model.elements);
@@ -100137,9 +100139,11 @@ function offsetDiagnostics(scene, model) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
   const diagnostics = [];
+  const reported = /* @__PURE__ */ new Set();
   for (const id of scene.clampedOffsets ?? []) {
     const span = spans.get(id);
-    if (!span) continue;
+    if (!span || reported.has(span)) continue;
+    reported.add(span);
     diagnostics.push({
       code: "W0573",
       severity: "warning",
@@ -100151,7 +100155,8 @@ function offsetDiagnostics(scene, model) {
   }
   const report = (id, what) => {
     const span = spans.get(id);
-    if (!span) return;
+    if (!span || reported.has(span)) return;
+    reported.add(span);
     diagnostics.push({
       code: "W0572",
       severity: "warning",
@@ -100198,7 +100203,8 @@ function runGeometryPasses(scene, model, options) {
   clearSideHugs(scene, settledTitles);
   anchorFlowLabels(scene, settledTitles);
   swapCrossingSiblingSeats(scene);
-  if (offsets.size) shiftIntoCanvas(scene);
+  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
+  if (offsets.size || nudgedLabels) shiftIntoCanvas(scene);
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {
@@ -101867,8 +101873,8 @@ async function compile(source, options) {
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
   const scene = await layout(model, view);
   diags.push(...attachSideDiagnostics(scene, model));
-  diags.push(...offsetDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos, theme });
+  diags.push(...offsetDiagnostics(scene, model));
   return {
     svg,
     boxes: layoutBoxes(model, scene),
