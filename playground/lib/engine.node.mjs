@@ -93020,7 +93020,7 @@ function parseFlow(p, sourceToken) {
   if (matchToken("lbrace")) {
     advance();
     flow.style = {};
-    p.parseStyleEntries(null, flow.style);
+    p.parseStyleEntries(null, flow.style, flow);
   }
   for (const split of [
     splitEndpoint(sourceToken, flow, "from"),
@@ -93136,6 +93136,49 @@ function tryOrderEntry(p, parent) {
     return true;
   }
   parent.order = { value, span: valueToken.span };
+  return true;
+}
+function readOffsetPair(p) {
+  const { matchToken, advance } = p;
+  const readWhole = () => {
+    if (!matchToken("num") && !matchToken("id")) return null;
+    const token = advance();
+    const value = /^-?\d+$/.test(token.text) ? Number(token.text) : Number.NaN;
+    return Number.isInteger(value) ? { value, span: token.span } : null;
+  };
+  const dx = readWhole();
+  if (!dx || !matchToken("comma")) return null;
+  advance();
+  const dy = readWhole();
+  if (!dy) return null;
+  return {
+    dx: dx.value,
+    dy: dy.value,
+    span: { line: dx.span.line, col: dx.span.col, len: dy.span.col + dy.span.len - dx.span.col }
+  };
+}
+function tryOffsetEntry(p, parent) {
+  const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
+  if (!parent || !matchToken("id", "offset")) return false;
+  const mark = save();
+  const keyToken = advance();
+  if (!matchToken("colon")) {
+    restore(mark);
+    return false;
+  }
+  advance();
+  const pair2 = readOffsetPair(p);
+  if (!pair2) {
+    reportCoded(
+      "E0109",
+      "`offset` expects two whole numbers \u2014 `offset: <dx>, <dy>`",
+      keyToken.span,
+      "e.g. `offset: 40, -20` \u2014 40px right and 20px up from where the layout put it"
+    );
+    syncToNextLine();
+    return true;
+  }
+  parent.offset = pair2;
   return true;
 }
 function tryLogoEntry(p, parent) {
@@ -93285,7 +93328,7 @@ function parse(src) {
       'add `diagram logical "Title"` or scaffold a file with `cairn new --logical-architecture`'
     );
   }
-  function parseStyleEntries(target, inline) {
+  function parseStyleEntries(target, inline, flow) {
     skipNewlines();
     while (!matchToken("rbrace") && !matchToken("eof")) {
       if (!matchToken("id")) {
@@ -93318,7 +93361,15 @@ function parse(src) {
         if (values.length && matchToken("id") && lookAhead(1).kind === "colon") break;
         values.push(advance());
       }
-      applyStyleEntry({ key: keyToken, styleTargetKind, values, target, inline, diagnostics });
+      applyStyleEntry({
+        key: keyToken,
+        styleTargetKind,
+        values,
+        target,
+        inline,
+        flow,
+        diagnostics
+      });
       skipNewlines();
     }
     if (matchToken("rbrace")) advance();
@@ -93373,6 +93424,7 @@ function parse(src) {
     }
     if (tryStyleBlock(parent)) return;
     if (tryOrderEntry(parser, parent)) return;
+    if (tryOffsetEntry(parser, parent)) return;
     if (tryLogoEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
@@ -93489,7 +93541,7 @@ var UNIFORM_STYLE_ENTRIES = {
   }
 };
 function applyStyleEntry(entry) {
-  const { key, styleTargetKind, values, target, inline, diagnostics } = entry;
+  const { key, styleTargetKind, values, target, inline, flow, diagnostics } = entry;
   const extractStroke = (tokens, _span) => {
     const strokeProps = {};
     for (const token of tokens) {
@@ -93523,6 +93575,27 @@ function applyStyleEntry(entry) {
   });
   const firstValue = () => values[0];
   const keyText = key.text;
+  if (keyText === "label-offset") {
+    const numbers = values.filter((token) => token.kind !== "comma");
+    const parsed = numbers.map((token) => /^-?\d+$/.test(token.text) ? Number(token.text) : NaN);
+    if (!flow || numbers.length !== 2 || parsed.some((value) => !Number.isInteger(value))) {
+      diagnostics.push({
+        code: "E0109",
+        severity: "error",
+        message: "`label-offset` expects two whole numbers \u2014 `label-offset: <dx>, <dy>`",
+        span: key.span,
+        help: flow ? 'e.g. `A -> B : "Sends" { label-offset: 12, -6 }`' : "`label-offset` belongs to a flow's inline block"
+      });
+      return;
+    }
+    const [first, last] = [numbers[0].span, numbers[1].span];
+    flow.labelOffset = {
+      dx: parsed[0],
+      dy: parsed[1],
+      span: { line: first.line, col: first.col, len: last.col + last.len - first.col }
+    };
+    return;
+  }
   if (inline) {
     if (keyText === "fill" && firstValue()?.kind === "color") inline.fill = firstValue().text;
     else if (keyText === "stroke") inline.stroke = extractStroke(values, key.span);
@@ -93535,7 +93608,7 @@ function applyStyleEntry(entry) {
         severity: "error",
         message: `unknown style property here: \`${keyText}\``,
         span: key.span,
-        help: "inline properties: fill, stroke, text, label"
+        help: "inline properties: fill, stroke, text, label, label-offset"
       });
     return;
   }
@@ -96062,6 +96135,7 @@ function compactVertical(scene) {
       pinned.push({ top: last.y - 1, bottom: last.y + 1 });
     }
   }
+  for (const band of scene.pinnedBands ?? []) pinned.push({ ...band });
   if (!pinned.length) return;
   pinned.sort((bandA, bandB) => bandA.top - bandB.top || bandA.bottom - bandB.bottom);
   const merged = [];
@@ -99134,7 +99208,7 @@ function resolveLabelCollision(seated, a, b) {
   giving.done = true;
   return true;
 }
-function anchorFlowLabels(scene, titleBoxes = []) {
+function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true) {
   const ctx = createLabelSeatContext(scene, titleBoxes);
   const seated = [];
   for (const edge of scene.edges) {
@@ -99156,6 +99230,13 @@ function anchorFlowLabels(scene, titleBoxes = []) {
       }
     if (!moved) break;
   }
+  if (!applyOffsets) return;
+  for (const edge of scene.edges)
+    for (const label of edge.labels)
+      if (label.offset) {
+        label.x += label.offset.dx;
+        label.y += label.offset.dy;
+      }
 }
 
 // src/scene-layout.ts
@@ -99903,8 +99984,200 @@ function snapLanes(scene, laneOf, axis) {
   scene.width = Math.max(scene.width, Math.ceil(maxX) + 10);
   scene.height = Math.max(scene.height, Math.ceil(maxY) + 10);
 }
+function offsetAssignment(model) {
+  const offsetOf = /* @__PURE__ */ new Map();
+  const walk = (elements, parent, inherited) => {
+    for (const element of elements) {
+      const own = element.offset;
+      const moved = inherited || !!own;
+      if (moved) offsetOf.set(element.id, { dx: own?.dx ?? 0, dy: own?.dy ?? 0, parent });
+      walk(element.children, element.id, moved);
+    }
+  };
+  walk(model.elements, void 0, false);
+  return offsetOf;
+}
+function stampLabelOffsets(edges, model) {
+  const declaredOf = new Map(
+    model.flows.filter((flow) => flow.labelOffset).map((flow) => [flow.id, flow.labelOffset])
+  );
+  for (const edge of edges) {
+    const declared = declaredOf.get(edge.id);
+    if (!declared) continue;
+    for (const label of edge.labels) label.offset = { dx: declared.dx, dy: declared.dy };
+  }
+}
+var pointOn = (point, box) => point.x >= box.x - 1 && point.x <= box.x + box.width + 1 && point.y >= box.y - 1 && point.y <= box.y + box.height + 1;
+function applyNodeOffsets(scene, offsetOf) {
+  if (!offsetOf.size) return;
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const clamped = /* @__PURE__ */ new Set();
+  const resolved = /* @__PURE__ */ new Map();
+  const deltaOf = (id) => {
+    const memo = resolved.get(id);
+    if (memo) return memo;
+    const spec = offsetOf.get(id);
+    if (!spec) return { dx: 0, dy: 0 };
+    resolved.set(id, { dx: 0, dy: 0 });
+    const inherited = spec.parent ? deltaOf(spec.parent) : { dx: 0, dy: 0 };
+    let dx = inherited.dx + spec.dx;
+    let dy = inherited.dy + spec.dy;
+    const node = nodeById.get(id);
+    const parent = spec.parent ? nodeById.get(spec.parent) : void 0;
+    if (node && parent) {
+      const room = {
+        x: parent.x + inherited.dx,
+        y: parent.y + inherited.dy,
+        right: parent.x + inherited.dx + parent.width - node.width,
+        bottom: parent.y + inherited.dy + parent.height - node.height
+      };
+      const held = {
+        dx: Math.min(Math.max(node.x + dx, room.x), Math.max(room.right, room.x)) - node.x,
+        dy: Math.min(Math.max(node.y + dy, room.y), Math.max(room.bottom, room.y)) - node.y
+      };
+      if (held.dx !== dx || held.dy !== dy) clamped.add(id);
+      dx = held.dx;
+      dy = held.dy;
+    }
+    const delta = { dx, dy };
+    resolved.set(id, delta);
+    return delta;
+  };
+  for (const id of offsetOf.keys()) deltaOf(id);
+  if (clamped.size) scene.clampedOffsets = clamped;
+  const seats = scene.nodes.filter((node) => resolved.has(node.id)).map((node) => ({
+    box: { x: node.x, y: node.y, width: node.width, height: node.height },
+    delta: resolved.get(node.id),
+    area: node.width * node.height
+  })).sort((a, b) => a.area - b.area);
+  const bands = scene.pinnedBands ?? [];
+  for (const node of scene.nodes) {
+    const delta = resolved.get(node.id);
+    if (!delta) continue;
+    if (delta.dy)
+      bands.push({
+        top: Math.min(node.y, node.y + delta.dy),
+        bottom: Math.max(node.y + node.height, node.y + delta.dy + node.height)
+      });
+    node.x += delta.dx;
+    node.y += delta.dy;
+  }
+  if (bands.length) scene.pinnedBands = bands;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    for (const end of [0, edge.pts.length - 1]) {
+      const terminal = edge.pts[end];
+      const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
+      if (!seat || !seat.delta.dx && !seat.delta.dy) continue;
+      const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
+      const neighbour = edge.pts[neighbourIndex];
+      const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
+      terminal.x += seat.delta.dx;
+      terminal.y += seat.delta.dy;
+      const elbow = wasHorizontal ? { x: terminal.x, y: neighbour.y } : { x: neighbour.x, y: terminal.y };
+      const degenerate = Math.abs(elbow.x - terminal.x) < 0.5 && Math.abs(elbow.y - terminal.y) < 0.5 || Math.abs(elbow.x - neighbour.x) < 0.5 && Math.abs(elbow.y - neighbour.y) < 0.5;
+      if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
+    }
+  }
+}
+function shiftIntoCanvas(scene) {
+  const MARGIN = 4;
+  let minX = MARGIN;
+  let minY = MARGIN;
+  for (const node of scene.nodes) {
+    minX = Math.min(minX, node.x);
+    minY = Math.min(minY, node.y);
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) {
+      minX = Math.min(minX, point.x);
+      minY = Math.min(minY, point.y);
+    }
+    for (const label of edge.labels) {
+      minX = Math.min(minX, label.x);
+      minY = Math.min(minY, label.y);
+    }
+  }
+  const shiftX = minX < MARGIN ? MARGIN - minX : 0;
+  const shiftY = minY < MARGIN ? MARGIN - minY : 0;
+  if (!shiftX && !shiftY) return;
+  for (const node of scene.nodes) {
+    node.x += shiftX;
+    node.y += shiftY;
+  }
+  for (const band of scene.pinnedBands ?? []) {
+    band.top += shiftY;
+    band.bottom += shiftY;
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) {
+      point.x += shiftX;
+      point.y += shiftY;
+    }
+    for (const label of edge.labels) {
+      label.x += shiftX;
+      label.y += shiftY;
+    }
+  }
+  scene.width += shiftX;
+  scene.height += shiftY;
+}
+function offsetDiagnostics(scene, model) {
+  const spans = /* @__PURE__ */ new Map();
+  const walk = (elements) => {
+    for (const element of elements) {
+      if (element.offset) spans.set(element.id, element.offset.span);
+      walk(element.children);
+    }
+  };
+  walk(model.elements);
+  for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
+  if (!spans.size) return [];
+  const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const labels = scene.edges.flatMap((edge) => edge.labels);
+  const diagnostics = [];
+  for (const id of scene.clampedOffsets ?? []) {
+    const span = spans.get(id);
+    if (!span) continue;
+    diagnostics.push({
+      code: "W0573",
+      severity: "warning",
+      message: `\`offset\` on \`${id}\` was limited to keep it inside its container`,
+      span,
+      help: "an element is drawn inside the thing that contains it \u2014 move the container instead, or use a smaller offset"
+    });
+    spans.delete(id);
+  }
+  const report = (id, what) => {
+    const span = spans.get(id);
+    if (!span) return;
+    diagnostics.push({
+      code: "W0572",
+      severity: "warning",
+      message: `\`offset\` on \`${id}\` overlaps ${what}`,
+      span,
+      help: "the offset is applied as written \u2014 reduce it, or move the element with `order:` instead"
+    });
+    spans.delete(id);
+  };
+  for (const node of leaves) {
+    if (!spans.has(node.id)) continue;
+    const struckNode = leaves.find((other) => other.id !== node.id && overlap(node, other));
+    if (struckNode) report(node.id, `\`${struckNode.id}\``);
+    else if (labels.some((label) => overlap(node, label))) report(node.id, "a flow label");
+  }
+  for (const label of labels) {
+    if (!spans.has(label.flowId)) continue;
+    if (leaves.some((node) => overlap(label, node))) report(label.flowId, "an element");
+    else if (labels.some((other) => other !== label && overlap(label, other)))
+      report(label.flowId, "another flow label");
+  }
+  return diagnostics;
+}
 function runGeometryPasses(scene, model, options) {
   const { numbered, sideways } = options;
+  const offsets = offsetAssignment(model);
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   const titleBoxes = titleBoxesOf(scene, model);
   if (sideways) transpose(scene, titleBoxes);
@@ -99912,8 +100185,9 @@ function runGeometryPasses(scene, model, options) {
   if (sideways) transpose(scene, titleBoxes);
   const routedTitles = titleBoxesOf(scene, model);
   tidyEdges(scene, routedTitles);
-  anchorFlowLabels(scene, routedTitles);
+  anchorFlowLabels(scene, routedTitles, false);
   compactVertical(scene);
+  applyNodeOffsets(scene, offsets);
   const routesBefore = new Map(
     scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
   );
@@ -99924,6 +100198,7 @@ function runGeometryPasses(scene, model, options) {
   clearSideHugs(scene, settledTitles);
   anchorFlowLabels(scene, settledTitles);
   swapCrossingSiblingSeats(scene);
+  if (offsets.size) shiftIntoCanvas(scene);
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {
@@ -100060,6 +100335,7 @@ async function layout(model, view) {
     const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
     for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
     markDeclaredTerminals(edges, model, view, laidOutWith?.hubPorts !== false);
+    stampLabelOffsets(edges, model);
     const scene = {
       width: Math.ceil(result2.width),
       height: Math.ceil(result2.height),
@@ -100378,6 +100654,7 @@ function settleOffOwnRun(s, label, here) {
   return false;
 }
 function settleOneLabel(s, label) {
+  if (label.offset) return;
   if (!s.collides(label) && s.attributableHere(label)) return;
   const origin = { x: label.x, y: label.y };
   if (settleOnOwnRun(s, label)) return;
@@ -101584,15 +101861,17 @@ async function compile(source, options) {
   diags.push(...validate(model));
   const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
-    return { svg: null, diagnostics: diags, metrics: null, matrix: null };
+    return { svg: null, diagnostics: diags, metrics: null, matrix: null, boxes: null };
   }
   const view = views[model.type];
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
   const scene = await layout(model, view);
   diags.push(...attachSideDiagnostics(scene, model));
+  diags.push(...offsetDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos, theme });
   return {
     svg,
+    boxes: layoutBoxes(model, scene),
     diagnostics: diags,
     metrics: {
       width: scene.width,
@@ -101602,6 +101881,57 @@ async function compile(source, options) {
     },
     matrix
   };
+}
+function layoutBoxes(model, scene) {
+  const declarations = /* @__PURE__ */ new Map();
+  const walk = (elements, parent) => {
+    for (const element of elements) {
+      declarations.set(element.id, {
+        line: element.kindSpan.line,
+        offsetSpan: element.offset?.span,
+        parent
+      });
+      walk(element.children, element.id);
+    }
+  };
+  walk(model.elements);
+  const flowDeclarations = new Map(
+    model.flows.map((flow) => [
+      flow.id,
+      { line: flow.span.line, offsetSpan: flow.labelOffset?.span }
+    ])
+  );
+  const boxes = [];
+  for (const node of scene.nodes) {
+    const declaration = declarations.get(node.id);
+    if (!declaration) continue;
+    boxes.push({
+      id: node.id,
+      what: "element",
+      x: node.x,
+      y: node.y,
+      width: node.width,
+      height: node.height,
+      container: node.container,
+      ...declaration
+    });
+  }
+  for (const edge of scene.edges)
+    for (const label of edge.labels) {
+      const declaration = flowDeclarations.get(label.flowId);
+      if (!declaration) continue;
+      boxes.push({
+        id: label.flowId,
+        what: "label",
+        x: label.x,
+        y: label.y,
+        width: label.width,
+        height: label.height,
+        container: false,
+        ...declaration
+      });
+    }
+  return boxes;
 }
 
 // src/api.ts

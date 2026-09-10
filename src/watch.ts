@@ -10,7 +10,7 @@ import { dirname, basename } from "node:path";
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
 import { renderHuman } from "./diagnostics.ts";
-import { layout, attachSideDiagnostics } from "./scene-layout.ts";
+import { layout, attachSideDiagnostics, offsetDiagnostics } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { views } from "./views.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
@@ -81,6 +81,7 @@ export function watchCommand(file: string, outFile: string, theme?: string) {
         const view = views[model.type!];
         const scene = await layout(model, view);
         diags.push(...attachSideDiagnostics(scene, model));
+        diags.push(...offsetDiagnostics(scene, model));
         const { logos, diagnostics: logoDiagnostics } = resolveLogoFiles(model, file);
         diags.push(...logoDiagnostics);
         const { svg, overlapsAfter } = render(model, view, scene, { logos });

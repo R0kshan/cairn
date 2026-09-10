@@ -62,6 +62,9 @@ export function compactVertical(scene: Scene): void {
       pinned.push({ top: last.y - 1, bottom: last.y + 1 });
     }
   }
+  // Space some earlier pass opened deliberately — an author's `offset:` — which
+  // is indistinguishable from dead height by measurement alone.
+  for (const band of scene.pinnedBands ?? []) pinned.push({ ...band });
   if (!pinned.length) return;
 
   pinned.sort((bandA, bandB) => bandA.top - bandB.top || bandA.bottom - bandB.bottom);

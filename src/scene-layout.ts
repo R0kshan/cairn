@@ -7,7 +7,7 @@
  * ELK result after layout (coordinates populated) and are shared with slide-fold.
  */
 
-import type { Model, Element, AttachSide, AttachRole } from "./models/ast.ts";
+import type { Model, Element, Span, AttachSide, AttachRole } from "./models/ast.ts";
 import type { ElkNode, ElkEdgeSection } from "elkjs/lib/elk.bundled.js";
 import type { View } from "./views.ts";
 import {
@@ -74,6 +74,13 @@ export interface SceneLabel extends Box {
   flowId: string;
   text: string;
   /**
+   * Author-declared nudge from the seat `anchorFlowLabels` gives this label
+   * (`{ label-offset: 12, -6 }`). Applied on every re-anchor, so a renderer
+   * that re-settles cannot quietly drop it. Pure geometry — a delta, never a
+   * DSL side or kind (invariant §16).
+   */
+  offset?: { dx: number; dy: number };
+  /**
    * Height of the *text* rows, which sit at the top of the box; a protocol line
    * and chips fill the rest. Seating a label on its run means centring this, not
    * the box — centre the box and the run lands between text and chip, which is
@@ -130,6 +137,19 @@ export interface Scene {
   nodes: SceneNode[];
   edges: SceneEdge[];
   layoutMs: number;
+  /**
+   * Vertical bands `compactVertical` must not reclaim. An `offset:` that moves an
+   * element down opens a gap on purpose, and compaction — which runs again inside
+   * the renderer, after settling — cannot otherwise tell it from the dead space
+   * it exists to remove. Geometry only, like every other flag here (§16).
+   */
+  pinnedBands?: { top: number; bottom: number }[];
+  /**
+   * Elements whose `offset:` was cut short to keep them inside their container.
+   * The one place a positioning hint is negotiated (§17), so it is also the one
+   * that has to be reportable — `offsetDiagnostics` turns this into W0573.
+   */
+  clampedOffsets?: Set<string>;
   /**
    * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept. The
    * renderer audits those repairs for label collateral the router could not see,
@@ -1542,12 +1562,316 @@ function snapLanes(scene: Scene, laneOf: Map<string, number>, axis: "x" | "y"): 
   scene.height = Math.max(scene.height, Math.ceil(maxY) + 10);
 }
 
+/**
+ * The author's `offset:` per element id, with a container's delta carried down
+ * to everything inside it and a child's own offset added on top. Computed from
+ * the model *before* any `Scene` exists — the same shape as `laneAssignment`,
+ * so the pass below reads a geometry-keyed map and never the DSL (§16).
+ *
+ * Empty unless some element declares an `offset:`, and an empty map makes the
+ * pass a no-op, which is what keeps an offset-free diagram byte-identical.
+ */
+function offsetAssignment(model: Model): Map<string, OffsetSpec> {
+  const offsetOf = new Map<string, OffsetSpec>();
+  const walk = (elements: Element[], parent: string | undefined, inherited: boolean): void => {
+    for (const element of elements) {
+      const own = element.offset;
+      // An element inside a moved container has an entry even with no `offset:`
+      // of its own: it still moves, and the pass resolves each delta against its
+      // parent's rather than carrying a pre-summed one, so a parent the
+      // containment clamp cut short does not hand its children a delta the
+      // drawing never used.
+      const moved = inherited || !!own;
+      if (moved) offsetOf.set(element.id, { dx: own?.dx ?? 0, dy: own?.dy ?? 0, parent });
+      walk(element.children, element.id, moved);
+    }
+  };
+  walk(model.elements, undefined, false);
+  return offsetOf;
+}
+
+/**
+ * Copies each flow's `label-offset:` onto its label boxes, where the model is
+ * still in reach — `anchorFlowLabels` then reads a plain delta and stays blind
+ * to the DSL (§16).
+ */
+function stampLabelOffsets(edges: SceneEdge[], model: Model): void {
+  const declaredOf = new Map(
+    model.flows.filter((flow) => flow.labelOffset).map((flow) => [flow.id, flow.labelOffset!]),
+  );
+  for (const edge of edges) {
+    const declared = declaredOf.get(edge.id);
+    if (!declared) continue;
+    for (const label of edge.labels) label.offset = { dx: declared.dx, dy: declared.dy };
+  }
+}
+
+/**
+ * One element's own `offset:` and the id of the element that holds it — ids and
+ * numbers only, no kinds and no view names, so the pass below stays blind to
+ * the DSL (§16).
+ */
+interface OffsetSpec {
+  dx: number;
+  dy: number;
+  parent?: string;
+}
+
+/** Is `point` on or inside `box`, within a pixel of its border? */
+const pointOn = (point: Point, box: Box): boolean =>
+  point.x >= box.x - 1 &&
+  point.x <= box.x + box.width + 1 &&
+  point.y >= box.y - 1 &&
+  point.y <= box.y + box.height + 1;
+
+/**
+ * Moves the nodes the author nudged, and carries every flow terminal seated on
+ * one along with it so the flow stays attached.
+ *
+ * A terminal that moves leaves its first segment slanted, and a slanted segment
+ * is a tier-0 breach (§3). So the elbow is rebuilt rather than left to the route
+ * repair, which is free to refuse a candidate and keep what it was given: one
+ * point is inserted between the moved terminal and its neighbour, on the axis
+ * the original segment did *not* run along. That is orthogonal by construction
+ * for any delta, and degenerates to nothing when the delta is zero on that axis
+ * — the zero-length segment is dropped.
+ *
+ * Runs after `compactVertical`, the last pass that moves a node of its own
+ * accord, and before the route repair, which then squares and re-seats around
+ * the new geometry. `fitCanvas` at the end of the pipeline grows the canvas for
+ * anything an offset pushed past its edge (§18).
+ */
+function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void {
+  if (!offsetOf.size) return;
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const clamped = new Set<string>();
+  const resolved = new Map<string, { dx: number; dy: number }>();
+
+  /**
+   * The delta an element actually moves by: its own, on top of whatever its
+   * container ended up moving by, and then held inside that container.
+   *
+   * The clamp is the one place an offset is negotiated, and deliberately so —
+   * a block drawn outside the system that contains it does not read as a nudged
+   * block, it reads as a broken diagram. Nesting is what the drawing *means*
+   * (§7); a nudge is a preference about where inside it something sits.
+   *
+   * Memoised and resolved through the parent chain, so a container is always
+   * settled before the children whose room it defines.
+   */
+  const deltaOf = (id: string): { dx: number; dy: number } => {
+    const memo = resolved.get(id);
+    if (memo) return memo;
+    const spec = offsetOf.get(id);
+    if (!spec) return { dx: 0, dy: 0 };
+    // Seeded before recursing: a malformed parent chain would otherwise spin
+    // here, and a layout must not hang on bad input.
+    resolved.set(id, { dx: 0, dy: 0 });
+    const inherited = spec.parent ? deltaOf(spec.parent) : { dx: 0, dy: 0 };
+    let dx = inherited.dx + spec.dx;
+    let dy = inherited.dy + spec.dy;
+    const node = nodeById.get(id);
+    const parent = spec.parent ? nodeById.get(spec.parent) : undefined;
+    if (node && parent) {
+      const room = {
+        x: parent.x + inherited.dx,
+        y: parent.y + inherited.dy,
+        right: parent.x + inherited.dx + parent.width - node.width,
+        bottom: parent.y + inherited.dy + parent.height - node.height,
+      };
+      const held = {
+        dx: Math.min(Math.max(node.x + dx, room.x), Math.max(room.right, room.x)) - node.x,
+        dy: Math.min(Math.max(node.y + dy, room.y), Math.max(room.bottom, room.y)) - node.y,
+      };
+      if (held.dx !== dx || held.dy !== dy) clamped.add(id);
+      dx = held.dx;
+      dy = held.dy;
+    }
+    const delta = { dx, dy };
+    resolved.set(id, delta);
+    return delta;
+  };
+
+  for (const id of offsetOf.keys()) deltaOf(id);
+  if (clamped.size) scene.clampedOffsets = clamped;
+
+  // Snapshot before anything moves: a terminal is matched against the box it was
+  // seated on, not against a box some earlier iteration has already shifted.
+  const seats = scene.nodes
+    .filter((node) => resolved.has(node.id))
+    .map((node) => ({
+      box: { x: node.x, y: node.y, width: node.width, height: node.height },
+      delta: resolved.get(node.id)!,
+      area: node.width * node.height,
+    }))
+    .sort((a, b) => a.area - b.area);
+
+  const bands = scene.pinnedBands ?? [];
+  for (const node of scene.nodes) {
+    const delta = resolved.get(node.id);
+    if (!delta) continue;
+    // The corridor the node crossed is intentional space; pin it before moving,
+    // while both extents are still known.
+    if (delta.dy)
+      bands.push({
+        top: Math.min(node.y, node.y + delta.dy),
+        bottom: Math.max(node.y + node.height, node.y + delta.dy + node.height),
+      });
+    node.x += delta.dx;
+    node.y += delta.dy;
+  }
+  if (bands.length) scene.pinnedBands = bands;
+
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    for (const end of [0, edge.pts.length - 1]) {
+      const terminal = edge.pts[end];
+      // Smallest box first: a terminal inside a container is seated on the leaf,
+      // and only the leaf's own delta describes where it went.
+      const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
+      if (!seat || (!seat.delta.dx && !seat.delta.dy)) continue;
+      const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
+      const neighbour = edge.pts[neighbourIndex];
+      const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
+      terminal.x += seat.delta.dx;
+      terminal.y += seat.delta.dy;
+      const elbow = wasHorizontal
+        ? { x: terminal.x, y: neighbour.y }
+        : { x: neighbour.x, y: terminal.y };
+      const degenerate =
+        (Math.abs(elbow.x - terminal.x) < 0.5 && Math.abs(elbow.y - terminal.y) < 0.5) ||
+        (Math.abs(elbow.x - neighbour.x) < 0.5 && Math.abs(elbow.y - neighbour.y) < 0.5);
+      if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
+    }
+  }
+}
+
+/**
+ * Slides the whole scene back to positive coordinates.
+ *
+ * `fitCanvas` only ever grows the canvas right and down, so geometry an offset
+ * pushed left of x=0 or above y=0 would be drawn outside it (§18). Shifting
+ * everything is what `route-detour` already does for a top channel, and it is
+ * the only answer that keeps the author's delta intact: clamping the element
+ * would negotiate the hint (§17).
+ *
+ * Runs only where an offset exists, so an offset-free diagram never moves.
+ */
+function shiftIntoCanvas(scene: Scene): void {
+  const MARGIN = 4;
+  let minX = MARGIN;
+  let minY = MARGIN;
+  for (const node of scene.nodes) {
+    minX = Math.min(minX, node.x);
+    minY = Math.min(minY, node.y);
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) {
+      minX = Math.min(minX, point.x);
+      minY = Math.min(minY, point.y);
+    }
+    for (const label of edge.labels) {
+      minX = Math.min(minX, label.x);
+      minY = Math.min(minY, label.y);
+    }
+  }
+  const shiftX = minX < MARGIN ? MARGIN - minX : 0;
+  const shiftY = minY < MARGIN ? MARGIN - minY : 0;
+  if (!shiftX && !shiftY) return;
+  for (const node of scene.nodes) {
+    node.x += shiftX;
+    node.y += shiftY;
+  }
+  for (const band of scene.pinnedBands ?? []) {
+    band.top += shiftY;
+    band.bottom += shiftY;
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) {
+      point.x += shiftX;
+      point.y += shiftY;
+    }
+    for (const label of edge.labels) {
+      label.x += shiftX;
+      label.y += shiftY;
+    }
+  }
+  scene.width += shiftX;
+  scene.height += shiftY;
+}
+
+/**
+ * Overlaps an author's `offset:` or `label-offset:` created. The hint itself is
+ * never negotiated (§17), so this reports rather than repairs — the drawing
+ * ships as asked and the author is told what the ask cost.
+ *
+ * Only boxes an offset actually moved are tested, against everything else: an
+ * overlap between two elements neither of which was nudged is the layout's
+ * business, not this warning's.
+ */
+export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
+  const spans = new Map<string, Span>();
+  const walk = (elements: Element[]): void => {
+    for (const element of elements) {
+      if (element.offset) spans.set(element.id, element.offset.span);
+      walk(element.children);
+    }
+  };
+  walk(model.elements);
+  for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
+  if (!spans.size) return [];
+
+  const overlap = (a: Box, b: Box): boolean =>
+    a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const labels = scene.edges.flatMap((edge) => edge.labels);
+  const diagnostics: Diagnostic[] = [];
+  for (const id of scene.clampedOffsets ?? []) {
+    const span = spans.get(id);
+    if (!span) continue;
+    diagnostics.push({
+      code: "W0573",
+      severity: "warning",
+      message: `\`offset\` on \`${id}\` was limited to keep it inside its container`,
+      span,
+      help: "an element is drawn inside the thing that contains it — move the container instead, or use a smaller offset",
+    });
+    spans.delete(id);
+  }
+  const report = (id: string, what: string) => {
+    const span = spans.get(id);
+    if (!span) return;
+    diagnostics.push({
+      code: "W0572",
+      severity: "warning",
+      message: `\`offset\` on \`${id}\` overlaps ${what}`,
+      span,
+      help: "the offset is applied as written — reduce it, or move the element with `order:` instead",
+    });
+    spans.delete(id);
+  };
+  for (const node of leaves) {
+    if (!spans.has(node.id)) continue;
+    const struckNode = leaves.find((other) => other.id !== node.id && overlap(node, other));
+    if (struckNode) report(node.id, `\`${struckNode.id}\``);
+    else if (labels.some((label) => overlap(node, label))) report(node.id, "a flow label");
+  }
+  for (const label of labels) {
+    if (!spans.has(label.flowId)) continue;
+    if (leaves.some((node) => overlap(label, node))) report(label.flowId, "an element");
+    else if (labels.some((other) => other !== label && overlap(label, other)))
+      report(label.flowId, "another flow label");
+  }
+  return diagnostics;
+}
+
 function runGeometryPasses(
   scene: Scene,
   model: Model,
   options: { numbered: boolean; sideways: boolean; laneOf?: Map<string, number> },
 ): void {
   const { numbered, sideways } = options;
+  const offsets = offsetAssignment(model);
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   // Issue #26 applies to every disposition. A DOWN layout wraps its backward
   // flows around the sides rather than the top, so it is routed through the
@@ -1569,11 +1893,19 @@ function runGeometryPasses(
   // Every pass above moves routes without moving the labels that name them. Put
   // each label back on its own flow before anything measures where labels are —
   // `compact` below is the first thing that does.
-  anchorFlowLabels(scene, routedTitles);
+  //
+  // Without the author's `label-offset:`, deliberately: everything below this
+  // line routes on where labels are, and a label nudged by hand must move the
+  // label and nothing else. The offsets go on at the final anchor instead.
+  anchorFlowLabels(scene, routedTitles, false);
   // Reclaim the bands elk sized for routes that no longer run there — every
   // disposition, since elk leaves spare corridors whether or not the reroute
   // above moved anything.
   compactVertical(scene);
+  // After the last pass that moves a node on its own account, so nothing the
+  // layout does afterwards can eat the author's delta, and before the route
+  // repair, which squares and re-seats around what the offset moved.
+  applyNodeOffsets(scene, offsets);
 
   // The repair is tried and then audited, not refused outright: a route change
   // can cost a *different* flow's label its seat, so any flow whose label was on
@@ -1614,6 +1946,9 @@ function runGeometryPasses(
   // renderer's batch audit, so an unrelated optimiser trade cannot revert the
   // swap. Only swaps that remove a crossing without shuffling it elsewhere.
   swapCrossingSiblingSeats(scene);
+  // An offset can push geometry off the top or left, which `fitCanvas` cannot
+  // answer — it only ever grows right and down.
+  if (offsets.size) shiftIntoCanvas(scene);
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.
   fitCanvas(scene);
@@ -1841,6 +2176,7 @@ export async function layout(model: Model, view: View): Promise<Scene> {
     const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
     for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
     markDeclaredTerminals(edges, model, view, laidOutWith?.hubPorts !== false);
+    stampLabelOffsets(edges, model);
 
     const scene: Scene = {
       width: Math.ceil(result.width),

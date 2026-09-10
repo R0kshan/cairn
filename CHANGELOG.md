@@ -2,6 +2,17 @@
 
 All notable changes to the cairn project will be documented in this file.
 
+## Unreleased
+
+### Added
+- Manual positioning: `offset: <dx>, <dy>` on an element and `label-offset: <dx>, <dy>` on a flow, both a nudge from where the layout placed things rather than an absolute seat ([#111](https://github.com/R0kshan/cairn/issues/111))
+- Drag an element, a container or a flow label in the playground and the DSL is rewritten to match — the source stays the single description of the diagram
+- `compile()` returns `boxes`, pairing the finished geometry with the source spans an editor writes back to
+- `E0109` for a malformed offset and `W0572` for an offset that lands something on something else
+- Hovering the playground preview highlights what can be dragged; a flow's path stays the router's, only its label is movable
+- A child element is held inside the container that holds it, reported as `W0573` when an offset is cut short
+- An offset that moves a container reconnects its flows to the side that now faces their counterpart, and one reaching past the top-left corner slides the canvas rather than drawing outside it
+
 ## [v1.0.0-RC15](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC15) - 2026-09-09
 
 ### Added

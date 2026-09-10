@@ -17,6 +17,7 @@ import { validate } from "../src/validator.ts";
 import {
   layout,
   attachSideDiagnostics,
+  offsetDiagnostics,
   beatsRelayout,
   noLadderRegression,
   nodeCoverage,
@@ -86,6 +87,198 @@ const build = async (src: string) => {
   const scene = await layout(model, view);
   return { model, view, scene, ...render(model, view, scene) };
 };
+
+// ---------- manual positioning (`offset:` / `label-offset:`) ----------
+
+// `DB` sits at the diagram root, so its `offset:` has no container to be held
+// inside — the exact-delta assertions below are about the nudge itself.
+// Containment gets its own fixture further down.
+const OFFSET_SRC = (body: string, flowTail = "") =>
+  `diagram application "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+application APP "App" {
+  module M1 "Mod one"
+}
+datastore DB "Store" {
+${body}
+}
+USER -> M1 : "Request"${flowTail}
+M1 -> DB : "Write"
+`;
+
+test("`offset:` moves the element by exactly what the author wrote", async () => {
+  const plain = await build(OFFSET_SRC(""));
+  const nudged = await build(OFFSET_SRC("  offset: 40, -20"));
+  assert.equal(xOf(nudged.scene, "DB") - xOf(plain.scene, "DB"), 40);
+  assert.equal(yOf(nudged.scene, "DB") - yOf(plain.scene, "DB"), -20);
+});
+
+test("an offset flow keeps every segment orthogonal", async () => {
+  const { scene } = await build(OFFSET_SRC("  offset: 40, -37"));
+  for (const edge of scene.edges)
+    for (let i = 1; i < edge.pts.length; i++) {
+      const a = edge.pts[i - 1];
+      const b = edge.pts[i];
+      assert.ok(
+        Math.abs(a.x - b.x) < 0.5 || Math.abs(a.y - b.y) < 0.5,
+        `segment ${i} of ${edge.id} runs off the orthogonal`,
+      );
+    }
+});
+
+test("`label-offset:` moves the label and survives the renderer's settling", async () => {
+  const labelOf = (result: Awaited<ReturnType<typeof build>>) =>
+    result.scene.edges.find((edge) => edge.id === "F01")!.labels[0];
+  const plain = await build(OFFSET_SRC(""));
+  const nudged = await build(OFFSET_SRC("", " { label-offset: 12, -6 }"));
+  assert.equal(labelOf(nudged).x - labelOf(plain).x, 12);
+  assert.equal(labelOf(nudged).y - labelOf(plain).y, -6);
+});
+
+test("`offset:` and `label-offset:` refuse anything but a pair of whole numbers", () => {
+  for (const bad of ["offset: 40", "offset: 40, 2.5", "offset: left, 3"]) {
+    const { diags } = check(OFFSET_SRC(`  ${bad}`));
+    assert.ok(
+      diags.some((d) => d.code === "E0109"),
+      `expected E0109 for \`${bad}\``,
+    );
+  }
+  const { diags } = check(OFFSET_SRC("", " { label-offset: 4 }"));
+  assert.ok(diags.some((d) => d.code === "E0109"));
+});
+
+test("an offset that lands one element on another is reported, not repaired", async () => {
+  const clear = await build(OFFSET_SRC("  offset: 0, 0"));
+  assert.deepEqual(
+    offsetDiagnostics(clear.scene, clear.model),
+    [],
+    "a zero offset overlaps nothing",
+  );
+  const plain = await build(OFFSET_SRC(""));
+  // Far enough left to slide `DB` back over the actor at the head of the drawing.
+  const dx = Math.round(xOf(plain.scene, "USER") - xOf(plain.scene, "DB"));
+  const collided = await build(OFFSET_SRC(`  offset: ${dx}, 0`));
+  assert.ok(offsetDiagnostics(collided.scene, collided.model).some((d) => d.code === "W0572"));
+  // Honored, not negotiated: the element is still exactly where it was asked to go.
+  assert.equal(xOf(collided.scene, "DB") - xOf(plain.scene, "DB"), dx);
+});
+
+// Containment: a nested element is held inside the container that holds it,
+// which is the one place a positioning hint is negotiated rather than honored.
+const NESTED_SRC = (body: string) =>
+  `diagram application "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+application APP "App" {${body}
+  module M1 "Mod one"
+}
+USER -> M1 : "Request"
+`;
+
+test("a child is never drawn outside the container that holds it", async () => {
+  const inside = (scene: Awaited<ReturnType<typeof build>>["scene"]) => {
+    const child = scene.nodes.find((node) => node.id === "M1")!;
+    const box = scene.nodes.find((node) => node.id === "APP")!;
+    return (
+      child.x >= box.x &&
+      child.y >= box.y &&
+      child.x + child.width <= box.x + box.width &&
+      child.y + child.height <= box.y + box.height
+    );
+  };
+  for (const offset of ["900, 900", "-900, -900", "0, 900", "900, 0"]) {
+    const source = `diagram application "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+application APP "App" {
+  module M1 "Mod one" {
+    offset: ${offset}
+  }
+}
+USER -> M1 : "Request"
+`;
+    const { scene, model } = await build(source);
+    assert.ok(inside(scene), `offset: ${offset} escaped its container`);
+    assert.ok(
+      offsetDiagnostics(scene, model).some((d) => d.code === "W0573"),
+      `offset: ${offset} was clamped without saying so`,
+    );
+  }
+});
+
+test("a container's own offset is not clamped, and it carries its children", async () => {
+  const plain = await build(NESTED_SRC(""));
+  const moved = await build(NESTED_SRC("\n  offset: 0, 300"));
+  assert.equal(yOf(moved.scene, "APP") - yOf(plain.scene, "APP"), 300);
+  assert.equal(yOf(moved.scene, "M1") - yOf(plain.scene, "M1"), 300);
+  assert.deepEqual(
+    offsetDiagnostics(moved.scene, moved.model).filter((d) => d.code === "W0573"),
+    [],
+  );
+});
+
+test("an offset that reaches past the top-left corner still draws inside the canvas", async () => {
+  // `fitCanvas` only ever grows right and down, so this is the one direction an
+  // offset can leave the canvas in (INVARIANTS §18).
+  const { scene } = await build(OFFSET_SRC("  offset: -400, -300"));
+  for (const node of scene.nodes) {
+    assert.ok(node.x >= 0 && node.y >= 0, `${node.id} sits outside the canvas`);
+    assert.ok(node.x + node.width <= scene.width && node.y + node.height <= scene.height);
+  }
+  for (const edge of scene.edges)
+    for (const point of edge.pts)
+      assert.ok(point.x >= 0 && point.y >= 0, `${edge.id} routes outside the canvas`);
+});
+
+test("nudging a label moves the label and nothing else", async () => {
+  // The promise the playground makes when a flow label is dragged: the flow
+  // itself is not draggable, and a label that moves must not drag its route
+  // along. Structural, not incidental — the routing passes anchor labels with
+  // the offsets withheld.
+  const routesOf = (scene: { edges: { id: string; pts: { x: number; y: number }[] }[] }) =>
+    scene.edges.map((edge) => `${edge.id}:${edge.pts.map((p) => `${p.x},${p.y}`).join(" ")}`);
+  const source = readFileSync(join(EX, "application-large-fr.cairn"), "utf8");
+  const plain = await build(source);
+  // A labelled flow, addressed by the line the parser recorded rather than by a
+  // pattern — the fixture is free to change shape without breaking this.
+  const target = plain.model.flows.find(
+    (flow) => plain.scene.edges.find((edge) => edge.id === flow.id)?.labels.length,
+  )!;
+  const lines = source.split("\n");
+  lines[target.span.line - 1] += " { label-offset: 40, -25 }";
+  const nudged = await build(lines.join("\n"));
+  assert.deepEqual(routesOf(nudged.scene), routesOf(plain.scene));
+  const labelOf = (r: typeof plain) => r.scene.edges.find((e) => e.id === target.id)!.labels[0];
+  assert.equal(labelOf(nudged).x - labelOf(plain).x, 40);
+  assert.equal(labelOf(nudged).y - labelOf(plain).y, -25);
+});
+
+test("compile() reports each box with the source span an editor writes back to", async () => {
+  const result = await compile(OFFSET_SRC("  offset: 40, -20"));
+  const box = result.boxes!.find((entry) => entry.id === "DB")!;
+  assert.equal(box.what, "element");
+  assert.equal(box.container, false);
+  assert.equal(box.parent, undefined, "`DB` is declared at the diagram root");
+  // `datastore DB "Store" {` is line 8 of the fixture above.
+  assert.equal(box.line, 8);
+  const source = OFFSET_SRC("  offset: 40, -20");
+  const span = box.offsetSpan!;
+  assert.equal(
+    source.split("\n")[span.line - 1].slice(span.col - 1, span.col - 1 + span.len),
+    "40, -20",
+  );
+  assert.equal(result.boxes!.find((entry) => entry.id === "M1")!.parent, "APP");
+  const labelled = await compile(OFFSET_SRC("", " { label-offset: 12, -6 }"));
+  const labelBox = labelled.boxes!.find((entry) => entry.what === "label")!;
+  // The span covers `12, -6`, not the key — a second drag replaces the numbers.
+  const flowLine = OFFSET_SRC("", " { label-offset: 12, -6 }").split("\n")[labelBox.line - 1];
+  const labelSpan = labelBox.offsetSpan!;
+  assert.equal(flowLine.slice(labelSpan.col - 1, labelSpan.col - 1 + labelSpan.len), "12, -6");
+});
 
 // ---------- logos ----------
 

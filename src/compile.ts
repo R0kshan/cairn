@@ -15,12 +15,14 @@
 
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
-import { layout, attachSideDiagnostics } from "./scene-layout.ts";
+import { layout, attachSideDiagnostics, offsetDiagnostics } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { views } from "./views.ts";
 import { buildFlowMatrix } from "./flow-matrix.ts";
 import type { FlowMatrix } from "./models/matrix.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
+import type { Model, Span } from "./models/ast.ts";
+import type { Scene } from "./scene-layout.ts";
 import { resolveThemeSpec } from "./theme-spec.ts";
 import type { ThemeOverrides } from "./theme-spec.ts";
 
@@ -46,6 +48,32 @@ export interface CompileOptions {
   logos?: Map<string, string>;
 }
 
+/**
+ * Where one element or flow label ended up on the canvas, paired with the
+ * source position an editor needs to write a nudge back into the DSL.
+ *
+ * This is what makes a drag in the playground possible without stamping ids
+ * into the SVG: the drawing's bytes stay exactly what they were (INVARIANTS
+ * §2, §14), and the one consumer that needs identity gets it out of band.
+ */
+export interface LayoutBox {
+  /** Element id, or the flow id for a label. */
+  id: string;
+  what: "element" | "label";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Containers hold other elements; a drag moves their whole subtree. */
+  container: boolean;
+  /** The container that holds this element — a child is never drawn outside it. */
+  parent?: string;
+  /** 1-based line the declaration sits on — an element's, or its flow's. */
+  line: number;
+  /** Span of the `dx, dy` an author already wrote, so an editor can replace it. */
+  offsetSpan?: Span;
+}
+
 export interface CompileResult {
   svg: string | null;
   diagnostics: (Diagnostic & { severity: "error" | "warning" })[];
@@ -57,6 +85,8 @@ export interface CompileResult {
   } | null;
   /** Present only when `options.matrix` asked for it and the source has no errors. */
   matrix: FlowMatrix | null;
+  /** Element and label geometry, for editors that place things by hand. Null on error. */
+  boxes: LayoutBox[] | null;
 }
 
 export async function compile(source: string, options?: CompileOptions): Promise<CompileResult> {
@@ -69,7 +99,7 @@ export async function compile(source: string, options?: CompileOptions): Promise
   diags.push(...validate(model));
   const errors = diags.filter((diagnostic) => diagnostic.severity === "error");
   if (errors.length || !model.type || !views[model.type]) {
-    return { svg: null, diagnostics: diags, metrics: null, matrix: null };
+    return { svg: null, diagnostics: diags, metrics: null, matrix: null, boxes: null };
   }
   const view = views[model.type];
   // Before layout: the matrix reads the model only, so it survives an ELK failure
@@ -79,9 +109,13 @@ export async function compile(source: string, options?: CompileOptions): Promise
   // Post-layout: whether a declared attachment side actually survived is only
   // knowable from the finished geometry (W0570).
   diags.push(...attachSideDiagnostics(scene, model));
+  diags.push(...offsetDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos, theme });
+  // After `render`, not before: it settles every label that is free to move, so
+  // this is the first point where a label box is where the reader will see it.
   return {
     svg,
+    boxes: layoutBoxes(model, scene),
     diagnostics: diags,
     metrics: {
       width: scene.width,
@@ -91,4 +125,58 @@ export async function compile(source: string, options?: CompileOptions): Promise
     },
     matrix,
   };
+}
+
+/** Pairs the finished geometry with the source spans an editor writes back to. */
+function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
+  const declarations = new Map<string, { line: number; offsetSpan?: Span; parent?: string }>();
+  const walk = (elements: Model["elements"], parent?: string): void => {
+    for (const element of elements) {
+      declarations.set(element.id, {
+        line: element.kindSpan.line,
+        offsetSpan: element.offset?.span,
+        parent,
+      });
+      walk(element.children, element.id);
+    }
+  };
+  walk(model.elements);
+  const flowDeclarations = new Map(
+    model.flows.map((flow) => [
+      flow.id,
+      { line: flow.span.line, offsetSpan: flow.labelOffset?.span },
+    ]),
+  );
+
+  const boxes: LayoutBox[] = [];
+  for (const node of scene.nodes) {
+    const declaration = declarations.get(node.id);
+    if (!declaration) continue;
+    boxes.push({
+      id: node.id,
+      what: "element",
+      x: node.x,
+      y: node.y,
+      width: node.width,
+      height: node.height,
+      container: node.container,
+      ...declaration,
+    });
+  }
+  for (const edge of scene.edges)
+    for (const label of edge.labels) {
+      const declaration = flowDeclarations.get(label.flowId);
+      if (!declaration) continue;
+      boxes.push({
+        id: label.flowId,
+        what: "label",
+        x: label.x,
+        y: label.y,
+        width: label.width,
+        height: label.height,
+        container: false,
+        ...declaration,
+      });
+    }
+  return boxes;
 }
