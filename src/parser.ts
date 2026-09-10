@@ -687,6 +687,49 @@ interface UniformStyleEntry {
   expected: string;
 }
 
+/** A whole-number style property: where the value lands, and how low it may go. */
+interface NumericStyleEntry {
+  /** Lowest value that still means something. */
+  min: number;
+  assign: (target: DiagramStyle, amount: number) => void;
+  /** Stands in the `expected:` help, so the writer sees a usable value. */
+  example: number;
+}
+
+/**
+ * The three density controls. A table rather than `switch` cases in
+ * `applyStyleEntry`: they differ only in where the value lands and how low it
+ * may go, and three near-identical numeric branches inline cost that function
+ * more cognitive complexity than the lint budget allows. Same shape as
+ * `UNIFORM_STYLE_ENTRIES` above, which exists for the same reason.
+ *
+ * A wrap of 0 would put every word on its own line forever, so that one starts
+ * at 1; a padding of 0 is a legitimate ask for none at all.
+ */
+const NUMERIC_STYLE_ENTRIES: Record<string, NumericStyleEntry> = {
+  "label-wrap": {
+    min: 1,
+    example: 14,
+    assign: (target, amount) => {
+      target.labelWrap = amount;
+    },
+  },
+  "container-padding": {
+    min: 0,
+    example: 4,
+    assign: (target, amount) => {
+      target.containerPadding = amount;
+    },
+  },
+  "label-padding": {
+    min: 0,
+    example: 4,
+    assign: (target, amount) => {
+      target.labelPadding = amount;
+    },
+  },
+};
+
 const UNIFORM_STYLE_ENTRIES: Record<string, UniformStyleEntry> = {
   "crossing-hops": {
     kind: "id",
@@ -785,6 +828,40 @@ const UNIFORM_STYLE_ENTRIES: Record<string, UniformStyleEntry> = {
     expected: "`#hex` color (canvas background)",
   },
 };
+
+/**
+ * Applies one of the density controls, and says whether `keyText` was one at
+ * all. A function of its own rather than a branch inside `applyStyleEntry`:
+ * that function is already at the lint's cognitive-complexity ceiling, and a
+ * numeric property's validation does not fit the `UNIFORM_STYLE_ENTRIES` shape
+ * (a `Set` of allowed strings cannot say "a whole number ≥ 1").
+ */
+function applyNumericStyleEntry(entry: {
+  keyText: string;
+  target: DiagramStyle;
+  /** First value token after the colon, if the author wrote one. */
+  value: Token | undefined;
+  /** The property name's own token, so a missing value still has a span to blame. */
+  key: Token;
+  reportBadValue: (value: Token, expected: string) => void;
+}): boolean {
+  const { keyText, target, value, key, reportBadValue } = entry;
+  // Guarded like the `UNIFORM_STYLE_ENTRIES` lookup, and for the same reason:
+  // `keyText` is user source, so a bare index would resolve `constructor` and
+  // friends off `Object.prototype`.
+  const numeric = Object.hasOwn(NUMERIC_STYLE_ENTRIES, keyText)
+    ? NUMERIC_STYLE_ENTRIES[keyText]
+    : undefined;
+  if (!numeric) return false;
+  const amount = value?.kind === "num" ? parseFloat(value.text) : Number.NaN;
+  if (Number.isInteger(amount) && amount >= numeric.min) numeric.assign(target, amount);
+  else
+    reportBadValue(
+      value ?? key,
+      `a whole number ≥ ${numeric.min}, e.g. \`${keyText}: ${numeric.example}\``,
+    );
+  return true;
+}
 
 function applyStyleEntry(entry: {
   key: Token;
@@ -896,6 +973,16 @@ function applyStyleEntry(entry: {
     else reportBadValue(value ?? key, uniform.expected);
     return;
   }
+  if (
+    applyNumericStyleEntry({
+      keyText,
+      target,
+      value: firstValue(),
+      key,
+      reportBadValue,
+    })
+  )
+    return;
   switch (keyText) {
     case "flow-stroke": {
       const stroke = extractStroke(values, key.span);
@@ -942,30 +1029,6 @@ function applyStyleEntry(entry: {
       const value = firstValue();
       if (value?.kind === "num") target.font.size = parseFloat(value.text);
       else reportBadValue(value ?? key, "a number, e.g. `font-size: 14`");
-      break;
-    }
-    // The three display dials. Each is a whole number and each is *optional* on
-    // `DiagramStyle`: left unset the layout uses the spacing it always used, so
-    // a file that names none of them renders exactly as it did before they
-    // existed. `label-wrap` counts characters, the other two count pixels.
-    case "label-wrap":
-    case "container-padding":
-    case "label-padding": {
-      const value = firstValue();
-      const amount = value?.kind === "num" ? parseFloat(value.text) : Number.NaN;
-      // A wrap of 0 would put every word on its own line forever, so that one
-      // starts at 1; a padding of 0 is a legitimate ask for none at all.
-      const floor = keyText === "label-wrap" ? 1 : 0;
-      if (Number.isInteger(amount) && amount >= floor) {
-        if (keyText === "label-wrap") target.labelWrap = amount;
-        else if (keyText === "container-padding") target.containerPadding = amount;
-        else target.labelPadding = amount;
-      } else {
-        reportBadValue(
-          value ?? key,
-          `a whole number ≥ ${floor}, e.g. \`${keyText}: ${keyText === "label-wrap" ? 14 : 4}\``,
-        );
-      }
       break;
     }
     default:
