@@ -530,6 +530,49 @@ function placeOverlay(el, box, dx = 0, dy = 0) {
 // lifts it out between these markers to round-trip it through the real parser.
 // Keep the three functions contiguous, and the markers where they are.
 // #region drag-writeback
+/**
+ * Index of the body brace on a declaration line, or -1.
+ *
+ * Quoted text is blanked out first: `"step {1}"` is a legal flow label and
+ * `"IHM SIET\nPCC"` a legal element one, and a brace inside either is part of
+ * the text, not the start of a block.
+ */
+const maskQuoted = line =>
+  line.replace(/"(?:[^"\\]|\\.)*"/g, quoted => ' '.repeat(quoted.length));
+
+function braceIndex(line) {
+  return maskQuoted(line).indexOf('{');
+}
+
+/**
+ * Puts `statement` inside the brace block on `line`, opening one if there is
+ * none, and returns the rewritten line.
+ *
+ * Three shapes exist and all three have to survive a round trip through the
+ * parser: no body at all, a body opened and closed on the one line
+ * (`application X "Y" {logo: angular }`), and a body left open for the lines
+ * below. Appending a second `{ … }` after the first is not a body, it is a
+ * syntax error — which is what a drag on a one-line body used to write.
+ *
+ * Spacing is explicit because the statement is a token sequence, not text:
+ * `47logo` happens to lex as `47` then `logo`, and code that relies on that is
+ * one lexer change from writing corrupt source.
+ */
+function insertInBlock(line, statement) {
+  const masked = maskQuoted(line);
+  const open = masked.indexOf('{');
+  if (open < 0) return `${line} { ${statement} }`;
+  const close = masked.indexOf('}', open + 1);
+  if (close < 0) {
+    const head = line.slice(0, open + 1);
+    const tail = line.slice(open + 1);
+    return `${head} ${statement}${tail.startsWith(' ') ? '' : ' '}${tail}`;
+  }
+  const head = line.slice(0, close);
+  const spacer = head.endsWith(' ') || head.endsWith('{') ? '' : ' ';
+  return `${head}${spacer}${statement} ${line.slice(close)}`;
+}
+
 /** Splices `text` over a parser span (1-based line, 1-based col, length). */
 function spliceSpan(source, span, text) {
   const lines = source.split('\n');
@@ -565,21 +608,19 @@ function writeOffset(source, box, dx, dy) {
   const line = lines[index];
   if (line === undefined) return source;
   const indent = line.match(/^\s*/)[0];
+  // A flow's inline block is its style block; `label-offset` rides in it.
   if (box.what === 'label') {
-    // A flow's inline block is its style block; `label-offset` rides in it.
-    // Quoted text is blanked out first: `A -> B : "step {1}"` is a legal label,
-    // and splicing into the brace inside it would rewrite the label instead.
-    const brace = line.replace(/"(?:[^"\\]|\\.)*"/g, quoted => ' '.repeat(quoted.length)).indexOf('{');
-    lines[index] = brace < 0
-      ? `${line} { label-offset: ${dx}, ${dy} }`
-      : `${line.slice(0, brace + 1)} label-offset: ${dx}, ${dy}${line.slice(brace + 1)}`;
+    lines[index] = insertInBlock(line, `label-offset: ${dx}, ${dy}`);
     return lines.join('\n');
   }
-  if (line.trimEnd().endsWith('{')) {
+  // A body already open at the end of the line gets the statement on its own
+  // indented line, which is how the DSL is written by hand. Every other shape
+  // goes inside the braces as they stand.
+  if (braceIndex(line) === line.trimEnd().length - 1) {
     lines.splice(index + 1, 0, `${indent}  offset: ${dx}, ${dy}`);
     return lines.join('\n');
   }
-  lines.splice(index, 1, `${line} {`, `${indent}  offset: ${dx}, ${dy}`, `${indent}}`);
+  lines[index] = insertInBlock(line, `offset: ${dx}, ${dy}`);
   return lines.join('\n');
 }
 // #endregion drag-writeback

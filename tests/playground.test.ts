@@ -56,7 +56,7 @@ async function pageWriteback(): Promise<{
   const end = html.indexOf("// #endregion drag-writeback");
   assert.ok(start >= 0 && end > start, "the drag-writeback markers are gone from the playground");
   const source = html.slice(start, end);
-  for (const name of ["spliceSpan", "readSpan", "writeOffset"])
+  for (const name of ["braceIndex", "insertInBlock", "spliceSpan", "readSpan", "writeOffset"])
     assert.ok(source.includes(`function ${name}(`), `\`${name}\` left the marked region`);
   return import(`data:text/javascript,${encodeURIComponent(`${source}\nexport { writeOffset };`)}`);
 }
@@ -106,6 +106,34 @@ test("a drag writes DSL the parser reads back as the same offset", async () => {
   assert.equal(parse(both).diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(parse(both).model.flows[0].labelOffset?.dy, -6);
   assert.equal(parse(both).model.flows[0].style?.stroke?.style, "dashed");
+
+  // Body shapes an element declaration can already have. A one-line body is the
+  // shape that broke in the playground: it took the "no body" path and appended
+  // a second `{ … }` block, which is a syntax error, not a body.
+  const BODIES: [string, string][] = [
+    ["no body", 'application X "IHM SIET\\nPCC"'],
+    ["one-line body", 'application X "IHM SIET\\nPCC" {logo: angular }'],
+    ["open at end of line", 'application X "IHM SIET\\nPCC" {\n  logo: angular\n}'],
+    ["label holding a brace", 'application X "IHM {SIET}" {logo: angular }'],
+  ];
+  for (const [shape, declaration] of BODIES) {
+    const source = `diagram application "t"\n${declaration}\nmodule Y "Y"\nY -> X : "Request"\n`;
+    const written = writeOffset(source, { id: "X", what: "element", line: 2 }, -167, 47);
+    const reparsed = parse(written);
+    assert.equal(
+      reparsed.diags.filter((d) => d.severity === "error").length,
+      0,
+      `${shape}: ${JSON.stringify(written)}`,
+    );
+    // Whitespace is asserted, not just re-parsability: `47logo` lexes as two
+    // tokens by luck, and source that leans on that is a lexer change away from
+    // being corrupt.
+    assert.match(written, /offset: -167, 47(\s|$)/, shape);
+    const element = reparsed.model.elements.find((e) => e.id === "X")!;
+    assert.equal(element.offset?.dx, -167, shape);
+    assert.equal(element.offset?.dy, 47, shape);
+    if (declaration.includes("angular")) assert.equal(element.logo?.value, "angular", shape);
+  }
 
   // A label may itself contain a brace, and the inline block is the one after it.
   const braced = DRAG_SRC.replace('"Request"', '"step {1}"');

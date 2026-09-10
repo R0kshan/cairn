@@ -18,6 +18,7 @@ All notable changes to the cairn project will be documented in this file.
 - An overlap a container's offset carried a child into is reported against that container's `offset:`, once
 - A diagram whose only offset is a `label-offset:` no longer draws the label outside the canvas
 - The playground writes `label-offset:` into the flow's own block when the label text contains a brace
+- Dragging an element whose body is written on one line (`application X "Y" {logo: angular }`) now adds `offset:` inside that block instead of appending a second, invalid one
 - An offset that moves a container reconnects its flows to the side that now faces their counterpart, and one reaching past the top-left corner slides the canvas rather than drawing outside it
 
 ## [v1.0.0-RC15](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC15) - 2026-09-09
