@@ -745,10 +745,15 @@ container on `positioning-sides`, against 3 turns after.
 What the layout genuinely cannot deliver is dropped and reported as `W0570` —
 never forced into an unreadable route, and never silently ignored.
 
-**A side cairn derived is not a pin.** Flows into a `queue` are given a left
-port and flows out of one a right port before layout (§16, `hubFlowSides`) —
-left and right in *every* disposition, because the glyph is a cylinder lying on
-its side and a terminal anywhere but its two caps reads as missing the box.
+**A side cairn derived is not a pin — a side the author's role names is.**
+Flows into a `queue` are given a left port and flows out of one a right port
+before layout (§16, `hubFlowSides`) — left and right in *every* disposition,
+because the glyph is a cylinder lying on its side and a terminal anywhere but
+its two caps reads as missing the box. Which of the two a cap came from decides
+how much it is worth: an arrow-derived cap is cairn's own reading of the
+drawing, an endpoint *role* is written by the author in the same slot as
+`ID.side`, so the role is marked `pinned` and only the arrow-derived cap is
+marked `hubSided` alone.
 
 The terminal is **not** marked `pinned`. It is marked `hubSided`, which buys one
 thing and refuses another. It buys standing down from the *route repair*:
@@ -771,6 +776,18 @@ and the flow keeps the direction the author drew it in. Only elk sees the data
 direction, so it can seat a consumer past the queue rather than before it
 (`elkEnds`); the polyline is traversed back the way it was written before any
 geometry pass runs, so the arrowhead is the author's.
+
+A role names the cap at the *other* end of its flow, and that terminal is
+`pinned` for the same reason an `ID.side` is: the author asked for it. It has to
+be, because the spec promises the wrap it implies — the consumer is seated past
+the queue and its arrow runs back into the right cap — and the §4c re-aim reads
+that wrap as a detour to be straightened away. With producer and consumer in one
+container block the queue can only sit on one side of it, so one of the two
+roles *must* wrap; before the pin, the re-aim dropped it on the near cap and
+both roles read as having done nothing (issue #110). The pin is granted only
+when elk was actually handed the hub ports: after `withHubPortFallback` climbs
+down from them the cap is elk's own guess, and freezing a guess is worse than
+leaving it free.
 
 And nothing is reported when a derived side does not survive: there is
 no span to report against and nothing was promised, so `W0570` stays what it has

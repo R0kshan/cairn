@@ -1735,6 +1735,23 @@ test("`.producer` / `.consumer` put a flow on the queue cap its role names", asy
   );
 });
 
+test("a role holds its cap when both ends live in one container block", async () => {
+  // Producer and consumer inside the same container leave elk one choice: the
+  // queue sits on one side of the box, so one of the two roles can only reach
+  // its cap by wrapping around the cylinder. That wrap is what the role asked
+  // for — the §4c re-aim used to trade it away and drop both flows on the same
+  // cap, which read as the roles doing nothing (issue #110).
+  for (const disposition of ["wide", "tall"]) {
+    const { scene, model } = await build(
+      `diagram application "t"\nstyle {\n  disposition: ${disposition}\n}\napplication SYS "System" {\n  module A "Producer A"\n  module B "Consumer B"\n}\nqueue Q "Notifications"\nA.producer -> Q (AMQP)\nB.consumer -> Q (AMQP)\n`,
+    );
+    const published = model.flows.find((flow) => flow.from === "A")!;
+    const consumed = model.flows.find((flow) => flow.from === "B")!;
+    assert.equal(sideOfTerminal(scene, published.id, "Q", "finish"), "left", disposition);
+    assert.equal(sideOfTerminal(scene, consumed.id, "Q", "finish"), "right", disposition);
+  }
+});
+
 test("a role reads the same written on either endpoint", async () => {
   // `Q -> B.consumer` draws the delivery, `B.consumer -> Q` draws the
   // dependency. Different arrows, same cap.
