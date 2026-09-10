@@ -472,7 +472,11 @@ function resolveLabelCollision(seated: SeatedLabel[], a: SeatedLabel, b: SeatedL
 }
 
 /** Positions flow labels on their routes, avoiding overlaps with nodes and other labels. */
-export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): void {
+export function anchorFlowLabels(
+  scene: Scene,
+  titleBoxes: TitleBox[] = [],
+  applyOffsets = true,
+): void {
   const ctx = createLabelSeatContext(scene, titleBoxes);
   const seated: SeatedLabel[] = [];
 
@@ -501,4 +505,21 @@ export function anchorFlowLabels(scene: Scene, titleBoxes: TitleBox[] = []): voi
       }
     if (!moved) break;
   }
+
+  // Last, so the delta is measured from the seat this pass actually chose and
+  // survives every re-anchor a renderer does. An author's positioning hint is
+  // honored, not negotiated (§17): the collision rounds above resolve what the
+  // layout produced, and this moves what the author asked to move afterwards.
+  //
+  // `applyOffsets: false` is how a caller anchors labels for a pass that is
+  // about to *route* on them. Nudging a label must never move its flow, and the
+  // only way to promise that is to keep the nudge out of the geometry the router
+  // reads — see the anchor call above `compactVertical` in `scene-layout`.
+  if (!applyOffsets) return;
+  for (const edge of scene.edges)
+    for (const label of edge.labels)
+      if (label.offset) {
+        label.x += label.offset.dx;
+        label.y += label.offset.dy;
+      }
 }

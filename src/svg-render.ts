@@ -402,6 +402,10 @@ function settleOffOwnRun(s: Settler, label: SceneLabel, here: Seat): boolean {
  * here.
  */
 function settleOneLabel(s: Settler, label: SceneLabel): void {
+  // An author put this label here by hand (`{ label-offset: … }`). Settling it
+  // would negotiate a hint §17 says is not negotiable, and the overlap it may
+  // have created is reported as W0572 instead of silently moved away from.
+  if (label.offset) return;
   if (!s.collides(label) && s.attributableHere(label)) return;
   const origin: Seat = { x: label.x, y: label.y };
   if (settleOnOwnRun(s, label)) return;

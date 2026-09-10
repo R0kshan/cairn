@@ -35,6 +35,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0000 | error | Internal `watch` error (build threw outside normal validation) — rendered as an SVG error panel rather than left as a stale diagram |
 | E0101–E0104 | error | Syntax / style-value errors |
 | E0106 | error | `order:` value is not a whole number ≥ 0 |
+| E0109 | error | `offset:` / `label-offset:` is not a pair of whole numbers (`offset: 40, -20`) |
 | E0200 / E0201 | error | Unknown diagram type / element kind (with did-you-mean) |
 | E0202 | error | Duplicate identifier (flat ID namespace, shared with business objects) |
 | E0203 | error | Flow without a label |
@@ -53,6 +54,8 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | W0540 | warning | Application system-to-system flow without a protocol (actor flows exempt) |
 | W0570 | warning | Declared attachment side the layout could not honor |
 | W0571 | warning | Endpoint resolved as a declared id, so its `.side` / `.role` reading was dropped |
+| W0572 | warning | An `offset:` / `label-offset:` landed something on something else — honored as written, reported rather than repaired |
+| W0573 | warning | An `offset:` was limited to keep the element inside its container |
 
 ## Exit codes
 

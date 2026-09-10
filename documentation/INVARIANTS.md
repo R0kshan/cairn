@@ -66,7 +66,7 @@ you what a violation looks like when you cause one.
 | 14 | Snapshot & corpus gates | `tests/corpus.ts` | reference |
 | 15 | Flow matrix export | `flow-matrix` | reference + test |
 | 16 | Flow positioning is blind to the DSL | `edge-tidy`, `route-detour`, `label-anchor`, `compact`, `readability` | structural + test |
-| 17 | Author positioning hints honored, not negotiated | `parser`, `scene-layout`, `edge-tidy` | reference + test |
+| 17 | Author positioning hints honored, not negotiated | `parser`, `scene-layout`, `edge-tidy`, `label-anchor` | reference + test |
 | 18 | Nothing is drawn outside the canvas | `compact` (`fitCanvas`), called by `scene-layout` and `svg-render` | test |
 
 Two rules cut across all of them:
@@ -666,9 +666,13 @@ Enforced structurally and by test:
 - `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
   registry appears in those sources, so the check covers kinds added later.
 
-Three DSL-declared positioning hints exist (§17), and none breaches this: an
+Four DSL-declared positioning hints exist (§17), and none breaches this: an
 `order:` becomes a partition band and a `layout` rank an elk position, both
-before any `Scene` exists, and a pinned
+before any `Scene` exists; an `offset:` is resolved to a
+`Map<nodeId, {dx, dy}>` before the pass runs, the same shape as a lane
+assignment, and a `label-offset:` is stamped onto `SceneLabel.offset` as a plain
+delta, so `label-anchor` re-applies a pair of numbers and never learns where they
+came from; and a pinned
 attachment side becomes an elk port plus a plain `pinned` boolean on the
 `SceneEdge`. The passes that read `pinned` read a boolean on geometry, exactly
 as they already read `detour` — no kind, no view name, so a new view inherits
@@ -689,9 +693,10 @@ That is a known limitation, not a guarantee.
 
 ## 17. Author positioning hints are honored, not negotiated
 
-Three opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
-override layout: `order:` on an element, `ID.side` on a flow endpoint, and the
-arrow glyph's line style. Three rules hold for them.
+Four opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
+override layout: `order:` on an element, `offset:` / `label-offset:` on an
+element or a flow label, `ID.side` on a flow endpoint, and the arrow glyph's
+line style. Three rules hold for them.
 
 **`order:` reads along the drawing at the root, across it inside a container.**
 A top-level `order:` becomes a partition band (§9), and a band is a contiguous
@@ -784,6 +789,76 @@ the hub ports — rather than failing the drawing or giving up the sides at the
 first refusal. And a producer entering from the left in a downward drawing runs
 its approach along a corridor a neighbour may already use, which raised the
 `nearParallel` ratchet once, on the record, in `scripts/sweep.ts`.
+
+**An offset is a delta, and it is the last word.** `offset:` moves an element
+from where elk put it; it never seats one at a canvas coordinate. That choice is
+the invariant: a delta keeps the element inside the layout — still in its
+reading band, still moving with its neighbours — so a diagram someone nudged in
+2026 still draws correctly after a sibling is added to it, which an absolute
+coordinate could not promise. A container's delta carries its subtree and a
+child's own adds to it, so a group moves rigidly and a single member inside it
+can still be corrected.
+
+**Containment beats the nudge.** A child is held inside the container that holds
+it, and that is the single exception to "honored, not negotiated" in this
+document. Nesting is what a diagram means (§7): a block drawn outside its system
+is not a nudged block, it is a wrong drawing. The clamp resolves through the
+parent chain — a container settles before the children whose room it defines —
+and every element it cuts short is recorded on the scene and reported as
+**W0573**, because a hint that is negotiated must at least say so.
+
+It is applied **after `compactVertical`** — the last pass that moves a node on
+its own account, so nothing the layout does afterwards can eat it — and **before
+the route repair**, which then squares and re-seats the flows around the new
+geometry. Moving a terminal leaves its first segment slanted, and a slanted
+segment is a tier-0 breach (§3), so the elbow is rebuilt in the pass itself
+rather than left to a repair that is free to refuse a candidate: one point is
+inserted on the axis the original segment did not run along, which is orthogonal
+by construction for any delta. Because the route repair then owns the moved
+geometry, **a flow reconnects to the side that now faces its counterpart** — an
+element dragged past the thing it talks to comes back attached the right way
+round, rather than trailing a wrapped edge.
+
+`compactVertical` runs a second time inside the renderer, after label settling,
+and a downward offset opens exactly the kind of empty band that pass exists to
+reclaim — measured: a 300px nudge arrived as 128. Compaction cannot tell
+deliberate space from dead space by measurement, so the pass that opened it says
+so: `applyNodeOffsets` records the corridor in `Scene.pinnedBands`, which
+`compactVertical` merges into its pinned extents. Geometry only, absent unless an
+offset exists.
+
+An offset is also the one hint that can push geometry off the *top or left* of
+the drawing, which `fitCanvas` cannot answer — it only ever grows right and
+down. `shiftIntoCanvas` slides the whole scene back instead, the same answer
+`route-detour` gives a top channel: clamping the element would negotiate the
+hint (§17), so the canvas moves and the delta stands (§18).
+
+**A `label-offset:` moves the label and nothing else.** It is applied at the end
+of `anchorFlowLabels`, so every re-anchor re-applies it and the renderer's
+settling cannot quietly drop it — the settler skips an offset label outright.
+But the anchor call that feeds the *routing* passes takes `applyOffsets: false`,
+so `compactVertical` and `optimiseRoutes` judge the seat the layout chose rather
+than the one the author moved it to. That is what makes "nudging a label does not
+move its flow" a property of the pipeline instead of a coincidence, and
+`tests/behavior.test.ts` holds every route in `application-large-fr` identical
+across a 40×25 label nudge. Flows themselves are not draggable at all: only
+elements, containers and labels appear in `compile()`'s `boxes`.
+
+What an offset may not do is disappear. Where one lands an element on another,
+or a label on an element, the drawing ships exactly as written and the collision
+is reported as **W0572**. Repairing it would negotiate the hint; ignoring it
+would let a hand-positioned diagram fail a review nobody was warned about.
+
+Like every other hint here, **opt-in means byte-identical**: `offsetAssignment`
+returns an empty map for a diagram that declares none, and the pass is a no-op
+on an empty map. `tests/corpus.test.ts` and the committed `examples/*.svg` are
+the gate.
+
+**The SVG carries no identity.** The playground drags an element by hit-testing
+`compile()`'s `boxes`, which pair the finished geometry with the source spans an
+editor writes back to. Stamping `data-id` into the drawing would have been
+smaller and is the reason this exists instead: the rendered bytes must not
+depend on whether anyone ever dragged the diagram (§2, §14).
 
 ## 18. Nothing is drawn outside the canvas
 

@@ -32,7 +32,7 @@ export { matrixCsv, matrixMd, matrixSvg } from "./flow-matrix.ts";
 // Named explicitly rather than `export *`, so the surface can't widen by
 // accident when an internal module gains an export. Every type reachable from
 // `CompileResult` is listed, so a consumer never has to import an internal path.
-export type { CompileOptions, CompileResult } from "./compile.ts";
+export type { CompileOptions, CompileResult, LayoutBox } from "./compile.ts";
 export type { ThemeSpec } from "./themes.ts";
 export type { ThemeOverrides } from "./theme-spec.ts";
 export type { FlowMatrix, FlowMatrixRow, MatrixColumn, MatrixColumnId } from "./models/matrix.ts";

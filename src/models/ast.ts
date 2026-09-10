@@ -83,6 +83,15 @@ export interface Element {
    */
   order?: { value: number; span: Span };
   /**
+   * Author-declared nudge from where the layout engine placed this element,
+   * in canvas pixels (`offset: 40, -20`). A delta, never an absolute seat: elk
+   * still lays the diagram out, so an offset element keeps moving with its
+   * neighbours instead of stranding itself when the drawing around it changes.
+   * A container's offset carries its whole subtree, and a child's own offset
+   * adds to it. Opt-in: an element without one renders unchanged.
+   */
+  offset?: { dx: number; dy: number; span: Span };
+  /**
    * Tech-stack logo drawn in the element's corner (`logo: react`, or
    * `logo: "./logos/acme.svg"` for a file). `source` records which of the two
    * the author wrote, because a bare name resolves against the built-in set
@@ -143,6 +152,14 @@ export interface Flow {
   objects?: { id: string; span: Span }[];
   span: Span;
   style?: StyleProps;
+  /**
+   * Author-declared nudge for this flow's label, from the seat `label-anchor`
+   * gave it (`{ label-offset: 12, -6 }`). Same delta contract as an element's
+   * `offset:` — the label is anchored to its own run first, then moved. A label
+   * carrying one is exempt from the renderer's overlap settling (§17: an author
+   * hint is honored, not negotiated), which is what W0572 reports on.
+   */
+  labelOffset?: { dx: number; dy: number; span: Span };
 }
 
 export interface BusinessObject {
@@ -241,6 +258,12 @@ export const explanations: Record<string, string> = {
     "Completeness check: a declared business object is never carried by any flow — either connect it to the flows that transport it, or remove it from this view.",
   W0570:
     "A declared attachment side (`APP.right -> DB.left`) did not survive layout: the flow ended up on another side of the element. Pins are honored where the layout can reach them and dropped where it cannot, rather than forced into an unreadable route. Move the element instead (`order:`), pin the other endpoint, or drop the pin.",
+  E0109:
+    "`offset:` takes two whole numbers — `offset: <dx>, <dy>` — the pixels to move this element by, right and down, from where the layout engine placed it. Either may be negative. It is a nudge, not a seat: elk still decides where the element belongs, so the diagram keeps re-flowing around it. Pair it with `order:` when the element is in the wrong place entirely — an offset large enough to change reading order is a sign the band is wrong, not the pixels.",
+  W0572:
+    "An `offset:` (or `label-offset:`) moved something onto something else. The hint is still honored — an author's positioning request is not negotiated — but the drawing now has an overlap the layout would never have produced on its own, so it is reported rather than left to be discovered in a review. Reduce the offset, or move the element with `order:` instead.",
+  W0573:
+    "An `offset:` was cut short so the element stays inside the container that holds it. Nesting is what a diagram *means* — a block drawn outside its system reads as a broken drawing, not a nudged one — so containment wins over the nudge here, and this is the one place a positioning hint is negotiated rather than honored outright. Nudge the container instead if the whole group belongs elsewhere, or use a smaller offset.",
   W0571:
     "An endpoint reads `ID.side`, but `ID.side` is itself a declared element, and a declared id always wins — so the flow attaches to that element and no side is pinned. Rename the element if you meant the side.",
 };
