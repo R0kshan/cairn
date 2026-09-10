@@ -57,6 +57,17 @@
   #status { padding:6px 14px; background:var(--panel); border-top:1px solid var(--border); font-size:12px; color:var(--dim); display:flex; gap:16px; align-items:center; }
   #status .ok { color:var(--ok); } #status .err { color:var(--err); }
   .note { color:var(--dim); font-size:12px; }
+  /* The drag feedback is an overlay div, not a transform on the SVG: the SVG
+     carries no per-element markup to move, and a dashed box is what the reader
+     needs anyway — where the thing will land, not a preview of the re-layout. */
+  #ghost { position:absolute; pointer-events:none; border:1.5px dashed var(--accent);
+           background:rgba(108,182,255,.12); border-radius:4px; display:none; }
+  /* The movable affordance. A cursor change alone is invisible until the pointer
+     is already on the thing, so what can be dragged says so on hover. */
+  #hover { position:absolute; pointer-events:none; border:1.5px solid var(--accent);
+           background:rgba(108,182,255,.07); border-radius:4px; display:none;
+           box-shadow:0 0 0 3px rgba(108,182,255,.13); }
+  #preview.draggable { cursor:move; }
 </style>
 </head>
 <body>
@@ -102,7 +113,7 @@
   </div>
   <div id="splitter" title="Drag to resize · double-click to reset"></div>
   <div class="right">
-    <div id="preview" title="Drag to pan · ctrl/⌘ + wheel to zoom"></div>
+    <div id="preview" title="Drag an element or a flow label to nudge it — the DSL follows · drag the canvas to pan · ctrl/⌘ + wheel to zoom"></div>
     <div id="status"><span id="stat">loading engine…</span></div>
   </div>
 </main>
@@ -162,7 +173,7 @@ const stat    = document.getElementById('stat');
 const note    = document.getElementById('note');
 const themeSel = document.getElementById('theme');
 const zoomLevel = document.getElementById('zoom-level');
-let lastSvg = null, lastMatrix = null, zoom = 1, currentTheme = '';
+let lastSvg = null, lastMatrix = null, lastBoxes = null, zoom = 1, currentTheme = '';
 // The bus to the `view.html` tabs, and the last thing published on it. Declared
 // here rather than beside its click handler further down because the render
 // loop below publishes to it — a `const` reached forward into is a trap the
@@ -209,6 +220,7 @@ async function run() {
     // is ready the moment the button is clicked, without recompiling.
     const r = await compile(src, { theme: currentTheme || undefined, matrix: true });
     lastMatrix = r.matrix;
+    lastBoxes = r.boxes;
     diagsEl.innerHTML = r.diagnostics.map(d =>
       `<div class="diag" data-line="${d.span.line}"><b class="${d.severity === 'error' ? 'e' : 'w'}">${d.severity}[${d.code}]</b> line ${d.span.line}: ${escapeHtml(d.message)}${d.help ? `<span class="help">help: ${escapeHtml(d.help)}</span>` : ''}</div>`
     ).join('');
@@ -220,6 +232,7 @@ async function run() {
       // Replacing the SVG resets the pane's scroll — restore it once resized.
       const { scrollLeft, scrollTop } = preview;
       preview.innerHTML = r.svg;
+      addOverlays();   // innerHTML above dropped them
       // match the preview backdrop to the theme's canvas colour
       const bg = (r.svg.match(/<rect width="\d+" height="\d+" fill="([^"]+)"\/>/) || [])[1];
       if (bg) preview.style.background = bg;
@@ -238,6 +251,7 @@ async function run() {
       // errors: do NOT render the diagram at all — clear it and show a clear
       // error state so it's unmistakable, pointing to the error list below.
       preview.classList.add('error');
+      lastBoxes = null;
       preview.innerHTML = `<div class="err-panel"><div class="err-icon">⚠</div>`
         + `<div class="err-h">${ne} error${ne > 1 ? 's' : ''} — diagram not rendered</div>`
         + `<div class="err-p">Fix the ${ne > 1 ? 'errors' : 'error'} listed below the editor and the diagram will render again automatically.</div></div>`;
@@ -246,6 +260,7 @@ async function run() {
     }
   } catch (e) {
     preview.classList.add('error');
+    lastBoxes = null;
     preview.innerHTML = `<div class="err-panel"><div class="err-icon">⚠</div>`
       + `<div class="err-h">Engine error — diagram not rendered</div>`
       + `<div class="err-p">${escapeHtml(e.message)}</div></div>`;
@@ -449,6 +464,236 @@ preview.addEventListener('wheel', e => {
   setZoom(zoom * Math.exp(-e.deltaY * WHEEL_ZOOM_SENSITIVITY), e);
 }, { passive: false });
 
+// --- Drag to nudge ----------------------------------------------------------
+// A drag does not move the drawing: it writes an `offset:` into the DSL and lets
+// the engine render it. The source stays the single description of the diagram,
+// which is the whole point of diagram-as-code — a playground that moved pixels
+// would produce a picture nobody could reproduce from the file.
+//
+// Hit-testing reads `compile()`'s `boxes`, not the SVG: the drawing carries no
+// per-element markup, deliberately, so its bytes are identical whether or not
+// anything ever dragged it.
+const ghost = document.createElement('div');
+ghost.id = 'ghost';
+const hover = document.createElement('div');
+hover.id = 'hover';
+/** Both overlays live in the preview, which `run()` empties on every render. */
+const addOverlays = () => preview.append(hover, ghost);
+addOverlays();
+
+// Below this, a drag is a click that wobbled — panning, or nothing at all.
+const DRAG_THRESHOLD_PX = 3;
+
+/** Pointer position in diagram coordinates, or null when nothing is rendered. */
+function diagramPoint(e) {
+  const svg = preview.querySelector('svg');
+  if (!svg) return null;
+  const rect = svg.getBoundingClientRect();
+  return { x: (e.clientX - rect.left) / zoom, y: (e.clientY - rect.top) / zoom };
+}
+
+/** The smallest box under the pointer — so a child wins over its container, and
+    a flow label wins over the box it happens to sit on. */
+function boxAt(point) {
+  if (!lastBoxes || !point) return null;
+  return lastBoxes
+    .filter(b => point.x >= b.x && point.x <= b.x + b.width &&
+                 point.y >= b.y && point.y <= b.y + b.height)
+    .sort((a, b) => a.width * a.height - b.width * b.height)[0] ?? null;
+}
+
+/**
+ * Lays one overlay over a box in diagram coordinates, shifted by `dx, dy`.
+ *
+ * The overlays are absolutely positioned inside `#preview`, so their offsets are
+ * measured from its padding box and scroll with its content. Where the drawing
+ * starts inside that box is read from the two rectangles rather than from
+ * `svg.offsetLeft`: `offsetLeft` is an `HTMLElement` property and `<svg>` is an
+ * `SVGElement`, so it reads `undefined` there and every coordinate built on it
+ * comes out `NaN` — which the browser drops, parking the overlay in the corner.
+ */
+function placeOverlay(el, box, dx = 0, dy = 0) {
+  const svg = preview.querySelector('svg');
+  if (!svg) return;
+  const svgRect = svg.getBoundingClientRect();
+  const paneRect = preview.getBoundingClientRect();
+  const originX = svgRect.left - paneRect.left + preview.scrollLeft;
+  const originY = svgRect.top - paneRect.top + preview.scrollTop;
+  el.style.display = 'block';
+  el.style.left   = (originX + (box.x + dx) * zoom) + 'px';
+  el.style.top    = (originY + (box.y + dy) * zoom) + 'px';
+  el.style.width  = (box.width * zoom) + 'px';
+  el.style.height = (box.height * zoom) + 'px';
+}
+
+// The writeback below is pure text surgery on the DSL, and `tests/playground.test.ts`
+// lifts it out between these markers to round-trip it through the real parser.
+// Keep the three functions contiguous, and the markers where they are.
+// #region drag-writeback
+/**
+ * Index of the body brace on a declaration line, or -1.
+ *
+ * Quoted text is blanked out first: `"step {1}"` is a legal flow label and
+ * `"IHM SIET\nPCC"` a legal element one, and a brace inside either is part of
+ * the text, not the start of a block.
+ */
+const maskQuoted = line =>
+  line.replace(/"(?:[^"\\]|\\.)*"/g, quoted => ' '.repeat(quoted.length));
+
+function braceIndex(line) {
+  return maskQuoted(line).indexOf('{');
+}
+
+/**
+ * Puts `statement` inside the brace block on `line`, opening one if there is
+ * none, and returns the rewritten line.
+ *
+ * Three shapes exist and all three have to survive a round trip through the
+ * parser: no body at all, a body opened and closed on the one line
+ * (`application X "Y" {logo: angular }`), and a body left open for the lines
+ * below. Appending a second `{ … }` after the first is not a body, it is a
+ * syntax error — which is what a drag on a one-line body used to write.
+ *
+ * Spacing is explicit because the statement is a token sequence, not text:
+ * `47logo` happens to lex as `47` then `logo`, and code that relies on that is
+ * one lexer change from writing corrupt source.
+ */
+function insertInBlock(line, statement) {
+  const masked = maskQuoted(line);
+  const open = masked.indexOf('{');
+  if (open < 0) return `${line} { ${statement} }`;
+  const close = masked.indexOf('}', open + 1);
+  if (close < 0) {
+    const head = line.slice(0, open + 1);
+    const tail = line.slice(open + 1);
+    return `${head} ${statement}${tail.startsWith(' ') ? '' : ' '}${tail}`;
+  }
+  const head = line.slice(0, close);
+  const spacer = head.endsWith(' ') || head.endsWith('{') ? '' : ' ';
+  return `${head}${spacer}${statement} ${line.slice(close)}`;
+}
+
+/** Splices `text` over a parser span (1-based line, 1-based col, length). */
+function spliceSpan(source, span, text) {
+  const lines = source.split('\n');
+  const line = lines[span.line - 1];
+  lines[span.line - 1] = line.slice(0, span.col - 1) + text + line.slice(span.col - 1 + span.len);
+  return lines.join('\n');
+}
+
+/** The `dx, dy` a span currently holds, so a second drag adds to the first
+    instead of replacing it. */
+function readSpan(source, span) {
+  const line = source.split('\n')[span.line - 1] ?? '';
+  const [dx, dy] = line.slice(span.col - 1, span.col - 1 + span.len).split(',').map(Number);
+  return Number.isFinite(dx) && Number.isFinite(dy) ? { dx, dy } : { dx: 0, dy: 0 };
+}
+
+/**
+ * Writes the nudge into the source and returns the new text.
+ *
+ * Three cases, in order of how much text they add: replace the numbers of an
+ * `offset:` that is already there, insert one into a body that already exists,
+ * or open a body for it. An element's `{` is always on its declaration line
+ * (the grammar gives it no chance to be anywhere else), so the line alone
+ * settles which of the last two applies.
+ */
+function writeOffset(source, box, dx, dy) {
+  if (box.offsetSpan) {
+    const current = readSpan(source, box.offsetSpan);
+    return spliceSpan(source, box.offsetSpan, `${current.dx + dx}, ${current.dy + dy}`);
+  }
+  const lines = source.split('\n');
+  const index = box.line - 1;
+  const line = lines[index];
+  if (line === undefined) return source;
+  const indent = line.match(/^\s*/)[0];
+  // A flow's inline block is its style block; `label-offset` rides in it.
+  if (box.what === 'label') {
+    lines[index] = insertInBlock(line, `label-offset: ${dx}, ${dy}`);
+    return lines.join('\n');
+  }
+  // A body already open at the end of the line gets the statement on its own
+  // indented line, which is how the DSL is written by hand. Every other shape
+  // goes inside the braces as they stand.
+  if (braceIndex(line) === line.trimEnd().length - 1) {
+    lines.splice(index + 1, 0, `${indent}  offset: ${dx}, ${dy}`);
+    return lines.join('\n');
+  }
+  lines[index] = insertInBlock(line, `offset: ${dx}, ${dy}`);
+  return lines.join('\n');
+}
+// #endregion drag-writeback
+
+/**
+ * Holds a drag inside the container the element lives in, so the ghost promises
+ * only what the engine will actually draw — a child is never rendered outside
+ * its parent, and a ghost that ignored that would land somewhere else.
+ */
+function holdInParent(box, dx, dy) {
+  const parent = box.parent && lastBoxes.find(b => b.id === box.parent && b.what === 'element');
+  if (!parent) return { dx, dy };
+  const hold = (value, low, high) => Math.min(Math.max(value, low), Math.max(high, low));
+  return {
+    dx: hold(box.x + dx, parent.x, parent.x + parent.width - box.width) - box.x,
+    dy: hold(box.y + dy, parent.y, parent.y + parent.height - box.height) - box.y,
+  };
+}
+
+let dragStart = null;
+
+/**
+ * How far this drag has moved, in whole diagram pixels and already held inside
+ * the element's container. Whole pixels because the DSL takes integers, and a
+ * fractional nudge is noise the reader of the file would have to decode for
+ * nothing — so the ghost and the value written to the source round identically.
+ */
+function dragDelta(e, box = dragStart.box, fromX = dragStart.clientX, fromY = dragStart.clientY) {
+  if (box.what === 'label') {
+    return { dx: Math.round((e.clientX - fromX) / zoom), dy: Math.round((e.clientY - fromY) / zoom) };
+  }
+  const held = holdInParent(box, (e.clientX - fromX) / zoom, (e.clientY - fromY) / zoom);
+  return { dx: Math.round(held.dx), dy: Math.round(held.dy) };
+}
+
+preview.addEventListener('pointermove', e => {
+  if (dragStart || panStart) return;
+  const box = boxAt(diagramPoint(e));
+  preview.classList.toggle('draggable', !!box);
+  if (box) placeOverlay(hover, box);
+  else hover.style.display = 'none';
+});
+
+preview.addEventListener('pointerleave', () => { hover.style.display = 'none'; });
+
+preview.addEventListener('pointermove', e => {
+  if (!dragStart) return;
+  dragStart.moved = dragStart.moved ||
+    Math.abs(e.clientX - dragStart.clientX) > DRAG_THRESHOLD_PX ||
+    Math.abs(e.clientY - dragStart.clientY) > DRAG_THRESHOLD_PX;
+  if (!dragStart.moved) return;
+  const { dx, dy } = dragDelta(e);
+  hover.style.display = 'none';   // the ghost speaks for the drag from here
+  placeOverlay(ghost, dragStart.box, dx, dy);
+});
+
+function endDrag(e) {
+  if (!dragStart) return;
+  const { box, clientX, clientY, moved } = dragStart;
+  dragStart = null;
+  ghost.style.display = 'none';
+  preview.releasePointerCapture(e.pointerId);
+  if (!moved) return;
+  const { dx, dy } = dragDelta(e, box, clientX, clientY);
+  if (!dx && !dy) return;
+  editor.value = writeOffset(editor.value, box, dx, dy);
+  flash(`${box.id} nudged ${dx >= 0 ? '+' : ''}${dx}, ${dy >= 0 ? '+' : ''}${dy}`);
+  run();
+}
+
+preview.addEventListener('pointerup', endDrag);
+preview.addEventListener('pointercancel', endDrag);
+
 // Touch is left to the browser, which already pans this scroll container —
 // handling it here too would move it twice.
 let panStart = null;
@@ -456,6 +701,14 @@ let panStart = null;
 preview.addEventListener('pointerdown', e => {
   if (e.button !== 0 || e.pointerType === 'touch' || !svgViewBox()) return;
   e.preventDefault();   // otherwise the browser starts dragging the SVG itself
+  // An element under the pointer takes the drag; empty canvas still pans, so
+  // both gestures live on the same button without a mode to switch between.
+  const box = boxAt(diagramPoint(e));
+  if (box) {
+    dragStart = { box, clientX: e.clientX, clientY: e.clientY, moved: false };
+    preview.setPointerCapture(e.pointerId);
+    return;
+  }
   panStart = { x: e.clientX, y: e.clientY, left: preview.scrollLeft, top: preview.scrollTop };
   preview.setPointerCapture(e.pointerId);
   preview.classList.add('panning');

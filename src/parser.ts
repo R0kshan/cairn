@@ -46,7 +46,7 @@ interface Parser {
   flowSequence: { next: number };
   /** `ID.side` endpoints awaiting `resolveAttachSides` once the id index exists. */
   endpointSplits: EndpointSplit[];
-  parseStyleEntries: (target: DiagramStyle | null, inline: StyleProps | null) => void;
+  parseStyleEntries: (target: DiagramStyle | null, inline: StyleProps | null, flow?: Flow) => void;
   parseElementBody: (parent: Element) => void;
 }
 
@@ -132,7 +132,7 @@ function parseFlow(p: Parser, sourceToken: Token): void {
   if (matchToken("lbrace")) {
     advance();
     flow.style = {};
-    p.parseStyleEntries(null, flow.style);
+    p.parseStyleEntries(null, flow.style, flow);
   }
   for (const split of [
     splitEndpoint(sourceToken, flow, "from"),
@@ -293,6 +293,60 @@ function tryOrderEntry(p: Parser, parent: Element | null): boolean {
     return true;
   }
   parent.order = { value, span: valueToken!.span };
+  return true;
+}
+
+/**
+ * A `dx, dy` pair of whole numbers. The lexer has no sign: `-` is an id
+ * character, so `-20` arrives as an `id` token whose text happens to be a
+ * number — which is why this reads both kinds rather than only `num`.
+ * Returns `null` when either half is missing or not a whole number.
+ */
+function readOffsetPair(p: Parser): { dx: number; dy: number; span: Span } | null {
+  const { matchToken, advance } = p;
+  const readWhole = (): { value: number; span: Span } | null => {
+    if (!matchToken("num") && !matchToken("id")) return null;
+    const token = advance();
+    const value = /^-?\d+$/.test(token.text) ? Number(token.text) : Number.NaN;
+    return Number.isInteger(value) ? { value, span: token.span } : null;
+  };
+  const dx = readWhole();
+  if (!dx || !matchToken("comma")) return null;
+  advance();
+  const dy = readWhole();
+  if (!dy) return null;
+  return {
+    dx: dx.value,
+    dy: dy.value,
+    span: { line: dx.span.line, col: dx.span.col, len: dy.span.col + dy.span.len - dx.span.col },
+  };
+}
+
+/** `offset: <dx>, <dy>` inside an element body. Backtracks when `offset` is not
+ *  followed by a colon, so `offset` stays usable as an id. Layout like `order:`,
+ *  not cosmetics — hence a statement of its own rather than a `style` property. */
+function tryOffsetEntry(p: Parser, parent: Element | null): boolean {
+  const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
+  if (!parent || !matchToken("id", "offset")) return false;
+  const mark = save();
+  const keyToken = advance();
+  if (!matchToken("colon")) {
+    restore(mark);
+    return false;
+  }
+  advance();
+  const pair = readOffsetPair(p);
+  if (!pair) {
+    reportCoded(
+      "E0109",
+      "`offset` expects two whole numbers — `offset: <dx>, <dy>`",
+      keyToken.span,
+      "e.g. `offset: 40, -20` — 40px right and 20px up from where the layout put it",
+    );
+    syncToNextLine();
+    return true;
+  }
+  parent.offset = pair;
   return true;
 }
 
@@ -469,7 +523,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     );
   }
 
-  function parseStyleEntries(target: DiagramStyle | null, inline: StyleProps | null) {
+  function parseStyleEntries(target: DiagramStyle | null, inline: StyleProps | null, flow?: Flow) {
     skipNewlines();
     while (!matchToken("rbrace") && !matchToken("eof")) {
       if (!matchToken("id")) {
@@ -506,7 +560,15 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
         if (values.length && matchToken("id") && lookAhead(1).kind === "colon") break;
         values.push(advance());
       }
-      applyStyleEntry({ key: keyToken, styleTargetKind, values, target, inline, diagnostics });
+      applyStyleEntry({
+        key: keyToken,
+        styleTargetKind,
+        values,
+        target,
+        inline,
+        flow,
+        diagnostics,
+      });
       skipNewlines();
     }
     if (matchToken("rbrace")) advance();
@@ -569,6 +631,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     }
     if (tryStyleBlock(parent)) return;
     if (tryOrderEntry(parser, parent)) return;
+    if (tryOffsetEntry(parser, parent)) return;
     if (tryLogoEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
@@ -712,9 +775,10 @@ function applyStyleEntry(entry: {
   values: Token[];
   target: DiagramStyle | null;
   inline: StyleProps | null;
+  flow?: Flow | null;
   diagnostics: Diagnostic[];
 }) {
-  const { key, styleTargetKind, values, target, inline, diagnostics } = entry;
+  const { key, styleTargetKind, values, target, inline, flow, diagnostics } = entry;
   const extractStroke = (tokens: Token[], _span: Span): NonNullable<StyleProps["stroke"]> => {
     const strokeProps: NonNullable<StyleProps["stroke"]> = {};
     for (const token of tokens) {
@@ -751,6 +815,35 @@ function applyStyleEntry(entry: {
   const firstValue = () => values[0];
 
   const keyText = key.text;
+  // Positioning, not cosmetics — the same argument that keeps `order:` and
+  // `offset:` out of an element's `style` block. A flow has no body of its own
+  // to put it in, so it rides the inline block and is routed to the flow
+  // itself rather than to its `StyleProps`.
+  if (keyText === "label-offset") {
+    const numbers = values.filter((token) => token.kind !== "comma");
+    const parsed = numbers.map((token) => (/^-?\d+$/.test(token.text) ? Number(token.text) : NaN));
+    if (!flow || numbers.length !== 2 || parsed.some((value) => !Number.isInteger(value))) {
+      diagnostics.push({
+        code: "E0109",
+        severity: "error",
+        message: "`label-offset` expects two whole numbers — `label-offset: <dx>, <dy>`",
+        span: key.span,
+        help: flow
+          ? 'e.g. `A -> B : "Sends" { label-offset: 12, -6 }`'
+          : "`label-offset` belongs to a flow's inline block",
+      });
+      return;
+    }
+    // The span covers the numbers, not the key: it is what an editor splices a
+    // new pair over when the same label is nudged twice.
+    const [first, last] = [numbers[0].span, numbers[1].span];
+    flow.labelOffset = {
+      dx: parsed[0],
+      dy: parsed[1],
+      span: { line: first.line, col: first.col, len: last.col + last.len - first.col },
+    };
+    return;
+  }
   if (inline) {
     if (keyText === "fill" && firstValue()?.kind === "color") inline.fill = firstValue().text;
     else if (keyText === "stroke") inline.stroke = extractStroke(values, key.span);
@@ -767,7 +860,7 @@ function applyStyleEntry(entry: {
         severity: "error",
         message: `unknown style property here: \`${keyText}\``,
         span: key.span,
-        help: "inline properties: fill, stroke, text, label",
+        help: "inline properties: fill, stroke, text, label, label-offset",
       });
     return;
   }
