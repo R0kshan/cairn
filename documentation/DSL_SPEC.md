@@ -608,19 +608,27 @@ retunes elk's spacing between elements, while these three work inside a box.
 
 Anything but a whole number in range is **E0103**, reported rather than clamped.
 
-`examples/application-dense.cairn` is `examples/application.cairn` with all
-three turned on and nothing else changed; rendering both is the quickest way to
-see what they buy — about 17% off the width of that model. Most of the saving is
-the boxes themselves, so the three compose with `compact: on`
-(`examples/application-compact.cairn`), which tightens the space *between*
-elements rather than the space inside them.
+`examples/application-tech-stack-large-dense.cairn` is
+`examples/application-tech-stack-large.cairn` with all three turned on and
+nothing else changed; rendering both is the quickest way to see what they buy —
+fifteen labels re-flow onto two rows, and about 13% comes off the width. That
+model is the one they are shown on because its labels are long single lines; an
+example whose labels are already broken by hand with `\n` has almost nothing
+left for a wrap to do. Most of the saving is the boxes themselves, so the three
+compose with `compact: on` (`examples/application-compact.cairn`), which
+tightens the space *between* elements rather than the space inside them.
 
 **`label-wrap: <n>` breaks the label, not the box.** A label is otherwise left
 exactly as written: a long name widens its box instead of stacking, and the only
 line breaks are the ones the author typed. Setting `label-wrap` re-flows every
 element and container label to `n` characters, which trades width for height —
-the usual reason a diagram is too wide to read is one long name. A word longer
-than `n` is left intact rather than cut mid-word.
+the usual reason a diagram is too wide to read is one long name.
+
+**It breaks between words, never inside one.** A single token longer than `n` is
+left intact rather than cut, so a screaming-snake queue name like
+`PCC_DONNEES_TPS_REEL` stays on one line however small `n` gets: to the wrap it
+is one word. Labels made of real words are what the property reshapes; give a
+long identifier its own `\n` if it has to be split.
 
 It is applied once, on the finished model, so the wrap reaches layout, rendering
 and the slide/page fold from a single place. Two things deliberately do *not*

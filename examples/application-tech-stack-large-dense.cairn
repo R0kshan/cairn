@@ -1,0 +1,139 @@
+diagram application "Grid operations — technical stack (dense)"
+style {
+  disposition: wide
+  label-wrap: 12
+  container-padding: 2
+  label-padding: 2
+}
+
+# Same model as application-tech-stack-large.cairn, with the three density
+# controls turned on and nothing else changed. Render both and compare — that
+# pair is what this example is for.
+#
+# This model is the one to show them on because its element labels are long
+# and written as single lines: "Control database", "Load forecasting",
+# "Partner systems". Fifteen of them re-flow onto two rows here, which is
+# exactly the case `label-wrap` exists for. (application.cairn, by contrast,
+# has its line breaks written by hand as `\n`, so a wrap has almost nothing
+# left to do there.)
+#
+#   label-wrap: 12         breaks element and container labels onto 12-character
+#                          lines. It breaks between words only, so a single long
+#                          token is left intact — the queue names below
+#                          (FORECAST_LIVE, INCIDENT_FEED) stay on one line no
+#                          matter how small the number goes.
+#   container-padding: 2   reclaims the whitespace inside the two backends and
+#                          the control room, on their left, right and bottom.
+#   label-padding: 2       hugs each label, and drops the uniform minimum node
+#                          width with it — so the boxes stop being one width
+#                          and each shrinks to its own name.
+#
+# Measured on this model: 2265x664 -> 1966x687, about 13% off the width, of
+# which the wrap alone is 2265 -> 2097. The saving is the boxes themselves;
+# the space *between* elements is what `compact: on` tightens instead
+# (application-compact.cairn), and the two are independent — a diagram may set
+# both. The three controls are independent of each other too: comment any one
+# out to see that control's own share. None is on by default, so a file that
+# names none renders exactly as it did before they existed.
+
+# The same `logo:` convention as `application-tech-stack.cairn`, on a landscape
+# big enough to show what it is for: two backends built on the same framework,
+# each with its own modules, talking through a broker to third parties nobody
+# here owns. The corner marks are what tell them apart at a glance.
+
+# ============================================================================
+# CONTROL ROOM
+# ============================================================================
+auth EDGE_PROXY "Reverse proxy\n(OIDC)"
+idp IDP "Corporate SSO"
+
+application WS_CONTROL "Control room\nworkstation" { logo: javascript }
+application WS_FIELD "Field site\nworkstation" { logo: javascript }
+application CONSOLE "Operations\nconsole" { logo: angular }
+application DISPLAYS "Platform\ndisplays"
+
+datastore CONTROL_DB "Control database" { logo: postgresql }
+
+application CONTROL_BACK "Control backend" {
+  logo: spring
+  module TRACKING "Movement\ntracking" { logo: openjdk }
+  module MESSAGING "Messaging hub" { logo: kotlin }
+  module REFERENCE "Reference data" { logo: openjdk }
+  module SYSTEM_MGMT "System\nmanagement" { logo: kotlin }
+}
+
+# ============================================================================
+# MESSAGE BROKER
+# ============================================================================
+queue Q_CONTROL_LIVE "CONTROL_LIVE" { logo: rabbitmq }
+queue Q_FORECAST_LIVE "FORECAST_LIVE" { logo: rabbitmq }
+queue Q_INCIDENT_FEED "INCIDENT_FEED" { logo: rabbitmq }
+queue Q_CONTROL_TRACK "CONTROL_TRACK" { logo: rabbitmq }
+queue Q_FIELD_TRACK "FIELD_TRACK" { logo: rabbitmq }
+
+# ============================================================================
+# FIELD SITE
+# ============================================================================
+application FIELD_BACK "Field backend" {
+  logo: spring
+  module FIELD_UI "Field console" { logo: typescript }
+  module FIELD_TRACKING "Movement tracking\n(field)" { logo: openjdk }
+  module FIELD_MESSAGING "Messaging\n(field)" { logo: kotlin }
+  module FIELD_SECURITY "Access control" { logo: vault }
+}
+
+# ============================================================================
+# THIRD PARTIES
+# ============================================================================
+external PARTNERS "Partner systems" {
+  external SCADA "Field telemetry" { logo: python }
+  external FORECAST "Load forecasting"
+  external INCIDENTS "Incident feed"
+  external SIGNAGE_FEED "Display\nscheduling"
+}
+
+# ---- console and control backend ----
+WS_CONTROL -> EDGE_PROXY (HTTPS)
+EDGE_PROXY -> IDP (OIDC, JWT)
+EDGE_PROXY -> CONSOLE (HTTPS)
+CONSOLE -> SYSTEM_MGMT (API_REST, JSON)
+CONSOLE -> MESSAGING (API_REST, JSON)
+MESSAGING -> CONSOLE (SSE)
+SYSTEM_MGMT -> CONSOLE (SSE)
+WS_FIELD -> FIELD_SECURITY (HTTPS)
+FIELD_SECURITY -> IDP (OIDC, JWT)
+FIELD_SECURITY -> FIELD_UI (HTTPS)
+
+# ---- inside the control backend ----
+TRACKING -> MESSAGING (in-process)
+TRACKING -> REFERENCE (in-process)
+REFERENCE -> CONTROL_DB (JDBC)
+
+# ---- control backend and partner systems ----
+SCADA -> TRACKING (API_REST, JSON)
+FORECAST -> Q_FORECAST_LIVE (AMQP/topic)
+MESSAGING -> Q_FORECAST_LIVE (AMQP/topic)
+REFERENCE -> Q_CONTROL_LIVE (AMQP/fanout)
+INCIDENTS -> Q_CONTROL_LIVE (AMQP/fanout)
+
+# ---- control room and field site, through the broker ----
+MESSAGING -> Q_CONTROL_TRACK (AMQP/direct)
+FIELD_MESSAGING -> Q_CONTROL_TRACK (AMQP/direct)
+FIELD_MESSAGING -> Q_FIELD_TRACK (AMQP/direct)
+MESSAGING -> Q_FIELD_TRACK (AMQP/direct)
+FIELD_MESSAGING -> MESSAGING (API_REST, JSON)
+
+# ---- inside the field backend ----
+FIELD_TRACKING -> FIELD_MESSAGING (in-process)
+FIELD_MESSAGING -> FIELD_UI (SSE)
+FIELD_TRACKING -> DISPLAYS (RS422)
+FIELD_UI -> FIELD_MESSAGING (in-process)
+
+# ---- field backend and partner systems ----
+SIGNAGE_FEED -> FIELD_TRACKING (TCP/Socket)
+INCIDENTS -> Q_INCIDENT_FEED (AMQP/fanout)
+FIELD_MESSAGING -> Q_INCIDENT_FEED (AMQP/fanout)
+
+legend {
+  note "Corner marks name the technology each component is built on."
+}
