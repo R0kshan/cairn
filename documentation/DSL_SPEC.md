@@ -608,6 +608,13 @@ retunes elk's spacing between elements, while these three work inside a box.
 
 Anything but a whole number in range is **E0103**, reported rather than clamped.
 
+`examples/application-dense.cairn` is `examples/application.cairn` with all
+three turned on and nothing else changed; rendering both is the quickest way to
+see what they buy — about 17% off the width of that model. Most of the saving is
+the boxes themselves, so the three compose with `compact: on`
+(`examples/application-compact.cairn`), which tightens the space *between*
+elements rather than the space inside them.
+
 **`label-wrap: <n>` breaks the label, not the box.** A label is otherwise left
 exactly as written: a long name widens its box instead of stacking, and the only
 line breaks are the ones the author typed. Setting `label-wrap` re-flows every
