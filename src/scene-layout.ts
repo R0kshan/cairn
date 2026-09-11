@@ -100,7 +100,9 @@ export interface SceneEdge {
   detour?: boolean;
   /**
    * Which of this flow's terminals the author pinned to a node side
-   * (`APP.right -> DB.left`). A pinned terminal is intent, not a metric win, so
+   * (`APP.right -> DB.left`) — or named with an endpoint role, which fixes the
+   * queue cap at the *other* end of the flow (`CAPTURE.producer -> EVENTS`) and
+   * is the author's word just as much. A pinned terminal is intent, not a metric win, so
    * the passes that would move it stand down: re-siding skips the edge,
    * `route-detour` never channels it, `attachAway` exempts it, and the route
    * repair may only offer it candidates that keep the pinned end on its side.
@@ -795,6 +797,19 @@ function firstPassSide(
 }
 
 /**
+ * Is this end of the flow the *elk* source? A role reverses the flow on the way
+ * into elk (`elkEnds`, `laidOutReversed`), so the authored source is elk's
+ * target — and both port builders below have to agree on that, or they hang two
+ * ports with different ids on the same terminal and the second one wins.
+ */
+const isElkSource = (flow: Model["flows"][number], end: "src" | "dst"): boolean =>
+  (end === "src") !== laidOutReversed(flow);
+
+/** The elk port id for one end of a flow, `#out` on elk's source end. */
+const elkPortId = (flow: Model["flows"][number], end: "src" | "dst"): string =>
+  `${flow.id}#${isElkSource(flow, end) ? "out" : "in"}`;
+
+/**
  * Rebuild `graph` with explicit ports on the nodes `flagged` flows touch, so elk
  * routes them out the side *facing* the counterpart. elk's default for a
  * backward flow in a layered layout is to loop around the outside, departing
@@ -836,7 +851,7 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
       const side = flagged.has(flow.id)
         ? sideToward(sceneNode, other)
         : (firstPassSide(scene, flow.id, role, sceneNode) ?? sideToward(sceneNode, other));
-      const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      const portId = elkPortId(flow, role);
       // The author already pinned this terminal, and `applyDeclaredPorts` put
       // the port on the node when the graph was built: leave it exactly as
       // declared instead of adding a second port under the same id.
@@ -848,7 +863,7 @@ function constrainPorts(graph: ElkNode, scene: Scene, flagged: Set<string>, mode
       ports.push({ id: portId, width: 1, height: 1, layoutOptions: { "elk.port.side": side } });
       const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
       if (elkEdge) {
-        if (role === "src") elkEdge.sources = [portId];
+        if (isElkSource(flow, role)) elkEdge.sources = [portId];
         else elkEdge.targets = [portId];
       }
     }
@@ -1203,15 +1218,15 @@ function applyDeclaredPorts(
     if (!elkEdge) continue;
     const hub = derived.get(flow.id);
     for (const [role, declared, nodeId] of [
-      ["out", flow.fromSide ?? sideRequest(hub?.from), flow.from],
-      ["in", flow.toSide ?? sideRequest(hub?.to), flow.to],
+      ["src", flow.fromSide ?? sideRequest(hub?.from), flow.from],
+      ["dst", flow.toSide ?? sideRequest(hub?.to), flow.to],
     ] as const) {
       if (!declared) continue;
       const elkNode = elkById.get(nodeId);
       if (!elkNode) continue;
       // `#out` / `#in` name the *elk* ends, which a role may have swapped
       // (`elkEnds`), so a reversed flow's source port is its authored target's.
-      const portId = `${flow.id}#${(role === "out") !== laidOutReversed(flow) ? "out" : "in"}`;
+      const portId = elkPortId(flow, role);
       elkNode.ports = [
         ...(elkNode.ports ?? []),
         {
@@ -1222,7 +1237,7 @@ function applyDeclaredPorts(
         },
       ];
       elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
-      if ((role === "out") !== laidOutReversed(flow)) elkEdge.sources = [portId];
+      if (isElkSource(flow, role)) elkEdge.sources = [portId];
       else elkEdge.targets = [portId];
     }
   }
@@ -2157,10 +2172,34 @@ function markDeclaredTerminals(
   view: View,
   hubPorts: boolean,
 ): void {
+  // A role counts as a pin, not as a derived side: it is written in the same
+  // slot as `ID.side`, and it names the cap at the *other* end of the flow
+  // (`CAPTURE.producer -> EVENTS` fixes the EVENTS end). The spec promises the
+  // wrap it implies — a consumer is seated past the queue and its arrow runs
+  // back into the right cap — and the §4c re-aim was trading that away, landing
+  // both roles on one cap whenever producer and consumer shared a container.
+  // Only when elk was actually handed the hub ports: after the fallback the cap
+  // is elk's own guess, and freezing a guess is worse than leaving it free.
+  const rolePin = (role: AttachRole | undefined) => hubPorts && !!role;
   const pinnedFlows = new Map(
     model.flows
-      .filter((flow) => flow.fromSide || flow.toSide)
-      .map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }] as const),
+      .filter(
+        (flow) =>
+          flow.fromSide ||
+          flow.toSide ||
+          rolePin(flow.fromRole?.value) ||
+          rolePin(flow.toRole?.value),
+      )
+      .map(
+        (flow) =>
+          [
+            flow.id,
+            {
+              start: !!flow.fromSide || rolePin(flow.toRole?.value),
+              end: !!flow.toSide || rolePin(flow.fromRole?.value),
+            },
+          ] as const,
+      ),
   );
   const hubSides = hubPorts ? hubFlowSides(model, view) : new Map<string, DerivedSides>();
   for (const edge of edges) {
