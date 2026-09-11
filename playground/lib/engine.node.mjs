@@ -95118,6 +95118,7 @@ function buildGroupGraph(group, style, fg) {
   };
 }
 function layoutColumn(elements, style) {
+  const side = style.containerPadding ?? PAD;
   return elements.map((group) => {
     const blocks = group.children.map((child) => {
       const size = leafSize(child, style);
@@ -95126,14 +95127,14 @@ function layoutColumn(elements, style) {
     const columnWidth = Math.max(
       measure(group.label ?? group.id, style.cont).width + 20,
       ...blocks.map((block) => block.width)
-    ) + 2 * PAD;
+    ) + 2 * side;
     let blockY = PAD_TOP;
     for (const block of blocks) {
-      block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
+      block.x = side + (columnWidth - 2 * side - block.width) / 2;
       block.y = blockY;
       blockY += block.height + 14;
     }
-    return { element: group, width: columnWidth, height: blockY - 14 + PAD, blocks };
+    return { element: group, width: columnWidth, height: blockY - 14 + side, blocks };
   });
 }
 function classifyFlow(flow, ctx) {

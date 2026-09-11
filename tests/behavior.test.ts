@@ -27,6 +27,8 @@ import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
 import { compile } from "../src/compile.ts";
+import { foldedLayout } from "../src/slide-fold.ts";
+import { getElk } from "../src/elk-engine.ts";
 import { resolveLogoFiles } from "../src/logo-files.ts";
 import { loadThemeFile } from "../src/theme-file.ts";
 import { THEME_SPECS, themeNames } from "../src/themes.ts";
@@ -2338,4 +2340,47 @@ CORE -> PARTNER : "Nightly export" (SFTP/22)
       `expected ${code} for: ${style}`,
     );
   }
+});
+
+/**
+ * `container-padding` has to reach the folded layout's hand-built source and
+ * sink columns too — those are sized by `layoutColumn`, not by elk, so the
+ * property would otherwise apply to half the drawing. Driven through
+ * `foldedLayout` directly: whether a slide-disposition diagram *picks* the
+ * folded layout is a fit decision, and this is about the sizing, not the pick.
+ */
+test("`container-padding` narrows the folded layout's source and sink columns", async () => {
+  const source = (style: string) => `diagram application "Folded padding"
+${style}
+actor-group USERS "Users" {
+  actor CLERK "Order clerk"
+  actor AUDIT "Compliance auditor"
+}
+system ORDERS "Order platform" {
+  application CORE "Order management platform"
+  datastore DB "Order persistence store"
+}
+system BILLING "Billing platform" {
+  application INVOICE "Invoice generator"
+  datastore LEDGER "Ledger store"
+}
+external PARTNER "Partner platform"
+
+CLERK   -> CORE    : "Places order" (HTTPS/443)
+AUDIT   -> CORE    : "Audits" (HTTPS/443)
+CORE    -> DB      : "Queries" (TCP/5432)
+CORE    -> INVOICE : "Bills" (HTTPS/443)
+INVOICE -> LEDGER  : "Posts" (TCP/5432)
+INVOICE -> PARTNER : "Nightly export" (SFTP/22)
+`;
+  const fold = async (style: string) => {
+    const model = parse(source(style)).model!;
+    const scene = await foldedLayout(model, views.application, await getElk());
+    assert.ok(scene, "folded layout produced nothing");
+    return scene.nodes.find((node) => node.id === "USERS")!.width;
+  };
+
+  const base = await fold("");
+  const tight = await fold("style {\n  container-padding: 2\n}");
+  assert.ok(tight < base, `folded column not narrowed: ${tight} >= ${base}`);
 });

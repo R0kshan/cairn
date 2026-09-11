@@ -711,11 +711,13 @@ would mean the property narrowed nothing on the very diagrams it was asked for,
 so setting `label-padding` lowers the floor to the narrowest box the renderer
 already draws well (an actor's). The visible cost is that boxes stop being a
 uniform width: each one hugs its own label. Reach for `label-wrap` first if the
-diagram is wide because of one long name rather than many short ones.
+diagram is wide because of one long name rather than many short ones. It leaves
+`actor` alone: an actor is drawn as a figure and sized by that figure, not by
+the box around its label.
 
 Colors: `theme` picks one of the nine built-in palettes (`light` is the default) and `background` overrides the canvas color; `accent` retints the flows on top of whichever palette is in force, and `flow-color: by-source` gives every source element its own hue instead. A per-flow inline `{ stroke: … }` still wins over both. Each element's colors are customizable at every level: `fill`, `stroke` and `text` (label color) work inline per element, per kind (`fill block: …`), or per diagram; flow color/width/style via `flow-stroke` and inline `{ stroke: … }`. Several properties may share one line: `{ fill: #a stroke: #b text: #c }`.
 
-Rules: styles never affect validation (semantics and cosmetics stay separate); views ship coherent defaults for both themes so a zero-`style` diagram renders correctly in light or dark.
+Rules: styles never affect *semantic* validation (semantics and cosmetics stay separate) — a style value is still checked for syntax and range, so a `label-wrap`, `container-padding` or `label-padding` outside its range is **E0103**; views ship coherent defaults for both themes so a zero-`style` diagram renders correctly in light or dark.
 
 Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS MÉTIER`, `LÉGENDE`, French legend/kind names, and the flow-matrix headers). Only the rendered artifact changes — DSL keywords remain English (decision D2) so sources stay portable and diff-clean. Default `en` is byte-identical to prior output.
 
