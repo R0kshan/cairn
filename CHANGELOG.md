@@ -6,8 +6,6 @@ All notable changes to the cairn project will be documented in this file.
 
 ### Added
 - Possibility to drag elements in the playground, with the coordinates written back to the DSL as `offset: <dx>, <dy>` on an element and `label-offset: <dx>, <dy>` on a flow 
-  - `compile()` returns `boxes`, pairing the finished geometry with the source spans an editor writes back to
-  - `E0109` for a malformed offset, `W0572` for one that lands something on something else, `W0573` for one cut short to keep a child inside its container
 - More display control through the DSL: `style { label-wrap: <n> }` to break labels onto `n`-character lines, `container-padding: <n>` and `label-padding: <n>` to reclaim the whitespace around them 
 
 ### Changed
