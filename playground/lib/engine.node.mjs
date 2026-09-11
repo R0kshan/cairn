@@ -93035,16 +93035,15 @@ function parseFlow(p, sourceToken) {
   };
   if (arrowToken.text === "-->") flow.lineStyle = "dashed";
   else if (arrowToken.text === "..>") flow.lineStyle = "dotted";
-  if (matchToken("colon")) {
-    advance();
-    if (matchToken("str")) flow.label = advance().text;
-    else if (!matchToken("lparen") && !matchToken("lbrack") && !matchToken("lbrace") && !matchToken("nl") && !matchToken("rbrace") && !matchToken("eof")) {
-      reportError(
-        "flow label expected after `:`",
-        lookAhead().span,
-        'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`'
-      );
-    }
+  const hadColon = matchToken("colon");
+  if (hadColon) advance();
+  if (matchToken("str")) flow.label = advance().text;
+  else if (hadColon && !matchToken("lparen") && !matchToken("lbrack") && !matchToken("lbrace") && !matchToken("nl") && !matchToken("rbrace") && !matchToken("eof")) {
+    reportError(
+      "flow label expected after `:`",
+      lookAhead().span,
+      'give a `"label"`, or drop the `:`: `A -> B (HTTPS/443)`'
+    );
   }
   if (matchToken("lparen")) {
     const openParen = advance();
@@ -93058,7 +93057,7 @@ function parseFlow(p, sourceToken) {
       reportError(
         "`)` expected to close the technical attributes",
         lookAhead().span,
-        'e.g. `A -> B : "Envoi" (SFTP, XML)`'
+        'e.g. `A -> B "Envoi" (SFTP, XML)`'
       );
     flow.tech = {
       protocol: values[0],
@@ -93079,7 +93078,7 @@ function parseFlow(p, sourceToken) {
       reportError(
         "`]` expected to close the business-object list",
         lookAhead().span,
-        'e.g. `A -> B : "Validation" [BO_CMD]`'
+        'e.g. `A -> B "Validation" [BO_CMD]`'
       );
   }
   if (matchToken("lbrace")) {
@@ -93100,7 +93099,7 @@ function parseElement(p, sourceToken, parent) {
     reportError(
       `invalid declaration: \`${sourceToken.text}\` alone on this line`,
       sourceToken.span,
-      'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`'
+      'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> "label"`'
     );
     syncToNextLine();
     return;
@@ -93690,7 +93689,7 @@ function applyStyleEntry(entry) {
         severity: "error",
         message: "`label-offset` expects two whole numbers \u2014 `label-offset: <dx>, <dy>`",
         span: key.span,
-        help: flow ? 'e.g. `A -> B : "Sends" { label-offset: 12, -6 }`' : "`label-offset` belongs to a flow's inline block"
+        help: flow ? 'e.g. `A -> B "Sends" { label-offset: 12, -6 }`' : "`label-offset` belongs to a flow's inline block"
       });
       return;
     }
@@ -93844,7 +93843,7 @@ var logicalView = {
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
-    help: 'add a label describing the exchanged data: `A -> B : "\u2026"`'
+    help: 'add a label describing the exchanged data: `A -> B "\u2026"`'
   },
   nesting: [
     {
@@ -94024,7 +94023,7 @@ var applicationView = {
   flowTechRecommended: {
     code: "W0540",
     message: "system-to-system flow without protocol",
-    help: 'add the technology: `A -> B : "\u2026" (API_REST, JSON)` (C4 practice: label the how, not just the what)'
+    help: 'add the technology: `A -> B "\u2026" (API_REST, JSON)` (C4 practice: label the how, not just the what)'
   },
   nesting: [
     {
@@ -94220,7 +94219,7 @@ var infrastructureView = {
   flowTechRequired: {
     code: "E0240",
     message: "technical flow without protocol",
-    help: 'the infrastructure view requires a protocol: `A -> B : "\u2026" (HTTPS/443)`'
+    help: 'the infrastructure view requires a protocol: `A -> B "\u2026" (HTTPS/443)`'
   },
   nesting: [
     {
@@ -94751,7 +94750,7 @@ function checkFlows(model, view) {
         span: flow.span,
         note: `the \`${view.name}\` view forbids unlabelled arrows`,
         help: view.flowLabelRequired.help,
-        fix: { insert: ' : "\u2026"', atEndOfLine: true }
+        fix: { insert: ' "\u2026"', atEndOfLine: true }
       });
     }
   }
