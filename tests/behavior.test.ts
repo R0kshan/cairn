@@ -569,6 +569,27 @@ test("broken.cairn raises exactly the seeded diagnostic codes", () => {
   assert.equal(codes.filter((c) => c === "W0510").length, 2);
 });
 
+test("the `:` before a flow label is optional, and both spellings parse the same (issue #109)", () => {
+  const src = (sep: string) =>
+    `diagram logical "t"\nactor-group G "g" { actor A "a" }\nsystem S "s" { layer L "l" { block B "b" } }\nbusiness-object BO_X "X" "d"\nA -> B ${sep}"x" [BO_X] { label: above }\n`;
+  const shape = (sep: string) => {
+    const { model, diags } = check(src(sep));
+    assert.deepEqual(diags, []);
+    const [flow] = model.flows;
+    return { label: flow.label, objects: flow.objects?.map((o) => o.id), style: flow.style };
+  };
+  assert.deepEqual(shape(""), shape(": "));
+  assert.equal(shape("").label, "x");
+
+  // A `:` with nothing usable after it is still an error; without one, the
+  // stray token is an unknown declaration instead.
+  assert.ok(
+    check('diagram logical "t"\nsystem S "s" { block B "b" }\nS -> B : 42\n').diags.some((d) =>
+      /flow label expected/.test(d.message),
+    ),
+  );
+});
+
 test("a missing flow target names the arrow the author actually wrote", () => {
   const dashed = check('diagram logical "t"\nsystem S "s"\nS -->\n');
   assert.match(dashed.diags.find((d) => d.severity === "error")!.message, /after `-->`/);

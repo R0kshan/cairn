@@ -134,7 +134,7 @@ system SYS "My system" {
   block APP "Application"
 }
 
-USER -> APP : "Uses the service"
+USER -> APP "Uses the service"
 `,
 application: `diagram application "My application view"
 
@@ -148,8 +148,8 @@ application APP "My application" {
 
 datastore DB "Database"
 
-USER -> M1 : "Request"
-M1 -> DB : "Read / write" (JDBC)
+USER -> M1 "Request"
+M1 -> DB "Read / write" (JDBC)
 `,
 infrastructure: `diagram infrastructure "My infrastructure view"
 
@@ -163,7 +163,7 @@ site DC "Data center" {
 
 external USER "User"
 
-USER -> SRV : "Access" (HTTPS/443)
+USER -> SRV "Access" (HTTPS/443)
 `};
 
 const editor  = document.getElementById('editor');

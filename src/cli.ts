@@ -59,8 +59,8 @@ external EXT "External systems" {
 business-object BO1 "Business object" "what this object represents"
 
 # ---- flows (every flow MUST be labelled; [BO1] = objects carried) ----
-ACT1 -> B1  : "What the actor does"
-B1   -> EXT1 : "Data sent" [BO1]
+ACT1 -> B1   "What the actor does"
+B1   -> EXT1 "Data sent" [BO1]
 
 # ---- legend (auto-generated; add free entries here, or "legend: off" in style) ----
 # legend {
@@ -104,11 +104,11 @@ datastore DB1 "Reference database"
 
 external EXT1 "Partner system"
 
-# ---- flows : "label" (protocol, format) — label optional ----
-ACT1 -> M1  : "What the actor does"
-M1   -> Q1  : "Publish events" (MQ, JSON)
-Q1   -> DB1 : "Persist events" (JDBC)
-M1   -> EXT1 : "Data sent" (SFTP, XML)
+# ---- flows "label" (protocol, format) — label optional ----
+ACT1 -> M1   "What the actor does"
+M1   -> Q1   "Publish events" (MQ, JSON)
+Q1   -> DB1  "Persist events" (JDBC)
+M1   -> EXT1 "Data sent" (SFTP, XML)
 `;
 
 const TEMPLATE_INFRASTRUCTURE = `diagram infrastructure "Diagram title"
@@ -116,7 +116,7 @@ const TEMPLATE_INFRASTRUCTURE = `diagram infrastructure "Diagram title"
 # An infrastructure diagram shows: users (\\\`actor\\\` — the consumers, on the entry
 # side), sites, network zones (banded in declaration order), servers/VMs and
 # deployed applications, and external systems (partners, on the exit side).
-# Every flow MUST carry its protocol (and port): \\\`A -> B : "…" (HTTPS/443)\\\`.
+# Every flow MUST carry its protocol (and port): \\\`A -> B "…" (HTTPS/443)\\\`.
 
 # Users of the infrastructure — rendered as people, placed on the entry side.
 actor USERS "End users"
@@ -144,14 +144,14 @@ site DC1 "Main datacenter" {
 external PARTNER "Partner platform"
 
 # ---- technical flows: protocol REQUIRED (E0240); the label is optional ----
-USERS    -> FRONT_I : "Web access" (HTTPS/443)
-FRONT_I  -> CORE_I  : "API calls" (HTTPS/8443)
-CORE_I   -> AUTH_GW : "Auth check" (HTTPS/8443)
-AUTH_GW  -> OAUTH2  : "Authorize request" (HTTPS/8443)
-OAUTH2   -> IDP     : "Validate tokens" (LDAPS/636)
-CORE_I   -> DB_I    : "Queries" (TCP/5432)
-CORE_I   -> BROKER  : "Publish events" (TCP/9092)
-CORE_I   -> PARTNER : "Nightly export" (SFTP/22)
+USERS    -> FRONT_I "Web access" (HTTPS/443)
+FRONT_I  -> CORE_I  "API calls" (HTTPS/8443)
+CORE_I   -> AUTH_GW "Auth check" (HTTPS/8443)
+AUTH_GW  -> OAUTH2  "Authorize request" (HTTPS/8443)
+OAUTH2   -> IDP     "Validate tokens" (LDAPS/636)
+CORE_I   -> DB_I    "Queries" (TCP/5432)
+CORE_I   -> BROKER  "Publish events" (TCP/9092)
+CORE_I   -> PARTNER "Nightly export" (SFTP/22)
 
 # ---- matrice des flux techniques ----
 # Export the flow matrix beside the physical diagram (French DA deliverable):

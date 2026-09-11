@@ -21,9 +21,9 @@ external PARTNER "Partner network" { block SETTLE "Settlement service" }
 # name one and the engine still chooses the other. A side the layout cannot
 # reach is dropped and reported as W0570, never forced.
 
-AGENT   -> RECEIVE : "File a claim"
-RECEIVE.bottom -> ASSIGN.top : "Route for assignment"
-ASSIGN.right -> SETTLE : "Request settlement"
-AGENT   -> TRACE   : "Consult the audit trail"
-TRACE.top -> STORE.bottom : "Archive the trace"
-AGENT -> DASH.left : "Open the dashboard"
+AGENT   -> RECEIVE "File a claim"
+RECEIVE.bottom -> ASSIGN.top "Route for assignment"
+ASSIGN.right -> SETTLE "Request settlement"
+AGENT   -> TRACE   "Consult the audit trail"
+TRACE.top -> STORE.bottom "Archive the trace"
+AGENT -> DASH.left "Open the dashboard"

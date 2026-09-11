@@ -22,7 +22,7 @@ external EXT "External systems" {
 
 business-object BO_APPT "Appointment" "slot booked by a patient"
 
-PATIENT -> PORTAL : "Search and book" [BO_APPT]
-PORTAL -> SCHEDULER : "Booking request" [BO_APPT]
-SCHEDULER -> NOTIF : "Appointment confirmed" [BO_APPT]
-NOTIF -> SMS : "Send SMS reminder"
+PATIENT -> PORTAL "Search and book" [BO_APPT]
+PORTAL -> SCHEDULER "Booking request" [BO_APPT]
+SCHEDULER -> NOTIF "Appointment confirmed" [BO_APPT]
+NOTIF -> SMS "Send SMS reminder"

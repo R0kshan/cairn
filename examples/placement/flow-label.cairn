@@ -23,9 +23,9 @@ external PARTNER "Partner network" { block SETTLE "Settlement service" }
 # The `style` block lifts every label above its run; a flow can take any of the
 # three positions back inline with `{ label: … }`.
 
-AGENT   -> RECEIVE : "File a claim"
-RECEIVE -> ASSIGN  : "Route for assignment"
-ASSIGN  -> SETTLE  : "Request settlement" { label: below }
-AGENT   -> TRACE   : "Consult the audit trail"
-TRACE   -> STORE   : "Archive the trace" { label: on-line }
-AGENT.top   -> DASH.left    : "Open the dashboard"
+AGENT   -> RECEIVE "File a claim"
+RECEIVE -> ASSIGN  "Route for assignment"
+ASSIGN  -> SETTLE  "Request settlement" { label: below }
+AGENT   -> TRACE   "Consult the audit trail"
+TRACE   -> STORE   "Archive the trace" { label: on-line }
+AGENT.top   -> DASH.left    "Open the dashboard"

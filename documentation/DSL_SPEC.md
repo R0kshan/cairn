@@ -23,7 +23,7 @@ Everything else is optional and order-free: elements, flows, an optional
 
 ```text
 <kind> <ID> "<Label>" { …statements… }                # element
-<ID> -> <ID> : "<label>" (TECH) [BO_REFS] { style }   # flow
+<ID> -> <ID> "<label>" (TECH) [BO_REFS] { style }     # flow
 ```
 
 - **IDs** are flat and unique per file — no namespace nesting. Legal
@@ -40,10 +40,13 @@ Everything else is optional and order-free: elements, flows, an optional
   and §2).
 - **Comments** start with `#` and run to end of line.
 - **Flow segments after the arrow are all optional**, subject to the view's
-  rules: `: "label"`, the technical tail `(PROTOCOL, FORMAT)` or `(PROTOCOL/PORT)`,
+  rules: `"label"`, the technical tail `(PROTOCOL, FORMAT)` or `(PROTOCOL/PORT)`,
   `[BO_REFS]` (logical only), and an inline `{ style }`. The arrow itself carries
   the line style — `->` solid, `-->` dashed, `..>` dotted — and either endpoint
   may pin its attachment side (`A.right -> B.left`).
+- **A `:` may sit between the target and the label** — `A -> B : "label"` — but
+  it carries no meaning. It is the older spelling, still parsed so existing
+  files keep working; write `A -> B "label"` in new ones.
 - **Every flow is its own arrow with its own label.** Flows are never merged;
   an `A -> B` / `B -> A` pair is drawn as two separated edges.
 - **`legend { note "…" }`** appends free lines to the auto-generated legend band
@@ -88,7 +91,7 @@ deployment.
 | `block` | one functional block | no | **inside a `layer`, `system` or `external`** (**E0210**) | plain box |
 | `external` | third-party systems as a group | yes (holds `block`) | root | dashed box, band 2 |
 
-Flows: `A -> B : "what is exchanged"`. **The label is mandatory** (**E0203**) —
+Flows: `A -> B "what is exchanged"`. **The label is mandatory** (**E0203**) —
 the logical view exists to name the exchange. No protocol tail; a
 `(HTTPS/443)`-style tail is meaningless here and the flow matrix for this view
 has no protocol column.
@@ -100,7 +103,7 @@ then carried by flows:
 business-object BO_MSG "Message" "information message broadcast to the sites"
 #               ^ID     ^name     ^description (both strings optional)
 
-COM_CTR -> OBS : "Alerts and notifications" [BO_MSG]
+COM_CTR -> OBS "Alerts and notifications" [BO_MSG]
 ```
 
 They render as a chip under the flow label plus a registry band under the canvas
@@ -136,12 +139,12 @@ external EXT "External systems" {
 business-object BO_APPT "Appointment" "slot booked by a patient with a practitioner"
 business-object BO_SLOT "Slot" "time window open for booking"
 
-PATIENT   -> PORTAL    : "Search a slot\nand book" [BO_SLOT]
-PORTAL    -> SCHEDULER : "Booking request" [BO_APPT]
-SCHEDULER -> NOTIF     : "Appointment confirmed" [BO_APPT]
-NOTIF     -> SMS       : "Send an SMS reminder"
-SECRETARY -> SCHEDULER : "Open / block\nslots" [BO_SLOT]
-SCHEDULER -> PATIENT   : "Appointment\nconfirmation" [BO_APPT]
+PATIENT   -> PORTAL    "Search a slot\nand book" [BO_SLOT]
+PORTAL    -> SCHEDULER "Booking request" [BO_APPT]
+SCHEDULER -> NOTIF     "Appointment confirmed" [BO_APPT]
+NOTIF     -> SMS       "Send an SMS reminder"
+SECRETARY -> SCHEDULER "Open / block\nslots" [BO_SLOT]
+SCHEDULER -> PATIENT   "Appointment\nconfirmation" [BO_APPT]
 
 legend {
   note "Health data is hosted on certified health-data infrastructure"
@@ -260,9 +263,9 @@ Flows: **the protocol is mandatory** (**E0240**), the label is optional. The tai
 is one token, `PROTOCOL/PORT`:
 
 ```cairn
-CORE -> DB_I : "Queries" (TCP/5432)
+CORE -> DB_I "Queries" (TCP/5432)
 RP   -> CORE (HTTPS/8443)              # label omitted: the tail becomes the label
-CORE -> PARTNER : "Nightly export" (SFTP/22)
+CORE -> PARTNER "Nightly export" (SFTP/22)
 ```
 
 The matrix splits that token on its **last** `/` when what follows is all
@@ -300,14 +303,14 @@ site DC1 "Main datacenter" {
 
 external PARTNER "Partner platform"
 
-USERS -> FW       : "Web access" (HTTPS/443)
-FW    -> RP       : "Filtered traffic" (HTTPS/443)
-RP    -> CORE     : "API calls" (HTTPS/8443)
-CORE  -> OAUTH    : "Token check" (HTTPS/8443)
-OAUTH -> IDP      : "Validate tokens" (LDAPS/636)
-CORE  -> ORDER_DB : "Queries" (TCP/5432)
-CORE  -> BROKER   : "Publish events" (TCP/9092)
-CORE  -> PARTNER  : "Nightly export" (SFTP/22)
+USERS -> FW       "Web access" (HTTPS/443)
+FW    -> RP       "Filtered traffic" (HTTPS/443)
+RP    -> CORE     "API calls" (HTTPS/8443)
+CORE  -> OAUTH    "Token check" (HTTPS/8443)
+OAUTH -> IDP      "Validate tokens" (LDAPS/636)
+CORE  -> ORDER_DB "Queries" (TCP/5432)
+CORE  -> BROKER   "Publish events" (TCP/9092)
+CORE  -> PARTNER  "Nightly export" (SFTP/22)
 ```
 
 ### 1.4 Layout partitions
@@ -433,7 +436,7 @@ than quietly repaired.
 the flow's inline block, because a flow has no body of its own:
 
 ```cairn
-CAPTURE -> EVENTS : "Order created" { label-offset: 12, -6 }
+CAPTURE -> EVENTS "Order created" { label-offset: 12, -6 }
 ```
 
 The delta is measured from the seat the label was given on its own run, so it
@@ -648,7 +651,7 @@ style {
 block COM_CTR "Central communication module" {
   style { fill: #fff7e6  stroke: #b08d2a dashed 1.5  text: #5a4a10 }
 }
-COM_CTR -> OBS : "Alerts…" { label: below  stroke: dashed #a33  text: #a33 }
+COM_CTR -> OBS "Alerts…" { label: below  stroke: dashed #a33  text: #a33 }
 ```
 
 Colors: `theme` picks one of the nine built-in palettes (`light` is the default) and `background` overrides the canvas color; `accent` retints the flows on top of whichever palette is in force, and `flow-color: by-source` gives every source element its own hue instead. A per-flow inline `{ stroke: … }` still wins over both. Each element's colors are customizable at every level: `fill`, `stroke` and `text` (label color) work inline per element, per kind (`fill block: …`), or per diagram; flow color/width/style via `flow-stroke` and inline `{ stroke: … }`. Several properties may share one line: `{ fill: #a stroke: #b text: #c }`.

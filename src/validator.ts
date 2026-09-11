@@ -286,7 +286,7 @@ function checkFlows(model: Model, view: View): Diagnostic[] {
         span: flow.span,
         note: `the \`${view.name}\` view forbids unlabelled arrows`,
         help: view.flowLabelRequired.help,
-        fix: { insert: ' : "…"', atEndOfLine: true },
+        fix: { insert: ' "…"', atEndOfLine: true },
       });
     }
   }

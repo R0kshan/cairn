@@ -134,7 +134,7 @@ Colours are resolved at three levels — most specific wins. From lowest to high
 
 Flows can also be coloured inline:
 ```cairn
-COM_CTR -> OBS : "Alerts…" { label: above  stroke: dashed #a33  text: #a33 }
+COM_CTR -> OBS "Alerts…" { label: above  stroke: dashed #a33  text: #a33 }
 ```
 
 See [`examples/colors-custom.cairn`](examples/colors-custom.cairn) for a full example:
@@ -207,9 +207,9 @@ style {
   flow-label: above     # on-line (default) | above | below
 }
 
-AGENT  -> RECEIVE : "File a claim"                            # above, from the style block
-ASSIGN -> SETTLE  : "Request settlement" { label: below }     # overridden per flow
-TRACE  -> STORE   : "Archive the trace" { label: on-line }    # back to the default
+AGENT  -> RECEIVE "File a claim"                            # above, from the style block
+ASSIGN -> SETTLE  "Request settlement" { label: below }     # overridden per flow
+TRACE  -> STORE   "Archive the trace" { label: on-line }    # back to the default
 ```
 
 <p align="center"><img src="examples/placement/flow-label.svg" alt="Flow label positions" width="760"></p>
