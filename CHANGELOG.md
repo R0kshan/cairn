@@ -5,30 +5,27 @@ All notable changes to the cairn project will be documented in this file.
 ## Unreleased
 
 ### Added
-- Manual positioning: `offset: <dx>, <dy>` on an element and `label-offset: <dx>, <dy>` on a flow, both a nudge from where the layout placed things rather than an absolute seat ([#111](https://github.com/R0kshan/cairn/issues/111))
-- Drag an element, a container or a flow label in the playground and the DSL is rewritten to match — the source stays the single description of the diagram
+- Manual positioning: `offset: <dx>, <dy>` on an element, `label-offset: <dx>, <dy>` on a flow — a nudge from where the layout placed things, not an absolute seat
+- Drag an element, container or flow label in the playground to rewrite the DSL; hover marks what is draggable. A flow's path stays the router's, only its label moves
 - `compile()` returns `boxes`, pairing the finished geometry with the source spans an editor writes back to
-- `E0109` for a malformed offset and `W0572` for an offset that lands something on something else
-- Hovering the playground preview highlights what can be dragged; a flow's path stays the router's, only its label is movable
-- A child element is held inside the container that holds it, reported as `W0573` when an offset is cut short
-- `style { label-wrap: <n> }` breaks element and container labels onto `n`-character lines, trading width for height when one long name is what makes a diagram too wide. It breaks between words only, so a single long token stays on one line ([#107](https://github.com/R0kshan/cairn/issues/107))
-- `style { container-padding: <n> }` reclaims the whitespace inside a container on its left, right and bottom ([#107](https://github.com/R0kshan/cairn/issues/107))
-- `style { label-padding: <n> }` tightens the room either side of a node's label, and drops the uniform minimum node width with it so boxes hug their own labels ([#107](https://github.com/R0kshan/cairn/issues/107))
+- Offset diagnostics: `E0109` malformed, `W0572` lands on something else, `W0573` cut short to keep a child inside its container
+- `style { label-wrap: <n> }` breaks element and container labels onto `n`-character lines, between words only 
+- `style { container-padding: <n> }` reclaims whitespace inside a container, on its left, right and bottom
+- `style { label-padding: <n> }` tightens the room either side of a node's label, dropping the uniform minimum node width so boxes hug their own labels 
 
 ### Changed
-- The flow matrix flattens newlines out of container names as it already did for element names, so a wrapped label cannot break a table cell across lines
-
-### Changed
-- A flow label follows the target directly — `A -> B "label"`. The `:` that used to separate them is optional everywhere, and the examples, templates, diagnostics and docs drop it. Files written with `A -> B : "label"` keep parsing unchanged ([#109](https://github.com/R0kshan/cairn/issues/109))
+- A flow label follows the target directly — `A -> B "label"`. The `:` is optional everywhere and dropped from examples, templates, diagnostics and docs; `A -> B : "label"` still parses
+- The flow matrix flattens newlines out of container names, as it already did for element names, so a wrapped label cannot break a table cell
 
 ### Fixed
+- `.producer` / `.consumer` roles now hold when both endpoints sit in the same container
 - A flow with both endpoints on offset elements no longer detaches from its target
-- `W0572` is now computed after rendering, so `compile()` and `cairn build` agree on it
+- `W0572` is computed after rendering, so `compile()` and `cairn build` agree on it
 - An overlap a container's offset carried a child into is reported against that container's `offset:`, once
 - A diagram whose only offset is a `label-offset:` no longer draws the label outside the canvas
 - The playground writes `label-offset:` into the flow's own block when the label text contains a brace
-- Dragging an element whose body is written on one line (`application X "Y" {logo: angular }`) now adds `offset:` inside that block instead of appending a second, invalid one
-- An offset that moves a container reconnects its flows to the side that now faces their counterpart, and one reaching past the top-left corner slides the canvas rather than drawing outside it
+- Dragging an element whose body is on one line (`application X "Y" {logo: angular }`) adds `offset:` inside that block instead of appending a second, invalid one
+- An offset that moves a container reconnects its flows to the side now facing their counterpart; one reaching past the top-left corner slides the canvas rather than drawing outside it
 
 ## [v1.0.0-RC15](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC15) - 2026-09-09
 
