@@ -99546,6 +99546,8 @@ function firstPassSide(scene, flowId, role, sceneNode) {
   if (!edge || edge.pts.length < 2) return null;
   return sideOn(role === "src" ? edge.pts[0] : edge.pts[edge.pts.length - 1], sceneNode);
 }
+var isElkSource = (flow, end) => end === "src" !== laidOutReversed(flow);
+var elkPortId = (flow, end) => `${flow.id}#${isElkSource(flow, end) ? "out" : "in"}`;
 function constrainPorts(graph, scene, flagged, model) {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const elkById = /* @__PURE__ */ new Map();
@@ -99571,12 +99573,12 @@ function constrainPorts(graph, scene, flagged, model) {
       const other = nodeById.get(role === "src" ? flow.to : flow.from);
       if (!other) continue;
       const side = flagged.has(flow.id) ? sideToward(sceneNode, other) : firstPassSide(scene, flow.id, role, sceneNode) ?? sideToward(sceneNode, other);
-      const portId = `${flow.id}${role === "src" ? "#out" : "#in"}`;
+      const portId = elkPortId(flow, role);
       if ((elkNode.ports ?? []).some((port) => port.id === portId)) continue;
       ports.push({ id: portId, width: 1, height: 1, layoutOptions: { "elk.port.side": side } });
       const elkEdge = (graph.edges ?? []).find((edge) => edge.id === flow.id);
       if (elkEdge) {
-        if (role === "src") elkEdge.sources = [portId];
+        if (isElkSource(flow, role)) elkEdge.sources = [portId];
         else elkEdge.targets = [portId];
       }
     }
@@ -99724,13 +99726,13 @@ function applyDeclaredPorts(graph, model, derived) {
     if (!elkEdge) continue;
     const hub = derived.get(flow.id);
     for (const [role, declared, nodeId] of [
-      ["out", flow.fromSide ?? sideRequest(hub?.from), flow.from],
-      ["in", flow.toSide ?? sideRequest(hub?.to), flow.to]
+      ["src", flow.fromSide ?? sideRequest(hub?.from), flow.from],
+      ["dst", flow.toSide ?? sideRequest(hub?.to), flow.to]
     ]) {
       if (!declared) continue;
       const elkNode = elkById.get(nodeId);
       if (!elkNode) continue;
-      const portId = `${flow.id}#${role === "out" !== laidOutReversed(flow) ? "out" : "in"}`;
+      const portId = elkPortId(flow, role);
       elkNode.ports = [
         ...elkNode.ports ?? [],
         {
@@ -99741,7 +99743,7 @@ function applyDeclaredPorts(graph, model, derived) {
         }
       ];
       elkNode.layoutOptions = { ...elkNode.layoutOptions, "elk.portConstraints": "FIXED_SIDE" };
-      if (role === "out" !== laidOutReversed(flow)) elkEdge.sources = [portId];
+      if (isElkSource(flow, role)) elkEdge.sources = [portId];
       else elkEdge.targets = [portId];
     }
   }
@@ -100288,8 +100290,19 @@ async function withHubPortFallback(elk, makeGraph, direction, options) {
   }
 }
 function markDeclaredTerminals(edges, model, view, hubPorts) {
+  const rolePin = (role) => hubPorts && !!role;
   const pinnedFlows = new Map(
-    model.flows.filter((flow) => flow.fromSide || flow.toSide).map((flow) => [flow.id, { start: !!flow.fromSide, end: !!flow.toSide }])
+    model.flows.filter(
+      (flow) => flow.fromSide || flow.toSide || rolePin(flow.fromRole?.value) || rolePin(flow.toRole?.value)
+    ).map(
+      (flow) => [
+        flow.id,
+        {
+          start: !!flow.fromSide || rolePin(flow.toRole?.value),
+          end: !!flow.toSide || rolePin(flow.fromRole?.value)
+        }
+      ]
+    )
   );
   const hubSides = hubPorts ? hubFlowSides(model, view) : /* @__PURE__ */ new Map();
   for (const edge of edges) {
