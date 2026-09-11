@@ -88,43 +88,43 @@ external AFFICHAGE_ZONES "Affichage des\nzones"
 # ============================================================================
 
 # ---- Authentification et exposition (AUTH_01..03) ----
-NAV_CLIENT_SIEGE -> LB : "AUTH_01 — accès helios.exemple.fr (poste siège)" (HTTPS/443)
-NAV_CLIENT_AGENCE -> LB : "AUTH_01 — accès helios.exemple.fr (poste agence)" (HTTPS/443)
-LB -> AUTH_RP_NGINX_OAUTH2 : "AUTH_02 — vers le reverse proxy" (HTTPS/443)
-AUTH_RP_NGINX_OAUTH2 -> SSO_INTERNE : "AUTH_03 — OAuth2 / OIDC" (HTTPS/443)
-AUTH_RP_NGINX_OAUTH2 -> APP_BACKEND_SIEGE : "IHM servie vers le backend" (HTTP/8080)
+NAV_CLIENT_SIEGE -> LB "AUTH_01 — accès helios.exemple.fr (poste siège)" (HTTPS/443)
+NAV_CLIENT_AGENCE -> LB "AUTH_01 — accès helios.exemple.fr (poste agence)" (HTTPS/443)
+LB -> AUTH_RP_NGINX_OAUTH2 "AUTH_02 — vers le reverse proxy" (HTTPS/443)
+AUTH_RP_NGINX_OAUTH2 -> SSO_INTERNE "AUTH_03 — OAuth2 / OIDC" (HTTPS/443)
+AUTH_RP_NGINX_OAUTH2 -> APP_BACKEND_SIEGE "IHM servie vers le backend" (HTTP/8080)
 
 # ---- Persistance (DB_01) ----
-APP_BACKEND_SIEGE -> BDD_SIEGE : "DB_01 — persistance" (JDBC/5432)
+APP_BACKEND_SIEGE -> BDD_SIEGE "DB_01 — persistance" (JDBC/5432)
 
 # ---- SI tiers vers le siège via le LB (TIER_01..03) ----
-SOCLE_2 -> LB : "TIER_01 — temps réel (10-15 s)" (TCP)
-ALPHA -> LB : "TIER_02 — messages d'incident" (HTTPS/443)
-BRAVO -> LB : "TIER_03 — consultation temps réel" (HTTPS/443)
+SOCLE_2 -> LB "TIER_01 — temps réel (10-15 s)" (TCP)
+ALPHA -> LB "TIER_02 — messages d'incident" (HTTPS/443)
+BRAVO -> LB "TIER_03 — consultation temps réel" (HTTPS/443)
 
 # ---- SI tiers vers RabbitMQ (RMQ_01..02) ----
-ALPHA -> RABBITMQ.left : "RMQ_01 — file Q_ALPHA" (AMQP/5672)
-BRAVO -> RABBITMQ.left : "RMQ_02 — file Q_BRAVO" (AMQP/5672)
+ALPHA -> RABBITMQ.left "RMQ_01 — file Q_ALPHA" (AMQP/5672)
+BRAVO -> RABBITMQ.left "RMQ_02 — file Q_BRAVO" (AMQP/5672)
 
 # ---- Siège vers agence et agence vers siège (SIEGE_AGENCE_01..02, AGENCE_SIEGE_01..02) ----
-APP_BACKEND_SIEGE -> RABBITMQ : "SIEGE_AGENCE_01 — file Q_SIEGE_GST" (AMQP/5672)
-RABBITMQ -> APP_BACK_AGENCE : "SIEGE_AGENCE_02 — réception en agence" (AMQP/5672)
-APP_BACK_AGENCE -> RABBITMQ : "AGENCE_SIEGE_01 — file Q_AGENCE_GST" (AMQP/5672)
-RABBITMQ -> APP_BACKEND_SIEGE : "AGENCE_SIEGE_02 — réception au siège" (AMQP/5672)
-APP_BACK_AGENCE -> LB : "AGENCE_BRAVO_01 — abonnement BRAVO" (HTTPS/443)
+APP_BACKEND_SIEGE -> RABBITMQ "SIEGE_AGENCE_01 — file Q_SIEGE_GST" (AMQP/5672)
+RABBITMQ -> APP_BACK_AGENCE "SIEGE_AGENCE_02 — réception en agence" (AMQP/5672)
+APP_BACK_AGENCE -> RABBITMQ "AGENCE_SIEGE_01 — file Q_AGENCE_GST" (AMQP/5672)
+RABBITMQ -> APP_BACKEND_SIEGE "AGENCE_SIEGE_02 — réception au siège" (AMQP/5672)
+APP_BACK_AGENCE -> LB "AGENCE_BRAVO_01 — abonnement BRAVO" (HTTPS/443)
 
 # ---- Orchestration (ORCH_01..02) ----
-ORCH_SERVER -> APP_BACK_AGENCE : "ORCH_01 — pilotage des 67 agents" (TCP/4647)
-APP_BACK_AGENCE -> ORCH_SERVER : "ORCH_02 — heartbeat des agents" (TCP/4647)
-ORCH_SERVER ..> BACK_AGENCE_FALLBACK : "Niveau 4 — déploiement VM de secours" (TCP/4647)
+ORCH_SERVER -> APP_BACK_AGENCE "ORCH_01 — pilotage des 67 agents" (TCP/4647)
+APP_BACK_AGENCE -> ORCH_SERVER "ORCH_02 — heartbeat des agents" (TCP/4647)
+ORCH_SERVER ..> BACK_AGENCE_FALLBACK "Niveau 4 — déploiement VM de secours" (TCP/4647)
 
 # ---- Accès distant par tunnel chiffré (VPN_01..02) ----
-POSTE_OPERATEUR ..> BACK_AGENCE_FALLBACK : "VPN_01 — tunnel WireGuard" (UDP/41641)
-BACK_AGENCE_FALLBACK ..> POSTE_OPERATEUR : "VPN_02 — réponse via le tunnel" (UDP/41641)
+POSTE_OPERATEUR ..> BACK_AGENCE_FALLBACK "VPN_01 — tunnel WireGuard" (UDP/41641)
+BACK_AGENCE_FALLBACK ..> POSTE_OPERATEUR "VPN_02 — réponse via le tunnel" (UDP/41641)
 
 # ---- Flux techniques locaux en agence (AGENCE_INT_01..02) ----
-APP_BACK_AGENCE -> ECRANS : "AGENCE_INT_01 — suivi des tournées" (RS422)
-APP_BACK_AGENCE -> AFFICHAGE_ZONES : "AGENCE_INT_02 — 6 prochaines tournées" (TCP)
+APP_BACK_AGENCE -> ECRANS "AGENCE_INT_01 — suivi des tournées" (RS422)
+APP_BACK_AGENCE -> AFFICHAGE_ZONES "AGENCE_INT_02 — 6 prochaines tournées" (TCP)
 
 legend {
   note "Vue mono-région : une seule région cloud représentée. La bascule inter-région (LB_01/LB_02, région A active / région B passive) est décrite dans la vue multi-région."

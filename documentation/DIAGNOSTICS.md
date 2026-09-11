@@ -16,8 +16,8 @@ Run `cairn explain <CODE>` for the rationale behind any rule (e.g. `cairn explai
       "span": { "file": "my-system.cairn", "line": 14, "col": 3, "len": 13 },
       "message": "flow without a label",
       "note": "the `logical` view forbids unlabelled arrows",
-      "help": "add a label describing the exchange: `A -> B : \"…\"`",
-      "fix": { "insert": " : \"…\"", "atEndOfLine": true }
+      "help": "add a label describing the exchange: `A -> B \"…\"`",
+      "fix": { "insert": " \"…\"", "atEndOfLine": true }
     }
   ],
   "summary": { "errors": 1, "warnings": 0 }

@@ -23,6 +23,6 @@ external EXT "External systems" {
   block QUEUE "Message queue"
 }
 
-USER -> API : "Request"
-API -> WORKER : "Dispatch job"
-WORKER -> QUEUE : "Publish event"
+USER -> API "Request"
+API -> WORKER "Dispatch job"
+WORKER -> QUEUE "Publish event"

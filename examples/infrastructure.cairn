@@ -36,19 +36,19 @@ actor USERS "User\nworkstations"
 external EDI "Partner EDI\nplatform"
 
 # ---- technical flows (protocol REQUIRED) ----
-USERS -> WAF_I : (HTTPS/443)
-WAF_I -> AUTH_GW : (HTTPS/443)
-AUTH_GW -> OAUTH2 : (HTTPS/8443)
-OAUTH2 -> IDP : (LDAPS/636)
-AUTH_GW -> BILL_I : (HTTPS/8443)
-AUTH_GW -> CRM_I : (HTTPS/8444)
-BILL_I -> PG_I : (TCP/5432)
-CRM_I -> PG_I : (TCP/5432)
-BILL_I -> KAFKA : (TCP/9092)
-CRM_I -> KAFKA.right : (TCP/9092)
-BILL_I -> SFTP_GW : (SFTP/22)
-SFTP_GW -> EDI : (AS4/443)
-DB_SRV -> BACKUP : (TCP/5432)
+USERS -> WAF_I (HTTPS/443)
+WAF_I -> AUTH_GW (HTTPS/443)
+AUTH_GW -> OAUTH2 (HTTPS/8443)
+OAUTH2 -> IDP (LDAPS/636)
+AUTH_GW -> BILL_I (HTTPS/8443)
+AUTH_GW -> CRM_I (HTTPS/8444)
+BILL_I -> PG_I (TCP/5432)
+CRM_I -> PG_I (TCP/5432)
+BILL_I -> KAFKA (TCP/9092)
+CRM_I -> KAFKA.right (TCP/9092)
+BILL_I -> SFTP_GW (SFTP/22)
+SFTP_GW -> EDI (AS4/443)
+DB_SRV -> BACKUP (TCP/5432)
 
 legend {
   note "Inter-zone flows filtered by firewall (flow matrix attached to the architecture dossier)"

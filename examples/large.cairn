@@ -76,53 +76,53 @@ business-object BO_PROD "Product" "catalog item with price and availability"
 business-object BO_PARCEL "Parcel" "shipping unit handed to the carrier"
 
 # ---- customer journey ----
-WEB_CUSTOMER -> SITE : "Browse, search,\norder"
-MOBILE_CUSTOMER -> APP : "Mobile purchase\njourney"
-STORE_CUSTOMER -> KIOSK : "Check stock and\norder in store"
-SITE -> CATALOG_FRONT : "Display product\npages"
-APP -> CATALOG_FRONT : "Display mobile\ncatalog"
-KIOSK -> CATALOG_FRONT : "Browse the\nstore offer"
-SITE -> CART : "Build the cart"
-APP -> CART : "Synchronized\nmobile cart"
-CART -> PROMO : "Apply current\noffers"
-CATALOG_FRONT -> RECO : "Browsing\ncontext"
-RECO -> SITE : "Personalized\nsuggestions"
-ACCOUNT -> LOYALTY : "Loyalty balance\nand benefits"
+WEB_CUSTOMER -> SITE "Browse, search,\norder"
+MOBILE_CUSTOMER -> APP "Mobile purchase\njourney"
+STORE_CUSTOMER -> KIOSK "Check stock and\norder in store"
+SITE -> CATALOG_FRONT "Display product\npages"
+APP -> CATALOG_FRONT "Display mobile\ncatalog"
+KIOSK -> CATALOG_FRONT "Browse the\nstore offer"
+SITE -> CART "Build the cart"
+APP -> CART "Synchronized\nmobile cart"
+CART -> PROMO "Apply current\noffers"
+CATALOG_FRONT -> RECO "Browsing\ncontext"
+RECO -> SITE "Personalized\nsuggestions"
+ACCOUNT -> LOYALTY "Loyalty balance\nand benefits"
 
 # ---- sales and fulfilment ----
-CART -> ORDER : "Order\nvalidation" [BO_ORDER]
-ORDER -> PAYMENT : "Charge\nrequest" [BO_PAY]
-PAYMENT -> PSP : "Payment authorization\nand capture" [BO_PAY]
-PSP -> PAYMENT : "Transaction\nstatus"
-ORDER -> OMS : "Fulfilment\norder" [BO_ORDER]
-OMS -> WMS_LINK : "Warehouse picking\nwaves"
-WAREHOUSE_OP -> WMS_LINK : "Pick and ship\nparcels"
-OMS -> CARRIERS : "Pickup requests\nand labels" [BO_PARCEL]
-CARRIERS -> OMS : "Parcel-tracking\nevents"
-OMS -> ACCOUNT : "Customer order\ntracking"
-ADVISOR -> AFTERSALES : "Handle\ncomplaints"
-AFTERSALES -> ORDER : "Returns and\nrefunds"
+CART -> ORDER "Order\nvalidation" [BO_ORDER]
+ORDER -> PAYMENT "Charge\nrequest" [BO_PAY]
+PAYMENT -> PSP "Payment authorization\nand capture" [BO_PAY]
+PSP -> PAYMENT "Transaction\nstatus"
+ORDER -> OMS "Fulfilment\norder" [BO_ORDER]
+OMS -> WMS_LINK "Warehouse picking\nwaves"
+WAREHOUSE_OP -> WMS_LINK "Pick and ship\nparcels"
+OMS -> CARRIERS "Pickup requests\nand labels" [BO_PARCEL]
+CARRIERS -> OMS "Parcel-tracking\nevents"
+OMS -> ACCOUNT "Customer order\ntracking"
+ADVISOR -> AFTERSALES "Handle\ncomplaints"
+AFTERSALES -> ORDER "Returns and\nrefunds"
 
 # ---- offer ----
-MERCH -> PIM : "Enrich product\npages"
-PIM -> CATALOG_FRONT : "Publish the\ncatalog" [BO_PROD]
-PRICING -> CATALOG_FRONT : "Current sale\nprices"
-ERP -> STOCK : "Accounting stock\nmovements"
-STOCK -> CATALOG_FRONT : "Product\navailability" [BO_PROD]
-ERP -> PRICING : "Reference purchase\ncosts"
+MERCH -> PIM "Enrich product\npages"
+PIM -> CATALOG_FRONT "Publish the\ncatalog" [BO_PROD]
+PRICING -> CATALOG_FRONT "Current sale\nprices"
+ERP -> STOCK "Accounting stock\nmovements"
+STOCK -> CATALOG_FRONT "Product\navailability" [BO_PROD]
+ERP -> PRICING "Reference purchase\ncosts"
 
 # ---- data ----
-SITE -> TRACKING : "Browsing\nevents"
-PIM -> CDC : "Reference-data\nchanges"
-TRACKING -> DWH : "Feed the data\nfoundation"
-CDC -> DWH : "Reference-data\nsync"
-DWH -> SEGMENTS : "Compute\nsegments"
-SEGMENTS -> RECO : "Audience segments\nfor personalization"
-SEGMENTS -> CRM : "Audiences for\ncampaigns"
-CRM -> ACCOUNT : "Personalized\noutreach"
+SITE -> TRACKING "Browsing\nevents"
+PIM -> CDC "Reference-data\nchanges"
+TRACKING -> DWH "Feed the data\nfoundation"
+CDC -> DWH "Reference-data\nsync"
+DWH -> SEGMENTS "Compute\nsegments"
+SEGMENTS -> RECO "Audience segments\nfor personalization"
+SEGMENTS -> CRM "Audiences for\ncampaigns"
+CRM -> ACCOUNT "Personalized\noutreach"
 
 # ---- cross-cutting ----
-ACCOUNTANT -> PAYMENT : "Reconcile\ncollections"
-ADMIN -> PIM : "Administer repositories\nand permissions"
-ORDER -> REVIEWS : "Request a review\nafter delivery"
-REVIEWS -> CATALOG_FRONT : "Product ratings\nand reviews"
+ACCOUNTANT -> PAYMENT "Reconcile\ncollections"
+ADMIN -> PIM "Administer repositories\nand permissions"
+ORDER -> REVIEWS "Request a review\nafter delivery"
+REVIEWS -> CATALOG_FRONT "Product ratings\nand reviews"

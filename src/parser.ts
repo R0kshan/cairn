@@ -51,7 +51,7 @@ interface Parser {
   parseElementBody: (parent: Element) => void;
 }
 
-/** `ID -> ID : "label" (proto, format) [BO…] { … }`, everything after the target
+/** `ID -> ID "label" (proto, format) [BO…] { … }`, everything after the target
  *  optional. `sourceToken` (the source id) is already consumed by the caller. */
 function parseFlow(p: Parser, sourceToken: Token): void {
   const { matchToken, advance, reportError, lookAhead, syncToNextLine, model } = p;
@@ -76,23 +76,25 @@ function parseFlow(p: Parser, sourceToken: Token): void {
   };
   if (arrowToken.text === "-->") flow.lineStyle = "dashed";
   else if (arrowToken.text === "..>") flow.lineStyle = "dotted";
-  if (matchToken("colon")) {
-    advance();
-    if (matchToken("str")) flow.label = advance().text;
-    else if (
-      !matchToken("lparen") &&
-      !matchToken("lbrack") &&
-      !matchToken("lbrace") &&
-      !matchToken("nl") &&
-      !matchToken("rbrace") &&
-      !matchToken("eof")
-    ) {
-      reportError(
-        "flow label expected after `:`",
-        lookAhead().span,
-        'give a `"label"`, or omit it: `A -> B : (HTTPS/443)`',
-      );
-    }
+  // The label follows the target directly; a `:` between them is legacy syntax,
+  // still accepted so files written before it became optional keep parsing.
+  const hadColon = matchToken("colon");
+  if (hadColon) advance();
+  if (matchToken("str")) flow.label = advance().text;
+  else if (
+    hadColon &&
+    !matchToken("lparen") &&
+    !matchToken("lbrack") &&
+    !matchToken("lbrace") &&
+    !matchToken("nl") &&
+    !matchToken("rbrace") &&
+    !matchToken("eof")
+  ) {
+    reportError(
+      "flow label expected after `:`",
+      lookAhead().span,
+      'give a `"label"`, or drop the `:`: `A -> B (HTTPS/443)`',
+    );
   }
   if (matchToken("lparen")) {
     const openParen = advance();
@@ -106,7 +108,7 @@ function parseFlow(p: Parser, sourceToken: Token): void {
       reportError(
         "`)` expected to close the technical attributes",
         lookAhead().span,
-        'e.g. `A -> B : "Envoi" (SFTP, XML)`',
+        'e.g. `A -> B "Envoi" (SFTP, XML)`',
       );
     flow.tech = {
       protocol: values[0],
@@ -127,7 +129,7 @@ function parseFlow(p: Parser, sourceToken: Token): void {
       reportError(
         "`]` expected to close the business-object list",
         lookAhead().span,
-        'e.g. `A -> B : "Validation" [BO_CMD]`',
+        'e.g. `A -> B "Validation" [BO_CMD]`',
       );
   }
   if (matchToken("lbrace")) {
@@ -151,7 +153,7 @@ function parseElement(p: Parser, sourceToken: Token, parent: Element | null): vo
     reportError(
       `invalid declaration: \`${sourceToken.text}\` alone on this line`,
       sourceToken.span,
-      'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> : "label"`',
+      'an element reads `<kind> <ID> "Label"`, a flow `<ID> -> <ID> "label"`',
     );
     syncToNextLine();
     return;
@@ -450,7 +452,7 @@ function tryBusinessObject(p: Parser): boolean {
   return true;
 }
 
-/** Everything else: `ID -> ID : …` flows and `<kind> ID "label" { … }` elements.
+/** Everything else: `ID -> ID …` flows and `<kind> ID "label" { … }` elements.
  *  The two share their leading identifier, so they are one grammar production,
  *  not two. */
 function parseFlowOrElement(p: Parser, parent: Element | null): void {
@@ -923,7 +925,7 @@ function applyStyleEntry(entry: {
         message: "`label-offset` expects two whole numbers — `label-offset: <dx>, <dy>`",
         span: key.span,
         help: flow
-          ? 'e.g. `A -> B : "Sends" { label-offset: 12, -6 }`'
+          ? 'e.g. `A -> B "Sends" { label-offset: 12, -6 }`'
           : "`label-offset` belongs to a flow's inline block",
       });
       return;

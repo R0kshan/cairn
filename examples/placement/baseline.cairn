@@ -18,9 +18,9 @@ external PARTNER "Partner network" { block SETTLE "Settlement service" }
 
 # No placement hints at all: every position below is the engine's own choice.
 
-AGENT   -> RECEIVE : "File a claim"
-RECEIVE -> ASSIGN  : "Route for assignment"
-ASSIGN  -> SETTLE  : "Request settlement"
-AGENT   -> TRACE   : "Consult the audit trail"
-TRACE   -> STORE   : "Archive the trace"
-AGENT   -> DASH    : "Open the dashboard"
+AGENT   -> RECEIVE "File a claim"
+RECEIVE -> ASSIGN  "Route for assignment"
+ASSIGN  -> SETTLE  "Request settlement"
+AGENT   -> TRACE   "Consult the audit trail"
+TRACE   -> STORE   "Archive the trace"
+AGENT   -> DASH    "Open the dashboard"

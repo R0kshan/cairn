@@ -51,25 +51,25 @@ business-object PARAMETRAGE "Paramétrage" "Configuration du système"
 
 
 # FLUX
-ACT_INF_HELIOS_SIEGE -> BF_GST_MSG_SIEGE: "Composer, recevoir et diffuser\nles messages, et paramétrage" [MESSAGE,PARAMETRAGE]
-ACT_ADM_FT_SIEGE -> BF_PARAM_SYS: "Paramétrer le système" [PARAMETRAGE]
-ACT_COORD_SIEGE -> BF_GST_MSG_SIEGE: "Diffuser messages\nd'incident" [MESSAGE]
-ACT_MEQ_HELIOS_SIEGE -> BF_PARAM_SYS: "Commander mise hors/en \nservice d'un \néquipement d'affichage" [PARAMETRAGE]
-ACT_OP_HELIOS_AGENCE -> BF_GST_MSG_AGENCE.left : "Rédaction et diffusion \ndes messages à \ndestination du siège" [MESSAGE]
-ACT_PASSIF -> ECRANS :"Consulter" [CHARGE]
+ACT_INF_HELIOS_SIEGE -> BF_GST_MSG_SIEGE "Composer, recevoir et diffuser\nles messages, et paramétrage" [MESSAGE,PARAMETRAGE]
+ACT_ADM_FT_SIEGE -> BF_PARAM_SYS "Paramétrer le système" [PARAMETRAGE]
+ACT_COORD_SIEGE -> BF_GST_MSG_SIEGE "Diffuser messages\nd'incident" [MESSAGE]
+ACT_MEQ_HELIOS_SIEGE -> BF_PARAM_SYS "Commander mise hors/en \nservice d'un \néquipement d'affichage" [PARAMETRAGE]
+ACT_OP_HELIOS_AGENCE -> BF_GST_MSG_AGENCE.left "Rédaction et diffusion \ndes messages à \ndestination du siège" [MESSAGE]
+ACT_PASSIF -> ECRANS "Consulter" [CHARGE]
 
-BF_GST_MSG_SIEGE  -> ACT_INF_HELIOS_SIEGE: "Alerter messages de provenance divers (agence, ALPHA)" [MESSAGE]
-BF_GST_AGENCE -> ACT_OP_HELIOS_AGENCE:  "Alerter incohérence"
-BF_GST_MSG_SIEGE -> SYS_ALPHA: "Diffusion tps réel de messages d'incident sur les secteurs 1 et 2 " [MESSAGE ]
-BF_GST_DONNEES.bottom -> SYS_BRAVO: "Export des données temps réel et \nconfiguration"
-BF_GST_SIEGE -> BF_GST_AGENCE.bottom: "Diffusion informations \net messages de prochaines tournées \nsaisies par l'informateur HELIOS du siège" [MESSAGE]
-BF_GST_AGENCE -> BF_GST_SIEGE: "Transmission des \nmessages saisis par l'agent\n d'exploitation en agence" [MESSAGE]
-BF_GST_MSG_AGENCE.right -> BF_GST_MSG_SIEGE.bottom : "Récupérer et archiver\n la messagerie diffusée\n localement en agence" [MESSAGE]
+BF_GST_MSG_SIEGE  -> ACT_INF_HELIOS_SIEGE "Alerter messages de provenance divers (agence, ALPHA)" [MESSAGE]
+BF_GST_AGENCE -> ACT_OP_HELIOS_AGENCE "Alerter incohérence"
+BF_GST_MSG_SIEGE -> SYS_ALPHA "Diffusion tps réel de messages d'incident sur les secteurs 1 et 2 " [MESSAGE ]
+BF_GST_DONNEES.bottom -> SYS_BRAVO "Export des données temps réel et \nconfiguration"
+BF_GST_SIEGE -> BF_GST_AGENCE.bottom "Diffusion informations \net messages de prochaines tournées \nsaisies par l'informateur HELIOS du siège" [MESSAGE]
+BF_GST_AGENCE -> BF_GST_SIEGE "Transmission des \nmessages saisis par l'agent\n d'exploitation en agence" [MESSAGE]
+BF_GST_MSG_AGENCE.right -> BF_GST_MSG_SIEGE.bottom "Récupérer et archiver\n la messagerie diffusée\n localement en agence" [MESSAGE]
 
-SYS_SOCLE2 -> BF_GST_SIEGE: "Transmission des données\nde circulation , missions et zones" [TOURNEE]
-SYS_ALPHA -> BF_GST_MSG_SIEGE: "Transmission  messages\nd'incident des  réseaux logistiques  souhaités" [MESSAGE]
-SYS_AFF_ZONES -> BF_GST_AGENCE: "Transmission de\nla liste des 6 prochaines\net identité de la tournée de tête \npour contrôle périodique" [TOURNEE]
-SYS_BRAVO -> BF_GST_MSG_AGENCE: "Notifications charge \net messagerie clients" [CHARGE]
+SYS_SOCLE2 -> BF_GST_SIEGE "Transmission des données\nde circulation , missions et zones" [TOURNEE]
+SYS_ALPHA -> BF_GST_MSG_SIEGE "Transmission  messages\nd'incident des  réseaux logistiques  souhaités" [MESSAGE]
+SYS_AFF_ZONES -> BF_GST_AGENCE "Transmission de\nla liste des 6 prochaines\net identité de la tournée de tête \npour contrôle périodique" [TOURNEE]
+SYS_BRAVO -> BF_GST_MSG_AGENCE "Notifications charge \net messagerie clients" [CHARGE]
 
 # *Indisponible en 4ème niveau de dégradation (panne serveur local)*
-BF_GST_AGENCE -> ECRANS: "Diffusion des informations\naux clients" [CHARGE]
+BF_GST_AGENCE -> ECRANS "Diffusion des informations\naux clients" [CHARGE]

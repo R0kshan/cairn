@@ -77,53 +77,53 @@ business-object BO_PROD "Produit" "article du catalogue avec prix et disponibili
 business-object BO_PARCEL "Colis" "unité d'expédition remise au transporteur"
 
 # ---- parcours client ----
-WEB_CUSTOMER -> SITE : "Naviguer, rechercher,\ncommander"
-MOBILE_CUSTOMER -> APP : "Parcours d'achat\nmobile"
-STORE_CUSTOMER -> KIOSK : "Vérifier le stock et\ncommander en magasin"
-SITE -> CATALOG_FRONT : "Afficher les fiches\nproduit"
-APP -> CATALOG_FRONT : "Afficher le catalogue\nmobile"
-KIOSK -> CATALOG_FRONT : "Parcourir l'offre\nmagasin"
-SITE -> CART : "Constituer le panier"
-APP -> CART : "Panier mobile\nsynchronisé"
-CART -> PROMO : "Appliquer les offres\nen cours"
-CATALOG_FRONT -> RECO : "Contexte de\nnavigation"
-RECO -> SITE : "Suggestions\npersonnalisées"
-ACCOUNT -> LOYALTY : "Solde et avantages\nde fidélité"
+WEB_CUSTOMER -> SITE "Naviguer, rechercher,\ncommander"
+MOBILE_CUSTOMER -> APP "Parcours d'achat\nmobile"
+STORE_CUSTOMER -> KIOSK "Vérifier le stock et\ncommander en magasin"
+SITE -> CATALOG_FRONT "Afficher les fiches\nproduit"
+APP -> CATALOG_FRONT "Afficher le catalogue\nmobile"
+KIOSK -> CATALOG_FRONT "Parcourir l'offre\nmagasin"
+SITE -> CART "Constituer le panier"
+APP -> CART "Panier mobile\nsynchronisé"
+CART -> PROMO "Appliquer les offres\nen cours"
+CATALOG_FRONT -> RECO "Contexte de\nnavigation"
+RECO -> SITE "Suggestions\npersonnalisées"
+ACCOUNT -> LOYALTY "Solde et avantages\nde fidélité"
 
 # ---- vente et exécution ----
-CART -> ORDER : "Validation de\nla commande" [BO_ORDER]
-ORDER -> PAYMENT : "Demande de\npaiement" [BO_PAY]
-PAYMENT -> PSP : "Autorisation et capture\ndu paiement" [BO_PAY]
-PSP -> PAYMENT : "Statut de la\ntransaction"
-ORDER -> OMS : "Commande à\nexécuter" [BO_ORDER]
-OMS -> WMS_LINK : "Vagues de préparation\nentrepôt"
-WAREHOUSE_OP -> WMS_LINK : "Préparer et expédier\nles colis"
-OMS -> CARRIERS : "Demandes d'enlèvement\net étiquettes" [BO_PARCEL]
-CARRIERS -> OMS : "Événements de suivi\ndes colis"
-OMS -> ACCOUNT : "Suivi de commande\nclient"
-ADVISOR -> AFTERSALES : "Traiter les\nréclamations"
-AFTERSALES -> ORDER : "Retours et\nremboursements"
+CART -> ORDER "Validation de\nla commande" [BO_ORDER]
+ORDER -> PAYMENT "Demande de\npaiement" [BO_PAY]
+PAYMENT -> PSP "Autorisation et capture\ndu paiement" [BO_PAY]
+PSP -> PAYMENT "Statut de la\ntransaction"
+ORDER -> OMS "Commande à\nexécuter" [BO_ORDER]
+OMS -> WMS_LINK "Vagues de préparation\nentrepôt"
+WAREHOUSE_OP -> WMS_LINK "Préparer et expédier\nles colis"
+OMS -> CARRIERS "Demandes d'enlèvement\net étiquettes" [BO_PARCEL]
+CARRIERS -> OMS "Événements de suivi\ndes colis"
+OMS -> ACCOUNT "Suivi de commande\nclient"
+ADVISOR -> AFTERSALES "Traiter les\nréclamations"
+AFTERSALES -> ORDER "Retours et\nremboursements"
 
 # ---- offre ----
-MERCH -> PIM : "Enrichir les fiches\nproduit"
-PIM -> CATALOG_FRONT : "Publier le\ncatalogue" [BO_PROD]
-PRICING -> CATALOG_FRONT : "Prix de vente\nen cours"
-ERP -> STOCK : "Mouvements de stock\ncomptables"
-STOCK -> CATALOG_FRONT : "Disponibilité\nproduit" [BO_PROD]
-ERP -> PRICING : "Coûts d'achat de\nréférence"
+MERCH -> PIM "Enrichir les fiches\nproduit"
+PIM -> CATALOG_FRONT "Publier le\ncatalogue" [BO_PROD]
+PRICING -> CATALOG_FRONT "Prix de vente\nen cours"
+ERP -> STOCK "Mouvements de stock\ncomptables"
+STOCK -> CATALOG_FRONT "Disponibilité\nproduit" [BO_PROD]
+ERP -> PRICING "Coûts d'achat de\nréférence"
 
 # ---- data ----
-SITE -> TRACKING : "Événements de\nnavigation"
-PIM -> CDC : "Changements de\nréférentiel"
-TRACKING -> DWH : "Alimenter le socle\nde données"
-CDC -> DWH : "Synchronisation du\nréférentiel"
-DWH -> SEGMENTS : "Calculer les\nsegments"
-SEGMENTS -> RECO : "Segments d'audience\npour personnalisation"
-SEGMENTS -> CRM : "Audiences pour\ncampagnes"
-CRM -> ACCOUNT : "Sollicitations\npersonnalisées"
+SITE -> TRACKING "Événements de\nnavigation"
+PIM -> CDC "Changements de\nréférentiel"
+TRACKING -> DWH "Alimenter le socle\nde données"
+CDC -> DWH "Synchronisation du\nréférentiel"
+DWH -> SEGMENTS "Calculer les\nsegments"
+SEGMENTS -> RECO "Segments d'audience\npour personnalisation"
+SEGMENTS -> CRM "Audiences pour\ncampagnes"
+CRM -> ACCOUNT "Sollicitations\npersonnalisées"
 
 # ---- transverse ----
-ACCOUNTANT -> PAYMENT : "Rapprocher les\nencaissements"
-ADMIN -> PIM : "Administrer référentiels\net habilitations"
-ORDER -> REVIEWS : "Demander un avis\naprès livraison"
-REVIEWS -> CATALOG_FRONT : "Notes et avis\nproduit"
+ACCOUNTANT -> PAYMENT "Rapprocher les\nencaissements"
+ADMIN -> PIM "Administrer référentiels\net habilitations"
+ORDER -> REVIEWS "Demander un avis\naprès livraison"
+REVIEWS -> CATALOG_FRONT "Notes et avis\nproduit"

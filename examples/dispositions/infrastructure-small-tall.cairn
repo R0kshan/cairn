@@ -17,6 +17,6 @@ site CLOUD "Cloud host" {
 
 actor VISITORS "Internet\nvisitors"
 
-VISITORS -> LB : "Site access" (HTTPS/443)
-LB -> CMS_I : "Balanced\ntraffic" (HTTP/8080)
-CMS_I -> MYSQL_I : "Read/write\ncontent" (TCP/3306)
+VISITORS -> LB "Site access" (HTTPS/443)
+LB -> CMS_I "Balanced\ntraffic" (HTTP/8080)
+CMS_I -> MYSQL_I "Read/write\ncontent" (TCP/3306)

@@ -179,7 +179,7 @@ const logicalView: View = {
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
-    help: 'add a label describing the exchanged data: `A -> B : "\u2026"`',
+    help: 'add a label describing the exchanged data: `A -> B "\u2026"`',
   },
   nesting: [
     {
@@ -360,7 +360,7 @@ const applicationView: View = {
   flowTechRecommended: {
     code: "W0540",
     message: "system-to-system flow without protocol",
-    help: 'add the technology: `A -> B : "\u2026" (API_REST, JSON)` (C4 practice: label the how, not just the what)',
+    help: 'add the technology: `A -> B "\u2026" (API_REST, JSON)` (C4 practice: label the how, not just the what)',
   },
   nesting: [
     {
@@ -557,7 +557,7 @@ const infrastructureView: View = {
   flowTechRequired: {
     code: "E0240",
     message: "technical flow without protocol",
-    help: 'the infrastructure view requires a protocol: `A -> B : "\u2026" (HTTPS/443)`',
+    help: 'the infrastructure view requires a protocol: `A -> B "\u2026" (HTTPS/443)`',
   },
   nesting: [
     {

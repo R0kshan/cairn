@@ -24,4 +24,4 @@ sytem SYS2 "Other system"
 OBS -> MOD
 
 # E0220: unknown reference (typo)
-OBS -> MODD : "Consultation"
+OBS -> MODD "Consultation"

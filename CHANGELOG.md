@@ -18,6 +18,9 @@ All notable changes to the cairn project will be documented in this file.
 ### Changed
 - The flow matrix flattens newlines out of container names as it already did for element names, so a wrapped label cannot break a table cell across lines
 
+### Changed
+- A flow label follows the target directly — `A -> B "label"`. The `:` that used to separate them is optional everywhere, and the examples, templates, diagnostics and docs drop it. Files written with `A -> B : "label"` keep parsing unchanged ([#109](https://github.com/R0kshan/cairn/issues/109))
+
 ### Fixed
 - A flow with both endpoints on offset elements no longer detaches from its target
 - `W0572` is now computed after rendering, so `compile()` and `cairn build` agree on it

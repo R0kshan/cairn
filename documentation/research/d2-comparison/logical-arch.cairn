@@ -40,25 +40,25 @@ external EXT "Ressources externes" {
 }
 
 # ---- flux ----
-OBS          -> CTRL       : "Contrôle globale"
-GE           -> CFG_SYS    : "Configurer le système"
-COM_CTR      -> OBS        : "Alertes, notifications et\nflux de diverses provenances"
-TECH         -> CFG_SYS    : "Activation/désactivation\nd'un terminal d'affichage"
+OBS          -> CTRL       "Contrôle globale"
+GE           -> CFG_SYS    "Configurer le système"
+COM_CTR      -> OBS        "Alertes, notifications et\nflux de diverses provenances"
+TECH         -> CFG_SYS    "Activation/désactivation\nd'un terminal d'affichage"
 
-COORD_SITE   -> OPE        : "Signalement\nd'anomalies et incohérences"
-OPE          -> COM_SITE   : "Rédaction et diffusion de\nmessages vers le contrôle\ncentral"
+COORD_SITE   -> OPE        "Signalement\nd'anomalies et incohérences"
+OPE          -> COM_SITE   "Rédaction et diffusion de\nmessages vers le contrôle\ncentral"
 
-ZONE_CIBLE   -> AFF_DPT    : "Consulter"
+ZONE_CIBLE   -> AFF_DPT    "Consulter"
 
-COM_CTR      -> EXT_NET01  : "Diffusion temps réel d'informations\nde perturbation\nvers les lignes concernées"
-GST_DATA     -> EXT_NET02  : "Export des données\ntemps réel et de configuration"
+COM_CTR      -> EXT_NET01  "Diffusion temps réel d'informations\nde perturbation\nvers les lignes concernées"
+GST_DATA     -> EXT_NET02  "Export des données\ntemps réel et de configuration"
 
-SUIV_FLUX    -> COORD_SITE : "Diffusion d'informations\net messages concernant les prochains flux\nsaisies par l'équipe centrale"
-COORD_SITE   -> SUIV_FLUX  : "Transmission des\nmessages saisis par le personnel\nprésent sur site"
-COM_SAT2     -> COM_CTR    : "Archivage de\nla messagerie diffusée\nlocalement en site distant"
+SUIV_FLUX    -> COORD_SITE "Diffusion d'informations\net messages concernant les prochains flux\nsaisies par l'équipe centrale"
+COORD_SITE   -> SUIV_FLUX  "Transmission des\nmessages saisis par le personnel\nprésent sur site"
+COM_SAT2     -> COM_CTR    "Archivage de\nla messagerie diffusée\nlocalement en site distant"
 
-EXT_COLLECTE -> SUIV_FLUX  : "Transmission des données\nde collecte externe et événements"
-EXT_NET01    -> COM_CTR    : "Transmission messages de\nperturbation des réseaux de transport souhaités"
-EXT_DISP     -> COORD_SITE : "Transmission de la liste des prochains\nflux et identité du véhicule de tête\npour contrôle périodique"
-EXT_NET02    -> COM_SAT2   : "Notifications trafic\net messagerie usagers"
-EXT_COLLECTE -> SUIV_FLUX  : "Transmission des missions et dessertes associés"
+EXT_COLLECTE -> SUIV_FLUX  "Transmission des données\nde collecte externe et événements"
+EXT_NET01    -> COM_CTR    "Transmission messages de\nperturbation des réseaux de transport souhaités"
+EXT_DISP     -> COORD_SITE "Transmission de la liste des prochains\nflux et identité du véhicule de tête\npour contrôle périodique"
+EXT_NET02    -> COM_SAT2   "Notifications trafic\net messagerie usagers"
+EXT_COLLECTE -> SUIV_FLUX  "Transmission des missions et dessertes associés"
