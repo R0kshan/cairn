@@ -215,10 +215,22 @@ const semiInteractiveOption = (children: Element[]): Record<string, string> =>
     ? { "elk.layered.crossingMinimization.semiInteractive": "true" }
     : {};
 
+/**
+ * Narrowest box the renderer draws well — an actor's, which carries a figure
+ * and a name and nothing else. It doubles as the floor for a node whose author
+ * asked for a `label-padding:`, since that is a request to stop reserving room
+ * the label is not using.
+ */
+const ACTOR_MIN_WIDTH = 64;
+
 /** What sizing a node needs beyond the element itself: the same values for every node in one layout. */
 interface NodeSizing {
   compact: boolean;
   fonts: { cont: number; node: number };
+  /** `style { container-padding: <n> }`, or undefined for the built-in spacing. */
+  containerPadding?: number;
+  /** `style { label-padding: <n> }`, or undefined for the built-in spacing. */
+  labelPadding?: number;
   /** Kinds drawn with a corner glyph — see `View.glyphKinds`. */
   glyphKinds: ReadonlySet<string>;
 }
@@ -229,14 +241,18 @@ interface NodeSizing {
  * band rather than an index inside a layer — its children still carry theirs.
  */
 function toElkNode(element: Element, sizing: NodeSizing, root = false): ElkNode {
-  const { compact, fonts, glyphKinds } = sizing;
+  const { compact, fonts, glyphKinds, containerPadding, labelPadding } = sizing;
   const { cont: containerFontSize, node: nodeFontSize } = fonts;
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
+    // The top is left out of the knob on purpose: it is the container's title
+    // bar, so it has to track the label's line count or the name lands on the
+    // first child. Only the three sides that are pure whitespace are tunable.
+    const side = containerPadding ?? (compact ? 7 : 9);
     return {
       id: element.id,
       layoutOptions: {
-        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${compact ? 7 : 9},bottom=${compact ? 7 : 9},right=${compact ? 7 : 9}]`,
+        "elk.padding": `[top=${(compact ? 11 : 13) + lineCount * 14},left=${side},bottom=${side},right=${side}]`,
         ...(root ? {} : orderOption(element)),
         ...semiInteractiveOption(element.children),
       },
@@ -258,12 +274,26 @@ function toElkNode(element: Element, sizing: NodeSizing, root = false): ElkNode 
   // element can in principle carry both, so they add rather than override.
   const gutter =
     (glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0) + (element.logo ? LOGO_GUTTER : 0);
+  // A `label-padding:` drops the uniform minimum with it. The minimum is what
+  // keeps boxes the same width when their labels are short, so leaving it in
+  // place would mean the knob narrowed nothing on the very diagrams it was
+  // asked for: it is the floor, not the padding, that most boxes sit on.
+  // `ACTOR_MIN_WIDTH` is the narrowest box the renderer already draws well.
+  const sidePad = labelPadding ?? (compact ? 5 : 6);
+  const minWidth = labelPadding === undefined ? (compact ? 98 : 108) : ACTOR_MIN_WIDTH;
+  // An actor's label sits under a figure rather than in a box, so it carries
+  // its own default — but `label-padding:` still governs it, or the property
+  // would narrow every box on the diagram except the people.
+  const actorSidePad = labelPadding ?? 4;
   return {
     id: element.id,
     ...(element.order && !root ? { layoutOptions: orderOption(element) } : {}),
     width: isActor
-      ? Math.max(64, measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8)
-      : Math.max(compact ? 98 : 108, measured.width + (compact ? 10 : 12) + gutter),
+      ? Math.max(
+          ACTOR_MIN_WIDTH,
+          measure(element.label ?? element.id, nodeFontSize - 1.5).width + actorSidePad * 2,
+        )
+      : Math.max(minWidth, measured.width + sidePad * 2 + gutter),
     height: isActor
       ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11
       : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12)),
@@ -1330,7 +1360,17 @@ function buildElkGraph(
       ...(options?.placement ? { "elk.layered.nodePlacement.strategy": options.placement } : {}),
     },
     children: model.elements.map((element, index) => {
-      const elkNode = toElkNode(element, { compact, fonts, glyphKinds }, true);
+      const elkNode = toElkNode(
+        element,
+        {
+          compact,
+          fonts,
+          glyphKinds,
+          containerPadding: model.style.containerPadding,
+          labelPadding: model.style.labelPadding,
+        },
+        true,
+      );
       const band = elkPartitionOf(element, index, view, ingressExternal);
       const slot = slotOf.get(element.id);
       elkNode.layoutOptions = {

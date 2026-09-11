@@ -94,6 +94,10 @@ interface FoldStyle {
   numLabel: (flow: { id: string }) => { text: string; width: number; height: number };
   /** Kinds drawn with a corner glyph — see `View.glyphKinds`. */
   glyphKinds: ReadonlySet<string>;
+  /** `style { container-padding: <n> }`, or undefined for this path's own `PAD`. */
+  containerPadding?: number;
+  /** `style { label-padding: <n> }`, or undefined for `nodeSize`'s own spacing. */
+  labelPadding?: number;
 }
 
 function foldStyle(model: Model, view: View): FoldStyle {
@@ -103,6 +107,8 @@ function foldStyle(model: Model, view: View): FoldStyle {
   return {
     numbered,
     glyphKinds: new Set(view.glyphKinds ?? []),
+    containerPadding: model.style.containerPadding,
+    labelPadding: model.style.labelPadding,
     edge,
     node,
     cont,
@@ -128,22 +134,23 @@ function foldStyle(model: Model, view: View): FoldStyle {
  * over a label the folded path had sized without room for it.
  */
 function leafSize(element: Element, style: FoldStyle) {
-  return nodeSize(
-    element.kind,
-    element.label ?? element.id,
-    style.node,
-    style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0,
-  );
+  return nodeSize(element.kind, element.label ?? element.id, style.node, {
+    gutter: style.glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0,
+    sidePad: style.labelPadding,
+  });
 }
 
 /** Converts an `Element` (and its children, recursively) into elk's input node shape. */
 function toElkNode(element: Element, style: FoldStyle): ElkNode {
   if (element.children.length) {
     const lineCount = (element.label ?? element.id).split("\n").length;
+    const side = style.containerPadding ?? PAD;
     return {
       id: element.id,
       layoutOptions: {
-        "elk.padding": `[top=${17 + lineCount * 13},left=${PAD},bottom=${PAD},right=${PAD}]`,
+        // Same split as `scene-layout`: the top is the title bar and tracks the
+        // label, the other three sides are whitespace the author may reclaim.
+        "elk.padding": `[top=${17 + lineCount * 13},left=${side},bottom=${side},right=${side}]`,
       },
       labels: [
         {
@@ -349,6 +356,9 @@ function buildGroupGraph(group: Element, style: FoldStyle, fg: FoldGraph): ElkNo
 
 /** Stacks a partition's groups into fixed-width columns of centred blocks. */
 function layoutColumn(elements: Element[], style: FoldStyle): ColGroup[] {
+  // Same split as `toElkNode`: `PAD_TOP` is the title bar and stays, the other
+  // three sides are the whitespace `container-padding:` reclaims.
+  const side = style.containerPadding ?? PAD;
   return elements.map((group) => {
     const blocks = group.children.map((child) => {
       const size = leafSize(child, style);
@@ -359,14 +369,14 @@ function layoutColumn(elements: Element[], style: FoldStyle): ColGroup[] {
         measure(group.label ?? group.id, style.cont).width + 20,
         ...blocks.map((block) => block.width),
       ) +
-      2 * PAD;
+      2 * side;
     let blockY = PAD_TOP;
     for (const block of blocks) {
-      block.x = PAD + (columnWidth - 2 * PAD - block.width) / 2;
+      block.x = side + (columnWidth - 2 * side - block.width) / 2;
       block.y = blockY;
       blockY += block.height + 14;
     }
-    return { element: group, width: columnWidth, height: blockY - 14 + PAD, blocks };
+    return { element: group, width: columnWidth, height: blockY - 14 + side, blocks };
   });
 }
 

@@ -11,6 +11,12 @@ All notable changes to the cairn project will be documented in this file.
 - `E0109` for a malformed offset and `W0572` for an offset that lands something on something else
 - Hovering the playground preview highlights what can be dragged; a flow's path stays the router's, only its label is movable
 - A child element is held inside the container that holds it, reported as `W0573` when an offset is cut short
+- `style { label-wrap: <n> }` breaks element and container labels onto `n`-character lines, trading width for height when one long name is what makes a diagram too wide. It breaks between words only, so a single long token stays on one line ([#107](https://github.com/R0kshan/cairn/issues/107))
+- `style { container-padding: <n> }` reclaims the whitespace inside a container on its left, right and bottom ([#107](https://github.com/R0kshan/cairn/issues/107))
+- `style { label-padding: <n> }` tightens the room either side of a node's label, and drops the uniform minimum node width with it so boxes hug their own labels ([#107](https://github.com/R0kshan/cairn/issues/107))
+
+### Changed
+- The flow matrix flattens newlines out of container names as it already did for element names, so a wrapped label cannot break a table cell across lines
 
 ### Fixed
 - A flow with both endpoints on offset elements no longer detaches from its target

@@ -9,6 +9,7 @@ application-queue-messaging.cairn  dim:572x171 n:6 e:4 ov:0  geom:bd6f68e07ff1 c
 application-small.cairn  dim:1042x243 n:10 e:7 ov:0  geom:59b5901636b7 color:e49468f53c18 text:5bda166c9cac
 application-system-fr.cairn  dim:1189x230 n:9 e:5 ov:0  geom:419ed089f560 color:fd9a0171260f text:3ebb09b9e467
 application-system.cairn  dim:1353x272 n:14 e:8 ov:0  geom:4389bdab72df color:8dbff496da98 text:2844f4ed0eb7
+application-tech-stack-large-dense.cairn  dim:1966x687 n:27 e:30 ov:0  geom:1e78635fcdc6 color:65ca71c98796 text:7d3d30651297
 application-tech-stack-large.cairn  dim:2265x664 n:27 e:30 ov:0  geom:577c1177a66e color:347972d640ca text:632148cd5f63
 application-tech-stack.cairn  dim:1473x219 n:13 e:10 ov:0  geom:2dba940519f7 color:d60459e79854 text:92cee4173ed3
 application.cairn  dim:1192x428 n:18 e:13 ov:0  geom:997efc5ede6e color:47e9040f5fd3 text:25578bcb9ca8

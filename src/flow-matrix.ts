@@ -51,7 +51,11 @@ const columnLabel = (id: MatrixColumnId, lang: "en" | "fr"): string => {
 function zoneOf(model: Model, id: string, zoneKinds: string[]): string | undefined {
   const element = model.index.get(id);
   for (let ancestor = element?.parent; ancestor; ancestor = ancestor.parent) {
-    if (zoneKinds.includes(ancestor.kind)) return ancestor.label ?? ancestor.id;
+    // Flattened like `endpoint` does below: a label may carry newlines, either
+    // written by the author or put there by `style { label-wrap: <n> }`, and a
+    // table cell is one line.
+    if (zoneKinds.includes(ancestor.kind))
+      return ancestor.label?.replace(/\n/g, " ") ?? ancestor.id;
   }
   return undefined;
 }

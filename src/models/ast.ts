@@ -47,6 +47,24 @@ export interface DiagramStyle {
   lang: "en" | "fr";
   kind: Record<string, StyleProps>;
   font: { family: string; size: number };
+  /**
+   * Characters per line for element and container labels. Unset — the default —
+   * means a label is never broken for the author: it keeps the lines it was
+   * written with, and a long one widens its box instead of stacking.
+   */
+  labelWrap?: number;
+  /**
+   * Pixels of room inside a container on its left, right and bottom. Unset
+   * keeps the built-in spacing. The top is not covered: it holds the
+   * container's own title, so its height follows the label rather than a knob.
+   */
+  containerPadding?: number;
+  /**
+   * Pixels either side of a node's label. Setting it also drops the uniform
+   * minimum node width, since a box that cannot shrink below the minimum would
+   * not narrow at all — see DSL_SPEC.md.
+   */
+  labelPadding?: number;
 }
 
 export interface Element {

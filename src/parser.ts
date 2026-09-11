@@ -23,6 +23,7 @@ import type { Diagnostic } from "./models/diagnostic.ts";
 import { defaultDiagramStyle, ATTACH_ROLES, ATTACH_SIDES } from "./models/ast.ts";
 import { themeNames } from "./themes.ts";
 import { indexElementsById } from "./element-tree.ts";
+import { wrapText } from "./text-metrics.ts";
 
 /**
  * The parser's cursor and the productions that recurse back into it. Bundled so
@@ -651,6 +652,22 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
   // names, and `ID.side` is only a side when `ID.side` is not itself an element.
   resolveEndpointSuffixes(endpointSplits, model, diagnostics);
 
+  // `label-wrap` is applied once, here, on the finished model: `style` may be
+  // declared after the elements it governs, so nothing earlier knows the width.
+  // Every drawing path — `scene-layout`, `slide-fold`, `svg-render` — sizes and
+  // draws from `element.label`, so wrapping it here reaches all of them without
+  // a width having to be threaded through any of them. The flow matrix reads
+  // the same field and flattens newlines back to spaces for its table.
+  //
+  // An element without a label is left alone. Its id stands in downstream, and
+  // writing one here would silence W0502, which is exactly the warning that
+  // says this element has no label.
+  if (model.style.labelWrap) {
+    for (const [, element] of indexElementsById(model.elements)) {
+      if (element.label) element.label = wrapText(element.label, model.style.labelWrap);
+    }
+  }
+
   return { model, diags: diagnostics };
 }
 
@@ -669,6 +686,49 @@ interface UniformStyleEntry {
   assign: (target: DiagramStyle, value: Token) => void;
   expected: string;
 }
+
+/** A whole-number style property: where the value lands, and how low it may go. */
+interface NumericStyleEntry {
+  /** Lowest value that still means something. */
+  min: number;
+  assign: (target: DiagramStyle, amount: number) => void;
+  /** Stands in the `expected:` help, so the writer sees a usable value. */
+  example: number;
+}
+
+/**
+ * The three density controls. A table rather than `switch` cases in
+ * `applyStyleEntry`: they differ only in where the value lands and how low it
+ * may go, and three near-identical numeric branches inline cost that function
+ * more cognitive complexity than the lint budget allows. Same shape as
+ * `UNIFORM_STYLE_ENTRIES` above, which exists for the same reason.
+ *
+ * A wrap of 0 would put every word on its own line forever, so that one starts
+ * at 1; a padding of 0 is a legitimate ask for none at all.
+ */
+const NUMERIC_STYLE_ENTRIES: Record<string, NumericStyleEntry> = {
+  "label-wrap": {
+    min: 1,
+    example: 14,
+    assign: (target, amount) => {
+      target.labelWrap = amount;
+    },
+  },
+  "container-padding": {
+    min: 0,
+    example: 4,
+    assign: (target, amount) => {
+      target.containerPadding = amount;
+    },
+  },
+  "label-padding": {
+    min: 0,
+    example: 4,
+    assign: (target, amount) => {
+      target.labelPadding = amount;
+    },
+  },
+};
 
 const UNIFORM_STYLE_ENTRIES: Record<string, UniformStyleEntry> = {
   "crossing-hops": {
@@ -768,6 +828,40 @@ const UNIFORM_STYLE_ENTRIES: Record<string, UniformStyleEntry> = {
     expected: "`#hex` color (canvas background)",
   },
 };
+
+/**
+ * Applies one of the density controls, and says whether `keyText` was one at
+ * all. A function of its own rather than a branch inside `applyStyleEntry`:
+ * that function is already at the lint's cognitive-complexity ceiling, and a
+ * numeric property's validation does not fit the `UNIFORM_STYLE_ENTRIES` shape
+ * (a `Set` of allowed strings cannot say "a whole number ≥ 1").
+ */
+function applyNumericStyleEntry(entry: {
+  keyText: string;
+  target: DiagramStyle;
+  /** First value token after the colon, if the author wrote one. */
+  value: Token | undefined;
+  /** The property name's own token, so a missing value still has a span to blame. */
+  key: Token;
+  reportBadValue: (value: Token, expected: string) => void;
+}): boolean {
+  const { keyText, target, value, key, reportBadValue } = entry;
+  // Guarded like the `UNIFORM_STYLE_ENTRIES` lookup, and for the same reason:
+  // `keyText` is user source, so a bare index would resolve `constructor` and
+  // friends off `Object.prototype`.
+  const numeric = Object.hasOwn(NUMERIC_STYLE_ENTRIES, keyText)
+    ? NUMERIC_STYLE_ENTRIES[keyText]
+    : undefined;
+  if (!numeric) return false;
+  const amount = value?.kind === "num" ? parseFloat(value.text) : Number.NaN;
+  if (Number.isInteger(amount) && amount >= numeric.min) numeric.assign(target, amount);
+  else
+    reportBadValue(
+      value ?? key,
+      `a whole number ≥ ${numeric.min}, e.g. \`${keyText}: ${numeric.example}\``,
+    );
+  return true;
+}
 
 function applyStyleEntry(entry: {
   key: Token;
@@ -879,6 +973,16 @@ function applyStyleEntry(entry: {
     else reportBadValue(value ?? key, uniform.expected);
     return;
   }
+  if (
+    applyNumericStyleEntry({
+      keyText,
+      target,
+      value: firstValue(),
+      key,
+      reportBadValue,
+    })
+  )
+    return;
   switch (keyText) {
     case "flow-stroke": {
       const stroke = extractStroke(values, key.span);
@@ -933,7 +1037,7 @@ function applyStyleEntry(entry: {
         severity: "error",
         message: `unknown style property: \`${keyText}\``,
         span: key.span,
-        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size",
+        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size, label-wrap, container-padding, label-padding",
       });
   }
 }
