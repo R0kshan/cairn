@@ -32,6 +32,7 @@ export type {
   MatrixSvgOptions,
   CompileOptions,
   CompileResult,
+  LayoutBox,
   Diagnostic,
   FlowMatrix,
   FlowMatrixRow,

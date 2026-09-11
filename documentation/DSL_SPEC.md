@@ -335,7 +335,7 @@ Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 
 ### Positioning controls
 
-Layout is automatic. These three controls exist for the cases where it gets a
+Layout is automatic. These four controls exist for the cases where it gets a
 diagram wrong; each is opt-in, and a file that uses none of them renders exactly
 as it did before they existed. One placement rule needs no control because it is
 applied for you — where a queue's producers and consumers attach, below.
@@ -383,6 +383,68 @@ actor-group STAFF "Payment actors" {
   actor AUDITOR  "Compliance auditor" { order: 2 }
 }
 ```
+
+**`offset: <dx>, <dy>` — a nudge, in pixels, from where the layout put it.** A
+statement in the element's body like `order:`, and read the same way: `dx` is
+right, `dy` is down, either may be negative, and anything but a pair of whole
+numbers is **E0109**. This is what the playground writes when you drag an
+element, so a diagram positioned by hand stays a diagram anyone can reproduce
+from its source.
+
+```cairn
+system ORDERS "Order platform" {
+  block APP "Order management" {
+    offset: 40, -20
+  }
+}
+```
+
+Three things follow from it being a **delta and not a seat**.
+
+- **The layout still runs.** The element keeps its place in the reading order and
+  moves with its neighbours; adding a sibling re-flows the drawing and the nudge
+  comes along. Nothing is ever pinned to a canvas coordinate, so an offset does
+  not go stale when the diagram around it grows.
+- **A container carries its children**, and a child's own `offset:` adds to its
+  container's — so nudging a `system` moves the whole group rigidly, and the one
+  block inside it that also needs moving still can. A child is **held inside**
+  the container that holds it, though: nesting is what a diagram *means*, and a
+  block drawn outside its system reads as a broken drawing rather than a nudged
+  one. An offset cut short that way is reported as **W0573** — the one place a
+  positioning hint is negotiated instead of honored. Nudge the container when the
+  whole group belongs elsewhere.
+- **The flows follow, and reconnect.** A terminal seated on an element that
+  moves is carried with it and its route re-squared, then the usual route repair
+  owns the result — so a flow whose element was dragged past its counterpart
+  comes back attached to the side that now faces it, rather than wrapping around.
+  An offset that reaches past the top-left corner slides the whole canvas instead
+  of being clamped, so the delta always stands.
+
+Reach for `order:` first. An offset large enough to change what the reader sees
+as the sequence is a sign the *band* is wrong, not the pixels — and `order:`
+survives edits that an offset merely rides along with.
+
+**An offset is honored, never negotiated** (INVARIANTS §17), containment aside.
+Where one lands an element on another, or a label on an element, the drawing
+still ships exactly as asked and the collision is reported as **W0572** rather
+than quietly repaired.
+
+**`label-offset: <dx>, <dy>` — the same nudge, for a flow's label.** It rides in
+the flow's inline block, because a flow has no body of its own:
+
+```cairn
+CAPTURE -> EVENTS : "Order created" { label-offset: 12, -6 }
+```
+
+The delta is measured from the seat the label was given on its own run, so it
+tracks the flow rather than the canvas. A label carrying one is exempt from the
+renderer's overlap settling — that is the "honored, not negotiated" rule again,
+and W0572 is what reports the overlap it may cost.
+
+**It moves the label and nothing else.** The flow keeps the route it had: the
+passes that route on label positions are handed the seats the layout chose, not
+the ones an author moved. A flow's *path* is not author-editable at all — the
+router owns it (INVARIANTS §16), and the playground offers no handle on it.
 
 **`logo: <name>` — the technology a component is built on.** A statement inside
 an element body, like `order:`. Content rather than cosmetics, so it lives
