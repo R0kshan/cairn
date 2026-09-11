@@ -279,13 +279,17 @@ function toElkNode(element: Element, sizing: NodeSizing, root = false): ElkNode 
   // `ACTOR_MIN_WIDTH` is the narrowest box the renderer already draws well.
   const sidePad = labelPadding ?? (compact ? 5 : 6);
   const minWidth = labelPadding === undefined ? (compact ? 98 : 108) : ACTOR_MIN_WIDTH;
+  // An actor's label sits under a figure rather than in a box, so it carries
+  // its own default — but `label-padding:` still governs it, or the property
+  // would narrow every box on the diagram except the people.
+  const actorSidePad = labelPadding ?? 4;
   return {
     id: element.id,
     ...(element.order && !root ? { layoutOptions: orderOption(element) } : {}),
     width: isActor
       ? Math.max(
           ACTOR_MIN_WIDTH,
-          measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8,
+          measure(element.label ?? element.id, nodeFontSize - 1.5).width + actorSidePad * 2,
         )
       : Math.max(minWidth, measured.width + sidePad * 2 + gutter),
     height: isActor

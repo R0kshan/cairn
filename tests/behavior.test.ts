@@ -23,6 +23,7 @@ import {
   nodeCoverage,
 } from "../src/scene-layout.ts";
 import { isLongDetour } from "../src/geometry.ts";
+import { nodeSize } from "../src/text-metrics.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
 import { views } from "../src/views.ts";
@@ -2327,6 +2328,32 @@ CORE -> PARTNER : "Nightly export" (SFTP/22)
   // The zone in parentheses is a *container* label, which `label-wrap` also
   // breaks — it is the one the matrix used to pass through unflattened.
   assert.ok(cells.some((cell) => cell.includes("(Order platform)")));
+
+  // An actor is drawn as a figure, but its label is still a label: the padding
+  // has to reach it on both sizing paths, or `label-padding` narrows every box
+  // on the diagram except the people. `text-metrics` sizes the folded layout,
+  // `scene-layout` the normal one, and the two must agree.
+  const actorLabel = "Compliance auditor";
+  assert.ok(
+    nodeSize("actor", actorLabel, 13, { sidePad: 2 }).width <
+      nodeSize("actor", actorLabel, 13).width,
+    "label-padding must narrow an actor on the folded sizing path",
+  );
+  const actorWidth = async (style: string) => {
+    const { model } = parse(
+      `diagram application "Actor padding"\n${style}\n` +
+        `actor-group PEOPLE "People" {\n  actor AUDIT "${actorLabel}"\n}\n${body}\n` +
+        `AUDIT -> CORE : "Audits" (HTTPS/443)\n`,
+    );
+    const scene = await layout(model!, views.application);
+    return scene.nodes.find((node) => node.id === "AUDIT")!.width;
+  };
+  const actorBase = await actorWidth("");
+  const actorPadded = await actorWidth("style {\n  label-padding: 2\n}");
+  assert.ok(
+    actorPadded < actorBase,
+    `label-padding must narrow an actor: got ${actorPadded}, base ${actorBase}`,
+  );
 
   // Out-of-range values are refused rather than clamped.
   for (const [style, code] of [

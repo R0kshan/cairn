@@ -93006,7 +93006,7 @@ var nodeSize = (kind, label, fontSize = DEFAULT_FONT_SIZE_NODE, room = {}) => {
   const isActor = kind === "actor";
   const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
   return {
-    width: isActor ? Math.max(64, measured.width + 8) : Math.max(sidePad === void 0 ? 140 : 64, measured.width + (sidePad ?? 8) * 2 + gutter),
+    width: isActor ? Math.max(64, measured.width + (sidePad ?? 4) * 2) : Math.max(sidePad === void 0 ? 140 : 64, measured.width + (sidePad ?? 8) * 2 + gutter),
     height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18)
   };
 };
@@ -99335,12 +99335,13 @@ function toElkNode2(element, sizing, root = false) {
   const gutter = (glyphKinds.has(element.kind) ? GLYPH_GUTTER : 0) + (element.logo ? LOGO_GUTTER : 0);
   const sidePad = labelPadding ?? (compact ? 5 : 6);
   const minWidth = labelPadding === void 0 ? compact ? 98 : 108 : ACTOR_MIN_WIDTH;
+  const actorSidePad = labelPadding ?? 4;
   return {
     id: element.id,
     ...element.order && !root ? { layoutOptions: orderOption(element) } : {},
     width: isActor ? Math.max(
       ACTOR_MIN_WIDTH,
-      measure(element.label ?? element.id, nodeFontSize - 1.5).width + 8
+      measure(element.label ?? element.id, nodeFontSize - 1.5).width + actorSidePad * 2
     ) : Math.max(minWidth, measured.width + sidePad * 2 + gutter),
     height: isActor ? 54 + ((element.label ?? element.id).split("\n").length - 1) * 11 : Math.max(compact ? 36 : 38, measured.height + (compact ? 10 : 12))
   };

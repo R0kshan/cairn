@@ -711,9 +711,7 @@ would mean the property narrowed nothing on the very diagrams it was asked for,
 so setting `label-padding` lowers the floor to the narrowest box the renderer
 already draws well (an actor's). The visible cost is that boxes stop being a
 uniform width: each one hugs its own label. Reach for `label-wrap` first if the
-diagram is wide because of one long name rather than many short ones. It leaves
-`actor` alone: an actor is drawn as a figure and sized by that figure, not by
-the box around its label.
+diagram is wide because of one long name rather than many short ones.
 
 Colors: `theme` picks one of the nine built-in palettes (`light` is the default) and `background` overrides the canvas color; `accent` retints the flows on top of whichever palette is in force, and `flow-color: by-source` gives every source element its own hue instead. A per-flow inline `{ stroke: … }` still wins over both. Each element's colors are customizable at every level: `fill`, `stroke` and `text` (label color) work inline per element, per kind (`fill block: …`), or per diagram; flow color/width/style via `flow-stroke` and inline `{ stroke: … }`. Several properties may share one line: `{ fill: #a stroke: #b text: #c }`.
 

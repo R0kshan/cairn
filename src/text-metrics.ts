@@ -110,7 +110,8 @@ export const flowLabelBox = (opts: {
  * actor is drawn as a figure, never with a glyph.
  *
  * `sidePad` is `style { label-padding: <n> }` — room either side of the label,
- * in place of the built-in 8. Setting it drops the uniform 140 minimum to the
+ * in place of the built-in 8 (4 on an actor, whose label sits under a figure
+ * and never carries a glyph). Setting it drops the uniform 140 minimum to the
  * actor's 64 as well, because the minimum, not the padding, is what most boxes
  * are actually sitting on; `scene-layout.ts` makes the same trade on its own
  * sizing path and the two must agree.
@@ -126,7 +127,7 @@ export const nodeSize = (
   const measured = measure(label, isActor ? fontSize - 1.5 : fontSize);
   return {
     width: isActor
-      ? Math.max(64, measured.width + 8)
+      ? Math.max(64, measured.width + (sidePad ?? 4) * 2)
       : Math.max(sidePad === undefined ? 140 : 64, measured.width + (sidePad ?? 8) * 2 + gutter),
     height: isActor ? 56 + (label.split("\n").length - 1) * 11 : Math.max(46, measured.height + 18),
   };
