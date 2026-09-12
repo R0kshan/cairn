@@ -154,6 +154,14 @@ export interface Scene {
    */
   clampedOffsets?: Set<string>;
   /**
+   * Spans of the `segment-offset:` entries a route could not honor as written:
+   * `clamped` was cut short to keep a terminal on the element side it sits on,
+   * `stale` named a run the route does not have. `offsetDiagnostics` turns them
+   * into W0573 and W0574 — the same rule as `clampedOffsets`, that the one
+   * negotiation a hint gets is also the one it is told about (§17).
+   */
+  segmentHints?: { clamped: Span[]; stale: Span[] };
+  /**
    * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept. The
    * renderer audits those repairs for label collateral the router could not see,
    * and "a loss at tier T is payable only by a gain at a better tier" needs to
@@ -1814,6 +1822,113 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void
   }
 }
 
+/** Two points are on the same axis when they differ by less than this. */
+const SEGMENT_EPSILON = 0.5;
+
+/** A run that carries no terminal has nothing bounding it; this stands in for
+    the infinity a clamp cannot use without turning a delta into `NaN`. */
+const SLIDE_UNBOUNDED = 1e4;
+
+/** Far enough in that a slid terminal still reads as meeting the side rather
+    than the corner where two of them meet. */
+const SEAT_INSET = 4;
+
+/**
+ * How far run `index` of `pts` may slide along its normal, as a delta range.
+ *
+ * A run in the middle of a route is free: both of its ends are corners, and the
+ * perpendicular runs on either side simply change length. A run carrying a
+ * *terminal* is bounded by the element side that terminal sits on — its normal
+ * points along that side, so sliding it slides the seat, and past the corner the
+ * flow would come off the element it connects.
+ *
+ * Exported for `compile()`, which hands the bounds to an editor so a drag can
+ * promise only what the drawing will actually show.
+ */
+export function segmentSlideRange(
+  pts: Point[],
+  index: number,
+  leaves: SceneNode[],
+): { min: number; max: number } {
+  const [a, b] = [pts[index], pts[index + 1]];
+  const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+  let min = -SLIDE_UNBOUNDED;
+  let max = SLIDE_UNBOUNDED;
+  for (const [point, terminal] of [
+    [a, index === 0],
+    [b, index + 2 === pts.length],
+  ] as [Point, boolean][]) {
+    if (!terminal) continue;
+    const node = leaves.find((leaf) => pointOn(point, leaf));
+    if (!node) continue;
+    const lo = (vertical ? node.x : node.y) + SEAT_INSET;
+    const hi = (vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
+    const at = vertical ? point.x : point.y;
+    min = Math.max(min, Math.min(lo, hi) - at);
+    max = Math.min(max, Math.max(lo, hi) - at);
+  }
+  return { min, max: Math.max(min, max) };
+}
+
+/**
+ * Slides the individual runs the author nudged (`{ segment-offset: 2, -18 }`)
+ * and returns how many moved, which is what tells `shiftIntoCanvas` whether to
+ * run.
+ *
+ * A run moves along its normal and nothing else: a vertical run left or right, a
+ * horizontal one up or down. That is the one direction that needs no repair —
+ * the perpendicular runs meeting it at either end keep their own axis and only
+ * change length — so the route comes out orthogonal by construction, with the
+ * same number of turns it went in with. Nothing else about the flow moves.
+ *
+ * Runs after the last pass that routes, so no repair can re-route the delta
+ * away, and before the final `anchorFlowLabels`, so a nudged run carries the
+ * label that names it. Reads `model.flows` for ids and numbers only — no kind,
+ * no view name (§16).
+ */
+function applySegmentOffsets(scene: Scene, model: Model): number {
+  const wanted = new Map(
+    model.flows
+      .filter((flow) => flow.segmentOffsets?.length)
+      .map((flow) => [flow.id, flow.segmentOffsets!]),
+  );
+  if (!wanted.size) return 0;
+  // Leaves only: a terminal inside a container is seated on the element, never
+  // on the box drawn around it.
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const clamped: Span[] = [];
+  const stale: Span[] = [];
+  let moved = 0;
+  for (const edge of scene.edges) {
+    for (const entry of wanted.get(edge.id) ?? []) {
+      const index = entry.segment - 1;
+      const [a, b] = [edge.pts[index], edge.pts[index + 1]];
+      const vertical = a && b && Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+      const horizontal = a && b && Math.abs(a.y - b.y) < SEGMENT_EPSILON;
+      // A run the route does not have, or a zero-length one left where two
+      // turns met: either way the author pointed at something that is not a run.
+      if (!a || !b || vertical === horizontal) {
+        stale.push(entry.span);
+        continue;
+      }
+      const range = segmentSlideRange(edge.pts, index, leaves);
+      const delta = Math.min(Math.max(entry.delta, range.min), range.max);
+      if (Math.abs(delta - entry.delta) >= SEGMENT_EPSILON) clamped.push(entry.span);
+      if (!delta) continue;
+      if (vertical) {
+        a.x += delta;
+        b.x += delta;
+      } else {
+        a.y += delta;
+        b.y += delta;
+      }
+      moved++;
+    }
+  }
+  if (clamped.length || stale.length) scene.segmentHints = { clamped, stale };
+  return moved;
+}
+
 /**
  * Slides the whole scene back to positive coordinates.
  *
@@ -1869,15 +1984,33 @@ function shiftIntoCanvas(scene: Scene): void {
 }
 
 /**
- * Overlaps an author's `offset:` or `label-offset:` created. The hint itself is
- * never negotiated (§17), so this reports rather than repairs — the drawing
- * ships as asked and the author is told what the ask cost.
+ * Overlaps an author's `offset:` or `label-offset:` created, plus the two ways a
+ * `segment-offset:` can fail to land. The hints themselves are never negotiated
+ * (§17), so this reports rather than repairs — the drawing ships as asked and
+ * the author is told what the ask cost.
  *
  * Only boxes an offset actually moved are tested, against everything else: an
  * overlap between two elements neither of which was nudged is the layout's
  * business, not this warning's.
  */
 export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
+  const hints: Diagnostic[] = [];
+  for (const span of scene.segmentHints?.stale ?? [])
+    hints.push({
+      code: "W0574",
+      severity: "warning",
+      message: "`segment-offset` names a run this flow's route does not have",
+      span,
+      help: "runs are counted from 1 along the route, and renumber when it gains or loses a turn — re-drag the run in the playground, or drop the hint",
+    });
+  for (const span of scene.segmentHints?.clamped ?? [])
+    hints.push({
+      code: "W0573",
+      severity: "warning",
+      message: "`segment-offset` was limited to keep the flow on the element it attaches to",
+      span,
+      help: "the run carries a terminal, so it can only slide as far as the side that terminal sits on — pin the side with `ID.side`, or move the element instead",
+    });
   // A descendant carried by its container's offset is answerable to *that*
   // offset: the container is what the author moved, so an overlap its children
   // cause is reported against the container's span, not passed over for having
@@ -1892,13 +2025,13 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   };
   walk(model.elements);
   for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
-  if (!spans.size) return [];
+  if (!spans.size) return hints;
 
   const overlap = (a: Box, b: Box): boolean =>
     a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
-  const diagnostics: Diagnostic[] = [];
+  const diagnostics: Diagnostic[] = [...hints];
   const reported = new Set<Span>();
   for (const id of scene.clampedOffsets ?? []) {
     const span = spans.get(id);
@@ -2223,7 +2356,31 @@ function markDeclaredTerminals(
   }
 }
 
+/**
+ * Lays out `model` and then applies the author's `segment-offset:` hints.
+ *
+ * The hints go on *after* `chooseLayout`, never inside it: the port pass below
+ * re-lays the drawing out and picks a winner by readability profile, so a run
+ * nudged before that choice is judged as if the router had drawn it there — and
+ * a 30px nudge on one flow was measured flipping an entire drawing to a
+ * different candidate. A positioning hint says where something sits, never which
+ * layout wins (§17).
+ *
+ * The three passes re-run here are the ones a moved run invalidates and no more:
+ * the label that names it, the canvas it may have pushed past, and the canvas
+ * growth that answers it. All three are idempotent on a settled scene.
+ */
 export async function layout(model: Model, view: View): Promise<Scene> {
+  const scene = await chooseLayout(model, view);
+  if (applySegmentOffsets(scene, model)) {
+    anchorFlowLabels(scene, titleBoxesOf(scene, model));
+    shiftIntoCanvas(scene);
+    fitCanvas(scene);
+  }
+  return scene;
+}
+
+async function chooseLayout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";

@@ -666,13 +666,16 @@ Enforced structurally and by test:
 - `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
   registry appears in those sources, so the check covers kinds added later.
 
-Four DSL-declared positioning hints exist (§17), and none breaches this: an
+Five DSL-declared positioning hints exist (§17), and none breaches this: an
 `order:` becomes a partition band and a `layout` rank an elk position, both
 before any `Scene` exists; an `offset:` is resolved to a
 `Map<nodeId, {dx, dy}>` before the pass runs, the same shape as a lane
 assignment, and a `label-offset:` is stamped onto `SceneLabel.offset` as a plain
 delta, so `label-anchor` re-applies a pair of numbers and never learns where they
-came from; and a pinned
+came from; a `segment-offset:` is read out of `model.flows` as an id, a run
+number and a delta and applied to two points of a polyline, so
+`applySegmentOffsets` knows a run and a node border and nothing else; and a
+pinned
 attachment side becomes an elk port plus a plain `pinned` boolean on the
 `SceneEdge`. The passes that read `pinned` read a boolean on geometry, exactly
 as they already read `detour` — no kind, no view name, so a new view inherits
@@ -693,10 +696,11 @@ That is a known limitation, not a guarantee.
 
 ## 17. Author positioning hints are honored, not negotiated
 
-Four opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
-override layout: `order:` on an element, `offset:` / `label-offset:` on an
-element or a flow label, `ID.side` on a flow endpoint, and the arrow glyph's
-line style. Three rules hold for them.
+Five opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
+override layout: `order:` on an element, `offset:` / `label-offset:` /
+`segment-offset:` on an element, a flow label or one run of a flow's route,
+`ID.side` on a flow endpoint, and the arrow glyph's line style. Three rules hold
+for them.
 
 **`order:` reads along the drawing at the root, across it inside a container.**
 A top-level `order:` becomes a partition band (§9), and a band is a contiguous
@@ -858,8 +862,35 @@ so `compactVertical` and `optimiseRoutes` judge the seat the layout chose rather
 than the one the author moved it to. That is what makes "nudging a label does not
 move its flow" a property of the pipeline instead of a coincidence, and
 `tests/behavior.test.ts` holds every route in `application-large-fr` identical
-across a 40×25 label nudge. Flows themselves are not draggable at all: only
-elements, containers and labels appear in `compile()`'s `boxes`.
+across a 40×25 label nudge.
+
+**A `segment-offset:` moves one run along its normal, and nothing else.** A
+vertical run goes left or right, a horizontal one up or down — the one direction
+that needs no repair, since the perpendicular runs meeting it at either end keep
+their own axis and only change length. The route therefore comes out orthogonal
+by construction with the turns it went in with, and `applySegmentOffsets` splices
+no points and re-routes nothing.
+
+**And it runs outside `chooseLayout`, not inside it.** The port pass re-lays the
+drawing out and picks a winner by readability profile, so a run nudged before
+that choice is judged as if the router had drawn it there: a 30px slide on one
+flow of `application-large-fr` was measured flipping the whole drawing to a
+different candidate. `layout()` therefore applies the hints to the *winning*
+scene and re-runs only what a moved run invalidates — `anchorFlowLabels` for the
+label that names it, `shiftIntoCanvas` and `fitCanvas` for the canvas it may have
+pushed past. A positioning hint says where something sits, never which layout
+wins; `tests/behavior.test.ts` holds every other route in that drawing identical
+across the nudge.
+
+The two ways a slide cannot land are reported, not dropped: a run carrying a
+terminal is bounded by the element side that terminal sits on, and a delta cut
+short there is `W0573` — the same negotiation the containment clamp makes, for
+the same reason, since a flow drawn off the element it connects reads as a broken
+diagram rather than a nudged one. A run number naming a run the route does not
+have is `W0574`; the numbers are positional and renumber when a route gains a
+turn, which is the price of addressing a run at all. Runs appear in `compile()`'s
+`boxes` as `what: "segment"` with their two endpoints and their slide bounds,
+which is what lets an editor hold a drag to what the drawing will actually show.
 
 What an offset may not do is disappear. Where one lands an element on another,
 or a label on an element, the drawing ships exactly as written and the collision

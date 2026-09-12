@@ -865,6 +865,54 @@ function applyNumericStyleEntry(entry: {
   return true;
 }
 
+/**
+ * The two nudges a flow carries in its inline block: `label-offset:` moves the
+ * label it names, `segment-offset:` slides one run of its route.
+ *
+ * Positioning, not cosmetics — the same argument that keeps `order:` and
+ * `offset:` out of an element's `style` block. A flow has no body of its own to
+ * put them in, so they ride the inline block and are routed to the flow itself
+ * rather than to its `StyleProps`.
+ */
+function applyFlowNudge(
+  key: Token,
+  values: Token[],
+  flow: Flow | null,
+  diagnostics: Diagnostic[],
+): void {
+  const keyText = key.text;
+  const segment = keyText === "segment-offset";
+  const numbers = values.filter((token) => token.kind !== "comma");
+  const parsed = numbers.map((token) => (/^-?\d+$/.test(token.text) ? Number(token.text) : NaN));
+  // A run is counted from 1 along the route, so 0 and below name nothing.
+  const wellFormed =
+    numbers.length === 2 &&
+    parsed.every((value) => Number.isInteger(value)) &&
+    (!segment || parsed[0] >= 1);
+  if (!flow || !wellFormed) {
+    diagnostics.push({
+      code: "E0109",
+      severity: "error",
+      message: segment
+        ? "`segment-offset` expects a run number of 1 or more and a whole delta — `segment-offset: <segment>, <delta>`"
+        : "`label-offset` expects two whole numbers — `label-offset: <dx>, <dy>`",
+      span: key.span,
+      help: flow
+        ? `e.g. \`A -> B "Sends" { ${keyText}: ${segment ? "2, -18" : "12, -6"} }\``
+        : `\`${keyText}\` belongs to a flow's inline block`,
+    });
+    return;
+  }
+  // The span covers the numbers, not the key: it is what an editor splices a
+  // new pair over when the same label or run is nudged twice.
+  const [first, last] = [numbers[0].span, numbers[1].span];
+  const span = { line: first.line, col: first.col, len: last.col + last.len - first.col };
+  // Repeatable, unlike every other inline property: one flow can need two of its
+  // runs moved, and a second key is less grammar than a list syntax.
+  if (segment) (flow.segmentOffsets ??= []).push({ segment: parsed[0], delta: parsed[1], span });
+  else flow.labelOffset = { dx: parsed[0], dy: parsed[1], span };
+}
+
 function applyStyleEntry(entry: {
   key: Token;
   styleTargetKind: string | undefined;
@@ -911,33 +959,8 @@ function applyStyleEntry(entry: {
   const firstValue = () => values[0];
 
   const keyText = key.text;
-  // Positioning, not cosmetics — the same argument that keeps `order:` and
-  // `offset:` out of an element's `style` block. A flow has no body of its own
-  // to put it in, so it rides the inline block and is routed to the flow
-  // itself rather than to its `StyleProps`.
-  if (keyText === "label-offset") {
-    const numbers = values.filter((token) => token.kind !== "comma");
-    const parsed = numbers.map((token) => (/^-?\d+$/.test(token.text) ? Number(token.text) : NaN));
-    if (!flow || numbers.length !== 2 || parsed.some((value) => !Number.isInteger(value))) {
-      diagnostics.push({
-        code: "E0109",
-        severity: "error",
-        message: "`label-offset` expects two whole numbers — `label-offset: <dx>, <dy>`",
-        span: key.span,
-        help: flow
-          ? 'e.g. `A -> B "Sends" { label-offset: 12, -6 }`'
-          : "`label-offset` belongs to a flow's inline block",
-      });
-      return;
-    }
-    // The span covers the numbers, not the key: it is what an editor splices a
-    // new pair over when the same label is nudged twice.
-    const [first, last] = [numbers[0].span, numbers[1].span];
-    flow.labelOffset = {
-      dx: parsed[0],
-      dy: parsed[1],
-      span: { line: first.line, col: first.col, len: last.col + last.len - first.col },
-    };
+  if (keyText === "label-offset" || keyText === "segment-offset") {
+    applyFlowNudge(key, values, flow ?? null, diagnostics);
     return;
   }
   if (inline) {
@@ -956,7 +979,7 @@ function applyStyleEntry(entry: {
         severity: "error",
         message: `unknown style property here: \`${keyText}\``,
         span: key.span,
-        help: "inline properties: fill, stroke, text, label, label-offset",
+        help: "inline properties: fill, stroke, text, label, label-offset, segment-offset",
       });
     return;
   }

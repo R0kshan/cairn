@@ -338,7 +338,7 @@ Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 
 ### Positioning controls
 
-Layout is automatic. These four controls exist for the cases where it gets a
+Layout is automatic. These five controls exist for the cases where it gets a
 diagram wrong; each is opt-in, and a file that uses none of them renders exactly
 as it did before they existed. One placement rule needs no control because it is
 applied for you — where a queue's producers and consumers attach, below.
@@ -446,8 +446,54 @@ and W0572 is what reports the overlap it may cost.
 
 **It moves the label and nothing else.** The flow keeps the route it had: the
 passes that route on label positions are handed the seats the layout chose, not
-the ones an author moved. A flow's *path* is not author-editable at all — the
-router owns it (INVARIANTS §16), and the playground offers no handle on it.
+the ones an author moved. To move the flow itself, use `segment-offset:`.
+
+**`segment-offset: <segment>, <delta>` — slides one run of a flow's route.** A
+route is a chain of horizontal and vertical runs; this moves one of them along
+its **normal** — a vertical run left or right, a horizontal run up or down — and
+touches nothing else:
+
+```cairn
+CAPTURE -> EVENTS "Order created" { segment-offset: 2, -18 }
+```
+
+`segment` counts the runs from 1, following the route from its source. `delta`
+is right for a vertical run and down for a horizontal one, and may be negative.
+The normal is the only direction a run can move without the route needing a
+repair: the perpendicular runs meeting it at either end keep their own axis and
+simply change length, so the drawing comes out orthogonal with exactly the turns
+it went in with. This is what the playground writes when you slide a flow — hover
+a run and the cursor becomes a resize cursor pointing the one way it can go.
+
+**Repeat the key to move more than one run.** It is the one inline property that
+may appear twice in a block, because a route can need two of its runs moved and
+a second key is less to learn than a list:
+
+```cairn
+CAPTURE -> EVENTS "Order created" { segment-offset: 2, -18 segment-offset: 4, 12 }
+```
+
+Two things bound it.
+
+- **A run carrying a terminal can only slide as far as its element side.** Its
+  normal points *along* the side the flow attaches to, so sliding it slides the
+  seat; past the corner the flow would come off the element it connects. The
+  delta is cut short a few pixels inside the corner instead, and reported as
+  **W0573**. Interior runs have no such bound.
+- **The run number is positional.** A route that gains or loses a turn renumbers
+  everything after it, and a `segment-offset` naming a run the route no longer
+  has is reported as **W0574** rather than silently dropped. Re-slide the run in
+  the playground and the number is rewritten for you.
+
+Applied after the layout is chosen and after every routing pass, so the router
+still owns the *shape* of the route — how many turns it takes and what it goes
+around — and the author owns where each run sits. A hint never decides which
+layout wins. The label of a nudged flow re-anchors to the run it names, and a
+`label-offset:` on the same flow still adds on top.
+
+Reach for `ID.side` or an element `offset:` first: a run that needs a large slide
+usually wants a different attachment side, and a side survives edits that a run
+number merely rides along with.
 
 **`logo: <name>` — the technology a component is built on.** A statement inside
 an element body, like `order:`. Content rather than cosmetics, so it lives

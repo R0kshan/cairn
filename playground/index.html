@@ -67,7 +67,17 @@
   #hover { position:absolute; pointer-events:none; border:1.5px solid var(--accent);
            background:rgba(108,182,255,.07); border-radius:4px; display:none;
            box-shadow:0 0 0 3px rgba(108,182,255,.13); }
+  /* A run of a route is a line, so its overlay is one too. Both polylines live
+     in one overlay <svg> laid over the drawing. */
+  #routes { position:absolute; pointer-events:none; overflow:visible; display:none; }
+  #routes polyline { fill:none; stroke:var(--accent); stroke-linejoin:round; stroke-linecap:round; }
+  #routes .hover-route { stroke-width:5; opacity:.45; }
+  #routes .ghost-route { stroke-width:2.5; stroke-dasharray:6 4; }
   #preview.draggable { cursor:move; }
+  /* A run slides along its normal and nowhere else, so the cursor says which
+     way before the drag starts rather than after it refuses to follow. */
+  #preview.slide-x { cursor:ew-resize; }
+  #preview.slide-y { cursor:ns-resize; }
 </style>
 </head>
 <body>
@@ -113,7 +123,7 @@
   </div>
   <div id="splitter" title="Drag to resize · double-click to reset"></div>
   <div class="right">
-    <div id="preview" title="Drag an element or a flow label to nudge it — the DSL follows · drag the canvas to pan · ctrl/⌘ + wheel to zoom"></div>
+    <div id="preview" title="Drag an element or a flow label to nudge it, or slide one run of a flow across itself — the DSL follows · drag the canvas to pan · ctrl/⌘ + wheel to zoom"></div>
     <div id="status"><span id="stat">loading engine…</span></div>
   </div>
 </main>
@@ -477,8 +487,24 @@ const ghost = document.createElement('div');
 ghost.id = 'ghost';
 const hover = document.createElement('div');
 hover.id = 'hover';
-/** Both overlays live in the preview, which `run()` empties on every render. */
-const addOverlays = () => preview.append(hover, ghost);
+// A flow is a line, so a box overlay says nothing useful about it: the
+// rectangle around a route that turns three corners covers half the drawing.
+// Both route overlays are polylines in one <svg> laid over the drawing.
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const routes = document.createElementNS(SVG_NS, 'svg');
+routes.id = 'routes';
+const polyline = className => {
+  const line = document.createElementNS(SVG_NS, 'polyline');
+  line.setAttribute('class', className);
+  line.style.display = 'none';
+  routes.append(line);
+  return line;
+};
+/** One overlay in each shape per role, so a flow and a box light up the same way. */
+const HOVER = { box: hover, route: polyline('hover-route') };
+const GHOST = { box: ghost, route: polyline('ghost-route') };
+/** Every overlay lives in the preview, which `run()` empties on every render. */
+const addOverlays = () => preview.append(hover, ghost, routes);
 addOverlays();
 
 // Below this, a drag is a click that wobbled — panning, or nothing at all.
@@ -492,14 +518,50 @@ function diagramPoint(e) {
   return { x: (e.clientX - rect.left) / zoom, y: (e.clientY - rect.top) / zoom };
 }
 
-/** The smallest box under the pointer — so a child wins over its container, and
-    a flow label wins over the box it happens to sit on. */
+/** Half the width of the band a run can be grabbed by, in diagram pixels. */
+const SEGMENT_GRAB_PX = 5;
+
+/** A run is vertical when its two endpoints share an x. */
+const isVertical = box => Math.abs(box.points[0].x - box.points[1].x) < 0.5;
+
+/** Distance from `point` to the segment `a`–`b`. */
+function distanceToSegment(point, a, b) {
+  const vx = b.x - a.x, vy = b.y - a.y;
+  const lengthSq = vx * vx + vy * vy;
+  const along = lengthSq
+    ? Math.max(0, Math.min(1, ((point.x - a.x) * vx + (point.y - a.y) * vy) / lengthSq))
+    : 0;
+  return Math.hypot(point.x - (a.x + along * vx), point.y - (a.y + along * vy));
+}
+
+/** The run passing closest under the pointer, within the grab band. */
+function segmentAt(point) {
+  let best = null;
+  for (const box of lastBoxes) {
+    if (box.what !== 'segment') continue;
+    const distance = distanceToSegment(point, box.points[0], box.points[1]);
+    if (distance <= SEGMENT_GRAB_PX && (!best || distance < best.distance)) best = { box, distance };
+  }
+  return best?.box ?? null;
+}
+
+/**
+ * What the pointer has hold of: a flow label, else one run of a route, else the
+ * smallest element box under it — so a child wins over its container.
+ *
+ * Labels outrank runs because a label sits *on* its own run, and a run that won
+ * there would leave `label-offset:` unreachable. Runs outrank elements because
+ * the grab band is 5px wide: a pointer that close to a line is on the line,
+ * whatever box the line happens to cross.
+ */
 function boxAt(point) {
   if (!lastBoxes || !point) return null;
-  return lastBoxes
-    .filter(b => point.x >= b.x && point.x <= b.x + b.width &&
+  const inside = lastBoxes
+    .filter(b => b.what !== 'segment' &&
+                 point.x >= b.x && point.x <= b.x + b.width &&
                  point.y >= b.y && point.y <= b.y + b.height)
-    .sort((a, b) => a.width * a.height - b.width * b.height)[0] ?? null;
+    .sort((a, b) => a.width * a.height - b.width * b.height);
+  return inside.find(b => b.what === 'label') ?? segmentAt(point) ?? inside[0] ?? null;
 }
 
 /**
@@ -524,6 +586,42 @@ function placeOverlay(el, box, dx = 0, dy = 0) {
   el.style.top    = (originY + (box.y + dy) * zoom) + 'px';
   el.style.width  = (box.width * zoom) + 'px';
   el.style.height = (box.height * zoom) + 'px';
+}
+
+/**
+ * Draws one flow's route into `line`, shifted by `dx, dy`.
+ *
+ * The overlay <svg> is parked over the drawing on every call rather than once:
+ * a zoom, a pan or a re-render moves the drawing under it, and there is no
+ * cheaper moment to notice than the one that is about to draw on it.
+ */
+function placeRoute(line, box, dx = 0, dy = 0) {
+  const svg = preview.querySelector('svg');
+  if (!svg) return;
+  const svgRect = svg.getBoundingClientRect();
+  const paneRect = preview.getBoundingClientRect();
+  routes.style.display = 'block';
+  routes.style.left   = (svgRect.left - paneRect.left + preview.scrollLeft) + 'px';
+  routes.style.top    = (svgRect.top - paneRect.top + preview.scrollTop) + 'px';
+  routes.style.width  = svgRect.width + 'px';
+  routes.style.height = svgRect.height + 'px';
+  line.style.display = 'block';
+  line.setAttribute(
+    'points',
+    box.points.map(p => `${(p.x + dx) * zoom},${(p.y + dy) * zoom}`).join(' '),
+  );
+}
+
+const hideOverlay = pair => {
+  pair.box.style.display = 'none';
+  pair.route.style.display = 'none';
+};
+
+/** Lights up what the pointer holds, in the shape that fits it. */
+function showOverlay(pair, box, dx = 0, dy = 0) {
+  hideOverlay(pair);
+  if (box.what === 'segment') placeRoute(pair.route, box, dx, dy);
+  else placeOverlay(pair.box, box, dx, dy);
 }
 
 // The writeback below is pure text surgery on the DSL, and `tests/playground.test.ts`
@@ -599,18 +697,30 @@ function readSpan(source, span) {
  * settles which of the last two applies.
  */
 function writeOffset(source, box, dx, dy) {
+  // A run's pair is `segment, delta`, not `dx, dy`: the first number names which
+  // run and has to survive every re-drag, and the second is the only one a drag
+  // adds to. A run slides along one axis, so the other delta is always zero.
+  const run = box.what === 'segment';
+  const delta = dx || dy;
   if (box.offsetSpan) {
     const current = readSpan(source, box.offsetSpan);
-    return spliceSpan(source, box.offsetSpan, `${current.dx + dx}, ${current.dy + dy}`);
+    const pair = run
+      ? `${box.segment}, ${current.dy + delta}`
+      : `${current.dx + dx}, ${current.dy + dy}`;
+    return spliceSpan(source, box.offsetSpan, pair);
   }
   const lines = source.split('\n');
   const index = box.line - 1;
   const line = lines[index];
   if (line === undefined) return source;
   const indent = line.match(/^\s*/)[0];
-  // A flow's inline block is its style block; `label-offset` rides in it.
-  if (box.what === 'label') {
-    lines[index] = insertInBlock(line, `label-offset: ${dx}, ${dy}`);
+  // A flow has no body of its own, so both of its nudges ride the inline block:
+  // `label-offset` moves the label, `segment-offset` one run of the route.
+  if (box.what !== 'element') {
+    const statement = run
+      ? `segment-offset: ${box.segment}, ${delta}`
+      : `label-offset: ${dx}, ${dy}`;
+    lines[index] = insertInBlock(line, statement);
     return lines.join('\n');
   }
   // A body already open at the end of the line gets the statement on its own
@@ -649,6 +759,16 @@ let dragStart = null;
  * nothing — so the ghost and the value written to the source round identically.
  */
 function dragDelta(e, box = dragStart.box, fromX = dragStart.clientX, fromY = dragStart.clientY) {
+  // A run slides along its normal and nowhere else — that is the one direction
+  // that leaves the route orthogonal — and only as far as the engine will take
+  // it, so the ghost promises what the drawing will actually show.
+  if (box.what === 'segment') {
+    const vertical = isVertical(box);
+    const travelled = (vertical ? e.clientX - fromX : e.clientY - fromY) / zoom;
+    const held = Math.round(Math.min(Math.max(travelled, box.slide.min), box.slide.max));
+    return vertical ? { dx: held, dy: 0 } : { dx: 0, dy: held };
+  }
+  // A label has no container to be held inside — only an element does.
   if (box.what === 'label') {
     return { dx: Math.round((e.clientX - fromX) / zoom), dy: Math.round((e.clientY - fromY) / zoom) };
   }
@@ -659,12 +779,18 @@ function dragDelta(e, box = dragStart.box, fromX = dragStart.clientX, fromY = dr
 preview.addEventListener('pointermove', e => {
   if (dragStart || panStart) return;
   const box = boxAt(diagramPoint(e));
-  preview.classList.toggle('draggable', !!box);
-  if (box) placeOverlay(hover, box);
-  else hover.style.display = 'none';
+  const run = box?.what === 'segment';
+  preview.classList.toggle('draggable', !!box && !run);
+  preview.classList.toggle('slide-x', run && isVertical(box));
+  preview.classList.toggle('slide-y', run && !isVertical(box));
+  if (box) showOverlay(HOVER, box);
+  else hideOverlay(HOVER);
 });
 
-preview.addEventListener('pointerleave', () => { hover.style.display = 'none'; });
+preview.addEventListener('pointerleave', () => {
+  hideOverlay(HOVER);
+  preview.classList.remove('draggable', 'slide-x', 'slide-y');
+});
 
 preview.addEventListener('pointermove', e => {
   if (!dragStart) return;
@@ -673,21 +799,24 @@ preview.addEventListener('pointermove', e => {
     Math.abs(e.clientY - dragStart.clientY) > DRAG_THRESHOLD_PX;
   if (!dragStart.moved) return;
   const { dx, dy } = dragDelta(e);
-  hover.style.display = 'none';   // the ghost speaks for the drag from here
-  placeOverlay(ghost, dragStart.box, dx, dy);
+  hideOverlay(HOVER);   // the ghost speaks for the drag from here
+  showOverlay(GHOST, dragStart.box, dx, dy);
 });
 
 function endDrag(e) {
   if (!dragStart) return;
   const { box, clientX, clientY, moved } = dragStart;
   dragStart = null;
-  ghost.style.display = 'none';
+  hideOverlay(GHOST);
   preview.releasePointerCapture(e.pointerId);
   if (!moved) return;
   const { dx, dy } = dragDelta(e, box, clientX, clientY);
   if (!dx && !dy) return;
   editor.value = writeOffset(editor.value, box, dx, dy);
-  flash(`${box.id} nudged ${dx >= 0 ? '+' : ''}${dx}, ${dy >= 0 ? '+' : ''}${dy}`);
+  const signed = value => `${value >= 0 ? '+' : ''}${value}`;
+  flash(box.what === 'segment'
+    ? `${box.id} run ${box.segment} slid ${signed(dx || dy)}`
+    : `${box.id} nudged ${signed(dx)}, ${signed(dy)}`);
   run();
 }
 

@@ -93645,6 +93645,27 @@ function applyNumericStyleEntry(entry) {
     );
   return true;
 }
+function applyFlowNudge(key, values, flow, diagnostics) {
+  const keyText = key.text;
+  const segment = keyText === "segment-offset";
+  const numbers = values.filter((token) => token.kind !== "comma");
+  const parsed = numbers.map((token) => /^-?\d+$/.test(token.text) ? Number(token.text) : NaN);
+  const wellFormed = numbers.length === 2 && parsed.every((value) => Number.isInteger(value)) && (!segment || parsed[0] >= 1);
+  if (!flow || !wellFormed) {
+    diagnostics.push({
+      code: "E0109",
+      severity: "error",
+      message: segment ? "`segment-offset` expects a run number of 1 or more and a whole delta \u2014 `segment-offset: <segment>, <delta>`" : "`label-offset` expects two whole numbers \u2014 `label-offset: <dx>, <dy>`",
+      span: key.span,
+      help: flow ? `e.g. \`A -> B "Sends" { ${keyText}: ${segment ? "2, -18" : "12, -6"} }\`` : `\`${keyText}\` belongs to a flow's inline block`
+    });
+    return;
+  }
+  const [first, last] = [numbers[0].span, numbers[1].span];
+  const span = { line: first.line, col: first.col, len: last.col + last.len - first.col };
+  if (segment) (flow.segmentOffsets ??= []).push({ segment: parsed[0], delta: parsed[1], span });
+  else flow.labelOffset = { dx: parsed[0], dy: parsed[1], span };
+}
 function applyStyleEntry(entry) {
   const { key, styleTargetKind, values, target, inline, flow, diagnostics } = entry;
   const extractStroke = (tokens, _span) => {
@@ -93680,25 +93701,8 @@ function applyStyleEntry(entry) {
   });
   const firstValue = () => values[0];
   const keyText = key.text;
-  if (keyText === "label-offset") {
-    const numbers = values.filter((token) => token.kind !== "comma");
-    const parsed = numbers.map((token) => /^-?\d+$/.test(token.text) ? Number(token.text) : NaN);
-    if (!flow || numbers.length !== 2 || parsed.some((value) => !Number.isInteger(value))) {
-      diagnostics.push({
-        code: "E0109",
-        severity: "error",
-        message: "`label-offset` expects two whole numbers \u2014 `label-offset: <dx>, <dy>`",
-        span: key.span,
-        help: flow ? 'e.g. `A -> B "Sends" { label-offset: 12, -6 }`' : "`label-offset` belongs to a flow's inline block"
-      });
-      return;
-    }
-    const [first, last] = [numbers[0].span, numbers[1].span];
-    flow.labelOffset = {
-      dx: parsed[0],
-      dy: parsed[1],
-      span: { line: first.line, col: first.col, len: last.col + last.len - first.col }
-    };
+  if (keyText === "label-offset" || keyText === "segment-offset") {
+    applyFlowNudge(key, values, flow ?? null, diagnostics);
     return;
   }
   if (inline) {
@@ -93713,7 +93717,7 @@ function applyStyleEntry(entry) {
         severity: "error",
         message: `unknown style property here: \`${keyText}\``,
         span: key.span,
-        help: "inline properties: fill, stroke, text, label, label-offset"
+        help: "inline properties: fill, stroke, text, label, label-offset, segment-offset"
       });
     return;
   }
@@ -100171,6 +100175,65 @@ function applyNodeOffsets(scene, offsetOf) {
     }
   }
 }
+var SEGMENT_EPSILON = 0.5;
+var SLIDE_UNBOUNDED = 1e4;
+var SEAT_INSET = 4;
+function segmentSlideRange(pts, index, leaves) {
+  const [a, b] = [pts[index], pts[index + 1]];
+  const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+  let min = -SLIDE_UNBOUNDED;
+  let max = SLIDE_UNBOUNDED;
+  for (const [point, terminal] of [
+    [a, index === 0],
+    [b, index + 2 === pts.length]
+  ]) {
+    if (!terminal) continue;
+    const node = leaves.find((leaf) => pointOn(point, leaf));
+    if (!node) continue;
+    const lo = (vertical ? node.x : node.y) + SEAT_INSET;
+    const hi = (vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
+    const at = vertical ? point.x : point.y;
+    min = Math.max(min, Math.min(lo, hi) - at);
+    max = Math.min(max, Math.max(lo, hi) - at);
+  }
+  return { min, max: Math.max(min, max) };
+}
+function applySegmentOffsets(scene, model) {
+  const wanted = new Map(
+    model.flows.filter((flow) => flow.segmentOffsets?.length).map((flow) => [flow.id, flow.segmentOffsets])
+  );
+  if (!wanted.size) return 0;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const clamped = [];
+  const stale = [];
+  let moved = 0;
+  for (const edge of scene.edges) {
+    for (const entry of wanted.get(edge.id) ?? []) {
+      const index = entry.segment - 1;
+      const [a, b] = [edge.pts[index], edge.pts[index + 1]];
+      const vertical = a && b && Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+      const horizontal = a && b && Math.abs(a.y - b.y) < SEGMENT_EPSILON;
+      if (!a || !b || vertical === horizontal) {
+        stale.push(entry.span);
+        continue;
+      }
+      const range = segmentSlideRange(edge.pts, index, leaves);
+      const delta = Math.min(Math.max(entry.delta, range.min), range.max);
+      if (Math.abs(delta - entry.delta) >= SEGMENT_EPSILON) clamped.push(entry.span);
+      if (!delta) continue;
+      if (vertical) {
+        a.x += delta;
+        b.x += delta;
+      } else {
+        a.y += delta;
+        b.y += delta;
+      }
+      moved++;
+    }
+  }
+  if (clamped.length || stale.length) scene.segmentHints = { clamped, stale };
+  return moved;
+}
 function shiftIntoCanvas(scene) {
   const MARGIN = 4;
   let minX = MARGIN;
@@ -100214,6 +100277,23 @@ function shiftIntoCanvas(scene) {
   scene.height += shiftY;
 }
 function offsetDiagnostics(scene, model) {
+  const hints = [];
+  for (const span of scene.segmentHints?.stale ?? [])
+    hints.push({
+      code: "W0574",
+      severity: "warning",
+      message: "`segment-offset` names a run this flow's route does not have",
+      span,
+      help: "runs are counted from 1 along the route, and renumber when it gains or loses a turn \u2014 re-drag the run in the playground, or drop the hint"
+    });
+  for (const span of scene.segmentHints?.clamped ?? [])
+    hints.push({
+      code: "W0573",
+      severity: "warning",
+      message: "`segment-offset` was limited to keep the flow on the element it attaches to",
+      span,
+      help: "the run carries a terminal, so it can only slide as far as the side that terminal sits on \u2014 pin the side with `ID.side`, or move the element instead"
+    });
   const spans = /* @__PURE__ */ new Map();
   const walk = (elements, inherited) => {
     for (const element of elements) {
@@ -100224,11 +100304,11 @@ function offsetDiagnostics(scene, model) {
   };
   walk(model.elements);
   for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
-  if (!spans.size) return [];
+  if (!spans.size) return hints;
   const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
-  const diagnostics = [];
+  const diagnostics = [...hints];
   const reported = /* @__PURE__ */ new Set();
   for (const id of scene.clampedOffsets ?? []) {
     const span = spans.get(id);
@@ -100402,6 +100482,15 @@ function markDeclaredTerminals(edges, model, view, hubPorts) {
   }
 }
 async function layout(model, view) {
+  const scene = await chooseLayout(model, view);
+  if (applySegmentOffsets(scene, model)) {
+    anchorFlowLabels(scene, titleBoxesOf(scene, model));
+    shiftIntoCanvas(scene);
+    fitCanvas(scene);
+  }
+  return scene;
+}
+async function chooseLayout(model, view) {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";
@@ -102004,13 +102093,9 @@ function layoutBoxes(model, scene) {
     }
   };
   walk(model.elements);
-  const flowDeclarations = new Map(
-    model.flows.map((flow) => [
-      flow.id,
-      { line: flow.span.line, offsetSpan: flow.labelOffset?.span }
-    ])
-  );
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
   const boxes = [];
+  const leaves = scene.nodes.filter((node) => !node.container);
   for (const node of scene.nodes) {
     const declaration = declarations.get(node.id);
     if (!declaration) continue;
@@ -102025,10 +102110,10 @@ function layoutBoxes(model, scene) {
       ...declaration
     });
   }
-  for (const edge of scene.edges)
-    for (const label of edge.labels) {
-      const declaration = flowDeclarations.get(label.flowId);
-      if (!declaration) continue;
+  for (const edge of scene.edges) {
+    const flow = flowById.get(edge.id);
+    if (!flow) continue;
+    for (const label of edge.labels)
       boxes.push({
         id: label.flowId,
         what: "label",
@@ -102037,9 +102122,31 @@ function layoutBoxes(model, scene) {
         width: label.width,
         height: label.height,
         container: false,
-        ...declaration
+        line: flow.span.line,
+        offsetSpan: flow.labelOffset?.span
+      });
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const [a, b] = [edge.pts[index], edge.pts[index + 1]];
+      const declared = flow.segmentOffsets?.find((entry) => entry.segment === index + 1);
+      boxes.push({
+        id: edge.id,
+        what: "segment",
+        x: Math.min(a.x, b.x),
+        y: Math.min(a.y, b.y),
+        width: Math.abs(a.x - b.x),
+        height: Math.abs(a.y - b.y),
+        container: false,
+        line: flow.span.line,
+        offsetSpan: declared?.span,
+        segment: index + 1,
+        points: [
+          { x: a.x, y: a.y },
+          { x: b.x, y: b.y }
+        ],
+        slide: segmentSlideRange(edge.pts, index, leaves)
       });
     }
+  }
   return boxes;
 }
 

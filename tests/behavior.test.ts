@@ -174,6 +174,90 @@ test("`label-offset:` moves the label and survives the renderer's settling", asy
   assert.equal(labelOf(nudged).y - labelOf(plain).y, -6);
 });
 
+test("`segment-offset:` slides one run along its normal and leaves the rest put", async () => {
+  const routeOf = (result: Awaited<ReturnType<typeof build>>) =>
+    result.scene.edges.find((edge) => edge.id === "F01")!.pts;
+  const plain = await build(OFFSET_SRC(""));
+  const corner = routeOf(plain).length > 2 ? 2 : 1;
+  const vertical = Math.abs(routeOf(plain)[corner - 1].x - routeOf(plain)[corner].x) < 0.5;
+  // Small enough that the side a terminal sits on does not bound it — the clamp
+  // has its own test below.
+  const SLIDE = 6;
+  const nudged = await build(OFFSET_SRC("", ` { segment-offset: ${corner}, ${SLIDE} }`));
+  const [before, after] = [routeOf(plain), routeOf(nudged)];
+  assert.equal(after.length, before.length, "a slide must not change how many turns a route takes");
+  // Both ends of the run moved by the delta, along the run's normal only.
+  for (const index of [corner - 1, corner]) {
+    assert.equal(after[index].x - before[index].x, vertical ? SLIDE : 0);
+    assert.equal(after[index].y - before[index].y, vertical ? 0 : SLIDE);
+  }
+  // Every other point stayed exactly where the router put it.
+  for (let i = 0; i < before.length; i++) {
+    if (i === corner - 1 || i === corner) continue;
+    assert.deepEqual({ x: after[i].x, y: after[i].y }, { x: before[i].x, y: before[i].y });
+  }
+  // And the route is still orthogonal, which is the point of moving a run along
+  // its normal rather than anywhere else (tier-0, §3).
+  for (let i = 1; i < after.length; i++)
+    assert.ok(
+      Math.abs(after[i - 1].x - after[i].x) < 0.5 || Math.abs(after[i - 1].y - after[i].y) < 0.5,
+      `segment ${i} of the nudged route runs off the orthogonal`,
+    );
+});
+
+test("a `segment-offset:` never changes which layout wins", async () => {
+  // The port pass re-lays the drawing out and picks a winner by profile, so a
+  // hint applied before that choice is judged as if the router had drawn it
+  // there — a 30px nudge on one flow was measured flipping a whole drawing.
+  const src = readFileSync(join(ROOT, "examples/application-large-fr.cairn"), "utf8");
+  const lines = src.split("\n");
+  const plain = await build(src);
+  const target = plain.model.flows[0];
+  lines[target.span.line - 1] += " { segment-offset: 2, 30 }";
+  const nudged = await build(lines.join("\n"));
+  for (const edge of plain.scene.edges) {
+    const moved = nudged.scene.edges.find((other) => other.id === edge.id)!;
+    assert.equal(
+      moved.pts.length,
+      edge.pts.length,
+      `${edge.id} was re-routed by a hint on another flow`,
+    );
+    if (edge.id === target.id) continue;
+    assert.deepEqual(
+      moved.pts.map((point) => [point.x, point.y]),
+      edge.pts.map((point) => [point.x, point.y]),
+      `${edge.id} moved for a hint that was not its own`,
+    );
+  }
+});
+
+test("a `segment-offset:` the route cannot honor is reported, not dropped", async () => {
+  // A run the route does not have.
+  const stale = await build(OFFSET_SRC("", " { segment-offset: 9, 12 }"));
+  assert.ok(
+    offsetDiagnostics(stale.scene, stale.model).some((d) => d.code === "W0574"),
+    "expected W0574 for a run the route does not have",
+  );
+  // A run carrying a terminal can only slide as far as the side it sits on.
+  const clamped = await build(OFFSET_SRC("", " { segment-offset: 1, 4000 }"));
+  assert.ok(
+    offsetDiagnostics(clamped.scene, clamped.model).some((d) => d.code === "W0573"),
+    "expected W0573 for a slide cut short at the element border",
+  );
+  const leaves = clamped.scene.nodes.filter((node) => !node.container);
+  const pts = clamped.scene.edges.find((edge) => edge.id === "F01")!.pts;
+  assert.ok(
+    leaves.some(
+      (node) =>
+        pts[0].x > node.x - 1 &&
+        pts[0].x < node.x + node.width + 1 &&
+        pts[0].y > node.y - 1 &&
+        pts[0].y < node.y + node.height + 1,
+    ),
+    "a clamped slide must leave the terminal on its element",
+  );
+});
+
 test("`offset:` and `label-offset:` refuse anything but a pair of whole numbers", () => {
   for (const bad of ["offset: 40", "offset: 40, 2.5", "offset: left, 3"]) {
     const { diags } = check(OFFSET_SRC(`  ${bad}`));
@@ -184,6 +268,15 @@ test("`offset:` and `label-offset:` refuse anything but a pair of whole numbers"
   }
   const { diags } = check(OFFSET_SRC("", " { label-offset: 4 }"));
   assert.ok(diags.some((d) => d.code === "E0109"));
+  // A run number is 1-based, so 0 and below name nothing and are rejected here
+  // rather than reported as a stale run after the layout has run.
+  for (const bad of ["segment-offset: 2", "segment-offset: 0, 5", "segment-offset: 1, 2.5"]) {
+    const run = check(OFFSET_SRC("", ` { ${bad} }`));
+    assert.ok(
+      run.diags.some((d) => d.code === "E0109"),
+      `expected E0109 for \`${bad}\``,
+    );
+  }
 });
 
 test("an offset that lands one element on another is reported, not repaired", async () => {
