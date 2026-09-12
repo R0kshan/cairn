@@ -699,9 +699,9 @@ interface NumericStyleEntry {
 }
 
 /**
- * The three density controls. A table rather than `switch` cases in
+ * The four density controls. A table rather than `switch` cases in
  * `applyStyleEntry`: they differ only in where the value lands and how low it
- * may go, and three near-identical numeric branches inline cost that function
+ * may go, and four near-identical numeric branches inline cost that function
  * more cognitive complexity than the lint budget allows. Same shape as
  * `UNIFORM_STYLE_ENTRIES` above, which exists for the same reason.
  *
@@ -714,6 +714,13 @@ const NUMERIC_STYLE_ENTRIES: Record<string, NumericStyleEntry> = {
     example: 14,
     assign: (target, amount) => {
       target.labelWrap = amount;
+    },
+  },
+  "flow-label-wrap": {
+    min: 1,
+    example: 10,
+    assign: (target, amount) => {
+      target.flowLabelWrap = amount;
     },
   },
   "container-padding": {
@@ -865,6 +872,26 @@ function applyNumericStyleEntry(entry: {
   return true;
 }
 
+/**
+ * A flow's own `{ flow-label-wrap: <n> }`. Spelt the same as the diagram-level
+ * property, and routed to the flow rather than to its `StyleProps` for
+ * `label-offset`'s reason: it reshapes the label, it does not colour it. Only
+ * reachable on a flow — in a diagram `style` block there is no flow and the key
+ * falls through to `NUMERIC_STYLE_ENTRIES` instead. Its own function so
+ * `applyStyleEntry` stays inside the lint budget, as `applyNumericStyleEntry`
+ * above already is.
+ */
+function applyFlowWrapEntry(
+  flow: Flow,
+  value: Token | undefined,
+  key: Token,
+  reportBadValue: (value: Token, expected: string) => void,
+) {
+  const amount = value?.kind === "num" ? parseFloat(value.text) : Number.NaN;
+  if (Number.isInteger(amount) && amount >= 1) flow.labelWrap = amount;
+  else reportBadValue(value ?? key, "a whole number ≥ 1, e.g. `flow-label-wrap: 12`");
+}
+
 function applyStyleEntry(entry: {
   key: Token;
   styleTargetKind: string | undefined;
@@ -940,6 +967,10 @@ function applyStyleEntry(entry: {
     };
     return;
   }
+  if (keyText === "flow-label-wrap" && flow) {
+    applyFlowWrapEntry(flow, firstValue(), key, reportBadValue);
+    return;
+  }
   if (inline) {
     if (keyText === "fill" && firstValue()?.kind === "color") inline.fill = firstValue().text;
     else if (keyText === "stroke") inline.stroke = extractStroke(values, key.span);
@@ -956,7 +987,7 @@ function applyStyleEntry(entry: {
         severity: "error",
         message: `unknown style property here: \`${keyText}\``,
         span: key.span,
-        help: "inline properties: fill, stroke, text, label, label-offset",
+        help: "inline properties: fill, stroke, text, label, label-offset, flow-label-wrap",
       });
     return;
   }
@@ -1039,7 +1070,7 @@ function applyStyleEntry(entry: {
         severity: "error",
         message: `unknown style property: \`${keyText}\``,
         span: key.span,
-        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size, label-wrap, container-padding, label-padding",
+        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size, label-wrap, flow-label-wrap, container-padding, label-padding",
       });
   }
 }

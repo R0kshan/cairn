@@ -54,6 +54,14 @@ export interface DiagramStyle {
    */
   labelWrap?: number;
   /**
+   * Characters per line for flow labels. Its own knob rather than `labelWrap`'s
+   * business: a flow label is a sentence riding a connector and wants a much
+   * narrower line than an element name in a box, so one number cannot serve
+   * both. Unset means a flow label keeps the lines it was written with —
+   * `compact: on` and the slide/page fit used to impose their own widths here.
+   */
+  flowLabelWrap?: number;
+  /**
    * Pixels of room inside a container on its left, right and bottom. Unset
    * keeps the built-in spacing. The top is not covered: it holds the
    * container's own title, so its height follows the label rather than a knob.
@@ -160,6 +168,14 @@ export interface Flow {
    * hint is honored, not negotiated), which is what W0572 reports on.
    */
   labelOffset?: { dx: number; dy: number; span: Span };
+  /**
+   * This flow's own `{ flow-label-wrap: <n> }`, overriding the diagram's. Same
+   * precedence as every other property spelt at both levels — the inline one
+   * wins — and the same promise: unset at both, the label is never broken.
+   * One label that is longer than the rest is the usual reason to reach for
+   * it, and wrapping the whole diagram to suit it costs every other label.
+   */
+  labelWrap?: number;
 }
 
 export interface BusinessObject {
