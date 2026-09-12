@@ -98139,7 +98139,7 @@ function shiftCoincidentRun(leaves, pts, b, newAt) {
     }
   }
 }
-function decoincideParallelRuns(ctx) {
+function decoincideParallelRuns(ctx, only) {
   const { scene, leaves, enforceOrthogonal } = ctx;
   const runs = [];
   for (const edge of scene.edges) {
@@ -98161,12 +98161,19 @@ function decoincideParallelRuns(ctx) {
       if (gap < 3 && shared > 8) coincidentPairs.push([runs[i], runs[j]]);
     }
   for (const [a, b] of coincidentPairs) {
-    const delta = a.at > b.at ? -8 : 8;
-    const newAt = b.at + delta;
-    const pts = b.edge.pts;
-    shiftCoincidentRun(leaves, pts, b, newAt);
+    const moving = !only ? b : only.has(b.edge.id) ? b : only.has(a.edge.id) ? a : null;
+    if (!moving) continue;
+    const other = moving === b ? a : b;
+    const delta = other.at > moving.at ? -8 : 8;
+    shiftCoincidentRun(leaves, moving.edge.pts, moving, moving.at + delta);
   }
-  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+  for (const edge of scene.edges)
+    if (edge.pts.length >= 2 && (!only || only.has(edge.id))) enforceOrthogonal(edge);
+}
+function decoincideAfterOffsets(scene, titleBoxes = [], only) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  decoincideParallelRuns(createTidyContext(scene, leaves, titleBoxes, false), only);
 }
 function tryLiftOffBand(ctx, edge, lift, outside) {
   const { runHitsNode, runIsClear, bandFor } = ctx;
@@ -98905,7 +98912,7 @@ function createLaneModel(deps) {
   };
   return { channelU, isChannelU, laneBeyond };
 }
-function optimiseRoutes(scene, titleBoxes = [], folded = false) {
+function optimiseRoutes(scene, titleBoxes = [], folded = false, only) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge) => enforceOrthogonalOn(edge, leaves);
   if (!folded) {
@@ -99017,7 +99024,7 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
       return squared;
     };
     const rank = (edge) => Number.parseInt(edge.id.slice(1), 10) || 0;
-    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
+    const ordered = [...scene.edges].filter((edge) => !only || only.has(edge.id)).sort((a, b) => rank(a) - rank(b));
     const neighboursOf = (edge) => {
       const mine = inspector.endsOf(edge.pts).map((end) => end?.node);
       return ordered.filter((other) => {
@@ -100182,21 +100189,42 @@ function applyNodeOffsets(scene, offsetOf) {
 var SEGMENT_EPSILON = 0.5;
 var SLIDE_UNBOUNDED = 1e4;
 var SEAT_INSET = 4;
-function segmentSlideRange(pts, index, leaves) {
-  const [a, b] = [pts[index], pts[index + 1]];
-  const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+function straightRuns(pts) {
+  const axisOf = (a, b) => {
+    const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+    const horizontal = Math.abs(a.y - b.y) < SEGMENT_EPSILON;
+    if (vertical === horizontal) return null;
+    return vertical ? "vertical" : "horizontal";
+  };
+  const runs = [];
+  let from = 0;
+  while (from + 1 < pts.length) {
+    let to = from + 1;
+    let axis = axisOf(pts[from], pts[to]);
+    while (to + 1 < pts.length) {
+      const next = axisOf(pts[to], pts[to + 1]);
+      if (next && axis && next !== axis) break;
+      axis ??= next;
+      to++;
+    }
+    runs.push({ from, to, vertical: axis === "vertical" });
+    from = to;
+  }
+  return runs;
+}
+function segmentSlideRange(pts, run, leaves) {
   let min = -SLIDE_UNBOUNDED;
   let max = SLIDE_UNBOUNDED;
   for (const [point, terminal] of [
-    [a, index === 0],
-    [b, index + 2 === pts.length]
+    [pts[run.from], run.from === 0],
+    [pts[run.to], run.to === pts.length - 1]
   ]) {
     if (!terminal) continue;
     const node = leaves.find((leaf) => pointOn(point, leaf));
     if (!node) continue;
-    const lo = (vertical ? node.x : node.y) + SEAT_INSET;
-    const hi = (vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
-    const at = vertical ? point.x : point.y;
+    const lo = (run.vertical ? node.x : node.y) + SEAT_INSET;
+    const hi = (run.vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
+    const at = run.vertical ? point.x : point.y;
     min = Math.max(min, Math.min(lo, hi) - at);
     max = Math.min(max, Math.max(lo, hi) - at);
   }
@@ -100212,25 +100240,21 @@ function applySegmentOffsets(scene, model) {
   const stale = [];
   let moved = 0;
   for (const edge of scene.edges) {
-    for (const entry of wanted.get(edge.id) ?? []) {
-      const index = entry.segment - 1;
-      const [a, b] = [edge.pts[index], edge.pts[index + 1]];
-      const vertical = a && b && Math.abs(a.x - b.x) < SEGMENT_EPSILON;
-      const horizontal = a && b && Math.abs(a.y - b.y) < SEGMENT_EPSILON;
-      if (!a || !b || vertical === horizontal) {
+    const entries = wanted.get(edge.id);
+    if (!entries) continue;
+    for (const entry of entries) {
+      const run = straightRuns(edge.pts)[entry.segment - 1];
+      if (!run) {
         stale.push(entry.span);
         continue;
       }
-      const range = segmentSlideRange(edge.pts, index, leaves);
+      const range = segmentSlideRange(edge.pts, run, leaves);
       const delta = Math.min(Math.max(entry.delta, range.min), range.max);
       if (Math.abs(delta - entry.delta) >= SEGMENT_EPSILON) clamped.push(entry.span);
       if (!delta) continue;
-      if (vertical) {
-        a.x += delta;
-        b.x += delta;
-      } else {
-        a.y += delta;
-        b.y += delta;
+      for (let index = run.from; index <= run.to; index++) {
+        if (run.vertical) edge.pts[index].x += delta;
+        else edge.pts[index].y += delta;
       }
       moved++;
     }
@@ -100488,7 +100512,17 @@ async function layout(model, view) {
 function applyAuthorPositioning(scene, model) {
   const offsets = offsetAssignment(model);
   if (offsets.size) {
-    reaimAfterOffsets(scene, titleBoxesOf(scene, model), applyNodeOffsets(scene, offsets));
+    const carried = applyNodeOffsets(scene, offsets);
+    const titles = titleBoxesOf(scene, model);
+    reaimAfterOffsets(scene, titles, carried);
+    const handPlaced = new Set(
+      model.flows.filter((flow) => flow.segmentOffsets?.length).map((flow) => flow.id)
+    );
+    const repairable = new Set([...carried].filter((id) => !handPlaced.has(id)));
+    if (repairable.size) {
+      optimiseRoutes(scene, titles, false, repairable);
+      decoincideAfterOffsets(scene, titles, repairable);
+    }
   }
   const nudgedRuns = applySegmentOffsets(scene, model);
   const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
@@ -102132,8 +102166,8 @@ function layoutBoxes(model, scene) {
         line: flow.span.line,
         offsetSpan: flow.labelOffset?.span
       });
-    for (let index = 0; index + 1 < edge.pts.length; index++) {
-      const [a, b] = [edge.pts[index], edge.pts[index + 1]];
+    straightRuns(edge.pts).forEach((run, index) => {
+      const [a, b] = [edge.pts[run.from], edge.pts[run.to]];
       const declared = flow.segmentOffsets?.find((entry) => entry.segment === index + 1);
       boxes.push({
         id: edge.id,
@@ -102150,9 +102184,9 @@ function layoutBoxes(model, scene) {
           { x: a.x, y: a.y },
           { x: b.x, y: b.y }
         ],
-        slide: segmentSlideRange(edge.pts, index, leaves)
+        slide: segmentSlideRange(edge.pts, run, leaves)
       });
-    }
+    });
     for (const end of ["from", "to"]) {
       if (end === "from" ? flow.fromRole : flow.toRole) continue;
       const declared = end === "from" ? flow.fromSide : flow.toSide;

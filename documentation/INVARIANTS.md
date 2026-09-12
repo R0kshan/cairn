@@ -846,13 +846,25 @@ element's neighbourhood identical across a 90px offset.
 Moving a terminal leaves its first segment slanted, and a slanted segment is a
 tier-0 breach (§3), so the elbow is rebuilt in the pass itself rather than left
 to a repair: one point is inserted on the axis the original segment did not run
-along, which is orthogonal by construction for any delta. No route repair runs
-afterwards — a repair is free to re-route a flow nobody touched, which is the
-churn this ordering exists to prevent. The one exception is `reaimAfterOffsets`,
-so that **a flow reconnects to the side that now faces its counterpart** — an
-element dragged past the thing it talks to comes back attached the right way
-round rather than trailing a wrapped edge — and it is handed the set of flows
-whose terminal the offset actually carried, so it cannot reach past them.
+along, which is orthogonal by construction for any delta.
+
+**The flows the move carried are then repaired, and only those.**
+`applyNodeOffsets` returns the set of flows whose terminal it actually carried,
+and three passes are handed it and nothing else: `reaimAfterOffsets`, so a flow
+reconnects to the side that now faces its counterpart — an element dragged past
+the thing it talks to comes back attached the right way round rather than
+trailing a wrapped edge; `optimiseRoutes`, because a carried flow otherwise keeps
+the route the router drew for the seat the element used to have; and
+`decoincideParallelRuns`, because the ladder trades defects against each other
+and two runs lying on top of one another read as a single line whatever else is
+true. Every one of them still *measures* the whole scene — an untouched flow is
+an obstacle and its damage still counts — but none of them may move it. A flow
+whose runs the author placed with `segment-offset:` is left out of the repair
+entirely: its shape is a hint, not a defect.
+
+Running them after `recordRepairs` is deliberate, for the reason `clearSideHugs`
+is: they are then outside the renderer's batch audit, which cannot revert a fix
+it never measured the need for.
 
 What still answers to a nudge is the immediate neighbourhood: a flow re-aimed
 onto a new side re-seats the siblings already on that side, because two terminals
@@ -882,12 +894,25 @@ move its flow" a property of the pipeline instead of a coincidence, and
 `tests/behavior.test.ts` holds every route in `application-large-fr` identical
 across a 40×25 label nudge.
 
+**A run is a straight line, not a pair of points.** Routes carry redundant
+points — `applyNodeOffsets` splices an elbow that can land in line with the
+segment beside it, and the committed examples hold eleven such junctions with no
+hint in sight — so `straightRuns` reads a route as its maximal straight
+stretches, and both `compile()`'s boxes and `applySegmentOffsets` number them
+that way. One reading, so an editor and the engine cannot disagree about which
+run is which. Numbering each *pair* of points instead let a slide move half a
+line and leave the other half slanted, which is a tier-0 breach (§3). The points
+themselves are never collapsed: the drawing would be identical pixel for pixel
+and every affected SVG would change, so it is the reading that merges, not the
+geometry.
+
 **A `segment-offset:` moves one run along its normal, and nothing else.** A
 vertical run goes left or right, a horizontal one up or down — the one direction
 that needs no repair, since the perpendicular runs meeting it at either end keep
-their own axis and only change length. The route therefore comes out orthogonal
-by construction with the turns it went in with, and `applySegmentOffsets` splices
-no points and re-routes nothing.
+their own axis and only change length. *Every* point of the run moves, which is
+what keeps that true where a straight line is spelled with three points. The
+route therefore comes out orthogonal by construction with the turns it went in
+with, and `applySegmentOffsets` splices no points and re-routes nothing.
 
 **And it runs outside `chooseLayout`, not inside it.** The port pass re-lays the
 drawing out and picks a winner by readability profile, so a run nudged before

@@ -21,6 +21,7 @@ import {
   beatsRelayout,
   noLadderRegression,
   nodeCoverage,
+  straightRuns,
   type Scene,
 } from "../src/scene-layout.ts";
 import type { Element } from "../src/models/ast.ts";
@@ -273,6 +274,130 @@ test("an `offset:` moves what it names and leaves the rest of the drawing alone"
       if (carried.has(flow.from) || carried.has(flow.to)) continue;
       assert.equal(pts, routesBefore.get(flowId), `nudging ${id} re-routed ${flowId}`);
     }
+  }
+});
+
+test("a run is the straight line the reader sees, however many points it spends", async () => {
+  // Routes carry redundant points: `applyNodeOffsets` splices an elbow that can
+  // land in line with the segment beside it, and the committed examples hold
+  // eleven such junctions with no hint in sight. Numbering each *pair* of points
+  // as a run both misnames what the author is looking at and lets a slide move
+  // half a line, leaving the other half slanted — reported from the playground
+  // after dragging an element and then sliding the flow beside it.
+  assert.deepEqual(
+    straightRuns([
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 20, y: 0 },
+      { x: 20, y: 10 },
+    ]),
+    [
+      { from: 0, to: 2, vertical: false },
+      { from: 2, to: 3, vertical: true },
+    ],
+    "three points on one line are one run",
+  );
+  // A zero-length segment has no direction to disagree about, so it joins the
+  // stretch it falls in rather than cutting it in two.
+  assert.deepEqual(
+    straightRuns([
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 0 },
+      { x: 20, y: 0 },
+    ]),
+    [{ from: 0, to: 3, vertical: false }],
+  );
+
+  // And on a real drawing: find a route that spends three points on one line,
+  // slide that line, and check the whole thing came along.
+  const src = readFileSync(join(ROOT, "examples/large-fr.cairn"), "utf8");
+  const plain = await build(src);
+  const found = plain.scene.edges
+    .map((edge) => ({ edge, runs: straightRuns(edge.pts) }))
+    .find(({ edge, runs }) => runs.length < edge.pts.length - 1);
+  assert.ok(found, "fixture: expected a committed route with a redundant point on a run");
+  const index = found.runs.findIndex((run) => run.to - run.from > 1);
+  const run = found.runs[index];
+  const before = found.edge.pts.map((point) => ({ ...point }));
+
+  const flow = plain.model.flows.find((candidate) => candidate.id === found.edge.id)!;
+  const lines = src.split("\n");
+  lines[flow.span.line - 1] += ` { segment-offset: ${index + 1}, 20 }`;
+  const slid = await build(lines.join("\n"));
+  const after = slid.scene.edges.find((edge) => edge.id === found.edge.id)!.pts;
+
+  assert.equal(after.length, before.length, "a slide must not change how many points a route has");
+  // Every point of the run moves by the same amount — which is the delta, or
+  // less where the element side a terminal sits on cut it short. What must not
+  // happen is one point moving and its neighbour on the same line staying put.
+  const shift = (i: number) => (run.vertical ? after[i].x - before[i].x : after[i].y - before[i].y);
+  assert.notEqual(shift(run.from), 0, "the run did not move at all");
+  for (let i = run.from; i <= run.to; i++)
+    assert.equal(
+      shift(i),
+      shift(run.from),
+      `point ${i} of the run was left behind — the line would be slanted`,
+    );
+  for (let i = 1; i < after.length; i++)
+    assert.ok(
+      Math.abs(after[i - 1].x - after[i].x) < 0.5 || Math.abs(after[i - 1].y - after[i].y) < 0.5,
+      `segment ${i} of ${found.edge.id} runs off the orthogonal`,
+    );
+});
+
+test("a flow carried by an offset is not left lying on another flow", async () => {
+  // A nudged element carries its flows to a new seat, and the route the router
+  // drew for the old one can land straight on top of another flow's run — two
+  // lines drawn as one. Reported from the playground after dragging an idp down:
+  // the flow into it lay on another for 138px and ran through a third element.
+  // `applyAuthorPositioning` repairs the carried flows for exactly this, scoped
+  // to them so the rest of the drawing is not re-spaced around the nudge.
+  const cases: [string, string, number][] = [
+    ["infrastructure-large", "FW_WAF", 120],
+    ["logical-archi", "COM_CTR", 120],
+    ["application-large-fr", "MERCH", 120],
+  ];
+  for (const [example, id, dy] of cases) {
+    const src = readFileSync(join(ROOT, `examples/${example}.cairn`), "utf8");
+    const plain = await compile(src);
+    const target = plain.boxes!.find((box) => box.what === "element" && box.id === id)!;
+    const lines = src.split("\n");
+    lines[target.line - 1] += ` { offset: 0, ${dy} }`;
+    const source = lines.join("\n");
+    const nudged = await compile(source);
+    assert.equal(nudged.diagnostics.filter((d) => d.severity === "error").length, 0);
+
+    const carried = new Set(
+      parse(source)
+        .model.flows.filter((flow) => flow.from === id || flow.to === id)
+        .map((flow) => flow.id),
+    );
+    const runs = nudged
+      .boxes!.filter((box) => box.what === "segment")
+      .map((box) => {
+        const [a, b] = box.points!;
+        const vertical = Math.abs(a.x - b.x) < 0.5;
+        return {
+          id: box.id,
+          seg: box.segment,
+          vertical,
+          at: vertical ? a.x : a.y,
+          lo: Math.min(vertical ? a.y : a.x, vertical ? b.y : b.x),
+          hi: Math.max(vertical ? a.y : a.x, vertical ? b.y : b.x),
+        };
+      });
+    for (let i = 0; i < runs.length; i++)
+      for (let j = i + 1; j < runs.length; j++) {
+        const [p, q] = [runs[i], runs[j]];
+        if (p.id === q.id || p.vertical !== q.vertical) continue;
+        if (!carried.has(p.id) && !carried.has(q.id)) continue;
+        const shared = Math.min(p.hi, q.hi) - Math.max(p.lo, q.lo);
+        assert.ok(
+          Math.abs(p.at - q.at) >= 3 || shared <= 8,
+          `${example}: nudging ${id} left ${p.id} run ${p.seg} lying on ${q.id} run ${q.seg} for ${shared.toFixed(0)}px`,
+        );
+      }
   }
 });
 

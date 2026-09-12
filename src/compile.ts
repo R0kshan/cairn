@@ -20,6 +20,7 @@ import {
   attachSideDiagnostics,
   offsetDiagnostics,
   segmentSlideRange,
+  straightRuns,
 } from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { views } from "./views.ts";
@@ -214,11 +215,14 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
         line: flow.span.line,
         offsetSpan: flow.labelOffset?.span,
       });
-    // One box per run, not one per flow: a run is what a `segment-offset:` names
-    // and what an editor lets the reader take hold of, and the rectangle around
-    // a whole route covers half the canvas once it turns a corner.
-    for (let index = 0; index + 1 < edge.pts.length; index++) {
-      const [a, b] = [edge.pts[index], edge.pts[index + 1]];
+    // One box per straight run, not one per flow and not one per pair of points:
+    // a run is the line the reader sees and the thing a `segment-offset:` names,
+    // and the rectangle around a whole route covers half the canvas once it
+    // turns a corner. `straightRuns` is what numbers them, here and in the pass
+    // that applies the hint — one reading, so a drag and the engine cannot
+    // disagree about which run is which.
+    straightRuns(edge.pts).forEach((run, index) => {
+      const [a, b] = [edge.pts[run.from], edge.pts[run.to]];
       const declared = flow.segmentOffsets?.find((entry) => entry.segment === index + 1);
       boxes.push({
         id: edge.id,
@@ -235,9 +239,9 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
           { x: a.x, y: a.y },
           { x: b.x, y: b.y },
         ],
-        slide: segmentSlideRange(edge.pts, index, leaves),
+        slide: segmentSlideRange(edge.pts, run, leaves),
       });
-    }
+    });
     // The two ends, which move between the *sides* of their element rather than
     // by a delta — `ID.side` is the lever, so the box carries the span that
     // writes one and the editor never has to know the grammar.

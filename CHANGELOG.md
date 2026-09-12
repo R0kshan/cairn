@@ -14,6 +14,8 @@ All notable changes to the cairn project will be documented in this file.
 - Removed the unnecessary `:` in flow definitions — `A -> B "label"`. The old spelling still parses
 
 ### Fixed
+- Sliding a run of a flow no longer leaves it slanted. A route can spend three points on one straight line, and a run was numbered per pair of points, so a slide moved half the line and left the rest behind. A run is now the straight line the reader sees, however many points it spends on it
+- A flow carried by a manual nudge is no longer left lying on another flow. An element dragged to a new place takes its flows with it, and the route drawn for its old seat could land straight on top of another run — two lines drawn as one. The carried flows are now re-aimed, re-routed and de-coincided, scoped to them alone so the rest of the drawing still does not move
 - A manual nudge no longer re-flows the diagram around itself. `offset:`, `label-offset:` and `segment-offset:` were being applied while layout candidates were still being scored, so a hint was measured as if the router had chosen it — one `offset: 0, -30` on `application-large-fr` moved all 28 other elements and re-routed 20 unrelated flows. The deltas are now applied to the layout that won, so a drawing with hints is the drawing without them plus the hints. A diagram declaring no hints renders exactly as before
 - Producer and consumer directives not taking effect when nested in a container block
 - The arrowhead no longer runs  along the border instead of into it, and the arrowhead now faces its counterpart after being dragged through the playground interface

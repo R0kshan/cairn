@@ -27,6 +27,7 @@ import type { Diagnostic } from "./models/diagnostic.ts";
 import { compactVertical, fitCanvas } from "./compact.ts";
 import {
   optimiseRoutes,
+  decoincideAfterOffsets,
   clearSideHugs,
   reaimAfterOffsets,
   spreadAttachments,
@@ -1841,8 +1842,59 @@ const SLIDE_UNBOUNDED = 1e4;
     than the corner where two of them meet. */
 const SEAT_INSET = 4;
 
+/** One maximal straight stretch of a route: the span of `pts` it covers, and
+    which way it runs. */
+export interface StraightRun {
+  /** Index of its first point in `pts`. */
+  from: number;
+  /** Index of its last point — never `from`, and more than one apart where the
+      route holds points that sit on the same straight line. */
+  to: number;
+  vertical: boolean;
+}
+
 /**
- * How far run `index` of `pts` may slide along its normal, as a delta range.
+ * The maximal straight stretches of a route, in order.
+ *
+ * A "run" is what the reader sees: one straight line, however many points the
+ * polyline spends on it. Routes do carry redundant ones — `applyNodeOffsets`
+ * splices an elbow that can land in line with the segment beside it, and the
+ * committed examples hold eleven such junctions — and treating each pair of
+ * points as its own run would both misnumber what an author is looking at and
+ * let a slide move half a line, leaving the other half slanted. Collapsing the
+ * points instead would change every affected SVG for a drawing that is pixel for
+ * pixel the same, so the geometry is left alone and the *reading* of it is what
+ * merges.
+ *
+ * A zero-length segment joins whichever stretch it falls in rather than ending
+ * one: it has no direction to disagree about.
+ */
+export function straightRuns(pts: Point[]): StraightRun[] {
+  const axisOf = (a: Point, b: Point): "vertical" | "horizontal" | null => {
+    const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+    const horizontal = Math.abs(a.y - b.y) < SEGMENT_EPSILON;
+    if (vertical === horizontal) return null; // degenerate, or a slant
+    return vertical ? "vertical" : "horizontal";
+  };
+  const runs: StraightRun[] = [];
+  let from = 0;
+  while (from + 1 < pts.length) {
+    let to = from + 1;
+    let axis = axisOf(pts[from], pts[to]);
+    while (to + 1 < pts.length) {
+      const next = axisOf(pts[to], pts[to + 1]);
+      if (next && axis && next !== axis) break;
+      axis ??= next;
+      to++;
+    }
+    runs.push({ from, to, vertical: axis === "vertical" });
+    from = to;
+  }
+  return runs;
+}
+
+/**
+ * How far `run` may slide along its normal, as a delta range.
  *
  * A run in the middle of a route is free: both of its ends are corners, and the
  * perpendicular runs on either side simply change length. A run carrying a
@@ -1855,23 +1907,21 @@ const SEAT_INSET = 4;
  */
 export function segmentSlideRange(
   pts: Point[],
-  index: number,
+  run: StraightRun,
   leaves: SceneNode[],
 ): { min: number; max: number } {
-  const [a, b] = [pts[index], pts[index + 1]];
-  const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
   let min = -SLIDE_UNBOUNDED;
   let max = SLIDE_UNBOUNDED;
   for (const [point, terminal] of [
-    [a, index === 0],
-    [b, index + 2 === pts.length],
+    [pts[run.from], run.from === 0],
+    [pts[run.to], run.to === pts.length - 1],
   ] as [Point, boolean][]) {
     if (!terminal) continue;
     const node = leaves.find((leaf) => pointOn(point, leaf));
     if (!node) continue;
-    const lo = (vertical ? node.x : node.y) + SEAT_INSET;
-    const hi = (vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
-    const at = vertical ? point.x : point.y;
+    const lo = (run.vertical ? node.x : node.y) + SEAT_INSET;
+    const hi = (run.vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
+    const at = run.vertical ? point.x : point.y;
     min = Math.max(min, Math.min(lo, hi) - at);
     max = Math.min(max, Math.max(lo, hi) - at);
   }
@@ -1908,27 +1958,28 @@ function applySegmentOffsets(scene: Scene, model: Model): number {
   const stale: Span[] = [];
   let moved = 0;
   for (const edge of scene.edges) {
-    for (const entry of wanted.get(edge.id) ?? []) {
-      const index = entry.segment - 1;
-      const [a, b] = [edge.pts[index], edge.pts[index + 1]];
-      const vertical = a && b && Math.abs(a.x - b.x) < SEGMENT_EPSILON;
-      const horizontal = a && b && Math.abs(a.y - b.y) < SEGMENT_EPSILON;
-      // A run the route does not have, or a zero-length one left where two
-      // turns met: either way the author pointed at something that is not a run.
-      if (!a || !b || vertical === horizontal) {
+    const entries = wanted.get(edge.id);
+    if (!entries) continue;
+    // Re-read per entry: a slide moves points, and a run's span into `pts` has
+    // to be the one the drawing currently has.
+    for (const entry of entries) {
+      const run = straightRuns(edge.pts)[entry.segment - 1];
+      // A run the route does not have — the numbers are positional, and a route
+      // that gained or lost a turn renumbers everything after it.
+      if (!run) {
         stale.push(entry.span);
         continue;
       }
-      const range = segmentSlideRange(edge.pts, index, leaves);
+      const range = segmentSlideRange(edge.pts, run, leaves);
       const delta = Math.min(Math.max(entry.delta, range.min), range.max);
       if (Math.abs(delta - entry.delta) >= SEGMENT_EPSILON) clamped.push(entry.span);
       if (!delta) continue;
-      if (vertical) {
-        a.x += delta;
-        b.x += delta;
-      } else {
-        a.y += delta;
-        b.y += delta;
+      // Every point of the run, not just its two ends: a straight line the route
+      // spends three points on is still one line, and moving two of them would
+      // leave the third behind on a slant — a tier-0 breach (§3).
+      for (let index = run.from; index <= run.to; index++) {
+        if (run.vertical) edge.pts[index].x += delta;
+        else edge.pts[index].y += delta;
       }
       moved++;
     }
@@ -2396,12 +2447,38 @@ export async function layout(model: Model, view: View): Promise<Scene> {
 function applyAuthorPositioning(scene: Scene, model: Model): void {
   const offsets = offsetAssignment(model);
   if (offsets.size) {
+    // The flows whose terminal the move carried. Everything repaired below is
+    // scoped to them: an author who nudges one box is asking for that box and
+    // its own flows to follow, never for the rest of the drawing to be
+    // re-routed (§17).
+    const carried = applyNodeOffsets(scene, offsets);
+    const titles = titleBoxesOf(scene, model);
     // A drag can move an element past its counterpart, which leaves the flow
     // attached to a side that no longer faces it — the wrap §4c straightens.
-    // The one repair a moved node earns, and scoped to the flows it actually
-    // carried: an arrowhead aimed at nothing is not a nudge, but a flow nobody
-    // touched is nobody's business.
-    reaimAfterOffsets(scene, titleBoxesOf(scene, model), applyNodeOffsets(scene, offsets));
+    reaimAfterOffsets(scene, titles, carried);
+    // And a carried flow otherwise keeps the route the router drew for the seat
+    // the element used to have: on `infrastructure-siet-pcc`, nudging the idp
+    // down 120px left its own inbound flow lying on another flow for 138px and
+    // running through a third element. The route repair is the pass that owns
+    // that, so it is run — over the carried flows alone, and after
+    // `recordRepairs`, so the renderer's batch audit cannot revert a fix it did
+    // not measure the need for.
+    //
+    // A flow whose runs the author placed by hand is left out: its shape is a
+    // hint, not a defect, and `applySegmentOffsets` below would be arguing with
+    // the repair over it.
+    const handPlaced = new Set(
+      model.flows.filter((flow) => flow.segmentOffsets?.length).map((flow) => flow.id),
+    );
+    const repairable = new Set([...carried].filter((id) => !handPlaced.has(id)));
+    if (repairable.size) {
+      optimiseRoutes(scene, titles, false, repairable);
+      // The repair works to the ladder, which trades defects against each other;
+      // two runs lying on top of one another reads as a single line and is worth
+      // removing on its own terms, so the de-coincidence post-pass runs after it
+      // the same way it does inside `tidyEdges`.
+      decoincideAfterOffsets(scene, titles, repairable);
+    }
   }
   const nudgedRuns = applySegmentOffsets(scene, model);
   const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));

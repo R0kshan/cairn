@@ -464,7 +464,9 @@ touches nothing else:
 CAPTURE -> EVENTS "Order created" { segment-offset: 2, -18 }
 ```
 
-`segment` counts the runs from 1, following the route from its source. `delta`
+`segment` counts the runs from 1, following the route from its source — a *run*
+being one straight line as the reader sees it, however many points the route
+spends on it. `delta`
 is right for a vertical run and down for a horizontal one, and may be negative.
 The normal is the only direction a run can move without the route needing a
 repair: the perpendicular runs meeting it at either end keep their own axis and
