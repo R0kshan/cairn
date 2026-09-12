@@ -58,7 +58,7 @@ Everything else is optional and order-free: elements, flows, an optional
   find on the canvas is noise, so nothing in the band is unconditional.
 
 **Inline style restriction:** per-element and per-flow `{ style { … } }` blocks
-support four properties — `fill`, `stroke`, `text`, `label` — and a flow's
+support four properties in `{ … }` — `fill`, `stroke`, `text`, `label` — and a flow's
 inline block takes two more for its own label, `label-offset` and
 `flow-label-wrap`. Diagram-level `style { … }` blocks support the full
 19-property set (§2). An unknown property inside an inline block is **E0104**.
