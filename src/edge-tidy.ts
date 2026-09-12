@@ -2523,13 +2523,24 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge, skewToo = false): void {
  * detour this pass exists to straighten, arriving too late for the call inside
  * `tidyEdges` to see it. Runs only where an offset exists, so an offset-free
  * drawing is untouched.
+ *
+ * `only` names the flows whose terminal the offset actually carried, and nothing
+ * outside it is considered. A flow nobody dragged is not this pass's business:
+ * an author who nudges one box is asking for that box to move, not for the
+ * drawing around it to be re-derived, and re-aiming every edge was measured
+ * moving three flows that never touched the nudged element.
  */
-export function reaimAfterOffsets(scene: Scene, titleBoxes: TitleBox[] = []): void {
+export function reaimAfterOffsets(
+  scene: Scene,
+  titleBoxes: TitleBox[] = [],
+  only?: ReadonlySet<string>,
+): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
   for (const edge of scene.edges)
-    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge, true);
+    if (!(edge.pinned?.start && edge.pinned?.end) && (!only || only.has(edge.id)))
+      reaimEdge(rctx, edge, true);
 }
 
 function reaimWrapAroundTerminals(ctx: TidyContext): void {

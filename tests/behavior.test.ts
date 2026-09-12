@@ -21,7 +21,9 @@ import {
   beatsRelayout,
   noLadderRegression,
   nodeCoverage,
+  type Scene,
 } from "../src/scene-layout.ts";
+import type { Element } from "../src/models/ast.ts";
 import { isLongDetour } from "../src/geometry.ts";
 import { nodeSize } from "../src/text-metrics.ts";
 import { render } from "../src/svg-render.ts";
@@ -205,6 +207,75 @@ test("`segment-offset:` slides one run along its normal and leaves the rest put"
     );
 });
 
+test("an `offset:` moves what it names and leaves the rest of the drawing alone", async () => {
+  // The whole point of a delta: a drawing with a hint is the drawing without it
+  // *plus the hint*. Before the hints were lifted out of the candidate pipeline,
+  // a single `offset: 0, -30` on `PAY_ORCH` here moved all 28 other elements and
+  // re-routed 20 flows that never touched it — the layout was being re-derived
+  // around the nudge instead of nudged.
+  //
+  // Judged on the scene, not the SVG: the renderer settles labels and audits
+  // overlaps on the finished geometry, and that is allowed to answer differently
+  // once something has moved.
+  const src = readFileSync(join(ROOT, "examples/application-large-fr.cairn"), "utf8");
+  const plain = await build(src);
+  const seat = (scene: Scene) =>
+    new Map(scene.nodes.map((node) => [node.id, `${node.x},${node.y}`]));
+  const route = (scene: Scene, shift: { x: number; y: number }) =>
+    new Map(
+      scene.edges.map((edge) => [
+        edge.id,
+        JSON.stringify(
+          edge.pts.map((point) => [
+            Math.round((point.x - shift.x) * 100) / 100,
+            Math.round((point.y - shift.y) * 100) / 100,
+          ]),
+        ),
+      ]),
+    );
+
+  for (const id of ["PAY_ORCH", "ERP", "MERCH"]) {
+    const declaration = [...plain.model.elements].flatMap(function walk(element): Element[] {
+      return [element, ...element.children.flatMap(walk)];
+    });
+    const target = declaration.find((element) => element.id === id)!;
+    const lines = src.split("\n");
+    lines[target.kindSpan.line - 1] += " { offset: 0, -90 }";
+    const nudged = await build(lines.join("\n"));
+
+    // An offset that reaches past the top-left slides the whole canvas (§18), so
+    // everything is measured against that slide rather than against the origin.
+    const anchor = plain.scene.nodes.find((node) => node.id !== id)!;
+    const moved = nudged.scene.nodes.find((node) => node.id === anchor.id)!;
+    const shift = { x: moved.x - anchor.x, y: moved.y - anchor.y };
+
+    const before = seat(plain.scene);
+    for (const node of nudged.scene.nodes) {
+      if (node.id === id) continue;
+      assert.equal(
+        `${node.x - shift.x},${node.y - shift.y}`,
+        before.get(node.id),
+        `nudging ${id} moved ${node.id}`,
+      );
+    }
+
+    // Flows touching the nudged element are carried with it and may be re-aimed;
+    // a flow that shares a node *side* with one of those is re-seated so the two
+    // terminals do not collide. Nothing beyond that neighbourhood may move.
+    const carried = new Set(
+      plain.model.flows
+        .filter((flow) => flow.from === id || flow.to === id)
+        .flatMap((flow) => [flow.from, flow.to]),
+    );
+    const routesBefore = route(plain.scene, { x: 0, y: 0 });
+    for (const [flowId, pts] of route(nudged.scene, shift)) {
+      const flow = plain.model.flows.find((candidate) => candidate.id === flowId)!;
+      if (carried.has(flow.from) || carried.has(flow.to)) continue;
+      assert.equal(pts, routesBefore.get(flowId), `nudging ${id} re-routed ${flowId}`);
+    }
+  }
+});
+
 test("a `segment-offset:` never changes which layout wins", async () => {
   // The port pass re-lays the drawing out and picks a winner by profile, so a
   // hint applied before that choice is judged as if the router had drawn it
@@ -229,6 +300,37 @@ test("a `segment-offset:` never changes which layout wins", async () => {
       `${edge.id} moved for a hint that was not its own`,
     );
   }
+});
+
+test("`compile()` offers a handle on each flow terminal, except where a role owns it", async () => {
+  const plain = await compile(OFFSET_SRC(""));
+  const terminals = plain.boxes!.filter((box) => box.what === "terminal");
+  assert.equal(terminals.length, 4, "two flows, two ends each");
+  const start = terminals.find((box) => box.id === "F01" && box.endpoint!.end === "from")!;
+  assert.equal(start.endpoint!.element, "USER");
+  assert.equal(start.endpoint!.side, undefined, "nothing was declared, so nothing is reported");
+  // The span an editor replaces is the endpoint's id when no side is declared,
+  // and the side word itself once one is.
+  const pinned = await compile(OFFSET_SRC("").replace("USER -> M1", "USER.top -> M1"));
+  const declared = pinned.boxes!.find(
+    (box) => box.what === "terminal" && box.id === "F01" && box.endpoint!.end === "from",
+  )!;
+  assert.equal(declared.endpoint!.side, "top");
+  assert.equal(declared.endpoint!.span.len, "top".length);
+
+  // An endpoint naming a role has no handle: a side and a role on one endpoint
+  // is E0225, so there is nothing an editor could write there.
+  const queued = await compile(`diagram application "t"
+application APP "App"
+queue Q "Bus"
+APP.producer -> Q (MQ, JSON)
+`);
+  const ends = queued.boxes!.filter((box) => box.what === "terminal");
+  assert.deepEqual(
+    ends.map((box) => box.endpoint!.end),
+    ["to"],
+    "the role endpoint must not be offered",
+  );
 });
 
 test("a `segment-offset:` the route cannot honor is reported, not dropped", async () => {

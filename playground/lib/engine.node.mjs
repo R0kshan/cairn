@@ -98083,12 +98083,13 @@ function reaimEdge(rctx, edge, skewToo = false) {
     break;
   }
 }
-function reaimAfterOffsets(scene, titleBoxes = []) {
+function reaimAfterOffsets(scene, titleBoxes = [], only) {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
   for (const edge of scene.edges)
-    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge, true);
+    if (!(edge.pinned?.start && edge.pinned?.end) && (!only || only.has(edge.id)))
+      reaimEdge(rctx, edge, true);
 }
 function reaimWrapAroundTerminals(ctx) {
   const { scene } = ctx;
@@ -100103,7 +100104,8 @@ function stampLabelOffsets(edges, model) {
 }
 var pointOn = (point, box) => point.x >= box.x - 1 && point.x <= box.x + box.width + 1 && point.y >= box.y - 1 && point.y <= box.y + box.height + 1;
 function applyNodeOffsets(scene, offsetOf) {
-  if (!offsetOf.size) return;
+  const carried = /* @__PURE__ */ new Set();
+  if (!offsetOf.size) return carried;
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const clamped = /* @__PURE__ */ new Set();
   const resolved = /* @__PURE__ */ new Map();
@@ -100164,6 +100166,7 @@ function applyNodeOffsets(scene, offsetOf) {
       const terminal = edge.pts[end];
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || !seat.delta.dx && !seat.delta.dy) continue;
+      carried.add(edge.id);
       const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
       const neighbour = edge.pts[neighbourIndex];
       const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
@@ -100174,6 +100177,7 @@ function applyNodeOffsets(scene, offsetOf) {
       if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
     }
   }
+  return carried;
 }
 var SEGMENT_EPSILON = 0.5;
 var SLIDE_UNBOUNDED = 1e4;
@@ -100352,7 +100356,6 @@ function offsetDiagnostics(scene, model) {
 }
 function runGeometryPasses(scene, model, options) {
   const { numbered, sideways } = options;
-  const offsets = offsetAssignment(model);
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   const titleBoxes = titleBoxesOf(scene, model);
   if (sideways) transpose(scene, titleBoxes);
@@ -100362,8 +100365,6 @@ function runGeometryPasses(scene, model, options) {
   tidyEdges(scene, routedTitles);
   anchorFlowLabels(scene, routedTitles, false);
   compactVertical(scene);
-  applyNodeOffsets(scene, offsets);
-  if (offsets.size) reaimAfterOffsets(scene, titleBoxesOf(scene, model));
   const routesBefore = new Map(
     scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
   );
@@ -100372,10 +100373,8 @@ function runGeometryPasses(scene, model, options) {
   spreadAttachments(scene);
   recordRepairs(scene, routesBefore);
   clearSideHugs(scene, settledTitles);
-  anchorFlowLabels(scene, settledTitles);
+  anchorFlowLabels(scene, settledTitles, false);
   swapCrossingSiblingSeats(scene);
-  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
-  if (offsets.size || nudgedLabels) shiftIntoCanvas(scene);
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {
@@ -100483,12 +100482,20 @@ function markDeclaredTerminals(edges, model, view, hubPorts) {
 }
 async function layout(model, view) {
   const scene = await chooseLayout(model, view);
-  if (applySegmentOffsets(scene, model)) {
-    anchorFlowLabels(scene, titleBoxesOf(scene, model));
-    shiftIntoCanvas(scene);
-    fitCanvas(scene);
-  }
+  applyAuthorPositioning(scene, model);
   return scene;
+}
+function applyAuthorPositioning(scene, model) {
+  const offsets = offsetAssignment(model);
+  if (offsets.size) {
+    reaimAfterOffsets(scene, titleBoxesOf(scene, model), applyNodeOffsets(scene, offsets));
+  }
+  const nudgedRuns = applySegmentOffsets(scene, model);
+  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
+  if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
+  anchorFlowLabels(scene, titleBoxesOf(scene, model));
+  shiftIntoCanvas(scene);
+  fitCanvas(scene);
 }
 async function chooseLayout(model, view) {
   const elk = await getElk();
@@ -102144,6 +102151,27 @@ function layoutBoxes(model, scene) {
           { x: b.x, y: b.y }
         ],
         slide: segmentSlideRange(edge.pts, index, leaves)
+      });
+    }
+    for (const end of ["from", "to"]) {
+      if (end === "from" ? flow.fromRole : flow.toRole) continue;
+      const declared = end === "from" ? flow.fromSide : flow.toSide;
+      const point = end === "from" ? edge.pts[0] : edge.pts[edge.pts.length - 1];
+      boxes.push({
+        id: edge.id,
+        what: "terminal",
+        x: point.x,
+        y: point.y,
+        width: 0,
+        height: 0,
+        container: false,
+        line: flow.span.line,
+        endpoint: {
+          end,
+          element: end === "from" ? flow.from : flow.to,
+          side: declared?.value,
+          span: declared?.span ?? (end === "from" ? flow.fromSpan : flow.toSpan)
+        }
       });
     }
   }

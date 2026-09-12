@@ -404,10 +404,17 @@ system ORDERS "Order platform" {
 
 Three things follow from it being a **delta and not a seat**.
 
-- **The layout still runs.** The element keeps its place in the reading order and
-  moves with its neighbours; adding a sibling re-flows the drawing and the nudge
-  comes along. Nothing is ever pinned to a canvas coordinate, so an offset does
-  not go stale when the diagram around it grows.
+- **The layout still runs, and the nudge does not change it.** The element keeps
+  its place in the reading order and moves with its neighbours; adding a sibling
+  re-flows the drawing and the nudge comes along. Nothing is ever pinned to a
+  canvas coordinate, so an offset does not go stale when the diagram around it
+  grows. But the offset itself re-flows nothing: a diagram carrying hints is the
+  diagram without them *plus the hints*, so nudging one box never moves another
+  or re-routes a flow that does not touch it. The deltas are applied to the
+  layout the router chose, never fed back into choosing it. What does answer to a
+  nudge is the immediate neighbourhood — a flow whose element moved is carried
+  along and re-aimed, and the flows sharing the side it lands on are re-seated so
+  two terminals do not end up in the same place.
 - **A container carries its children**, and a child's own `offset:` adds to its
   container's — so nudging a `system` moves the whole group rigidly, and the one
   block inside it that also needs moving still can. A child is **held inside**
@@ -546,6 +553,17 @@ path between them: the passes that would move a terminal stand down for *that*
 terminal — pin one end and the other is still re-aimed, unwoven and measured as
 usual — while the route itself is still tidied along shapes that leave the
 pinned ends where the author put them.
+
+**This is what the playground writes when you drag a flow's end.** Hover either
+end of a flow and the point it meets its element shows as a small circle; drag it
+to another side and the endpoint is rewritten — `APP -> DB` becomes
+`APP.top -> DB`, and an endpoint that already names a side has that word replaced
+rather than a second one appended. The drop picks the side from where the pointer
+sits relative to the element's centre, so the ghost circle sits on the middle of
+the side you are about to choose: a pin names a *side*, and which seat on it the
+flow takes stays the layout's answer. An endpoint that names a role
+(`CAPTURE.producer`) offers no handle — a side and a role on one endpoint is
+**E0225**, so there is nothing a drag could write there.
 
 **A queue's flows are sided for you.** One placement decision needs no control
 at all: a `queue` is a hand-off between two halves of a drawing, so everything

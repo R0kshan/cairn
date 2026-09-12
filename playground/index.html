@@ -73,11 +73,16 @@
   #routes polyline { fill:none; stroke:var(--accent); stroke-linejoin:round; stroke-linecap:round; }
   #routes .hover-route { stroke-width:5; opacity:.45; }
   #routes .ghost-route { stroke-width:2.5; stroke-dasharray:6 4; }
+  /* Where a flow meets an element. A handle this small needs to read as a
+     handle, so it is a filled dot rather than another line. */
+  #routes .hover-dot { fill:var(--accent); fill-opacity:.3; stroke:var(--accent); stroke-width:2; }
+  #routes .ghost-dot { fill:none; stroke:var(--accent); stroke-width:2.5; stroke-dasharray:4 3; }
   #preview.draggable { cursor:move; }
   /* A run slides along its normal and nowhere else, so the cursor says which
      way before the drag starts rather than after it refuses to follow. */
   #preview.slide-x { cursor:ew-resize; }
   #preview.slide-y { cursor:ns-resize; }
+  #preview.grab { cursor:grab; }
 </style>
 </head>
 <body>
@@ -123,7 +128,7 @@
   </div>
   <div id="splitter" title="Drag to resize · double-click to reset"></div>
   <div class="right">
-    <div id="preview" title="Drag an element or a flow label to nudge it, or slide one run of a flow across itself — the DSL follows · drag the canvas to pan · ctrl/⌘ + wheel to zoom"></div>
+    <div id="preview" title="Drag an element or a flow label to nudge it, slide one run of a flow across itself, or drag an end dot to another side — the DSL follows · drag the canvas to pan · ctrl/⌘ + wheel to zoom"></div>
     <div id="status"><span id="stat">loading engine…</span></div>
   </div>
 </main>
@@ -493,16 +498,26 @@ hover.id = 'hover';
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const routes = document.createElementNS(SVG_NS, 'svg');
 routes.id = 'routes';
-const polyline = className => {
-  const line = document.createElementNS(SVG_NS, 'polyline');
-  line.setAttribute('class', className);
-  line.style.display = 'none';
-  routes.append(line);
-  return line;
+const overlayShape = (tag, className, attributes = {}) => {
+  const shape = document.createElementNS(SVG_NS, tag);
+  shape.setAttribute('class', className);
+  for (const [name, value] of Object.entries(attributes)) shape.setAttribute(name, value);
+  shape.style.display = 'none';
+  routes.append(shape);
+  return shape;
 };
-/** One overlay in each shape per role, so a flow and a box light up the same way. */
-const HOVER = { box: hover, route: polyline('hover-route') };
-const GHOST = { box: ghost, route: polyline('ghost-route') };
+/** One overlay in each shape per role, so a box, a run and a terminal all light
+    up the same way: a rectangle, a line, a dot. */
+const HOVER = {
+  box: hover,
+  route: overlayShape('polyline', 'hover-route'),
+  dot: overlayShape('circle', 'hover-dot', { r: 6 }),
+};
+const GHOST = {
+  box: ghost,
+  route: overlayShape('polyline', 'ghost-route'),
+  dot: overlayShape('circle', 'ghost-dot', { r: 7 }),
+};
 /** Every overlay lives in the preview, which `run()` empties on every render. */
 const addOverlays = () => preview.append(hover, ghost, routes);
 addOverlays();
@@ -523,6 +538,46 @@ const SEGMENT_GRAB_PX = 5;
 
 /** A run is vertical when its two endpoints share an x. */
 const isVertical = box => Math.abs(box.points[0].x - box.points[1].x) < 0.5;
+
+/** How close the pointer has to be to a terminal to take hold of it, in diagram
+    pixels. Wider than the run band it sits on, since it wins the tie. */
+const TERMINAL_GRAB_PX = 8;
+
+/** The flow terminal nearest the pointer, within the grab radius. */
+function terminalAt(point) {
+  let best = null;
+  for (const box of lastBoxes) {
+    if (box.what !== 'terminal') continue;
+    const distance = Math.hypot(point.x - box.x, point.y - box.y);
+    if (distance <= TERMINAL_GRAB_PX && (!best || distance < best.distance)) best = { box, distance };
+  }
+  return best?.box ?? null;
+}
+
+/**
+ * The side of its element a terminal would attach to if it were dropped at
+ * `point`, and the middle of that side — which is where the ghost sits, because
+ * `ID.side` names a side and not a seat on it.
+ *
+ * Measured from the box centre in *normalised* units, so a wide element does not
+ * read as left or right from almost everywhere.
+ */
+function terminalTarget(box, point) {
+  const element = lastBoxes?.find(b => b.what === 'element' && b.id === box.endpoint.element);
+  if (!element || !point) return null;
+  const half = { x: element.width / 2 || 1, y: element.height / 2 || 1 };
+  const from = { x: point.x - (element.x + half.x), y: point.y - (element.y + half.y) };
+  const side = Math.abs(from.x / half.x) >= Math.abs(from.y / half.y)
+    ? (from.x >= 0 ? 'right' : 'left')
+    : (from.y >= 0 ? 'bottom' : 'top');
+  const middle = {
+    left:   { x: element.x, y: element.y + half.y },
+    right:  { x: element.x + element.width, y: element.y + half.y },
+    top:    { x: element.x + half.x, y: element.y },
+    bottom: { x: element.x + half.x, y: element.y + element.height },
+  }[side];
+  return { side, ...middle };
+}
 
 /** Distance from `point` to the segment `a`–`b`. */
 function distanceToSegment(point, a, b) {
@@ -546,9 +601,12 @@ function segmentAt(point) {
 }
 
 /**
- * What the pointer has hold of: a flow label, else one run of a route, else the
- * smallest element box under it — so a child wins over its container.
+ * What the pointer has hold of: a flow terminal, else a flow label, else one run
+ * of a route, else the smallest element box under it — so a child wins over its
+ * container.
  *
+ * Most specific first. A terminal sits at the end of its own run and on the
+ * border of its element, so anything but first place makes it unreachable.
  * Labels outrank runs because a label sits *on* its own run, and a run that won
  * there would leave `label-offset:` unreachable. Runs outrank elements because
  * the grab band is 5px wide: a pointer that close to a line is on the line,
@@ -557,11 +615,12 @@ function segmentAt(point) {
 function boxAt(point) {
   if (!lastBoxes || !point) return null;
   const inside = lastBoxes
-    .filter(b => b.what !== 'segment' &&
+    .filter(b => b.what !== 'segment' && b.what !== 'terminal' &&
                  point.x >= b.x && point.x <= b.x + b.width &&
                  point.y >= b.y && point.y <= b.y + b.height)
     .sort((a, b) => a.width * a.height - b.width * b.height);
-  return inside.find(b => b.what === 'label') ?? segmentAt(point) ?? inside[0] ?? null;
+  return terminalAt(point) ??
+    inside.find(b => b.what === 'label') ?? segmentAt(point) ?? inside[0] ?? null;
 }
 
 /**
@@ -595,9 +654,9 @@ function placeOverlay(el, box, dx = 0, dy = 0) {
  * a zoom, a pan or a re-render moves the drawing under it, and there is no
  * cheaper moment to notice than the one that is about to draw on it.
  */
-function placeRoute(line, box, dx = 0, dy = 0) {
+function parkRoutes() {
   const svg = preview.querySelector('svg');
-  if (!svg) return;
+  if (!svg) return false;
   const svgRect = svg.getBoundingClientRect();
   const paneRect = preview.getBoundingClientRect();
   routes.style.display = 'block';
@@ -605,6 +664,11 @@ function placeRoute(line, box, dx = 0, dy = 0) {
   routes.style.top    = (svgRect.top - paneRect.top + preview.scrollTop) + 'px';
   routes.style.width  = svgRect.width + 'px';
   routes.style.height = svgRect.height + 'px';
+  return true;
+}
+
+function placeRoute(line, box, dx = 0, dy = 0) {
+  if (!parkRoutes()) return;
   line.style.display = 'block';
   line.setAttribute(
     'points',
@@ -612,15 +676,26 @@ function placeRoute(line, box, dx = 0, dy = 0) {
   );
 }
 
+/** Marks one point in diagram coordinates. The radius stays in screen pixels,
+    so a handle is the same size to grab at every zoom. */
+function placeDot(dot, x, y) {
+  if (!parkRoutes()) return;
+  dot.style.display = 'block';
+  dot.setAttribute('cx', x * zoom);
+  dot.setAttribute('cy', y * zoom);
+}
+
 const hideOverlay = pair => {
   pair.box.style.display = 'none';
   pair.route.style.display = 'none';
+  pair.dot.style.display = 'none';
 };
 
 /** Lights up what the pointer holds, in the shape that fits it. */
 function showOverlay(pair, box, dx = 0, dy = 0) {
   hideOverlay(pair);
-  if (box.what === 'segment') placeRoute(pair.route, box, dx, dy);
+  if (box.what === 'terminal') placeDot(pair.dot, box.x + dx, box.y + dy);
+  else if (box.what === 'segment') placeRoute(pair.route, box, dx, dy);
   else placeOverlay(pair.box, box, dx, dy);
 }
 
@@ -677,6 +752,21 @@ function spliceSpan(source, span, text) {
   const line = lines[span.line - 1];
   lines[span.line - 1] = line.slice(0, span.col - 1) + text + line.slice(span.col - 1 + span.len);
   return lines.join('\n');
+}
+
+/**
+ * Moves one end of a flow to another side of its element, by writing the
+ * `ID.side` the DSL already has for it — no new grammar, and a file a drag
+ * produced is one an author could have typed.
+ *
+ * Two shapes, one splice. An endpoint that already declares a side has just the
+ * side word replaced; one that does not has its id replaced by `ID.side`. Which
+ * of the two `endpoint.span` covers is settled by whether a side is declared,
+ * so there is nothing here to get wrong when both ends of a flow are moved.
+ */
+function writeSide(source, box, side) {
+  const { span, element, side: declared } = box.endpoint;
+  return spliceSpan(source, span, declared ? side : `${element}.${side}`);
 }
 
 /** The `dx, dy` a span currently holds, so a second drag adds to the first
@@ -759,6 +849,12 @@ let dragStart = null;
  * nothing — so the ghost and the value written to the source round identically.
  */
 function dragDelta(e, box = dragStart.box, fromX = dragStart.clientX, fromY = dragStart.clientY) {
+  // A terminal does not move by a delta at all: it moves to a *side*, so the
+  // ghost sits on the middle of the side the drop would choose.
+  if (box.what === 'terminal') {
+    const target = terminalTarget(box, diagramPoint(e));
+    return target ? { dx: target.x - box.x, dy: target.y - box.y } : { dx: 0, dy: 0 };
+  }
   // A run slides along its normal and nowhere else — that is the one direction
   // that leaves the route orthogonal — and only as far as the engine will take
   // it, so the ghost promises what the drawing will actually show.
@@ -780,16 +876,18 @@ preview.addEventListener('pointermove', e => {
   if (dragStart || panStart) return;
   const box = boxAt(diagramPoint(e));
   const run = box?.what === 'segment';
-  preview.classList.toggle('draggable', !!box && !run);
+  const terminal = box?.what === 'terminal';
+  preview.classList.toggle('draggable', !!box && !run && !terminal);
   preview.classList.toggle('slide-x', run && isVertical(box));
   preview.classList.toggle('slide-y', run && !isVertical(box));
+  preview.classList.toggle('grab', terminal);
   if (box) showOverlay(HOVER, box);
   else hideOverlay(HOVER);
 });
 
 preview.addEventListener('pointerleave', () => {
   hideOverlay(HOVER);
-  preview.classList.remove('draggable', 'slide-x', 'slide-y');
+  preview.classList.remove('draggable', 'slide-x', 'slide-y', 'grab');
 });
 
 preview.addEventListener('pointermove', e => {
@@ -810,6 +908,17 @@ function endDrag(e) {
   hideOverlay(GHOST);
   preview.releasePointerCapture(e.pointerId);
   if (!moved) return;
+  // A terminal is re-attached, not nudged: what a drop settles is which side of
+  // the element the flow meets, and the layout answers for the seat on it.
+  if (box.what === 'terminal') {
+    const target = terminalTarget(box, diagramPoint(e));
+    if (!target || target.side === box.endpoint.side) return;
+    editor.value = writeSide(editor.value, box, target.side);
+    const end = box.endpoint.end === 'from' ? 'start' : 'end';
+    flash(`${box.id} ${end} moved to the ${target.side} of ${box.endpoint.element}`);
+    run();
+    return;
+  }
   const { dx, dy } = dragDelta(e, box, clientX, clientY);
   if (!dx && !dy) return;
   editor.value = writeOffset(editor.value, box, dx, dy);

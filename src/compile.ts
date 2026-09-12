@@ -26,7 +26,7 @@ import { views } from "./views.ts";
 import { buildFlowMatrix } from "./flow-matrix.ts";
 import type { FlowMatrix } from "./models/matrix.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
-import type { Model, Span } from "./models/ast.ts";
+import type { AttachSide, Model, Span } from "./models/ast.ts";
 import type { Scene } from "./scene-layout.ts";
 import { resolveThemeSpec } from "./theme-spec.ts";
 import type { ThemeOverrides } from "./theme-spec.ts";
@@ -54,18 +54,18 @@ export interface CompileOptions {
 }
 
 /**
- * Where one element, flow label or run of a flow's route ended up on the canvas,
- * paired with the source position an editor needs to write a nudge back into
- * the DSL.
+ * Where one element, flow label, run of a flow's route or flow terminal ended up
+ * on the canvas, paired with the source position an editor needs to write the
+ * move back into the DSL.
  *
  * This is what makes a drag in the playground possible without stamping ids
  * into the SVG: the drawing's bytes stay exactly what they were (INVARIANTS
  * §2, §14), and the one consumer that needs identity gets it out of band.
  */
 export interface LayoutBox {
-  /** Element id, or the flow id for a label or one run of a route. */
+  /** Element id, or the flow id for a label, a run of a route, or a terminal. */
   id: string;
-  what: "element" | "label" | "segment";
+  what: "element" | "label" | "segment" | "terminal";
   x: number;
   y: number;
   width: number;
@@ -96,6 +96,17 @@ export interface LayoutBox {
    * drag to what the drawing will actually show. `"segment"` boxes only.
    */
   slide?: { min: number; max: number };
+  /**
+   * Where a flow meets an element — `"terminal"` boxes only, one per end, with
+   * `x/y` on the point itself and no extent.
+   *
+   * `span` is what an editor replaces to move the attachment: the side the
+   * author declared when there is one, and otherwise the endpoint's id, which
+   * takes an `ID.side` suffix in its place. An endpoint that names a *role*
+   * (`CAPTURE.producer`) gets no terminal box at all — a side and a role on one
+   * endpoint is E0225, so there is nothing an editor could write there.
+   */
+  endpoint?: { end: "from" | "to"; element: string; side?: AttachSide; span: Span };
 }
 
 export interface CompileResult {
@@ -225,6 +236,30 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
           { x: b.x, y: b.y },
         ],
         slide: segmentSlideRange(edge.pts, index, leaves),
+      });
+    }
+    // The two ends, which move between the *sides* of their element rather than
+    // by a delta — `ID.side` is the lever, so the box carries the span that
+    // writes one and the editor never has to know the grammar.
+    for (const end of ["from", "to"] as const) {
+      if (end === "from" ? flow.fromRole : flow.toRole) continue;
+      const declared = end === "from" ? flow.fromSide : flow.toSide;
+      const point = end === "from" ? edge.pts[0] : edge.pts[edge.pts.length - 1];
+      boxes.push({
+        id: edge.id,
+        what: "terminal",
+        x: point.x,
+        y: point.y,
+        width: 0,
+        height: 0,
+        container: false,
+        line: flow.span.line,
+        endpoint: {
+          end,
+          element: end === "from" ? flow.from : flow.to,
+          side: declared?.value,
+          span: declared?.span ?? (end === "from" ? flow.fromSpan : flow.toSpan),
+        },
       });
     }
   }

@@ -1700,13 +1700,18 @@ const pointOn = (point: Point, box: Box): boolean =>
  * for any delta, and degenerates to nothing when the delta is zero on that axis
  * — the zero-length segment is dropped.
  *
- * Runs after `compactVertical`, the last pass that moves a node of its own
- * accord, and before the route repair, which then squares and re-seats around
- * the new geometry. `fitCanvas` at the end of the pipeline grows the canvas for
- * anything an offset pushed past its edge (§18).
+ * Runs from `applyAuthorPositioning`, on the layout that already won — never
+ * inside the pipeline that builds a candidate, or the nudge would be measured as
+ * if the router had chosen it (§17). Nothing re-routes afterwards, so the elbow
+ * rebuilt here is the repair, and `fitCanvas` grows the canvas for anything the
+ * offset pushed past its edge (§18).
+ *
+ * Returns the flows whose terminal it carried, which is the only set
+ * `reaimAfterOffsets` is allowed to touch.
  */
-function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void {
-  if (!offsetOf.size) return;
+function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): Set<string> {
+  const carried = new Set<string>();
+  if (!offsetOf.size) return carried;
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const clamped = new Set<string>();
   const resolved = new Map<string, { dx: number; dy: number }>();
@@ -1799,6 +1804,8 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void
       // and only the leaf's own delta describes where it went.
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || (!seat.delta.dx && !seat.delta.dy)) continue;
+      // Named for the re-aim below, which is only ever this pass's business.
+      carried.add(edge.id);
       const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
       const neighbour = edge.pts[neighbourIndex];
       const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
@@ -1820,6 +1827,7 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void
       if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
     }
   }
+  return carried;
 }
 
 /** Two points are on the same axis when they differ by less than this. */
@@ -2081,7 +2089,6 @@ function runGeometryPasses(
   options: { numbered: boolean; sideways: boolean; laneOf?: Map<string, number> },
 ): void {
   const { numbered, sideways } = options;
-  const offsets = offsetAssignment(model);
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   // Issue #26 applies to every disposition. A DOWN layout wraps its backward
   // flows around the sides rather than the top, so it is routed through the
@@ -2112,15 +2119,6 @@ function runGeometryPasses(
   // disposition, since elk leaves spare corridors whether or not the reroute
   // above moved anything.
   compactVertical(scene);
-  // After the last pass that moves a node on its own account, so nothing the
-  // layout does afterwards can eat the author's delta, and before the route
-  // repair, which squares and re-seats around what the offset moved.
-  applyNodeOffsets(scene, offsets);
-  // A drag can move an element past its counterpart, which leaves the flow
-  // attached to a side that no longer faces it — the wrap §4c straightens, made
-  // after the pass that owns it ran. Only where an offset exists: without one
-  // nothing moved since `tidyEdges`, and the drawing must stay byte-identical.
-  if (offsets.size) reaimAfterOffsets(scene, titleBoxesOf(scene, model));
 
   // The repair is tried and then audited, not refused outright: a route change
   // can cost a *different* flow's label its seat, so any flow whose label was on
@@ -2155,18 +2153,14 @@ function runGeometryPasses(
   // batch-reverted to y=451 over another edge's label harm. Here it is in both
   // audit states, so the comparison is unaffected and the fix permanent.
   clearSideHugs(scene, settledTitles);
-  anchorFlowLabels(scene, settledTitles);
+  // Still without the author's offsets: this scene is a layout *candidate*, and
+  // `applyAuthorPositioning` puts the hints on the one that wins.
+  anchorFlowLabels(scene, settledTitles, false);
   // Crossings between two flows on the same leaf side, further out than the §4b
   // fan can see. Here for the same reason as `clearSideHugs`: outside the
   // renderer's batch audit, so an unrelated optimiser trade cannot revert the
   // swap. Only swaps that remove a crossing without shuffling it elsewhere.
   swapCrossingSiblingSeats(scene);
-  // An offset can push geometry off the top or left, which `fitCanvas` cannot
-  // answer — it only ever grows right and down. A `label-offset:` reaches there
-  // as easily as an element's, and moves no node, so the element map alone does
-  // not see it.
-  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
-  if (offsets.size || nudgedLabels) shiftIntoCanvas(scene);
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.
   fitCanvas(scene);
@@ -2357,27 +2351,67 @@ function markDeclaredTerminals(
 }
 
 /**
- * Lays out `model` and then applies the author's `segment-offset:` hints.
+ * Lays out `model`, then applies the author's three positioning deltas —
+ * `offset:`, `label-offset:` and `segment-offset:` — to the layout that won.
  *
- * The hints go on *after* `chooseLayout`, never inside it: the port pass below
- * re-lays the drawing out and picks a winner by readability profile, so a run
- * nudged before that choice is judged as if the router had drawn it there — and
- * a 30px nudge on one flow was measured flipping an entire drawing to a
- * different candidate. A positioning hint says where something sits, never which
- * layout wins (§17).
+ * **The deltas go on after `chooseLayout`, never inside it.** A drawing with
+ * hints must be the hint-free drawing *plus the hints*, and nothing else: an
+ * author who nudges one box is asking for that box to move, not for the diagram
+ * to be re-derived around it. Inside `chooseLayout` a hint is not a hint, it is
+ * an input — the candidate sweep, `denserLayout` and the port pass all measure
+ * readability on the scene the passes produced and pick a winner by it, so a
+ * nudged element is judged as if the router had put it there. Measured on
+ * `application-large-fr`: a single `offset: 0, -30` on `PAY_ORCH` moved all 28
+ * other elements and re-routed 20 flows that never touched it.
  *
- * The three passes re-run here are the ones a moved run invalidates and no more:
- * the label that names it, the canvas it may have pushed past, and the canvas
- * growth that answers it. All three are idempotent on a settled scene.
+ * So the candidate scenes are built hint-free, down to `anchorFlowLabels`
+ * running with `applyOffsets: false`, and the winner alone is nudged. A hint
+ * says where something sits, never which layout wins (§17).
+ *
+ * `ID.side` and `order:` stay inside the layout, where they belong: those are
+ * requests *of* the router — an elk port and a partition band — not deltas
+ * applied to what it drew.
  */
 export async function layout(model: Model, view: View): Promise<Scene> {
   const scene = await chooseLayout(model, view);
-  if (applySegmentOffsets(scene, model)) {
-    anchorFlowLabels(scene, titleBoxesOf(scene, model));
-    shiftIntoCanvas(scene);
-    fitCanvas(scene);
-  }
+  applyAuthorPositioning(scene, model);
   return scene;
+}
+
+/**
+ * Puts the author's deltas on a settled scene, and re-runs only what they
+ * invalidate.
+ *
+ * Order matters and is the same as the pipeline's: nodes move first and carry
+ * their terminals (`applyNodeOffsets` squares the elbow itself, so no route
+ * repair is needed or wanted — a repair here would undo the very churn this
+ * function exists to prevent), then the one re-aim a moved node genuinely needs,
+ * then the runs, then the labels ride what moved. `shiftIntoCanvas` answers
+ * anything pushed past the top or left, which `fitCanvas` cannot — it only ever
+ * grows right and down (§18).
+ *
+ * Every pass here is idempotent on a settled scene, and the whole function is a
+ * no-op without a hint, which is what keeps a hint-free drawing byte-identical.
+ */
+function applyAuthorPositioning(scene: Scene, model: Model): void {
+  const offsets = offsetAssignment(model);
+  if (offsets.size) {
+    // A drag can move an element past its counterpart, which leaves the flow
+    // attached to a side that no longer faces it — the wrap §4c straightens.
+    // The one repair a moved node earns, and scoped to the flows it actually
+    // carried: an arrowhead aimed at nothing is not a nudge, but a flow nobody
+    // touched is nobody's business.
+    reaimAfterOffsets(scene, titleBoxesOf(scene, model), applyNodeOffsets(scene, offsets));
+  }
+  const nudgedRuns = applySegmentOffsets(scene, model);
+  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
+  if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
+  // With the author's offsets this time: every anchor before this one ran
+  // without them, so this is where a nudged label lands and where a label whose
+  // flow moved catches up with it.
+  anchorFlowLabels(scene, titleBoxesOf(scene, model));
+  shiftIntoCanvas(scene);
+  fitCanvas(scene);
 }
 
 async function chooseLayout(model: Model, view: View): Promise<Scene> {

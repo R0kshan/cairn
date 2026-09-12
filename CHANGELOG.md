@@ -6,6 +6,7 @@ All notable changes to the cairn project will be documented in this file.
 
 ### Added
 - Possibility to drag elements in the playground, with the coordinates written back to the DSL as `offset: <dx>, <dy>` on an element and `label-offset: <dx>, <dy>` on a flow 
+- Flow ends can be re-attached by hand: hover either end of a flow and the point it meets its element shows as a circle, and dragging it to another side rewrites the endpoint as `ID.side` — no new syntax, it is the pin the DSL already had
 - Flows can be adjusted too: hover a run of a route and the cursor becomes a resize cursor, and sliding it writes `segment-offset: <run>, <delta>` into the flow's inline block. A run moves along its normal only — a vertical run left/right, a horizontal one up/down — so the route keeps its turns and stays orthogonal. Repeat the key to move several runs of one flow
 - More display control through the DSL: `style { label-wrap: <n> }` to break labels onto `n`-character lines, `container-padding: <n>` and `label-padding: <n>` to reclaim the whitespace around them 
 
@@ -13,6 +14,7 @@ All notable changes to the cairn project will be documented in this file.
 - Removed the unnecessary `:` in flow definitions — `A -> B "label"`. The old spelling still parses
 
 ### Fixed
+- A manual nudge no longer re-flows the diagram around itself. `offset:`, `label-offset:` and `segment-offset:` were being applied while layout candidates were still being scored, so a hint was measured as if the router had chosen it — one `offset: 0, -30` on `application-large-fr` moved all 28 other elements and re-routed 20 unrelated flows. The deltas are now applied to the layout that won, so a drawing with hints is the drawing without them plus the hints. A diagram declaring no hints renders exactly as before
 - Producer and consumer directives not taking effect when nested in a container block
 - The arrowhead no longer runs  along the border instead of into it, and the arrowhead now faces its counterpart after being dragged through the playground interface
 

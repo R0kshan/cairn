@@ -828,17 +828,35 @@ parent chain — a container settles before the children whose room it defines �
 and every element it cuts short is recorded on the scene and reported as
 **W0573**, because a hint that is negotiated must at least say so.
 
-It is applied **after `compactVertical`** — the last pass that moves a node on
-its own account, so nothing the layout does afterwards can eat it — and **before
-the route repair**, which then squares and re-seats the flows around the new
-geometry. Moving a terminal leaves its first segment slanted, and a slanted
-segment is a tier-0 breach (§3), so the elbow is rebuilt in the pass itself
-rather than left to a repair that is free to refuse a candidate: one point is
-inserted on the axis the original segment did not run along, which is orthogonal
-by construction for any delta. Because the route repair then owns the moved
-geometry, **a flow reconnects to the side that now faces its counterpart** — an
+It is applied **after the whole layout has been chosen**, in
+`applyAuthorPositioning`, and not inside the pipeline that builds a layout
+candidate. A drawing with hints must be the hint-free drawing *plus the hints*:
+an author who nudges one box is asking for that box to move, never for the
+diagram to be re-derived around it. Inside `chooseLayout` a hint is not a hint,
+it is an input — the candidate sweep, `denserLayout` and the port pass each
+measure readability on the scene the geometry passes produced and pick a winner
+by it, so a nudged element is judged as if the router had put it there. Measured
+on `application-large-fr`: one `offset: 0, -30` on `PAY_ORCH` moved **all 28
+other elements** and re-routed **20 flows that never touched it**. Candidate
+scenes are therefore built hint-free down to `anchorFlowLabels`, which runs with
+`applyOffsets: false` throughout, and the winner alone is nudged.
+`tests/behavior.test.ts` holds every other node and every flow outside the nudged
+element's neighbourhood identical across a 90px offset.
+
+Moving a terminal leaves its first segment slanted, and a slanted segment is a
+tier-0 breach (§3), so the elbow is rebuilt in the pass itself rather than left
+to a repair: one point is inserted on the axis the original segment did not run
+along, which is orthogonal by construction for any delta. No route repair runs
+afterwards — a repair is free to re-route a flow nobody touched, which is the
+churn this ordering exists to prevent. The one exception is `reaimAfterOffsets`,
+so that **a flow reconnects to the side that now faces its counterpart** — an
 element dragged past the thing it talks to comes back attached the right way
-round, rather than trailing a wrapped edge.
+round rather than trailing a wrapped edge — and it is handed the set of flows
+whose terminal the offset actually carried, so it cannot reach past them.
+
+What still answers to a nudge is the immediate neighbourhood: a flow re-aimed
+onto a new side re-seats the siblings already on that side, because two terminals
+in the same place is a worse drawing than a moved one. Nothing beyond that.
 
 `compactVertical` runs a second time inside the renderer, after label settling,
 and a downward offset opens exactly the kind of empty band that pass exists to
@@ -891,6 +909,17 @@ have is `W0574`; the numbers are positional and renumber when a route gains a
 turn, which is the price of addressing a run at all. Runs appear in `compile()`'s
 `boxes` as `what: "segment"` with their two endpoints and their slide bounds,
 which is what lets an editor hold a drag to what the drawing will actually show.
+
+**A flow terminal is moved by writing a pin, not by moving geometry.** Each end
+appears in `compile()`'s `boxes` as `what: "terminal"` carrying the element it
+sits on, the side the author declared for it if any, and the span an editor
+replaces — the side word when one is declared, the endpoint's id otherwise, which
+takes an `ID.side` in its place. So dragging an end in the playground produces
+exactly the source an author would have typed, and the pin is then honored by the
+same passes that have always honored one: nothing in the pipeline learns that an
+editor was involved. An endpoint naming a role gets no box, because a side and a
+role on one endpoint is E0225 — an editor is not given a handle that can only
+write a diagnostic.
 
 What an offset may not do is disappear. Where one lands an element on another,
 or a label on an element, the drawing ships exactly as written and the collision
