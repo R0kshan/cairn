@@ -22,6 +22,7 @@ import {
   noLadderRegression,
   nodeCoverage,
   straightRuns,
+  refuseScenicRepairs,
   type Scene,
 } from "../src/scene-layout.ts";
 import type { Element } from "../src/models/ast.ts";
@@ -344,6 +345,149 @@ test("a run is the straight line the reader sees, however many points it spends"
       Math.abs(after[i - 1].x - after[i].x) < 0.5 || Math.abs(after[i - 1].y - after[i].y) < 0.5,
       `segment ${i} of ${found.edge.id} runs off the orthogonal`,
     );
+});
+
+test("a moved element leaves no spur behind on the flows it carries", async () => {
+  // `applyNodeOffsets` squares a carried terminal by splicing an elbow beside
+  // it, which leaves the point that used to be the corner in line with the new
+  // one — and where the element moved past that corner, in line but beyond it.
+  // The route then runs out to the old seat and back: `L 430 611 L 430 237
+  // L 430 339 L 483 339`, a spur up to where the queue used to be, drawn over
+  // the run that already goes there. Reported from the playground three times
+  // before it was found.
+  //
+  // Judged on `scene.edges[].pts`, deliberately, and never on `compile()`'s
+  // boxes: `straightRuns` merges runs that share an axis, so it reports that
+  // route as one clean run from (430,611) to (430,339) and the spur disappears
+  // from view. The renderer draws every point.
+  const reverses = (pts: { x: number; y: number }[]): number[] => {
+    const found: number[] = [];
+    for (let i = 1; i + 1 < pts.length; i++) {
+      const [back, here, next] = [pts[i - 1], pts[i], pts[i + 1]];
+      const vertical = Math.abs(back.x - here.x) < 0.5 && Math.abs(here.x - next.x) < 0.5;
+      const horizontal = Math.abs(back.y - here.y) < 0.5 && Math.abs(here.y - next.y) < 0.5;
+      // Three points on one line walked in one direction draw exactly the line
+      // they describe; only a reversal is a defect.
+      if (
+        vertical &&
+        here.y !== back.y &&
+        Math.sign(here.y - back.y) === -Math.sign(next.y - here.y)
+      )
+        found.push(i);
+      else if (
+        horizontal &&
+        here.x !== back.x &&
+        Math.sign(here.x - back.x) === -Math.sign(next.x - here.x)
+      )
+        found.push(i);
+    }
+    return found;
+  };
+
+  for (const example of ["application-large-fr", "logical-archi"]) {
+    const src = readFileSync(join(ROOT, `examples/${example}.cairn`), "utf8");
+    const plain = await build(src);
+    const all = (element: Element): Element[] => [element, ...element.children.flatMap(all)];
+    const elements = plain.model.elements.flatMap(all).slice(0, 6);
+    for (const element of elements)
+      for (const [dx, dy] of [
+        [43, 102],
+        [-60, -120],
+      ]) {
+        const lines = src.split("\n");
+        lines[element.kindSpan.line - 1] += ` { offset: ${dx}, ${dy} }`;
+        const { diags } = check(lines.join("\n"));
+        if (diags.some((d) => d.severity === "error")) continue;
+        const nudged = await build(lines.join("\n"));
+        for (const edge of nudged.scene.edges) {
+          const spur = reverses(edge.pts);
+          assert.deepEqual(
+            spur,
+            [],
+            `${example}: nudging ${element.id} by ${dx},${dy} left ${edge.id} doubling back at ${spur.join(",")} — ${edge.pts.map((p) => `(${Math.round(p.x)},${Math.round(p.y)})`).join(" ")}`,
+          );
+        }
+      }
+  }
+});
+
+test("a repair bought with a long way round is refused", () => {
+  // The ladder judges defects and is blind to how far a route travels, which is
+  // fine inside the pipeline — everything it chooses between was drawn by the
+  // router. After an offset it is choosing against the squared route
+  // `applyNodeOffsets` produced, which is already a reasonable answer, so a
+  // candidate that clears a tier by climbing over the drawing and back is not an
+  // improvement anyone would recognise. Reported from the playground: nudging a
+  // queue 80px down sent the flow into it up above the title band and back.
+  const route = (...points: [number, number][]) => points.map(([x, y]) => ({ x, y }));
+  // 20 + 5 + 80 + 410 = 515px, the shape a carried terminal leaves behind.
+  const direct = route([1045, 232], [1025, 232], [1025, 237], [1025, 317], [615, 317]);
+  // 88 + 470 + 185 + 51 = 794px, over the top of the drawing and back down.
+  const scenic = route([1135, 207], [1135, 119], [665, 119], [665, 304], [614, 304]);
+  // A repair that buys its tier honestly: same corridor, a little longer.
+  const modest = route([1045, 232], [1045, 250], [1033, 250], [1033, 317], [615, 317]);
+
+  const scene = {
+    width: 0,
+    height: 0,
+    layoutMs: 0,
+    nodes: [],
+    edges: [
+      { id: "F15", pts: scenic.map((p) => ({ ...p })), labels: [] },
+      { id: "F16", pts: modest.map((p) => ({ ...p })), labels: [] },
+    ],
+  } as unknown as Scene;
+  refuseScenicRepairs(
+    scene,
+    new Map([
+      ["F15", direct],
+      ["F16", direct],
+    ]),
+  );
+  assert.deepEqual(scene.edges[0].pts, direct, "the scenic route should have been put back");
+  assert.deepEqual(scene.edges[1].pts, modest, "a modest repair should be kept");
+});
+
+test("a flow carried by an offset stays attached to both of its elements", async () => {
+  // The renderer can undo a route repair by restoring `SceneEdge.repairedFrom`,
+  // and that snapshot is taken inside the candidate pipeline — before the
+  // author's delta moves anything. Restoring it puts the flow back on the seat
+  // the element used to have, leaving a stub hanging in mid-air next to a box
+  // that has moved on. Reported from the playground, and it took a one-pixel
+  // offset to trigger: the revert is all-or-nothing about the route, not about
+  // how far the element went.
+  for (const example of ["application-large-fr", "logical-archi"]) {
+    const src = readFileSync(join(ROOT, `examples/${example}.cairn`), "utf8");
+    const plain = await compile(src);
+    const targets = plain
+      .boxes!.filter((box) => box.what === "element" && !box.container)
+      .slice(0, 5);
+    for (const target of targets) {
+      for (const dy of [1, 80]) {
+        const lines = src.split("\n");
+        lines[target.line - 1] += ` { offset: 0, ${dy} }`;
+        const nudged = await compile(lines.join("\n"));
+        // Appending a body to a declaration that already opens one is not what
+        // the playground writes; skip what does not compile rather than assert
+        // on it.
+        if (!nudged.boxes) continue;
+        const nodes = nudged.boxes.filter((box) => box.what === "element");
+        const seated = (point: { x: number; y: number }) =>
+          nodes.some(
+            (node) =>
+              point.x >= node.x - 2 &&
+              point.x <= node.x + node.width + 2 &&
+              point.y >= node.y - 2 &&
+              point.y <= node.y + node.height + 2,
+          );
+        for (const box of nudged.boxes.filter((b) => b.what === "terminal"))
+          assert.ok(
+            seated(box),
+            `${example}: nudging ${target.id} by ${dy} left ${box.id}'s ${box.endpoint!.end} end off ${box.endpoint!.element}`,
+          );
+      }
+    }
+  }
 });
 
 test("a flow carried by an offset is not left lying on another flow", async () => {

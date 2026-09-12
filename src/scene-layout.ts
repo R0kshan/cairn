@@ -1828,7 +1828,33 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): Set<
       if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
     }
   }
+  for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
   return carried;
+}
+
+/**
+ * Drops interior points whose two segments run along the same axis.
+ *
+ * The elbow spliced above lands beside the terminal it squares, which leaves the
+ * point that used to be the corner in line with it — and where the element moved
+ * *past* that corner, in line but beyond it, so the route runs out to the old
+ * seat and back. `M … L 430 611 L 430 237 L 430 339 L 483 339`: a spur up to
+ * where the queue used to be, drawn over the run that already goes there.
+ *
+ * Removing such a point cannot bend anything, since the two segments it joined
+ * shared an axis and what is left still runs along it. Only routes an offset
+ * actually moved are touched, so a drawing with no hint keeps its geometry —
+ * redundant points and all — to the byte.
+ *
+ * Backwards, so one removal cannot skip the next: dropping `i` makes the old
+ * `i + 1` the new `i`, which a forward walk would step straight over.
+ */
+function dropRedundantPoints(pts: Point[]): void {
+  const inLine = (a: Point, b: Point, c: Point): boolean =>
+    (Math.abs(a.x - b.x) < SEGMENT_EPSILON && Math.abs(b.x - c.x) < SEGMENT_EPSILON) ||
+    (Math.abs(a.y - b.y) < SEGMENT_EPSILON && Math.abs(b.y - c.y) < SEGMENT_EPSILON);
+  for (let i = pts.length - 2; i >= 1; i--)
+    if (inLine(pts[i - 1], pts[i], pts[i + 1])) pts.splice(i, 1);
 }
 
 /** Two points are on the same axis when they differ by less than this. */
@@ -2030,6 +2056,13 @@ function shiftIntoCanvas(scene: Scene): void {
   }
   for (const edge of scene.edges) {
     for (const point of edge.pts) {
+      point.x += shiftX;
+      point.y += shiftY;
+    }
+    // The renderer can still undo a repair by restoring this, so it has to move
+    // with the drawing — a snapshot left behind describes a canvas that no
+    // longer exists.
+    for (const point of edge.repairedFrom ?? []) {
       point.x += shiftX;
       point.y += shiftY;
     }
@@ -2444,6 +2477,46 @@ export async function layout(model: Model, view: View): Promise<Scene> {
  * Every pass here is idempotent on a settled scene, and the whole function is a
  * no-op without a hint, which is what keeps a hint-free drawing byte-identical.
  */
+/** Length of a polyline, in pixels. */
+const pathLength = (pts: Point[]): number =>
+  pts.reduce(
+    (total, point, index) =>
+      index === 0
+        ? 0
+        : total + Math.abs(point.x - pts[index - 1].x) + Math.abs(point.y - pts[index - 1].y),
+    0,
+  );
+
+/**
+ * Puts back any route the repair bought at the price of a long way round.
+ *
+ * The ladder judges *defects* — crossings, struck titles, runs hugging a border
+ * — and is deliberately blind to how far a route travels, because inside the
+ * pipeline everything it is choosing between was drawn by the router in the
+ * first place. After an offset that stops being true: what the repair is handed
+ * is the squared route `applyNodeOffsets` produced, which is already a
+ * reasonable answer, and a candidate that clears a tier by climbing over the
+ * whole drawing and coming back is not an improvement anybody would recognise.
+ * On `architecture-applicative-l1`, nudging a queue 80px down sent the flow into
+ * it up above the title band and back — 515px of route become 794.
+ *
+ * So a repair that makes a route half as long again is refused and `before` is
+ * restored. The snapshot is taken here rather than read off `repairedFrom`:
+ * that field is written by `recordRepairs` for the pipeline's own repair pass,
+ * and this stage runs after it.
+ */
+export function refuseScenicRepairs(scene: Scene, before: Map<string, Point[]>): void {
+  // ponytail: one ratio, measured rather than derived. If it starts refusing
+  // repairs that are visibly right, the answer is a length term in the ladder
+  // itself, not a second constant here.
+  const TOLERATED_DETOUR = 1.5;
+  for (const edge of scene.edges) {
+    const original = before.get(edge.id);
+    if (!original) continue;
+    if (pathLength(edge.pts) > pathLength(original) * TOLERATED_DETOUR) edge.pts = original;
+  }
+}
+
 function applyAuthorPositioning(scene: Scene, model: Model): void {
   const offsets = offsetAssignment(model);
   if (offsets.size) {
@@ -2452,6 +2525,13 @@ function applyAuthorPositioning(scene: Scene, model: Model): void {
     // its own flows to follow, never for the rest of the drawing to be
     // re-routed (§17).
     const carried = applyNodeOffsets(scene, offsets);
+    // The renderer may undo a route repair by restoring `repairedFrom`, and for
+    // a flow this stage just moved that snapshot is of geometry that no longer
+    // exists — it was taken before the delta, against the node's old seat, so
+    // restoring it strands the flow in mid-air beside an element that has moved
+    // on. Dropping it leaves the renderer with nothing stale to fall back to;
+    // the repair below records a fresh one where it moves anything.
+    for (const edge of scene.edges) if (carried.has(edge.id)) edge.repairedFrom = undefined;
     const titles = titleBoxesOf(scene, model);
     // A drag can move an element past its counterpart, which leaves the flow
     // attached to a side that no longer faces it — the wrap §4c straightens.
@@ -2472,7 +2552,13 @@ function applyAuthorPositioning(scene: Scene, model: Model): void {
     );
     const repairable = new Set([...carried].filter((id) => !handPlaced.has(id)));
     if (repairable.size) {
+      const before = new Map(
+        scene.edges
+          .filter((edge) => repairable.has(edge.id))
+          .map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))]),
+      );
       optimiseRoutes(scene, titles, false, repairable);
+      refuseScenicRepairs(scene, before);
       // The repair works to the ladder, which trades defects against each other;
       // two runs lying on top of one another reads as a single line and is worth
       // removing on its own terms, so the de-coincidence post-pass runs after it
@@ -2481,6 +2567,12 @@ function applyAuthorPositioning(scene: Scene, model: Model): void {
     }
   }
   const nudgedRuns = applySegmentOffsets(scene, model);
+  // Same again for a run the author slid: the snapshot is of the route before
+  // the slide, and undoing to it would quietly drop the hint.
+  if (nudgedRuns)
+    for (const edge of scene.edges)
+      if (model.flows.find((flow) => flow.id === edge.id)?.segmentOffsets?.length)
+        edge.repairedFrom = undefined;
   const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
   if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
   // With the author's offsets this time: every anchor before this one ran

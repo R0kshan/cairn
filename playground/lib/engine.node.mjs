@@ -100184,7 +100184,13 @@ function applyNodeOffsets(scene, offsetOf) {
       if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
     }
   }
+  for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
   return carried;
+}
+function dropRedundantPoints(pts) {
+  const inLine = (a, b, c) => Math.abs(a.x - b.x) < SEGMENT_EPSILON && Math.abs(b.x - c.x) < SEGMENT_EPSILON || Math.abs(a.y - b.y) < SEGMENT_EPSILON && Math.abs(b.y - c.y) < SEGMENT_EPSILON;
+  for (let i = pts.length - 2; i >= 1; i--)
+    if (inLine(pts[i - 1], pts[i], pts[i + 1])) pts.splice(i, 1);
 }
 var SEGMENT_EPSILON = 0.5;
 var SLIDE_UNBOUNDED = 1e4;
@@ -100293,6 +100299,10 @@ function shiftIntoCanvas(scene) {
   }
   for (const edge of scene.edges) {
     for (const point of edge.pts) {
+      point.x += shiftX;
+      point.y += shiftY;
+    }
+    for (const point of edge.repairedFrom ?? []) {
       point.x += shiftX;
       point.y += shiftY;
     }
@@ -100509,10 +100519,23 @@ async function layout(model, view) {
   applyAuthorPositioning(scene, model);
   return scene;
 }
+var pathLength2 = (pts) => pts.reduce(
+  (total, point, index) => index === 0 ? 0 : total + Math.abs(point.x - pts[index - 1].x) + Math.abs(point.y - pts[index - 1].y),
+  0
+);
+function refuseScenicRepairs(scene, before) {
+  const TOLERATED_DETOUR = 1.5;
+  for (const edge of scene.edges) {
+    const original = before.get(edge.id);
+    if (!original) continue;
+    if (pathLength2(edge.pts) > pathLength2(original) * TOLERATED_DETOUR) edge.pts = original;
+  }
+}
 function applyAuthorPositioning(scene, model) {
   const offsets = offsetAssignment(model);
   if (offsets.size) {
     const carried = applyNodeOffsets(scene, offsets);
+    for (const edge of scene.edges) if (carried.has(edge.id)) edge.repairedFrom = void 0;
     const titles = titleBoxesOf(scene, model);
     reaimAfterOffsets(scene, titles, carried);
     const handPlaced = new Set(
@@ -100520,11 +100543,20 @@ function applyAuthorPositioning(scene, model) {
     );
     const repairable = new Set([...carried].filter((id) => !handPlaced.has(id)));
     if (repairable.size) {
+      const before = new Map(
+        scene.edges.filter((edge) => repairable.has(edge.id)).map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
+      );
       optimiseRoutes(scene, titles, false, repairable);
+      refuseScenicRepairs(scene, before);
       decoincideAfterOffsets(scene, titles, repairable);
     }
   }
   const nudgedRuns = applySegmentOffsets(scene, model);
+  if (nudgedRuns) {
+    for (const edge of scene.edges)
+      if (model.flows.find((flow) => flow.id === edge.id)?.segmentOffsets?.length)
+        edge.repairedFrom = void 0;
+  }
   const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
   if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
   anchorFlowLabels(scene, titleBoxesOf(scene, model));

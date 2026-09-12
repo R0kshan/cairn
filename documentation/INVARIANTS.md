@@ -848,6 +848,25 @@ tier-0 breach (§3), so the elbow is rebuilt in the pass itself rather than left
 to a repair: one point is inserted on the axis the original segment did not run
 along, which is orthogonal by construction for any delta.
 
+**And the point that used to be the corner is then dropped.** The new elbow
+lands beside the terminal, in line with the old corner — and where the element
+moved *past* it, in line but beyond, so the route runs out to the old seat and
+back: `L 430 611 L 430 237 L 430 339 L 483 339` is a spur up to where a queue
+used to be, drawn on top of the run that already goes there. `dropRedundantPoints`
+removes any interior point whose two segments share an axis, which cannot bend a
+route — what is left still runs along that axis — and it is applied to carried
+routes only, so a drawing with no hint keeps its geometry, redundant points and
+all, to the byte.
+
+This one is worth remembering for how long it hid. Every check written against
+`compile()`'s boxes reported the route above as one clean run from `(430,611)` to
+`(430,339)`, because `straightRuns` merges runs that share an axis and the spur
+sits *inside* the merged run. Three rounds of detectors — detached terminals,
+slants, coincident runs, route length — all came back clean on a drawing that
+visibly had a line doubling back on itself. A defect inside a run is invisible to
+anything that reads runs; `tests/behavior.test.ts` checks `scene.edges[].pts`
+directly for it, and says why.
+
 **The flows the move carried are then repaired, and only those.**
 `applyNodeOffsets` returns the set of flows whose terminal it actually carried,
 and three passes are handed it and nothing else: `reaimAfterOffsets`, so a flow
@@ -865,6 +884,31 @@ entirely: its shape is a hint, not a defect.
 Running them after `recordRepairs` is deliberate, for the reason `clearSideHugs`
 is: they are then outside the renderer's batch audit, which cannot revert a fix
 it never measured the need for.
+
+**The repair's answer is then checked for length, which the ladder never
+weighs.** Inside the pipeline that blindness is right — every candidate the
+ladder chooses between was drawn by the router in the first place. After an
+offset it is choosing against the squared route `applyNodeOffsets` produced,
+which is already a reasonable answer, so a candidate that clears a tier by
+climbing over the drawing and coming back is not an improvement anybody would
+recognise: on `architecture-applicative-l1`, nudging a queue 80px down sent the
+flow into it above the title band and back, 515px of route becoming 794.
+`refuseScenicRepairs` puts back anything more than half again as long. One
+ratio, measured rather than derived; if it ever refuses a repair that is visibly
+right, the answer is a length term in the ladder itself.
+
+**And the snapshots that audit reverts to are dropped.** `SceneEdge.repairedFrom`
+holds the route a flow had before `optimiseRoutes` moved it, so the renderer can
+undo a repair once label settling shows what it cost. For a flow the offset
+stage moved, that snapshot is of geometry that no longer exists — it was taken
+inside the candidate pipeline, against the seat the element used to have — and
+restoring it strands the flow in mid-air beside a box that has moved on. It took
+a one-pixel offset to show, because the revert is all-or-nothing about the route
+and says nothing about how far the element went. So every flow this stage moves
+has its snapshot cleared, and the scoped repair records a fresh one where it
+moves anything. `shiftIntoCanvas` carries the surviving snapshots with the rest
+of the drawing for the same reason: one left behind describes a canvas that is
+no longer there.
 
 What still answers to a nudge is the immediate neighbourhood: a flow re-aimed
 onto a new side re-seats the siblings already on that side, because two terminals
