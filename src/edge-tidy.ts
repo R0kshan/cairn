@@ -2414,7 +2414,26 @@ function labelsRideRoute(
   return true;
 }
 
-function reaimEdge(rctx: ReaimContext, edge: SceneEdge): void {
+/**
+ * Does either terminal run *along* the side it sits on instead of into it?
+ *
+ * The arrowhead points down the terminal segment, so a north or south seat has
+ * to be met by a vertical segment and an east or west seat by a horizontal one.
+ * Anything else draws the head sliding along the border it lands on, aimed at
+ * whatever lies past the element rather than at the element.
+ */
+function skewedSeat(pts: Point[], srcSide: Side, dstSide: Side): boolean {
+  const along = (side: Side, terminal: Point, neighbour: Point): boolean => {
+    const vertical = Math.abs(terminal.x - neighbour.x) < ORTHOGONAL_EPSILON;
+    const horizontal = Math.abs(terminal.y - neighbour.y) < ORTHOGONAL_EPSILON;
+    // Zero-length or diagonal: `enforceOrthogonalOn` owns those, not this.
+    if (vertical === horizontal) return false;
+    return side === "north" || side === "south" ? horizontal : vertical;
+  };
+  return along(srcSide, pts[0], pts[1]) || along(dstSide, pts[pts.length - 1], pts[pts.length - 2]);
+}
+
+function reaimEdge(rctx: ReaimContext, edge: SceneEdge, skewToo = false): void {
   const { leaves, runsExcept, awayTol: AWAY_TOL, seatedLabelBoxes, wrapAround } = rctx;
   if (edge.pts.length < 2) return;
   const srcSeat = sideOf(edge.pts[0], leaves);
@@ -2435,7 +2454,12 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge): void {
   const ends = { src, dst };
   const wrapped = wrapAround(edge.pts, src, dst);
   const tangledBefore = returnLegCrossings(rctx, edge, ends, edge.pts);
-  if (!wrapped && tangledBefore === 0) return;
+  // A third, for the offset pass only (`reaimAfterOffsets`): a seat carried by a
+  // dragged box, whose route was squared around the move and now meets the side
+  // along it. Candidates are perpendicular at both ends by construction, so a
+  // survivor always removes it.
+  const skewed = skewToo && skewedSeat(edge.pts, srcSeat.side, dstSeat.side);
+  if (!wrapped && tangledBefore === 0 && !skewed) return;
 
   const srcC = { x: src.x + src.width / 2, y: src.y + src.height / 2 };
   const dstC = { x: dst.x + dst.width / 2, y: dst.y + dst.height / 2 };
@@ -2471,7 +2495,10 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge): void {
     // (64px) doing it; beyond that the cure reads worse than the tangle.
     const untangles =
       tangledBefore > 0 && returnLegCrossings(rctx, edge, ends, pts) < tangledBefore;
-    if (untangles) {
+    // A skew is priced like a tangle, not like a detour: crossing to the side
+    // that faces the run can cost a little length, and a head pointing along the
+    // border is a direction defect rather than a distance one.
+    if (untangles || skewed) {
       if (sharedPathLength(pts) > currentLength + 64) continue;
     } else if (sharedPathLength(pts) >= currentLength - 12) {
       continue;
@@ -2486,6 +2513,23 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge): void {
     edge.detour = false;
     break;
   }
+}
+
+/**
+ * The §4c re-aim on its own, for the one caller that moves geometry after
+ * `tidyEdges` has run: `applyNodeOffsets`. A dragged element carries its
+ * terminals with it (INVARIANTS §17), so a flow whose counterpart was dragged
+ * past it is left wrapping around a side that no longer faces — exactly the
+ * detour this pass exists to straighten, arriving too late for the call inside
+ * `tidyEdges` to see it. Runs only where an offset exists, so an offset-free
+ * drawing is untouched.
+ */
+export function reaimAfterOffsets(scene: Scene, titleBoxes: TitleBox[] = []): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
+  for (const edge of scene.edges)
+    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge, true);
 }
 
 function reaimWrapAroundTerminals(ctx: TidyContext): void {

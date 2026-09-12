@@ -13,6 +13,7 @@ All notable changes to the cairn project will be documented in this file.
 
 ### Fixed
 - Producer and consumer directives not taking effect when nested in a container block
+- Flows into a dragged element keeping a side that no longer faces: the arrowhead ran along the border instead of into it, and the route wrapped around rather than taking the side now facing its counterpart
 
 ## [v1.0.0-RC15](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC15) - 2026-09-09
 

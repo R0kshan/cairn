@@ -28,6 +28,7 @@ import { compactVertical, fitCanvas } from "./compact.ts";
 import {
   optimiseRoutes,
   clearSideHugs,
+  reaimAfterOffsets,
   spreadAttachments,
   swapCrossingSiblingSeats,
   tidyEdges,
@@ -1795,9 +1796,16 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void
       const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
       terminal.x += seat.delta.dx;
       terminal.y += seat.delta.dy;
+      // The elbow goes on the *neighbour's* side of the move, so the terminal
+      // keeps meeting its box across the border rather than along it. Squaring
+      // the other way is orthogonal too, but it turns this end's approach a
+      // quarter turn: a seat on a west side gets a vertical last segment, and
+      // the arrowhead then points down the border it lands on. Where the
+      // neighbour is the flow's *other* terminal the turn only moves to that
+      // end, which is what `reaimAfterOffsets` is there to settle.
       const elbow = wasHorizontal
-        ? { x: terminal.x, y: neighbour.y }
-        : { x: neighbour.x, y: terminal.y };
+        ? { x: neighbour.x, y: terminal.y }
+        : { x: terminal.x, y: neighbour.y };
       const degenerate =
         (Math.abs(elbow.x - terminal.x) < 0.5 && Math.abs(elbow.y - terminal.y) < 0.5) ||
         (Math.abs(elbow.x - neighbour.x) < 0.5 && Math.abs(elbow.y - neighbour.y) < 0.5);
@@ -1975,6 +1983,11 @@ function runGeometryPasses(
   // layout does afterwards can eat the author's delta, and before the route
   // repair, which squares and re-seats around what the offset moved.
   applyNodeOffsets(scene, offsets);
+  // A drag can move an element past its counterpart, which leaves the flow
+  // attached to a side that no longer faces it — the wrap §4c straightens, made
+  // after the pass that owns it ran. Only where an offset exists: without one
+  // nothing moved since `tidyEdges`, and the drawing must stay byte-identical.
+  if (offsets.size) reaimAfterOffsets(scene, titleBoxesOf(scene, model));
 
   // The repair is tried and then audited, not refused outright: a route change
   // can cost a *different* flow's label its seat, so any flow whose label was on
