@@ -131,6 +131,40 @@ test("an offset flow keeps every segment orthogonal", async () => {
     }
 });
 
+test("an offset terminal meets its side across the border, not along it", async () => {
+  // The arrowhead points down the terminal segment, so a seat on a west or east
+  // side needs a horizontal one and a north or south seat a vertical one. A drag
+  // carries the seat with the box; squaring the route around it must not turn
+  // the approach a quarter turn, or the head reads as aimed past the element.
+  for (const offset of ["40, -37", "0, -60", "-40, 60", "60, 40"]) {
+    const { scene } = await build(OFFSET_SRC(`  offset: ${offset}`));
+    const leaves = scene.nodes.filter((node) => !node.container);
+    for (const edge of scene.edges)
+      for (const end of [0, edge.pts.length - 1]) {
+        const terminal = edge.pts[end];
+        const neighbour = edge.pts[end === 0 ? 1 : edge.pts.length - 2];
+        const seat = leaves.find(
+          (node) =>
+            terminal.x > node.x - 1 &&
+            terminal.x < node.x + node.width + 1 &&
+            terminal.y > node.y - 1 &&
+            terminal.y < node.y + node.height + 1,
+        );
+        if (!seat) continue;
+        const vertical = Math.abs(terminal.x - neighbour.x) < 0.5;
+        const horizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
+        if (vertical === horizontal) continue; // zero-length: nothing to judge
+        const onSide =
+          Math.abs(terminal.x - seat.x) < 1 || Math.abs(terminal.x - (seat.x + seat.width)) < 1;
+        assert.equal(
+          onSide ? horizontal : vertical,
+          true,
+          `${edge.id} meets ${seat.id} along its side at offset ${offset}`,
+        );
+      }
+  }
+});
+
 test("`label-offset:` moves the label and survives the renderer's settling", async () => {
   const labelOf = (result: Awaited<ReturnType<typeof build>>) =>
     result.scene.edges.find((edge) => edge.id === "F01")!.labels[0];

@@ -98023,7 +98023,16 @@ function labelsRideRoute(rctx, edge, pts, outside) {
   }
   return true;
 }
-function reaimEdge(rctx, edge) {
+function skewedSeat(pts, srcSide, dstSide) {
+  const along = (side, terminal, neighbour) => {
+    const vertical = Math.abs(terminal.x - neighbour.x) < ORTHOGONAL_EPSILON;
+    const horizontal = Math.abs(terminal.y - neighbour.y) < ORTHOGONAL_EPSILON;
+    if (vertical === horizontal) return false;
+    return side === "north" || side === "south" ? horizontal : vertical;
+  };
+  return along(srcSide, pts[0], pts[1]) || along(dstSide, pts[pts.length - 1], pts[pts.length - 2]);
+}
+function reaimEdge(rctx, edge, skewToo = false) {
   const { leaves, runsExcept, awayTol: AWAY_TOL2, seatedLabelBoxes, wrapAround } = rctx;
   if (edge.pts.length < 2) return;
   const srcSeat = sideOf(edge.pts[0], leaves);
@@ -98034,7 +98043,8 @@ function reaimEdge(rctx, edge) {
   const ends = { src, dst };
   const wrapped = wrapAround(edge.pts, src, dst);
   const tangledBefore = returnLegCrossings(rctx, edge, ends, edge.pts);
-  if (!wrapped && tangledBefore === 0) return;
+  const skewed = skewToo && skewedSeat(edge.pts, srcSeat.side, dstSeat.side);
+  if (!wrapped && tangledBefore === 0 && !skewed) return;
   const srcC = { x: src.x + src.width / 2, y: src.y + src.height / 2 };
   const dstC = { x: dst.x + dst.width / 2, y: dst.y + dst.height / 2 };
   const candidates = generateReaimCandidates(
@@ -98054,7 +98064,7 @@ function reaimEdge(rctx, edge) {
       continue;
     }
     const untangles = tangledBefore > 0 && returnLegCrossings(rctx, edge, ends, pts) < tangledBefore;
-    if (untangles) {
+    if (untangles || skewed) {
       if (pathLength(pts) > currentLength + 64) continue;
     } else if (pathLength(pts) >= currentLength - 12) {
       continue;
@@ -98068,6 +98078,13 @@ function reaimEdge(rctx, edge) {
     edge.detour = false;
     break;
   }
+}
+function reaimAfterOffsets(scene, titleBoxes = []) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
+  for (const edge of scene.edges)
+    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge, true);
 }
 function reaimWrapAroundTerminals(ctx) {
   const { scene } = ctx;
@@ -100148,7 +100165,7 @@ function applyNodeOffsets(scene, offsetOf) {
       const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
       terminal.x += seat.delta.dx;
       terminal.y += seat.delta.dy;
-      const elbow = wasHorizontal ? { x: terminal.x, y: neighbour.y } : { x: neighbour.x, y: terminal.y };
+      const elbow = wasHorizontal ? { x: neighbour.x, y: terminal.y } : { x: terminal.x, y: neighbour.y };
       const degenerate = Math.abs(elbow.x - terminal.x) < 0.5 && Math.abs(elbow.y - terminal.y) < 0.5 || Math.abs(elbow.x - neighbour.x) < 0.5 && Math.abs(elbow.y - neighbour.y) < 0.5;
       if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
     }
@@ -100266,6 +100283,7 @@ function runGeometryPasses(scene, model, options) {
   anchorFlowLabels(scene, routedTitles, false);
   compactVertical(scene);
   applyNodeOffsets(scene, offsets);
+  if (offsets.size) reaimAfterOffsets(scene, titleBoxesOf(scene, model));
   const routesBefore = new Map(
     scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
   );
