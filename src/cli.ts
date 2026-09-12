@@ -75,13 +75,14 @@ B1   -> EXT1 "Data sent" [BO1]
 #   crossing-hops: on
 #   theme: light               # light | dark | slate | sand | contrast | nord | solarized | classic | classic-dark
 #   accent: #1f77b4            # optional: retints flows on top of the chosen theme
-#   compact: off               # on = denser layout (tighter spacing + wrapped flow labels)
+#   compact: off               # on = denser layout (tighter inter-element spacing)
 #   font-size: 12.5            # base text size (edge labels = base-1, container titles = base+0.5)
 #   arrows: normal             # normal | large (larger arrowheads so endpoints stand out)
 #   flow-color: none           # none | by-source (tint each flow + its arrowhead by origin)
 #   flow-label: on-line
 #   lang: en                   # en | fr (localizes rendered labels; keywords stay English)
 #   label-wrap: 14             # chars per line for element/container labels (unset = never wrap)
+#   flow-label-wrap: 10        # chars per line for flow labels (unset = never wrap)
 #   container-padding: 4       # px inside a container: left, right, bottom (unset = default)
 #   label-padding: 4           # px either side of a node label (unset = default)
 # }

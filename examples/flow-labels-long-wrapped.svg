@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1136 480" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="1136" height="480" fill="#ffffff"/>
+<rect x="10" y="133" width="82" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="151" font-size="13" font-weight="bold" fill="#17202c">Customers</text>
+<rect x="231" y="83" width="126" height="132" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="241" y="101" font-size="13" font-weight="bold" fill="#17202c">Claims portal</text>
+<rect x="496" y="83" width="371" height="143" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="506" y="101" font-size="13" font-weight="bold" fill="#17202c">Claims core</text>
+<circle cx="51" cy="170" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 40 192 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="51" y="204" font-size="11" text-anchor="middle" fill="#20364c">Customer</text>
+<rect x="240" y="168" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="294" y="191" font-size="12.5" text-anchor="middle" fill="#17202c">Intake</text>
+<rect x="240" y="110" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="294" y="133" font-size="12.5" text-anchor="middle" fill="#17202c">Tracking</text>
+<rect x="505" y="174.33333333333331" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="559" y="197.33333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">Case file</text>
+<rect x="750" y="168" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="804" y="191" font-size="12.5" text-anchor="middle" fill="#17202c">Pricing</text>
+<path d="M 488 41 v 24 a 65.5 7 0 0 0 131 0 v -24" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="553.5" cy="41" rx="65.5" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="553.5" y="60.5" font-size="12.5" text-anchor="middle" fill="#17202c">Document archive</text>
+<path d="M 1003 197 h 115 a 8 19 0 0 1 0 38 h -115 a 8 19 0 0 1 0 -38" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="1003" cy="216" rx="8" ry="19" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="1064.5" y="220" font-size="12.5" text-anchor="middle" fill="#17202c">Claims event bus</text>
+<path d="M 83 187 L 240 187" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 348 193.33333333333331 L 505 193.33333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 348 180.66666666666669 L 372 181 L 372 53 L 488 53" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 613 187 L 750 187" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 607 212.33333333333331 L 607 229 L 995 229" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1060.5 235 L 1060.5 311 L 4 311 L 4 129 L 240 129" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="161.5" y="168.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">declares a new</text>
+<text x="161.5" y="183" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">claim with</text>
+<text x="161.5" y="197.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">supporting</text>
+<text x="161.5" y="212" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">documents</text>
+<text x="161.5" y="226.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS)</text>
+<text x="426.5" y="174.83333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">opens the case</text>
+<text x="426.5" y="189.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">file and</text>
+<text x="426.5" y="203.83333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">assigns a</text>
+<text x="426.5" y="218.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">handler</text>
+<text x="426.5" y="232.83333333333331" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="430" y="34.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">stores the</text>
+<text x="430" y="49" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">supporting</text>
+<text x="430" y="63.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">documents for</text>
+<text x="430" y="78" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">ten years</text>
+<text x="430" y="92.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(S3)</text>
+<text x="681.5" y="168.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">requests the</text>
+<text x="681.5" y="183" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">settlement</text>
+<text x="681.5" y="197.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">amount for the</text>
+<text x="681.5" y="212" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">approved items</text>
+<text x="681.5" y="226.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="950" y="203.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">publishes</text>
+<text x="950" y="217.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">every</text>
+<text x="950" y="232.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">case-file</text>
+<text x="950" y="246.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">status change</text>
+<text x="950" y="261.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">as an event</text>
+<text x="950" y="275.75" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
+<text x="532.25" y="270.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">notifies</text>
+<text x="532.25" y="285.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">the</text>
+<text x="532.25" y="299.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">customer</text>
+<text x="532.25" y="314.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">that the</text>
+<text x="532.25" y="328.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">case file</text>
+<text x="532.25" y="343.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">moved on</text>
+<text x="532.25" y="357.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and why</text>
+<text x="532.25" y="372.25" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP)</text>
+<line x1="20" y1="408" x2="1116" y2="408" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="430" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="420" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="431" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="420" width="26" height="14" rx="3" fill="#e9f3fa" stroke="#2f83b6"/>
+<text x="304" y="431" font-size="10" fill="#17202c">Application</text>
+<rect x="394" y="420" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="426" y="431" font-size="10" fill="#17202c">Application module</text>
+<rect x="552" y="420" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="584" y="431" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="720" y="420" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="752" y="431" font-size="10" fill="#17202c">Message queue / broker</text>
+<line x1="150" y1="450" x2="176" y2="450" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="454" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
+</svg>
