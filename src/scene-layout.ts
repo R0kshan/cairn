@@ -892,7 +892,6 @@ interface GraphContext {
 }
 
 interface GraphOptions {
-  labelWrap?: number;
   tight?: boolean;
   minLayers?: boolean;
   /** elk node-placement strategy override (cross-axis spread). */
@@ -938,7 +937,6 @@ const INGRESS_PARTITION = -1;
  */
 const DEFAULT_INGRESS_KINDS = ["actor", "actor-group"];
 const EGRESS_PARTITION = 900;
-const COMPACT_WRAP = 10;
 
 /**
  * How many reading-order slots one view partition is split into. A partition
@@ -1054,8 +1052,8 @@ function elkEnds(flow: Model["flows"][number]): { sources: string[]; targets: st
 }
 
 /** The elk edge for one flow, with the label it carries already measured. */
-function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, labelWrap?: number) {
-  const { compact, numbered, fonts, businessObjectName } = ctx;
+function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, flowLabelWrap?: number) {
+  const { numbered, fonts, businessObjectName } = ctx;
   if (numbered)
     return {
       id: flow.id,
@@ -1068,7 +1066,13 @@ function elkFlowEdge(flow: Model["flows"][number], ctx: GraphContext, labelWrap?
         },
       ],
     };
-  const wrap = labelWrap ?? (compact ? COMPACT_WRAP : undefined);
+  // Only `flow-label-wrap: <n>` breaks a flow label — the flow's own if it
+  // names one, else the diagram's — the way `label-wrap` is the only thing that
+  // breaks an element's. Left alone it
+  // keeps the lines it was written with, whatever the layout would rather it
+  // were: `compact: on` and the slide/page fit both used to impose their own
+  // widths from here, which is the automatic wrapping #107 removed.
+  const wrap = flow.labelWrap ?? flowLabelWrap;
   const raw = flow.label && wrap ? wrapText(flow.label, wrap) : flow.label;
   const chips = (flow.objects ?? []).map(
     (objectRef) => businessObjectName.get(objectRef.id) ?? objectRef.id,
@@ -1382,7 +1386,7 @@ function buildElkGraph(
       };
       return elkNode;
     }),
-    edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap)),
+    edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, model.style.flowLabelWrap)),
   };
   applyDeclaredPorts(
     graph,
@@ -2317,11 +2321,10 @@ export async function layout(model: Model, view: View): Promise<Scene> {
       disposition === "slide"
         ? [
             { direction: "RIGHT" },
-            { direction: "RIGHT", options: { labelWrap: 16 } },
-            { direction: "RIGHT", options: { labelWrap: 14, tight: true } },
-            { direction: "RIGHT", options: { labelWrap: 14, tight: true, minLayers: true } },
+            { direction: "RIGHT", options: { tight: true } },
+            { direction: "RIGHT", options: { tight: true, minLayers: true } },
           ]
-        : [{ direction: "DOWN" }, { direction: "DOWN", options: { labelWrap: 16 } }];
+        : [{ direction: "DOWN" }];
     const laidOutSpecs = await Promise.all(
       graphSpecs.map((spec) => layoutGraph(spec.direction, spec.options)),
     );
