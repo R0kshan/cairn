@@ -1,87 +1,84 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1157 481" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1302 461" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1157" height="481" fill="#ffffff"/>
+<rect width="1302" height="461" fill="#ffffff"/>
 <rect x="65" y="22" width="82" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="75" y="40" font-size="13" font-weight="bold" fill="#17202c">Users</text>
 <rect x="10" y="123" width="137" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="141" font-size="13" font-weight="bold" fill="#17202c">Staff</text>
-<rect x="283" y="22" width="638" height="171.66666666666669" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<rect x="283" y="22" width="725" height="152.66666666666669" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="293" y="40" font-size="13" font-weight="bold" fill="#17202c">Appointment booking system</text>
-<rect x="297" y="53.5" width="126" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="307" y="71.5" font-size="13" font-weight="bold" fill="#17202c">Booking channels</text>
-<rect x="552" y="61.33333333333333" width="355" height="123.33333333333334" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="562" y="79.33333333333333" font-size="13" font-weight="bold" fill="#17202c">Appointment management</text>
-<rect x="1021" y="74" width="126" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1031" y="92" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
+<rect x="297" y="49" width="126" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="307" y="67" font-size="13" font-weight="bold" fill="#17202c">Booking channels</text>
+<rect x="576" y="56.83333333333333" width="418" height="108.83333333333334" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="586" y="74.83333333333333" font-size="13" font-weight="bold" fill="#17202c">Appointment management</text>
+<rect x="1166" y="69" width="126" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1176" y="87" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="106" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 95 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="106" y="93" font-size="11" text-anchor="middle" fill="#20364c">Patient</text>
 <circle cx="78.5" cy="160" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 67.5 182 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="78.5" y="194" font-size="11" text-anchor="middle" fill="#20364c">Medical secretary</text>
-<rect x="306" y="80.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="360" y="100.75" font-size="12.5" text-anchor="middle" fill="#17202c">Booking</text>
-<text x="360" y="115.25" font-size="12.5" text-anchor="middle" fill="#17202c">portal</text>
-<rect x="561" y="88.33333333333331" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="615" y="108.58333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">Slot</text>
-<text x="615" y="123.08333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
-<rect x="788" y="100.66666666666666" width="110" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="843" y="123.66666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Notifications</text>
-<rect x="1030" y="101" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1084" y="124" font-size="12.5" text-anchor="middle" fill="#17202c">SMS gateway</text>
-<path d="M 138 76 L 268 76 L 268 104 L 306 104" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 414 104 L 561 104" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 669 119.66666666666666 L 788 119.66666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 898 119.66666666666666 L 1030 120" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 138 177 L 537 177 L 537 119.66666666666666 L 561 119.66666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 615 135.33333333333331 L 615 223 L 4 223 L 4 76 L 74 76" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="203" y="72" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Search a slot</text>
-<text x="203" y="86.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and book</text>
-<rect x="184" y="94.5" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="203" y="105.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
-<text x="487.5" y="100" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Booking</text>
-<text x="487.5" y="114.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">request</text>
-<rect x="450" y="122.5" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="487.5" y="133.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<text x="728.5" y="115.66666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment</text>
-<text x="728.5" y="130.16666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">confirmed</text>
-<rect x="691" y="138.16666666666666" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="728.5" y="149.16666666666666" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<text x="964" y="115.83333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS</text>
-<text x="964" y="130.33333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">reminder</text>
-<text x="416.25" y="173" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open / block</text>
-<text x="416.25" y="187.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">slots</text>
-<rect x="397.25" y="195.5" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="416.25" y="206.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
-<text x="309.5" y="219" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment</text>
-<text x="309.5" y="233.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">confirmation</text>
-<rect x="272" y="241.5" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="309.5" y="252.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<line x1="20" y1="291" x2="1137" y2="291" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="313" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
-<rect x="150" y="303" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="187.5" y="314" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<text x="235" y="314" font-size="10" fill="#79828f">— slot booked by a patient with a practitioner</text>
-<rect x="150" y="327" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="169" y="338" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
-<text x="198" y="338" font-size="10" fill="#79828f">— time window open for booking</text>
-<rect x="150" y="351" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="198" y="362" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
-<text x="256" y="362" font-size="10" fill="#79828f">carried by the flow</text>
-<line x1="20" y1="389" x2="1137" y2="389" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="411" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
-<rect x="150" y="401" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="412" font-size="10" fill="#17202c">Actor group</text>
-<rect x="272" y="401" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="304" y="412" font-size="10" fill="#17202c">System</text>
-<rect x="368" y="401" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="400" y="412" font-size="10" fill="#17202c">Layer</text>
-<rect x="458" y="401" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="490" y="412" font-size="10" fill="#17202c">Functional block</text>
-<rect x="606" y="401" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="638" y="412" font-size="10" fill="#17202c">External system</text>
-<line x1="150" y1="431" x2="176" y2="431" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="435" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
-<text x="150" y="459" font-size="10" fill="#17202c" font-style="italic">Health data is stored on certified health-data-hosting infrastructure</text>
+<rect x="306" y="76" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="360" y="96.25" font-size="12.5" text-anchor="middle" fill="#17202c">Booking</text>
+<text x="360" y="110.75" font-size="12.5" text-anchor="middle" fill="#17202c">portal</text>
+<rect x="585" y="83.83333333333331" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="639" y="104.08333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">Slot</text>
+<text x="639" y="118.58333333333331" font-size="12.5" text-anchor="middle" fill="#17202c">management</text>
+<rect x="875" y="96.16666666666666" width="110" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="930" y="119.16666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Notifications</text>
+<rect x="1175" y="96" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1229" y="119" font-size="12.5" text-anchor="middle" fill="#17202c">SMS gateway</text>
+<path d="M 138 76 L 268 76 L 268 100 L 306 100" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 414 99.5 L 585 99.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 693 115.16666666666666 L 875 115.16666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 985 115.16666666666666 L 1175 115" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 138 182.66666666666669 L 167 182.66666666666669 A 5 5 0 0 1 177 182.66666666666669 L 561 182.66666666666669 L 561 115.16666666666666 L 585 115.16666666666666" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 639 130.83333333333331 L 639 202.66666666666669 L 172 202.66666666666669 L 172 88 L 138 88" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="223" y="72" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Search a slot</text>
+<text x="223" y="86.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and book</text>
+<rect x="204" y="94.5" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="223" y="105.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
+<text x="499.5" y="102.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Booking request</text>
+<rect x="462" y="110.75" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="499.5" y="121.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<text x="784" y="118.41666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment confirmed</text>
+<rect x="746.5" y="126.41666666666666" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="784" y="137.41666666666666" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<text x="1080" y="118.33333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
+<text x="561" y="144.91666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open / block</text>
+<text x="561" y="159.41666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">slots</text>
+<rect x="542" y="167.41666666666669" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="561" y="178.41666666666669" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
+<text x="405.5" y="198.66666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment</text>
+<text x="405.5" y="213.16666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">confirmation</text>
+<rect x="368" y="221.16666666666669" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="405.5" y="232.16666666666669" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<line x1="20" y1="271" x2="1282" y2="271" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="293" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
+<rect x="150" y="283" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="187.5" y="294" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
+<text x="235" y="294" font-size="10" fill="#79828f">— slot booked by a patient with a practitioner</text>
+<rect x="150" y="307" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="169" y="318" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Slot</text>
+<text x="198" y="318" font-size="10" fill="#79828f">— time window open for booking</text>
+<rect x="150" y="331" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="198" y="342" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
+<text x="256" y="342" font-size="10" fill="#79828f">carried by the flow</text>
+<line x1="20" y1="369" x2="1282" y2="369" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="391" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
+<rect x="150" y="381" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="392" font-size="10" fill="#17202c">Actor group</text>
+<rect x="272" y="381" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="304" y="392" font-size="10" fill="#17202c">System</text>
+<rect x="368" y="381" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="400" y="392" font-size="10" fill="#17202c">Layer</text>
+<rect x="458" y="381" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="490" y="392" font-size="10" fill="#17202c">Functional block</text>
+<rect x="606" y="381" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="638" y="392" font-size="10" fill="#17202c">External system</text>
+<line x1="150" y1="411" x2="176" y2="411" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="415" font-size="10" fill="#17202c">Functional flow (label = exchanged data)</text>
+<text x="150" y="439" font-size="10" fill="#17202c" font-style="italic">Health data is stored on certified health-data-hosting infrastructure</text>
 </svg>

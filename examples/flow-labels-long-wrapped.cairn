@@ -1,0 +1,46 @@
+diagram application "Claims intake — long flow labels (wrapped)"
+style { flow-label-wrap: 14 }
+
+# `examples/flow-labels-long.cairn` with one property added and nothing else
+# changed: every flow label below re-flows onto 14-character lines, which
+# trades the drawing's width for a little of its height. Measured on this
+# model: 2054x201 -> 1136x398, about 45% off the width.
+#
+# `flow-label-wrap:` covers flow labels only. Element and container names are
+# `label-wrap:`, a separate knob, because the two want different widths — a
+# label riding a connector reads at a much narrower line than a name in a box,
+# and `PORTAL`, `CORE` and the rest keep their names on one line here.
+#
+# Like `label-wrap:`, it breaks between words and never inside one, so a single
+# long token stays intact however small the number gets.
+#
+# One flow may also name its own, in its inline block, which beats the
+# diagram's: the last flow below is the longest label on the drawing and is the
+# only one that needs a narrower line, and wrapping the whole diagram to suit it
+# would cost every other label a row.
+
+actor-group CUSTOMERS "Customers" {
+  actor CUSTOMER "Customer"
+}
+
+application PORTAL "Claims portal" {
+  module INTAKE "Intake"
+  module TRACKING "Tracking"
+}
+
+application CORE "Claims core" {
+  module CASEFILE "Case file"
+  module PRICING "Pricing"
+}
+
+datastore ARCHIVE "Document archive"
+queue EVENTS "Claims event bus"
+
+CUSTOMER -> INTAKE "declares a new claim with supporting documents" (HTTPS)
+INTAKE -> CASEFILE "opens the case file and assigns a handler" (API_REST, JSON)
+INTAKE -> ARCHIVE "stores the supporting documents for ten years" (S3)
+CASEFILE -> PRICING "requests the settlement amount for the approved items" (API_REST, JSON)
+CASEFILE -> EVENTS "publishes every case-file status change as an event" (AMQP)
+EVENTS -> TRACKING "notifies the customer that the case file moved on and why" (AMQP) {
+  flow-label-wrap: 10
+}

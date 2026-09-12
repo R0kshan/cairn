@@ -58,9 +58,10 @@ Everything else is optional and order-free: elements, flows, an optional
   find on the canvas is noise, so nothing in the band is unconditional.
 
 **Inline style restriction:** per-element and per-flow `{ style { … } }` blocks
-support four properties — `fill`, `stroke`, `text`, `label`. Diagram-level
-`style { … }` blocks support the full 18-property set (§2). An unknown property
-inside an inline block is **E0104**.
+support four properties — `fill`, `stroke`, `text`, `label` — and a flow's
+inline block takes two more for its own label, `label-offset` and
+`flow-label-wrap`. Diagram-level `style { … }` blocks support the full
+19-property set (§2). An unknown property inside an inline block is **E0104**.
 
 ### Views at a glance
 
@@ -630,7 +631,7 @@ style {
   # and suggests splitting the view — no layout can fix too much content.
   crossing-hops: on            # on | off — arcs where lines cross (spike-validated)
   compact: off                 # on | off — denser layout: tighter inter-layer
-  #                              spacing and narrower-wrapped flow labels
+  #                              and inter-element spacing
   arrows: normal               # normal | large — arrowhead size
   legend: auto                 # auto | off — auto legend band below the canvas
   flow-text: full              # full | numbered
@@ -647,6 +648,7 @@ style {
   font: "Helvetica" 11         # family and size in one value
   font-size: 11                # size alone, leaving the family as it is
   label-wrap: 14               # characters per line for element/container labels
+  flow-label-wrap: 10          # characters per line for flow labels
   container-padding: 4         # px inside a container: left, right, bottom
   label-padding: 4             # px either side of a node label
 }
@@ -659,15 +661,15 @@ COM_CTR -> OBS "Alerts…" { label: below  stroke: dashed #a33  text: #a33 }
 
 ### Density controls
 
-Three properties trade whitespace for compactness. Each is **opt-in and
-independent**: unset, the layout uses the spacing it always used, so a diagram
-that names none of them renders byte-identically to one built before they
-existed. They compose with `compact: on` rather than replacing it — `compact`
-retunes elk's spacing between elements, while these three work inside a box.
+Four properties trade whitespace for compactness. Each is **opt-in and
+independent**: unset, the layout uses the spacing it always used. They compose
+with `compact: on` rather than replacing it — `compact` retunes elk's spacing
+between elements, while these four work inside a box or inside a label.
 
 | Property | Unit | Governs |
 |---|---|---|
 | `label-wrap: <n>` | characters, ≥ 1 | breaks element and container labels onto `n`-character lines |
+| `flow-label-wrap: <n>` | characters, ≥ 1 | breaks flow labels onto `n`-character lines; also spelt inline on one flow |
 | `container-padding: <n>` | pixels, ≥ 0 | room inside a container on its left, right and bottom |
 | `label-padding: <n>` | pixels, ≥ 0 | room either side of a node's label |
 
@@ -700,7 +702,43 @@ and the slide/page fold from a single place. Two things deliberately do *not*
 follow it: an element with no label at all keeps falling back to its id (writing
 one would silence **W0502**, the warning that the label is missing), and the flow
 matrix flattens the newlines back to spaces, because a table cell is one line.
-Flow labels are untouched — those wrap under `compact: on`, on their own rule.
+
+**`flow-label-wrap: <n>` is the same promise for the text on the arrows.** No
+flow label is ever broken for you either: left unset, a label rides its
+connector on the lines it was written with, and a long one widens the drawing
+rather than stacking. It breaks between words only, exactly as `label-wrap`
+does.
+
+**A single flow may name its own.** `flow-label-wrap:` is spelt the same way in
+a flow's inline block, where it governs that flow and nothing else:
+
+```
+A -> B "publishes every case-file status change as an event" (AMQP) {
+  flow-label-wrap: 10
+}
+```
+
+Precedence is the same as every other property written at both levels — the
+inline one wins — and reaching for it beats lowering the diagram's: one label
+longer than the rest is the usual reason to wrap at all, and wrapping the whole
+drawing to suit it costs every other label its line. Out of range is **E0103**
+there too.
+
+It is a separate property rather than a second job for `label-wrap` because the
+two want different numbers. A flow label is a phrase riding a line and reads at
+roughly 10–14 characters; an element label is a name centred in a box and wants
+more. Setting one number for both narrows whichever of the two it was not
+chosen for, so each gets its own.
+
+`examples/flow-labels-long.cairn` and `examples/flow-labels-long-wrapped.cairn`
+are the same model with and without it — 2054×201 becomes 1136×398, about 45%
+off the width, and the last flow in the pair carries its own narrower wrap.
+
+Before 1.0.0-RC16 this wrap was not a choice. `compact: on` broke every flow
+label at 10 characters, and the `slide` and `page` fits tried 16 and 14 while
+searching for a layout that fit the frame, so a label could come back stacked on
+a diagram that never asked for it. Those three built-in widths are gone; a
+diagram that relied on them declares `flow-label-wrap:` to get them back.
 
 **`container-padding: <n>` covers three sides, not four.** The top of a container
 holds its own title, so its depth has to track the label's line count; a knob

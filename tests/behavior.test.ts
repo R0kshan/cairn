@@ -2442,6 +2442,103 @@ CORE -> PARTNER : "Nightly export" (SFTP/22)
 });
 
 /**
+ * The other half of issue #107: no layout mode may wrap a flow label on its
+ * own. `compact: on` used to break every one at 10 characters and the slide and
+ * page fits at 16 or 14, so a label came back stacked on a diagram that never
+ * asked for it. `flow-label-wrap` is now the only thing that breaks one, and it
+ * is separate from `label-wrap` because the two want different widths.
+ */
+test("only `flow-label-wrap` breaks a flow label, and it leaves element labels alone", async () => {
+  const body = `
+application CORE "Order management platform"
+datastore DB "Order persistence store"
+
+CORE -> DB "replicates the order book to the reporting store" (TCP/5432)
+`;
+  const flowLabelOf = async (style: string) => {
+    const { model } = parse(`diagram application "Flow wrap"\n${style}\n${body}`);
+    const scene = await layout(model!, views.application);
+    return scene.edges.find((edge) => edge.id === "F01")!.labels[0].text;
+  };
+  const written = "replicates the order book to the reporting store";
+
+  // No layout mode wraps it for the author, `compact` and the aspect fits least
+  // of all — those are exactly the three that used to.
+  for (const style of [
+    "",
+    "style {\n  compact: on\n}",
+    "style {\n  disposition: slide\n}",
+    "style {\n  disposition: page\n}",
+  ]) {
+    assert.equal(await flowLabelOf(style), written, `must be left as written under: ${style || "no style"}`);
+  }
+
+  // Asked for, it breaks between words and only between words.
+  const wrapped = await flowLabelOf("style {\n  flow-label-wrap: 14\n}");
+  assert.ok(wrapped.includes("\n"), `flow-label-wrap must break the label: got ${JSON.stringify(wrapped)}`);
+  assert.equal(wrapped.replace(/\n/g, " "), written, "only the line breaks change");
+  for (const line of wrapped.split("\n"))
+    assert.ok(line.length <= 14 || !line.includes(" "), `line over the wrap must be one word: ${line}`);
+
+  // The two wraps are independent: neither reaches the other's labels.
+  const elementLabelOf = async (style: string) => {
+    const { model } = parse(`diagram application "Flow wrap"\n${style}\n${body}`);
+    const scene = await layout(model!, views.application);
+    return scene.nodes.find((node) => node.id === "CORE")!.label;
+  };
+  assert.equal(
+    await elementLabelOf("style {\n  flow-label-wrap: 14\n}"),
+    "Order management platform",
+    "flow-label-wrap must not touch an element label",
+  );
+  assert.equal(
+    await flowLabelOf("style {\n  label-wrap: 14\n}"),
+    written,
+    "label-wrap must not touch a flow label",
+  );
+
+  // A single flow may name its own, and the inline one wins — the precedence
+  // every property spelt at both levels already has.
+  const inlineOf = async (style: string, inline: string) => {
+    const { model } = parse(
+      `diagram application "Flow wrap"\n${style}\n` +
+        `application CORE "Order management platform"\n` +
+        `datastore DB "Order persistence store"\n` +
+        `CORE -> DB "${written}" (TCP/5432) {${inline}}\n`,
+    );
+    const scene = await layout(model!, views.application);
+    return scene.edges.find((edge) => edge.id === "F01")!.labels[0].text;
+  };
+  assert.equal(
+    await inlineOf("", " flow-label-wrap: 14 "),
+    wrapped,
+    "a flow may wrap its own label with no diagram-level wrap at all",
+  );
+  assert.equal(
+    await inlineOf("style {\n  flow-label-wrap: 40\n}", " flow-label-wrap: 14 "),
+    wrapped,
+    "the flow's own wrap beats the diagram's",
+  );
+  assert.equal(
+    await inlineOf("style {\n  flow-label-wrap: 14\n}", ""),
+    wrapped,
+    "a flow that names none falls back to the diagram's",
+  );
+
+  // Out of range is refused rather than clamped, at both levels.
+  for (const source of [
+    `diagram application "Flow wrap"\nstyle {\n  flow-label-wrap: 0\n}\n${body}`,
+    `diagram application "Flow wrap"\n${body.replace("(TCP/5432)", "(TCP/5432) { flow-label-wrap: 0 }")}`,
+  ]) {
+    const refused = await compile(source);
+    assert.ok(
+      refused.diagnostics.some((diagnostic) => diagnostic.code === "E0103"),
+      `expected E0103 for: ${source}`,
+    );
+  }
+});
+
+/**
  * `container-padding` has to reach the folded layout's hand-built source and
  * sink columns too — those are sized by `layoutColumn`, not by elk, so the
  * property would otherwise apply to half the drawing. Driven through

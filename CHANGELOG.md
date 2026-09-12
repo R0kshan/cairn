@@ -6,12 +6,13 @@ All notable changes to the cairn project will be documented in this file.
 
 ### Added
 - Possibility to drag elements in the playground, with the coordinates written back to the DSL as `offset: <dx>, <dy>` on an element and `label-offset: <dx>, <dy>` on a flow 
-- More display control through the DSL: `style { label-wrap: <n> }` to break labels onto `n`-character lines, `container-padding: <n>` and `label-padding: <n>` to reclaim the whitespace around them 
+- More display control through the DSL: `style { label-wrap: <n> }` to break element and container labels onto `n`-character lines, `flow-label-wrap: <n>` to do the same for flow labels, diagram-wide or on one flow, `container-padding: <n>` and `label-padding: <n>` to reclaim the whitespace around them
 
 ### Changed
 - Removed the unnecessary `:` in flow definitions — `A -> B "label"`. The old spelling still parses
 
 ### Fixed
+- Flow labels are no longer wrapped behind the author's back. `compact: on` broke every flow label at 10 characters and the `slide`/`page` fits broke them at 16 or 14 while searching for a layout that fit the frame, so a label could come back stacked on a diagram that never asked for it. Nothing wraps a flow label now but `style { flow-label-wrap: <n> }`, which completes for flow labels what `label-wrap` started for element ones ([#107](https://github.com/R0kshan/cairn/issues/107))
 - Producer and consumer directives not taking effect when nested in a container block
 - The arrowhead no longer runs  along the border instead of into it, and the arrowhead now faces its counterpart after being dragged through the playground interface
 

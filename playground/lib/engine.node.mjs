@@ -93521,6 +93521,13 @@ var NUMERIC_STYLE_ENTRIES = {
       target.labelWrap = amount;
     }
   },
+  "flow-label-wrap": {
+    min: 1,
+    example: 10,
+    assign: (target, amount) => {
+      target.flowLabelWrap = amount;
+    }
+  },
   "container-padding": {
     min: 0,
     example: 4,
@@ -93645,6 +93652,11 @@ function applyNumericStyleEntry(entry) {
     );
   return true;
 }
+function applyFlowWrapEntry(flow, value, key, reportBadValue) {
+  const amount = value?.kind === "num" ? parseFloat(value.text) : Number.NaN;
+  if (Number.isInteger(amount) && amount >= 1) flow.labelWrap = amount;
+  else reportBadValue(value ?? key, "a whole number \u2265 1, e.g. `flow-label-wrap: 12`");
+}
 function applyStyleEntry(entry) {
   const { key, styleTargetKind, values, target, inline, flow, diagnostics } = entry;
   const extractStroke = (tokens, _span) => {
@@ -93701,6 +93713,10 @@ function applyStyleEntry(entry) {
     };
     return;
   }
+  if (keyText === "flow-label-wrap" && flow) {
+    applyFlowWrapEntry(flow, firstValue(), key, reportBadValue);
+    return;
+  }
   if (inline) {
     if (keyText === "fill" && firstValue()?.kind === "color") inline.fill = firstValue().text;
     else if (keyText === "stroke") inline.stroke = extractStroke(values, key.span);
@@ -93713,7 +93729,7 @@ function applyStyleEntry(entry) {
         severity: "error",
         message: `unknown style property here: \`${keyText}\``,
         span: key.span,
-        help: "inline properties: fill, stroke, text, label, label-offset"
+        help: "inline properties: fill, stroke, text, label, label-offset, flow-label-wrap"
       });
     return;
   }
@@ -93788,7 +93804,7 @@ function applyStyleEntry(entry) {
         severity: "error",
         message: `unknown style property: \`${keyText}\``,
         span: key.span,
-        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size, label-wrap, container-padding, label-padding"
+        help: "properties: theme, accent, lang, background, disposition, legend, flow-text, crossing-hops, compact, arrows, flow-color, flow-label, flow-stroke, fill <kind>, stroke <kind>, text <kind>, font, font-size, label-wrap, flow-label-wrap, container-padding, label-padding"
       });
   }
 }
@@ -94915,7 +94931,8 @@ var PAD_TOP = 30;
 var PAD = 12;
 var LANE_STEP = 10;
 var LANE_V = 11;
-var LABEL_WRAP = 16;
+var flowWrapOf = (flow, style) => flow.labelWrap ?? style.flowLabelWrap;
+var foldWrap = (label, wrap, slack = 0) => wrap ? wrapText(label, wrap + slack) : label;
 var LaneAllocator = class {
   lanes = [];
   alloc(intervalStart, intervalEnd) {
@@ -94942,6 +94959,7 @@ function foldStyle(model, view) {
     glyphKinds: new Set(view.glyphKinds ?? []),
     containerPadding: model.style.containerPadding,
     labelPadding: model.style.labelPadding,
+    flowLabelWrap: model.style.flowLabelWrap,
     edge,
     node,
     cont,
@@ -95044,7 +95062,7 @@ function collectFoldedEdges(elkNode, rootOffset, ctx) {
 }
 function internalFlowLabels(flow, style) {
   if (style.numbered) return [style.numLabel(flow)];
-  const text = flow.label ? wrapText(flow.label, LABEL_WRAP + 4) : techText(flow.tech);
+  const text = flow.label ? foldWrap(flow.label, flowWrapOf(flow, style), 4) : techText(flow.tech);
   const chips = style.chipsOf(flow);
   if (!text && !chips.length) return [];
   return [
@@ -95279,7 +95297,7 @@ function routeConnector(entry, ends, gut) {
 }
 function connectorLabel(flow, routed, style) {
   const chips = style.chipsOf(flow);
-  const text = style.numbered ? style.numLabel(flow).text : flow.label ? wrapText(flow.label, LABEL_WRAP) : techText(flow.tech) || (chips.length ? "" : void 0);
+  const text = style.numbered ? style.numLabel(flow).text : flow.label ? foldWrap(flow.label, flowWrapOf(flow, style)) : techText(flow.tech) || (chips.length ? "" : void 0);
   if (text === void 0) return void 0;
   const measured = style.numbered ? { width: Math.round(26 * style.scale), height: Math.round(17 * style.scale) } : flowLabelBox({
     text,
@@ -99670,7 +99688,6 @@ var DENSITY_GAIN = 0.95;
 var INGRESS_PARTITION = -1;
 var DEFAULT_INGRESS_KINDS = ["actor", "actor-group"];
 var EGRESS_PARTITION = 900;
-var COMPACT_WRAP = 10;
 var SLOT_SCALE = 1e3;
 function elkPartitionOf(element, index, view, ingressExternal) {
   if (!view.partitionByOrder) return view.partitions[element.kind] ?? 1;
@@ -99726,8 +99743,8 @@ function readingSlots(model, view, ingressExternal) {
 function elkEnds(flow) {
   return laidOutReversed(flow) ? { sources: [flow.to], targets: [flow.from] } : { sources: [flow.from], targets: [flow.to] };
 }
-function elkFlowEdge(flow, ctx, labelWrap) {
-  const { compact, numbered, fonts, businessObjectName } = ctx;
+function elkFlowEdge(flow, ctx, flowLabelWrap) {
+  const { numbered, fonts, businessObjectName } = ctx;
   if (numbered)
     return {
       id: flow.id,
@@ -99740,7 +99757,7 @@ function elkFlowEdge(flow, ctx, labelWrap) {
         }
       ]
     };
-  const wrap = labelWrap ?? (compact ? COMPACT_WRAP : void 0);
+  const wrap = flow.labelWrap ?? flowLabelWrap;
   const raw = flow.label && wrap ? wrapText(flow.label, wrap) : flow.label;
   const chips = (flow.objects ?? []).map(
     (objectRef) => businessObjectName.get(objectRef.id) ?? objectRef.id
@@ -99937,7 +99954,7 @@ function buildElkGraph(ctx, direction, options) {
       };
       return elkNode;
     }),
-    edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, options?.labelWrap))
+    edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, model.style.flowLabelWrap))
   };
   applyDeclaredPorts(
     graph,
@@ -100467,10 +100484,9 @@ async function layout(model, view) {
   if (aspectTarget) {
     const graphSpecs = disposition === "slide" ? [
       { direction: "RIGHT" },
-      { direction: "RIGHT", options: { labelWrap: 16 } },
-      { direction: "RIGHT", options: { labelWrap: 14, tight: true } },
-      { direction: "RIGHT", options: { labelWrap: 14, tight: true, minLayers: true } }
-    ] : [{ direction: "DOWN" }, { direction: "DOWN", options: { labelWrap: 16 } }];
+      { direction: "RIGHT", options: { tight: true } },
+      { direction: "RIGHT", options: { tight: true, minLayers: true } }
+    ] : [{ direction: "DOWN" }];
     const laidOutSpecs = await Promise.all(
       graphSpecs.map((spec) => layoutGraph(spec.direction, spec.options))
     );

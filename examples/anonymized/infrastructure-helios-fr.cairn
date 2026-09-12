@@ -4,6 +4,7 @@ style {
   disposition: wide
   #flow-text: numbered
   compact: on
+  flow-label-wrap: 10
   fill network-zone: #eef6ff
 }
 

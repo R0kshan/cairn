@@ -1,0 +1,39 @@
+diagram application "Claims intake — long flow labels (default)"
+
+# Flow labels are never broken for you. Every label below is one long line and
+# stays one long line, however wide that makes the drawing — the only line
+# breaks on a diagram are the ones its author asked for.
+#
+# `examples/flow-labels-long-wrapped.cairn` is this model with one property
+# added, `style { flow-label-wrap: 14 }`, and nothing else changed. Render both
+# and compare: that pair is what these two examples are for.
+#
+# Before cairn 1.0.0-RC16 the wrap was not a choice. `compact: on` broke every
+# flow label at 10 characters and the slide and page fits broke them at 16 or
+# 14 while searching for something that fit, so a label could come back stacked
+# on a diagram that never asked for it. Now nothing wraps a flow label but
+# `flow-label-wrap:`, and nothing wraps an element label but `label-wrap:`.
+
+actor-group CUSTOMERS "Customers" {
+  actor CUSTOMER "Customer"
+}
+
+application PORTAL "Claims portal" {
+  module INTAKE "Intake"
+  module TRACKING "Tracking"
+}
+
+application CORE "Claims core" {
+  module CASEFILE "Case file"
+  module PRICING "Pricing"
+}
+
+datastore ARCHIVE "Document archive"
+queue EVENTS "Claims event bus"
+
+CUSTOMER -> INTAKE "declares a new claim with supporting documents" (HTTPS)
+INTAKE -> CASEFILE "opens the case file and assigns a handler" (API_REST, JSON)
+INTAKE -> ARCHIVE "stores the supporting documents for ten years" (S3)
+CASEFILE -> PRICING "requests the settlement amount for the approved items" (API_REST, JSON)
+CASEFILE -> EVENTS "publishes every case-file status change as an event" (AMQP)
+EVENTS -> TRACKING "notifies the customer that the case file moved on and why" (AMQP)

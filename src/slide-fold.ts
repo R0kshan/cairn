@@ -32,7 +32,23 @@ const PAD_TOP = 30,
   PAD = 12;
 const LANE_STEP = 10;
 const LANE_V = 11;
-const LABEL_WRAP = 16;
+
+/**
+ * The wrap this flow is drawn at: its own `{ flow-label-wrap: <n> }` if it
+ * names one, else the diagram's, else none — the same precedence `scene-layout`
+ * applies on the unfolded path.
+ */
+const flowWrapOf = (flow: Flow, style: FoldStyle) => flow.labelWrap ?? style.flowLabelWrap;
+
+/**
+ * A flow label on the folded path, wrapped only if the author asked. This used
+ * to impose a fixed 16 characters on every label unconditionally — the
+ * automatic wrapping #107 removed. `slack` is the extra room an internal flow
+ * has over a connector between groups, kept as the relative widths the two
+ * always had.
+ */
+const foldWrap = (label: string, wrap: number | undefined, slack = 0) =>
+  wrap ? wrapText(label, wrap + slack) : label;
 
 type Flow = Model["flows"][number];
 
@@ -98,6 +114,8 @@ interface FoldStyle {
   containerPadding?: number;
   /** `style { label-padding: <n> }`, or undefined for `nodeSize`'s own spacing. */
   labelPadding?: number;
+  /** `style { flow-label-wrap: <n> }`, or undefined to leave flow labels as written. */
+  flowLabelWrap?: number;
 }
 
 function foldStyle(model: Model, view: View): FoldStyle {
@@ -109,6 +127,7 @@ function foldStyle(model: Model, view: View): FoldStyle {
     glyphKinds: new Set(view.glyphKinds ?? []),
     containerPadding: model.style.containerPadding,
     labelPadding: model.style.labelPadding,
+    flowLabelWrap: model.style.flowLabelWrap,
     edge,
     node,
     cont,
@@ -266,7 +285,7 @@ interface FoldGraph {
 /** The elk label list for an internal flow — numbered views carry just the index. */
 function internalFlowLabels(flow: Flow, style: FoldStyle) {
   if (style.numbered) return [style.numLabel(flow)];
-  const text = flow.label ? wrapText(flow.label, LABEL_WRAP + 4) : techText(flow.tech);
+  const text = flow.label ? foldWrap(flow.label, flowWrapOf(flow, style), 4) : techText(flow.tech);
   const chips = style.chipsOf(flow);
   if (!text && !chips.length) return [];
   return [
@@ -630,7 +649,7 @@ function connectorLabel(
   const text = style.numbered
     ? style.numLabel(flow).text
     : flow.label
-      ? wrapText(flow.label, LABEL_WRAP)
+      ? foldWrap(flow.label, flowWrapOf(flow, style))
       : techText(flow.tech) || (chips.length ? "" : undefined);
   if (text === undefined) return undefined;
   const measured = style.numbered
