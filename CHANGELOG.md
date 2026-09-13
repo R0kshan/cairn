@@ -27,7 +27,7 @@ diagram declaring `offset:`, `label-offset:` or `segment-offset:`, however it is
 - A carried flow is no longer left lying on another: carried flows are re-aimed, re-routed and de-coincided, scoped to them alone so the rest of the drawing still does not move
 - Sliding a run no longer leaves it slanted. A run is now the straight line the reader sees, however many points it spends on it
 - A manual nudge no longer re-flows the diagram around itself. Hints were applied while layout candidates were still being scored, so one `offset: 0, -30` moved all 28 other elements of `application-large-fr` and re-routed 20 unrelated flows. They now go on the layout that won, so a drawing with hints is the drawing without them plus the hints, and a diagram declaring none renders exactly as before
-- Flow labels are no longer wrapped behind the author's back — `compact: on` and the `slide`/`page` fits broke them at 10, 16 or 14 characters. Nothing wraps a flow label now but `style { flow-label-wrap: <n> }` ([#107](https://github.com/R0kshan/cairn/issues/107))
+- Flow labels are no longer wrapped behind the author's back — `compact: on` and the `slide`/`page` fits broke them at 10, 16 or 14 characters. Nothing wraps a flow label now but `style { flow-label-wrap: <n> }`
 - Producer and consumer directives not taking effect when nested in a container block
 - An arrowhead no longer runs along a border instead of into it, and faces its counterpart after an end has been re-attached
 
