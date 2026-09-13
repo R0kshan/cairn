@@ -1,6 +1,6 @@
 # DSL Spec
 
-Tracks `main`. One `.cairn` file is one diagram.
+One `.cairn` file is one diagram.
 
 ```text
 diagram <logical|application|infrastructure> "Title"
