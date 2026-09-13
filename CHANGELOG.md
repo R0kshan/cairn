@@ -5,24 +5,31 @@ All notable changes to the cairn project will be documented in this file.
 ## Unreleased
 
 ### Added
-- Possibility to drag elements in the playground, with the coordinates written back to the DSL as `offset: <dx>, <dy>` on an element and `label-offset: <dx>, <dy>` on a flow 
-- Flow ends can be re-attached by hand: hover either end of a flow and the point it meets its element shows as a circle, and dragging it to another side rewrites the endpoint as `ID.side` — no new syntax, it is the pin the DSL already had
-- Flows can be adjusted too: hover a run of a route and the cursor becomes a resize cursor, and sliding it writes `segment-offset: <run>, <delta>` into the flow's inline block. A run moves along its normal only — a vertical run left/right, a horizontal one up/down — so the route keeps its turns and stays orthogonal. Repeat the key to move several runs of one flow
-- More display control through the DSL: `style { label-wrap: <n> }` to break element and container labels onto `n`-character lines, `flow-label-wrap: <n>` to do the same for flow labels, diagram-wide or on one flow, `container-padding: <n>` and `label-padding: <n>` to reclaim the whitespace around them
+- **Playground:** elements and flow labels can be dragged, and the position is written back to the DSL as `offset: <dx>, <dy>` and `label-offset: <dx>, <dy>` — the keys work by hand in any editor too
+- **Playground:** flow ends can be re-attached by dragging the circle at either end to another side, which rewrites the endpoint as `ID.side` — no new syntax, it is the pin the DSL already had
+- `segment-offset: <run>, <delta>` slides one run of a route — by hand in the DSL, or **in the playground** by dragging the run, which writes the key for you. A run moves along its normal only, so the route keeps its turns and stays orthogonal; repeat the key to move several runs of one flow
+- Diagnostics for a `segment-offset` the route cannot honour — a run the route does not have, or a slide cut short at an element border. Reported by the CLI, the API and the playground alike
+- `compile()` reports a handle for every flow terminal and route segment, so any editor — not just the playground — can offer these drags
+- More display control through the DSL, everywhere it is rendered: `label-wrap: <n>` for element and container labels, `flow-label-wrap: <n>` for flow labels — diagram-wide or on one flow — and `container-padding: <n>` and `label-padding: <n>` to reclaim the whitespace around them
 
 ### Changed
 - Removed the unnecessary `:` in flow definitions — `A -> B "label"`. The old spelling still parses
+- DSL, diagnostics and invariants documentation updated for the new positioning and dragging
 
 ### Fixed
-- Moving an element by hand no longer leaves a spur on the flows it carries. Squaring a moved terminal leaves the old corner point in line with the new elbow, and where the element moved past that corner the route ran out to the old seat and back — a line drawn on top of itself, most visible as a stray vertical above a queue that had been dragged down. The redundant point is now dropped, on carried routes only
-- Moving an element by hand no longer sends one of its flows the long way round. The route repair judges defects and is blind to distance, which is right inside the pipeline but not against a route that was already a reasonable answer — nudging a queue down sent the flow into it up over the title band and back. A repair more than half again as long as what it replaced is now refused
-- A flow whose element is moved by hand no longer comes off it. The renderer can undo a route repair by restoring the route the flow had before it, and for a moved element that snapshot describes the seat it used to have — restoring it left a stub hanging beside a box that had moved on. A one-pixel offset was enough to trigger it
-- Sliding a run of a flow no longer leaves it slanted. A route can spend three points on one straight line, and a run was numbered per pair of points, so a slide moved half the line and left the rest behind. A run is now the straight line the reader sees, however many points it spends on it
-- A flow carried by a manual nudge is no longer left lying on another flow. An element dragged to a new place takes its flows with it, and the route drawn for its old seat could land straight on top of another run — two lines drawn as one. The carried flows are now re-aimed, re-routed and de-coincided, scoped to them alone so the rest of the drawing still does not move
-- A manual nudge no longer re-flows the diagram around itself. `offset:`, `label-offset:` and `segment-offset:` were being applied while layout candidates were still being scored, so a hint was measured as if the router had chosen it — one `offset: 0, -30` on `application-large-fr` moved all 28 other elements and re-routed 20 unrelated flows. The deltas are now applied to the layout that won, so a drawing with hints is the drawing without them plus the hints. A diagram declaring no hints renders exactly as before
-- Flow labels are no longer wrapped behind the author's back. `compact: on` broke every flow label at 10 characters and the `slide`/`page` fits broke them at 16 or 14 while searching for a layout that fit the frame, so a label could come back stacked on a diagram that never asked for it. Nothing wraps a flow label now but `style { flow-label-wrap: <n> }`, which completes for flow labels what `label-wrap` started for element ones ([#107](https://github.com/R0kshan/cairn/issues/107))
+
+The positioning fixes below are in the renderer, not in the playground: they apply to any
+diagram declaring `offset:`, `label-offset:` or `segment-offset:`, however it is rendered.
+
+- A moved element no longer leaves a spur on the flows it carries: the redundant corner left by squaring a carried terminal is dropped
+- A moved element no longer sends one of its flows the long way round — a repair more than half again as long as the route it replaces is refused
+- A flow no longer comes off an element that was moved. The renderer could restore a route snapshot taken against the seat the element used to have, leaving a stub beside a box that had moved on; a one-pixel offset was enough to trigger it
+- A carried flow is no longer left lying on another: carried flows are re-aimed, re-routed and de-coincided, scoped to them alone so the rest of the drawing still does not move
+- Sliding a run no longer leaves it slanted. A run is now the straight line the reader sees, however many points it spends on it
+- A manual nudge no longer re-flows the diagram around itself. Hints were applied while layout candidates were still being scored, so one `offset: 0, -30` moved all 28 other elements of `application-large-fr` and re-routed 20 unrelated flows. They now go on the layout that won, so a drawing with hints is the drawing without them plus the hints, and a diagram declaring none renders exactly as before
+- Flow labels are no longer wrapped behind the author's back — `compact: on` and the `slide`/`page` fits broke them at 10, 16 or 14 characters. Nothing wraps a flow label now but `style { flow-label-wrap: <n> }` ([#107](https://github.com/R0kshan/cairn/issues/107))
 - Producer and consumer directives not taking effect when nested in a container block
-- The arrowhead no longer runs  along the border instead of into it, and the arrowhead now faces its counterpart after being dragged through the playground interface
+- An arrowhead no longer runs along a border instead of into it, and faces its counterpart after an end has been re-attached
 
 ## [v1.0.0-RC15](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC15) - 2026-09-09
 
