@@ -90,9 +90,9 @@
   <h1>cairn <span class="dim">playground</span></h1>
   <select id="templates" title="Start from a template">
     <option value="">templates…</option>
-    <option value="logical">logical — starter</option>
-    <option value="application">application — starter</option>
-    <option value="infrastructure">infrastructure — starter</option>
+    <option value="logical">logical — every kind</option>
+    <option value="application">application — every kind</option>
+    <option value="infrastructure">infrastructure — every kind</option>
   </select>
   <select id="theme" title="Preview theme (overrides the diagram's own theme)">
     <option value="">theme: as written</option>
@@ -143,13 +143,34 @@ logical: `diagram logical "My logical view"
 
 actor-group ACTORS "Actors" {
   actor USER "User"
+  actor ADMIN "Administrator"
 }
 
 system SYS "My system" {
-  block APP "Application"
+  layer FRONT "Front office" {
+    block PORTAL "Portal"
+    security MFA "Strong authentication"
+  }
+  layer BACK "Back office" {
+    block CORE "Business core"
+  }
 }
 
-USER -> APP "Uses the service"
+external EXT "External systems" {
+  block PARTNER "Partner service"
+}
+
+business-object BO_FILE "Case file" "the record a request opens"
+
+USER   -> MFA     "Signs in"
+MFA    -> PORTAL  "Verified identity"
+PORTAL -> CORE    "Opens a case file" [BO_FILE]
+ADMIN  -> CORE    "Reviews a case"
+CORE   -> PARTNER "Sends for validation"
+
+legend {
+  note "Every kind this view offers is shown above"
+}
 `,
 application: `diagram application "My application view"
 
@@ -157,28 +178,60 @@ actor-group ACTORS "Actors" {
   actor USER "User"
 }
 
-application APP "My application" {
-  module M1 "Main module"
+gateway EDGE "API gateway"
+auth SSO "Auth middleware"
+idp IDP "Identity provider"
+
+system SYS "My system" {
+  application APP "My application" { logo: spring
+    module API "API module"
+    module WORKER "Worker module"
+  }
+  queue EVENTS "Event bus" { logo: apachekafka }
+  datastore DB "Database" { logo: postgresql }
 }
 
-datastore DB "Database"
+external PARTNER "Partner service"
 
-USER -> M1 "Request"
-M1 -> DB "Read / write" (JDBC)
+USER   -> EDGE                      # an actor flow needs no tail
+EDGE   -> SSO (API_REST, JSON)
+SSO    -> IDP (OIDC, JWT)
+SSO    -> API (API_REST, JSON)
+API    -> DB (JDBC)
+API    -> EVENTS (MQ, JSON)
+EVENTS -> WORKER (MQ, JSON)
+WORKER -> PARTNER (SFTP, CSV)
 `,
 infrastructure: `diagram infrastructure "My infrastructure view"
 
+actor USER "User"
+device LAPTOP "Workstation"
+
 site DC "Data center" {
-  network-zone Z "Application zone" {
-    server SRV "Server" {
+  network-zone DMZ "DMZ" {
+    firewall FW "Perimeter firewall"
+    gateway RP "Reverse proxy"
+  }
+  network-zone LAN "Application zone" {
+    auth OAUTH "OAuth2 proxy"
+    idp IDP "Identity provider"
+    server SRV "Application server" {
       app-instance APP_I "Application"
     }
+    queue BROKER "Message broker"
   }
 }
 
-external USER "User"
+external PARTNER "Partner platform"
 
-USER -> SRV "Access" (HTTPS/443)
+USER   -> FW      "Web access" (HTTPS/443)
+LAPTOP -> FW      "Web access" (HTTPS/443)
+FW     -> RP      "Filtered traffic" (HTTPS/443)
+RP     -> APP_I   "API calls" (HTTPS/8443)
+APP_I  -> OAUTH   "Token check" (HTTPS/8443)
+OAUTH  -> IDP     "Validates tokens" (LDAPS/636)
+APP_I  -> BROKER  "Publishes events" (TCP/9092)
+APP_I  -> PARTNER "Nightly export" (SFTP/22)
 `};
 
 const editor  = document.getElementById('editor');

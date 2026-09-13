@@ -95,3 +95,4 @@ Nothing in the repo sets it, so it must never change committed output.
 
 - Keep it focused — one concern per PR.
 - Link the PR to an issue.
+- Update the CHANGELOG.md following the https://keepachangelog.com/en/1.1.0/ guidelines

@@ -61,6 +61,7 @@ large-numbered.cairn  dim:3009x838 n:47 e:42 ov:0  geom:50f4755b6ea4 color:ec197
 large.cairn  dim:3542x1203 n:47 e:42 ov:0  geom:eeb7e14a0063 color:59a033bd004f text:160ff12476e5
 logical-archi.cairn  dim:1638x788 n:26 e:17 ov:0  geom:09b8e971460e color:7fbd814cd857 text:c3d520475ecf
 logical-fr.cairn  dim:2462x548 n:23 e:19 ov:0  geom:13e84202a7d5 color:d962b7ddc1c3 text:dc87bf6a31bb
+logical-security.cairn  dim:2137x578 n:25 e:21 ov:0  geom:da12ba8e34bd color:23d684b4e51d text:4077c8715eda
 logical.cairn  dim:2311x548 n:23 e:19 ov:0  geom:716bb32756c7 color:d962b7ddc1c3 text:68e487464509
 medium.cairn  dim:2392x584 n:24 e:20 ov:0  geom:3402dca0688c color:2ed23f4211da text:8cc2b6297057
 placement/baseline.cairn  dim:1112x276 n:14 e:6 ov:0  geom:c7ac4d910060 color:4d06ef3531ab text:fa3340e6308b

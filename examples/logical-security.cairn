@@ -1,0 +1,73 @@
+diagram logical "Patient portal — logical view (with security capabilities)"
+style {
+  fill layer: #f6f4fb
+}
+
+actor-group PATIENTS "Patients and relatives" {
+  actor PATIENT "Patient"
+  actor PROXY "Authorised\nrelative"
+}
+
+actor-group OVERSIGHT "Care and oversight" {
+  actor PRACTITIONER "Practitioner"
+  actor DPO "Data protection\nofficer"
+  actor RESEARCHER "Research\nanalyst"
+}
+
+system PORTAL "Patient portal information system" {
+  layer ACCESS "Access and consent" {
+    block ENROLMENT "Account\nenrolment"
+    security MFA "Strong\nauthentication"
+    security CONSENT "Consent\nmanagement"
+    security AUDIT "Access audit\ntrail"
+  }
+  layer RECORD "Medical record" {
+    block RECORD_VIEW "Record\nconsultation"
+    block DOCUMENTS "Document\nsharing"
+    block APPOINTMENT "Appointment\nbooking"
+  }
+  layer SECONDARY "Secondary use" {
+    block COHORT "Cohort\nbuilding"
+    security ANON "Health-data\nanonymisation"
+    block STATS "Statistical\nreporting"
+  }
+}
+
+external EXT "External systems" {
+  block IDENTITY "National identity\nfederation"
+  block EHR "Hospital\nEHR"
+  block REGISTRY "Public-health\nregistry"
+}
+
+# ---- business objects ----
+business-object BO_IDENT "Verified identity" "identity proven to the level the record requires"
+business-object BO_RECORD "Medical record" "the care history held for one patient"
+business-object BO_CONSENT "Consent" "what the patient allows their data to be used for"
+business-object BO_DOC "Care document" "report, prescription or result shared in the record"
+business-object BO_COHORT "Anonymised cohort" "a study population carrying no identifying trait"
+
+PATIENT -> ENROLMENT "Open an account"
+ENROLMENT -> MFA "Enrol a second factor"
+PATIENT -> MFA "Sign in" [BO_IDENT]
+PROXY -> MFA "Sign in on behalf" [BO_IDENT]
+MFA -> IDENTITY "Verify the claimed\nidentity" [BO_IDENT]
+MFA -> RECORD_VIEW "Verified access" [BO_IDENT]
+PATIENT -> CONSENT "Grant or withdraw\nconsent" [BO_CONSENT]
+CONSENT -> RECORD_VIEW "Applicable\nsharing rules" [BO_CONSENT]
+RECORD_VIEW -> EHR "Fetch the care history" [BO_RECORD]
+PRACTITIONER -> DOCUMENTS "Share a report" [BO_DOC]
+DOCUMENTS -> RECORD_VIEW "Attach to the record" [BO_DOC]
+PATIENT -> APPOINTMENT "Book a consultation"
+APPOINTMENT -> PRACTITIONER "Notify the practitioner"
+RECORD_VIEW -> AUDIT "Log every access"
+AUDIT -> DPO "Access reports"
+DPO -> CONSENT "Audit the consent base"
+CONSENT -> COHORT "Consented\npopulation only" [BO_CONSENT]
+COHORT -> ANON "Remove identifying\ntraits" [BO_COHORT]
+ANON -> STATS "Anonymised cohort" [BO_COHORT]
+RESEARCHER -> STATS "Run a study"
+STATS -> REGISTRY "Publish aggregates"
+
+legend {
+  note "Health records are retained for 20 years (legal obligation)"
+}

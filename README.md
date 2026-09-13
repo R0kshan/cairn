@@ -75,8 +75,8 @@ Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/
 ### Logicial view diagram examples from small to large
 
 <p align="center"><img src="examples/small.svg" alt="Small logical view" width="760"></p>
-<p align="center"><img src="examples/medium.svg" alt="Medium logical view" width="760"></p>
-<p align="center"><img src="examples/large.svg" alt="Medium logical view" width="760"></p>
+<p align="center"><img src="examples/logical-security.svg" alt="Medium logical view with security capabilities" width="760"></p>
+<p align="center"><img src="examples/large.svg" alt="Large logical view" width="760"></p>
 
 ### Application view diagram examples from small to large
 

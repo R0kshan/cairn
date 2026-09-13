@@ -169,6 +169,7 @@ const KIND_ROLE_MAP: Record<string, string> = {
   gateway: "authGateway",
   firewall: "firewall",
   auth: "auth",
+  security: "auth",
   idp: "identityProvider",
   site: "site",
   "network-zone": "networkZone",

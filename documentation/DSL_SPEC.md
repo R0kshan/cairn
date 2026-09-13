@@ -97,7 +97,7 @@ listed in §2.
 
 | View | Element kinds | Flow rules |
 |---|---|---|
-| `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (logical only — elsewhere is **E0222**) |
+| `logical` | actor-group, actor, system, layer, block, security, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (logical only — elsewhere is **E0222**) |
 | `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label optional; `(protocol, format)` recommended between non-actors (**W0540**) |
 | `infrastructure` | actor, device, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 
@@ -117,7 +117,15 @@ moves between them. No technology, no deployment.
 | `system` | the system under study | yes (holds `layer`, `block`) | root | box, band 1 |
 | `layer` | a functional layer | yes (holds `block`) | **inside a `system`** (**E0212**) | box with title |
 | `block` | one functional block | no | **inside a `layer`, `system` or `external`** (**E0210**) | plain box |
+| `security` | a security capability with business impact | no | anywhere | box + padlock glyph |
 | `external` | third-party systems | yes (holds `block`) | root | dashed box, band 2 |
+
+**`security` names the capability, not the component.** Strong authentication,
+anonymisation, encryption of a held record — the controls a business feels. It
+is deliberately not the `auth` kind the other two views carry: `auth` is a piece
+of middleware, this view holds no technology, and anonymisation is not
+authentication. Unlike `block` it may sit anywhere, and an unconnected one is
+not warned — a capability can apply to a record rather than to an exchange.
 
 **The flow label is mandatory** (**E0203**) — this view exists to name the
 exchange. No technical tail.
@@ -147,6 +155,7 @@ actor-group USERS "Users" {
 system BOOKING "Appointment booking system" {
   layer CHANNELS "Booking channels" {
     block PORTAL "Booking\nportal"
+    security MFA "Strong\nauthentication"
   }
   layer BUSINESS "Appointment management" {
     block SCHEDULER "Slot\nmanagement"
@@ -160,7 +169,8 @@ external EXT "External systems" {
 
 business-object BO_APPT "Appointment" "slot booked with a practitioner"
 
-PATIENT   -> PORTAL    "Search a slot and book"
+PATIENT   -> MFA       "Signs in"
+MFA       -> PORTAL    "Verified identity"
 PORTAL    -> SCHEDULER "Booking request" [BO_APPT]
 SCHEDULER -> NOTIF     "Appointment confirmed" [BO_APPT]
 NOTIF     -> SMS       "Send an SMS reminder"
