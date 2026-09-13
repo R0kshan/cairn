@@ -14,6 +14,34 @@ elements, flows, a `style { … }` block, `business-object` declarations
 Scaffold a file with `cairn new` — `-L` logical, `-A` application,
 `-I` infrastructure.
 
+## Contents
+
+| I want to… | Go to |
+|---|---|
+| write my first diagram | [Grammar shared by every view](#grammar-shared-by-every-view) |
+| know which kinds and flow rules my view has | [Views at a glance](#views-at-a-glance) |
+| draw what the system does, no technology | [1.1 Logical view](#11-logical-view--diagram-logical) |
+| draw applications and their technical exchanges | [1.2 Application view](#12-application-view--diagram-application) |
+| draw sites, zones, servers, protocols and ports | [1.3 Infrastructure view](#13-infrastructure-view--diagram-infrastructure) |
+| understand why an element landed where it did | [1.4 Layout partitions](#14-layout-partitions) |
+| move something the layout put in the wrong place | [Positioning controls](#positioning-controls) |
+| set colours, fonts, arrow size, page shape | [2. Styling](#2-styling--three-levels-most-specific-wins) |
+| make a wide diagram fit | [Density controls](#density-controls) |
+| export the flow table for a dossier | [2.1 Flow matrix](#21-flow-matrix) |
+| change the palette, or write my own | [2.2 Themes](#22-themes) |
+| look up an error or warning code | [3. Diagnostics](#3-diagnostics) |
+
+**Positioning controls, one line each:**
+[`order:`](#order-n--reading-order) reading order ·
+[`offset:`](#offset-dx-dy--nudge-an-element) move an element ·
+[`label-offset:`](#label-offset-dx-dy--nudge-a-flows-label) move a flow label ·
+[`segment-offset:`](#segment-offset-run-delta--slide-one-run-of-a-route) slide one run of a route ·
+[`ID.side`](#idside--which-side-a-flow-attaches-to) pin an attachment side ·
+[queue sides](#a-queues-flows-are-sided-for-you) and
+[`ID.producer` / `ID.consumer`](#idproducer--idconsumer--which-side-of-the-exchange) ·
+[arrow glyph](#arrow-glyph--the-flows-line-style) line style ·
+[`logo:`](#logo-name--the-technology-a-component-runs-on) technology mark
+
 ## 1. Structure
 
 ### Grammar shared by every view
