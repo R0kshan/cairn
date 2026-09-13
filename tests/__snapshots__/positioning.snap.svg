@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1181 410" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1102 410" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1181" height="410" fill="#ffffff"/>
+<rect width="1102" height="410" fill="#ffffff"/>
 <rect x="10" y="46" width="143" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="64" font-size="13" font-weight="bold" fill="#17202c">Payment actors</text>
 <rect x="309" y="22" width="653" height="249.2" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
@@ -32,24 +32,24 @@
 <ellipse cx="878" cy="222.2" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
 <text x="878" y="238.9" font-size="12.5" text-anchor="middle" fill="#17202c">Ledger</text>
 <text x="878" y="253.4" font-size="12.5" text-anchor="middle" fill="#17202c">store</text>
-<rect x="1063" y="49" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1117" y="69.3" font-size="12.5" text-anchor="middle" fill="#17202c">Card scheme</text>
-<text x="1117" y="83.8" font-size="12.5" text-anchor="middle" fill="#17202c">(external)</text>
+<rect x="984" y="49" width="108" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1038" y="69.3" font-size="12.5" text-anchor="middle" fill="#17202c">Card scheme</text>
+<text x="1038" y="83.8" font-size="12.5" text-anchor="middle" fill="#17202c">(external)</text>
 <path d="M 144 100 L 332 100" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 144 174 L 294 174 L 294 198 L 503.3 198" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 440 99.5 L 590 99.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 698 107.3 L 823 107.3" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 611.3 185 L 956 185 L 956 124.8 L 932 124.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 611.3 198 L 860 198 L 860 215.2" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 662 76 L 662 55 L 1063 55" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
+<path d="M 662 76 L 662 55 L 984 55" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
 <text x="238" y="103.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="219" y="177.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="515" y="102.8" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="760.5" y="110.6" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="852.1" y="188.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="735.7" y="201.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
-<text x="862.5" y="58.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(ISO8583)</text>
-<line x1="20" y1="292" x2="1161" y2="292" stroke="#e6e9ee" stroke-width="1"/>
+<text x="823" y="58.3" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(ISO8583)</text>
+<line x1="20" y1="292" x2="1082" y2="292" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="314" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="304" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="315" font-size="10" fill="#17202c">Actor group</text>

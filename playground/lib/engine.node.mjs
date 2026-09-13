@@ -96273,6 +96273,8 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
 
 // src/compact.ts
 var KEEP_GAP = 14;
+var COLUMN_GAP = 20;
+var COLUMN_MIN_SAVING = 24;
 var EDGE_MARGIN = 22;
 var MIN_SAVING = 4;
 function compactVertical(scene) {
@@ -96354,6 +96356,75 @@ function fitCanvas(scene) {
   }
   scene.width = Math.max(scene.width, Math.ceil(maxX) + CANVAS_MARGIN);
   scene.height = Math.max(scene.height, Math.ceil(maxY) + CANVAS_MARGIN);
+}
+function compactHorizontal(scene, titleBoxes) {
+  const pinned = [];
+  for (const node of scene.nodes) {
+    if (node.container) {
+      pinned.push({ lo: node.x - 1, hi: node.x + 1 });
+      pinned.push({ lo: node.x + node.width - 1, hi: node.x + node.width + 1 });
+    } else pinned.push({ lo: node.x, hi: node.x + node.width });
+  }
+  for (const title of titleBoxes) pinned.push({ lo: title.x, hi: title.x + title.width });
+  for (const edge of scene.edges) {
+    for (const label of edge.labels) pinned.push({ lo: label.x, hi: label.x + label.width });
+    for (let index = 0; index + 1 < edge.pts.length; index++) {
+      const pointA = edge.pts[index];
+      const pointB = edge.pts[index + 1];
+      if (Math.abs(pointA.x - pointB.x) < 0.5 && Math.abs(pointA.y - pointB.y) >= 0.5)
+        pinned.push({ lo: pointA.x - 1, hi: pointA.x + 1 });
+    }
+    if (edge.pts.length) {
+      const first = edge.pts[0];
+      const last = edge.pts[edge.pts.length - 1];
+      pinned.push({ lo: first.x - 1, hi: first.x + 1 });
+      pinned.push({ lo: last.x - 1, hi: last.x + 1 });
+    }
+  }
+  if (!pinned.length) return;
+  pinned.sort((spanA, spanB) => spanA.lo - spanB.lo || spanA.hi - spanB.hi);
+  const merged = [];
+  for (const span of pinned) {
+    const last = merged[merged.length - 1];
+    if (last && span.lo <= last.hi) last.hi = Math.max(last.hi, span.hi);
+    else merged.push({ ...span });
+  }
+  const cuts = [];
+  const addCut = (from, to, keep, floor = MIN_SAVING) => {
+    const save = Math.round(to - from - keep);
+    if (save >= floor) cuts.push({ from, to, save });
+  };
+  addCut(0, merged[0].lo, EDGE_MARGIN);
+  for (let index = 0; index + 1 < merged.length; index++)
+    addCut(merged[index].hi, merged[index + 1].lo, COLUMN_GAP, COLUMN_MIN_SAVING);
+  const widthBefore = merged[merged.length - 1].hi;
+  const rightMargin = Math.min(scene.width - widthBefore, EDGE_MARGIN);
+  if (!cuts.length && scene.width - widthBefore <= EDGE_MARGIN) return;
+  const shiftAt = (x) => {
+    let shift = 0;
+    for (const cut of cuts) {
+      if (x >= cut.to) shift += cut.save;
+      else if (x > cut.from) shift += Math.min(x - cut.from, cut.save);
+    }
+    return shift;
+  };
+  for (const node of scene.nodes) {
+    const left = node.x - shiftAt(node.x);
+    const right = node.x + node.width - shiftAt(node.x + node.width);
+    node.x = left;
+    node.width = right - left;
+  }
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) point.x -= shiftAt(point.x);
+    for (const label of edge.labels) label.x -= shiftAt(label.x);
+  }
+  let widthAfter = 0;
+  for (const node of scene.nodes) widthAfter = Math.max(widthAfter, node.x + node.width);
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) widthAfter = Math.max(widthAfter, point.x);
+    for (const label of edge.labels) widthAfter = Math.max(widthAfter, label.x + label.width);
+  }
+  scene.width = Math.ceil(widthAfter + rightMargin);
 }
 
 // src/readability.ts
@@ -100508,6 +100579,7 @@ function runGeometryPasses(scene, model, options) {
   clearSideHugs(scene, settledTitles);
   anchorFlowLabels(scene, settledTitles, false);
   swapCrossingSiblingSeats(scene);
+  if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {
