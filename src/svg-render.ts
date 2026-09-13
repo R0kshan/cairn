@@ -438,12 +438,17 @@ interface GlyphPen {
   stroke: string;
 }
 
+/** Padlock: authentication is a check something must pass. */
+const padlock = ({ x, y, r, line, stroke }: GlyphPen): string =>
+  `<rect x="${x(3)}" y="${y(7)}" width="${r(12)}" height="${r(9)}" rx="${r(2)}" ${line}/>` +
+  `<path d="M ${x(6)} ${y(7)} v ${-r(3)} a ${r(3)} ${r(3)} 0 0 1 ${r(6)} 0 v ${r(3)}" ${line}/>` +
+  `<circle cx="${x(9)}" cy="${y(11)}" r="${r(1.5)}" fill="${stroke}"/>`;
+
 const GLYPHS: Record<string, (pen: GlyphPen) => string> = {
-  // Padlock: authentication is a check something must pass.
-  auth: ({ x, y, r, line, stroke }) =>
-    `<rect x="${x(3)}" y="${y(7)}" width="${r(12)}" height="${r(9)}" rx="${r(2)}" ${line}/>` +
-    `<path d="M ${x(6)} ${y(7)} v ${-r(3)} a ${r(3)} ${r(3)} 0 0 1 ${r(6)} 0 v ${r(3)}" ${line}/>` +
-    `<circle cx="${x(9)}" cy="${y(11)}" r="${r(1.5)}" fill="${stroke}"/>`,
+  auth: padlock,
+  // The logical view's security capability wears the same padlock: a reader who
+  // has seen one view should not have to learn a second mark for the same idea.
+  security: padlock,
   // Two posts with traffic passing between them: a gateway routes, it does not block.
   gateway: ({ x, y, r, line }) =>
     `<path d="M ${x(2)} ${y(1)} V ${y(15)} M ${x(16)} ${y(1)} V ${y(15)}" ${line}/>` +

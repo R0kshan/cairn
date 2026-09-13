@@ -92438,6 +92438,7 @@ var KIND_ROLE_MAP = {
   gateway: "authGateway",
   firewall: "firewall",
   auth: "auth",
+  security: "auth",
   idp: "identityProvider",
   site: "site",
   "network-zone": "networkZone",
@@ -93818,8 +93819,13 @@ var LINE_STYLES2 = ["solid", "dashed", "dotted"];
 var logicalView = {
   name: "logical",
   laneKinds: ["external"],
-  kinds: ["actor-group", "actor", "system", "layer", "block", "external"],
+  kinds: ["actor-group", "actor", "system", "layer", "block", "external", "security"],
   containerKinds: ["actor-group", "system", "layer", "external"],
+  // A security capability the business can feel — strong authentication,
+  // anonymisation, encryption of a held record. Named for the capability and not
+  // for the component that would implement it (`auth` in the other two views):
+  // this view is technology-agnostic, and anonymisation is not authentication.
+  glyphKinds: ["security"],
   // Logical flows carry no technical detail (flowTech* are null below), so the
   // table is who exchanges what with whom.
   matrix: { zoneKinds: ["layer", "system"], columns: ["num", "source", "dest", "nature"] },
@@ -93829,7 +93835,8 @@ var logicalView = {
     system: "System",
     layer: "Layer",
     block: "Functional block",
-    external: "External system"
+    external: "External system",
+    security: "Security function"
   },
   legendNamesFr: {
     "actor-group": "Groupe d'acteurs",
@@ -93837,7 +93844,8 @@ var logicalView = {
     system: "Syst\xE8me",
     layer: "Couche",
     block: "Bloc fonctionnel",
-    external: "Syst\xE8me externe"
+    external: "Syst\xE8me externe",
+    security: "Fonction de s\xE9curit\xE9"
   },
   bandTitles: {
     flows: "FLOWS",
@@ -93859,7 +93867,7 @@ var logicalView = {
   flowTechRequired: null,
   flowTechRecommended: null,
   businessObjects: true,
-  partitions: { "actor-group": 0, system: 1, external: 2 },
+  partitions: { "actor-group": 0, system: 1, security: 1, external: 2 },
   flowLabelRequired: {
     code: "E0203",
     message: "flow without a label",
@@ -93922,6 +93930,12 @@ var logicalView = {
       fill: "#ffffff",
       stroke: { color: "#666677", style: "solid", width: 1.3 }
     },
+    // The blue the other two views give `auth`: a security capability and the
+    // middleware that implements it read as the same idea across views.
+    security: {
+      fill: "#e8f1fb",
+      stroke: { color: "#2f6fb5", style: "solid", width: 1.5 }
+    },
     actor: {}
   },
   defaultsDark: {
@@ -93944,6 +93958,10 @@ var logicalView = {
     block: {
       fill: "#252a31",
       stroke: { color: "#7c8894", style: "solid", width: 1.3 }
+    },
+    security: {
+      fill: "#1d2735",
+      stroke: { color: "#6fa8e0", style: "solid", width: 1.5 }
     },
     actor: {}
   }
@@ -100948,9 +100966,12 @@ function settleOneLabel(s, label) {
   label.y = origin.y;
 }
 var GLYPH_BOX = { width: 18, height: 16, left: 6, top: 7 };
+var padlock = ({ x, y, r, line, stroke }) => `<rect x="${x(3)}" y="${y(7)}" width="${r(12)}" height="${r(9)}" rx="${r(2)}" ${line}/><path d="M ${x(6)} ${y(7)} v ${-r(3)} a ${r(3)} ${r(3)} 0 0 1 ${r(6)} 0 v ${r(3)}" ${line}/><circle cx="${x(9)}" cy="${y(11)}" r="${r(1.5)}" fill="${stroke}"/>`;
 var GLYPHS = {
-  // Padlock: authentication is a check something must pass.
-  auth: ({ x, y, r, line, stroke }) => `<rect x="${x(3)}" y="${y(7)}" width="${r(12)}" height="${r(9)}" rx="${r(2)}" ${line}/><path d="M ${x(6)} ${y(7)} v ${-r(3)} a ${r(3)} ${r(3)} 0 0 1 ${r(6)} 0 v ${r(3)}" ${line}/><circle cx="${x(9)}" cy="${y(11)}" r="${r(1.5)}" fill="${stroke}"/>`,
+  auth: padlock,
+  // The logical view's security capability wears the same padlock: a reader who
+  // has seen one view should not have to learn a second mark for the same idea.
+  security: padlock,
   // Two posts with traffic passing between them: a gateway routes, it does not block.
   gateway: ({ x, y, r, line }) => `<path d="M ${x(2)} ${y(1)} V ${y(15)} M ${x(16)} ${y(1)} V ${y(15)}" ${line}/><path d="M ${x(4)} ${y(8)} H ${x(14)}" ${line}/><path d="M ${x(11)} ${y(5)} l ${r(3)} ${r(3)} l ${-r(3)} ${r(3)}" ${line}/>`,
   // ID badge: an identity provider issues who-you-are, it does not check it.

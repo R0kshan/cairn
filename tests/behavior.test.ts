@@ -2039,6 +2039,34 @@ test("a `[ref]` on a flow in a non-logical view is E0222", () => {
   assert.ok(check(src).codes.includes("E0222"));
 });
 
+test("security is a logical-view kind, unknown in the other two", () => {
+  // A security capability with business impact — 2FA, anonymisation — is what a
+  // logical view is asked to show. It is named for the capability, not for the
+  // `auth` component that implements it, because this view carries no technology
+  // and anonymisation is not authentication.
+  const logical = check(
+    'diagram logical "t"\nactor-group G "g" { actor A "a" }\n' +
+      'system S "s" { layer L "l" { block B "b" security MFA "2FA" } }\n' +
+      'A -> MFA "signs in"\nMFA -> B "verified identity"\n',
+  );
+  assert.deepEqual(logical.diags, [], "a logical `security` is clean");
+
+  for (const view of ["application", "infrastructure"])
+    assert.ok(
+      check(`diagram ${view} "t"\nsecurity S "2FA"\n`).codes.includes("E0201"),
+      `${view} must not accept \`security\``,
+    );
+
+  // Left out of `isolatedWarn` on purpose: a capability can apply to a record
+  // rather than to an exchange, so standing alone is not a defect.
+  const alone = check(
+    'diagram logical "t"\nactor-group G "g" { actor A "a" }\n' +
+      'system S "s" { layer L "l" { block B "b" security ANON "anonymisation" } }\n' +
+      'A -> B "asks"\n',
+  );
+  assert.ok(!alone.codes.includes("W0510"), "an unconnected security function is not warned");
+});
+
 test("queue is a valid kind in application & infrastructure, unknown in logical", () => {
   assert.ok(
     !check(
