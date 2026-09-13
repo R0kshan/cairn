@@ -167,6 +167,9 @@ const KIND_ROLE_MAP: Record<string, string> = {
   datastore: "datastore",
   queue: "datastore",
   gateway: "authGateway",
+  // The gateway's orange: both sit in the traffic path, and the glyph is what
+  // separates forwarding one way from distributing across many.
+  "load-balancer": "authGateway",
   firewall: "firewall",
   auth: "auth",
   security: "auth",
@@ -174,6 +177,9 @@ const KIND_ROLE_MAP: Record<string, string> = {
   site: "site",
   "network-zone": "networkZone",
   server: "server",
+  // A cluster is a boundary around nodes, styled like the zone it sits in
+  // rather than like the servers it holds.
+  cluster: "cluster",
   "app-instance": "appInstance",
 };
 
@@ -220,6 +226,7 @@ const buildTheme = (spec: ThemeSpec): Theme => {
       site: containerStyle(accentColors.siteF, accentColors.siteS, false, 1.4),
       networkZone: containerStyle(accentColors.greenF, accentColors.green, true),
       server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
+      cluster: containerStyle(accentColors.serverF, accentColors.serverS, true, 1.4),
       appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
       // Accent keys predate the roles that read them: `auth`/`authF` is the
       // gateway's orange, `authn`/`authnF` the auth middleware's blue. The two

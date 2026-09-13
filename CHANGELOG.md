@@ -7,6 +7,13 @@ All notable changes to the cairn project will be documented in this file.
 ### Added
 - `security` in the logical view: a security capability the business feels — strong authentication, anonymisation, encryption of a held record. Named for the capability rather than for the `auth` middleware the other two views carry, because this view holds no technology and anonymisation is not authentication. It may sit anywhere, and an unconnected one raises no warning: a capability can apply to a record rather than to an exchange
 - `examples/logical-security.cairn` — a patient-portal logical view showing the new kind alongside business objects, and the medium logical diagram the README now displays
+- `cluster` in the infrastructure view: a container for the nodes that stand in for one another — a Kubernetes cluster of workers, a primary/standby database pair. It holds `server`, `app-instance` and `datastore`, must sit in a `network-zone` or `site` (**E0217**), and is drawn dashed so the group reads as the thing that is resilient
+- `datastore` in the infrastructure view: a database, drawn as the vertical cylinder the application view already uses. Before, half the examples wrote `app-instance PostgreSQL` and the other half `server "Database server"`, so a *vue technique* reader could not see where the data sat without reading labels
+- `load-balancer` in the infrastructure view: a répartiteur de charge, with its own fan glyph. Not a `gateway` — a gateway terminates a protocol conversation and forwards it, a load balancer picks one backend out of many, and that "one of N" is the topology the view exists to show
+
+### Changed
+- A WAF is now drawn as a `firewall` in every example, whether it is an appliance in the DMZ or software on the reverse proxy. It was modelled three different ways — `app-instance`, `server`, and never `firewall` — so the brick-wall glyph a reader scans for was missing from the one element that most needed it
+- The infrastructure examples now use the new kinds instead of working around them: a database engine is a `datastore` rather than an `app-instance` on a server, an HA group is a `cluster` rather than a single `server` box, and the load balancer is a `load-balancer` rather than a `server`
 
 ## [v1.0.0-RC16](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC16) - 2026-09-13
 

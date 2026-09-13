@@ -5,8 +5,9 @@ style {
 
 site DC1 "Main data center" {
   network-zone DMZ1 "DMZ" {
-    server FW_WAF "Application\nfirewall (WAF)"
-    server RP1 "Reverse proxies\n(HA)" {
+    firewall FW_WAF "Application\nfirewall (WAF)"
+    load-balancer LB1 "Load\nbalancer"
+    cluster RP1 "Reverse proxies\n(HA)" {
       app-instance NGINX_I "Nginx"
     }
     server SFTP_GW "Transfer\ngateway"
@@ -15,20 +16,20 @@ site DC1 "Main data center" {
     gateway AUTH_GW "Gateway"
     auth OAUTH2 "OAuth2\nproxy"
     idp IDP "LDAP / IdP"
-    server K8S1 "K8s cluster\nfront" {
+    cluster K8S1 "K8s cluster\nfront" {
       app-instance FRONT_I "Sales front"
       app-instance CHECKOUT_I "Checkout funnel"
     }
-    server K8S2 "K8s cluster\nbusiness" {
+    cluster K8S2 "K8s cluster\nbusiness" {
       app-instance OMS_I "Order\nmanagement"
       app-instance PAYHUB_I "Payment\nhub"
     }
   }
   network-zone DATA1 "Data zone" {
-    server PG_CLU "PostgreSQL\ncluster" {
-      app-instance PG_I "PostgreSQL\nprimary"
+    cluster PG_CLU "PostgreSQL\ncluster" {
+      datastore PG_I "PostgreSQL\nprimary"
     }
-    server KAFKA_SRV "Kafka\ncluster" {
+    cluster KAFKA_SRV "Kafka\ncluster" {
       app-instance KAFKA_I "Kafka"
     }
   }
@@ -37,7 +38,7 @@ site DC1 "Main data center" {
 site DC2 "Disaster-recovery site" {
   network-zone DATA2 "DR data zone" {
     server PG_STANDBY "PostgreSQL\nstandby" {
-      app-instance PG2_I "PostgreSQL\nreplica"
+      datastore PG2_I "PostgreSQL\nreplica"
     }
     server BACKUP "Backup\nserver"
   }
@@ -49,7 +50,8 @@ external CARRIERS_EXT "Carrier\nplatforms"
 
 # ---- technical flows (protocol REQUIRED) ----
 USERS -> FW_WAF (HTTPS/443)
-FW_WAF -> NGINX_I (HTTPS/443)
+FW_WAF -> LB1 (HTTPS/443)
+LB1 -> NGINX_I (HTTPS/443)
 NGINX_I -> AUTH_GW (HTTPS/443)
 AUTH_GW -> OAUTH2 (HTTPS/8443)
 OAUTH2 -> IDP (LDAPS/636)

@@ -460,6 +460,12 @@ const GLYPHS: Record<string, (pen: GlyphPen) => string> = {
     `<path d="M ${x(7)} ${y(2)} H ${x(11)}" ${line}/>` +
     `<circle cx="${x(9)}" cy="${y(7)}" r="${r(2)}" ${line}/>` +
     `<path d="M ${x(5)} ${y(13)} q ${r(4)} ${-r(4)} ${r(8)} 0" ${line}/>`,
+  // One line in, three out of a split point: a load balancer picks one backend
+  // out of many, which is exactly what the gateway's two posts do not say.
+  "load-balancer": ({ x, y, r, line, stroke }) =>
+    `<path d="M ${x(1)} ${y(8)} H ${x(7)}" ${line}/>` +
+    `<path d="M ${x(7)} ${y(8)} L ${x(16)} ${y(2)} M ${x(7)} ${y(8)} H ${x(16)} M ${x(7)} ${y(8)} L ${x(16)} ${y(14)}" ${line}/>` +
+    `<circle cx="${x(7)}" cy="${y(8)}" r="${r(1.6)}" fill="${stroke}"/>`,
   // Brick wall: a firewall is a barrier, and no other kind reads as one.
   firewall: ({ x, y, r, line }) =>
     `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/>` +

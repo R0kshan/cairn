@@ -20,8 +20,9 @@
 <rect x="1054" y="126" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="1064" y="144" font-size="13" font-weight="bold" fill="#17202c">Serveur de</text>
 <text x="1064" y="158" font-size="13" font-weight="bold" fill="#17202c">base de données</text>
-<rect x="1115.25" y="378" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
-<text x="1169.25" y="401" font-size="12.5" text-anchor="middle" fill="#17202c">WAF</text>
+<rect x="1115.25" y="378" width="108" height="38" rx="4" fill="#fdecea" stroke="#c0392b" stroke-width="1.6"/>
+<rect x="1123.3" y="387" width="14" height="12" rx="1" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 1123.3 391 H 1137.3 M 1123.3 395 H 1137.3" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 1130.3 387 V 391 M 1127.3 391 V 395 M 1133.3 391 V 395 M 1130.3 395 V 399" fill="none" stroke="#c0392b" stroke-width="1.3"/>
+<text x="1182.25" y="401" font-size="12.5" text-anchor="middle" fill="#17202c">WAF</text>
 <rect x="1115.25" y="270" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="1169.25" y="290.25" font-size="12.5" text-anchor="middle" fill="#17202c">Passerelle</text>
 <text x="1169.25" y="304.75" font-size="12.5" text-anchor="middle" fill="#17202c">de transfert</text>
@@ -43,8 +44,9 @@
 <text x="565" y="287" font-size="12.5" text-anchor="middle" fill="#17202c">Facturation</text>
 <rect x="524.3333333333333" y="170" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
 <text x="578.3333333333333" y="193" font-size="12.5" text-anchor="middle" fill="#17202c">CRM</text>
-<rect x="1063" y="167" width="108" height="38" rx="4" fill="#fdf4e3" stroke="#c88a2e" stroke-width="1.2"/>
-<text x="1117" y="190" font-size="12.5" text-anchor="middle" fill="#17202c">PostgreSQL</text>
+<path d="M 1063 174 v 24 a 54 7 0 0 0 108 0 v -24" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<ellipse cx="1117" cy="174" rx="54" ry="7" fill="#f4edf8" stroke="#8a53a8" stroke-width="1.3"/>
+<text x="1117" y="193.5" font-size="12.5" text-anchor="middle" fill="#17202c">PostgreSQL</text>
 <rect x="1291" y="143.5" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="1345" y="163.75" font-size="12.5" text-anchor="middle" fill="#17202c">Serveur de</text>
 <text x="1345" y="178.25" font-size="12.5" text-anchor="middle" fill="#17202c">sauvegarde</text>
@@ -89,21 +91,25 @@
 <text x="371" y="519" font-size="10" fill="#17202c">Zone réseau</text>
 <rect x="461" y="508" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="493" y="519" font-size="10" fill="#17202c">Serveur / VM</text>
-<rect x="588" y="508" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
-<text x="620" y="519" font-size="10" fill="#17202c">Application déployée</text>
-<rect x="756" y="508" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
-<path d="M 764.6 510.6 V 519.4 M 773.4 510.6 V 519.4" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 765.9 515 H 772.1" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 770.3 513.1 l 1.9 1.9 l -1.9 1.9" fill="none" stroke="#b85a30" stroke-width="0.8"/><text x="788" y="519" font-size="10" fill="#17202c">Passerelle / proxy</text>
-<rect x="914" y="508" width="26" height="14" rx="3" fill="#e8f1fb" stroke="#2f6fb5"/>
-<rect x="923.3" y="514.4" width="7.5" height="5.6" rx="1.3" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><path d="M 925.1 514.4 v -1.9 a 1.9 1.9 0 0 1 3.8 0 v 1.9" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><circle cx="927" cy="516.9" r="0.9" fill="#2f6fb5"/><text x="946" y="519" font-size="10" fill="#17202c">Middleware d'authentification</text>
-<rect x="1129" y="508" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
-<rect x="1138.3" y="511.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1140.8 511.3 H 1143.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="1142" cy="514.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1139.5 518.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="1161" y="519" font-size="10" fill="#17202c">Fournisseur d'identité (IdP)</text>
-<rect x="1339" y="508" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="1371" y="519" font-size="10" fill="#17202c">File de messages / broker</text>
-<circle cx="163" cy="533" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<path d="M 158 543 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<text x="182" y="541" font-size="10" fill="#17202c">Utilisateur / consommateur</text>
-<rect x="350" y="530" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="382" y="541" font-size="10" fill="#17202c">Système externe</text>
+<rect x="588" y="508" width="26" height="14" rx="3" fill="#fdecea" stroke="#c0392b"/>
+<rect x="596.6" y="511.3" width="8.8" height="7.5" rx="0.6" fill="none" stroke="#c0392b" stroke-width="0.8"/><path d="M 596.6 513.8 H 605.4 M 596.6 516.3 H 605.4" fill="none" stroke="#c0392b" stroke-width="0.8"/><path d="M 601 511.3 V 513.8 M 599.1 513.8 V 516.3 M 602.9 513.8 V 516.3 M 601 516.3 V 518.8" fill="none" stroke="#c0392b" stroke-width="0.8"/><text x="620" y="519" font-size="10" fill="#17202c">Pare-feu</text>
+<rect x="694" y="508" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
+<path d="M 702.6 510.6 V 519.4 M 711.4 510.6 V 519.4" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 703.9 515 H 710.1" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 708.3 513.1 l 1.9 1.9 l -1.9 1.9" fill="none" stroke="#b85a30" stroke-width="0.8"/><text x="726" y="519" font-size="10" fill="#17202c">Passerelle / proxy</text>
+<rect x="852" y="508" width="26" height="14" rx="3" fill="#e8f1fb" stroke="#2f6fb5"/>
+<rect x="861.3" y="514.4" width="7.5" height="5.6" rx="1.3" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><path d="M 863.1 514.4 v -1.9 a 1.9 1.9 0 0 1 3.8 0 v 1.9" fill="none" stroke="#2f6fb5" stroke-width="0.8"/><circle cx="865" cy="516.9" r="0.9" fill="#2f6fb5"/><text x="884" y="519" font-size="10" fill="#17202c">Middleware d'authentification</text>
+<rect x="1067" y="508" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
+<rect x="1076.3" y="511.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1078.8 511.3 H 1081.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="1080" cy="514.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1077.5 518.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="1099" y="519" font-size="10" fill="#17202c">Fournisseur d'identité (IdP)</text>
+<rect x="1277" y="508" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="1309" y="519" font-size="10" fill="#17202c">File de messages / broker</text>
+<rect x="150" y="530" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="182" y="541" font-size="10" fill="#17202c">Application déployée</text>
+<rect x="318" y="530" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="350" y="541" font-size="10" fill="#17202c">Base de données</text>
+<circle cx="473" cy="533" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<path d="M 468 543 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<text x="492" y="541" font-size="10" fill="#17202c">Utilisateur / consommateur</text>
+<rect x="660" y="530" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="692" y="541" font-size="10" fill="#17202c">Système externe</text>
 <line x1="150" y1="560" x2="176" y2="560" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="564" font-size="10" fill="#17202c">Flux technique (protocole, port)</text>
 <text x="150" y="588" font-size="10" fill="#17202c" font-style="italic">Flux inter-zones filtrés par pare-feu (matrice des flux jointe au dossier d'architecture)</text>

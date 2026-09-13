@@ -39,7 +39,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0200 / E0201 | error | Unknown diagram type / element kind (with did-you-mean) |
 | E0202 | error | Duplicate identifier (flat ID namespace, shared with business objects) |
 | E0203 | error | Flow without a label |
-| E0210–E0218 | error | Nesting violations, per view (blocks / actors / layers / modules / servers / app-instances / network-zones) |
+| E0210–E0218 | error | Nesting violations, per view (blocks / actors / layers / modules / servers / app-instances / network-zones / clusters) |
 | E0220 / E0221 | error | Unknown flow reference / unknown business-object reference |
 | E0222 | error | Business object used outside the logical view (business objects are logical-view only) |
 | E0223 | error | Unknown suffix on a flow endpoint — neither a side nor a role (`A.middle -> B`) |

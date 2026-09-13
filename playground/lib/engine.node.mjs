@@ -92436,6 +92436,9 @@ var KIND_ROLE_MAP = {
   datastore: "datastore",
   queue: "datastore",
   gateway: "authGateway",
+  // The gateway's orange: both sit in the traffic path, and the glyph is what
+  // separates forwarding one way from distributing across many.
+  "load-balancer": "authGateway",
   firewall: "firewall",
   auth: "auth",
   security: "auth",
@@ -92443,6 +92446,9 @@ var KIND_ROLE_MAP = {
   site: "site",
   "network-zone": "networkZone",
   server: "server",
+  // A cluster is a boundary around nodes, styled like the zone it sits in
+  // rather than like the servers it holds.
+  cluster: "cluster",
   "app-instance": "appInstance"
 };
 var roleForKind = (kind) => KIND_ROLE_MAP[kind] ?? "leaf";
@@ -92486,6 +92492,7 @@ var buildTheme = (spec) => {
       site: containerStyle(accentColors.siteF, accentColors.siteS, false, 1.4),
       networkZone: containerStyle(accentColors.greenF, accentColors.green, true),
       server: containerStyle(accentColors.serverF, accentColors.serverS, false, 1.5),
+      cluster: containerStyle(accentColors.serverF, accentColors.serverS, true, 1.4),
       appInstance: leafStyle(accentColors.aiF, accentColors.aiS, 1.2),
       // Accent keys predate the roles that read them: `auth`/`authF` is the
       // gateway's orange, `authn`/`authnF` the auth middleware's blue. The two
@@ -94185,17 +94192,23 @@ var infrastructureView = {
     "device",
     "site",
     "network-zone",
+    "cluster",
     "server",
     "app-instance",
     "queue",
+    "datastore",
     "gateway",
+    "load-balancer",
     "firewall",
     "auth",
     "idp",
     "external"
   ],
-  containerKinds: ["site", "network-zone", "server"],
-  glyphKinds: ["gateway", "firewall", "auth", "idp", "device"],
+  // A cluster holds nodes, so it is a container: drawing an HA pair as one
+  // `server` box is what every example had to do before, and it erases the
+  // redundancy the dossier exists to document.
+  containerKinds: ["site", "network-zone", "server", "cluster"],
+  glyphKinds: ["gateway", "load-balancer", "firewall", "auth", "idp", "device"],
   // A `device` is a flow origin, so it belongs on the entry side with the
   // actors rather than in a declaration-order band with the zones.
   ingressKinds: ["actor", "actor-group", "device"],
@@ -94212,10 +94225,13 @@ var infrastructureView = {
     device: "Device / workstation",
     site: "Site / data center",
     "network-zone": "Network zone",
+    cluster: "Cluster / HA group",
     server: "Server / VM",
     "app-instance": "Deployed application",
     queue: "Message queue / broker",
+    datastore: "Database",
     gateway: "Gateway / reverse proxy",
+    "load-balancer": "Load balancer",
     firewall: "Firewall",
     auth: "Auth middleware",
     idp: "Identity provider (IdP)",
@@ -94226,10 +94242,13 @@ var infrastructureView = {
     device: "Poste de travail",
     site: "Site / centre de donn\xE9es",
     "network-zone": "Zone r\xE9seau",
+    cluster: "Cluster / groupe de haute disponibilit\xE9",
     server: "Serveur / VM",
     "app-instance": "Application d\xE9ploy\xE9e",
     queue: "File de messages / broker",
+    datastore: "Base de donn\xE9es",
     gateway: "Passerelle / proxy",
+    "load-balancer": "R\xE9partiteur de charge",
     firewall: "Pare-feu",
     auth: "Middleware d'authentification",
     idp: "Fournisseur d'identit\xE9 (IdP)",
@@ -94263,16 +94282,23 @@ var infrastructureView = {
     {
       code: "E0214",
       child: "server",
-      parents: ["network-zone", "site"],
+      parents: ["network-zone", "site", "cluster"],
       message: "server outside any network zone or site",
-      help: "move this `server` inside a `network-zone` or `site`"
+      help: "move this `server` inside a `network-zone`, `site` or `cluster`"
     },
     {
       code: "E0215",
       child: "app-instance",
-      parents: ["server", "network-zone"],
+      parents: ["server", "network-zone", "cluster"],
       message: "deployed application outside any server or zone",
-      help: "move this `app-instance` inside a `server` or `network-zone`"
+      help: "move this `app-instance` inside a `server`, `network-zone` or `cluster`"
+    },
+    {
+      code: "E0217",
+      child: "cluster",
+      parents: ["network-zone", "site"],
+      message: "cluster outside any network zone or site",
+      help: "move this `cluster` inside a `network-zone` or `site`"
     },
     {
       code: "E0216",
@@ -94285,7 +94311,17 @@ var infrastructureView = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp", "device"],
+    kinds: [
+      "app-instance",
+      "queue",
+      "datastore",
+      "gateway",
+      "load-balancer",
+      "firewall",
+      "auth",
+      "idp",
+      "device"
+    ],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {
@@ -94297,6 +94333,13 @@ var infrastructureView = {
     "network-zone": {
       fill: "#ecf3ec",
       stroke: { color: "#6d9a6d", style: "dashed", width: 1.2 }
+    },
+    // Dashed, and only a shade off the server it holds: a cluster is not another
+    // box in the rack, it is the line drawn around the boxes that stand in for
+    // one another.
+    cluster: {
+      fill: "#f7f8f9",
+      stroke: { color: "#55606b", style: "dashed", width: 1.4 }
     },
     server: {
       fill: "#ffffff",
@@ -94312,11 +94355,21 @@ var infrastructureView = {
       fill: "#fff7e6",
       stroke: { color: "#b08d2a", style: "solid", width: 1.2 }
     },
+    // The same purple the application view gives both cylinders: the shape is
+    // what separates a broker lying on its side from a database standing up.
+    datastore: {
+      fill: "#f3eef8",
+      stroke: { color: "#8a6fae", style: "solid", width: 1.3 }
+    },
     queue: {
       fill: "#f3eef8",
       stroke: { color: "#8a6fae", style: "solid", width: 1.3 }
     },
     gateway: {
+      fill: "#f5e6dd",
+      stroke: { color: "#bf5530", style: "solid", width: 1.6 }
+    },
+    "load-balancer": {
       fill: "#f5e6dd",
       stroke: { color: "#bf5530", style: "solid", width: 1.6 }
     },
@@ -94347,6 +94400,10 @@ var infrastructureView = {
       fill: "#20291f",
       stroke: { color: "#5f8a5f", style: "dashed", width: 1.2 }
     },
+    cluster: {
+      fill: "#20252b",
+      stroke: { color: "#6b7885", style: "dashed", width: 1.4 }
+    },
     server: {
       fill: "#252a31",
       stroke: { color: "#6b7885", style: "solid", width: 1.5 }
@@ -94359,11 +94416,19 @@ var infrastructureView = {
       fill: "#2e2717",
       stroke: { color: "#b08d2a", style: "solid", width: 1.2 }
     },
+    datastore: {
+      fill: "#2a2433",
+      stroke: { color: "#7a5f9e", style: "solid", width: 1.3 }
+    },
     queue: {
       fill: "#2a2433",
       stroke: { color: "#7a5f9e", style: "solid", width: 1.3 }
     },
     gateway: {
+      fill: "#332218",
+      stroke: { color: "#c96a4a", style: "solid", width: 1.6 }
+    },
+    "load-balancer": {
       fill: "#332218",
       stroke: { color: "#c96a4a", style: "solid", width: 1.6 }
     },
@@ -100976,6 +101041,9 @@ var GLYPHS = {
   gateway: ({ x, y, r, line }) => `<path d="M ${x(2)} ${y(1)} V ${y(15)} M ${x(16)} ${y(1)} V ${y(15)}" ${line}/><path d="M ${x(4)} ${y(8)} H ${x(14)}" ${line}/><path d="M ${x(11)} ${y(5)} l ${r(3)} ${r(3)} l ${-r(3)} ${r(3)}" ${line}/>`,
   // ID badge: an identity provider issues who-you-are, it does not check it.
   idp: ({ x, y, r, line }) => `<rect x="${x(3)}" y="${y(2)}" width="${r(12)}" height="${r(13)}" rx="${r(2)}" ${line}/><path d="M ${x(7)} ${y(2)} H ${x(11)}" ${line}/><circle cx="${x(9)}" cy="${y(7)}" r="${r(2)}" ${line}/><path d="M ${x(5)} ${y(13)} q ${r(4)} ${-r(4)} ${r(8)} 0" ${line}/>`,
+  // One line in, three out of a split point: a load balancer picks one backend
+  // out of many, which is exactly what the gateway's two posts do not say.
+  "load-balancer": ({ x, y, r, line, stroke }) => `<path d="M ${x(1)} ${y(8)} H ${x(7)}" ${line}/><path d="M ${x(7)} ${y(8)} L ${x(16)} ${y(2)} M ${x(7)} ${y(8)} H ${x(16)} M ${x(7)} ${y(8)} L ${x(16)} ${y(14)}" ${line}/><circle cx="${x(7)}" cy="${y(8)}" r="${r(1.6)}" fill="${stroke}"/>`,
   // Brick wall: a firewall is a barrier, and no other kind reads as one.
   firewall: ({ x, y, r, line }) => `<rect x="${x(2)}" y="${y(2)}" width="${r(14)}" height="${r(12)}" rx="${r(1)}" ${line}/><path d="M ${x(2)} ${y(6)} H ${x(16)} M ${x(2)} ${y(10)} H ${x(16)}" ${line}/><path d="M ${x(9)} ${y(2)} V ${y(6)} M ${x(6)} ${y(6)} V ${y(10)} M ${x(12)} ${y(6)} V ${y(10)} M ${x(9)} ${y(10)} V ${y(14)}" ${line}/>`,
   // Monitor on a stand: a device is the machine a person works at. The screen is

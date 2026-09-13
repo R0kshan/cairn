@@ -502,17 +502,23 @@ const infrastructureView: View = {
     "device",
     "site",
     "network-zone",
+    "cluster",
     "server",
     "app-instance",
     "queue",
+    "datastore",
     "gateway",
+    "load-balancer",
     "firewall",
     "auth",
     "idp",
     "external",
   ],
-  containerKinds: ["site", "network-zone", "server"],
-  glyphKinds: ["gateway", "firewall", "auth", "idp", "device"],
+  // A cluster holds nodes, so it is a container: drawing an HA pair as one
+  // `server` box is what every example had to do before, and it erases the
+  // redundancy the dossier exists to document.
+  containerKinds: ["site", "network-zone", "server", "cluster"],
+  glyphKinds: ["gateway", "load-balancer", "firewall", "auth", "idp", "device"],
   // A `device` is a flow origin, so it belongs on the entry side with the
   // actors rather than in a declaration-order band with the zones.
   ingressKinds: ["actor", "actor-group", "device"],
@@ -529,10 +535,13 @@ const infrastructureView: View = {
     device: "Device / workstation",
     site: "Site / data center",
     "network-zone": "Network zone",
+    cluster: "Cluster / HA group",
     server: "Server / VM",
     "app-instance": "Deployed application",
     queue: "Message queue / broker",
+    datastore: "Database",
     gateway: "Gateway / reverse proxy",
+    "load-balancer": "Load balancer",
     firewall: "Firewall",
     auth: "Auth middleware",
     idp: "Identity provider (IdP)",
@@ -543,10 +552,13 @@ const infrastructureView: View = {
     device: "Poste de travail",
     site: "Site / centre de donn\u00e9es",
     "network-zone": "Zone r\u00e9seau",
+    cluster: "Cluster / groupe de haute disponibilit\u00e9",
     server: "Serveur / VM",
     "app-instance": "Application d\u00e9ploy\u00e9e",
     queue: "File de messages / broker",
+    datastore: "Base de donn\u00e9es",
     gateway: "Passerelle / proxy",
+    "load-balancer": "R\u00e9partiteur de charge",
     firewall: "Pare-feu",
     auth: "Middleware d'authentification",
     idp: "Fournisseur d'identit\u00e9 (IdP)",
@@ -580,16 +592,23 @@ const infrastructureView: View = {
     {
       code: "E0214",
       child: "server",
-      parents: ["network-zone", "site"],
+      parents: ["network-zone", "site", "cluster"],
       message: "server outside any network zone or site",
-      help: "move this `server` inside a `network-zone` or `site`",
+      help: "move this `server` inside a `network-zone`, `site` or `cluster`",
     },
     {
       code: "E0215",
       child: "app-instance",
-      parents: ["server", "network-zone"],
+      parents: ["server", "network-zone", "cluster"],
       message: "deployed application outside any server or zone",
-      help: "move this `app-instance` inside a `server` or `network-zone`",
+      help: "move this `app-instance` inside a `server`, `network-zone` or `cluster`",
+    },
+    {
+      code: "E0217",
+      child: "cluster",
+      parents: ["network-zone", "site"],
+      message: "cluster outside any network zone or site",
+      help: "move this `cluster` inside a `network-zone` or `site`",
     },
     {
       code: "E0216",
@@ -602,7 +621,17 @@ const infrastructureView: View = {
   minCounts: [],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["app-instance", "queue", "gateway", "firewall", "auth", "idp", "device"],
+    kinds: [
+      "app-instance",
+      "queue",
+      "datastore",
+      "gateway",
+      "load-balancer",
+      "firewall",
+      "auth",
+      "idp",
+      "device",
+    ],
     message: "isolated element: no incoming or outgoing flow",
   },
   defaults: {
@@ -614,6 +643,13 @@ const infrastructureView: View = {
     "network-zone": {
       fill: "#ecf3ec",
       stroke: { color: "#6d9a6d", style: "dashed", width: 1.2 },
+    },
+    // Dashed, and only a shade off the server it holds: a cluster is not another
+    // box in the rack, it is the line drawn around the boxes that stand in for
+    // one another.
+    cluster: {
+      fill: "#f7f8f9",
+      stroke: { color: "#55606b", style: "dashed", width: 1.4 },
     },
     server: {
       fill: "#ffffff",
@@ -629,11 +665,21 @@ const infrastructureView: View = {
       fill: "#fff7e6",
       stroke: { color: "#b08d2a", style: "solid", width: 1.2 },
     },
+    // The same purple the application view gives both cylinders: the shape is
+    // what separates a broker lying on its side from a database standing up.
+    datastore: {
+      fill: "#f3eef8",
+      stroke: { color: "#8a6fae", style: "solid", width: 1.3 },
+    },
     queue: {
       fill: "#f3eef8",
       stroke: { color: "#8a6fae", style: "solid", width: 1.3 },
     },
     gateway: {
+      fill: "#f5e6dd",
+      stroke: { color: "#bf5530", style: "solid", width: 1.6 },
+    },
+    "load-balancer": {
       fill: "#f5e6dd",
       stroke: { color: "#bf5530", style: "solid", width: 1.6 },
     },
@@ -664,6 +710,10 @@ const infrastructureView: View = {
       fill: "#20291f",
       stroke: { color: "#5f8a5f", style: "dashed", width: 1.2 },
     },
+    cluster: {
+      fill: "#20252b",
+      stroke: { color: "#6b7885", style: "dashed", width: 1.4 },
+    },
     server: {
       fill: "#252a31",
       stroke: { color: "#6b7885", style: "solid", width: 1.5 },
@@ -676,11 +726,19 @@ const infrastructureView: View = {
       fill: "#2e2717",
       stroke: { color: "#b08d2a", style: "solid", width: 1.2 },
     },
+    datastore: {
+      fill: "#2a2433",
+      stroke: { color: "#7a5f9e", style: "solid", width: 1.3 },
+    },
     queue: {
       fill: "#2a2433",
       stroke: { color: "#7a5f9e", style: "solid", width: 1.3 },
     },
     gateway: {
+      fill: "#332218",
+      stroke: { color: "#c96a4a", style: "solid", width: 1.6 },
+    },
+    "load-balancer": {
       fill: "#332218",
       stroke: { color: "#c96a4a", style: "solid", width: 1.6 },
     },

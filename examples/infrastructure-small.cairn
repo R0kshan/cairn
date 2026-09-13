@@ -5,14 +5,14 @@ style {
 
 site CLOUD "Cloud host" {
   network-zone PUBLIC "Public zone" {
-    server LB "Load\nbalancer"
+    load-balancer LB "Load\nbalancer"
   }
   network-zone PRIVATE "Private zone" {
     server WEB "Web VM" {
       app-instance CMS_I "CMS"
     }
     server DB "Database\nVM" {
-      app-instance MYSQL_I "MySQL"
+      datastore MYSQL_I "MySQL"
     }
   }
 }
