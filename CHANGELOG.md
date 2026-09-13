@@ -2,7 +2,7 @@
 
 All notable changes to the cairn project will be documented in this file.
 
-## Unreleased
+## [v1.0.0-RC16](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC16) - 2026-09-13
 
 ### Added
 - **Playground:** elements and flow labels can be dragged, and the position is written back to the DSL as `offset: <dx>, <dy>` and `label-offset: <dx>, <dy>` — the keys work by hand in any editor too
