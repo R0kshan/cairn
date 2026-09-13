@@ -666,13 +666,16 @@ Enforced structurally and by test:
 - `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
   registry appears in those sources, so the check covers kinds added later.
 
-Four DSL-declared positioning hints exist (§17), and none breaches this: an
+Five DSL-declared positioning hints exist (§17), and none breaches this: an
 `order:` becomes a partition band and a `layout` rank an elk position, both
 before any `Scene` exists; an `offset:` is resolved to a
 `Map<nodeId, {dx, dy}>` before the pass runs, the same shape as a lane
 assignment, and a `label-offset:` is stamped onto `SceneLabel.offset` as a plain
 delta, so `label-anchor` re-applies a pair of numbers and never learns where they
-came from; and a pinned
+came from; a `segment-offset:` is read out of `model.flows` as an id, a run
+number and a delta and applied to two points of a polyline, so
+`applySegmentOffsets` knows a run and a node border and nothing else; and a
+pinned
 attachment side becomes an elk port plus a plain `pinned` boolean on the
 `SceneEdge`. The passes that read `pinned` read a boolean on geometry, exactly
 as they already read `detour` — no kind, no view name, so a new view inherits
@@ -693,10 +696,11 @@ That is a known limitation, not a guarantee.
 
 ## 17. Author positioning hints are honored, not negotiated
 
-Four opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
-override layout: `order:` on an element, `offset:` / `label-offset:` on an
-element or a flow label, `ID.side` on a flow endpoint, and the arrow glyph's
-line style. Three rules hold for them.
+Five opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
+override layout: `order:` on an element, `offset:` / `label-offset:` /
+`segment-offset:` on an element, a flow label or one run of a flow's route,
+`ID.side` on a flow endpoint, and the arrow glyph's line style. Three rules hold
+for them.
 
 **`order:` reads along the drawing at the root, across it inside a container.**
 A top-level `order:` becomes a partition band (§9), and a band is a contiguous
@@ -824,17 +828,91 @@ parent chain — a container settles before the children whose room it defines �
 and every element it cuts short is recorded on the scene and reported as
 **W0573**, because a hint that is negotiated must at least say so.
 
-It is applied **after `compactVertical`** — the last pass that moves a node on
-its own account, so nothing the layout does afterwards can eat it — and **before
-the route repair**, which then squares and re-seats the flows around the new
-geometry. Moving a terminal leaves its first segment slanted, and a slanted
-segment is a tier-0 breach (§3), so the elbow is rebuilt in the pass itself
-rather than left to a repair that is free to refuse a candidate: one point is
-inserted on the axis the original segment did not run along, which is orthogonal
-by construction for any delta. Because the route repair then owns the moved
-geometry, **a flow reconnects to the side that now faces its counterpart** — an
-element dragged past the thing it talks to comes back attached the right way
-round, rather than trailing a wrapped edge.
+It is applied **after the whole layout has been chosen**, in
+`applyAuthorPositioning`, and not inside the pipeline that builds a layout
+candidate. A drawing with hints must be the hint-free drawing *plus the hints*:
+an author who nudges one box is asking for that box to move, never for the
+diagram to be re-derived around it. Inside `chooseLayout` a hint is not a hint,
+it is an input — the candidate sweep, `denserLayout` and the port pass each
+measure readability on the scene the geometry passes produced and pick a winner
+by it, so a nudged element is judged as if the router had put it there. Measured
+on `application-large-fr`: one `offset: 0, -30` on `PAY_ORCH` moved **all 28
+other elements** and re-routed **20 flows that never touched it**. Candidate
+scenes are therefore built hint-free down to `anchorFlowLabels`, which runs with
+`applyOffsets: false` throughout, and the winner alone is nudged.
+`tests/behavior.test.ts` holds every other node and every flow outside the nudged
+element's neighbourhood identical across a 90px offset.
+
+Moving a terminal leaves its first segment slanted, and a slanted segment is a
+tier-0 breach (§3), so the elbow is rebuilt in the pass itself rather than left
+to a repair: one point is inserted on the axis the original segment did not run
+along, which is orthogonal by construction for any delta.
+
+**And the point that used to be the corner is then dropped.** The new elbow
+lands beside the terminal, in line with the old corner — and where the element
+moved *past* it, in line but beyond, so the route runs out to the old seat and
+back: `L 430 611 L 430 237 L 430 339 L 483 339` is a spur up to where a queue
+used to be, drawn on top of the run that already goes there. `dropRedundantPoints`
+removes any interior point whose two segments share an axis, which cannot bend a
+route — what is left still runs along that axis — and it is applied to carried
+routes only, so a drawing with no hint keeps its geometry, redundant points and
+all, to the byte.
+
+This one is worth remembering for how long it hid. Every check written against
+`compile()`'s boxes reported the route above as one clean run from `(430,611)` to
+`(430,339)`, because `straightRuns` merges runs that share an axis and the spur
+sits *inside* the merged run. Three rounds of detectors — detached terminals,
+slants, coincident runs, route length — all came back clean on a drawing that
+visibly had a line doubling back on itself. A defect inside a run is invisible to
+anything that reads runs; `tests/behavior.test.ts` checks `scene.edges[].pts`
+directly for it, and says why.
+
+**The flows the move carried are then repaired, and only those.**
+`applyNodeOffsets` returns the set of flows whose terminal it actually carried,
+and three passes are handed it and nothing else: `reaimAfterOffsets`, so a flow
+reconnects to the side that now faces its counterpart — an element dragged past
+the thing it talks to comes back attached the right way round rather than
+trailing a wrapped edge; `optimiseRoutes`, because a carried flow otherwise keeps
+the route the router drew for the seat the element used to have; and
+`decoincideParallelRuns`, because the ladder trades defects against each other
+and two runs lying on top of one another read as a single line whatever else is
+true. Every one of them still *measures* the whole scene — an untouched flow is
+an obstacle and its damage still counts — but none of them may move it. A flow
+whose runs the author placed with `segment-offset:` is left out of the repair
+entirely: its shape is a hint, not a defect.
+
+Running them after `recordRepairs` is deliberate, for the reason `clearSideHugs`
+is: they are then outside the renderer's batch audit, which cannot revert a fix
+it never measured the need for.
+
+**The repair's answer is then checked for length, which the ladder never
+weighs.** Inside the pipeline that blindness is right — every candidate the
+ladder chooses between was drawn by the router in the first place. After an
+offset it is choosing against the squared route `applyNodeOffsets` produced,
+which is already a reasonable answer, so a candidate that clears a tier by
+climbing over the drawing and coming back is not an improvement anybody would
+recognise: on `architecture-applicative-l1`, nudging a queue 80px down sent the
+flow into it above the title band and back, 515px of route becoming 794.
+`refuseScenicRepairs` puts back anything more than half again as long. One
+ratio, measured rather than derived; if it ever refuses a repair that is visibly
+right, the answer is a length term in the ladder itself.
+
+**And the snapshots that audit reverts to are dropped.** `SceneEdge.repairedFrom`
+holds the route a flow had before `optimiseRoutes` moved it, so the renderer can
+undo a repair once label settling shows what it cost. For a flow the offset
+stage moved, that snapshot is of geometry that no longer exists — it was taken
+inside the candidate pipeline, against the seat the element used to have — and
+restoring it strands the flow in mid-air beside a box that has moved on. It took
+a one-pixel offset to show, because the revert is all-or-nothing about the route
+and says nothing about how far the element went. So every flow this stage moves
+has its snapshot cleared, and the scoped repair records a fresh one where it
+moves anything. `shiftIntoCanvas` carries the surviving snapshots with the rest
+of the drawing for the same reason: one left behind describes a canvas that is
+no longer there.
+
+What still answers to a nudge is the immediate neighbourhood: a flow re-aimed
+onto a new side re-seats the siblings already on that side, because two terminals
+in the same place is a worse drawing than a moved one. Nothing beyond that.
 
 `compactVertical` runs a second time inside the renderer, after label settling,
 and a downward offset opens exactly the kind of empty band that pass exists to
@@ -858,8 +936,59 @@ so `compactVertical` and `optimiseRoutes` judge the seat the layout chose rather
 than the one the author moved it to. That is what makes "nudging a label does not
 move its flow" a property of the pipeline instead of a coincidence, and
 `tests/behavior.test.ts` holds every route in `application-large-fr` identical
-across a 40×25 label nudge. Flows themselves are not draggable at all: only
-elements, containers and labels appear in `compile()`'s `boxes`.
+across a 40×25 label nudge.
+
+**A run is a straight line, not a pair of points.** Routes carry redundant
+points — `applyNodeOffsets` splices an elbow that can land in line with the
+segment beside it, and the committed examples hold eleven such junctions with no
+hint in sight — so `straightRuns` reads a route as its maximal straight
+stretches, and both `compile()`'s boxes and `applySegmentOffsets` number them
+that way. One reading, so an editor and the engine cannot disagree about which
+run is which. Numbering each *pair* of points instead let a slide move half a
+line and leave the other half slanted, which is a tier-0 breach (§3). The points
+themselves are never collapsed: the drawing would be identical pixel for pixel
+and every affected SVG would change, so it is the reading that merges, not the
+geometry.
+
+**A `segment-offset:` moves one run along its normal, and nothing else.** A
+vertical run goes left or right, a horizontal one up or down — the one direction
+that needs no repair, since the perpendicular runs meeting it at either end keep
+their own axis and only change length. *Every* point of the run moves, which is
+what keeps that true where a straight line is spelled with three points. The
+route therefore comes out orthogonal by construction with the turns it went in
+with, and `applySegmentOffsets` splices no points and re-routes nothing.
+
+**And it runs outside `chooseLayout`, not inside it.** The port pass re-lays the
+drawing out and picks a winner by readability profile, so a run nudged before
+that choice is judged as if the router had drawn it there: a 30px slide on one
+flow of `application-large-fr` was measured flipping the whole drawing to a
+different candidate. `layout()` therefore applies the hints to the *winning*
+scene and re-runs only what a moved run invalidates — `anchorFlowLabels` for the
+label that names it, `shiftIntoCanvas` and `fitCanvas` for the canvas it may have
+pushed past. A positioning hint says where something sits, never which layout
+wins; `tests/behavior.test.ts` holds every other route in that drawing identical
+across the nudge.
+
+The two ways a slide cannot land are reported, not dropped: a run carrying a
+terminal is bounded by the element side that terminal sits on, and a delta cut
+short there is `W0573` — the same negotiation the containment clamp makes, for
+the same reason, since a flow drawn off the element it connects reads as a broken
+diagram rather than a nudged one. A run number naming a run the route does not
+have is `W0574`; the numbers are positional and renumber when a route gains a
+turn, which is the price of addressing a run at all. Runs appear in `compile()`'s
+`boxes` as `what: "segment"` with their two endpoints and their slide bounds,
+which is what lets an editor hold a drag to what the drawing will actually show.
+
+**A flow terminal is moved by writing a pin, not by moving geometry.** Each end
+appears in `compile()`'s `boxes` as `what: "terminal"` carrying the element it
+sits on, the side the author declared for it if any, and the span an editor
+replaces — the side word when one is declared, the endpoint's id otherwise, which
+takes an `ID.side` in its place. So dragging an end in the playground produces
+exactly the source an author would have typed, and the pin is then honored by the
+same passes that have always honored one: nothing in the pipeline learns that an
+editor was involved. An endpoint naming a role gets no box, because a side and a
+role on one endpoint is E0225 — an editor is not given a handle that can only
+write a diagnostic.
 
 What an offset may not do is disappear. Where one lands an element on another,
 or a label on an element, the drawing ships exactly as written and the collision

@@ -50,15 +50,25 @@ test("browser bundle renders a large diagram with no `process` global", async ()
  */
 async function pageWriteback(): Promise<{
   writeOffset: (source: string, box: Record<string, unknown>, dx: number, dy: number) => string;
+  writeSide: (source: string, box: Record<string, unknown>, side: string) => string;
 }> {
   const html = readFileSync(join(ROOT, "playground/index.html"), "utf8");
   const start = html.indexOf("// #region drag-writeback");
   const end = html.indexOf("// #endregion drag-writeback");
   assert.ok(start >= 0 && end > start, "the drag-writeback markers are gone from the playground");
   const source = html.slice(start, end);
-  for (const name of ["braceIndex", "insertInBlock", "spliceSpan", "readSpan", "writeOffset"])
+  for (const name of [
+    "braceIndex",
+    "insertInBlock",
+    "spliceSpan",
+    "writeSide",
+    "readSpan",
+    "writeOffset",
+  ])
     assert.ok(source.includes(`function ${name}(`), `\`${name}\` left the marked region`);
-  return import(`data:text/javascript,${encodeURIComponent(`${source}\nexport { writeOffset };`)}`);
+  return import(
+    `data:text/javascript,${encodeURIComponent(`${source}\nexport { writeOffset, writeSide };`)}`
+  );
 }
 
 const DRAG_SRC = `diagram application "t"
@@ -98,6 +108,52 @@ test("a drag writes DSL the parser reads back as the same offset", async () => {
   assert.equal(parse(twice).diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(parse(twice).model.flows[0].labelOffset?.dx, 15);
   assert.equal(parse(twice).model.flows[0].labelOffset?.dy, -3);
+  // One run of a route, which rides the same inline block under its own key.
+  const runsOf = (src: string) => parse(src).model.flows[0].segmentOffsets ?? [];
+  const slid = writeOffset(DRAG_SRC, { id: "F01", what: "segment", segment: 2, line: 8 }, 0, -18);
+  assert.equal(parse(slid).diags.filter((d) => d.severity === "error").length, 0);
+  assert.deepEqual(
+    runsOf(slid).map((entry) => [entry.segment, entry.delta]),
+    [[2, -18]],
+  );
+
+  // Sliding the same run again adds to its delta and leaves the run number
+  // alone — the first number names the run, it is not part of the nudge.
+  const runSpan = runsOf(slid)[0].span;
+  const slidTwice = writeOffset(
+    slid,
+    { id: "F01", what: "segment", segment: 2, offsetSpan: runSpan },
+    0,
+    4,
+  );
+  assert.deepEqual(
+    runsOf(slidTwice).map((entry) => [entry.segment, entry.delta]),
+    [[2, -14]],
+  );
+
+  // A second run of the same flow gets its own key rather than overwriting the
+  // first: one flow can need two of its runs moved.
+  const twoRuns = writeOffset(
+    slidTwice,
+    { id: "F01", what: "segment", segment: 4, line: 8 },
+    12,
+    0,
+  );
+  assert.equal(parse(twoRuns).diags.filter((d) => d.severity === "error").length, 0);
+  assert.deepEqual(
+    runsOf(twoRuns).map((entry) => [entry.segment, entry.delta]),
+    [
+      [2, -14],
+      [4, 12],
+    ],
+  );
+
+  // Both kinds of nudge on one flow: sliding a run must not clobber the label's.
+  const bothKeys = writeOffset(twoRuns, { id: "F01", what: "label", line: 8 }, 12, -6);
+  assert.equal(parse(bothKeys).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(runsOf(bothKeys).length, 2);
+  assert.equal(parse(bothKeys).model.flows[0].labelOffset?.dx, 12);
+
   const styled = DRAG_SRC.replace(
     'USER -> M1 : "Request"',
     'USER -> M1 : "Request" { stroke: dashed }',
@@ -141,4 +197,46 @@ test("a drag writes DSL the parser reads back as the same offset", async () => {
   assert.equal(parse(written).diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(parse(written).model.flows[0].label, "step {1}", "the label was rewritten");
   assert.equal(parse(written).model.flows[0].labelOffset?.dx, 12);
+});
+
+test("dragging a flow end writes the `ID.side` the DSL already has", async () => {
+  const { writeSide } = await pageWriteback();
+  const { parse } = await import("../src/parser.ts");
+  const flowOf = (src: string) => parse(src).model.flows[0];
+
+  /** The box the page builds from `compile()`'s `boxes` for one end of a flow. */
+  const handle = (src: string, end: "from" | "to") => {
+    const flow = flowOf(src);
+    const declared = end === "from" ? flow.fromSide : flow.toSide;
+    return {
+      id: flow.id,
+      what: "terminal",
+      endpoint: {
+        end,
+        element: end === "from" ? flow.from : flow.to,
+        side: declared?.value,
+        span: declared?.span ?? (end === "from" ? flow.fromSpan : flow.toSpan),
+      },
+    };
+  };
+
+  // No side declared: the endpoint's id takes an `ID.side` in its place.
+  const pinned = writeSide(DRAG_SRC, handle(DRAG_SRC, "from"), "top");
+  assert.equal(parse(pinned).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(flowOf(pinned).fromSide?.value, "top");
+  assert.equal(flowOf(pinned).from, "USER", "the endpoint still names its element");
+
+  // Declared already: only the side word is replaced, never appended to.
+  const moved = writeSide(pinned, handle(pinned, "from"), "left");
+  assert.equal(parse(moved).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(flowOf(moved).fromSide?.value, "left");
+  assert.match(moved, /USER\.left -> M1/);
+
+  // The far end, on a line the near end has already lengthened — the spans are
+  // re-read from the rewritten source, which is what the page does on every render.
+  const both = writeSide(moved, handle(moved, "to"), "bottom");
+  assert.equal(parse(both).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(flowOf(both).fromSide?.value, "left");
+  assert.equal(flowOf(both).toSide?.value, "bottom");
+  assert.equal(flowOf(both).to, "M1");
 });

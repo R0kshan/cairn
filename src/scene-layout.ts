@@ -27,6 +27,7 @@ import type { Diagnostic } from "./models/diagnostic.ts";
 import { compactVertical, fitCanvas } from "./compact.ts";
 import {
   optimiseRoutes,
+  decoincideAfterOffsets,
   clearSideHugs,
   reaimAfterOffsets,
   spreadAttachments,
@@ -153,6 +154,14 @@ export interface Scene {
    * that has to be reportable — `offsetDiagnostics` turns this into W0573.
    */
   clampedOffsets?: Set<string>;
+  /**
+   * Spans of the `segment-offset:` entries a route could not honor as written:
+   * `clamped` was cut short to keep a terminal on the element side it sits on,
+   * `stale` named a run the route does not have. `offsetDiagnostics` turns them
+   * into W0573 and W0574 — the same rule as `clampedOffsets`, that the one
+   * negotiation a hint gets is also the one it is told about (§17).
+   */
+  segmentHints?: { clamped: Span[]; stale: Span[] };
   /**
    * Best (lowest) tier `optimiseRoutes` paid at across the repairs it kept. The
    * renderer audits those repairs for label collateral the router could not see,
@@ -1696,13 +1705,18 @@ const pointOn = (point: Point, box: Box): boolean =>
  * for any delta, and degenerates to nothing when the delta is zero on that axis
  * — the zero-length segment is dropped.
  *
- * Runs after `compactVertical`, the last pass that moves a node of its own
- * accord, and before the route repair, which then squares and re-seats around
- * the new geometry. `fitCanvas` at the end of the pipeline grows the canvas for
- * anything an offset pushed past its edge (§18).
+ * Runs from `applyAuthorPositioning`, on the layout that already won — never
+ * inside the pipeline that builds a candidate, or the nudge would be measured as
+ * if the router had chosen it (§17). Nothing re-routes afterwards, so the elbow
+ * rebuilt here is the repair, and `fitCanvas` grows the canvas for anything the
+ * offset pushed past its edge (§18).
+ *
+ * Returns the flows whose terminal it carried, which is the only set
+ * `reaimAfterOffsets` is allowed to touch.
  */
-function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void {
-  if (!offsetOf.size) return;
+function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): Set<string> {
+  const carried = new Set<string>();
+  if (!offsetOf.size) return carried;
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const clamped = new Set<string>();
   const resolved = new Map<string, { dx: number; dy: number }>();
@@ -1795,6 +1809,8 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void
       // and only the leaf's own delta describes where it went.
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || (!seat.delta.dx && !seat.delta.dy)) continue;
+      // Named for the re-aim below, which is only ever this pass's business.
+      carried.add(edge.id);
       const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
       const neighbour = edge.pts[neighbourIndex];
       const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
@@ -1816,6 +1832,194 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): void
       if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
     }
   }
+  for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
+  return carried;
+}
+
+/**
+ * Drops interior points whose two segments run along the same axis.
+ *
+ * The elbow spliced above lands beside the terminal it squares, which leaves the
+ * point that used to be the corner in line with it — and where the element moved
+ * *past* that corner, in line but beyond it, so the route runs out to the old
+ * seat and back. `M … L 430 611 L 430 237 L 430 339 L 483 339`: a spur up to
+ * where the queue used to be, drawn over the run that already goes there.
+ *
+ * Removing such a point cannot bend anything, since the two segments it joined
+ * shared an axis and what is left still runs along it. Only routes an offset
+ * actually moved are touched, so a drawing with no hint keeps its geometry —
+ * redundant points and all — to the byte.
+ *
+ * Backwards, so one removal cannot skip the next: dropping `i` makes the old
+ * `i + 1` the new `i`, which a forward walk would step straight over.
+ */
+function dropRedundantPoints(pts: Point[]): void {
+  const inLine = (a: Point, b: Point, c: Point): boolean =>
+    (Math.abs(a.x - b.x) < SEGMENT_EPSILON && Math.abs(b.x - c.x) < SEGMENT_EPSILON) ||
+    (Math.abs(a.y - b.y) < SEGMENT_EPSILON && Math.abs(b.y - c.y) < SEGMENT_EPSILON);
+  for (let i = pts.length - 2; i >= 1; i--)
+    if (inLine(pts[i - 1], pts[i], pts[i + 1])) pts.splice(i, 1);
+}
+
+/** Two points are on the same axis when they differ by less than this. */
+const SEGMENT_EPSILON = 0.5;
+
+/** A run that carries no terminal has nothing bounding it; this stands in for
+    the infinity a clamp cannot use without turning a delta into `NaN`. */
+const SLIDE_UNBOUNDED = 1e4;
+
+/** Far enough in that a slid terminal still reads as meeting the side rather
+    than the corner where two of them meet. */
+const SEAT_INSET = 4;
+
+/** One maximal straight stretch of a route: the span of `pts` it covers, and
+    which way it runs. */
+export interface StraightRun {
+  /** Index of its first point in `pts`. */
+  from: number;
+  /** Index of its last point — never `from`, and more than one apart where the
+      route holds points that sit on the same straight line. */
+  to: number;
+  vertical: boolean;
+}
+
+/**
+ * The maximal straight stretches of a route, in order.
+ *
+ * A "run" is what the reader sees: one straight line, however many points the
+ * polyline spends on it. Routes do carry redundant ones — `applyNodeOffsets`
+ * splices an elbow that can land in line with the segment beside it, and the
+ * committed examples hold eleven such junctions — and treating each pair of
+ * points as its own run would both misnumber what an author is looking at and
+ * let a slide move half a line, leaving the other half slanted. Collapsing the
+ * points instead would change every affected SVG for a drawing that is pixel for
+ * pixel the same, so the geometry is left alone and the *reading* of it is what
+ * merges.
+ *
+ * A zero-length segment joins whichever stretch it falls in rather than ending
+ * one: it has no direction to disagree about.
+ */
+export function straightRuns(pts: Point[]): StraightRun[] {
+  const axisOf = (a: Point, b: Point): "vertical" | "horizontal" | null => {
+    const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+    const horizontal = Math.abs(a.y - b.y) < SEGMENT_EPSILON;
+    if (vertical === horizontal) return null; // degenerate, or a slant
+    return vertical ? "vertical" : "horizontal";
+  };
+  const runs: StraightRun[] = [];
+  let from = 0;
+  while (from + 1 < pts.length) {
+    let to = from + 1;
+    let axis = axisOf(pts[from], pts[to]);
+    while (to + 1 < pts.length) {
+      const next = axisOf(pts[to], pts[to + 1]);
+      if (next && axis && next !== axis) break;
+      axis ??= next;
+      to++;
+    }
+    runs.push({ from, to, vertical: axis === "vertical" });
+    from = to;
+  }
+  return runs;
+}
+
+/**
+ * How far `run` may slide along its normal, as a delta range.
+ *
+ * A run in the middle of a route is free: both of its ends are corners, and the
+ * perpendicular runs on either side simply change length. A run carrying a
+ * *terminal* is bounded by the element side that terminal sits on — its normal
+ * points along that side, so sliding it slides the seat, and past the corner the
+ * flow would come off the element it connects.
+ *
+ * Exported for `compile()`, which hands the bounds to an editor so a drag can
+ * promise only what the drawing will actually show.
+ */
+export function segmentSlideRange(
+  pts: Point[],
+  run: StraightRun,
+  leaves: SceneNode[],
+): { min: number; max: number } {
+  let min = -SLIDE_UNBOUNDED;
+  let max = SLIDE_UNBOUNDED;
+  for (const [point, terminal] of [
+    [pts[run.from], run.from === 0],
+    [pts[run.to], run.to === pts.length - 1],
+  ] as [Point, boolean][]) {
+    if (!terminal) continue;
+    const node = leaves.find((leaf) => pointOn(point, leaf));
+    if (!node) continue;
+    const lo = (run.vertical ? node.x : node.y) + SEAT_INSET;
+    const hi = (run.vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
+    const at = run.vertical ? point.x : point.y;
+    min = Math.max(min, Math.min(lo, hi) - at);
+    max = Math.min(max, Math.max(lo, hi) - at);
+  }
+  return { min, max: Math.max(min, max) };
+}
+
+/**
+ * Slides the individual runs the author nudged (`{ segment-offset: 2, -18 }`)
+ * and returns how many moved, which is what tells `shiftIntoCanvas` whether to
+ * run.
+ *
+ * A run moves along its normal and nothing else: a vertical run left or right, a
+ * horizontal one up or down. That is the one direction that needs no repair —
+ * the perpendicular runs meeting it at either end keep their own axis and only
+ * change length — so the route comes out orthogonal by construction, with the
+ * same number of turns it went in with. Nothing else about the flow moves.
+ *
+ * Runs after the last pass that routes, so no repair can re-route the delta
+ * away, and before the final `anchorFlowLabels`, so a nudged run carries the
+ * label that names it. Reads `model.flows` for ids and numbers only — no kind,
+ * no view name (§16).
+ */
+function applySegmentOffsets(scene: Scene, model: Model): number {
+  const wanted = new Map(
+    model.flows
+      .filter((flow) => flow.segmentOffsets?.length)
+      .map((flow) => [flow.id, flow.segmentOffsets!]),
+  );
+  if (!wanted.size) return 0;
+  // Leaves only: a terminal inside a container is seated on the element, never
+  // on the box drawn around it.
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const clamped: Span[] = [];
+  const stale: Span[] = [];
+  let moved = 0;
+  for (const edge of scene.edges) {
+    const entries = wanted.get(edge.id);
+    if (!entries) continue;
+    // Read once, before any slide: a slide that leaves a neighbouring run zero
+    // length lets `straightRuns` absorb it into the run beside it, and every
+    // number after that point would name a different run than the author saw.
+    // Indices into `pts` stay valid either way — a slide moves points, it never
+    // adds or drops one.
+    const runs = straightRuns(edge.pts);
+    for (const entry of entries) {
+      const run = runs[entry.segment - 1];
+      // A run the route does not have — the numbers are positional, and a route
+      // that gained or lost a turn renumbers everything after it.
+      if (!run) {
+        stale.push(entry.span);
+        continue;
+      }
+      const range = segmentSlideRange(edge.pts, run, leaves);
+      const delta = Math.min(Math.max(entry.delta, range.min), range.max);
+      if (Math.abs(delta - entry.delta) >= SEGMENT_EPSILON) clamped.push(entry.span);
+      if (!delta) continue;
+      // Every point of the run, not just its two ends: a straight line the route
+      // spends three points on is still one line, and moving two of them would
+      // leave the third behind on a slant — a tier-0 breach (§3).
+      for (let index = run.from; index <= run.to; index++) {
+        if (run.vertical) edge.pts[index].x += delta;
+        else edge.pts[index].y += delta;
+      }
+      moved++;
+    }
+  }
+  if (clamped.length || stale.length) scene.segmentHints = { clamped, stale };
+  return moved;
 }
 
 /**
@@ -1863,6 +2067,13 @@ function shiftIntoCanvas(scene: Scene): void {
       point.x += shiftX;
       point.y += shiftY;
     }
+    // The renderer can still undo a repair by restoring this, so it has to move
+    // with the drawing — a snapshot left behind describes a canvas that no
+    // longer exists.
+    for (const point of edge.repairedFrom ?? []) {
+      point.x += shiftX;
+      point.y += shiftY;
+    }
     for (const label of edge.labels) {
       label.x += shiftX;
       label.y += shiftY;
@@ -1873,15 +2084,33 @@ function shiftIntoCanvas(scene: Scene): void {
 }
 
 /**
- * Overlaps an author's `offset:` or `label-offset:` created. The hint itself is
- * never negotiated (§17), so this reports rather than repairs — the drawing
- * ships as asked and the author is told what the ask cost.
+ * Overlaps an author's `offset:` or `label-offset:` created, plus the two ways a
+ * `segment-offset:` can fail to land. The hints themselves are never negotiated
+ * (§17), so this reports rather than repairs — the drawing ships as asked and
+ * the author is told what the ask cost.
  *
  * Only boxes an offset actually moved are tested, against everything else: an
  * overlap between two elements neither of which was nudged is the layout's
  * business, not this warning's.
  */
 export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
+  const hints: Diagnostic[] = [];
+  for (const span of scene.segmentHints?.stale ?? [])
+    hints.push({
+      code: "W0574",
+      severity: "warning",
+      message: "`segment-offset` names a run this flow's route does not have",
+      span,
+      help: "runs are counted from 1 along the route, and renumber when it gains or loses a turn — re-drag the run in the playground, or drop the hint",
+    });
+  for (const span of scene.segmentHints?.clamped ?? [])
+    hints.push({
+      code: "W0573",
+      severity: "warning",
+      message: "`segment-offset` was limited to keep the flow on the element it attaches to",
+      span,
+      help: "the run carries a terminal, so it can only slide as far as the side that terminal sits on — pin the side with `ID.side`, or move the element instead",
+    });
   // A descendant carried by its container's offset is answerable to *that*
   // offset: the container is what the author moved, so an overlap its children
   // cause is reported against the container's span, not passed over for having
@@ -1896,13 +2125,13 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   };
   walk(model.elements);
   for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
-  if (!spans.size) return [];
+  if (!spans.size) return hints;
 
   const overlap = (a: Box, b: Box): boolean =>
     a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
-  const diagnostics: Diagnostic[] = [];
+  const diagnostics: Diagnostic[] = [...hints];
   const reported = new Set<Span>();
   for (const id of scene.clampedOffsets ?? []) {
     const span = spans.get(id);
@@ -1952,7 +2181,6 @@ function runGeometryPasses(
   options: { numbered: boolean; sideways: boolean; laneOf?: Map<string, number> },
 ): void {
   const { numbered, sideways } = options;
-  const offsets = offsetAssignment(model);
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   // Issue #26 applies to every disposition. A DOWN layout wraps its backward
   // flows around the sides rather than the top, so it is routed through the
@@ -1983,15 +2211,6 @@ function runGeometryPasses(
   // disposition, since elk leaves spare corridors whether or not the reroute
   // above moved anything.
   compactVertical(scene);
-  // After the last pass that moves a node on its own account, so nothing the
-  // layout does afterwards can eat the author's delta, and before the route
-  // repair, which squares and re-seats around what the offset moved.
-  applyNodeOffsets(scene, offsets);
-  // A drag can move an element past its counterpart, which leaves the flow
-  // attached to a side that no longer faces it — the wrap §4c straightens, made
-  // after the pass that owns it ran. Only where an offset exists: without one
-  // nothing moved since `tidyEdges`, and the drawing must stay byte-identical.
-  if (offsets.size) reaimAfterOffsets(scene, titleBoxesOf(scene, model));
 
   // The repair is tried and then audited, not refused outright: a route change
   // can cost a *different* flow's label its seat, so any flow whose label was on
@@ -2026,18 +2245,14 @@ function runGeometryPasses(
   // batch-reverted to y=451 over another edge's label harm. Here it is in both
   // audit states, so the comparison is unaffected and the fix permanent.
   clearSideHugs(scene, settledTitles);
-  anchorFlowLabels(scene, settledTitles);
+  // Still without the author's offsets: this scene is a layout *candidate*, and
+  // `applyAuthorPositioning` puts the hints on the one that wins.
+  anchorFlowLabels(scene, settledTitles, false);
   // Crossings between two flows on the same leaf side, further out than the §4b
   // fan can see. Here for the same reason as `clearSideHugs`: outside the
   // renderer's batch audit, so an unrelated optimiser trade cannot revert the
   // swap. Only swaps that remove a crossing without shuffling it elsewhere.
   swapCrossingSiblingSeats(scene);
-  // An offset can push geometry off the top or left, which `fitCanvas` cannot
-  // answer — it only ever grows right and down. A `label-offset:` reaches there
-  // as easily as an element's, and moves no node, so the element map alone does
-  // not see it.
-  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
-  if (offsets.size || nudgedLabels) shiftIntoCanvas(scene);
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.
   fitCanvas(scene);
@@ -2227,7 +2442,156 @@ function markDeclaredTerminals(
   }
 }
 
+/**
+ * Lays out `model`, then applies the author's three positioning deltas —
+ * `offset:`, `label-offset:` and `segment-offset:` — to the layout that won.
+ *
+ * **The deltas go on after `chooseLayout`, never inside it.** A drawing with
+ * hints must be the hint-free drawing *plus the hints*, and nothing else: an
+ * author who nudges one box is asking for that box to move, not for the diagram
+ * to be re-derived around it. Inside `chooseLayout` a hint is not a hint, it is
+ * an input — the candidate sweep, `denserLayout` and the port pass all measure
+ * readability on the scene the passes produced and pick a winner by it, so a
+ * nudged element is judged as if the router had put it there. Measured on
+ * `application-large-fr`: a single `offset: 0, -30` on `PAY_ORCH` moved all 28
+ * other elements and re-routed 20 flows that never touched it.
+ *
+ * So the candidate scenes are built hint-free, down to `anchorFlowLabels`
+ * running with `applyOffsets: false`, and the winner alone is nudged. A hint
+ * says where something sits, never which layout wins (§17).
+ *
+ * `ID.side` and `order:` stay inside the layout, where they belong: those are
+ * requests *of* the router — an elk port and a partition band — not deltas
+ * applied to what it drew.
+ */
 export async function layout(model: Model, view: View): Promise<Scene> {
+  const scene = await chooseLayout(model, view);
+  applyAuthorPositioning(scene, model);
+  return scene;
+}
+
+/**
+ * Puts the author's deltas on a settled scene, and re-runs only what they
+ * invalidate.
+ *
+ * Order matters and is the same as the pipeline's: nodes move first and carry
+ * their terminals (`applyNodeOffsets` squares the elbow itself, so no route
+ * repair is needed or wanted — a repair here would undo the very churn this
+ * function exists to prevent), then the one re-aim a moved node genuinely needs,
+ * then the runs, then the labels ride what moved. `shiftIntoCanvas` answers
+ * anything pushed past the top or left, which `fitCanvas` cannot — it only ever
+ * grows right and down (§18).
+ *
+ * Every pass here is idempotent on a settled scene, and the whole function is a
+ * no-op without a hint, which is what keeps a hint-free drawing byte-identical.
+ */
+/** Length of a polyline, in pixels. */
+const pathLength = (pts: Point[]): number =>
+  pts.reduce(
+    (total, point, index) =>
+      index === 0
+        ? 0
+        : total + Math.abs(point.x - pts[index - 1].x) + Math.abs(point.y - pts[index - 1].y),
+    0,
+  );
+
+/**
+ * Puts back any route the repair bought at the price of a long way round.
+ *
+ * The ladder judges *defects* — crossings, struck titles, runs hugging a border
+ * — and is deliberately blind to how far a route travels, because inside the
+ * pipeline everything it is choosing between was drawn by the router in the
+ * first place. After an offset that stops being true: what the repair is handed
+ * is the squared route `applyNodeOffsets` produced, which is already a
+ * reasonable answer, and a candidate that clears a tier by climbing over the
+ * whole drawing and coming back is not an improvement anybody would recognise.
+ * On `architecture-applicative-l1`, nudging a queue 80px down sent the flow into
+ * it up above the title band and back — 515px of route become 794.
+ *
+ * So a repair that makes a route half as long again is refused and `before` is
+ * restored. The snapshot is taken here rather than read off `repairedFrom`:
+ * that field is written by `recordRepairs` for the pipeline's own repair pass,
+ * and this stage runs after it.
+ */
+export function refuseScenicRepairs(scene: Scene, before: Map<string, Point[]>): void {
+  // ponytail: one ratio, measured rather than derived. If it starts refusing
+  // repairs that are visibly right, the answer is a length term in the ladder
+  // itself, not a second constant here.
+  const TOLERATED_DETOUR = 1.5;
+  for (const edge of scene.edges) {
+    const original = before.get(edge.id);
+    if (!original) continue;
+    if (pathLength(edge.pts) > pathLength(original) * TOLERATED_DETOUR) edge.pts = original;
+  }
+}
+
+function applyAuthorPositioning(scene: Scene, model: Model): void {
+  const offsets = offsetAssignment(model);
+  if (offsets.size) {
+    // The flows whose terminal the move carried. Everything repaired below is
+    // scoped to them: an author who nudges one box is asking for that box and
+    // its own flows to follow, never for the rest of the drawing to be
+    // re-routed (§17).
+    const carried = applyNodeOffsets(scene, offsets);
+    // The renderer may undo a route repair by restoring `repairedFrom`, and for
+    // a flow this stage just moved that snapshot is of geometry that no longer
+    // exists — it was taken before the delta, against the node's old seat, so
+    // restoring it strands the flow in mid-air beside an element that has moved
+    // on. Dropping it leaves the renderer with nothing stale to fall back to;
+    // the repair below records a fresh one where it moves anything.
+    for (const edge of scene.edges) if (carried.has(edge.id)) edge.repairedFrom = undefined;
+    const titles = titleBoxesOf(scene, model);
+    // A drag can move an element past its counterpart, which leaves the flow
+    // attached to a side that no longer faces it — the wrap §4c straightens.
+    reaimAfterOffsets(scene, titles, carried);
+    // And a carried flow otherwise keeps the route the router drew for the seat
+    // the element used to have: on `infrastructure-siet-pcc`, nudging the idp
+    // down 120px left its own inbound flow lying on another flow for 138px and
+    // running through a third element. The route repair is the pass that owns
+    // that, so it is run — over the carried flows alone, and after
+    // `recordRepairs`, so the renderer's batch audit cannot revert a fix it did
+    // not measure the need for.
+    //
+    // A flow whose runs the author placed by hand is left out: its shape is a
+    // hint, not a defect, and `applySegmentOffsets` below would be arguing with
+    // the repair over it.
+    const handPlaced = new Set(
+      model.flows.filter((flow) => flow.segmentOffsets?.length).map((flow) => flow.id),
+    );
+    const repairable = new Set([...carried].filter((id) => !handPlaced.has(id)));
+    if (repairable.size) {
+      const before = new Map(
+        scene.edges
+          .filter((edge) => repairable.has(edge.id))
+          .map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))]),
+      );
+      optimiseRoutes(scene, titles, false, repairable);
+      refuseScenicRepairs(scene, before);
+      // The repair works to the ladder, which trades defects against each other;
+      // two runs lying on top of one another reads as a single line and is worth
+      // removing on its own terms, so the de-coincidence post-pass runs after it
+      // the same way it does inside `tidyEdges`.
+      decoincideAfterOffsets(scene, titles, repairable);
+    }
+  }
+  const nudgedRuns = applySegmentOffsets(scene, model);
+  // Same again for a run the author slid: the snapshot is of the route before
+  // the slide, and undoing to it would quietly drop the hint.
+  if (nudgedRuns)
+    for (const edge of scene.edges)
+      if (model.flows.find((flow) => flow.id === edge.id)?.segmentOffsets?.length)
+        edge.repairedFrom = undefined;
+  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
+  if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
+  // With the author's offsets this time: every anchor before this one ran
+  // without them, so this is where a nudged label lands and where a label whose
+  // flow moved catches up with it.
+  anchorFlowLabels(scene, titleBoxesOf(scene, model));
+  shiftIntoCanvas(scene);
+  fitCanvas(scene);
+}
+
+async function chooseLayout(model: Model, view: View): Promise<Scene> {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";

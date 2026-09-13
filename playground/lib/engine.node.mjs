@@ -93652,6 +93652,27 @@ function applyNumericStyleEntry(entry) {
     );
   return true;
 }
+function applyFlowNudge(key, values, flow, diagnostics) {
+  const keyText = key.text;
+  const segment = keyText === "segment-offset";
+  const numbers = values.length === 3 && values[1].kind === "comma" && values[0].kind !== "str" && values[2].kind !== "str" ? [values[0], values[2]] : [];
+  const parsed = numbers.map((token) => /^-?\d+$/.test(token.text) ? Number(token.text) : NaN);
+  const wellFormed = numbers.length === 2 && parsed.every((value) => Number.isInteger(value)) && (!segment || parsed[0] >= 1);
+  if (!flow || !wellFormed) {
+    diagnostics.push({
+      code: "E0109",
+      severity: "error",
+      message: segment ? "`segment-offset` expects a run number of 1 or more and a whole delta \u2014 `segment-offset: <segment>, <delta>`" : "`label-offset` expects two whole numbers \u2014 `label-offset: <dx>, <dy>`",
+      span: key.span,
+      help: flow ? `e.g. \`A -> B "Sends" { ${keyText}: ${segment ? "2, -18" : "12, -6"} }\`` : `\`${keyText}\` belongs to a flow's inline block`
+    });
+    return;
+  }
+  const [first, last] = [numbers[0].span, numbers[1].span];
+  const span = { line: first.line, col: first.col, len: last.col + last.len - first.col };
+  if (segment) (flow.segmentOffsets ??= []).push({ segment: parsed[0], delta: parsed[1], span });
+  else flow.labelOffset = { dx: parsed[0], dy: parsed[1], span };
+}
 function applyFlowWrapEntry(flow, value, key, reportBadValue) {
   const amount = value?.kind === "num" ? parseFloat(value.text) : Number.NaN;
   if (Number.isInteger(amount) && amount >= 1) flow.labelWrap = amount;
@@ -93692,25 +93713,8 @@ function applyStyleEntry(entry) {
   });
   const firstValue = () => values[0];
   const keyText = key.text;
-  if (keyText === "label-offset") {
-    const numbers = values.filter((token) => token.kind !== "comma");
-    const parsed = numbers.map((token) => /^-?\d+$/.test(token.text) ? Number(token.text) : NaN);
-    if (!flow || numbers.length !== 2 || parsed.some((value) => !Number.isInteger(value))) {
-      diagnostics.push({
-        code: "E0109",
-        severity: "error",
-        message: "`label-offset` expects two whole numbers \u2014 `label-offset: <dx>, <dy>`",
-        span: key.span,
-        help: flow ? 'e.g. `A -> B "Sends" { label-offset: 12, -6 }`' : "`label-offset` belongs to a flow's inline block"
-      });
-      return;
-    }
-    const [first, last] = [numbers[0].span, numbers[1].span];
-    flow.labelOffset = {
-      dx: parsed[0],
-      dy: parsed[1],
-      span: { line: first.line, col: first.col, len: last.col + last.len - first.col }
-    };
+  if (keyText === "label-offset" || keyText === "segment-offset") {
+    applyFlowNudge(key, values, flow ?? null, diagnostics);
     return;
   }
   if (keyText === "flow-label-wrap" && flow) {
@@ -93729,7 +93733,7 @@ function applyStyleEntry(entry) {
         severity: "error",
         message: `unknown style property here: \`${keyText}\``,
         span: key.span,
-        help: "inline properties: fill, stroke, text, label, label-offset, flow-label-wrap"
+        help: "inline properties: fill, stroke, text, label, label-offset, segment-offset, flow-label-wrap"
       });
     return;
   }
@@ -98097,12 +98101,11 @@ function reaimEdge(rctx, edge, skewToo = false) {
     break;
   }
 }
-function reaimAfterOffsets(scene, titleBoxes = []) {
+function reaimAfterOffsets(scene, titleBoxes = [], only) {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
-  for (const edge of scene.edges)
-    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge, true);
+  for (const edge of scene.edges) if (!only || only.has(edge.id)) reaimEdge(rctx, edge, true);
 }
 function reaimWrapAroundTerminals(ctx) {
   const { scene } = ctx;
@@ -98152,7 +98155,7 @@ function shiftCoincidentRun(leaves, pts, b, newAt) {
     }
   }
 }
-function decoincideParallelRuns(ctx) {
+function decoincideParallelRuns(ctx, only) {
   const { scene, leaves, enforceOrthogonal } = ctx;
   const runs = [];
   for (const edge of scene.edges) {
@@ -98174,12 +98177,19 @@ function decoincideParallelRuns(ctx) {
       if (gap < 3 && shared > 8) coincidentPairs.push([runs[i], runs[j]]);
     }
   for (const [a, b] of coincidentPairs) {
-    const delta = a.at > b.at ? -8 : 8;
-    const newAt = b.at + delta;
-    const pts = b.edge.pts;
-    shiftCoincidentRun(leaves, pts, b, newAt);
+    const moving = !only ? b : only.has(b.edge.id) ? b : only.has(a.edge.id) ? a : null;
+    if (!moving) continue;
+    const other = moving === b ? a : b;
+    const delta = other.at > moving.at ? -8 : 8;
+    shiftCoincidentRun(leaves, moving.edge.pts, moving, moving.at + delta);
   }
-  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+  for (const edge of scene.edges)
+    if (edge.pts.length >= 2 && (!only || only.has(edge.id))) enforceOrthogonal(edge);
+}
+function decoincideAfterOffsets(scene, titleBoxes = [], only) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  decoincideParallelRuns(createTidyContext(scene, leaves, titleBoxes, false), only);
 }
 function tryLiftOffBand(ctx, edge, lift, outside) {
   const { runHitsNode, runIsClear, bandFor } = ctx;
@@ -98918,7 +98928,7 @@ function createLaneModel(deps) {
   };
   return { channelU, isChannelU, laneBeyond };
 }
-function optimiseRoutes(scene, titleBoxes = [], folded = false) {
+function optimiseRoutes(scene, titleBoxes = [], folded = false, only) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge) => enforceOrthogonalOn(edge, leaves);
   if (!folded) {
@@ -99030,7 +99040,7 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false) {
       return squared;
     };
     const rank = (edge) => Number.parseInt(edge.id.slice(1), 10) || 0;
-    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
+    const ordered = [...scene.edges].filter((edge) => !only || only.has(edge.id)).sort((a, b) => rank(a) - rank(b));
     const neighboursOf = (edge) => {
       const mine = inspector.endsOf(edge.pts).map((end) => end?.node);
       return ordered.filter((other) => {
@@ -100116,7 +100126,8 @@ function stampLabelOffsets(edges, model) {
 }
 var pointOn = (point, box) => point.x >= box.x - 1 && point.x <= box.x + box.width + 1 && point.y >= box.y - 1 && point.y <= box.y + box.height + 1;
 function applyNodeOffsets(scene, offsetOf) {
-  if (!offsetOf.size) return;
+  const carried = /* @__PURE__ */ new Set();
+  if (!offsetOf.size) return carried;
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const clamped = /* @__PURE__ */ new Set();
   const resolved = /* @__PURE__ */ new Map();
@@ -100177,6 +100188,7 @@ function applyNodeOffsets(scene, offsetOf) {
       const terminal = edge.pts[end];
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || !seat.delta.dx && !seat.delta.dy) continue;
+      carried.add(edge.id);
       const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
       const neighbour = edge.pts[neighbourIndex];
       const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
@@ -100187,6 +100199,90 @@ function applyNodeOffsets(scene, offsetOf) {
       if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
     }
   }
+  for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
+  return carried;
+}
+function dropRedundantPoints(pts) {
+  const inLine = (a, b, c) => Math.abs(a.x - b.x) < SEGMENT_EPSILON && Math.abs(b.x - c.x) < SEGMENT_EPSILON || Math.abs(a.y - b.y) < SEGMENT_EPSILON && Math.abs(b.y - c.y) < SEGMENT_EPSILON;
+  for (let i = pts.length - 2; i >= 1; i--)
+    if (inLine(pts[i - 1], pts[i], pts[i + 1])) pts.splice(i, 1);
+}
+var SEGMENT_EPSILON = 0.5;
+var SLIDE_UNBOUNDED = 1e4;
+var SEAT_INSET = 4;
+function straightRuns(pts) {
+  const axisOf = (a, b) => {
+    const vertical = Math.abs(a.x - b.x) < SEGMENT_EPSILON;
+    const horizontal = Math.abs(a.y - b.y) < SEGMENT_EPSILON;
+    if (vertical === horizontal) return null;
+    return vertical ? "vertical" : "horizontal";
+  };
+  const runs = [];
+  let from = 0;
+  while (from + 1 < pts.length) {
+    let to = from + 1;
+    let axis = axisOf(pts[from], pts[to]);
+    while (to + 1 < pts.length) {
+      const next = axisOf(pts[to], pts[to + 1]);
+      if (next && axis && next !== axis) break;
+      axis ??= next;
+      to++;
+    }
+    runs.push({ from, to, vertical: axis === "vertical" });
+    from = to;
+  }
+  return runs;
+}
+function segmentSlideRange(pts, run, leaves) {
+  let min = -SLIDE_UNBOUNDED;
+  let max = SLIDE_UNBOUNDED;
+  for (const [point, terminal] of [
+    [pts[run.from], run.from === 0],
+    [pts[run.to], run.to === pts.length - 1]
+  ]) {
+    if (!terminal) continue;
+    const node = leaves.find((leaf) => pointOn(point, leaf));
+    if (!node) continue;
+    const lo = (run.vertical ? node.x : node.y) + SEAT_INSET;
+    const hi = (run.vertical ? node.x + node.width : node.y + node.height) - SEAT_INSET;
+    const at = run.vertical ? point.x : point.y;
+    min = Math.max(min, Math.min(lo, hi) - at);
+    max = Math.min(max, Math.max(lo, hi) - at);
+  }
+  return { min, max: Math.max(min, max) };
+}
+function applySegmentOffsets(scene, model) {
+  const wanted = new Map(
+    model.flows.filter((flow) => flow.segmentOffsets?.length).map((flow) => [flow.id, flow.segmentOffsets])
+  );
+  if (!wanted.size) return 0;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const clamped = [];
+  const stale = [];
+  let moved = 0;
+  for (const edge of scene.edges) {
+    const entries = wanted.get(edge.id);
+    if (!entries) continue;
+    const runs = straightRuns(edge.pts);
+    for (const entry of entries) {
+      const run = runs[entry.segment - 1];
+      if (!run) {
+        stale.push(entry.span);
+        continue;
+      }
+      const range = segmentSlideRange(edge.pts, run, leaves);
+      const delta = Math.min(Math.max(entry.delta, range.min), range.max);
+      if (Math.abs(delta - entry.delta) >= SEGMENT_EPSILON) clamped.push(entry.span);
+      if (!delta) continue;
+      for (let index = run.from; index <= run.to; index++) {
+        if (run.vertical) edge.pts[index].x += delta;
+        else edge.pts[index].y += delta;
+      }
+      moved++;
+    }
+  }
+  if (clamped.length || stale.length) scene.segmentHints = { clamped, stale };
+  return moved;
 }
 function shiftIntoCanvas(scene) {
   const MARGIN = 4;
@@ -100222,6 +100318,10 @@ function shiftIntoCanvas(scene) {
       point.x += shiftX;
       point.y += shiftY;
     }
+    for (const point of edge.repairedFrom ?? []) {
+      point.x += shiftX;
+      point.y += shiftY;
+    }
     for (const label of edge.labels) {
       label.x += shiftX;
       label.y += shiftY;
@@ -100231,6 +100331,23 @@ function shiftIntoCanvas(scene) {
   scene.height += shiftY;
 }
 function offsetDiagnostics(scene, model) {
+  const hints = [];
+  for (const span of scene.segmentHints?.stale ?? [])
+    hints.push({
+      code: "W0574",
+      severity: "warning",
+      message: "`segment-offset` names a run this flow's route does not have",
+      span,
+      help: "runs are counted from 1 along the route, and renumber when it gains or loses a turn \u2014 re-drag the run in the playground, or drop the hint"
+    });
+  for (const span of scene.segmentHints?.clamped ?? [])
+    hints.push({
+      code: "W0573",
+      severity: "warning",
+      message: "`segment-offset` was limited to keep the flow on the element it attaches to",
+      span,
+      help: "the run carries a terminal, so it can only slide as far as the side that terminal sits on \u2014 pin the side with `ID.side`, or move the element instead"
+    });
   const spans = /* @__PURE__ */ new Map();
   const walk = (elements, inherited) => {
     for (const element of elements) {
@@ -100241,11 +100358,11 @@ function offsetDiagnostics(scene, model) {
   };
   walk(model.elements);
   for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
-  if (!spans.size) return [];
+  if (!spans.size) return hints;
   const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
-  const diagnostics = [];
+  const diagnostics = [...hints];
   const reported = /* @__PURE__ */ new Set();
   for (const id of scene.clampedOffsets ?? []) {
     const span = spans.get(id);
@@ -100289,7 +100406,6 @@ function offsetDiagnostics(scene, model) {
 }
 function runGeometryPasses(scene, model, options) {
   const { numbered, sideways } = options;
-  const offsets = offsetAssignment(model);
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
   const titleBoxes = titleBoxesOf(scene, model);
   if (sideways) transpose(scene, titleBoxes);
@@ -100299,8 +100415,6 @@ function runGeometryPasses(scene, model, options) {
   tidyEdges(scene, routedTitles);
   anchorFlowLabels(scene, routedTitles, false);
   compactVertical(scene);
-  applyNodeOffsets(scene, offsets);
-  if (offsets.size) reaimAfterOffsets(scene, titleBoxesOf(scene, model));
   const routesBefore = new Map(
     scene.edges.map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
   );
@@ -100309,10 +100423,8 @@ function runGeometryPasses(scene, model, options) {
   spreadAttachments(scene);
   recordRepairs(scene, routesBefore);
   clearSideHugs(scene, settledTitles);
-  anchorFlowLabels(scene, settledTitles);
+  anchorFlowLabels(scene, settledTitles, false);
   swapCrossingSiblingSeats(scene);
-  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
-  if (offsets.size || nudgedLabels) shiftIntoCanvas(scene);
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {
@@ -100419,6 +100531,55 @@ function markDeclaredTerminals(edges, model, view, hubPorts) {
   }
 }
 async function layout(model, view) {
+  const scene = await chooseLayout(model, view);
+  applyAuthorPositioning(scene, model);
+  return scene;
+}
+var pathLength2 = (pts) => pts.reduce(
+  (total, point, index) => index === 0 ? 0 : total + Math.abs(point.x - pts[index - 1].x) + Math.abs(point.y - pts[index - 1].y),
+  0
+);
+function refuseScenicRepairs(scene, before) {
+  const TOLERATED_DETOUR = 1.5;
+  for (const edge of scene.edges) {
+    const original = before.get(edge.id);
+    if (!original) continue;
+    if (pathLength2(edge.pts) > pathLength2(original) * TOLERATED_DETOUR) edge.pts = original;
+  }
+}
+function applyAuthorPositioning(scene, model) {
+  const offsets = offsetAssignment(model);
+  if (offsets.size) {
+    const carried = applyNodeOffsets(scene, offsets);
+    for (const edge of scene.edges) if (carried.has(edge.id)) edge.repairedFrom = void 0;
+    const titles = titleBoxesOf(scene, model);
+    reaimAfterOffsets(scene, titles, carried);
+    const handPlaced = new Set(
+      model.flows.filter((flow) => flow.segmentOffsets?.length).map((flow) => flow.id)
+    );
+    const repairable = new Set([...carried].filter((id) => !handPlaced.has(id)));
+    if (repairable.size) {
+      const before = new Map(
+        scene.edges.filter((edge) => repairable.has(edge.id)).map((edge) => [edge.id, edge.pts.map((point) => ({ ...point }))])
+      );
+      optimiseRoutes(scene, titles, false, repairable);
+      refuseScenicRepairs(scene, before);
+      decoincideAfterOffsets(scene, titles, repairable);
+    }
+  }
+  const nudgedRuns = applySegmentOffsets(scene, model);
+  if (nudgedRuns) {
+    for (const edge of scene.edges)
+      if (model.flows.find((flow) => flow.id === edge.id)?.segmentOffsets?.length)
+        edge.repairedFrom = void 0;
+  }
+  const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
+  if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
+  anchorFlowLabels(scene, titleBoxesOf(scene, model));
+  shiftIntoCanvas(scene);
+  fitCanvas(scene);
+}
+async function chooseLayout(model, view) {
   const elk = await getElk();
   const businessObjectName = new Map(model.businessObjects.map((bo) => [bo.id, bo.name]));
   const numbered = model.style.flowText === "numbered";
@@ -102020,13 +102181,9 @@ function layoutBoxes(model, scene) {
     }
   };
   walk(model.elements);
-  const flowDeclarations = new Map(
-    model.flows.map((flow) => [
-      flow.id,
-      { line: flow.span.line, offsetSpan: flow.labelOffset?.span }
-    ])
-  );
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
   const boxes = [];
+  const leaves = scene.nodes.filter((node) => !node.container);
   for (const node of scene.nodes) {
     const declaration = declarations.get(node.id);
     if (!declaration) continue;
@@ -102041,10 +102198,10 @@ function layoutBoxes(model, scene) {
       ...declaration
     });
   }
-  for (const edge of scene.edges)
-    for (const label of edge.labels) {
-      const declaration = flowDeclarations.get(label.flowId);
-      if (!declaration) continue;
+  for (const edge of scene.edges) {
+    const flow = flowById.get(edge.id);
+    if (!flow) continue;
+    for (const label of edge.labels)
       boxes.push({
         id: label.flowId,
         what: "label",
@@ -102053,9 +102210,52 @@ function layoutBoxes(model, scene) {
         width: label.width,
         height: label.height,
         container: false,
-        ...declaration
+        line: flow.span.line,
+        offsetSpan: flow.labelOffset?.span
+      });
+    straightRuns(edge.pts).forEach((run, index) => {
+      const [a, b] = [edge.pts[run.from], edge.pts[run.to]];
+      const declared = flow.segmentOffsets?.find((entry) => entry.segment === index + 1);
+      boxes.push({
+        id: edge.id,
+        what: "segment",
+        x: Math.min(a.x, b.x),
+        y: Math.min(a.y, b.y),
+        width: Math.abs(a.x - b.x),
+        height: Math.abs(a.y - b.y),
+        container: false,
+        line: flow.span.line,
+        offsetSpan: declared?.span,
+        segment: index + 1,
+        points: [
+          { x: a.x, y: a.y },
+          { x: b.x, y: b.y }
+        ],
+        slide: segmentSlideRange(edge.pts, run, leaves)
+      });
+    });
+    for (const end of ["from", "to"]) {
+      if (end === "from" ? flow.fromRole : flow.toRole) continue;
+      const declared = end === "from" ? flow.fromSide : flow.toSide;
+      const point = end === "from" ? edge.pts[0] : edge.pts[edge.pts.length - 1];
+      boxes.push({
+        id: edge.id,
+        what: "terminal",
+        x: point.x,
+        y: point.y,
+        width: 0,
+        height: 0,
+        container: false,
+        line: flow.span.line,
+        endpoint: {
+          end,
+          element: end === "from" ? flow.from : flow.to,
+          side: declared?.value,
+          span: declared?.span ?? (end === "from" ? flow.fromSpan : flow.toSpan)
+        }
       });
     }
+  }
   return boxes;
 }
 

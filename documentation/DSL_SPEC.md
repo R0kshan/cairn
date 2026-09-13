@@ -339,7 +339,7 @@ Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
 
 ### Positioning controls
 
-Layout is automatic. These four controls exist for the cases where it gets a
+Layout is automatic. These five controls exist for the cases where it gets a
 diagram wrong; each is opt-in, and a file that uses none of them renders exactly
 as it did before they existed. One placement rule needs no control because it is
 applied for you — where a queue's producers and consumers attach, below.
@@ -405,10 +405,17 @@ system ORDERS "Order platform" {
 
 Three things follow from it being a **delta and not a seat**.
 
-- **The layout still runs.** The element keeps its place in the reading order and
-  moves with its neighbours; adding a sibling re-flows the drawing and the nudge
-  comes along. Nothing is ever pinned to a canvas coordinate, so an offset does
-  not go stale when the diagram around it grows.
+- **The layout still runs, and the nudge does not change it.** The element keeps
+  its place in the reading order and moves with its neighbours; adding a sibling
+  re-flows the drawing and the nudge comes along. Nothing is ever pinned to a
+  canvas coordinate, so an offset does not go stale when the diagram around it
+  grows. But the offset itself re-flows nothing: a diagram carrying hints is the
+  diagram without them *plus the hints*, so nudging one box never moves another
+  or re-routes a flow that does not touch it. The deltas are applied to the
+  layout the router chose, never fed back into choosing it. What does answer to a
+  nudge is the immediate neighbourhood — a flow whose element moved is carried
+  along and re-aimed, and the flows sharing the side it lands on are re-seated so
+  two terminals do not end up in the same place.
 - **A container carries its children**, and a child's own `offset:` adds to its
   container's — so nudging a `system` moves the whole group rigidly, and the one
   block inside it that also needs moving still can. A child is **held inside**
@@ -447,8 +454,56 @@ and W0572 is what reports the overlap it may cost.
 
 **It moves the label and nothing else.** The flow keeps the route it had: the
 passes that route on label positions are handed the seats the layout chose, not
-the ones an author moved. A flow's *path* is not author-editable at all — the
-router owns it (INVARIANTS §16), and the playground offers no handle on it.
+the ones an author moved. To move the flow itself, use `segment-offset:`.
+
+**`segment-offset: <segment>, <delta>` — slides one run of a flow's route.** A
+route is a chain of horizontal and vertical runs; this moves one of them along
+its **normal** — a vertical run left or right, a horizontal run up or down — and
+touches nothing else:
+
+```cairn
+CAPTURE -> EVENTS "Order created" { segment-offset: 2, -18 }
+```
+
+`segment` counts the runs from 1, following the route from its source — a *run*
+being one straight line as the reader sees it, however many points the route
+spends on it. `delta`
+is right for a vertical run and down for a horizontal one, and may be negative.
+The normal is the only direction a run can move without the route needing a
+repair: the perpendicular runs meeting it at either end keep their own axis and
+simply change length, so the drawing comes out orthogonal with exactly the turns
+it went in with. This is what the playground writes when you slide a flow — hover
+a run and the cursor becomes a resize cursor pointing the one way it can go.
+
+**Repeat the key to move more than one run.** It is the one inline property that
+may appear twice in a block, because a route can need two of its runs moved and
+a second key is less to learn than a list:
+
+```cairn
+CAPTURE -> EVENTS "Order created" { segment-offset: 2, -18 segment-offset: 4, 12 }
+```
+
+Two things bound it.
+
+- **A run carrying a terminal can only slide as far as its element side.** Its
+  normal points *along* the side the flow attaches to, so sliding it slides the
+  seat; past the corner the flow would come off the element it connects. The
+  delta is cut short a few pixels inside the corner instead, and reported as
+  **W0573**. Interior runs have no such bound.
+- **The run number is positional.** A route that gains or loses a turn renumbers
+  everything after it, and a `segment-offset` naming a run the route no longer
+  has is reported as **W0574** rather than silently dropped. Re-slide the run in
+  the playground and the number is rewritten for you.
+
+Applied after the layout is chosen and after every routing pass, so the router
+still owns the *shape* of the route — how many turns it takes and what it goes
+around — and the author owns where each run sits. A hint never decides which
+layout wins. The label of a nudged flow re-anchors to the run it names, and a
+`label-offset:` on the same flow still adds on top.
+
+Reach for `ID.side` or an element `offset:` first: a run that needs a large slide
+usually wants a different attachment side, and a side survives edits that a run
+number merely rides along with.
 
 **`logo: <name>` — the technology a component is built on.** A statement inside
 an element body, like `order:`. Content rather than cosmetics, so it lives
@@ -501,6 +556,17 @@ path between them: the passes that would move a terminal stand down for *that*
 terminal — pin one end and the other is still re-aimed, unwoven and measured as
 usual — while the route itself is still tidied along shapes that leave the
 pinned ends where the author put them.
+
+**This is what the playground writes when you drag a flow's end.** Hover either
+end of a flow and the point it meets its element shows as a small circle; drag it
+to another side and the endpoint is rewritten — `APP -> DB` becomes
+`APP.top -> DB`, and an endpoint that already names a side has that word replaced
+rather than a second one appended. The drop picks the side from where the pointer
+sits relative to the element's centre, so the ghost circle sits on the middle of
+the side you are about to choose: a pin names a *side*, and which seat on it the
+flow takes stays the layout's answer. An endpoint that names a role
+(`CAPTURE.producer`) offers no handle — a side and a role on one endpoint is
+**E0225**, so there is nothing a drag could write there.
 
 **A queue's flows are sided for you.** One placement decision needs no control
 at all: a `queue` is a hand-off between two halves of a drawing, so everything

@@ -169,6 +169,22 @@ export interface Flow {
    */
   labelOffset?: { dx: number; dy: number; span: Span };
   /**
+   * Author-declared slides of individual runs of this flow's route
+   * (`{ segment-offset: 2, -18 }`), one entry per nudged segment and repeatable
+   * in the same block.
+   *
+   * `segment` is 1-based along the route. `delta` moves that run along its
+   * *normal* only — a vertical run left or right, a horizontal run up or down —
+   * which is the one direction that keeps the route orthogonal without moving
+   * anything else: the two perpendicular runs on either side of it simply change
+   * length. Applied after the last routing pass, so the router still owns the
+   * shape of the route and the author owns where its runs sit.
+   *
+   * Positional, and knowingly so: a route that gains a turn renumbers what comes
+   * after it, and `W0574` reports an entry the route no longer has.
+   */
+  segmentOffsets?: { segment: number; delta: number; span: Span }[];
+  /**
    * This flow's own `{ flow-label-wrap: <n> }`, overriding the diagram's. Same
    * precedence as every other property spelt at both levels — the inline one
    * wins — and the same promise: unset at both, the label is never broken.

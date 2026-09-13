@@ -15,13 +15,19 @@
 
 import { parse } from "./parser.ts";
 import { validate } from "./validator.ts";
-import { layout, attachSideDiagnostics, offsetDiagnostics } from "./scene-layout.ts";
+import {
+  layout,
+  attachSideDiagnostics,
+  offsetDiagnostics,
+  segmentSlideRange,
+  straightRuns,
+} from "./scene-layout.ts";
 import { render } from "./svg-render.ts";
 import { views } from "./views.ts";
 import { buildFlowMatrix } from "./flow-matrix.ts";
 import type { FlowMatrix } from "./models/matrix.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
-import type { Model, Span } from "./models/ast.ts";
+import type { AttachSide, Model, Span } from "./models/ast.ts";
 import type { Scene } from "./scene-layout.ts";
 import { resolveThemeSpec } from "./theme-spec.ts";
 import type { ThemeOverrides } from "./theme-spec.ts";
@@ -49,17 +55,18 @@ export interface CompileOptions {
 }
 
 /**
- * Where one element or flow label ended up on the canvas, paired with the
- * source position an editor needs to write a nudge back into the DSL.
+ * Where one element, flow label, run of a flow's route or flow terminal ended up
+ * on the canvas, paired with the source position an editor needs to write the
+ * move back into the DSL.
  *
  * This is what makes a drag in the playground possible without stamping ids
  * into the SVG: the drawing's bytes stay exactly what they were (INVARIANTS
  * §2, §14), and the one consumer that needs identity gets it out of band.
  */
 export interface LayoutBox {
-  /** Element id, or the flow id for a label. */
+  /** Element id, or the flow id for a label, a run of a route, or a terminal. */
   id: string;
-  what: "element" | "label";
+  what: "element" | "label" | "segment" | "terminal";
   x: number;
   y: number;
   width: number;
@@ -72,6 +79,35 @@ export interface LayoutBox {
   line: number;
   /** Span of the `dx, dy` an author already wrote, so an editor can replace it. */
   offsetSpan?: Span;
+  /**
+   * Which run of the route this is, counted from 1 — `"segment"` boxes only, and
+   * what a `segment-offset:` names.
+   */
+  segment?: number;
+  /**
+   * The run's two endpoints. A run is a line, not a box: one side of
+   * `x/y/width/height` is zero, so an editor hit-tests the distance to these
+   * instead. `"segment"` boxes only.
+   */
+  points?: { x: number; y: number }[];
+  /**
+   * How far this run may slide along its normal — left/right for a vertical run,
+   * up/down for a horizontal one. Wide open in the middle of a route; bounded at
+   * either end by the element side the terminal sits on, so an editor can hold a
+   * drag to what the drawing will actually show. `"segment"` boxes only.
+   */
+  slide?: { min: number; max: number };
+  /**
+   * Where a flow meets an element — `"terminal"` boxes only, one per end, with
+   * `x/y` on the point itself and no extent.
+   *
+   * `span` is what an editor replaces to move the attachment: the side the
+   * author declared when there is one, and otherwise the endpoint's id, which
+   * takes an `ID.side` suffix in its place. An endpoint that names a *role*
+   * (`CAPTURE.producer`) gets no terminal box at all — a side and a role on one
+   * endpoint is E0225, so there is nothing an editor could write there.
+   */
+  endpoint?: { end: "from" | "to"; element: string; side?: AttachSide; span: Span };
 }
 
 export interface CompileResult {
@@ -85,7 +121,7 @@ export interface CompileResult {
   } | null;
   /** Present only when `options.matrix` asked for it and the source has no errors. */
   matrix: FlowMatrix | null;
-  /** Element and label geometry, for editors that place things by hand. Null on error. */
+  /** Element, label and route-run geometry, for editors that place things by hand. Null on error. */
   boxes: LayoutBox[] | null;
 }
 
@@ -144,14 +180,12 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
     }
   };
   walk(model.elements);
-  const flowDeclarations = new Map(
-    model.flows.map((flow) => [
-      flow.id,
-      { line: flow.span.line, offsetSpan: flow.labelOffset?.span },
-    ]),
-  );
+  const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
 
   const boxes: LayoutBox[] = [];
+  // A terminal is seated on a leaf, never on the box drawn around it — the same
+  // rule the slide bounds are measured by.
+  const leaves = scene.nodes.filter((node) => !node.container);
   for (const node of scene.nodes) {
     const declaration = declarations.get(node.id);
     if (!declaration) continue;
@@ -166,10 +200,10 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
       ...declaration,
     });
   }
-  for (const edge of scene.edges)
-    for (const label of edge.labels) {
-      const declaration = flowDeclarations.get(label.flowId);
-      if (!declaration) continue;
+  for (const edge of scene.edges) {
+    const flow = flowById.get(edge.id);
+    if (!flow) continue;
+    for (const label of edge.labels)
       boxes.push({
         id: label.flowId,
         what: "label",
@@ -178,8 +212,60 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
         width: label.width,
         height: label.height,
         container: false,
-        ...declaration,
+        line: flow.span.line,
+        offsetSpan: flow.labelOffset?.span,
+      });
+    // One box per straight run, not one per flow and not one per pair of points:
+    // a run is the line the reader sees and the thing a `segment-offset:` names,
+    // and the rectangle around a whole route covers half the canvas once it
+    // turns a corner. `straightRuns` is what numbers them, here and in the pass
+    // that applies the hint — one reading, so a drag and the engine cannot
+    // disagree about which run is which.
+    straightRuns(edge.pts).forEach((run, index) => {
+      const [a, b] = [edge.pts[run.from], edge.pts[run.to]];
+      const declared = flow.segmentOffsets?.find((entry) => entry.segment === index + 1);
+      boxes.push({
+        id: edge.id,
+        what: "segment",
+        x: Math.min(a.x, b.x),
+        y: Math.min(a.y, b.y),
+        width: Math.abs(a.x - b.x),
+        height: Math.abs(a.y - b.y),
+        container: false,
+        line: flow.span.line,
+        offsetSpan: declared?.span,
+        segment: index + 1,
+        points: [
+          { x: a.x, y: a.y },
+          { x: b.x, y: b.y },
+        ],
+        slide: segmentSlideRange(edge.pts, run, leaves),
+      });
+    });
+    // The two ends, which move between the *sides* of their element rather than
+    // by a delta — `ID.side` is the lever, so the box carries the span that
+    // writes one and the editor never has to know the grammar.
+    for (const end of ["from", "to"] as const) {
+      if (end === "from" ? flow.fromRole : flow.toRole) continue;
+      const declared = end === "from" ? flow.fromSide : flow.toSide;
+      const point = end === "from" ? edge.pts[0] : edge.pts[edge.pts.length - 1];
+      boxes.push({
+        id: edge.id,
+        what: "terminal",
+        x: point.x,
+        y: point.y,
+        width: 0,
+        height: 0,
+        container: false,
+        line: flow.span.line,
+        endpoint: {
+          end,
+          element: end === "from" ? flow.from : flow.to,
+          side: declared?.value,
+          span: declared?.span ?? (end === "from" ? flow.fromSpan : flow.toSpan),
+        },
       });
     }
+  }
   return boxes;
 }

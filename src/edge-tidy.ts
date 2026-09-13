@@ -2523,13 +2523,27 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge, skewToo = false): void {
  * detour this pass exists to straighten, arriving too late for the call inside
  * `tidyEdges` to see it. Runs only where an offset exists, so an offset-free
  * drawing is untouched.
+ *
+ * A flow pinned at both ends is included, unlike in `reaimWrapAroundTerminals`:
+ * `reaimEdge` hands each pinned end its own side as `keepSide`, so the declared
+ * attachments survive, and the skew an inserted elbow leaves at the far end has
+ * no other pass to repair it.
+ *
+ * `only` names the flows whose terminal the offset actually carried, and nothing
+ * outside it is considered. A flow nobody dragged is not this pass's business:
+ * an author who nudges one box is asking for that box to move, not for the
+ * drawing around it to be re-derived, and re-aiming every edge was measured
+ * moving three flows that never touched the nudged element.
  */
-export function reaimAfterOffsets(scene: Scene, titleBoxes: TitleBox[] = []): void {
+export function reaimAfterOffsets(
+  scene: Scene,
+  titleBoxes: TitleBox[] = [],
+  only?: ReadonlySet<string>,
+): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
-  for (const edge of scene.edges)
-    if (!(edge.pinned?.start && edge.pinned?.end)) reaimEdge(rctx, edge, true);
+  for (const edge of scene.edges) if (!only || only.has(edge.id)) reaimEdge(rctx, edge, true);
 }
 
 function reaimWrapAroundTerminals(ctx: TidyContext): void {
@@ -2606,7 +2620,7 @@ function shiftCoincidentRun(
   }
 }
 
-function decoincideParallelRuns(ctx: TidyContext): void {
+function decoincideParallelRuns(ctx: TidyContext, only?: ReadonlySet<string>): void {
   const { scene, leaves, enforceOrthogonal } = ctx;
   // Post-pass: push apart parallel runs from different edges that are within 3px
   // with >8px shared overlap (coincident). For each pair, shift the corner point
@@ -2634,15 +2648,40 @@ function decoincideParallelRuns(ctx: TidyContext): void {
     }
 
   for (const [a, b] of coincidentPairs) {
-    // Try to push edge B's run away from A's by 8px
-    const delta = a.at > b.at ? -8 : 8;
-    const newAt = b.at + delta;
-    const pts = b.edge.pts;
-    shiftCoincidentRun(leaves, pts, b, newAt);
+    // Normally B's run gives way. Under `only` the run that moves has to be one
+    // the caller is allowed to move, so a pair where just A qualifies is fixed
+    // by moving A instead, and a pair where neither does is left alone.
+    const moving = !only ? b : only.has(b.edge.id) ? b : only.has(a.edge.id) ? a : null;
+    if (!moving) continue;
+    const other = moving === b ? a : b;
+    // Push it away from the run it is lying on.
+    const delta = other.at > moving.at ? -8 : 8;
+    shiftCoincidentRun(leaves, moving.edge.pts, moving, moving.at + delta);
   }
 
   // Fix any orthogonality broken by the de-coincidence shifts
-  for (const edge of scene.edges) if (edge.pts.length >= 2) enforceOrthogonal(edge);
+  for (const edge of scene.edges)
+    if (edge.pts.length >= 2 && (!only || only.has(edge.id))) enforceOrthogonal(edge);
+}
+
+/**
+ * The de-coincidence post-pass on its own, for the caller that moves geometry
+ * after `tidyEdges` has run: `applyAuthorPositioning`.
+ *
+ * An element the author nudged carries its flows to a new seat, and a flow that
+ * lands on top of another flow's run reads as one line, not two — the defect
+ * this pass exists to remove, arriving too late for the call inside `tidyEdges`
+ * to see it. `only` keeps it to the flows the offset actually carried, so a
+ * drawing the author did not touch is not re-spaced around the nudge (§17).
+ */
+export function decoincideAfterOffsets(
+  scene: Scene,
+  titleBoxes: TitleBox[] = [],
+  only?: ReadonlySet<string>,
+): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  decoincideParallelRuns(createTidyContext(scene, leaves, titleBoxes, false), only);
 }
 
 /** Tries sliding the interior run at `index` to just below or above `band`,
@@ -3983,7 +4022,12 @@ function createLaneModel(deps: {
 }
 
 /** Optimises edge routes by attempting local improvements that pass the readability ladder. */
-export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded = false): void {
+export function optimiseRoutes(
+  scene: Scene,
+  titleBoxes: TitleBox[] = [],
+  folded = false,
+  only?: ReadonlySet<string>,
+): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   const enforceOrthogonal = (edge: SceneEdge) => enforceOrthogonalOn(edge, leaves);
 
@@ -4171,7 +4215,14 @@ export function optimiseRoutes(scene: Scene, titleBoxes: TitleBox[] = [], folded
     };
 
     const rank = (edge: SceneEdge) => Number.parseInt(edge.id.slice(1), 10) || 0;
-    const ordered = [...scene.edges].sort((a, b) => rank(a) - rank(b));
+    // `only` limits which flows may be *moved*, never what the ladder measures:
+    // every other edge is still an obstacle and still counts towards the damage
+    // a candidate does. `applyAuthorPositioning` passes the flows an author's
+    // offset carried, so repairing them cannot re-route the rest of a drawing
+    // that the author did not touch (§17).
+    const ordered = [...scene.edges]
+      .filter((edge) => !only || only.has(edge.id))
+      .sort((a, b) => rank(a) - rank(b));
 
     /** Flows sharing a node with this one — the ones a joint move can help. */
     const neighboursOf = (edge: SceneEdge): SceneEdge[] => {
