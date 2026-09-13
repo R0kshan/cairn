@@ -2,6 +2,12 @@
 
 All notable changes to the cairn project will be documented in this file.
 
+## Unreleased
+
+### Added
+- `security` in the logical view: a security capability the business feels — strong authentication, anonymisation, encryption of a held record. Named for the capability rather than for the `auth` middleware the other two views carry, because this view holds no technology and anonymisation is not authentication. It may sit anywhere, and an unconnected one raises no warning: a capability can apply to a record rather than to an exchange
+- `examples/logical-security.cairn` — a patient-portal logical view showing the new kind alongside business objects, and the medium logical diagram the README now displays
+
 ## [v1.0.0-RC16](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC16) - 2026-09-13
 
 ### Added
