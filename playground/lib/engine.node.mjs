@@ -102260,7 +102260,7 @@ function layoutBoxes(model, scene) {
 }
 
 // src/api.ts
-var version = true ? "1.0.0-RC15" : pkg.version;
+var version = true ? "1.0.0-RC16" : pkg.version;
 
 // src/playground.ts
 var ElkClass = import_elk_bundled.default;
