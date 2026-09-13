@@ -25,11 +25,12 @@ Scaffold a file with `cairn new` — `-L` logical, `-A` application,
 | draw sites, zones, servers, protocols and ports | [1.3 Infrastructure view](#13-infrastructure-view--diagram-infrastructure) |
 | understand why an element landed where it did | [1.4 Layout partitions](#14-layout-partitions) |
 | move something the layout put in the wrong place | [Positioning controls](#positioning-controls) |
+| put a technology logo on a component | [Logos](#logos) |
 | set colours, fonts, arrow size, page shape | [2. Styling](#2-styling--three-levels-most-specific-wins) |
 | make a wide diagram fit | [Density controls](#density-controls) |
-| export the flow table for a dossier | [2.1 Flow matrix](#21-flow-matrix) |
-| change the palette, or write my own | [2.2 Themes](#22-themes) |
-| look up an error or warning code | [3. Diagnostics](#3-diagnostics) |
+| export the flow table for a dossier | [3. Flow matrix](#3-flow-matrix) |
+| change the palette, or write my own | [Themes](#themes) |
+| look up an error or warning code | [4. Diagnostics](#4-diagnostics) |
 
 **Positioning controls, one line each:**
 [`order:`](#order-n--reading-order) reading order ·
@@ -39,8 +40,7 @@ Scaffold a file with `cairn new` — `-L` logical, `-A` application,
 [`ID.side`](#idside--which-side-a-flow-attaches-to) pin an attachment side ·
 [queue sides](#a-queues-flows-are-sided-for-you) and
 [`ID.producer` / `ID.consumer`](#idproducer--idconsumer--which-side-of-the-exchange) ·
-[arrow glyph](#arrow-glyph--the-flows-line-style) line style ·
-[`logo:`](#logo-name--the-technology-a-component-runs-on) technology mark
+[arrow glyph](#arrow-glyph--the-flows-line-style) line style
 
 ## 1. Structure
 
@@ -70,8 +70,9 @@ CAPTURE -> EVENTS "Order created" (MQ, JSON) { label: below }
   (`F01`, `F02`…). A duplicate is a diagnostic with a rename suggestion.
 - **Element labels** are `"` quoted free text. `\n` forces a line break.
   Omit the label and the element renders as its bare ID, with **W0502**.
-- **An element body** holds child elements plus `order:`, `offset:`, `logo:`
-  and `style { … }` — see [Positioning controls](#positioning-controls) and §2.
+- **An element body** holds child elements plus `order:` and `offset:`
+  ([Positioning controls](#positioning-controls)), `logo:` ([Logos](#logos))
+  and `style { … }` (§2).
 - **Comments** start with `#` and run to end of line.
 - **Everything after the arrow is optional**, subject to the view's rules:
   `"label"`, a technical tail (`(PROTOCOL, FORMAT)` or `(PROTOCOL/PORT)`),
@@ -197,8 +198,8 @@ non-actor elements with no tail warns (**W0540**). Business objects are rejected
 
 Use `idp` for a provider inside the landscape you are drawing (a self-hosted
 Keycloak, the group's SSO) and `external` for one somebody else owns. `gateway`,
-`auth` and `idp` take no `logo:` (**E0108**) — their glyph occupies the corner a
-logo would use. `firewall` is infrastructure-only.
+`auth` and `idp` take no [`logo:`](#logos) (**E0108**) — their glyph occupies
+the corner a logo would use. `firewall` is infrastructure-only.
 
 ```cairn
 diagram application "Order platform — application view"
@@ -328,7 +329,6 @@ is opt-in; a file using none of them renders exactly as it always did.
 | `label-offset: <dx>, <dy>` | flow inline block | that flow's label |
 | `segment-offset: <run>, <delta>` | flow inline block | one run of that flow's route |
 | `ID.side` | either flow endpoint | which side of an element the flow meets |
-| `logo: <name>` | element body | *(not positioning — the technology mark)* |
 
 A queue's flow sides need no control at all; see below.
 
@@ -534,17 +534,30 @@ diagram that uses more than one style:
 Nothing enforces the reading: the parser records a style and the renderer draws
 it. cairn defines these readings; they are not lifted from a standard.
 
-#### `logo: <name>` — the technology a component runs on
+#### Examples
 
-Application view only, and only on kinds that stand for running software:
-`application`, `module`, `queue`, `datastore`, `external`. An `actor` or
-`system` takes none (**E0108**).
+Six files in [`examples/placement/`](../examples/placement) show these controls:
+`baseline.cairn` declares none, `sides.cairn` adds `ID.side` pins,
+`reading-order.cairn` sequences two backends with `order:`, `flow-label.cairn`
+moves a flow label, `queue-sides.cairn` declares nothing and takes the derived
+queue sides, and `queue-roles.cairn` draws every flow *at* the queue with roles.
+
+### Logos
+
+**`logo: <name>` marks the technology a component runs on.** A statement in the
+element body, like `order:` — content, not cosmetics, so it lives outside the
+`style` block.
 
 ```cairn
 module WEB "Web client" { logo: react }
 datastore ORDER_DB "Order store" { logo: postgresql }
 module BILLING "Billing" { logo: "./logos/acme.svg" }
 ```
+
+Application view only, and only on the kinds that stand for running software:
+`application`, `module`, `queue`, `datastore`, `external`. An `actor` is a
+person, a `system` is a grouping, and `gateway`, `auth` and `idp` already use
+that corner for their glyph — none of them takes one (**E0108**).
 
 A bare name comes from the built-in set — `cairn logos` lists them, and an
 unknown one is **E0107** with a suggestion. A quoted value is a path **relative
@@ -556,14 +569,6 @@ The mark is drawn top-right, opposite the kind glyph, in the node's own stroke
 colour. File-sourced logos resolve in the CLI only — the playground has no
 filesystem and renders built-ins.
 
-#### Examples
-
-Six files in [`examples/placement/`](../examples/placement) show these controls:
-`baseline.cairn` declares none, `sides.cairn` adds `ID.side` pins,
-`reading-order.cairn` sequences two backends with `order:`, `flow-label.cairn`
-moves a flow label, `queue-sides.cairn` declares nothing and takes the derived
-queue sides, and `queue-roles.cairn` draws every flow *at* the queue with roles.
-
 ## 2. Styling — three levels, most specific wins
 
 View defaults → diagram `style` block → inline per element or flow. Values are
@@ -573,7 +578,7 @@ is a width. Two values of the same type (`dashed dotted`) is a diagnostic.
 ```cairn
 style {
   theme: light                 # light | dark | slate | sand | contrast | nord |
-                               #   solarized | classic | classic-dark (§2.2)
+                               #   solarized | classic | classic-dark (see Themes below)
   accent: #4c6ef5              # retints the flows on top of the theme
   background: #ffffff          # canvas colour (defaults to the theme's)
   lang: en                     # en | fr — localizes rendered chrome only
@@ -616,7 +621,7 @@ about 7px raise **W0520**: the diagram exceeds the medium and wants splitting.
 descriptions and business-object chips to a table below the canvas —
 recommended for very large diagrams.
 
-**Colours.** `theme` picks a palette, `background` overrides the canvas,
+**Colours.** [`theme`](#themes) picks a palette, `background` overrides the canvas,
 `accent` retints the flows, and `flow-color: by-source` gives every source
 element its own hue. `fill`, `stroke` and `text` work per diagram, per kind
 (`fill block: …`) or inline; a per-flow inline `{ stroke: … }` wins over
@@ -681,37 +686,10 @@ spaces, because a table cell is one line.
 `examples/flow-labels-long-wrapped.cairn` are the plain models with these turned
 on — rendering both pairs is the quickest way to see what they buy.
 
-## 2.1 Flow matrix
+### Themes
 
-> A standard French EA deliverable — the *matrice des flux techniques* —
-> produced natively from the DSL.
-
-```sh
-cairn matrix my-system.cairn --format csv|md|svg
-```
-
-One row per flow. **Every view exports one**, with the columns its flows can
-fill and its own container kind annotating endpoints, as `Name (Zone)`. An
-endpoint outside any container is listed by name alone.
-
-| View | Columns | Endpoint annotated with |
-|---|---|---|
-| `infrastructure` | No. · Source · Destination · Protocol · Port · Flow | `network-zone`, `site` |
-| `application` | No. · Source · Destination · Protocol · Flow | `application`, `system` |
-| `logical` | No. · Source · Destination · Flow | `layer`, `system` |
-
-`csv`/`md` give an editable table for the dossier; `svg` a theme-aware,
-paste-ready image. Headers follow `style { lang }` — under `lang: fr` the
-infrastructure headers read **N° · Source · Destination · Protocole · Port ·
-Nature du flux**. Output defaults to `<file>.flow.<ext>`.
-
-Embedders get the same table as data: `compile(source, { matrix: true })`
-returns `columns` plus one `row` per flow, and the `matrixCsv` / `matrixMd` /
-`matrixSvg` exports format it exactly as the CLI does.
-
-## 2.2 Themes
-
-The DSL names a palette; the palette itself is built in or comes from JSON.
+`theme:` is the one style property whose values are defined outside the DSL:
+the DSL names a palette, the palette itself is built in or comes from JSON.
 
 **Nine built-ins**, listed by `cairn themes`: `light` (the default), `dark`,
 `slate`, `sand`, `contrast`, `nord`, `solarized`, plus the legacy `classic` and
@@ -728,7 +706,7 @@ compile(source, { theme: "nord" })             # embedder
 The flag applies after parsing and works on `build`, `matrix` and `watch`. A
 theme that cannot be resolved is an error, never a silent fallback.
 
-### A palette of your own
+#### A palette of your own
 
 Custom palettes are **not DSL syntax** — a JSON file for the CLI, or an object
 for `compile()`:
@@ -788,17 +766,45 @@ const { svg } = await compile(source, {
 complete example ships in
 [`examples/themes/midnight.json`](../examples/themes/midnight.json).
 
-## 3. Diagnostics
+## 3. Flow matrix
+
+> A standard French EA deliverable — the *matrice des flux techniques* —
+> produced natively from the DSL.
+
+```sh
+cairn matrix my-system.cairn --format csv|md|svg
+```
+
+One row per flow. **Every view exports one**, with the columns its flows can
+fill and its own container kind annotating endpoints, as `Name (Zone)`. An
+endpoint outside any container is listed by name alone.
+
+| View | Columns | Endpoint annotated with |
+|---|---|---|
+| `infrastructure` | No. · Source · Destination · Protocol · Port · Flow | `network-zone`, `site` |
+| `application` | No. · Source · Destination · Protocol · Flow | `application`, `system` |
+| `logical` | No. · Source · Destination · Flow | `layer`, `system` |
+
+`csv`/`md` give an editable table for the dossier; `svg` a theme-aware,
+paste-ready image. Headers follow `style { lang }` — under `lang: fr` the
+infrastructure headers read **N° · Source · Destination · Protocole · Port ·
+Nature du flux**. Output defaults to `<file>.flow.<ext>`.
+
+Embedders get the same table as data: `compile(source, { matrix: true })`
+returns `columns` plus one `row` per flow, and the `matrixCsv` / `matrixMd` /
+`matrixSvg` exports format it exactly as the CLI does.
+
+## 4. Diagnostics
 
 Every issue carries a stable code — `E01xx` syntax, `E02xx` semantic, `W05xx`
 warning. `cairn explain <CODE>` gives the rationale behind any rule
 (`cairn explain E0240`). Full catalog: [`DIAGNOSTICS.md`](DIAGNOSTICS.md).
 
-## 4. Not in the language
+## 5. Not in the language
 
 Imports across files, variables, and longhand style properties
 (`stroke-color:` …) are deliberately absent.
 
 Custom themes stay a CLI parameter or a `compile()` option rather than DSL
-syntax ([§2.2](#22-themes)): reading a file from the parser would put filesystem
+syntax ([Themes](#themes)): reading a file from the parser would put filesystem
 work into a core that must also run in the playground.
