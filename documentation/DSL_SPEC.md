@@ -1,23 +1,20 @@
 # DSL Spec
 
-Tracks `main` — this describes the current grammar, not a frozen release; it
-has no version number independent of the codebase itself. Design goals:
-D2-like terseness, typed elements (the view knows what an `actor` is),
-diagnostics-friendly (every token carries a source span), Git-friendly
-(meaningful diffs), styling fully overridable.
-
-## 1. Structure
-
-A file is one diagram. The first statement declares which view it is, and the
-view decides every element kind the rest of the file may use:
+Tracks `main`. One `.cairn` file is one diagram.
 
 ```text
 diagram <logical|application|infrastructure> "Title"
 ```
 
-Everything else is optional and order-free: elements, flows, an optional
-`style { … }` block, `business-object` declarations (logical only) and a
-`legend { … }` block.
+That first line picks the view, and the view decides which element kinds the
+rest of the file may use. Everything after it is optional and order-free:
+elements, flows, a `style { … }` block, `business-object` declarations
+(logical only) and a `legend { … }` block.
+
+Scaffold a file with `cairn new` — `-L` logical, `-A` application,
+`-I` infrastructure.
+
+## 1. Structure
 
 ### Grammar shared by every view
 
@@ -26,101 +23,96 @@ Everything else is optional and order-free: elements, flows, an optional
 <ID> -> <ID> "<label>" (TECH) [BO_REFS] { style }     # flow
 ```
 
-- **IDs** are flat and unique per file — no namespace nesting. Legal
-  characters are letters, digits, `_`, `-`, `/` and `.`. A duplicate is a
-  diagnostic with a rename suggestion. Elements and business objects share the
-  ID pool; flows get synthetic IDs (`F01`, `F02`…).
-- **Element labels** are free text, `"` quoted. `\n` forces a line break;
-  wrapping is automatic otherwise. Every element takes one, in every view — omit
-  it and the element renders as its bare ID, with a **W0502** warning. *Flow*
-  labels are a separate matter, required in some views and optional in others
-  (per view, below).
-- **An element body** holds child elements plus the statements `order:`,
-  `logo:` and `style { … }` (see [Positioning controls](#positioning-controls)
-  and §2).
-- **Comments** start with `#` and run to end of line.
-- **Flow segments after the arrow are all optional**, subject to the view's
-  rules: `"label"`, the technical tail `(PROTOCOL, FORMAT)` or `(PROTOCOL/PORT)`,
-  `[BO_REFS]` (logical only), and an inline `{ style }`. The arrow itself carries
-  the line style — `->` solid, `-->` dashed, `..>` dotted — and either endpoint
-  may pin its attachment side (`A.right -> B.left`).
-- **A `:` may sit between the target and the label** — `A -> B : "label"` — but
-  it carries no meaning. It is the older spelling, still parsed so existing
-  files keep working; write `A -> B "label"` in new ones.
-- **Every flow is its own arrow with its own label.** Flows are never merged;
-  an `A -> B` / `B -> A` pair is drawn as two separated edges.
-- **`legend { note "…" }`** appends free lines to the auto-generated legend band
-  below the canvas. `style { legend: off }` drops the band entirely.
-- **The legend keys only what the drawing holds.** Element keys come from the
-  elements actually placed, the flow key only from a diagram that has flows, the
-  line-style keys only from the styles its flows use, and the business-object
-  chip key only when a flow carries one. A key for something the reader cannot
-  find on the canvas is noise, so nothing in the band is unconditional.
+```cairn
+# an element, and an element holding two children
+datastore ORDER_DB "Order repository"
 
-**Inline style restriction:** per-element and per-flow `{ style { … } }` blocks
-support four properties in `{ … }` — `fill`, `stroke`, `text`, `label` — and a flow's
-inline block takes two more for its own label, `label-offset` and
-`flow-label-wrap`. Diagram-level `style { … }` blocks support the full
-19-property set (§2). An unknown property inside an inline block is **E0104**.
+application ORDER_APP "Order management" {
+  module CAPTURE "Order capture"
+  module VALIDATE "Order validation"
+}
+
+# a flow, and a flow carrying everything it may carry
+CAPTURE -> VALIDATE
+CAPTURE -> EVENTS "Order created" (MQ, JSON) { label: below }
+```
+
+- **IDs** are flat and unique per file. Letters, digits, `_`, `-`, `/` and `.`.
+  Elements and business objects share the ID pool; flows get synthetic IDs
+  (`F01`, `F02`…). A duplicate is a diagnostic with a rename suggestion.
+- **Element labels** are `"` quoted free text. `\n` forces a line break.
+  Omit the label and the element renders as its bare ID, with **W0502**.
+- **An element body** holds child elements plus `order:`, `offset:`, `logo:`
+  and `style { … }` — see [Positioning controls](#positioning-controls) and §2.
+- **Comments** start with `#` and run to end of line.
+- **Everything after the arrow is optional**, subject to the view's rules:
+  `"label"`, a technical tail (`(PROTOCOL, FORMAT)` or `(PROTOCOL/PORT)`),
+  `[BO_REFS]` (logical only) and an inline `{ … }` block.
+- **The arrow carries the line style** — `->` solid, `-->` dashed, `..>` dotted
+  — and either endpoint may pin its side: `A.right -> B.left`. Whitespace before
+  the arrow is required (`A->B` does not parse: `-` is a legal ID character).
+- **A `:` may sit before the label** — `A -> B : "label"`. Older spelling, still
+  parsed; write `A -> B "label"` in new files.
+- **Every flow is its own arrow.** Flows are never merged; `A -> B` and
+  `B -> A` are drawn as two separate edges.
+- **`legend { note "…" }`** appends lines to the legend band under the canvas.
+  `style { legend: off }` drops the band. The band keys only what the drawing
+  actually holds.
+
+**Inline blocks take seven properties:** `fill`, `stroke`, `text`, `label`, and
+on a flow also `label-offset`, `segment-offset` and `flow-label-wrap`. Anything
+else inline is **E0104**. Diagram-level `style { … }` blocks take the full set
+listed in §2.
 
 ### Views at a glance
 
 | View | Element kinds | Flow rules |
 |---|---|---|
-| `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (**logical-view only** — a `business-object` elsewhere is **E0222**) |
-| `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label **optional**; `(protocol, format)` **recommended on system-to-system flows** (**W0540**; actor flows exempt — a person is not a protocol endpoint) |
+| `logical` | actor-group, actor, system, layer, block, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (logical only — elsewhere is **E0222**) |
+| `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label optional; `(protocol, format)` recommended between non-actors (**W0540**) |
 | `infrastructure` | actor, device, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 
-Nesting is checked against the rules each view declares (**E0210–E0218**); a
-combination no rule names is accepted. In the per-view tables below, a
-**Placement** cell in bold and naming a diagnostic code is enforced by the
-validator — anything else is convention the validator does not check, so a
-`queue` declared inside an `application` parses and renders.
+Nesting is checked against each view's rules (**E0210–E0218**). In the tables
+below, a **Placement** cell in bold naming a code is enforced; anything else is
+convention, so a `queue` inside an `application` parses and renders.
 
 ### 1.1 Logical view — `diagram logical`
 
-What the system does, in functional terms: who uses it, which functional blocks
-it is made of, and what data circulates between them. No technology, no
-deployment.
+What the system does: who uses it, which functional blocks it has, what data
+moves between them. No technology, no deployment.
 
 | Kind | Stands for | Container? | Placement | Drawn as |
 |---|---|---|---|---|
 | `actor-group` | a population of roles | yes (holds `actor`) | root | dashed box, band 0 |
 | `actor` | one role or person | no | **inside an `actor-group`** (**E0211**) | person glyph |
 | `system` | the system under study | yes (holds `layer`, `block`) | root | box, band 1 |
-| `layer` | a functional layer inside the system | yes (holds `block`) | **inside a `system`** (**E0212**) | box with title |
+| `layer` | a functional layer | yes (holds `block`) | **inside a `system`** (**E0212**) | box with title |
 | `block` | one functional block | no | **inside a `layer`, `system` or `external`** (**E0210**) | plain box |
-| `external` | third-party systems as a group | yes (holds `block`) | root | dashed box, band 2 |
+| `external` | third-party systems | yes (holds `block`) | root | dashed box, band 2 |
 
-Flows: `A -> B "what is exchanged"`. **The label is mandatory** (**E0203**) —
-the logical view exists to name the exchange. No protocol tail; a
-`(HTTPS/443)`-style tail is meaningless here and the flow matrix for this view
-has no protocol column.
+**The flow label is mandatory** (**E0203**) — this view exists to name the
+exchange. No technical tail.
 
-Business objects — logical view only — declare *what circulates*, once, and are
-then carried by flows:
+**Business objects** name what circulates, once, and flows then carry them:
 
 ```cairn
-business-object BO_MSG "Message" "information message broadcast to the sites"
+business-object BO_MSG "Message" "broadcast to the sites"
 #               ^ID     ^name     ^description (both strings optional)
 
 COM_CTR -> OBS "Alerts and notifications" [BO_MSG]
 ```
 
-They render as a chip under the flow label plus a registry band under the canvas
-(ArchiMate: a business object associated with a flow relationship).
+They render as a chip under the flow label, plus a registry band under the
+canvas.
 
-Completeness: a file with no `actor` warns (**W0501**); a `block` with no flow
-warns (**W0510**).
+A file with no `actor` warns (**W0501**); a `block` with no flow warns
+(**W0510**).
 
 ```cairn
 diagram logical "Appointment booking — logical view"
 
 actor-group USERS "Users" {
   actor PATIENT "Patient"
-}
-actor-group STAFF "Staff" {
-  actor SECRETARY "Medical secretary"
 }
 
 system BOOKING "Appointment booking system" {
@@ -137,69 +129,48 @@ external EXT "External systems" {
   block SMS "SMS gateway"
 }
 
-business-object BO_APPT "Appointment" "slot booked by a patient with a practitioner"
-business-object BO_SLOT "Slot" "time window open for booking"
+business-object BO_APPT "Appointment" "slot booked with a practitioner"
 
-PATIENT   -> PORTAL    "Search a slot\nand book" [BO_SLOT]
+PATIENT   -> PORTAL    "Search a slot and book"
 PORTAL    -> SCHEDULER "Booking request" [BO_APPT]
 SCHEDULER -> NOTIF     "Appointment confirmed" [BO_APPT]
 NOTIF     -> SMS       "Send an SMS reminder"
-SECRETARY -> SCHEDULER "Open / block\nslots" [BO_SLOT]
-SCHEDULER -> PATIENT   "Appointment\nconfirmation" [BO_APPT]
 
 legend {
-  note "Health data is hosted on certified health-data infrastructure"
+  note "Health data is hosted on certified infrastructure"
 }
 ```
 
 ### 1.2 Application view — `diagram application`
 
-Which applications exist, what they are built with, and which technical
-exchanges connect them.
+Which applications exist, what they run on, which technical exchanges connect
+them.
 
 | Kind | Stands for | Container? | Placement | `logo:` | Drawn as |
 |---|---|---|---|---|---|
 | `actor-group` | a population of roles | yes (holds `actor`) | root | no | dashed box, band 0 |
 | `actor` | one role or person | no | **inside an `actor-group`** (**E0211**) | no | person glyph |
-| `system` | a boundary grouping applications | yes | root, **never required** | no | box with title, band 1 |
-| `application` | one deployable application | yes (holds `module`) | root or inside a `system` | yes | box with title, band 1 |
+| `system` | a boundary grouping applications | yes | root, never required | no | box with title, band 1 |
+| `application` | one deployable application | yes (holds `module`) | root or in a `system` | yes | box with title, band 1 |
 | `module` | a component inside an application | no | **inside an `application`** (**E0213**) | yes | plain box |
-| `gateway` | an API gateway or reverse proxy | no | root, or inside a `system` | no | box + gate glyph |
-| `auth` | an auth middleware | no | root, or inside a `system` | no | box + padlock glyph |
-| `idp` | an identity provider | no | root, or inside a `system` | no | box + badge glyph |
-| `queue` | a message queue or broker | no | root, or inside a `system` | yes | horizontal cylinder |
-| `datastore` | a database or registry | no | root, or inside a `system` | yes | vertical cylinder |
+| `gateway` | an API gateway or reverse proxy | no | root, or in a `system` | no | box + gate glyph |
+| `auth` | an auth middleware | no | root, or in a `system` | no | box + padlock glyph |
+| `idp` | an identity provider | no | root, or in a `system` | no | box + badge glyph |
+| `queue` | a message queue or broker | no | root, or in a `system` | yes | horizontal cylinder |
+| `datastore` | a database or registry | no | root, or in a `system` | yes | vertical cylinder |
 | `external` | a third-party system | yes | root | yes | dashed box, band 2 |
 
-`system` is the one kind here that carries no meaning of its own: it draws a
-boundary around the applications, queues and datastores that belong to one
-system, and the flow matrix then annotates an endpoint with its nearest
-container — a module reads `Name (App)`, a queue sitting directly in the system
-reads `Name (System)`.
-
-Flows: the label is optional and usually omitted, because the interesting half
-is the technical tail `(PROTOCOL, FORMAT)` — `(API_REST, JSON)`, `(MQ, JSON)`,
-`(JDBC)`. Omit the label and the tail becomes the arrow's primary label; give
+The flow label is optional and usually omitted — the technical tail is the
+interesting half. Omit the label and the tail becomes the arrow's label; give
 both and the tail renders as a smaller grey sub-line. A flow between two
-non-actor elements with no tail warns (**W0540**); flows from an `actor` are
-exempt. The matrix keeps the protocol and drops the format. Business objects are
-rejected here (**E0222**). An unconnected `module`, `gateway`, `auth`, `idp`,
-`queue` or `datastore` warns (**W0510**).
+non-actor elements with no tail warns (**W0540**). Business objects are rejected
+(**E0222**). An unconnected `module`, `gateway`, `auth`, `idp`, `queue` or
+`datastore` warns (**W0510**).
 
-`gateway`, `auth` and `idp` are three of the kinds the infrastructure view has,
-drawn identically — same colours, same corner placement, each with its own
-glyph: a gate, a padlock, a badge. An API gateway, an auth middleware and an
-identity provider are containers in their own right, and the
-glyph is what tells them apart from a plain `application`, and from each other,
-at a glance. Use `idp` for a provider that belongs to the landscape being described —
-a self-hosted Keycloak, the group's SSO — and `external` for one owned by
-someone else, the way any third party is drawn. `firewall` stays out of this
-view on purpose: it is a network device with no application meaning. None of the
-three glyph kinds takes a `logo:` (**E0108**) — the glyph occupies the corner a
-logo would use.
-
-`logo:` marks the technology a component runs on — see
-[Positioning controls](#positioning-controls) for the full rules.
+Use `idp` for a provider inside the landscape you are drawing (a self-hosted
+Keycloak, the group's SSO) and `external` for one somebody else owns. `gateway`,
+`auth` and `idp` take no `logo:` (**E0108**) — their glyph occupies the corner a
+logo would use. `firewall` is infrastructure-only.
 
 ```cairn
 diagram application "Order platform — application view"
@@ -217,51 +188,44 @@ system ORDERS "Order platform" {
   datastore ORDER_DB "Order\nrepository" { logo: postgresql }
 }
 
-application CRM "Customer CRM" { logo: dotnet
-  module CUSTOMER "Customer\nrecords"
-}
-
 gateway EDGE "Public API\ngateway"
 auth SSO "SSO\nmiddleware"
 idp SSO_IDP "Group SSO\nprovider"
 
-external CARRIER "Carrier tracking\n(third party)"
+external CARRIER "Carrier tracking"
 
-CLERK    -> EDGE                           # actor flow: no tail needed
+CLERK    -> EDGE                        # actor flow: no tail needed
 EDGE     -> SSO (API_REST, JSON)
 SSO      -> SSO_IDP (OIDC, JWT)
 SSO      -> CAPTURE (API_REST, JSON)
 CAPTURE  -> VALIDATE (API_REST, JSON)
 VALIDATE -> ORDER_DB (JDBC)
 VALIDATE -> EVENTS (MQ, JSON)
-CUSTOMER -> VALIDATE (API_REST, JSON)
 EVENTS   -> CARRIER (SFTP, CSV)
 ```
 
 ### 1.3 Infrastructure view — `diagram infrastructure`
 
-Where the software runs and how the traffic gets there: sites, network zones,
-servers, deployed instances, the boxes in the path (gateway, firewall, auth,
-IdP), and every flow's protocol and port. This is the view the *matrice des flux
-techniques* is built from.
+Where the software runs and how traffic reaches it. This is the view the
+*matrice des flux techniques* is built from.
 
 | Kind | Stands for | Container? | Placement | Drawn as |
 |---|---|---|---|---|
-| `actor` | a user or consumer of the infrastructure | no | root (**no `actor-group` in this view**) | person glyph, entry side |
-| `device` | a client machine: workstation, laptop, phone, kiosk | no | root | box + monitor glyph, entry side |
+| `actor` | a user of the infrastructure | no | root (**no `actor-group` here**) | person glyph, entry side |
+| `device` | a client machine | no | root | box + monitor glyph, entry side |
 | `site` | a site or data center | yes | root | box with title |
-| `network-zone` | a network zone | yes | **inside a `site`, or nested in another zone** (**E0216**) | box with title, banded in declaration order |
+| `network-zone` | a network zone | yes | **inside a `site` or another zone** (**E0216**) | box with title |
 | `server` | a server or VM | yes (holds `app-instance`) | **inside a `network-zone` or `site`** (**E0214**) | box with title |
 | `app-instance` | a deployed application | no | **inside a `server` or `network-zone`** (**E0215**) | plain box |
-| `queue` | a message queue or broker | no | inside a zone or site by convention | horizontal cylinder |
-| `gateway` | gateway or reverse proxy | no | inside a zone or site (convention, not enforced) | box + gate glyph |
-| `firewall` | firewall | no | inside a zone or site (convention, not enforced) | box + brick-wall glyph |
-| `auth` | auth middleware | no | inside a zone or site (convention, not enforced) | box + padlock glyph |
-| `idp` | identity provider | no | inside a zone or site (convention, not enforced) | box + badge glyph |
+| `queue` | a message queue or broker | no | in a zone or site (convention) | horizontal cylinder |
+| `gateway` | gateway or reverse proxy | no | in a zone or site (convention) | box + gate glyph |
+| `firewall` | firewall | no | in a zone or site (convention) | box + brick-wall glyph |
+| `auth` | auth middleware | no | in a zone or site (convention) | box + padlock glyph |
+| `idp` | identity provider | no | in a zone or site (convention) | box + badge glyph |
 | `external` | a partner system | no | root | dashed box, exit side |
 
-Flows: **the protocol is mandatory** (**E0240**), the label is optional. The tail
-is one token, `PROTOCOL/PORT`:
+**The protocol is mandatory** (**E0240**), the label optional. The tail is one
+token, `PROTOCOL/PORT`:
 
 ```cairn
 CORE -> DB_I "Queries" (TCP/5432)
@@ -270,14 +234,12 @@ CORE -> PARTNER "Nightly export" (SFTP/22)
 ```
 
 The matrix splits that token on its **last** `/` when what follows is all
-digits, filling the Protocol and Port columns separately; a tail with no numeric
-port (`(LDAPS)`) fills Protocol and leaves Port empty.
+digits; a tail with no numeric port (`(LDAPS)`) leaves Port empty.
 
-Layout: this view has no fixed bands for the containers — sites and zones are
-placed in **declaration order** along the reading direction, so the file's order
-is the diagram's order, with `external` pushed to the far side. An unconnected
-`app-instance`, `device`, `queue`, `gateway`, `firewall`, `auth` or `idp`
-warns (**W0510**).
+Sites and zones are placed in **declaration order** along the reading
+direction, with `external` pushed to the far side. An unconnected
+`app-instance`, `device`, `queue`, `gateway`, `firewall`, `auth` or `idp` warns
+(**W0510**).
 
 ```cairn
 diagram infrastructure "Order platform — infrastructure view"
@@ -295,91 +257,73 @@ site DC1 "Main datacenter" {
     server APP_SRV "Application server" {
       app-instance CORE "Order core"
     }
-    server DB_SRV "Database server" {
-      app-instance ORDER_DB "PostgreSQL"
-    }
     queue BROKER "Message broker"
   }
 }
 
 external PARTNER "Partner platform"
 
-USERS -> FW       "Web access" (HTTPS/443)
-FW    -> RP       "Filtered traffic" (HTTPS/443)
-RP    -> CORE     "API calls" (HTTPS/8443)
-CORE  -> OAUTH    "Token check" (HTTPS/8443)
-OAUTH -> IDP      "Validate tokens" (LDAPS/636)
-CORE  -> ORDER_DB "Queries" (TCP/5432)
-CORE  -> BROKER   "Publish events" (TCP/9092)
-CORE  -> PARTNER  "Nightly export" (SFTP/22)
+USERS -> FW      "Web access" (HTTPS/443)
+FW    -> RP      "Filtered traffic" (HTTPS/443)
+RP    -> CORE    "API calls" (HTTPS/8443)
+CORE  -> OAUTH   "Token check" (HTTPS/8443)
+OAUTH -> IDP     "Validate tokens" (LDAPS/636)
+CORE  -> BROKER  "Publish events" (TCP/9092)
+CORE  -> PARTNER "Nightly export" (SFTP/22)
 ```
 
 ### 1.4 Layout partitions
 
-The layout engine assigns each element a semantic band (ELK partition).
-Elements in the same partition stay aligned across the reading direction.
+Each element gets a semantic band. Elements in the same band stay aligned
+across the reading direction.
 
-| View | Partitions (in reading order) |
+| View | Bands, in reading order |
 |---|---|
 | `logical` | actor-groups (0) · systems (1) · externals (2) |
 | `application` | actor-groups (0) · systems / applications / gateways / auths / idps / queues / datastores (1) · externals (2) |
 | `infrastructure` | actors / devices first · sites / zones in declaration order · externals last |
 
-**Lanes.** Within a partition, the `external` elements of every view are seated
-in one lane across the reading axis — a column under `wide`/`slide`, a row under
-`tall`/`page` — instead of being scattered over the layers the flows happen to
-give them. Two exclusions keep it from fighting the drawing: an external that is
-a container, or one transitively linked to another by a flow, keeps its own
-layer, because a chain has to occupy successive layers by construction. Lanes
-are also skipped entirely under `compact: on`, which is a request to spend
-whitespace on density rather than on alignment.
-
-Scaffold any of them with `cairn new` — `-L` logical, `-A` application,
-`-I` infrastructure — which writes a commented starter file for that view.
+**Lanes.** Within its band, the `external` elements of every view are seated in
+one lane — a column under `wide`/`slide`, a row under `tall`/`page`. Two
+exceptions keep their own layer: an external that is a container, and one linked
+to another external by a flow. `compact: on` skips lanes entirely.
 
 ### Positioning controls
 
-Layout is automatic. These five controls exist for the cases where it gets a
-diagram wrong; each is opt-in, and a file that uses none of them renders exactly
-as it did before they existed. One placement rule needs no control because it is
-applied for you — where a queue's producers and consumers attach, below.
+Layout is automatic. These controls are for when it gets a diagram wrong. Each
+is opt-in; a file using none of them renders exactly as it always did.
 
-**`order: <n>` — where an element sits in the reading order.** A statement in the
-element's body, not a style property (placement is layout, not cosmetics). Lower
-comes first, and *first* is defined by the active disposition: left to right for
-`wide`/`slide`, top to bottom for `tall`/`page`. Values need not be contiguous,
-and a value that is not a whole number ≥ 0 is **E0106**.
+| Control | Where it goes | Moves |
+|---|---|---|
+| `order: <n>` | element body | where the element sits in the reading order |
+| `offset: <dx>, <dy>` | element body | the element, in pixels |
+| `label-offset: <dx>, <dy>` | flow inline block | that flow's label |
+| `segment-offset: <run>, <delta>` | flow inline block | one run of that flow's route |
+| `ID.side` | either flow endpoint | which side of an element the flow meets |
+| `logo: <name>` | element body | *(not positioning — the technology mark)* |
+
+A queue's flow sides need no control at all; see below.
+
+#### `order: <n>` — reading order
+
+Lower comes first, where *first* follows the disposition: left to right for
+`wide`/`slide`, top to bottom for `tall`/`page`. Values need not be contiguous.
+Not a whole number ≥ 0 is **E0106**.
 
 ```cairn
-application BACKEND_L1 "Line 1 backend" {
-  order: 1
-  module MSG_L1 "Messaging handler"
-}
-application BACKEND_L2 "Line 2 backend" {
-  order: 2
-  module MSG_L2 "Messaging handler"
-}
+application BACKEND_L1 "Line 1 backend" { order: 1 }
+application BACKEND_L2 "Line 2 backend" { order: 2 }
 ```
 
-At the diagram root the hint becomes a band of the element's own layout
-partition, which is why it reads along the length: two elements the flows give
-the same depth — the two backends above, both publishing to the same queue —
-would otherwise be drawn side by side across the axis. Three rules bound it.
-
-- **It never crosses a view partition** (§9). An `order:` on an actor-group
-  orders it among the other actor-groups; it cannot push it past the
-  applications.
-- **An element without an `order:` follows the flows.** It joins the band of the
-  latest ordered element that flows into it, so a hint never drags a consumer
-  ahead of its own source; when nothing flows into it, it sits in the first band.
-- **A flow may end up running backwards.** Where the declared order contradicts
-  the flow direction, the order wins and the flow is drawn as a backward edge.
-
-**Inside a container `order:` sorts across the axis instead** — top to bottom in
-`wide`/`slide`, left to right in `tall`/`page`. A child's layer is fixed by the
-flows there and every layer constraint elk offers was measured to be a no-op
-under its `INCLUDE_CHILDREN` hierarchy handling, so the hint orders the siblings
-that share a layer and nothing more:
+- **It never crosses a view band.** An `order:` on an actor-group orders it
+  among actor-groups; it cannot push it past the applications.
+- **An element with no `order:` follows the flows** — it joins the band of the
+  latest ordered element flowing into it, or the first band if nothing does.
+- **A flow may end up running backwards** where the declared order contradicts
+  the flow direction. The order wins.
+- **Inside a container it sorts across the axis instead** — top to bottom in
+  `wide`/`slide`, left to right in `tall`/`page` — among siblings sharing a
+  layer:
 
 ```cairn
 actor-group STAFF "Payment actors" {
@@ -388,252 +332,161 @@ actor-group STAFF "Payment actors" {
 }
 ```
 
-**`offset: <dx>, <dy>` — a nudge, in pixels, from where the layout put it.** A
-statement in the element's body like `order:`, and read the same way: `dx` is
-right, `dy` is down, either may be negative, and anything but a pair of whole
-numbers is **E0109**. This is what the playground writes when you drag an
-element, so a diagram positioned by hand stays a diagram anyone can reproduce
-from its source.
+#### `offset: <dx>, <dy>` — nudge an element
+
+`dx` is right, `dy` is down; either may be negative. Anything but a pair of
+whole numbers is **E0109**. This is what the playground writes when you drag an
+element.
 
 ```cairn
-system ORDERS "Order platform" {
-  block APP "Order management" {
-    offset: 40, -20
-  }
-}
+block APP "Order management" { offset: 40, -20 }
 ```
 
-Three things follow from it being a **delta and not a seat**.
-
-- **The layout still runs, and the nudge does not change it.** The element keeps
-  its place in the reading order and moves with its neighbours; adding a sibling
-  re-flows the drawing and the nudge comes along. Nothing is ever pinned to a
-  canvas coordinate, so an offset does not go stale when the diagram around it
-  grows. But the offset itself re-flows nothing: a diagram carrying hints is the
-  diagram without them *plus the hints*, so nudging one box never moves another
-  or re-routes a flow that does not touch it. The deltas are applied to the
-  layout the router chose, never fed back into choosing it. What does answer to a
-  nudge is the immediate neighbourhood — a flow whose element moved is carried
-  along and re-aimed, and the flows sharing the side it lands on are re-seated so
-  two terminals do not end up in the same place.
+- **It is a delta, not a seat.** The layout still runs and the element keeps its
+  place in the reading order, so the nudge survives edits that re-flow the
+  drawing.
+- **It re-flows nothing.** A diagram with hints is the diagram without them plus
+  the hints: nudging one box never moves another or re-routes a flow that does
+  not touch it. What does follow are the flows on the moved element — carried,
+  re-aimed and re-seated so two terminals never land in the same place.
 - **A container carries its children**, and a child's own `offset:` adds to its
-  container's — so nudging a `system` moves the whole group rigidly, and the one
-  block inside it that also needs moving still can. A child is **held inside**
-  the container that holds it, though: nesting is what a diagram *means*, and a
-  block drawn outside its system reads as a broken drawing rather than a nudged
-  one. An offset cut short that way is reported as **W0573** — the one place a
-  positioning hint is negotiated instead of honored. Nudge the container when the
-  whole group belongs elsewhere.
-- **The flows follow, and reconnect.** A terminal seated on an element that
-  moves is carried with it and its route re-squared, then the usual route repair
-  owns the result — so a flow whose element was dragged past its counterpart
-  comes back attached to the side that now faces it, rather than wrapping around.
-  An offset that reaches past the top-left corner slides the whole canvas instead
-  of being clamped, so the delta always stands.
+  container's. A child is **held inside** its container, and an offset cut short
+  that way is **W0573** — the one case a hint is negotiated rather than honored.
+  Nudge the container when the whole group belongs elsewhere.
+- **An offset past the top-left corner slides the whole canvas** rather than
+  being clamped, so the delta always stands.
 
-Reach for `order:` first. An offset large enough to change what the reader sees
-as the sequence is a sign the *band* is wrong, not the pixels — and `order:`
-survives edits that an offset merely rides along with.
+Reach for `order:` first: an offset big enough to change the reading sequence
+means the *band* is wrong, and `order:` survives edits an offset merely rides
+along with.
 
 **An offset is honored, never negotiated** (INVARIANTS §17), containment aside.
-Where one lands an element on another, or a label on an element, the drawing
-still ships exactly as asked and the collision is reported as **W0572** rather
-than quietly repaired.
+An element landed on another, or a label on an element, still ships as asked and
+the collision is reported as **W0572**.
 
-**`label-offset: <dx>, <dy>` — the same nudge, for a flow's label.** It rides in
-the flow's inline block, because a flow has no body of its own:
+#### `label-offset: <dx>, <dy>` — nudge a flow's label
 
 ```cairn
 CAPTURE -> EVENTS "Order created" { label-offset: 12, -6 }
 ```
 
-The delta is measured from the seat the label was given on its own run, so it
-tracks the flow rather than the canvas. A label carrying one is exempt from the
-renderer's overlap settling — that is the "honored, not negotiated" rule again,
-and W0572 is what reports the overlap it may cost.
+Measured from the seat the label had on its run, so it tracks the flow rather
+than the canvas. The label is then exempt from the renderer's overlap settling,
+and **W0572** reports any overlap that costs. **It moves the label and nothing
+else** — to move the flow, use `segment-offset:`.
 
-**It moves the label and nothing else.** The flow keeps the route it had: the
-passes that route on label positions are handed the seats the layout chose, not
-the ones an author moved. To move the flow itself, use `segment-offset:`.
+#### `segment-offset: <run>, <delta>` — slide one run of a route
 
-**`segment-offset: <segment>, <delta>` — slides one run of a flow's route.** A
-route is a chain of horizontal and vertical runs; this moves one of them along
+A route is a chain of horizontal and vertical runs. This moves one of them along
 its **normal** — a vertical run left or right, a horizontal run up or down — and
-touches nothing else:
+touches nothing else, so the route keeps exactly the turns it went in with.
 
 ```cairn
 CAPTURE -> EVENTS "Order created" { segment-offset: 2, -18 }
 ```
 
-`segment` counts the runs from 1, following the route from its source — a *run*
-being one straight line as the reader sees it, however many points the route
-spends on it. `delta`
-is right for a vertical run and down for a horizontal one, and may be negative.
-The normal is the only direction a run can move without the route needing a
-repair: the perpendicular runs meeting it at either end keep their own axis and
-simply change length, so the drawing comes out orthogonal with exactly the turns
-it went in with. This is what the playground writes when you slide a flow — hover
-a run and the cursor becomes a resize cursor pointing the one way it can go.
+`run` counts from 1 along the route from its source, a *run* being one straight
+line as the reader sees it. `delta` is right for a vertical run, down for a
+horizontal one, and may be negative. This is what the playground writes when you
+drag a run.
 
-**Repeat the key to move more than one run.** It is the one inline property that
-may appear twice in a block, because a route can need two of its runs moved and
-a second key is less to learn than a list:
+**Repeat the key to move more than one run** — the only inline property that may
+appear twice in a block:
 
 ```cairn
 CAPTURE -> EVENTS "Order created" { segment-offset: 2, -18 segment-offset: 4, 12 }
 ```
 
-Two things bound it.
+- **A run carrying a terminal stops at its element side.** Its normal points
+  along the side the flow attaches to, so sliding it slides the seat. The delta
+  is cut short just inside the corner and reported as **W0573**. Interior runs
+  are unbounded.
+- **Run numbers are positional.** A route that gains or loses a turn renumbers
+  everything after it, and a `segment-offset` naming a run that no longer exists
+  is **W0574** rather than silently dropped. Re-slide it in the playground and
+  the number is rewritten for you.
 
-- **A run carrying a terminal can only slide as far as its element side.** Its
-  normal points *along* the side the flow attaches to, so sliding it slides the
-  seat; past the corner the flow would come off the element it connects. The
-  delta is cut short a few pixels inside the corner instead, and reported as
-  **W0573**. Interior runs have no such bound.
-- **The run number is positional.** A route that gains or loses a turn renumbers
-  everything after it, and a `segment-offset` naming a run the route no longer
-  has is reported as **W0574** rather than silently dropped. Re-slide the run in
-  the playground and the number is rewritten for you.
+Applied after the layout and every routing pass: the router owns the route's
+*shape*, you own where each run sits. A `label-offset:` on the same flow still
+adds on top.
 
-Applied after the layout is chosen and after every routing pass, so the router
-still owns the *shape* of the route — how many turns it takes and what it goes
-around — and the author owns where each run sits. A hint never decides which
-layout wins. The label of a nudged flow re-anchors to the run it names, and a
-`label-offset:` on the same flow still adds on top.
+Reach for `ID.side` or an element `offset:` first — a run needing a large slide
+usually wants a different attachment side.
 
-Reach for `ID.side` or an element `offset:` first: a run that needs a large slide
-usually wants a different attachment side, and a side survives edits that a run
-number merely rides along with.
+#### `ID.side` — which side a flow attaches to
 
-**`logo: <name>` — the technology a component is built on.** A statement inside
-an element body, like `order:`. Content rather than cosmetics, so it lives
-outside the `style` block. Application view only, and only on the kinds that
-stand for running software: `application`, `module`, `queue`, `datastore`,
-`external`. An `actor` is a person and a `system` is a grouping, so neither takes
-one (**E0108**).
-
-```cairn
-module WEB "Web client" { logo: react }
-datastore ORDER_DB "Order store" { logo: postgresql }
-module BILLING "Billing" { logo: "./logos/acme.svg" }
-```
-
-A bare name comes from the built-in set — `cairn logos` lists all of them, and an
-unknown one is **E0107** with a `did you mean` suggestion. A quoted value is a
-path to a file **relative to the `.cairn` file**, in `.svg`, `.png`, `.jpg`,
-`.jpeg` or `.webp`, of up to 256 KB.
-
-The mark is drawn in the element's top-right corner, opposite the kind glyph, in
-the node's own stroke colour — a built-in logo never introduces a colour the
-theme did not choose. The layout reserves room for it, so a long label is
-centred in what is left rather than running underneath.
-
-**A URL is refused (E0105).** A logo file is read at build time and inlined as a
-`data:` URI, so the SVG stays one self-contained file: it renders offline, it
-cannot change under the author afterwards, and opening it does not tell a third
-party who is reading. A file that is missing, oversized or of an unsupported type
-is **W0580** — a warning, not an error, and the diagram renders without the mark.
-
-Because the core never touches a filesystem, file-sourced logos resolve in the
-CLI. The playground, which has no filesystem, renders built-ins only.
-
-**`ID.side` — which side of an element a flow attaches to.** Written on either
-endpoint, independently: `A.right -> B`, `A -> B.top`, or both. Sides are named
-as the diagram is *read* — `left`, `right`, `top`, `bottom` — not relative to the
-flow's direction, so a diagram authored for `wide` may want different pins after
-switching to `tall`.
+Written on either endpoint, independently. Sides are named as the diagram is
+*read* — `left`, `right`, `top`, `bottom` — not relative to the flow direction,
+so a diagram authored for `wide` may want different pins under `tall`.
 
 ```cairn
 POSTING.bottom -> LEDGER_DB.top (JDBC)
 ```
 
-Because `.` is a legal id character, `API.right` is ambiguous with an element
-*named* `API.right`. A declared id always wins, and the dropped side reading is
-reported as **W0571**. An unknown side name is **E0223**. A pin is a request,
-not a guarantee: one the layout cannot reach is dropped rather than forced into
-an unreadable route, and reported as **W0570**. A pin fixes the two ends, not the
-path between them: the passes that would move a terminal stand down for *that*
-terminal — pin one end and the other is still re-aimed, unwoven and measured as
-usual — while the route itself is still tidied along shapes that leave the
-pinned ends where the author put them.
+- A declared ID always wins over a side reading (`.` is a legal ID character),
+  and the dropped side is reported as **W0571**.
+- An unknown side name is **E0223**.
+- A pin is a request: one the layout cannot reach is dropped rather than forced
+  into an unreadable route, and reported as **W0570**.
+- A pin fixes the two ends, not the path between them. Pin one end and the other
+  is still re-aimed as usual.
 
 **This is what the playground writes when you drag a flow's end.** Hover either
-end of a flow and the point it meets its element shows as a small circle; drag it
-to another side and the endpoint is rewritten — `APP -> DB` becomes
-`APP.top -> DB`, and an endpoint that already names a side has that word replaced
-rather than a second one appended. The drop picks the side from where the pointer
-sits relative to the element's centre, so the ghost circle sits on the middle of
-the side you are about to choose: a pin names a *side*, and which seat on it the
-flow takes stays the layout's answer. An endpoint that names a role
-(`CAPTURE.producer`) offers no handle — a side and a role on one endpoint is
-**E0225**, so there is nothing a drag could write there.
+end and the point it meets its element shows as a circle; drag it to another
+side and `APP -> DB` becomes `APP.top -> DB`. An endpoint that already names a
+side has that word replaced, not appended. An endpoint naming a role
+(`CAPTURE.producer`) offers no handle — a side and a role together is **E0225**.
 
-**A queue's flows are sided for you.** One placement decision needs no control
-at all: a `queue` is a hand-off between two halves of a drawing, so everything
-published *into* one attaches on its **left** side and everything read *out of*
-one leaves on its **right** side — the arrow direction is what says which,
-unless a role says so instead (below). Left and right in every disposition, including
-`tall` and `page`: a queue is drawn as a cylinder lying on its side, and its
-mouth is the left and right cap, so a flow touching the flat top reads as
-missing the box even where the drawing itself runs downward. It applies in the
-two views that have queues, `application` and `infrastructure`, and needs nothing
-in the source:
+#### A queue's flows are sided for you
+
+Everything published *into* a `queue` attaches on its **left** cap, everything
+read *out of* one leaves on its **right** — in every disposition, since a queue
+is drawn as a cylinder on its side. Nothing to declare:
 
 ```cairn
 queue EVENTS "Order event bus"
 
-CAPTURE  -> EVENTS (MQ, JSON)   # producer — arrives on the upstream side
-EVENTS   -> INDEXER (MQ, JSON)  # consumer — leaves on the downstream side
+CAPTURE -> EVENTS (MQ, JSON)    # producer — left cap
+EVENTS  -> INDEXER (MQ, JSON)   # consumer — right cap
 ```
 
-Two limits are worth knowing. **Your pin wins:** name a side yourself
-(`CAPTURE -> EVENTS.top`) and that endpoint is yours; only endpoints you left
-free are sided for you. And **it is a preference, not a pin:** the derived side
-is handed to the layout engine, but a producer the layout draws to the *right* of
-its queue would have to wrap around the box to reach the left cap, so the routing
-passes attach it on the near side instead. Nothing is reported when that happens
-— you declared nothing, so nothing was dropped. Pin the endpoint by hand if you
-want the side regardless.
+Two limits. **Your pin wins:** name a side yourself (`CAPTURE -> EVENTS.top`)
+and that endpoint is yours. And **it is a preference, not a pin:** a producer
+the layout draws to the right of its queue attaches on the near side instead,
+with nothing reported, since you declared nothing. Pin it by hand if you want
+the side regardless.
 
-**`ID.producer` / `ID.consumer` — which side of the exchange this element is
-on.** Written in the same slot as a side pin, on the element *opposite* the
-queue, and it names a relationship rather than a geometry: `producer` puts the
-flow on the queue's left cap, `consumer` on its right.
+#### `ID.producer` / `ID.consumer` — which side of the exchange
+
+Written in the side-pin slot, on the element *opposite* the queue. It names a
+relationship, not a geometry: `producer` puts the flow on the queue's left cap,
+`consumer` on its right.
 
 ```cairn
 CAPTURE.producer -> QUEUE_NOTIF (AMQP)
 INDEXER.consumer -> QUEUE_NOTIF (AMQP)
 ```
 
-Both arrows point **at** the queue, which is how a reader looks at a bus:
-everything touches it. The role is what separates the two sides of the exchange,
-and the drawing follows — the producer arrives on the left cap, the consumer is
-seated past the queue and its arrow runs back into the right cap. What you wrote
-is what is drawn: the arrowhead stays on the queue for both.
+Both arrows point **at** the queue. The arrowhead stays on the queue for both:
+what you wrote is what is drawn.
 
-Roles are optional. Writing the arrow the way the data runs —
-`QUEUE_NOTIF -> INDEXER` — needs no role at all and lands the flow on the same
-cap; the role exists for diagrams drawn as *dependencies*, where every arrow
-points at the thing it talks to and direction alone cannot say who publishes and
-who reads. A role may also be written on either endpoint:
-`QUEUE_NOTIF -> INDEXER.consumer` is the delivery drawn out of the queue, and it
-meets the same right cap.
+Roles are optional — writing the arrow the way the data runs
+(`QUEUE_NOTIF -> INDEXER`) lands on the same cap. They exist for diagrams drawn
+as *dependencies*, where every arrow points at the thing it talks to and
+direction alone cannot say who publishes and who reads. A role may sit on either
+endpoint: `QUEUE_NOTIF -> INDEXER.consumer` meets the same right cap.
 
 The flow matrix exports what you wrote, so a consumer drawn at the queue is
 tabulated `INDEXER → QUEUE_NOTIF`. If the table matters more than the picture,
 draw that flow the way the data runs.
 
-Three rules bound it. The other end must be a queue (**E0224**) — between two
-ordinary elements the arrow already says everything a role would. The queue end
-must not also carry a side (**E0225**): `producer` *means* the left cap, so a
-side there is a second answer to a settled question. And an unknown suffix is
-**E0223**, the same error a misspelt side gets.
+Three rules: the other end must be a queue (**E0224**); the queue end must not
+also carry a side (**E0225**); an unknown suffix is **E0223**.
 
-**Arrow glyph — the flow's line style.** `->` solid (the default), `-->` dashed,
-`..>` dotted. Whitespace before the arrow is required, as it always has been
-(`A->B` does not parse: `-` is a legal id character). Precedence follows the
-style model: an inline `{ stroke: dashed }` beats the glyph, which beats the
-diagram-level `flow-stroke`.
+#### Arrow glyph — the flow's line style
+
+`->` solid (default), `-->` dashed, `..>` dotted. An inline `{ stroke: dashed }`
+beats the glyph, which beats the diagram-level `flow-stroke`.
 
 ```cairn
 ROUTING --> SETTLE (MQ, JSON)          # dashed
@@ -641,8 +494,8 @@ ROUTING ..> SCHEME (ISO8583)           # dotted
 M2 --> M4 (MQ, JSON) { stroke: solid } # inline wins: solid
 ```
 
-Each glyph carries a reading, and the legend states it — a drawing that uses
-more than one line style gets a key per style, in the view's own vocabulary:
+The legend states the reading, in the view's own vocabulary, and only for a
+diagram that uses more than one style:
 
 | Glyph | Logical | Application | Infrastructure |
 |---|---|---|---|
@@ -650,71 +503,68 @@ more than one line style gets a key per style, in the view's own vocabulary:
 | `-->` dashed | asynchronous or event-driven exchange | asynchronous exchange (message, event) | asynchronous or intermittent link |
 | `..>` dotted | dependency — no data exchanged | dependency — no direct call | dependency — outside nominal traffic |
 
-cairn defines these readings — they are not lifted from a standard — informed by
-two that do distinguish relationships this way. ArchiMate separates its
-relationships by line style, drawing *flow* dashed and *access* dotted against a
-solid *triggering* line. C4 prescribes no notation at all, but asks every diagram
-for a key, which is what this band is; drawing asynchronous relationships dashed
-is a convention among its users, not part of the model.
+Nothing enforces the reading: the parser records a style and the renderer draws
+it. cairn defines these readings; they are not lifted from a standard.
 
-Nothing enforces the reading: the parser records a line style and the renderer
-draws it. A diagram that uses one style throughout gets no key row, since there
-is nothing to tell apart.
+#### `logo: <name>` — the technology a component runs on
 
-Five files in [`examples/placement/`](../examples/placement) show these
-controls: `baseline.cairn` declares none, `sides.cairn` is the same shape with
-`ID.side` pins on its flows, `reading-order.cairn` sequences two backends along
-the length with `order:`, `queue-sides.cairn` declares nothing at all — its
-producer and consumer sides are the ones the layout derives — and
-`queue-roles.cairn` draws every flow *at* the queue and names the roles instead.
+Application view only, and only on kinds that stand for running software:
+`application`, `module`, `queue`, `datastore`, `external`. An `actor` or
+`system` takes none (**E0108**).
+
+```cairn
+module WEB "Web client" { logo: react }
+datastore ORDER_DB "Order store" { logo: postgresql }
+module BILLING "Billing" { logo: "./logos/acme.svg" }
+```
+
+A bare name comes from the built-in set — `cairn logos` lists them, and an
+unknown one is **E0107** with a suggestion. A quoted value is a path **relative
+to the `.cairn` file**, in `.svg`, `.png`, `.jpg`, `.jpeg` or `.webp`, up to
+256 KB. A URL is refused (**E0105**); a file that is missing, oversized or of an
+unsupported type is **W0580** and the diagram renders without the mark.
+
+The mark is drawn top-right, opposite the kind glyph, in the node's own stroke
+colour. File-sourced logos resolve in the CLI only — the playground has no
+filesystem and renders built-ins.
+
+#### Examples
+
+Six files in [`examples/placement/`](../examples/placement) show these controls:
+`baseline.cairn` declares none, `sides.cairn` adds `ID.side` pins,
+`reading-order.cairn` sequences two backends with `order:`, `flow-label.cairn`
+moves a flow label, `queue-sides.cairn` declares nothing and takes the derived
+queue sides, and `queue-roles.cairn` draws every flow *at* the queue with roles.
 
 ## 2. Styling — three levels, most specific wins
 
-View defaults → diagram-level `style` block → inline per-element/per-flow. Terse shorthand: the parser disambiguates values by shape (`#hex` = color, keyword = line style, number = width). Conflicting same-type values (e.g. `dashed dotted`) → diagnostic.
+View defaults → diagram `style` block → inline per element or flow. Values are
+disambiguated by shape: `#hex` is a colour, a keyword is a line style, a number
+is a width. Two values of the same type (`dashed dotted`) is a diagnostic.
 
 ```cairn
 style {
   theme: light                 # light | dark | slate | sand | contrast | nord |
-  #                              solarized | classic | classic-dark — selects the
-  #                              default color palette. A custom palette is a JSON
-  #                              file passed to `--theme` (§4), never a DSL name.
-  accent: #4c6ef5              # #hex — retints the flows on top of the theme
-  lang: en                     # en | fr — localizes rendered labels (band titles,
-  #                              legend, matrix headers); keywords stay English (D2)
-  background: #ffffff          # canvas background color (defaults to the theme's)
+                               #   solarized | classic | classic-dark (§2.2)
+  accent: #4c6ef5              # retints the flows on top of the theme
+  background: #ffffff          # canvas colour (defaults to the theme's)
+  lang: en                     # en | fr — localizes rendered chrome only
   disposition: wide            # wide | tall | slide | page
-  #   wide  : elongated horizontal (default) — actors left, externals right
-  #   tall  : elongated vertical — actors top, externals bottom
-  #   slide : balanced, targets a 16:9 ratio (PowerPoint)
-  #   page  : balanced, targets an A4 portrait ratio (Word/ODT)
-  # slide/page: orientation is a hard constraint (slide is always landscape,
-  # page always portrait). Among correctly-oriented candidates (both directions,
-  # narrow-wrapped labels, tight spacing, min-layer layering), the winner is the
-  # one that MAXIMIZES scale-to-fit on the physical target (1280×720 slide /
-  # A4 page) — i.e. the biggest readable text, not an abstract ratio. The build
-  # prints the fit: `fits 16:9 slide at 91% (labels ≈ 9.5px)`. If labels would
-  # land below ~7px, W0520 warns that the diagram exceeds the medium's capacity
-  # and suggests splitting the view — no layout can fix too much content.
-  crossing-hops: on            # on | off — arcs where lines cross (spike-validated)
-  compact: off                 # on | off — denser layout: tighter inter-layer
-  #                              and inter-element spacing
-  arrows: normal               # normal | large — arrowhead size
-  legend: auto                 # auto | off — auto legend band below the canvas
+  crossing-hops: on            # on | off — arcs where lines cross
+  compact: off                 # on | off — tighter spacing between elements
+  arrows: normal               # normal | large
+  legend: auto                 # auto | off
   flow-text: full              # full | numbered
-  #   full     : labels (and BO chips) ride on the arrows
-  #   numbered : arrows carry a number badge only; full descriptions + chips
-  #              move to a flow table below the canvas
-  #              (recommended for very large diagrams)
   flow-label: above            # on-line | above | below
   flow-color: none             # none | by-source — one hue per source element
   flow-stroke: solid #444 1.3
   fill actor-group: #eef4fb    # per-kind fill
   stroke actor-group: #7a9cc4 dashed
-  text block: #222233          # per-kind label/text color
-  font: "Helvetica" 11         # family and size in one value
-  font-size: 11                # size alone, leaving the family as it is
-  label-wrap: 14               # characters per line for element/container labels
-  flow-label-wrap: 10          # characters per line for flow labels
+  text block: #222233          # per-kind label colour
+  font: "Helvetica" 11         # family and size together
+  font-size: 11                # size alone
+  label-wrap: 14               # characters per line, element and container labels
+  flow-label-wrap: 10          # characters per line, flow labels
   container-padding: 4         # px inside a container: left, right, bottom
   label-padding: 4             # px either side of a node label
 }
@@ -725,133 +575,119 @@ block COM_CTR "Central communication module" {
 COM_CTR -> OBS "Alerts…" { label: below  stroke: dashed #a33  text: #a33 }
 ```
 
+Those 22 keys are the whole diagram-level set; an unknown one is **E0104**.
+
+**Dispositions.** `wide` is elongated horizontal (the default) — actors left,
+externals right. `tall` is elongated vertical. `slide` targets 16:9 and `page`
+targets A4 portrait; for those two the orientation is a hard constraint and the
+winning candidate is the one that maximises scale-to-fit on the physical target,
+so the build prints `fits 16:9 slide at 91% (labels ≈ 9.5px)`. Labels below
+about 7px raise **W0520**: the diagram exceeds the medium and wants splitting.
+
+**`flow-text: numbered`** puts a number badge on each arrow and moves the full
+descriptions and business-object chips to a table below the canvas —
+recommended for very large diagrams.
+
+**Colours.** `theme` picks a palette, `background` overrides the canvas,
+`accent` retints the flows, and `flow-color: by-source` gives every source
+element its own hue. `fill`, `stroke` and `text` work per diagram, per kind
+(`fill block: …`) or inline; a per-flow inline `{ stroke: … }` wins over
+everything. Several may share a line: `{ fill: #a stroke: #b text: #c }`.
+
+**`lang: fr`** switches rendered chrome to French (`FLUX`, `OBJETS MÉTIER`,
+`LÉGENDE`, kind names, matrix headers). DSL keywords stay English so sources
+stay portable.
+
+Styles never affect semantic validation, but a style value is still range
+checked.
+
 ### Density controls
 
-Four properties trade whitespace for compactness. Each is **opt-in and
-independent**: unset, the layout uses the spacing it always used. They compose
-with `compact: on` rather than replacing it — `compact` retunes elk's spacing
-between elements, while these four work inside a box or inside a label.
+Four opt-in properties trade whitespace for compactness. They compose with
+`compact: on` rather than replacing it — `compact` tightens the space *between*
+elements, these four work inside a box or inside a label. Out of range is
+**E0103**, reported rather than clamped.
 
 | Property | Unit | Governs |
 |---|---|---|
 | `label-wrap: <n>` | characters, ≥ 1 | breaks element and container labels onto `n`-character lines |
-| `flow-label-wrap: <n>` | characters, ≥ 1 | breaks flow labels onto `n`-character lines; also spelt inline on one flow |
-| `container-padding: <n>` | pixels, ≥ 0 | room inside a container on its left, right and bottom |
-| `label-padding: <n>` | pixels, ≥ 0 | room either side of a node's label |
+| `flow-label-wrap: <n>` | characters, ≥ 1 | breaks flow labels; also spelt inline on one flow |
+| `container-padding: <n>` | pixels, ≥ 0 | room inside a container: left, right, bottom |
+| `label-padding: <n>` | pixels, ≥ 0 | room either side of a node label |
 
-Anything but a whole number in range is **E0103**, reported rather than clamped.
+**Nothing wraps a label unless you ask.** Unset, a long name widens its box and
+the only line breaks are the ones you typed with `\n`.
 
-`examples/application-tech-stack-large-dense.cairn` is
-`examples/application-tech-stack-large.cairn` with all three turned on and
-nothing else changed; rendering both is the quickest way to see what they buy —
-fifteen labels re-flow onto two rows, and about 13% comes off the width. That
-model is the one they are shown on because its labels are long single lines; an
-example whose labels are already broken by hand with `\n` has almost nothing
-left for a wrap to do. Most of the saving is the boxes themselves, so the three
-compose with `compact: on` (`examples/application-compact.cairn`), which
-tightens the space *between* elements rather than the space inside them.
+**Both wraps break between words, never inside one.** A single token longer than
+`n` is left intact, so `PCC_DONNEES_TPS_REEL` stays on one line however small
+`n` gets — to the wrap it is one word. Split a long identifier with `\n`
+yourself.
 
-**`label-wrap: <n>` breaks the label, not the box.** A label is otherwise left
-exactly as written: a long name widens its box instead of stacking, and the only
-line breaks are the ones the author typed. Setting `label-wrap` re-flows every
-element and container label to `n` characters, which trades width for height —
-the usual reason a diagram is too wide to read is one long name.
+**A single flow may name its own wrap**, and the inline one wins:
 
-**It breaks between words, never inside one.** A single token longer than `n` is
-left intact rather than cut, so a screaming-snake queue name like
-`PCC_DONNEES_TPS_REEL` stays on one line however small `n` gets: to the wrap it
-is one word. Labels made of real words are what the property reshapes; give a
-long identifier its own `\n` if it has to be split.
-
-It is applied once, on the finished model, so the wrap reaches layout, rendering
-and the slide/page fold from a single place. Two things deliberately do *not*
-follow it: an element with no label at all keeps falling back to its id (writing
-one would silence **W0502**, the warning that the label is missing), and the flow
-matrix flattens the newlines back to spaces, because a table cell is one line.
-
-**`flow-label-wrap: <n>` is the same promise for the text on the arrows.** No
-flow label is ever broken for you either: left unset, a label rides its
-connector on the lines it was written with, and a long one widens the drawing
-rather than stacking. It breaks between words only, exactly as `label-wrap`
-does.
-
-**A single flow may name its own.** `flow-label-wrap:` is spelt the same way in
-a flow's inline block, where it governs that flow and nothing else:
-
-```
+```cairn
 A -> B "publishes every case-file status change as an event" (AMQP) {
   flow-label-wrap: 10
 }
 ```
 
-Precedence is the same as every other property written at both levels — the
-inline one wins — and reaching for it beats lowering the diagram's: one label
-longer than the rest is the usual reason to wrap at all, and wrapping the whole
-drawing to suit it costs every other label its line. Out of range is **E0103**
-there too.
+Reach for that before lowering the diagram's: one long label is the usual reason
+to wrap at all, and wrapping the whole drawing to suit it costs every other
+label its line. The two properties stay separate because they want different
+numbers — a flow label reads at roughly 10–14 characters, an element label wants
+more.
 
-It is a separate property rather than a second job for `label-wrap` because the
-two want different numbers. A flow label is a phrase riding a line and reads at
-roughly 10–14 characters; an element label is a name centred in a box and wants
-more. Setting one number for both narrows whichever of the two it was not
-chosen for, so each gets its own.
+**`container-padding:` covers three sides, not four.** The top holds the
+container's own title, so its depth tracks the label.
 
-`examples/flow-labels-long.cairn` and `examples/flow-labels-long-wrapped.cairn`
-are the same model with and without it — 2054×201 becomes 1136×398, about 45%
-off the width, and the last flow in the pair carries its own narrower wrap.
+**`label-padding:` also drops the uniform minimum node width**, which is what
+most boxes actually sit on. Boxes then stop being a uniform width: each hugs its
+own label. Reach for `label-wrap` first if the diagram is wide because of one
+long name.
 
-Before 1.0.0-RC16 this wrap was not a choice. `compact: on` broke every flow
-label at 10 characters, and the `slide` and `page` fits tried 16 and 14 while
-searching for a layout that fit the frame, so a label could come back stacked on
-a diagram that never asked for it. Those three built-in widths are gone; a
-diagram that relied on them declares `flow-label-wrap:` to get them back.
+Two things never follow `label-wrap`: an element with no label keeps falling
+back to its ID (**W0502** stays), and the flow matrix flattens newlines back to
+spaces, because a table cell is one line.
 
-**`container-padding: <n>` covers three sides, not four.** The top of a container
-holds its own title, so its depth has to track the label's line count; a knob
-there would put the name on the first child. The left, right and bottom are pure
-whitespace and are what the property reclaims.
-
-**`label-padding: <n>` also drops the uniform minimum node width.** Nodes have a
-floor so that boxes with short labels come out the same width, and that floor —
-not the padding — is what most boxes are actually sitting on. Left in place it
-would mean the property narrowed nothing on the very diagrams it was asked for,
-so setting `label-padding` lowers the floor to the narrowest box the renderer
-already draws well (an actor's). The visible cost is that boxes stop being a
-uniform width: each one hugs its own label. Reach for `label-wrap` first if the
-diagram is wide because of one long name rather than many short ones.
-
-Colors: `theme` picks one of the nine built-in palettes (`light` is the default) and `background` overrides the canvas color; `accent` retints the flows on top of whichever palette is in force, and `flow-color: by-source` gives every source element its own hue instead. A per-flow inline `{ stroke: … }` still wins over both. Each element's colors are customizable at every level: `fill`, `stroke` and `text` (label color) work inline per element, per kind (`fill block: …`), or per diagram; flow color/width/style via `flow-stroke` and inline `{ stroke: … }`. Several properties may share one line: `{ fill: #a stroke: #b text: #c }`.
-
-Rules: styles never affect *semantic* validation (semantics and cosmetics stay separate) — a style value is still checked for syntax and range, so a `label-wrap`, `container-padding` or `label-padding` outside its range is **E0103**; views ship coherent defaults for both themes so a zero-`style` diagram renders correctly in light or dark.
-
-Output language: `lang: fr` switches rendered chrome to French (`FLUX`, `OBJETS MÉTIER`, `LÉGENDE`, French legend/kind names, and the flow-matrix headers). Only the rendered artifact changes — DSL keywords remain English (decision D2) so sources stay portable and diff-clean. Default `en` is byte-identical to prior output.
+`examples/application-tech-stack-large-dense.cairn` and
+`examples/flow-labels-long-wrapped.cairn` are the plain models with these turned
+on — rendering both pairs is the quickest way to see what they buy.
 
 ## 2.1 Flow matrix
 
-> This is a standard French EA deliverable — the *matrice des flux techniques* — natively produced from a diagram-as-code DSL
+> A standard French EA deliverable — the *matrice des flux techniques* —
+> produced natively from the DSL.
 
-`cairn matrix <file> --format csv|md|svg` tabulates the flows of a diagram, one row per flow. **Every view exports one**, with the columns its flows can actually fill and its own container kind annotating the endpoints that sit in one, as `Name (Zone)` — an endpoint declared outside any of them (an `external`, a root-level actor) is listed by name alone:
+```sh
+cairn matrix my-system.cairn --format csv|md|svg
+```
 
-| View | Columns (English) | Endpoint annotated with |
+One row per flow. **Every view exports one**, with the columns its flows can
+fill and its own container kind annotating endpoints, as `Name (Zone)`. An
+endpoint outside any container is listed by name alone.
+
+| View | Columns | Endpoint annotated with |
 |---|---|---|
 | `infrastructure` | No. · Source · Destination · Protocol · Port · Flow | `network-zone`, `site` |
 | `application` | No. · Source · Destination · Protocol · Flow | `application`, `system` |
 | `logical` | No. · Source · Destination · Flow | `layer`, `system` |
 
-Infrastructure is the reference shape — the deliverable the format was designed around. There the protocol/port pair is split from the infra tail `(HTTPS/443)`, and with `lang: fr` its headers read **N° · Source · Destination · Protocole · Port · Nature du flux**. Application takes the protocol half of the tail `(API_REST, JSON)` and no port; logical flows carry no technical tail at all, so its table is who exchanges what with whom.
+`csv`/`md` give an editable table for the dossier; `svg` a theme-aware,
+paste-ready image. Headers follow `style { lang }` — under `lang: fr` the
+infrastructure headers read **N° · Source · Destination · Protocole · Port ·
+Nature du flux**. Output defaults to `<file>.flow.<ext>`.
 
-`csv`/`md` produce an editable table for the architecture dossier; `svg` a theme-aware, paste-ready table image. Headers follow `style { lang }`. Output defaults to `<file>.flow.<ext>`.
-
-Which columns a view emits is view data, declared in `views.ts` — adding a view brings its own matrix shape with it, the exporter branches on nothing. The same table is available to embedders: `compile(source, { matrix: true })` returns it as data (`columns` + one `row` per flow), and the `matrixCsv` / `matrixMd` / `matrixSvg` exports format it exactly as the CLI does.
+Embedders get the same table as data: `compile(source, { matrix: true })`
+returns `columns` plus one `row` per flow, and the `matrixCsv` / `matrixMd` /
+`matrixSvg` exports format it exactly as the CLI does.
 
 ## 2.2 Themes
 
-`theme:` is the one style property whose value space is defined outside the DSL:
-the DSL names a palette, the palette itself is built-in or comes from JSON.
+The DSL names a palette; the palette itself is built in or comes from JSON.
 
 **Nine built-ins**, listed by `cairn themes`: `light` (the default), `dark`,
-`slate`, `sand`, `contrast`, `nord`, `solarized`, plus the two legacy variants
-`classic` and `classic-dark`.
+`slate`, `sand`, `contrast`, `nord`, `solarized`, plus the legacy `classic` and
+`classic-dark`.
 
 **Three ways to select one**, most specific wins:
 
@@ -861,16 +697,13 @@ cairn build my-system.cairn --theme nord       # CLI — overrides the diagram
 compile(source, { theme: "nord" })             # embedder
 ```
 
-The flag is applied after parsing (the parser validates `theme:` against a
-closed set, so a custom name written in the DSL is rejected) and works on
-`build`, `matrix` and `watch`. A theme that cannot be resolved is an error, never
-a silent fallback to the default palette.
+The flag applies after parsing and works on `build`, `matrix` and `watch`. A
+theme that cannot be resolved is an error, never a silent fallback.
 
 ### A palette of your own
 
-Custom palettes are **not DSL syntax** — reading a file from the parser would put
-filesystem work back into a core that must also run in the playground. They are a
-JSON file for the CLI, or an object for `compile()`:
+Custom palettes are **not DSL syntax** — a JSON file for the CLI, or an object
+for `compile()`:
 
 ```sh
 cairn build my-system.cairn --theme ./my-theme.json
@@ -885,45 +718,35 @@ cairn build my-system.cairn --theme ./my-theme.json
 }
 ```
 
-A spec **extends a built-in and overrides only what it names**, so a usable theme
-is a few keys rather than the fifty-odd colours a full palette holds. Four keys
-exist, all optional:
+A spec **extends a built-in and overrides only what it names**, so a usable
+theme is a few keys rather than a full palette. Four optional keys:
 
 | Key | Holds | Notes |
 |---|---|---|
-| `extends` | a built-in to inherit from | defaults to `light`; accepts `light`, `dark`, `slate`, `sand`, `contrast`, `nord`, `solarized` — **not** `classic` / `classic-dark`, which are aliases rather than specs |
-| `dark` | `true` \| `false` | whether the palette sits on a dark ground. Selects the flow colour set, and **cannot be inferred** from the colours: a dark palette that omits it draws light flow hues |
+| `extends` | a built-in to inherit from | defaults to `light`; **not** `classic` / `classic-dark`, which are aliases rather than specs |
+| `dark` | `true` \| `false` | whether the palette sits on a dark ground. Selects the flow colour set, and **cannot be inferred** — a dark palette omitting it draws light flow hues |
 | `pal` | canvas and chrome colours | `bg`, `text`, `sub`, `muted`, `cFill`, `cStroke`, `nFill`, `nStroke`, `edge`, `div`, `halo`, `aStroke`, `aText`, `chip`, `badge` |
-| `accentColors` | per-kind fills and strokes | 34 keys in stroke/fill pairs, the fill suffixed `F`: `blue`/`blueF`, `amber`, `app`, `gold`, `violet`, `red`, `purple`, `green`, `node`, `auth`, `idp`, `fw`, `authn` follow that shape; `siteS`/`siteF`, `leafS`/`leafF`, `aiS`/`aiF` and `serverS`/`serverF` suffix the stroke `S` |
+| `accentColors` | per-kind fills and strokes | stroke/fill pairs, the fill suffixed `F` (`blue`/`blueF`, `amber`, `app`, `gold`, `violet`, `red`, `purple`, `green`, `node`, `auth`, `idp`, `fw`, `authn`); `siteS`/`siteF`, `leafS`/`leafF`, `aiS`/`aiF`, `serverS`/`serverF` suffix the stroke `S` |
 
-Merging is one level deep, which is as deep as a palette goes — naming
-`pal.bg` leaves every other `pal` entry inherited. Most entries are a single
-colour; the exceptions are `pal.chip` (`[fill, stroke, text]`) and `pal.badge`
-(`[fill, stroke]`), which are replaced whole and must carry exactly that many
-colours.
+Merging is one level deep: naming `pal.bg` leaves every other `pal` entry
+inherited. `pal.chip` (`[fill, stroke, text]`) and `pal.badge` (`[fill, stroke]`)
+are replaced whole and must carry exactly that many colours.
 
-A colour is a hex value (3, 4, 6 or 8 digits), an `rgb()`/`rgba()` or
-`hsl()`/`hsla()` call in either the legacy comma form or the modern
-slash-separated form, or a CSS colour keyword (`rebeccapurple`, `transparent`,
-`currentColor`). This is wider than the DSL itself, where a colour is always
-`#hex`.
+A colour is hex (3, 4, 6 or 8 digits), an `rgb()`/`rgba()` or `hsl()`/`hsla()`
+call in either the comma or slash form, or a CSS keyword (`rebeccapurple`,
+`transparent`, `currentColor`) — wider than the DSL itself, where a colour is
+always `#hex`.
 
-Anything else is rejected **by name, at load time** — `ThemeSpecError` (the CLI
-wraps it as `ThemeFileError` with the file path in front) naming the offending
-key: an unknown `extends`, a non-boolean `dark`, an unknown section, a value
-that is not a colour, or a tuple of the wrong length. Nothing reaches the SVG,
-where an unparseable colour is silently ignored — a bad fill turns the shape
-black, a bad stroke erases its outline.
+Anything else is rejected **at load time**, by name: `ThemeSpecError` (wrapped
+by the CLI as `ThemeFileError` with the file path) names the offending key.
 
-**The CLI registers the file under its basename** (`my-theme.json` → `my-theme`),
-which is the name the renderer then resolves. `classic`, `classic-dark`,
-`__proto__`, `constructor` and `prototype` are reserved and rejected: a file
-named `classic.json` would otherwise register without error and never be used.
+**The CLI registers the file under its basename** (`my-theme.json` →
+`my-theme`). `classic`, `classic-dark`, `__proto__`, `constructor` and
+`prototype` are reserved and rejected.
 
-**An embedder passes the same object instead of a file**, and it is used for that
-call and forgotten — nothing is registered globally, so a server rendering for
-many callers cannot leak one caller's colours into another's diagram, and two
-callers cannot collide on a name:
+**An embedder passes the object instead**, used for that call and forgotten — so
+a server rendering for many callers cannot leak one caller's colours into
+another's diagram:
 
 ```js
 import { compile, resolveThemeSpec } from "@r0kshan/cairn";
@@ -933,16 +756,21 @@ const { svg } = await compile(source, {
 });
 ```
 
-`resolveThemeSpec()` is exported for validating a palette up front; it and
-`compile()` throw the same `ThemeSpecError`. A complete example ships in
+`resolveThemeSpec()` validates a palette up front and throws the same error. A
+complete example ships in
 [`examples/themes/midnight.json`](../examples/themes/midnight.json).
 
 ## 3. Diagnostics
 
-Every issue cairn reports carries a stable code (`E01xx` syntax, `E02xx` semantic, `W05xx` warning). Run `cairn explain <CODE>` for the rationale behind any rule (e.g. `cairn explain E0240`). See [`DIAGNOSTICS.md`](DIAGNOSTICS.md) for the full code catalog.
+Every issue carries a stable code — `E01xx` syntax, `E02xx` semantic, `W05xx`
+warning. `cairn explain <CODE>` gives the rationale behind any rule
+(`cairn explain E0240`). Full catalog: [`DIAGNOSTICS.md`](DIAGNOSTICS.md).
 
-## 4. Deferred (not v0.1)
+## 4. Not in the language
 
-Imports/includes across files, variables, longhand style properties (`stroke-color:` …) as an additive alternative.
+Imports across files, variables, and longhand style properties
+(`stroke-color:` …) are deliberately absent.
 
-Themes are no longer deferred — see [§2.2](#22-themes). A custom palette stays a CLI parameter (or a `compile()` option) rather than DSL syntax, because reading a file from the parser would put filesystem work back into a core that must run in the playground.
+Custom themes stay a CLI parameter or a `compile()` option rather than DSL
+syntax ([§2.2](#22-themes)): reading a file from the parser would put filesystem
+work into a core that must also run in the playground.
