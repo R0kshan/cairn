@@ -272,6 +272,8 @@ export const explanations: Record<string, string> = {
     "A deployed application (app-instance) must sit on a server or in a zone. It shows WHERE an application runs, without its internal detail (C4 deployment convention).",
   E0216:
     "Network zones belong to a site (or nest inside a larger zone): DMZ and LAN only mean something relative to a perimeter.",
+  E0217:
+    "A cluster groups the nodes that stand in for one another, so it needs a network location like any of them: put it in a `network-zone` or a `site`. Its members may be servers, deployed applications or databases \u2014 a Kubernetes cluster of worker nodes, or a database cluster of primary and standby.",
   W0540:
     'C4 container-diagram practice: inter-process relationships should be labelled with their technology/protocol ("the how, not just the what"). Human/actor interactions are exempt. Add `(API_REST, JSON)` after the label, or ignore if the diagram is intentionally functional-only.',
   E0223:

@@ -210,13 +210,20 @@ device LAPTOP "Workstation"
 site DC "Data center" {
   network-zone DMZ "DMZ" {
     firewall FW "Perimeter firewall"
+    load-balancer LB "Load balancer"
     gateway RP "Reverse proxy"
   }
   network-zone LAN "Application zone" {
     auth OAUTH "OAuth2 proxy"
     idp IDP "Identity provider"
-    server SRV "Application server" {
-      app-instance APP_I "Application"
+    cluster K8S "Kubernetes cluster" {
+      server SRV "Worker node" {
+        app-instance APP_I "Application"
+      }
+    }
+    cluster PG "Database cluster" {
+      datastore DB_PRIMARY "Primary"
+      datastore DB_STANDBY "Standby"
     }
     queue BROKER "Message broker"
   }
@@ -226,10 +233,13 @@ external PARTNER "Partner platform"
 
 USER   -> FW      "Web access" (HTTPS/443)
 LAPTOP -> FW      "Web access" (HTTPS/443)
-FW     -> RP      "Filtered traffic" (HTTPS/443)
+FW     -> LB      "Filtered traffic" (HTTPS/443)
+LB     -> RP      "Balanced traffic" (HTTPS/443)
 RP     -> APP_I   "API calls" (HTTPS/8443)
 APP_I  -> OAUTH   "Token check" (HTTPS/8443)
 OAUTH  -> IDP     "Validates tokens" (LDAPS/636)
+APP_I  -> DB_PRIMARY "Queries" (TCP/5432)
+DB_PRIMARY -> DB_STANDBY "Replication" (TCP/5432)
 APP_I  -> BROKER  "Publishes events" (TCP/9092)
 APP_I  -> PARTNER "Nightly export" (SFTP/22)
 `};

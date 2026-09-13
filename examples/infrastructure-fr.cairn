@@ -10,7 +10,7 @@ style {
 site DC "Centre de données principal" {
   network-zone DMZ "DMZ" {
     server RP "Reverse proxy\n(paire HA)" {
-      app-instance WAF_I "WAF"
+      firewall WAF_I "WAF"
     }
     server SFTP_GW "Passerelle\nde transfert"
   }
@@ -28,7 +28,7 @@ site DC "Centre de données principal" {
   }
   network-zone LAN_DATA "Zone de données" {
     server DB_SRV "Serveur de\nbase de données" {
-      app-instance PG_I "PostgreSQL"
+      datastore PG_I "PostgreSQL"
     }
     server SAUVEGARDE "Serveur de\nsauvegarde"
   }

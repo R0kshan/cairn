@@ -99,7 +99,7 @@ listed in §2.
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, security, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (logical only — elsewhere is **E0222**) |
 | `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label optional; `(protocol, format)` recommended between non-actors (**W0540**) |
-| `infrastructure` | actor, device, site, network-zone, server, app-instance, queue, gateway, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
+| `infrastructure` | actor, device, site, network-zone, cluster, server, app-instance, queue, datastore, gateway, load-balancer, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 
 Nesting is checked against each view's rules (**E0210–E0218**). In the tables
 below, a **Placement** cell in bold naming a code is enforced; anything else is
@@ -254,14 +254,32 @@ Where the software runs and how traffic reaches it. This is the view the
 | `device` | a client machine | no | root | box + monitor glyph, entry side |
 | `site` | a site or data center | yes | root | box with title |
 | `network-zone` | a network zone | yes | **inside a `site` or another zone** (**E0216**) | box with title |
-| `server` | a server or VM | yes (holds `app-instance`) | **inside a `network-zone` or `site`** (**E0214**) | box with title |
-| `app-instance` | a deployed application | no | **inside a `server` or `network-zone`** (**E0215**) | plain box |
+| `cluster` | nodes that stand in for one another | yes (holds `server`, `app-instance`, `datastore`) | **inside a `network-zone` or `site`** (**E0217**) | dashed box with title |
+| `server` | a server or VM | yes (holds `app-instance`) | **inside a `network-zone`, `site` or `cluster`** (**E0214**) | box with title |
+| `app-instance` | a deployed application | no | **inside a `server`, `network-zone` or `cluster`** (**E0215**) | plain box |
 | `queue` | a message queue or broker | no | in a zone or site (convention) | horizontal cylinder |
+| `datastore` | a database | no | in a zone, site or cluster (convention) | vertical cylinder |
 | `gateway` | gateway or reverse proxy | no | in a zone or site (convention) | box + gate glyph |
+| `load-balancer` | répartiteur de charge | no | in a zone or site (convention) | box + fan glyph |
 | `firewall` | firewall | no | in a zone or site (convention) | box + brick-wall glyph |
 | `auth` | auth middleware | no | in a zone or site (convention) | box + padlock glyph |
 | `idp` | identity provider | no | in a zone or site (convention) | box + badge glyph |
 | `external` | a partner system | no | root | dashed box, exit side |
+
+**`cluster` draws the redundancy, `server` draws the machine.** A Kubernetes
+cluster of worker nodes or a primary/standby database pair is one cluster
+holding its members, not one box standing for all of them — the dashed border
+says the group is what is resilient, and the nodes inside say how.
+
+**A load balancer is not a `gateway`.** A gateway terminates a protocol
+conversation and forwards it; a load balancer picks one backend out of many, and
+that "one of N" is the topology an infrastructure view exists to show — the same
+reason `cluster` is its own kind. Use `gateway` for an API gateway or a reverse
+proxy, `load-balancer` for the thing in front of a pool.
+
+**A WAF is a `firewall`, not an `app-instance`.** It is a barrier in the traffic
+path, whether it runs as an appliance in the DMZ or as software on the reverse
+proxy — the brick-wall glyph is what a reader scans for.
 
 **The protocol is mandatory** (**E0240**), the label optional. The tail is one
 token, `PROTOCOL/PORT`:
@@ -277,8 +295,8 @@ digits; a tail with no numeric port (`(LDAPS)`) leaves Port empty.
 
 Sites and zones are placed in **declaration order** along the reading
 direction, with `external` pushed to the far side. An unconnected
-`app-instance`, `device`, `queue`, `gateway`, `firewall`, `auth` or `idp` warns
-(**W0510**).
+`app-instance`, `device`, `queue`, `datastore`, `gateway`, `load-balancer`,
+`firewall`, `auth` or `idp` warns (**W0510**).
 
 ```cairn
 diagram infrastructure "Order platform — infrastructure view"
@@ -288,6 +306,7 @@ actor USERS "End users"
 site DC1 "Main datacenter" {
   network-zone DMZ "DMZ" {
     firewall FW "Perimeter\nfirewall"
+    load-balancer LB "Load\nbalancer"
     gateway RP "Reverse\nproxy"
   }
   network-zone LAN "Internal zone" {
@@ -296,6 +315,10 @@ site DC1 "Main datacenter" {
     server APP_SRV "Application server" {
       app-instance CORE "Order core"
     }
+    cluster PG "PostgreSQL cluster" {
+      datastore PG_PRIMARY "Primary"
+      datastore PG_STANDBY "Standby"
+    }
     queue BROKER "Message broker"
   }
 }
@@ -303,10 +326,13 @@ site DC1 "Main datacenter" {
 external PARTNER "Partner platform"
 
 USERS -> FW      "Web access" (HTTPS/443)
-FW    -> RP      "Filtered traffic" (HTTPS/443)
+FW    -> LB      "Filtered traffic" (HTTPS/443)
+LB    -> RP      "Balanced traffic" (HTTPS/443)
 RP    -> CORE    "API calls" (HTTPS/8443)
 CORE  -> OAUTH   "Token check" (HTTPS/8443)
 OAUTH -> IDP     "Validate tokens" (LDAPS/636)
+CORE  -> PG_PRIMARY "Queries" (TCP/5432)
+PG_PRIMARY -> PG_STANDBY "Replication" (TCP/5432)
 CORE  -> BROKER  "Publish events" (TCP/9092)
 CORE  -> PARTNER "Nightly export" (SFTP/22)
 ```

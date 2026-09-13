@@ -8,7 +8,7 @@ style {
 site DC "Main data center" {
   network-zone DMZ "DMZ" {
     server RP "Reverse proxy\n(HA pair)" {
-      app-instance WAF_I "WAF"
+      firewall WAF_I "WAF"
     }
     server SFTP_GW "Transfer\ngateway"
   }
@@ -25,7 +25,7 @@ site DC "Main data center" {
   }
   network-zone LAN_DATA "Data zone" {
     server DB_SRV "Database\nserver" {
-      app-instance PG_I "PostgreSQL"
+      datastore PG_I "PostgreSQL"
     }
     server BACKUP "Backup\nserver"
   }

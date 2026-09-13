@@ -2039,6 +2039,81 @@ test("a `[ref]` on a flow in a non-logical view is E0222", () => {
   assert.ok(check(src).codes.includes("E0222"));
 });
 
+test("a load balancer is its own kind, not a gateway", () => {
+  // A gateway terminates a protocol conversation and forwards it; a load
+  // balancer picks one backend out of many. The "one of N" is the topology an
+  // infrastructure view exists to show, so the two do not share a kind.
+  const ok = check(
+    'diagram infrastructure "t"\nactor U "u"\n' +
+      'site S "s" { network-zone Z "z" {\n' +
+      '  load-balancer LB "lb"\n' +
+      '  server N1 "node 1" { app-instance A1 "app" }\n' +
+      '  server N2 "node 2" { app-instance A2 "app" }\n' +
+      '} }\n' +
+      'U -> LB "access" (HTTPS/443)\n' +
+      'LB -> A1 "balanced" (HTTP/8080)\nLB -> A2 "balanced" (HTTP/8080)\n',
+  );
+  assert.deepEqual(ok.diags, [], "a load balancer fanning out is clean");
+
+  for (const view of ["logical", "application"])
+    assert.ok(
+      check(`diagram ${view} "t"\nload-balancer LB "lb"\n`).codes.includes("E0201"),
+      `${view} must not accept \`load-balancer\``,
+    );
+
+  // It answers to the same isolation rule as the gateway beside it.
+  assert.ok(
+    check(
+      'diagram infrastructure "t"\nactor U "u"\n' +
+        'site S "s" { network-zone Z "z" { load-balancer LB "lb" server N "n" { app-instance A "a" } } }\n' +
+        'U -> A "x" (HTTPS/443)\n',
+    ).codes.includes("W0510"),
+    "an unconnected load balancer is warned",
+  );
+});
+
+test("cluster and datastore are infrastructure kinds, and a cluster holds nodes", () => {
+  // A cluster is the line drawn around the nodes that stand in for one another,
+  // so it is a container and its members may be servers, deployed applications
+  // or databases. Drawing an HA pair as one `server` is what every example had
+  // to do before, and it erases the redundancy a dossier exists to document.
+  const ok = check(
+    'diagram infrastructure "t"\nactor U "u"\n' +
+      'site S "s" { network-zone Z "z" {\n' +
+      '  cluster K "k8s" { server N "node" { app-instance A "app" } }\n' +
+      '  cluster P "pg" { datastore PRI "primary" datastore SBY "standby" }\n' +
+      '} }\n' +
+      'U -> A "use" (HTTPS/443)\nA -> PRI "query" (TCP/5432)\n' +
+      'PRI -> SBY "replication" (TCP/5432)\n',
+  );
+  assert.deepEqual(ok.diags, [], "a cluster holding nodes is clean");
+
+  // It needs a network location like any node it holds.
+  assert.ok(
+    check(
+      'diagram infrastructure "t"\nactor U "u"\ncluster K "k" { server N "n" { app-instance A "a" } }\n' +
+        'U -> A "x" (HTTPS/443)\n',
+    ).codes.includes("E0217"),
+    "a root-level cluster is E0217",
+  );
+
+  // A database standing alone in a zone is still a database.
+  assert.deepEqual(
+    check(
+      'diagram infrastructure "t"\nactor U "u"\n' +
+        'site S "s" { network-zone Z "z" { datastore DB "PostgreSQL" } }\nU -> DB "q" (TCP/5432)\n',
+    ).diags,
+    [],
+  );
+
+  for (const view of ["logical", "application"])
+    for (const kind of ["cluster"])
+      assert.ok(
+        check(`diagram ${view} "t"\n${kind} C "c"\n`).codes.includes("E0201"),
+        `${view} must not accept \`${kind}\``,
+      );
+});
+
 test("security is a logical-view kind, unknown in the other two", () => {
   // A security capability with business impact — 2FA, anonymisation — is what a
   // logical view is asked to show. It is named for the capability, not for the

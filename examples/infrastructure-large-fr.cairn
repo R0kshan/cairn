@@ -6,8 +6,9 @@ style {
 
 site DC1 "Centre de données principal" {
   network-zone DMZ1 "DMZ" {
-    server FW_WAF "Pare-feu\napplicatif (WAF)"
-    server RP1 "Reverse proxies\n(HA)" {
+    firewall FW_WAF "Pare-feu\napplicatif (WAF)"
+    load-balancer LB1 "Répartiteur\nde charge"
+    cluster RP1 "Reverse proxies\n(HA)" {
       app-instance NGINX_I "Nginx"
     }
     server SFTP_GW "Passerelle\nde transfert"
@@ -16,20 +17,20 @@ site DC1 "Centre de données principal" {
     gateway AUTH_GW "Gateway"
     auth OAUTH2 "OAuth2\nproxy"
     idp IDP "LDAP / IdP"
-    server K8S1 "Cluster K8s\nfront" {
+    cluster K8S1 "Cluster K8s\nfront" {
       app-instance FRONT_I "Front de vente"
       app-instance CHECKOUT_I "Tunnel d'achat"
     }
-    server K8S2 "Cluster K8s\nmétier" {
+    cluster K8S2 "Cluster K8s\nmétier" {
       app-instance OMS_I "Gestion des\ncommandes"
       app-instance PAYHUB_I "Hub de\npaiement"
     }
   }
   network-zone DATA1 "Zone de données" {
-    server PG_CLU "Cluster\nPostgreSQL" {
-      app-instance PG_I "PostgreSQL\nprimaire"
+    cluster PG_CLU "Cluster\nPostgreSQL" {
+      datastore PG_I "PostgreSQL\nprimaire"
     }
-    server KAFKA_SRV "Cluster\nKafka" {
+    cluster KAFKA_SRV "Cluster\nKafka" {
       app-instance KAFKA_I "Kafka"
     }
   }
@@ -38,7 +39,7 @@ site DC1 "Centre de données principal" {
 site DC2 "Site de secours" {
   network-zone DATA2 "Zone de données PRA" {
     server PG_STANDBY "PostgreSQL\nstandby" {
-      app-instance PG2_I "Réplique\nPostgreSQL"
+      datastore PG2_I "Réplique\nPostgreSQL"
     }
     server BACKUP "Serveur de\nsauvegarde"
   }
@@ -50,7 +51,8 @@ external CARRIERS_EXT "Plateformes\ntransporteurs"
 
 # ---- flux techniques (protocole OBLIGATOIRE) ----
 USERS -> FW_WAF (HTTPS/443)
-FW_WAF -> NGINX_I (HTTPS/443)
+FW_WAF -> LB1 (HTTPS/443)
+LB1 -> NGINX_I (HTTPS/443)
 NGINX_I -> AUTH_GW (HTTPS/443)
 AUTH_GW -> OAUTH2 (HTTPS/8443)
 OAUTH2 -> IDP (LDAPS/636)
