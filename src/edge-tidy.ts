@@ -2524,6 +2524,11 @@ function reaimEdge(rctx: ReaimContext, edge: SceneEdge, skewToo = false): void {
  * `tidyEdges` to see it. Runs only where an offset exists, so an offset-free
  * drawing is untouched.
  *
+ * A flow pinned at both ends is included, unlike in `reaimWrapAroundTerminals`:
+ * `reaimEdge` hands each pinned end its own side as `keepSide`, so the declared
+ * attachments survive, and the skew an inserted elbow leaves at the far end has
+ * no other pass to repair it.
+ *
  * `only` names the flows whose terminal the offset actually carried, and nothing
  * outside it is considered. A flow nobody dragged is not this pass's business:
  * an author who nudges one box is asking for that box to move, not for the
@@ -2538,9 +2543,7 @@ export function reaimAfterOffsets(
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
-  for (const edge of scene.edges)
-    if (!(edge.pinned?.start && edge.pinned?.end) && (!only || only.has(edge.id)))
-      reaimEdge(rctx, edge, true);
+  for (const edge of scene.edges) if (!only || only.has(edge.id)) reaimEdge(rctx, edge, true);
 }
 
 function reaimWrapAroundTerminals(ctx: TidyContext): void {

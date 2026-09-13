@@ -889,7 +889,17 @@ function applyFlowNudge(
 ): void {
   const keyText = key.text;
   const segment = keyText === "segment-offset";
-  const numbers = values.filter((token) => token.kind !== "comma");
+  // The whole sequence, not just the non-commas: `1 2` and `,1,2,` would both
+  // filter down to two numbers and pass. The kind cannot be pinned to `num` —
+  // a negative lexes as an `id` (`-6`) — so only a quoted number is ruled out
+  // here, and the text itself is checked below.
+  const numbers =
+    values.length === 3 &&
+    values[1].kind === "comma" &&
+    values[0].kind !== "str" &&
+    values[2].kind !== "str"
+      ? [values[0], values[2]]
+      : [];
   const parsed = numbers.map((token) => (/^-?\d+$/.test(token.text) ? Number(token.text) : NaN));
   // A run is counted from 1 along the route, so 0 and below name nothing.
   const wellFormed =

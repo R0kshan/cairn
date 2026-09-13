@@ -93655,7 +93655,7 @@ function applyNumericStyleEntry(entry) {
 function applyFlowNudge(key, values, flow, diagnostics) {
   const keyText = key.text;
   const segment = keyText === "segment-offset";
-  const numbers = values.filter((token) => token.kind !== "comma");
+  const numbers = values.length === 3 && values[1].kind === "comma" && values[0].kind !== "str" && values[2].kind !== "str" ? [values[0], values[2]] : [];
   const parsed = numbers.map((token) => /^-?\d+$/.test(token.text) ? Number(token.text) : NaN);
   const wellFormed = numbers.length === 2 && parsed.every((value) => Number.isInteger(value)) && (!segment || parsed[0] >= 1);
   if (!flow || !wellFormed) {
@@ -98105,9 +98105,7 @@ function reaimAfterOffsets(scene, titleBoxes = [], only) {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const rctx = createReaimContext(createTidyContext(scene, leaves, titleBoxes, false));
-  for (const edge of scene.edges)
-    if (!(edge.pinned?.start && edge.pinned?.end) && (!only || only.has(edge.id)))
-      reaimEdge(rctx, edge, true);
+  for (const edge of scene.edges) if (!only || only.has(edge.id)) reaimEdge(rctx, edge, true);
 }
 function reaimWrapAroundTerminals(ctx) {
   const { scene } = ctx;
@@ -100265,8 +100263,9 @@ function applySegmentOffsets(scene, model) {
   for (const edge of scene.edges) {
     const entries = wanted.get(edge.id);
     if (!entries) continue;
+    const runs = straightRuns(edge.pts);
     for (const entry of entries) {
-      const run = straightRuns(edge.pts)[entry.segment - 1];
+      const run = runs[entry.segment - 1];
       if (!run) {
         stale.push(entry.span);
         continue;

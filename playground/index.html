@@ -533,13 +533,15 @@ function diagramPoint(e) {
   return { x: (e.clientX - rect.left) / zoom, y: (e.clientY - rect.top) / zoom };
 }
 
-/** Half the width of the band a run can be grabbed by, in diagram pixels. */
+/** Half the width of the band a run can be grabbed by, in screen pixels — the
+    overlay that draws it is sized in screen pixels too, so the band has to
+    shrink with the drawing, not with the zoom. */
 const SEGMENT_GRAB_PX = 5;
 
 /** A run is vertical when its two endpoints share an x. */
 const isVertical = box => Math.abs(box.points[0].x - box.points[1].x) < 0.5;
 
-/** How close the pointer has to be to a terminal to take hold of it, in diagram
+/** How close the pointer has to be to a terminal to take hold of it, in screen
     pixels. Wider than the run band it sits on, since it wins the tie. */
 const TERMINAL_GRAB_PX = 8;
 
@@ -549,7 +551,7 @@ function terminalAt(point) {
   for (const box of lastBoxes) {
     if (box.what !== 'terminal') continue;
     const distance = Math.hypot(point.x - box.x, point.y - box.y);
-    if (distance <= TERMINAL_GRAB_PX && (!best || distance < best.distance)) best = { box, distance };
+    if (distance <= TERMINAL_GRAB_PX / zoom && (!best || distance < best.distance)) best = { box, distance };
   }
   return best?.box ?? null;
 }
@@ -595,7 +597,7 @@ function segmentAt(point) {
   for (const box of lastBoxes) {
     if (box.what !== 'segment') continue;
     const distance = distanceToSegment(point, box.points[0], box.points[1]);
-    if (distance <= SEGMENT_GRAB_PX && (!best || distance < best.distance)) best = { box, distance };
+    if (distance <= SEGMENT_GRAB_PX / zoom && (!best || distance < best.distance)) best = { box, distance };
   }
   return best?.box ?? null;
 }

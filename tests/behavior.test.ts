@@ -472,17 +472,22 @@ test("a flow carried by an offset stays attached to both of its elements", async
         // on it.
         if (!nudged.boxes) continue;
         const nodes = nudged.boxes.filter((box) => box.what === "element");
-        const seated = (point: { x: number; y: number }) =>
-          nodes.some(
-            (node) =>
-              point.x >= node.x - 2 &&
-              point.x <= node.x + node.width + 2 &&
-              point.y >= node.y - 2 &&
-              point.y <= node.y + node.height + 2,
+        // Against the element the flow declares, not against any element: a
+        // detached stub that lands on the neighbour it was dragged past would
+        // pass a containment test that accepts all of them.
+        const seatedOn = (point: { x: number; y: number }, id: string) => {
+          const node = nodes.find((candidate) => candidate.id === id);
+          return (
+            !!node &&
+            point.x >= node.x - 2 &&
+            point.x <= node.x + node.width + 2 &&
+            point.y >= node.y - 2 &&
+            point.y <= node.y + node.height + 2
           );
+        };
         for (const box of nudged.boxes.filter((b) => b.what === "terminal"))
           assert.ok(
-            seated(box),
+            seatedOn(box, box.endpoint!.element),
             `${example}: nudging ${target.id} by ${dy} left ${box.id}'s ${box.endpoint!.end} end off ${box.endpoint!.element}`,
           );
       }
@@ -615,16 +620,17 @@ test("a `segment-offset:` the route cannot honor is reported, not dropped", asyn
     offsetDiagnostics(clamped.scene, clamped.model).some((d) => d.code === "W0573"),
     "expected W0573 for a slide cut short at the element border",
   );
-  const leaves = clamped.scene.nodes.filter((node) => !node.container);
   const pts = clamped.scene.edges.find((edge) => edge.id === "F01")!.pts;
+  // The element `F01` starts from, not whichever one the stub happened to land
+  // on: run 1 carries the `from` terminal, and sliding it off its own side is
+  // the defect the clamp exists to prevent.
+  const from = clamped.model.flows.find((flow) => flow.id === "F01")!.from;
+  const node = clamped.scene.nodes.find((candidate) => candidate.id === from)!;
   assert.ok(
-    leaves.some(
-      (node) =>
-        pts[0].x > node.x - 1 &&
-        pts[0].x < node.x + node.width + 1 &&
-        pts[0].y > node.y - 1 &&
-        pts[0].y < node.y + node.height + 1,
-    ),
+    pts[0].x > node.x - 1 &&
+      pts[0].x < node.x + node.width + 1 &&
+      pts[0].y > node.y - 1 &&
+      pts[0].y < node.y + node.height + 1,
     "a clamped slide must leave the terminal on its element",
   );
 });
@@ -641,7 +647,18 @@ test("`offset:` and `label-offset:` refuse anything but a pair of whole numbers"
   assert.ok(diags.some((d) => d.code === "E0109"));
   // A run number is 1-based, so 0 and below name nothing and are rejected here
   // rather than reported as a stale run after the layout has run.
-  for (const bad of ["segment-offset: 2", "segment-offset: 0, 5", "segment-offset: 1, 2.5"]) {
+  for (const bad of [
+    "segment-offset: 2",
+    "segment-offset: 0, 5",
+    "segment-offset: 1, 2.5",
+    // The comma is grammar, not decoration: a missing, extra or stray one is a
+    // typo, and filtering the commas out would read every one of these as a
+    // well-formed pair.
+    "segment-offset: 1 2",
+    "segment-offset: ,1,2,",
+    "segment-offset: 1,,2",
+    'segment-offset: "1", 2',
+  ]) {
     const run = check(OFFSET_SRC("", ` { ${bad} }`));
     assert.ok(
       run.diags.some((d) => d.code === "E0109"),

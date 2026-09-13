@@ -1990,10 +1990,14 @@ function applySegmentOffsets(scene: Scene, model: Model): number {
   for (const edge of scene.edges) {
     const entries = wanted.get(edge.id);
     if (!entries) continue;
-    // Re-read per entry: a slide moves points, and a run's span into `pts` has
-    // to be the one the drawing currently has.
+    // Read once, before any slide: a slide that leaves a neighbouring run zero
+    // length lets `straightRuns` absorb it into the run beside it, and every
+    // number after that point would name a different run than the author saw.
+    // Indices into `pts` stay valid either way — a slide moves points, it never
+    // adds or drops one.
+    const runs = straightRuns(edge.pts);
     for (const entry of entries) {
-      const run = straightRuns(edge.pts)[entry.segment - 1];
+      const run = runs[entry.segment - 1];
       // A run the route does not have — the numbers are positional, and a route
       // that gained or lost a turn renumbers everything after it.
       if (!run) {
