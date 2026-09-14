@@ -1641,6 +1641,120 @@ function defectTally(scene: Scene, titleBoxes: TitleBox[]): Map<string, number> 
 }
 
 /**
+ * How close to a border a departing run has to be before it is worth moving out
+ * past it. Wider than `sideHug`'s 3px, because this is not that defect: at 4px a
+ * run and a frame are legally apart and still read as one thick line down the
+ * page.
+ */
+const LEAVING_REACH = 6;
+/** Where such a run is put: outside the frame, clear of it. */
+const LEAVING_CLEAR = 8;
+
+/**
+ * Where a run should sit if it is skimming the inside of `frame` on its way out,
+ * or null if it is not. Split out of `clearLeavingRuns` to keep that loop
+ * readable; pure geometry either way.
+ */
+function leavingTarget(
+  a: Point,
+  b: Point,
+  frame: SceneNode,
+): { vertical: boolean; target: number } | null {
+  const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+  if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) return null;
+  // Long enough to read as a second border, and parallel to one.
+  const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+  const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+  if (hi - lo <= MIN_HUG_SPAN) return null;
+  const at = vertical ? a.x : a.y;
+  const nearLo = vertical ? frame.x : frame.y;
+  const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
+  // Inside the frame, hugging one of its two parallel borders.
+  if (at <= nearLo || at >= nearHi) return null;
+  if (at - nearLo < LEAVING_REACH) return { vertical, target: nearLo - LEAVING_CLEAR };
+  if (nearHi - at < LEAVING_REACH) return { vertical, target: nearHi + LEAVING_CLEAR };
+  return null;
+}
+
+/**
+ * Takes a run that descends the inside of the frame it is on its way out of, and
+ * puts it on the outside.
+ *
+ * `infrastructure-large-page` is the shape: `PAYHUB_I -> PSP_EXT` turns right out
+ * of the payment hub, stops 4px short of the *Main data center* border and runs
+ * 421px down the inside of it before leaving through the bottom — two lines a
+ * hair apart for a third of the page, with the flow's label wedged in the same
+ * gap, overlapping the *Data zone* frame on one side and crossing the data-centre
+ * border on the other. Four pixels is outside `sideHug` (3px) and outside what
+ * `clearSideHugs` reaches for, so nothing owned it.
+ *
+ * Three conditions, and each one earns its place against the corpus:
+ *
+ * - **The flow is leaving.** One terminal inside the frame, the other beyond it.
+ *   A run that merely passes near a border on internal business is not on its way
+ *   anywhere and belongs where the router put it.
+ * - **The frame is outermost.** Outside a top-level site or system is the page
+ *   margin, which is open; outside a nested zone is the interior of whatever
+ *   holds it, which is where all the other runs already are. Allowing nested
+ *   frames turned eight drawings' clean sides into hugs.
+ * - **It is free.** No defect of any kind may grow, anywhere. At 4px there is no
+ *   `sideHug` on the books to pay with, so a move that buys a turn or a jog is
+ *   spending real defects on a cosmetic gain — which is how this cost
+ *   `application-queue-messaging` two turns and a jog before the guard went in.
+ *
+ * Runs after `clearSideHugs`, on settled geometry, and moves one run at a time.
+ */
+export function clearLeavingRuns(scene: Scene, titleBoxes: TitleBox[] = []): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const frames = scene.nodes.filter(
+    (node) =>
+      node.container &&
+      !scene.nodes.some(
+        (outer) =>
+          outer !== node &&
+          outer.container &&
+          node.x >= outer.x - 1 &&
+          node.y >= outer.y - 1 &&
+          node.x + node.width <= outer.x + outer.width + 1 &&
+          node.y + node.height <= outer.y + outer.height + 1,
+      ),
+  );
+  if (!frames.length) return;
+
+  const holds = (box: SceneNode, node: SceneNode) =>
+    node.x >= box.x - 1 &&
+    node.y >= box.y - 1 &&
+    node.x + node.width <= box.x + box.width + 1 &&
+    node.y + node.height <= box.y + box.height + 1;
+
+  let before: Map<string, number> | null = null;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const ends = [edge.pts[0], edge.pts[edge.pts.length - 1]]
+      .map((point) => sideOf(point, leaves)?.node)
+      .filter((node): node is SceneNode => !!node);
+    if (ends.length !== 2) continue;
+
+    for (const frame of frames) {
+      const inside = ends.filter((node) => holds(frame, node)).length;
+      if (inside !== 1) continue;
+      for (let i = 0; i + 1 < edge.pts.length; i++) {
+        const spot = leavingTarget(edge.pts[i], edge.pts[i + 1], frame);
+        if (!spot) continue;
+        const { vertical, target } = spot;
+
+        const was = (before ??= defectTally(scene, titleBoxes));
+        const undo = edge.pts.map((point) => ({ ...point }));
+        for (const index of [i, i + 1]) edge.pts[index][vertical ? "x" : "y"] = target;
+        const after = defectTally(scene, titleBoxes);
+        if ([...after].every(([kind, count]) => count <= (was.get(kind) ?? 0))) before = after;
+        else edge.pts = undo;
+      }
+    }
+  }
+}
+
+/**
  * Straightens a flow whose two terminals sit on the faces that look *away* from
  * each other, when the faces that look at each other line up.
  *

@@ -38,7 +38,7 @@
 <text x="738" y="102.75" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment confirmed</text>
 <rect x="700.5" y="110.75" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a" stroke-width="1"/>
 <text x="738" y="121.75" font-size="9.5" text-anchor="middle" fill="#e0c068" font-weight="bold">Appointment</text>
-<text x="1019" y="134.25" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
+<text x="1019" y="146.25" font-size="11.5" text-anchor="middle" fill="#c2ccd6" font-style="italic" stroke="#1e2530" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
 <line x1="20" y1="179" x2="1115" y2="179" stroke="#3a4149" stroke-width="1"/>
 <text x="20" y="201" font-size="11" font-weight="bold" fill="#c2ccd6">BUSINESS OBJECTS</text>
 <rect x="150" y="191" width="75" height="15" rx="7.5" fill="#3a3320" stroke="#b08d2a"/>

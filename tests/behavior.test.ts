@@ -3382,3 +3382,114 @@ test("an arrowhead crossing into a container is not drawn on its border", async 
       }
   }
 });
+
+/**
+ * A run on its way out of a container does not descend the inside of its frame
+ * (`clearLeavingRuns`).
+ *
+ * `infrastructure-large-page`'s `PAYHUB_I -> PSP_EXT` turned right out of the
+ * payment hub, stopped 4px short of the *Main data center* border and ran 421px
+ * down the inside of it before leaving through the bottom — two lines a hair
+ * apart for a third of the page. Four pixels is outside `sideHug` (3px) and
+ * outside what `clearSideHugs` reaches for, so nothing owned it.
+ *
+ * Asserted as a property: any run long enough to read as a second border, inside
+ * an outermost frame the flow is leaving, must be clear of that frame's parallel
+ * borders.
+ */
+test("a run leaving a container does not descend the inside of its frame", async () => {
+  const LEAVING_REACH = 6;
+  for (const file of [
+    "dispositions/infrastructure-large-page.cairn",
+    "dispositions/infrastructure-large-wide.cairn",
+    "logical.cairn",
+    "medium.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    const encloses = (box: { x: number; y: number; width: number; height: number }, n: typeof box) =>
+      n.x >= box.x - 1 &&
+      n.y >= box.y - 1 &&
+      n.x + n.width <= box.x + box.width + 1 &&
+      n.y + n.height <= box.y + box.height + 1;
+    const frames = scene.nodes.filter(
+      (n) => n.container && !scene.nodes.some((o) => o !== n && o.container && encloses(o, n)),
+    );
+    for (const frame of frames)
+      for (const edge of scene.edges) {
+        if (edge.pts.length < 2) continue;
+        const seats = [edge.pts[0], edge.pts[edge.pts.length - 1]].map((p) =>
+          scene.nodes.find(
+            (n) =>
+              !n.container &&
+              p.x >= n.x - 1 &&
+              p.x <= n.x + n.width + 1 &&
+              p.y >= n.y - 1 &&
+              p.y <= n.y + n.height + 1,
+          ),
+        );
+        if (seats.some((s) => !s)) continue;
+        if (seats.filter((s) => encloses(frame, s!)).length !== 1) continue;
+        for (let i = 0; i + 1 < edge.pts.length; i++) {
+          const a = edge.pts[i];
+          const b = edge.pts[i + 1];
+          const vertical = Math.abs(a.x - b.x) < 0.5;
+          if (vertical === Math.abs(a.y - b.y) < 0.5) continue;
+          const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+          const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+          if (hi - lo <= 24) continue;
+          const at = vertical ? a.x : a.y;
+          const nearLo = vertical ? frame.x : frame.y;
+          const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
+          if (at <= nearLo || at >= nearHi) continue; // outside the frame is fine
+          const gap = Math.min(at - nearLo, nearHi - at);
+          assert.ok(
+            gap >= LEAVING_REACH,
+            `${file}: ${edge.id} runs ${gap.toFixed(1)}px inside ${frame.id}'s border ` +
+              `for ${(hi - lo).toFixed(0)}px on its way out`,
+          );
+        }
+      }
+  }
+});
+
+/**
+ * A label crossing container outlines slides along its own run to where it
+ * crosses fewest (`preferClearBorders`).
+ *
+ * `infrastructure-large-page`'s F08 sat where the *Data zone* corner, its
+ * PostgreSQL cluster and the data-centre border all meet, with clear line 100px
+ * above it on the same run. Its seat could never be fully clear — the run is 8px
+ * from the data-centre border and the label is 77px wide, so every seat on it
+ * crosses that one — which is why the preference has to count borders rather than
+ * ask whether any is struck.
+ */
+test("a label slides along its run to cross fewer container outlines", async () => {
+  const { scene } = await build(load("dispositions/infrastructure-large-page.cairn"));
+  const label = scene.edges.flatMap((e) => e.labels).find((l) => l.x > 700 && l.x < 800);
+  assert.ok(label, "F08's label missing");
+  const words = {
+    x: label.x + 4,
+    y: label.y,
+    width: Math.max(0, label.width - 8),
+    height: label.textH > 0 ? label.textH : label.height,
+  };
+  const struck = scene.nodes.filter((box) => {
+    if (!box.container) return false;
+    const overlaps =
+      words.x < box.x + box.width &&
+      box.x < words.x + words.width &&
+      words.y < box.y + box.height &&
+      box.y < words.y + words.height;
+    const inside =
+      words.x >= box.x &&
+      words.x + words.width <= box.x + box.width &&
+      words.y >= box.y &&
+      words.y + words.height <= box.y + box.height;
+    return overlaps && !inside;
+  });
+  // One is unavoidable here; three is what it used to be.
+  assert.ok(
+    struck.length <= 1,
+    `label crosses ${struck.length} outlines (${struck.map((b) => b.id).join(", ")})`,
+  );
+});

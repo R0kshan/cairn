@@ -97702,6 +97702,53 @@ function defectTally(scene, titleBoxes) {
   }
   return tally;
 }
+var LEAVING_REACH = 6;
+var LEAVING_CLEAR = 8;
+function leavingTarget(a, b, frame) {
+  const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+  if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) return null;
+  const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+  const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+  if (hi - lo <= MIN_HUG_SPAN) return null;
+  const at = vertical ? a.x : a.y;
+  const nearLo = vertical ? frame.x : frame.y;
+  const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
+  if (at <= nearLo || at >= nearHi) return null;
+  if (at - nearLo < LEAVING_REACH) return { vertical, target: nearLo - LEAVING_CLEAR };
+  if (nearHi - at < LEAVING_REACH) return { vertical, target: nearHi + LEAVING_CLEAR };
+  return null;
+}
+function clearLeavingRuns(scene, titleBoxes = []) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const frames = scene.nodes.filter(
+    (node) => node.container && !scene.nodes.some(
+      (outer) => outer !== node && outer.container && node.x >= outer.x - 1 && node.y >= outer.y - 1 && node.x + node.width <= outer.x + outer.width + 1 && node.y + node.height <= outer.y + outer.height + 1
+    )
+  );
+  if (!frames.length) return;
+  const holds = (box, node) => node.x >= box.x - 1 && node.y >= box.y - 1 && node.x + node.width <= box.x + box.width + 1 && node.y + node.height <= box.y + box.height + 1;
+  let before = null;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const ends = [edge.pts[0], edge.pts[edge.pts.length - 1]].map((point) => sideOf(point, leaves)?.node).filter((node) => !!node);
+    if (ends.length !== 2) continue;
+    for (const frame of frames) {
+      const inside = ends.filter((node) => holds(frame, node)).length;
+      if (inside !== 1) continue;
+      for (let i = 0; i + 1 < edge.pts.length; i++) {
+        const spot = leavingTarget(edge.pts[i], edge.pts[i + 1], frame);
+        if (!spot) continue;
+        const { vertical, target } = spot;
+        const was = before ??= defectTally(scene, titleBoxes);
+        const undo = edge.pts.map((point) => ({ ...point }));
+        for (const index of [i, i + 1]) edge.pts[index][vertical ? "x" : "y"] = target;
+        const after = defectTally(scene, titleBoxes);
+        if ([...after].every(([kind, count]) => count <= (was.get(kind) ?? 0))) before = after;
+        else edge.pts = undo;
+      }
+    }
+  }
+}
 function reseatAwayTerminals(scene, titleBoxes = []) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const holds = (child, box) => box.container && child.x >= box.x - 1 && child.y >= box.y - 1 && child.x + child.width <= box.x + box.width + 1 && child.y + child.height <= box.y + box.height + 1;
@@ -99364,18 +99411,19 @@ function createLabelSeatContext(scene, titleBoxes, final = false) {
   };
   const overlaps = (box, other) => box.x < other.x + other.width && other.x < box.x + box.width && box.y < other.y + other.height && other.y < box.y + box.height;
   const coversNode = (box) => leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
-  const strikesBorder = (box, textH) => {
-    if (!final) return false;
+  const countBorders = (box, textH) => {
+    if (!final) return 0;
     const words = {
       x: box.x + BORDER_SLACK,
       y: box.y,
       width: Math.max(0, box.width - 2 * BORDER_SLACK),
       height: textH > 0 ? textH : box.height
     };
-    return containers.some(
+    return containers.filter(
       (node) => overlaps(words, node) && !(words.x >= node.x && words.x + words.width <= node.x + node.width && words.y >= node.y && words.y + words.height <= node.y + node.height)
-    );
+    ).length;
   };
+  const strikesBorder = (box, textH) => countBorders(box, textH) > 0;
   const straddledSeat = (box, vertical, own) => {
     const lo = vertical ? box.x : box.y;
     const hi = lo + (vertical ? box.width : box.height);
@@ -99414,6 +99462,7 @@ function createLabelSeatContext(scene, titleBoxes, final = false) {
     overlaps,
     coversNode,
     strikesBorder,
+    countBorders,
     straddledSeat,
     attributableAt
   };
@@ -99480,9 +99529,11 @@ function chooseSeat(ctx, edge, label, segmentOrder) {
   const plain = pick(false);
   if (!plain || !strikesBorder(plain, label.textH)) return plain;
   const clear = pick(true);
-  if (!clear) return plain;
-  const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
-  return moved <= LOCAL_REACH ? clear : plain;
+  if (clear) {
+    const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
+    if (moved <= LOCAL_REACH) return clear;
+  }
+  return plain;
 }
 function stretchedSeats(ctx, edge, label, segmentOrder) {
   const { coversNode, straddledSeat } = ctx;
@@ -99601,8 +99652,35 @@ function resolveLabelCollision(seated, a, b) {
   giving.done = true;
   return true;
 }
-function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true) {
-  const ctx = createLabelSeatContext(scene, titleBoxes, applyOffsets);
+function preferClearBorders(ctx, seated) {
+  const { coversNode, countBorders, straddledSeat, nearestOtherSq } = ctx;
+  for (const entry of seated) {
+    const { label, edge } = entry;
+    const host = hostSegment(label, edge);
+    if (host < 0) continue;
+    const from = { x: label.x, y: label.y };
+    let best = { ...from };
+    let bestCount = countBorders({ ...from, width: label.width, height: label.height }, label.textH);
+    if (!bestCount) continue;
+    for (const candidate of slideSeats(label, edge, host)) {
+      if (coversNode(candidate)) continue;
+      if (straddledSeat(candidate, segmentIsVertical(edge, host), edge)) continue;
+      if (nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+      const count = countBorders(candidate, label.textH);
+      if (count >= bestCount) continue;
+      const clash = seated.some(
+        (other) => other !== entry && candidate.x < other.label.x + other.label.width && other.label.x < candidate.x + label.width && candidate.y < other.label.y + other.label.height && other.label.y < candidate.y + label.height
+      );
+      if (clash) continue;
+      best = { x: candidate.x, y: candidate.y };
+      bestCount = count;
+    }
+    label.x = best.x;
+    label.y = best.y;
+  }
+}
+function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true, final = applyOffsets) {
+  const ctx = createLabelSeatContext(scene, titleBoxes, final);
   const seated = [];
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
@@ -99623,6 +99701,7 @@ function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true) {
       }
     if (!moved) break;
   }
+  if (final) preferClearBorders(ctx, seated);
   if (!applyOffsets) return;
   for (const edge of scene.edges)
     for (const label of edge.labels)
@@ -101000,11 +101079,13 @@ function runGeometryPasses(scene, model, options) {
   recordRepairs(scene, routesBefore);
   clearSideHugs(scene, settledTitles);
   reseatAwayTerminals(scene, settledTitles);
+  clearLeavingRuns(scene, settledTitles);
   anchorFlowLabels(scene, settledTitles, false);
   swapCrossingSiblingSeats(scene);
   if (!sideways) reclaimTrailingColumns(scene, model);
   if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
   airOutContainers(scene);
+  anchorFlowLabels(scene, titleBoxesOf(scene, model), false, true);
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {

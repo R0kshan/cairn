@@ -30,6 +30,7 @@ import {
   decoincideAfterOffsets,
   clearSideHugs,
   reaimAfterOffsets,
+  clearLeavingRuns,
   reseatAwayTerminals,
   spreadAttachments,
   swapCrossingSiblingSeats,
@@ -2831,6 +2832,10 @@ function runGeometryPasses(
   // One flow at a time, on settled geometry, so it cannot disturb a route it does
   // not touch (which is exactly what re-laying out for one flow did).
   reseatAwayTerminals(scene, settledTitles);
+  // A run descending the inside of the frame it is on its way out of. Not a
+  // `sideHug` — it is legally clear of the border — but it reads as one, and the
+  // page margin outside is empty. Free moves only; see the pass.
+  clearLeavingRuns(scene, settledTitles);
   // Still without the author's offsets: this scene is a layout *candidate*, and
   // `applyAuthorPositioning` puts the hints on the one that wins.
   anchorFlowLabels(scene, settledTitles, false);
@@ -2859,6 +2864,11 @@ function runGeometryPasses(
   // against the border. After every routing pass on purpose — it moves borders,
   // never routes, and nothing below re-measures.
   airOutContainers(scene);
+  // The one anchor that runs with nothing left to route. Every earlier one is
+  // read by a pass below it, so the seat preferences that are purely about how a
+  // label *looks* — clearing a container outline above all — have to wait until
+  // here, where moving a label cannot move anything else.
+  anchorFlowLabels(scene, titleBoxesOf(scene, model), false, true);
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.
   fitCanvas(scene);

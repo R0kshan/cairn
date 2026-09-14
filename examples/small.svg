@@ -46,7 +46,7 @@
 <text x="784" y="118.41666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Appointment confirmed</text>
 <rect x="746.5" y="126.41666666666666" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="784" y="137.41666666666666" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Appointment</text>
-<text x="1065" y="161.41666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
+<text x="1006.5" y="161.41666666666666" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Send SMS reminder</text>
 <text x="561" y="144.91666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open / block</text>
 <text x="561" y="159.41666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">slots</text>
 <rect x="542" y="167.41666666666669" width="38" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
