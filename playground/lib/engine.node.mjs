@@ -100695,6 +100695,42 @@ function offsetDiagnostics(scene, model) {
   }
   return diagnostics;
 }
+function sceneSnapshots(scene) {
+  const clone = (item) => ({ ...item });
+  const capture = () => ({
+    nodes: scene.nodes.map(clone),
+    edges: scene.edges.map((edge) => ({
+      ...edge,
+      pts: edge.pts.map(clone),
+      labels: edge.labels.map(clone)
+    })),
+    pinnedBands: scene.pinnedBands?.map(clone),
+    clampedOffsets: scene.clampedOffsets && new Set(scene.clampedOffsets),
+    repairTier: scene.repairTier,
+    width: scene.width,
+    height: scene.height
+  });
+  const revert = (item, snapshot) => {
+    for (const key of Object.keys(item))
+      if (!(key in snapshot)) delete item[key];
+    Object.assign(item, snapshot);
+  };
+  const restore = (snapshot) => {
+    for (const [index, node] of scene.nodes.entries()) revert(node, snapshot.nodes[index]);
+    for (const [index, edge] of scene.edges.entries()) {
+      const was = snapshot.edges[index];
+      revert(edge, was);
+      edge.pts = was.pts.map(clone);
+      edge.labels = was.labels.map(clone);
+    }
+    scene.pinnedBands = snapshot.pinnedBands?.map(clone);
+    scene.clampedOffsets = snapshot.clampedOffsets && new Set(snapshot.clampedOffsets);
+    scene.repairTier = snapshot.repairTier;
+    scene.width = snapshot.width;
+    scene.height = snapshot.height;
+  };
+  return { capture, restore };
+}
 var RECLAIM_GAP = 12;
 var MIN_RECLAIM = 24;
 var MIN_RECLAIM_KEPT = 24;
@@ -100795,37 +100831,7 @@ function reclaimTrailingColumns(scene, model) {
   if (!moves.size || spans.get(widest()).right > widthBefore - MIN_RECLAIM) return;
   const everyEdge = new Set(scene.edges.map((edge) => edge.id));
   const profileOf = (candidate) => inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, /* @__PURE__ */ new Map());
-  const clone = (item) => ({ ...item });
-  const capture = () => ({
-    nodes: scene.nodes.map(clone),
-    edges: scene.edges.map((edge) => ({
-      ...edge,
-      pts: edge.pts.map(clone),
-      labels: edge.labels.map(clone)
-    })),
-    pinnedBands: scene.pinnedBands?.map(clone),
-    clampedOffsets: scene.clampedOffsets && new Set(scene.clampedOffsets),
-    width: scene.width,
-    height: scene.height
-  });
-  const revert = (item, snapshot) => {
-    for (const key of Object.keys(item))
-      if (!(key in snapshot)) delete item[key];
-    Object.assign(item, snapshot);
-  };
-  const restore = (snapshot) => {
-    for (const [index, node] of scene.nodes.entries()) revert(node, snapshot.nodes[index]);
-    for (const [index, edge] of scene.edges.entries()) {
-      const was2 = snapshot.edges[index];
-      revert(edge, was2);
-      edge.pts = was2.pts.map(clone);
-      edge.labels = was2.labels.map(clone);
-    }
-    scene.pinnedBands = snapshot.pinnedBands?.map(clone);
-    scene.clampedOffsets = snapshot.clampedOffsets && new Set(snapshot.clampedOffsets);
-    scene.width = snapshot.width;
-    scene.height = snapshot.height;
-  };
+  const { capture, restore } = sceneSnapshots(scene);
   const undo = capture();
   const compact = () => compactHorizontal(scene, titleBoxesOf(scene, model));
   compact();
@@ -100840,7 +100846,7 @@ function reclaimTrailingColumns(scene, model) {
       if (id !== rootId) offsetOf.set(id, { dx: 0, dy: 0, parent: model.index.get(id)?.parent?.id });
   }
   const carried = applyNodeOffsets(scene, offsetOf);
-  scene.pinnedBands = undo.pinnedBands?.map(clone);
+  scene.pinnedBands = undo.pinnedBands?.map((band) => ({ ...band }));
   const settled = titleBoxesOf(scene, model);
   reaimAfterOffsets(scene, settled, carried);
   if (carried.size) optimiseRoutes(scene, settled, false, carried);

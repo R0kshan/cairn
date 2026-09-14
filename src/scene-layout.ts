@@ -2176,6 +2176,56 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   return diagnostics;
 }
 
+/**
+ * Take-and-put-back for a whole `Scene`, for a pass that tries something and may
+ * not keep it.
+ *
+ * Whole objects, not the handful of fields a caller means to touch: a trial that
+ * runs the repair, the re-anchor or either compaction pass sets route flags
+ * (`detour`, `pinned`, `hubSided`, `repairedFrom`) and scene metadata
+ * (`repairTier`, `clampedOffsets`) a partial rollback would leave behind. Residue
+ * does not merely dirty the scene — the candidate sweep reads it, so a trial that
+ * was thrown away ends up picking the layout (`medium` came out 26px wider for
+ * exactly that).
+ */
+function sceneSnapshots(scene: Scene) {
+  const clone = <T extends object>(item: T): T => ({ ...item });
+  const capture = () => ({
+    nodes: scene.nodes.map(clone),
+    edges: scene.edges.map((edge) => ({
+      ...edge,
+      pts: edge.pts.map(clone),
+      labels: edge.labels.map(clone),
+    })),
+    pinnedBands: scene.pinnedBands?.map(clone),
+    clampedOffsets: scene.clampedOffsets && new Set(scene.clampedOffsets),
+    repairTier: scene.repairTier,
+    width: scene.width,
+    height: scene.height,
+  });
+  /** Puts `item` back to `snapshot`, keys the trial added included. */
+  const revert = <T extends object>(item: T, snapshot: T) => {
+    for (const key of Object.keys(item))
+      if (!(key in snapshot)) delete (item as Record<string, unknown>)[key];
+    Object.assign(item, snapshot);
+  };
+  const restore = (snapshot: ReturnType<typeof capture>) => {
+    for (const [index, node] of scene.nodes.entries()) revert(node, snapshot.nodes[index]);
+    for (const [index, edge] of scene.edges.entries()) {
+      const was = snapshot.edges[index];
+      revert(edge, was);
+      edge.pts = was.pts.map(clone);
+      edge.labels = was.labels.map(clone);
+    }
+    scene.pinnedBands = snapshot.pinnedBands?.map(clone);
+    scene.clampedOffsets = snapshot.clampedOffsets && new Set(snapshot.clampedOffsets);
+    scene.repairTier = snapshot.repairTier;
+    scene.width = snapshot.width;
+    scene.height = snapshot.height;
+  };
+  return { capture, restore };
+}
+
 /** Breathing room kept between a subtree this pass moves and whatever bounds it. */
 const RECLAIM_GAP = 12;
 /** Don't churn a drawing's routes to claw back less than this. */
@@ -2394,44 +2444,7 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
   const everyEdge = new Set(scene.edges.map((edge) => edge.id));
   const profileOf = (candidate: Scene) =>
     inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, new Map());
-  // Whole objects, not the handful of fields this pass means to touch: the trial
-  // below runs the repair, the re-anchor and both compaction passes, and those
-  // set route flags (`detour`, `pinned`, `hubSided`, `repairedFrom`) a partial
-  // rollback would leave behind. Residue does not merely dirty the scene — the
-  // candidate sweep reads it, so a trial this pass threw away was picking the
-  // layout (`medium` came out 26px wider for it).
-  const clone = <T extends object>(item: T): T => ({ ...item });
-  const capture = () => ({
-    nodes: scene.nodes.map(clone),
-    edges: scene.edges.map((edge) => ({
-      ...edge,
-      pts: edge.pts.map(clone),
-      labels: edge.labels.map(clone),
-    })),
-    pinnedBands: scene.pinnedBands?.map(clone),
-    clampedOffsets: scene.clampedOffsets && new Set(scene.clampedOffsets),
-    width: scene.width,
-    height: scene.height,
-  });
-  /** Puts `item` back to `snapshot`, keys the trial added included. */
-  const revert = <T extends object>(item: T, snapshot: T) => {
-    for (const key of Object.keys(item))
-      if (!(key in snapshot)) delete (item as Record<string, unknown>)[key];
-    Object.assign(item, snapshot);
-  };
-  const restore = (snapshot: ReturnType<typeof capture>) => {
-    for (const [index, node] of scene.nodes.entries()) revert(node, snapshot.nodes[index]);
-    for (const [index, edge] of scene.edges.entries()) {
-      const was = snapshot.edges[index];
-      revert(edge, was);
-      edge.pts = was.pts.map(clone);
-      edge.labels = was.labels.map(clone);
-    }
-    scene.pinnedBands = snapshot.pinnedBands?.map(clone);
-    scene.clampedOffsets = snapshot.clampedOffsets && new Set(snapshot.clampedOffsets);
-    scene.width = snapshot.width;
-    scene.height = snapshot.height;
-  };
+  const { capture, restore } = sceneSnapshots(scene);
   const undo = capture();
 
   // What the drawing costs if this pass does nothing — measured through the
@@ -2460,7 +2473,7 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
   // something across a gap meant to leave the gap there. A lift is not a
   // preference — it is this pass taking a box off rows it was not using, and the
   // height it vacates is exactly what `compactVertical` below is for.
-  scene.pinnedBands = undo.pinnedBands?.map(clone);
+  scene.pinnedBands = undo.pinnedBands?.map((band) => ({ ...band }));
   const settled = titleBoxesOf(scene, model);
   // A subtree that moved this far leaves terminals on a side that no longer faces
   // its counterpart, and routes drawn for the seat it used to have.

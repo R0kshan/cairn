@@ -1660,11 +1660,26 @@ export function reseatAwayTerminals(scene: Scene, titleBoxes: TitleBox[] = []): 
     const tail = sideOf(edge.pts[last], leaves);
     if (!head || !tail || head.node === tail.node) continue;
 
-    // Both ends must be looking the wrong way. One end facing correctly means the
-    // route is already aimed, and straightening it would drag a good terminal.
+    // One end looking the wrong way is the defect, so one is enough to act on —
+    // `application-medium-page`'s F08 leaves its source backwards and arrives at
+    // its target correctly, and it is the flow this pass exists for.
+    //
+    // Acting moves *both* terminals, which sounds like it risks the good one, but
+    // cannot: each is seated on its own `faceToward` result, so a terminal
+    // already on its facing side stays on that side and only slides along it to
+    // the shared coordinate. There is no seat this construction can reach that
+    // points a terminal away from its counterpart.
     const headFace = faceToward(head.node, tail.node);
     const tailFace = faceToward(tail.node, head.node);
     if (head.side !== OPPOSITE[headFace] && tail.side !== OPPOSITE[tailFace]) continue;
+    // And the route may not be a real channel. Tested at the departure only, and
+    // that is not an oversight: the predicate measures how far the route travels
+    // in the direction it *leaves*, which at an arrival is the whole route. F08
+    // reaches 19px from its source and 458px from its target, so testing the
+    // arrival too would call every long flow a lane and turn this pass off for
+    // the flows it exists for. A channel's shape lives at its departure; what
+    // guards the far end is the defect tally below, which refuses any straighten
+    // that costs the drawing something.
     if (departsTheFrame(edge, edge.pts[0], edge.pts[1], frameOf(head.node))) continue;
 
     // The straight line only exists where the two facing spans overlap, and both
