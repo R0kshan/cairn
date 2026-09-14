@@ -249,7 +249,7 @@ export function compactHorizontal(scene: Scene, titleBoxes: readonly TitleBox[])
     addCut(merged[index].hi, merged[index + 1].lo, COLUMN_GAP, COLUMN_MIN_SAVING);
 
   const widthBefore = merged[merged.length - 1].hi;
-  const rightMargin = Math.min(scene.width - widthBefore, EDGE_MARGIN);
+  const rightMargin = Math.max(0, Math.min(scene.width - widthBefore, EDGE_MARGIN));
   if (!cuts.length && scene.width - widthBefore <= EDGE_MARGIN) return;
 
   const shiftAt = (x: number): number => {
@@ -279,5 +279,10 @@ export function compactHorizontal(scene: Scene, titleBoxes: readonly TitleBox[])
     for (const point of edge.pts) widthAfter = Math.max(widthAfter, point.x);
     for (const label of edge.labels) widthAfter = Math.max(widthAfter, label.x + label.width);
   }
+  // Titles are pinned, so they never straddle a cut: their whole span shifts by
+  // shiftAt(x). They overflow a narrow container, so the rightmost one can be
+  // the rightmost thing in the drawing — and `fitCanvas` does not look at them.
+  for (const title of titleBoxes)
+    widthAfter = Math.max(widthAfter, title.x - shiftAt(title.x) + title.width);
   scene.width = Math.ceil(widthAfter + rightMargin);
 }

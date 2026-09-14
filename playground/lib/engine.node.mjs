@@ -96398,7 +96398,7 @@ function compactHorizontal(scene, titleBoxes) {
   for (let index = 0; index + 1 < merged.length; index++)
     addCut(merged[index].hi, merged[index + 1].lo, COLUMN_GAP, COLUMN_MIN_SAVING);
   const widthBefore = merged[merged.length - 1].hi;
-  const rightMargin = Math.min(scene.width - widthBefore, EDGE_MARGIN);
+  const rightMargin = Math.max(0, Math.min(scene.width - widthBefore, EDGE_MARGIN));
   if (!cuts.length && scene.width - widthBefore <= EDGE_MARGIN) return;
   const shiftAt = (x) => {
     let shift = 0;
@@ -96424,6 +96424,8 @@ function compactHorizontal(scene, titleBoxes) {
     for (const point of edge.pts) widthAfter = Math.max(widthAfter, point.x);
     for (const label of edge.labels) widthAfter = Math.max(widthAfter, label.x + label.width);
   }
+  for (const title of titleBoxes)
+    widthAfter = Math.max(widthAfter, title.x - shiftAt(title.x) + title.width);
   scene.width = Math.ceil(widthAfter + rightMargin);
 }
 

@@ -38,7 +38,7 @@ dispositions/large-page.cairn  dim:2564x2232 n:47 e:42 ov:0  geom:c91b2f6cfd90 c
 dispositions/large-slide.cairn  dim:1936x1853 n:47 e:42 ov:0  geom:20eea823b42f color:2c1006f86575 text:e2862da52ebb
 dispositions/large-tall.cairn  dim:2564x2232 n:47 e:42 ov:0  geom:c91b2f6cfd90 color:2c1006f86575 text:160ff12476e5
 dispositions/medium-page.cairn  dim:1043x1238 n:23 e:19 ov:0  geom:17b7eae10ecd color:6a2fa9616faf text:68e487464509
-dispositions/medium-slide.cairn  dim:2123x548 n:23 e:19 ov:0  geom:1f1be4d3884d color:6a2fa9616faf text:68e487464509
+dispositions/medium-slide.cairn  dim:2127x548 n:23 e:19 ov:0  geom:21478cb2eb9d color:6a2fa9616faf text:68e487464509
 dispositions/medium-tall.cairn  dim:1043x1238 n:23 e:19 ov:0  geom:17b7eae10ecd color:6a2fa9616faf text:68e487464509
 dispositions/positioning-sides-page.cairn  dim:865x719 n:12 e:10 ov:0  geom:8ebef4a4e969 color:a2ca1ff5d080 text:4f25bcb657ce
 dispositions/positioning-sides-slide.cairn  dim:1216x319 n:12 e:10 ov:0  geom:38026986c9db color:a2ca1ff5d080 text:4f25bcb657ce
@@ -62,8 +62,8 @@ large.cairn  dim:3542x1203 n:47 e:42 ov:0  geom:eeb7e14a0063 color:59a033bd004f 
 logical-archi.cairn  dim:1638x788 n:26 e:17 ov:0  geom:09b8e971460e color:7fbd814cd857 text:c3d520475ecf
 logical-fr.cairn  dim:2162x548 n:23 e:19 ov:0  geom:8ec8aef654ac color:d962b7ddc1c3 text:dc87bf6a31bb
 logical-security.cairn  dim:2137x578 n:25 e:21 ov:0  geom:da12ba8e34bd color:23d684b4e51d text:4077c8715eda
-logical.cairn  dim:2123x548 n:23 e:19 ov:0  geom:1f1be4d3884d color:d962b7ddc1c3 text:68e487464509
-medium.cairn  dim:2351x584 n:24 e:20 ov:0  geom:b000ad58117b color:2ed23f4211da text:8cc2b6297057
+logical.cairn  dim:2127x548 n:23 e:19 ov:0  geom:21478cb2eb9d color:d962b7ddc1c3 text:68e487464509
+medium.cairn  dim:2355x584 n:24 e:20 ov:0  geom:1bcc8f2cc50b color:2ed23f4211da text:8cc2b6297057
 placement/baseline.cairn  dim:1275x228 n:14 e:6 ov:0  geom:e97395c8e9a0 color:4d06ef3531ab text:fa3340e6308b
 placement/flow-label.cairn  dim:1112x276 n:14 e:6 ov:0  geom:d242dd0c3e45 color:4d06ef3531ab text:fa3340e6308b
 placement/queue-roles.cairn  dim:574x182 n:6 e:4 ov:0  geom:18ddeee98330 color:9d6220703546 text:fb5c17599a54

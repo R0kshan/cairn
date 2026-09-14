@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2123 796" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2127 796" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2123" height="796" fill="#ffffff"/>
+<rect width="2127" height="796" fill="#ffffff"/>
 <rect x="25" y="80" width="156" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="35" y="98" font-size="13" font-weight="bold" fill="#17202c">Policyholders</text>
 <rect x="62" y="255" width="94" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -130,7 +130,7 @@
 <text x="1894.25" y="293.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Compensation</text>
 <text x="624.1666666666666" y="36" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notify steps</text>
 <text x="624.1666666666666" y="50.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">and decision</text>
-<line x1="20" y1="558" x2="2103" y2="558" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="20" y1="558" x2="2107" y2="558" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="580" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
 <rect x="150" y="570" width="43" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
 <text x="171.5" y="581" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Claim</text>
@@ -147,7 +147,7 @@
 <rect x="150" y="666" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
 <text x="198" y="677" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
 <text x="256" y="677" font-size="10" fill="#79828f">carried by the flow</text>
-<line x1="20" y1="704" x2="2103" y2="704" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="20" y1="704" x2="2107" y2="704" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="726" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="716" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="727" font-size="10" fill="#17202c">Actor group</text>
