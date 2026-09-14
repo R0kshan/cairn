@@ -1,49 +1,49 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1311 323" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1282 323" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1311" height="323" fill="#ffffff"/>
+<rect width="1282" height="323" fill="#ffffff"/>
 <rect x="10" y="33" width="106" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="51" font-size="13" font-weight="bold" fill="#17202c">Operations team</text>
-<rect x="320" y="97" width="191" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="330" y="115" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
-<rect x="734" y="146" width="157" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="744" y="164" font-size="13" font-weight="bold" fill="#17202c">Claim routing</text>
-<rect x="541" y="78" width="169" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="551" y="96" font-size="13" font-weight="bold" fill="#17202c">Audit trail</text>
-<rect x="921" y="106" width="198" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="931" y="124" font-size="13" font-weight="bold" fill="#17202c">Claim archive</text>
-<rect x="734" y="22" width="170" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="744" y="40" font-size="13" font-weight="bold" fill="#17202c">Management reporting</text>
-<rect x="1138" y="157" width="163" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1148" y="175" font-size="13" font-weight="bold" fill="#17202c">Partner network</text>
+<rect x="291" y="97" width="191" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="301" y="115" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
+<rect x="705" y="146" width="157" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="715" y="164" font-size="13" font-weight="bold" fill="#17202c">Claim routing</text>
+<rect x="512" y="78" width="169" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="522" y="96" font-size="13" font-weight="bold" fill="#17202c">Audit trail</text>
+<rect x="892" y="106" width="198" height="85" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="902" y="124" font-size="13" font-weight="bold" fill="#17202c">Claim archive</text>
+<rect x="705" y="22" width="170" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="715" y="40" font-size="13" font-weight="bold" fill="#17202c">Management reporting</text>
+<rect x="1109" y="157" width="163" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1119" y="175" font-size="13" font-weight="bold" fill="#17202c">Partner network</text>
 <circle cx="63" cy="70" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 52 92 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="63" y="104" font-size="11" text-anchor="middle" fill="#20364c">Claims agent</text>
-<rect x="329" y="124" width="173" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="415.5" y="147" font-size="12.5" text-anchor="middle" fill="#17202c">Claim reception module</text>
-<rect x="743" y="184" width="138" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="812" y="207" font-size="12.5" text-anchor="middle" fill="#17202c">Assignment module</text>
-<rect x="550" y="116" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="625.5" y="139" font-size="12.5" text-anchor="middle" fill="#17202c">Traceability module</text>
-<rect x="930" y="133" width="180" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1020" y="156" font-size="12.5" text-anchor="middle" fill="#17202c">Document storage module</text>
-<rect x="744" y="49" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="819.5" y="72" font-size="12.5" text-anchor="middle" fill="#17202c">Reporting dashboard</text>
-<rect x="1147" y="184" width="145" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1219.5" y="207" font-size="12.5" text-anchor="middle" fill="#17202c">Settlement service</text>
-<path d="M 107 100.5 L 136 100.5 L 136 143 L 329 143" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 415.5 163 L 415.5 173 L 812 173 L 812 183" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 882 203 L 1147 203" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 107 87 L 526 87 L 526 135 L 550 135" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 625.5 115 L 625.5 105 L 906 105 L 906 182 L 1020 182 L 1020 172" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 107 68 L 743 68" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="232.5" y="146.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">File a claim</text>
-<text x="613.75" y="176.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Route for assignment</text>
-<text x="1014.5" y="206.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Request settlement</text>
-<text x="316.5" y="90.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consult the audit trail</text>
-<text x="765.75" y="108.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archive the trace</text>
-<text x="425" y="71.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the dashboard</text>
-<line x1="20" y1="251" x2="1291" y2="251" stroke="#e6e9ee" stroke-width="1"/>
+<rect x="300" y="124" width="173" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="386.5" y="147" font-size="12.5" text-anchor="middle" fill="#17202c">Claim reception module</text>
+<rect x="714" y="184" width="138" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="783" y="207" font-size="12.5" text-anchor="middle" fill="#17202c">Assignment module</text>
+<rect x="521" y="116" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="596.5" y="139" font-size="12.5" text-anchor="middle" fill="#17202c">Traceability module</text>
+<rect x="901" y="133" width="180" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="991" y="156" font-size="12.5" text-anchor="middle" fill="#17202c">Document storage module</text>
+<rect x="715" y="49" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="790.5" y="72" font-size="12.5" text-anchor="middle" fill="#17202c">Reporting dashboard</text>
+<rect x="1118" y="184" width="145" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1190.5" y="207" font-size="12.5" text-anchor="middle" fill="#17202c">Settlement service</text>
+<path d="M 107 100.5 L 136 100.5 L 136 143 L 300 143" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 386.5 163 L 386.5 173 L 783 173 L 783 183" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 853 203 L 1118 203" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 107 87 L 497 87 L 497 135 L 521 135" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 596.5 115 L 596.5 105 L 877 105 L 877 182 L 991 182 L 991 172" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 107 68 L 714 68" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="203.5" y="146.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">File a claim</text>
+<text x="584.75" y="176.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Route for assignment</text>
+<text x="985.5" y="206.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Request settlement</text>
+<text x="287.5" y="90.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consult the audit trail</text>
+<text x="736.75" y="108.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archive the trace</text>
+<text x="396" y="71.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open the dashboard</text>
+<line x1="20" y1="251" x2="1262" y2="251" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="273" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="263" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="274" font-size="10" fill="#17202c">Actor group</text>

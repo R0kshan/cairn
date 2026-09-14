@@ -24,7 +24,7 @@ import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
 import { type Box, type Point, type TitleBox, isLongDetour } from "./geometry.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
-import { compactVertical, fitCanvas } from "./compact.ts";
+import { compactHorizontal, compactVertical, fitCanvas } from "./compact.ts";
 import {
   optimiseRoutes,
   decoincideAfterOffsets,
@@ -2253,6 +2253,18 @@ function runGeometryPasses(
   // renderer's batch audit, so an unrelated optimiser trade cannot revert the
   // swap. Only swaps that remove a crossing without shuffling it elsewhere.
   swapCrossingSiblingSeats(scene);
+  // The columns elk sized for a label narrower than the gap it reserved, or for
+  // a container reaching past the layer beside it. Dead last among the geometry
+  // passes, unlike its vertical twin: every pass above re-routes, and a column
+  // squeezed before them is judged on geometry they then replace — put here it
+  // narrows what the drawing actually ends up with, and nothing re-routes into
+  // the gap it closed (`logical-archi` paid for the earlier seat with two
+  // coincident runs).
+  //
+  // Reading direction only. Under `DOWN` the layers run down the page, so x is
+  // the cross axis: squeezing it pulls siblings together rather than shortening
+  // anything, and the sweep measured that as crossings on six drawings.
+  if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.
   fitCanvas(scene);
