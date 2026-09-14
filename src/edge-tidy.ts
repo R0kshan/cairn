@@ -1651,6 +1651,37 @@ const LEAVING_REACH = 6;
 const LEAVING_CLEAR = 8;
 
 /**
+ * Would moving run `i` to `target` keep this edge's terminals on their boxes?
+ *
+ * Only the two runs that carry a terminal are at risk, and only on the axis the
+ * move changes: a terminal seated on a north or south face may slide along x and
+ * is detached by a change in y, and the other way round for east and west. A
+ * slide is also held inside the face's own span, so the endpoint cannot come to
+ * rest past the corner it belongs to.
+ */
+function terminalHolds(
+  edge: SceneEdge,
+  move: { i: number; vertical: boolean; target: number },
+  leaves: SceneNode[],
+): boolean {
+  const { i, vertical, target } = move;
+  const last = edge.pts.length - 1;
+  for (const index of [i, i + 1]) {
+    if (index !== 0 && index !== last) continue;
+    const seat = sideOf(edge.pts[index], leaves);
+    if (!seat) continue;
+    const alongX = seat.side === "north" || seat.side === "south";
+    // The move changes x on a vertical run, y on a horizontal one. Changing the
+    // coordinate the face does *not* run along lifts the terminal off it.
+    if (vertical !== alongX) return false;
+    const lo = vertical ? seat.node.x : seat.node.y;
+    const hi = lo + (vertical ? seat.node.width : seat.node.height);
+    if (target < lo + SIDE_INSET || target > hi - SIDE_INSET) return false;
+  }
+  return true;
+}
+
+/**
  * Where a run should sit if it is skimming the inside of `frame` on its way out,
  * or null if it is not. Split out of `clearLeavingRuns` to keep that loop
  * readable; pure geometry either way.
@@ -1666,6 +1697,13 @@ function leavingTarget(
   const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
   const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
   if (hi - lo <= MIN_HUG_SPAN) return null;
+  // And actually beside the frame. Without this a run is judged on its fixed
+  // coordinate alone, so one passing far above or below a container — sharing
+  // none of its height, merely lining up with its left edge — reads as hugging a
+  // border it never comes near.
+  const acrossLo = vertical ? frame.y : frame.x;
+  const acrossHi = vertical ? frame.y + frame.height : frame.x + frame.width;
+  if (hi <= acrossLo || lo >= acrossHi) return null;
   const at = vertical ? a.x : a.y;
   const nearLo = vertical ? frame.x : frame.y;
   const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
@@ -1742,6 +1780,13 @@ export function clearLeavingRuns(scene: Scene, titleBoxes: TitleBox[] = []): voi
         const spot = leavingTarget(edge.pts[i], edge.pts[i + 1], frame);
         if (!spot) continue;
         const { vertical, target } = spot;
+        // A terminal run is movable — on `infrastructure-large-page` the run that
+        // needs moving *is* the last one — but only along the face its endpoint
+        // sits on. Sliding a terminal across its face detaches it from the box,
+        // and nothing downstream would say so: the readability profile skips a
+        // flow whose ends are unseated, so the tally below would score a
+        // disconnected route as an improvement.
+        if (!terminalHolds(edge, { i, vertical, target }, leaves)) continue;
 
         const was = (before ??= defectTally(scene, titleBoxes));
         const undo = edge.pts.map((point) => ({ ...point }));

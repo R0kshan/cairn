@@ -2629,7 +2629,7 @@ function runRoom(scene: Scene, box: Box, side: "left" | "right" | "bottom"): num
  * never onto a route that is not already crossing that border. A side with
  * nothing to spare simply stays where it is.
  */
-function airOutContainers(scene: Scene): void {
+export function airOutContainers(scene: Scene): void {
   const containers = scene.nodes.filter((node) => node.container);
   if (!containers.length) return;
 

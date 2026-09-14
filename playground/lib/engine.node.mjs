@@ -97704,12 +97704,30 @@ function defectTally(scene, titleBoxes) {
 }
 var LEAVING_REACH = 6;
 var LEAVING_CLEAR = 8;
+function terminalHolds(edge, move, leaves) {
+  const { i, vertical, target } = move;
+  const last = edge.pts.length - 1;
+  for (const index of [i, i + 1]) {
+    if (index !== 0 && index !== last) continue;
+    const seat = sideOf(edge.pts[index], leaves);
+    if (!seat) continue;
+    const alongX = seat.side === "north" || seat.side === "south";
+    if (vertical !== alongX) return false;
+    const lo = vertical ? seat.node.x : seat.node.y;
+    const hi = lo + (vertical ? seat.node.width : seat.node.height);
+    if (target < lo + SIDE_INSET || target > hi - SIDE_INSET) return false;
+  }
+  return true;
+}
 function leavingTarget(a, b, frame) {
   const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
   if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) return null;
   const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
   const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
   if (hi - lo <= MIN_HUG_SPAN) return null;
+  const acrossLo = vertical ? frame.y : frame.x;
+  const acrossHi = vertical ? frame.y + frame.height : frame.x + frame.width;
+  if (hi <= acrossLo || lo >= acrossHi) return null;
   const at = vertical ? a.x : a.y;
   const nearLo = vertical ? frame.x : frame.y;
   const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
@@ -97739,6 +97757,7 @@ function clearLeavingRuns(scene, titleBoxes = []) {
         const spot = leavingTarget(edge.pts[i], edge.pts[i + 1], frame);
         if (!spot) continue;
         const { vertical, target } = spot;
+        if (!terminalHolds(edge, { i, vertical, target }, leaves)) continue;
         const was = before ??= defectTally(scene, titleBoxes);
         const undo = edge.pts.map((point) => ({ ...point }));
         for (const index of [i, i + 1]) edge.pts[index][vertical ? "x" : "y"] = target;
@@ -102344,6 +102363,7 @@ function render(model, view, scene, options) {
   });
   const overlapsAfter = countLabelOverlaps();
   compactVertical(scene);
+  airOutContainers(scene);
   fitCanvas(scene);
   const drawnLogos = /* @__PURE__ */ new Set();
   const { renderContainerNode, renderLeafNode } = createNodeRenderers({

@@ -3437,6 +3437,11 @@ test("a run leaving a container does not descend the inside of its frame", async
           const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
           const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
           if (hi - lo <= 24) continue;
+          // Beside the frame, not merely lined up with it: a run sharing none
+          // of the frame's height is not hugging its side, whatever its x.
+          const acrossLo = vertical ? frame.y : frame.x;
+          const acrossHi = vertical ? frame.y + frame.height : frame.x + frame.width;
+          if (hi <= acrossLo || lo >= acrossHi) continue;
           const at = vertical ? a.x : a.y;
           const nearLo = vertical ? frame.x : frame.y;
           const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
@@ -3465,7 +3470,10 @@ test("a run leaving a container does not descend the inside of its frame", async
  */
 test("a label slides along its run to cross fewer container outlines", async () => {
   const { scene } = await build(load("dispositions/infrastructure-large-page.cairn"));
-  const label = scene.edges.flatMap((e) => e.labels).find((l) => l.x > 700 && l.x < 800);
+  // By id, not by where it landed: a coordinate window silently starts matching
+  // a different label — or nothing — the moment the layout shifts, and the test
+  // would then pass without checking anything.
+  const label = scene.edges.flatMap((e) => e.labels).find((l) => l.flowId === "F08");
   assert.ok(label, "F08's label missing");
   const words = {
     x: label.x + 4,

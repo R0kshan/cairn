@@ -4,7 +4,7 @@
 <rect width="1181" height="461" fill="#ffffff"/>
 <rect x="65" y="22" width="85" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="75" y="40" font-size="13" font-weight="bold" fill="#17202c">Users</text>
-<rect x="10" y="123" width="137" height="93" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="123" width="140" height="93" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="141" font-size="13" font-weight="bold" fill="#17202c">Staff</text>
 <rect x="283" y="22" width="725" height="152.66666666666669" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="293" y="40" font-size="13" font-weight="bold" fill="#17202c">Appointment booking system</text>
