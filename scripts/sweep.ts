@@ -1057,15 +1057,23 @@ if (jobs > 1 && !emitJson) {
 if (process.argv.includes("--score-json")) {
   const byTier = [0, 0, 0, 0, 0];
   for (const [kind, count] of Object.entries(totals)) byTier[TIER[kind] ?? 4] += count;
-  process.stdout.write(
-    `${JSON.stringify({
-      totalFlows,
-      totals,
-      byTier,
-      perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
-    })}
+  // Awaited, for the reason the block below documents: `process.stdout` is
+  // asynchronous when it is a pipe, and `process.exit` drops whatever has not
+  // reached the OS. This payload is ~27 KB on today's corpus — under the 64 KiB
+  // pipe buffer, but it carries a row per drawing and grows with the examples,
+  // and `readability-score.ts` reads it through a pipe.
+  await new Promise<void>((resolve, reject) => {
+    process.stdout.write(
+      `${JSON.stringify({
+        totalFlows,
+        totals,
+        byTier,
+        perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
+      })}
 `,
-  );
+      (error) => (error ? reject(error) : resolve()),
+    );
+  });
   process.exit(0);
 }
 

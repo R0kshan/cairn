@@ -94,22 +94,31 @@ const beforeRates = rates(baseScore);
 const afterRates = rates(headScore);
 const verdict = verdictOf(beforeRates, afterRates);
 
+/**
+ * `process.exitCode`, never `process.exit()`: stdout is asynchronous when it is a
+ * pipe — which is what CI and `--json` are — and exiting outright drops whatever
+ * has not reached the OS. Setting the code lets Node leave of its own accord once
+ * the writes have drained. The `--json` payload carries both revisions'
+ * per-drawing rows, so it is the one most likely to be cut.
+ */
+const failed = () => (verdict && !verdict.better ? 1 : 0);
+
 if (asJson) {
   console.log(
     JSON.stringify({ base, baseScore, headScore, beforeRates, afterRates, verdict }, null, 1),
   );
-  process.exit(verdict && !verdict.better ? 1 : 0);
-}
+  process.exitCode = failed();
+} else {
 
-const pad = (text: string, width: number) => text.padEnd(width);
-const sign = (delta: number) => (delta > 0 ? `+${delta.toFixed(3)}` : delta.toFixed(3));
+  const pad = (text: string, width: number) => text.padEnd(width);
+  const sign = (delta: number) => (delta > 0 ? `+${delta.toFixed(3)}` : delta.toFixed(3));
 
-console.log(`readability: working tree vs ${base}`);
-console.log(
+  console.log(`readability: working tree vs ${base}`);
+  console.log(
   `  flows ${baseScore.totalFlows} -> ${headScore.totalFlows}   (rates are per 1000 flows)\n`,
-);
-console.log(`  ${pad("tier", 6)}${pad(base, 12)}${pad("this", 12)}delta`);
-for (let tier = 0; tier < beforeRates.length; tier++) {
+  );
+  console.log(`  ${pad("tier", 6)}${pad(base, 12)}${pad("this", 12)}delta`);
+  for (let tier = 0; tier < beforeRates.length; tier++) {
   const delta = afterRates[tier] - beforeRates[tier];
   const mark = Math.abs(delta) < 1e-9 ? " " : delta < 0 ? "↓" : "↑";
   console.log(
@@ -118,10 +127,10 @@ for (let tier = 0; tier < beforeRates.length; tier++) {
       12,
     )}${sign(delta)} ${mark}`,
   );
-}
+  }
 
-const kinds = [...new Set([...Object.keys(baseScore.totals), ...Object.keys(headScore.totals)])];
-const moved = kinds
+  const kinds = [...new Set([...Object.keys(baseScore.totals), ...Object.keys(headScore.totals)])];
+  const moved = kinds
   .map((kind) => {
     const was = ((baseScore.totals[kind] ?? 0) / baseScore.totalFlows) * 1000;
     const now = ((headScore.totals[kind] ?? 0) / headScore.totalFlows) * 1000;
@@ -130,7 +139,7 @@ const moved = kinds
   .filter((row) => Math.abs(row.delta) > 1e-9)
   .sort((a, b) => a.delta - b.delta);
 
-if (moved.length) {
+  if (moved.length) {
   console.log(`\n  per metric (rate per 1000 flows)`);
   for (const row of moved)
     console.log(
@@ -138,11 +147,12 @@ if (moved.length) {
         row.delta,
       )}`,
     );
+  }
+
+  console.log();
+  if (!verdict) console.log("  = no change on any tier");
+  else if (verdict.better) console.log(`  BETTER — first difference at tier ${verdict.tier}, lower`);
+  else console.log(`  WORSE — first difference at tier ${verdict.tier}, higher`);
+
+  process.exitCode = failed();
 }
-
-console.log();
-if (!verdict) console.log("  = no change on any tier");
-else if (verdict.better) console.log(`  BETTER — first difference at tier ${verdict.tier}, lower`);
-else console.log(`  WORSE — first difference at tier ${verdict.tier}, higher`);
-
-process.exit(verdict && !verdict.better ? 1 : 0);
