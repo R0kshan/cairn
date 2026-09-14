@@ -34,6 +34,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **Typed diagrams with validation.** | Each view defines its element kinds and rules; `cairn validate` reports syntax, schema, and completeness issues as source-located, coded diagnostics, with a JSON mode for CI. |
 | **Flow matrix.** | `cairn matrix` exports the flow matrix as CSV, Markdown, or SVG — from any view, with the columns that view can fill. In infrastructure it splits protocol from port and annotates endpoints that sit in a network zone; headers localise via `style { lang: fr }`. The same table is available to embedders through `compile(source, { matrix: true })`. |
 | **Author-controlled positioning.** | Layout is automatic, with three opt-in overrides for when it gets a diagram wrong: `order: 2` sequences a top-level element along the disposition's own reading direction (left to right in `wide`, top to bottom in `tall`) and sorts siblings inside a container, `A.right -> B.left` pins which side of an element a flow leaves and arrives on, and the arrow glyph carries the line style (`->` solid, `-->` dashed, `..>` dotted). |
+| **Playground drag-to-adjust.** | When the automatic layout needs a correction, the [playground](https://cairn-psi-five.vercel.app/) lets you drag elements, flow labels, a single route segment, or a flow's endpoint onto another side. Every drag is written back into the source as the matching hint — `offset:`, `label-offset:`, `segment-offset:`, `ID.side` — so the adjustment stays versionable text and re-renders identically from the CLI. |
 | **Enterprise-view extras.** | Business objects on flows, an auto-generated legend, and a numbered-flow table via `flow-text: numbered`. |
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
 | **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
@@ -64,7 +65,7 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
 
 ## Usage
 
-Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/).
+Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/) (elements are and labels are manually draggable with DSL updated automatically with corresponding offsets).
 
 ## Preview
 
