@@ -2180,6 +2180,15 @@ const RECLAIM_GAP = 12;
 /** Don't churn a drawing's routes to claw back less than this. */
 const MIN_RECLAIM = 24;
 /**
+ * And don't *keep* the result for less than this, whatever the share works out
+ * at. Below it the reclaim stops paying for itself: `colors-custom` bought 97px
+ * and a new `sideHug`, `flow-labels-long` 96px and 26px of extra height. Both
+ * are stage-5 costs this pass cannot see from where it runs — it measures before
+ * labels take their final seats — so the floor stands in for the look it cannot
+ * take.
+ */
+const MIN_RECLAIM_KEPT = 24;
+/**
  * And don't *keep* the result for less than this share of the width.
  *
  * Stage 5 re-settles labels and refits the canvas after every geometry pass, so
@@ -2190,6 +2199,17 @@ const MIN_RECLAIM = 24;
  * anything stage 5 does to it. A few percent is noise this cannot see the end of.
  */
 const RECLAIM_SHARE = 0.05;
+/**
+ * And how much of the drawing's height a lift may move a box through.
+ *
+ * A lift is meant to step a box off rows it was not using — 21px, on the drawing
+ * this pass was written for. Past a point it stops being that and becomes a
+ * restack: `theme-light` had its one box moved 118px down a 169px drawing, which
+ * turns a wide strip into a block. That is a disposition choice (§2.1), made once
+ * for the whole drawing against the aspect target, not something a space-reclaim
+ * pass gets to make on the side.
+ */
+const RECLAIM_LIFT_SHARE = 0.15;
 
 /** A top-level subtree's extent, title overflow included — what this pass moves as one. */
 interface Reach {
@@ -2359,6 +2379,7 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
     );
     for (const dy of options) {
       if (!dy) continue;
+      if (Math.abs(dy) > scene.height * RECLAIM_LIFT_SHARE) continue;
       const moved = { ...wall, y: wall.y + dy, bottom: wall.bottom + dy };
       if (moved.y < RECLAIM_GAP || !clear(moved)) continue;
       shift(blocker, 0, dy);
@@ -2444,6 +2465,10 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
   // its counterpart, and routes drawn for the seat it used to have.
   reaimAfterOffsets(scene, settled, carried);
   if (carried.size) optimiseRoutes(scene, settled, false, carried);
+  // A subtree that slid into a column now sits alongside routes that were not
+  // running past anything before. `tidyEdges` owns that defect mid-pipeline and
+  // is long past; run its side-hug pass again over the settled geometry.
+  clearSideHugs(scene, settled);
   // Labels name runs that just moved, and a band the slide emptied is dead height
   // the vertical pass already ran past. Both are measured below, so both are put
   // right first — judging the move on stale labels judges the wrong drawing.
@@ -2461,7 +2486,7 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
   const held = [...tallyProfile(profileOf(scene))].every(
     ([key, entry]) => entry.count <= (was.get(key)?.count ?? 0),
   );
-  const bar = Math.max(MIN_RECLAIM, stayWidth * RECLAIM_SHARE);
+  const bar = Math.max(MIN_RECLAIM_KEPT, stayWidth * RECLAIM_SHARE);
   // Narrower, and not one pixel taller. Width alone is the wrong objective — the
   // freed column has to go somewhere, and on `theme-dark` a third of the width
   // came back as half again the height. Trading the axes is what the disposition

@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2137 850" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1971 850" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2137" height="850" fill="#ffffff"/>
+<rect width="1971" height="850" fill="#ffffff"/>
 <rect x="21" y="311" width="94" height="175" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="31" y="329" font-size="13" font-weight="bold" fill="#17202c">Patients and relatives</text>
 <rect x="25" y="22" width="125" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
@@ -14,8 +14,8 @@
 <text x="1148.7142857142858" y="232.5" font-size="13" font-weight="bold" fill="#17202c">Medical record</text>
 <rect x="1059" y="68" width="688" height="126.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="1069" y="86" font-size="13" font-weight="bold" fill="#17202c">Secondary use</text>
-<rect x="1971" y="258" width="156" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1981" y="276" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
+<rect x="1793" y="258" width="156" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1803" y="276" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="74" cy="348" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 63 370 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="74" y="382" font-size="11" text-anchor="middle" fill="#20364c">Patient</text>
@@ -68,24 +68,24 @@
 <rect x="1630" y="98.16666666666666" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <text x="1684" y="118.41666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">Statistical</text>
 <text x="1684" y="132.91666666666666" font-size="12.5" text-anchor="middle" fill="#17202c">reporting</text>
-<rect x="1980" y="419" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2049" y="439.25" font-size="12.5" text-anchor="middle" fill="#17202c">National identity</text>
-<text x="2049" y="453.75" font-size="12.5" text-anchor="middle" fill="#17202c">federation</text>
-<rect x="1980" y="352" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2034" y="372.25" font-size="12.5" text-anchor="middle" fill="#17202c">Hospital</text>
-<text x="2034" y="386.75" font-size="12.5" text-anchor="middle" fill="#17202c">EHR</text>
-<rect x="1980" y="285" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2035" y="305.25" font-size="12.5" text-anchor="middle" fill="#17202c">Public-health</text>
-<text x="2035" y="319.75" font-size="12.5" text-anchor="middle" fill="#17202c">registry</text>
+<rect x="1802" y="419" width="138" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1871" y="439.25" font-size="12.5" text-anchor="middle" fill="#17202c">National identity</text>
+<text x="1871" y="453.75" font-size="12.5" text-anchor="middle" fill="#17202c">federation</text>
+<rect x="1802" y="352" width="108" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1856" y="372.25" font-size="12.5" text-anchor="middle" fill="#17202c">Hospital</text>
+<text x="1856" y="386.75" font-size="12.5" text-anchor="middle" fill="#17202c">EHR</text>
+<rect x="1802" y="285" width="110" height="47" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1857" y="305.25" font-size="12.5" text-anchor="middle" fill="#17202c">Public-health</text>
+<text x="1857" y="319.75" font-size="12.5" text-anchor="middle" fill="#17202c">registry</text>
 <path d="M 106 372.8 L 268 372.8 A 5 5 0 0 1 278 372.8 L 357 372.8 L 415.5 372.8" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 523.5 352.08333333333337 L 769.5 352.08333333333337 L 769.5 379.58333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 106 384.8 L 268 384.8 A 5 5 0 0 1 278 384.8 L 411 384.8 L 411 403.08333333333337 L 716 403.08333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 106 444.5 L 198 444.5 L 198 453 L 334 453 L 334 415.33333333333337 L 716 415.33333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 859 410.9166666666667 L 893 410.9166666666667 L 893 446.75 L 1196.7142857142858 446.75 A 5 5 0 0 1 1206.7142857142858 446.75 L 1479.7142857142858 446.75 A 5 5 0 0 1 1489.7142857142858 446.75 L 1980 446.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 859 410.9166666666667 L 893 410.9166666666667 L 893 446.75 L 1196.7142857142858 446.75 A 5 5 0 0 1 1206.7142857142858 446.75 L 1479.7142857142858 446.75 A 5 5 0 0 1 1489.7142857142858 446.75 L 1802 446.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 859 395.75 L 1196.7142857142858 395.75 A 5 5 0 0 1 1206.7142857142858 395.75 L 1430.7142857142858 395.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 106 360.8 L 211 360.8 L 211 306.75 L 268 306.75 A 5 5 0 0 1 278 306.75 L 412.5 306.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 526.5 310.41666666666674 L 883 310.4166666666667 L 883 383.75 L 1196.7142857142858 383.75 A 5 5 0 0 1 1206.7142857142858 383.75 L 1430.7142857142858 383.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1538.7142857142858 375.66666666666663 L 1980 375.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1538.7142857142858 375.66666666666663 L 1802 375.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 131.5 161 L 327 161 L 327 99 L 880.5 99 A 5 5 0 0 1 890.5 99 L 1034 99 L 1034 282 L 1147.7142857142858 282" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1255.7142857142858 299.5 L 1466.7142857142858 299.5 L 1466.7142857142858 360" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 106 348.8 L 198 349 L 198 273 L 268 273 A 5 5 0 0 1 278 273 L 347 273 L 347 119 L 376 119 A 5 5 0 0 1 386 119 L 1024 119 L 1024 349 L 1147.7142857142858 349" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -97,7 +97,7 @@
 <path d="M 1176 129.5 L 1338 129.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1474 129.5 L 1630 129.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 141 81.5 L 885.5 81.5 L 885.5 102.5 L 1029 102.5 A 5 5 0 0 1 1039 102.5 L 1630 102.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1738 121.66666666666666 L 1938 121.99999999999997 L 1938 309 L 1980 309" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1684 145.16666666666666 L 1684 308.5 L 1802 308.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="194.5" y="376.05" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Open an account</text>
 <text x="646.5" y="355.33333333333337" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Enrol a second factor</text>
 <text x="331.25" y="388.05" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Sign in</text>
@@ -106,10 +106,10 @@
 <text x="266" y="456.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Sign in on behalf</text>
 <rect x="212.5" y="464.25" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="266" y="475.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Verified identity</text>
-<text x="1677.75" y="442.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Verify the claimed</text>
-<text x="1677.75" y="457.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">identity</text>
-<rect x="1624.25" y="465.25" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1677.75" y="476.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Verified identity</text>
+<text x="1741" y="442.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Verify the claimed</text>
+<text x="1741" y="457.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">identity</text>
+<rect x="1687.5" y="465.25" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1741" y="476.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Verified identity</text>
 <text x="1144.857142857143" y="399" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Verified access</text>
 <rect x="1091.357142857143" y="407" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="1144.857142857143" y="418" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Verified identity</text>
@@ -121,9 +121,9 @@
 <text x="883" y="352.25000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">sharing rules</text>
 <rect x="856" y="360.25000000000006" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="883" y="371.25000000000006" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Consent</text>
-<text x="1759.357142857143" y="378.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Fetch the care history</text>
-<rect x="1713.857142857143" y="386.8333333333333" width="91" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1759.357142857143" y="397.8333333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Medical record</text>
+<text x="1670.357142857143" y="378.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Fetch the care history</text>
+<rect x="1624.857142857143" y="386.8333333333333" width="91" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1670.357142857143" y="397.8333333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Medical record</text>
 <text x="229.25" y="164.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Share a report</text>
 <rect x="186.25" y="172.25" width="86" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="229.25" y="183.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Care document</text>
@@ -147,8 +147,8 @@
 <rect x="1498.5" y="140.75" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="1552" y="151.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Anonymised cohort</text>
 <text x="513.25" y="84.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Run a study</text>
-<text x="1838" y="125.08333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Publish aggregates</text>
-<line x1="20" y1="588" x2="2117" y2="588" stroke="#e6e9ee" stroke-width="1"/>
+<text x="1684" y="230.08333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Publish aggregates</text>
+<line x1="20" y1="588" x2="1951" y2="588" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="610" font-size="11" font-weight="bold" fill="#3a4553">BUSINESS OBJECTS</text>
 <rect x="150" y="600" width="107" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
 <text x="203.5" y="611" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Verified identity</text>
@@ -168,7 +168,7 @@
 <rect x="150" y="720" width="96" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
 <text x="198" y="731" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Business object</text>
 <text x="256" y="731" font-size="10" fill="#79828f">carried by the flow</text>
-<line x1="20" y1="758" x2="2117" y2="758" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="20" y1="758" x2="1951" y2="758" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="780" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="770" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="781" font-size="10" fill="#17202c">Actor group</text>
