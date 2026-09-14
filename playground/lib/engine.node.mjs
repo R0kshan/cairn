@@ -97710,7 +97710,7 @@ function reseatAwayTerminals(scene, titleBoxes = []) {
   };
   let before = null;
   for (const edge of scene.edges) {
-    if (edge.pts.length < 3 || edge.pinned?.start || edge.pinned?.end) continue;
+    if (edge.pts.length < 3 || sideFixed(edge, "start") || sideFixed(edge, "end")) continue;
     const last = edge.pts.length - 1;
     const head = sideOf(edge.pts[0], leaves);
     const tail = sideOf(edge.pts[last], leaves);
