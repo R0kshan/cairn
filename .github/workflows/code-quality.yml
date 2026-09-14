@@ -26,6 +26,40 @@ jobs:
             echo "$out" | grep -q "label overlaps: 0" || { echo "OVERLAP REGRESSION: $f -> $out"; exit 1; }
           done
 
+  # Whether the PR's drawings read better or worse than its base branch. This is
+  # NOT a gate: `npm test` already runs the sweep, which blocks any regression
+  # against the recorded floor. What that cannot say is whether a change is an
+  # *improvement* — the floor is a committed file and lags the working tree, so a
+  # PR that fixes ten drawings looks identical to one that does nothing. This
+  # reports the difference and never fails the build, because a change can be
+  # neutral or a shade worse on a rate while being right (see the ladder's trade
+  # rule in documentation/READABILITY_METRICS.md) and only a human should weigh
+  # that.
+  readability:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+          # The score measures the base revision in a worktree, so the base ref
+          # has to exist locally — the default shallow fetch has only this PR.
+          fetch-depth: 0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with: { node-version: 22 }
+      - run: npm ci
+      - name: Score against the base branch
+        env:
+          BASE: origin/${{ github.event.pull_request.base.ref }}
+        run: |
+          {
+            echo '### Readability vs `'"$BASE"'`'
+            echo
+            echo '```'
+            npm run readability --silent -- --base="$BASE" 2>&1 || true
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
   # Proves the bun-COMPILED binary actually runs (Node tests can't — see scripts/smoke-binary.sh). 
   # Builds only the host target for speed; the release workflow builds all five platforms.
   binary-smoke:

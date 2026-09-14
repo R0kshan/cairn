@@ -30,3 +30,5 @@ graphify-out/
 .code-review-graph/
 
 opencode.jsonc
+# Throwaway worktree used by scripts/readability-score.ts
+.readability-score-base/
