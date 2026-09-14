@@ -6,20 +6,20 @@
 <text x="130" y="40" font-size="13" font-weight="bold" fill="#17202c">Centre de données principal</text>
 <rect x="900.25" y="243" width="154" height="191" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="910.25" y="261" font-size="13" font-weight="bold" fill="#17202c">DMZ</text>
-<rect x="914.25" y="337" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="924.25" y="355" font-size="13" font-weight="bold" fill="#17202c">Reverse proxy</text>
-<text x="924.25" y="369" font-size="13" font-weight="bold" fill="#17202c">(paire HA)</text>
+<rect x="911.25" y="337" width="129" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="921.25" y="355" font-size="13" font-weight="bold" fill="#17202c">Reverse proxy</text>
+<text x="921.25" y="369" font-size="13" font-weight="bold" fill="#17202c">(paire HA)</text>
 <rect x="154" y="49" width="667" height="271" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="164" y="67" font-size="13" font-weight="bold" fill="#17202c">Zone applicative</text>
-<rect x="410" y="237" width="146" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="420" y="255" font-size="13" font-weight="bold" fill="#17202c">VM Facturation</text>
-<rect x="423.33333333333326" y="143" width="126" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="433.33333333333326" y="161" font-size="13" font-weight="bold" fill="#17202c">VM CRM</text>
+<rect x="407" y="237" width="149" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="417" y="255" font-size="13" font-weight="bold" fill="#17202c">VM Facturation</text>
+<rect x="420.33333333333326" y="143" width="132" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="430.33333333333326" y="161" font-size="13" font-weight="bold" fill="#17202c">VM CRM</text>
 <rect x="848" y="99" width="368" height="124" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="858" y="117" font-size="13" font-weight="bold" fill="#17202c">Zone de données</text>
-<rect x="862" y="126" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="872" y="144" font-size="13" font-weight="bold" fill="#17202c">Serveur de</text>
-<text x="872" y="158" font-size="13" font-weight="bold" fill="#17202c">base de données</text>
+<rect x="859" y="126" width="129" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="869" y="144" font-size="13" font-weight="bold" fill="#17202c">Serveur de</text>
+<text x="869" y="158" font-size="13" font-weight="bold" fill="#17202c">base de données</text>
 <rect x="923.25" y="378" width="108" height="38" rx="4" fill="#fdecea" stroke="#c0392b" stroke-width="1.6"/>
 <rect x="931.3" y="387" width="14" height="12" rx="1" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 931.3 391 H 945.3 M 931.3 395 H 945.3" fill="none" stroke="#c0392b" stroke-width="1.3"/><path d="M 938.3 387 V 391 M 935.3 391 V 395 M 941.3 391 V 395 M 938.3 395 V 399" fill="none" stroke="#c0392b" stroke-width="1.3"/>
 <text x="990.25" y="401" font-size="12.5" text-anchor="middle" fill="#17202c">WAF</text>

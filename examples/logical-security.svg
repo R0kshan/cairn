@@ -2,20 +2,20 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="1971" height="850" fill="#ffffff"/>
-<rect x="21" y="311" width="94" height="175" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="21" y="311" width="97" height="175" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="31" y="329" font-size="13" font-weight="bold" fill="#17202c">Patients and relatives</text>
-<rect x="25" y="22" width="125" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="25" y="22" width="128" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="35" y="40" font-size="13" font-weight="bold" fill="#17202c">Care and oversight</text>
 <rect x="362" y="41" width="1419" height="481.58333333333337" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="372" y="59" font-size="13" font-weight="bold" fill="#17202c">Patient portal information system</text>
-<rect x="396" y="252.08333333333337" width="472" height="229" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="406" y="270.08333333333337" font-size="13" font-weight="bold" fill="#17202c">Access and consent</text>
-<rect x="1138.7142857142858" y="214.5" width="409" height="201.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1148.7142857142858" y="232.5" font-size="13" font-weight="bold" fill="#17202c">Medical record</text>
-<rect x="1059" y="68" width="688" height="126.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1069" y="86" font-size="13" font-weight="bold" fill="#17202c">Secondary use</text>
-<rect x="1793" y="258" width="156" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1803" y="276" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
+<rect x="393" y="252.08333333333337" width="478" height="229" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="403" y="270.08333333333337" font-size="13" font-weight="bold" fill="#17202c">Access and consent</text>
+<rect x="1135.7142857142858" y="214.5" width="415" height="204.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1145.7142857142858" y="232.5" font-size="13" font-weight="bold" fill="#17202c">Medical record</text>
+<rect x="1056" y="68" width="691" height="126.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1066" y="86" font-size="13" font-weight="bold" fill="#17202c">Secondary use</text>
+<rect x="1790" y="258" width="159" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1800" y="276" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="74" cy="348" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 63 370 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="74" y="382" font-size="11" text-anchor="middle" fill="#20364c">Patient</text>

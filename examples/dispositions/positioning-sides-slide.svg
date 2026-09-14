@@ -6,9 +6,9 @@
 <text x="20" y="82" font-size="13" font-weight="bold" fill="#17202c">Claims actors</text>
 <rect x="223" y="22" width="844" height="269" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="233" y="40" font-size="13" font-weight="bold" fill="#17202c">Claims platform</text>
-<rect x="395" y="54.5" width="407" height="106" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="405" y="72.5" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
-<rect x="232" y="143.66666666666666" width="126" height="105" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<rect x="392" y="54.5" width="410" height="106" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="402" y="72.5" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
+<rect x="232" y="143.66666666666666" width="129" height="105" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
 <text x="242" y="161.66666666666666" font-size="13" font-weight="bold" fill="#17202c">Assessment</text>
 <circle cx="69.5" cy="101" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 58.5 123 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>

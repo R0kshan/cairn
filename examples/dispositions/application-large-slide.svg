@@ -2,20 +2,20 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="2327" height="639" fill="#ffffff"/>
-<rect x="10" y="211" width="143" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="211" width="146" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="229" font-size="13" font-weight="bold" fill="#17202c">Internal teams</text>
-<rect x="485" y="206" width="384" height="152.16666666666666" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="495" y="224" font-size="13" font-weight="bold" fill="#17202c">Sales front</text>
-<rect x="1568" y="180" width="347" height="176.66666666666669" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="1578" y="198" font-size="13" font-weight="bold" fill="#17202c">Order management</text>
-<rect x="196" y="275" width="126" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="206" y="293" font-size="13" font-weight="bold" fill="#17202c">Product repository</text>
-<rect x="193" y="181" width="126" height="83" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="203" y="199" font-size="13" font-weight="bold" fill="#17202c">Pricing</text>
+<rect x="482" y="206" width="390" height="152.16666666666666" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="492" y="224" font-size="13" font-weight="bold" fill="#17202c">Sales front</text>
+<rect x="1565" y="180" width="353" height="176.66666666666669" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="1575" y="198" font-size="13" font-weight="bold" fill="#17202c">Order management</text>
+<rect x="193" y="275" width="132" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="203" y="293" font-size="13" font-weight="bold" fill="#17202c">Product repository</text>
+<rect x="190" y="181" width="132" height="83" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="200" y="199" font-size="13" font-weight="bold" fill="#17202c">Pricing</text>
 <rect x="1025" y="377" width="377" height="105" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
 <text x="1035" y="395" font-size="13" font-weight="bold" fill="#17202c">Payment hub</text>
-<rect x="1286" y="52" width="126" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
-<text x="1296" y="70" font-size="13" font-weight="bold" fill="#17202c">Customer care</text>
+<rect x="1283" y="52" width="132" height="150" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<text x="1293" y="70" font-size="13" font-weight="bold" fill="#17202c">Customer care</text>
 <circle cx="96.5" cy="333" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 85.5 355 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="96.5" y="367" font-size="11" text-anchor="middle" fill="#20364c">Merchandising</text>

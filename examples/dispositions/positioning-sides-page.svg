@@ -2,13 +2,13 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="865" height="869" fill="#ffffff"/>
-<rect x="255" y="22" width="119" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="255" y="22" width="119" height="93" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="265" y="40" font-size="13" font-weight="bold" fill="#17202c">Claims actors</text>
 <rect x="44" y="126" width="708.4166666666667" height="521.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="54" y="144" font-size="13" font-weight="bold" fill="#17202c">Claims platform</text>
-<rect x="251.75" y="325.5" width="335" height="181.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<rect x="251.75" y="325.5" width="335" height="183.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
 <text x="261.75" y="343.5" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
-<rect x="53" y="153" width="137" height="84" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<rect x="53" y="153" width="137" height="86" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
 <text x="63" y="171" font-size="13" font-weight="bold" fill="#17202c">Assessment</text>
 <circle cx="314.5" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 303.5 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>

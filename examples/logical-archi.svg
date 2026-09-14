@@ -2,19 +2,19 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="1638" height="968" fill="#ffffff"/>
-<rect x="25" y="494.5" width="156" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="25" y="494.5" width="159" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="35" y="512.5" font-size="13" font-weight="bold" fill="#17202c">Role group - Central zone</text>
-<rect x="70" y="122.5" width="119" height="101" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="70" y="122.5" width="122" height="101" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="80" y="140.5" font-size="13" font-weight="bold" fill="#17202c">Role group - Remote site</text>
 <rect x="77" y="234.5" width="174" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="87" y="252.5" font-size="13" font-weight="bold" fill="#17202c">External targets</text>
 <rect x="431" y="149.5" width="798" height="478.6666666666667" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="441" y="167.5" font-size="13" font-weight="bold" fill="#17202c">Main infrastructure</text>
-<rect x="982" y="285.8333333333333" width="213" height="284" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="982" y="285.8333333333333" width="216" height="287" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="992" y="303.8333333333333" font-size="13" font-weight="bold" fill="#17202c">Central control layer</text>
-<rect x="465" y="260.1666666666667" width="198" height="284" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="475" y="278.1666666666667" font-size="13" font-weight="bold" fill="#17202c">Remote site layer</text>
-<rect x="1423" y="293.5" width="205" height="284" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="462" y="260.1666666666667" width="204" height="287" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="472" y="278.1666666666667" font-size="13" font-weight="bold" fill="#17202c">Remote site layer</text>
+<rect x="1423" y="293.5" width="205" height="287" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1433" y="311.5" font-size="13" font-weight="bold" fill="#17202c">External resources</text>
 <circle cx="103" cy="531.5" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 92 553.5 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>

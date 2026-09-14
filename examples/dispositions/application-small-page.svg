@@ -2,9 +2,9 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="450" height="737" fill="#ffffff"/>
-<rect x="46" y="22" width="166" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="46" y="22" width="166" height="93" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="56" y="40" font-size="13" font-weight="bold" fill="#17202c">HR actors</text>
-<rect x="78" y="142" width="184" height="188.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
+<rect x="78" y="142" width="187" height="191.5" rx="6" fill="#e9f3fa" stroke="#2f83b6" stroke-width="1.2"/>
 <text x="88" y="160" font-size="13" font-weight="bold" fill="#17202c">HR portal</text>
 <circle cx="171" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 160 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>

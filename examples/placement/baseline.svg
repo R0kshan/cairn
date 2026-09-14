@@ -2,17 +2,17 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="972" height="358" fill="#ffffff"/>
-<rect x="10" y="99" width="106" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="99" width="109" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="117" font-size="13" font-weight="bold" fill="#17202c">Operations team</text>
-<rect x="251" y="192" width="191" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="261" y="210" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
-<rect x="619" y="192" width="156" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="629" y="210" font-size="13" font-weight="bold" fill="#17202c">Claim routing</text>
-<rect x="322" y="107" width="169" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="332" y="125" font-size="13" font-weight="bold" fill="#17202c">Audit trail</text>
-<rect x="503" y="106" width="198" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<rect x="248" y="192" width="197" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="258" y="210" font-size="13" font-weight="bold" fill="#17202c">Claim intake</text>
+<rect x="616" y="192" width="159" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="626" y="210" font-size="13" font-weight="bold" fill="#17202c">Claim routing</text>
+<rect x="319" y="107" width="172" height="77" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="329" y="125" font-size="13" font-weight="bold" fill="#17202c">Audit trail</text>
+<rect x="503" y="106" width="198" height="77" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="513" y="124" font-size="13" font-weight="bold" fill="#17202c">Claim archive</text>
-<rect x="289" y="22" width="169" height="74" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<rect x="289" y="22" width="169" height="77" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="299" y="40" font-size="13" font-weight="bold" fill="#17202c">Management reporting</text>
 <rect x="787" y="192" width="163" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="797" y="210" font-size="13" font-weight="bold" fill="#17202c">Partner network</text>

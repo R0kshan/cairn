@@ -2,32 +2,32 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="2948" height="1568" fill="#ffffff"/>
-<rect x="172" y="469" width="125" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="172" y="469" width="128" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="182" y="487" font-size="13" font-weight="bold" fill="#17202c">Customers</text>
-<rect x="10" y="55" width="143" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="55" width="146" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="73" font-size="13" font-weight="bold" fill="#17202c">Internal teams</text>
 <rect x="1267" y="288" width="776" height="451" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="1277" y="306" font-size="13" font-weight="bold" fill="#17202c">Commerce front</text>
-<rect x="1301" y="443" width="156" height="217" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1311" y="461" font-size="13" font-weight="bold" fill="#17202c">Sales channels</text>
-<rect x="1643" y="449" width="356" height="230" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="1298" y="443" width="159" height="220" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1308" y="461" font-size="13" font-weight="bold" fill="#17202c">Sales channels</text>
+<rect x="1643" y="449" width="359" height="230" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
 <text x="1653" y="467" font-size="13" font-weight="bold" fill="#17202c">Customer journey</text>
 <rect x="357" y="56" width="784" height="512.9" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="367" y="74" font-size="13" font-weight="bold" fill="#17202c">Commerce core</text>
-<rect x="805" y="102.9" width="302" height="229" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="815" y="120.9" font-size="13" font-weight="bold" fill="#17202c">Sales</text>
-<rect x="483" y="351.9" width="128" height="208" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="493" y="369.9" font-size="13" font-weight="bold" fill="#17202c">Offer</text>
-<rect x="391" y="138" width="312" height="151.4" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="401" y="156" font-size="13" font-weight="bold" fill="#17202c">Execution</text>
+<rect x="802" y="102.9" width="308" height="232" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="812" y="120.9" font-size="13" font-weight="bold" fill="#17202c">Sales</text>
+<rect x="481" y="351.9" width="133" height="208" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="491" y="369.9" font-size="13" font-weight="bold" fill="#17202c">Offer</text>
+<rect x="388" y="138" width="315" height="151.4" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="398" y="156" font-size="13" font-weight="bold" fill="#17202c">Execution</text>
 <rect x="2143" y="189" width="539" height="186" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="2153" y="207" font-size="13" font-weight="bold" fill="#17202c">Data platform</text>
-<rect x="2157" y="216" width="135" height="150" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="2157" y="216" width="138" height="150" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
 <text x="2167" y="234" font-size="13" font-weight="bold" fill="#17202c">Collection</text>
-<rect x="2368" y="223.8" width="300" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="2378" y="241.8" font-size="13" font-weight="bold" fill="#17202c">Analytics</text>
-<rect x="2731" y="32" width="142" height="351" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="2741" y="50" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
+<rect x="2365" y="223.8" width="306" height="86" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="2375" y="241.8" font-size="13" font-weight="bold" fill="#17202c">Analytics</text>
+<rect x="2728" y="32" width="148" height="354" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="2738" y="50" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="244" cy="665" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 233 687 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="244" y="699" font-size="11" text-anchor="middle" fill="#20364c">Web customer</text>

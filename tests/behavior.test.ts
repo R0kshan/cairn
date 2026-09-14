@@ -3327,3 +3327,58 @@ test("no route turns just inside a container border it crosses", async () => {
       }
   }
 });
+
+/**
+ * An arrowhead arriving from outside a container is not drawn against its frame
+ * (`airOutContainers`).
+ *
+ * The head is ~7px long and elk's container padding is 9, so a flow crossing into
+ * a zone had 2px between the head and the border — on `infrastructure-large-wide`
+ * the WAF's inbound arrow all but sat on the DMZ edge. Widening elk's padding is
+ * the wrong lever (it moves every child and re-routes the drawing; one extra
+ * pixel put `sideHug` through its ceiling), so the border moves outward instead
+ * and every route stays exactly where the router put it.
+ *
+ * Asserted as a property across views: the rule is geometric and applies to any
+ * container with an arrival.
+ */
+test("an arrowhead crossing into a container is not drawn on its border", async () => {
+  const ARROW_ROOM = 12;
+  for (const file of [
+    "dispositions/infrastructure-large-wide.cairn",
+    "infrastructure-medium.cairn",
+    "logical.cairn",
+    "application.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    const inside = (outer: { x: number; y: number; width: number; height: number }, n: typeof outer) =>
+      n.x >= outer.x - 1 &&
+      n.y >= outer.y - 1 &&
+      n.x + n.width <= outer.x + outer.width + 1 &&
+      n.y + n.height <= outer.y + outer.height + 1;
+    for (const box of scene.nodes.filter((n) => n.container))
+      for (const edge of scene.edges) {
+        if (edge.pts.length < 2) continue;
+        for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+          const seat = scene.nodes.find(
+            (n) =>
+              !n.container &&
+              terminal.x >= n.x - 1 &&
+              terminal.x <= n.x + n.width + 1 &&
+              terminal.y >= n.y - 1 &&
+              terminal.y <= n.y + n.height + 1,
+          );
+          if (!seat || seat === box || !inside(box, seat)) continue;
+          // West arrivals only — the shape the report was about, and enough to
+          // pin the rule without restating the whole pass.
+          if (Math.abs(terminal.x - seat.x) >= 1) continue;
+          if (!edge.pts.some((p) => p.x < box.x)) continue;
+          assert.ok(
+            seat.x - box.x >= ARROW_ROOM,
+            `${file}: ${edge.id} arrives at ${seat.id} with ${(seat.x - box.x).toFixed(1)}px ` +
+              `between ${box.id}'s border and the box (need ${ARROW_ROOM})`,
+          );
+        }
+      }
+  }
+});

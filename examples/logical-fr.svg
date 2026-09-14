@@ -2,20 +2,20 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="2162" height="796" fill="#ffffff"/>
-<rect x="23" y="80" width="119" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="23" y="80" width="122" height="164" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="33" y="98" font-size="13" font-weight="bold" fill="#17202c">Assurés</text>
-<rect x="29" y="255" width="113" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="29" y="255" width="116" height="271" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="39" y="273" font-size="13" font-weight="bold" fill="#17202c">Gestionnaires</text>
 <rect x="349" y="50" width="1529" height="320.5" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="359" y="68" font-size="13" font-weight="bold" fill="#17202c">Système d'information sinistres</text>
-<rect x="363" y="88" width="183" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="373" y="106" font-size="13" font-weight="bold" fill="#17202c">Déclaration</text>
-<rect x="656" y="167.5" width="746" height="183" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="666" y="185.5" font-size="13" font-weight="bold" fill="#17202c">Instruction</text>
-<rect x="1439" y="221.33333333333331" width="425" height="111" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1449" y="239.33333333333331" font-size="13" font-weight="bold" fill="#17202c">Indemnisation</text>
-<rect x="1991" y="92" width="149" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="2001" y="110" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
+<rect x="360" y="88" width="189" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="370" y="106" font-size="13" font-weight="bold" fill="#17202c">Déclaration</text>
+<rect x="653" y="167.5" width="752" height="183" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="663" y="185.5" font-size="13" font-weight="bold" fill="#17202c">Instruction</text>
+<rect x="1436" y="221.33333333333331" width="431" height="111" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1446" y="239.33333333333331" font-size="13" font-weight="bold" fill="#17202c">Indemnisation</text>
+<rect x="1988" y="92" width="152" height="217" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1998" y="110" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
 <circle cx="88.66666666666666" cy="117" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 77.66666666666666 139 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <text x="88.66666666666666" y="151" font-size="11" text-anchor="middle" fill="#20364c">Assuré</text>

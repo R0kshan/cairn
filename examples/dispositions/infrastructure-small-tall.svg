@@ -4,11 +4,11 @@
 <rect width="198" height="885" fill="#ffffff"/>
 <rect x="10" y="140" width="172" height="517" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="20" y="158" font-size="13" font-weight="bold" fill="#17202c">Cloud host</text>
-<rect x="38" y="172" width="126" height="83" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="38" y="172" width="126" height="86" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="48" y="190" font-size="13" font-weight="bold" fill="#17202c">Public zone</text>
 <rect x="19" y="350" width="154" height="298" rx="6" fill="#eaf5ef" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="29" y="368" font-size="13" font-weight="bold" fill="#17202c">Private zone</text>
-<rect x="38" y="382" width="126" height="74" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<rect x="38" y="382" width="126" height="77" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="48" y="400" font-size="13" font-weight="bold" fill="#17202c">Web VM</text>
 <rect x="38" y="551" width="126" height="88" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="48" y="569" font-size="13" font-weight="bold" fill="#17202c">Database</text>

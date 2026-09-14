@@ -2,15 +2,15 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="1135" height="325" fill="#ffffff"/>
-<rect x="10" y="46" width="82" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="46" width="85" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="64" font-size="13" font-weight="bold" fill="#17202c">Users</text>
 <rect x="237" y="22" width="725" height="137" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="247" y="40" font-size="13" font-weight="bold" fill="#17202c">Appointment booking system</text>
-<rect x="251" y="49" width="126" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="261" y="67" font-size="13" font-weight="bold" fill="#17202c">Booking channels</text>
-<rect x="530" y="49" width="418" height="101" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="540" y="67" font-size="13" font-weight="bold" fill="#17202c">Appointment management</text>
-<rect x="974" y="54" width="126" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="248" y="49" width="132" height="83" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="258" y="67" font-size="13" font-weight="bold" fill="#17202c">Booking channels</text>
+<rect x="527" y="49" width="421" height="101" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="537" y="67" font-size="13" font-weight="bold" fill="#17202c">Appointment management</text>
+<rect x="974" y="54" width="126" height="77" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="984" y="72" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="51" cy="83" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 40 105 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>

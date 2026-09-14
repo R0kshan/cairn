@@ -100877,6 +100877,109 @@ function reclaimTrailingColumns(scene, model) {
   if (held && won) return;
   restore(undo);
 }
+var BORDER_AIR = 3;
+var ARROW_ROOM2 = 12;
+var RUN_CLEAR = 4;
+function runRoom(scene, box, side) {
+  const horizontal = side !== "bottom";
+  const acrossLo = horizontal ? box.y : box.x;
+  const acrossHi = horizontal ? box.y + box.height : box.x + box.width;
+  let free = Number.POSITIVE_INFINITY;
+  for (const edge of scene.edges)
+    for (let i = 0; i + 1 < edge.pts.length; i++) {
+      const a = edge.pts[i];
+      const b = edge.pts[i + 1];
+      const vertical = Math.abs(a.x - b.x) < 0.5;
+      if (vertical === Math.abs(a.y - b.y) < 0.5) continue;
+      if (vertical !== horizontal) continue;
+      const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+      const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+      if (hi <= acrossLo || lo >= acrossHi) continue;
+      const at = vertical ? a.x : a.y;
+      const gap = side === "left" ? box.x - at : side === "right" ? at - (box.x + box.width) : at - (box.y + box.height);
+      if (gap >= 0) free = Math.min(free, gap - RUN_CLEAR);
+    }
+  return free;
+}
+function airOutContainers(scene) {
+  const containers = scene.nodes.filter((node) => node.container);
+  if (!containers.length) return;
+  const holds = (outer, inner) => outer !== inner && inner.x >= outer.x - 1 && inner.y >= outer.y - 1 && inner.x + inner.width <= outer.x + outer.width + 1 && inner.y + inner.height <= outer.y + outer.height + 1;
+  const parentOf = (node) => {
+    let best = null;
+    for (const box of containers)
+      if (holds(box, node) && (!best || box.width * box.height < best.width * best.height))
+        best = box;
+    return best;
+  };
+  const was = new Map(scene.nodes.map((node) => [node.id, { ...node }]));
+  const grown = new Map(containers.map((box) => [box.id, { ...box }]));
+  for (const box of containers) {
+    const parent = parentOf(box);
+    const self2 = was.get(box.id);
+    const foreign = scene.nodes.filter(
+      (node) => node !== box && !holds(box, node) && !holds(node, box)
+    );
+    const room = (side) => {
+      const horizontal = side !== "bottom";
+      let free = BORDER_AIR;
+      free = Math.min(free, runRoom(scene, self2, side));
+      if (parent) {
+        const edge = was.get(parent.id);
+        const limit = side === "left" ? self2.x - edge.x : side === "right" ? edge.x + edge.width - (self2.x + self2.width) : edge.y + edge.height - (self2.y + self2.height);
+        free = Math.min(free, Math.max(0, limit - 1));
+      }
+      for (const other of foreign) {
+        const o = was.get(other.id);
+        if (horizontal) {
+          if (o.y + o.height <= self2.y || o.y >= self2.y + self2.height) continue;
+          const gap = side === "left" ? self2.x - (o.x + o.width) : o.x - (self2.x + self2.width);
+          if (gap >= 0) free = Math.min(free, gap / 2);
+        } else {
+          if (o.x + o.width <= self2.x || o.x >= self2.x + self2.width) continue;
+          const gap = o.y - (self2.y + self2.height);
+          if (gap >= 0) free = Math.min(free, gap / 2);
+        }
+      }
+      return Math.max(0, Math.floor(free));
+    };
+    const wanted = (side) => {
+      let short = 0;
+      for (const edge of scene.edges) {
+        if (edge.pts.length < 2) continue;
+        for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+          const seat = scene.nodes.find(
+            (node) => !node.container && pointOn(terminal, was.get(node.id))
+          );
+          if (!seat || !holds(box, seat)) continue;
+          const s = was.get(seat.id);
+          const outside = edge.pts.some(
+            (point) => side === "left" ? point.x < self2.x : side === "right" ? point.x > self2.x + self2.width : point.y > self2.y + self2.height
+          );
+          if (!outside) continue;
+          const gap = side === "left" ? s.x - self2.x : side === "right" ? self2.x + self2.width - (s.x + s.width) : self2.y + self2.height - (s.y + s.height);
+          const onFace = side === "bottom" ? Math.abs(terminal.y - (s.y + s.height)) < 1 : Math.abs(terminal.x - (side === "left" ? s.x : s.x + s.width)) < 1;
+          if (onFace && gap >= 0) short = Math.max(short, ARROW_ROOM2 - gap);
+        }
+      }
+      return short;
+    };
+    const left = Math.min(room("left"), wanted("left"));
+    const right = Math.min(room("right"), wanted("right"));
+    const bottom = Math.min(room("bottom"), wanted("bottom"));
+    if (left <= 0 && right <= 0 && bottom <= 0) continue;
+    const out = grown.get(box.id);
+    out.x = self2.x - Math.max(0, left);
+    out.width = self2.width + Math.max(0, left) + Math.max(0, right);
+    out.height = self2.height + Math.max(0, bottom);
+  }
+  for (const box of containers) {
+    const out = grown.get(box.id);
+    box.x = out.x;
+    box.width = out.width;
+    box.height = out.height;
+  }
+}
 function runGeometryPasses(scene, model, options) {
   const { numbered, sideways } = options;
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
@@ -100901,6 +101004,7 @@ function runGeometryPasses(scene, model, options) {
   swapCrossingSiblingSeats(scene);
   if (!sideways) reclaimTrailingColumns(scene, model);
   if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
+  airOutContainers(scene);
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {
