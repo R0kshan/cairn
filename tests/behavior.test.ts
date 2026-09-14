@@ -3164,3 +3164,31 @@ INVOICE -> PARTNER : "Nightly export" (SFTP/22)
   const tight = await fold("style {\n  container-padding: 2\n}");
   assert.ok(tight < base, `folded column not narrowed: ${tight} >= ${base}`);
 });
+
+/**
+ * A container's stroke must not run through the words of a flow label (§4e).
+ *
+ * The label carries a halo, so a border grazing its *box* is harmless — what
+ * reads badly is the stroke crossing the text rows, which sit at the top of the
+ * box. `small`'s F04 is the case the seat search was taught: a 116px label on a
+ * 117px run, nowhere to slide, seated across the bottom of *External systems*.
+ *
+ * A preference, not an invariant — a label whose run is boxed in has no clear
+ * seat at any distance, and `small`'s own "Open / block slots" is one. So this
+ * pins the case that *is* reachable rather than asserting every label clears.
+ */
+test("a flow label steps off a container's outline when a seat nearby is clear", async () => {
+  const { scene } = await build(load("small.cairn"));
+  const ext = scene.nodes.find((n) => n.id === "EXT");
+  assert.ok(ext, "EXT container missing");
+  const label = scene.edges.flatMap((e) => e.labels).find((l) => l.text.includes("SMS reminder"));
+  assert.ok(label, "F04 label missing");
+  // The text band, exactly as `strikesBorder` measures it.
+  const top = label.y;
+  const bottom = label.y + (label.textH > 0 ? label.textH : label.height);
+  assert.ok(
+    top >= ext.y + ext.height || bottom <= ext.y,
+    `label text ${top.toFixed(1)}..${bottom.toFixed(1)} still crosses EXT's ` +
+      `${ext.y.toFixed(0)}..${(ext.y + ext.height).toFixed(0)} outline`,
+  );
+});

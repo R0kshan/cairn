@@ -89,7 +89,7 @@
 <text x="278.75" y="209.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer un sinistre</text>
 <rect x="249.25" y="217.25" width="59" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="278.75" y="228.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Sinistre</text>
-<text x="278.75" y="276.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer son implication</text>
+<text x="258.125" y="276.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Déclarer son implication</text>
 <text x="183.5" y="112" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Téléverser photos</text>
 <text x="183.5" y="126.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et documents</text>
 <text x="1268.5" y="141.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Archiver les documents</text>
@@ -125,9 +125,9 @@
 <text x="1647" y="292.0833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Ordre d'indemnisation</text>
 <rect x="1615" y="300.0833333333333" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="1647" y="311.0833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
-<text x="1912.25" y="274.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Virement SEPA</text>
-<rect x="1880.25" y="282.5833333333333" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1912.25" y="293.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
+<text x="1924.5" y="274.5833333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Virement SEPA</text>
+<rect x="1892.5" y="282.5833333333333" width="64" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1924.5" y="293.5833333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Indemnité</text>
 <text x="778.5416666666667" y="36" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notifier étapes</text>
 <text x="778.5416666666667" y="50.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et décision</text>
 <line x1="20" y1="558" x2="2142" y2="558" stroke="#e6e9ee" stroke-width="1"/>
