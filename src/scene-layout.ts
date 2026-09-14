@@ -30,6 +30,7 @@ import {
   decoincideAfterOffsets,
   clearSideHugs,
   reaimAfterOffsets,
+  reseatAwayTerminals,
   spreadAttachments,
   swapCrossingSiblingSeats,
   tidyEdges,
@@ -2569,6 +2570,12 @@ function runGeometryPasses(
   // batch-reverted to y=451 over another edge's label harm. Here it is in both
   // audit states, so the comparison is unaffected and the fix permanent.
   clearSideHugs(scene, settledTitles);
+  // A terminal still seated on the face opposite its counterpart. The port pass
+  // above answers most of these by re-laying the graph out, but exempts anything
+  // `route-detour` flagged — and that flag outlives the channel it was set for.
+  // One flow at a time, on settled geometry, so it cannot disturb a route it does
+  // not touch (which is exactly what re-laying out for one flow did).
+  reseatAwayTerminals(scene, settledTitles);
   // Still without the author's offsets: this scene is a layout *candidate*, and
   // `applyAuthorPositioning` puts the hints on the one that wins.
   anchorFlowLabels(scene, settledTitles, false);

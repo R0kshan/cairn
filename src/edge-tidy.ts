@@ -671,6 +671,16 @@ interface HugContext {
 
 function createHugContext(scene: Scene, titleBoxes: TitleBox[]): HugContext {
   const SIDE_CLEAR = 8;
+  /**
+   * What this pass treats as hugging: a hair wider than the 3px the sweep's
+   * `sideHug` flags. A run sitting at exactly 3.0 clears the predicate and still
+   * draws as one line with the frame — `application-medium-page`'s F07 runs 47px
+   * along the inside of *Billing*'s top border at precisely that. The metric is
+   * the yardstick and stays where it is; the fixer is allowed to be tidier than
+   * the floor it has to clear. Only just, though: at 3.5 the extra reach cost
+   * `application-logistique-fr` an `attachTight` in slide.
+   */
+  const HUG_REACH = 3.25;
   const leaves = scene.nodes.filter((node) => !node.container);
   /**
    * Tier-0 gate: the changed segments (from `fromIdx` on) may not strike a
@@ -722,13 +732,13 @@ function createHugContext(scene: Scene, titleBoxes: TitleBox[]): HugContext {
     if (shared <= MIN_HUG_SPAN) return null;
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
-    if (Math.abs(run.at - nearLo) < 3)
+    if (Math.abs(run.at - nearLo) < HUG_REACH)
       return node.container
         ? run.at < nearLo
           ? nearLo - SIDE_CLEAR
           : nearLo + SIDE_CLEAR
         : nearLo - SIDE_CLEAR;
-    if (Math.abs(run.at - nearHi) < 3)
+    if (Math.abs(run.at - nearHi) < HUG_REACH)
       return node.container
         ? run.at > nearHi
           ? nearHi + SIDE_CLEAR
@@ -754,10 +764,10 @@ function createHugContext(scene: Scene, titleBoxes: TitleBox[]): HugContext {
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
     let sign = 0;
     let side = 0;
-    if (Math.abs(run.at - nearLo) < 3) {
+    if (Math.abs(run.at - nearLo) < HUG_REACH) {
       side = nearLo;
       sign = node.container ? (run.at < nearLo ? -1 : 1) : -1;
-    } else if (Math.abs(run.at - nearHi) < 3) {
+    } else if (Math.abs(run.at - nearHi) < HUG_REACH) {
       side = nearHi;
       sign = node.container ? (run.at > nearHi ? 1 : -1) : 1;
     } else return [];
@@ -1465,8 +1475,25 @@ function slideClamp(edge: SceneEdge, run: HugRun, leaves: SceneNode[]): { lo: nu
 function clearRunHug(ctx: HugContext, edge: SceneEdge, run: HugRun, own: Set<SceneNode>): boolean {
   const { scene, leaves, hugTargetsOf } = ctx;
   const targets: number[] = [];
+  // A run may hug the box *it* attaches to — that is the approach, and pushing
+  // it off would only bend the stub. It may not hug the box at the route's other
+  // end: `application-medium-page`'s F07 leaves *Invoice issuing and sending*
+  // northward, hooks back over the top of it, then descends flush against that
+  // same box's left border for its whole height, drawn as one line with the
+  // frame. Exempting both endpoints on both terminal runs — which is what `own`
+  // does — is what let it through.
+  const exempt = new Set<SceneNode>();
+  const last = edge.pts.length - 1;
+  if (run.i === 0) {
+    const seat = sideOf(edge.pts[0], leaves);
+    if (seat) exempt.add(seat.node);
+  }
+  if (run.i + 1 === last) {
+    const seat = sideOf(edge.pts[last], leaves);
+    if (seat) exempt.add(seat.node);
+  }
   for (const node of scene.nodes) {
-    if (own.has(node)) continue;
+    if (exempt.has(node)) continue;
     for (const t of hugTargetsOf(run, node)) if (!targets.includes(t)) targets.push(t);
   }
   if (!targets.length) return false;
@@ -1503,6 +1530,172 @@ function clearEdgeHugs(ctx: HugContext, edge: SceneEdge): void {
       }
     }
     if (!applied) break;
+  }
+}
+
+/** The face opposite `side` — where a terminal that departs backwards sits. */
+const OPPOSITE: Record<Side, Side> = {
+  north: "south",
+  south: "north",
+  west: "east",
+  east: "west",
+};
+
+/**
+ * The face of `node` that looks at `other`. Mirrors `sideToward` in
+ * `scene-layout`; kept local because this module is handed a `Scene` and never a
+ * `Model` (INVARIANTS §16).
+ */
+function faceToward(node: SceneNode, other: SceneNode): Side {
+  const dx = other.x + other.width / 2 - (node.x + node.width / 2);
+  const dy = other.y + other.height / 2 - (node.y + node.height / 2);
+  return Math.abs(dx) >= Math.abs(dy) ? (dx < 0 ? "west" : "east") : dy < 0 ? "north" : "south";
+}
+
+/** Where a face sits, and the span a terminal may take along it. */
+const faceOf = (node: SceneNode, side: Side) =>
+  side === "west" || side === "east"
+    ? { at: side === "west" ? node.x : node.x + node.width, lo: node.y, hi: node.y + node.height }
+    : { at: side === "north" ? node.y : node.y + node.height, lo: node.x, hi: node.x + node.width };
+
+/**
+ * Does this departure leave the frame its terminal sits in?
+ *
+ * That is what separates the channel `route-detour` builds — out of the layer and
+ * off down a lane — from a hook that turns back over the box it just left. A
+ * terminal in no frame has nothing to clear, so a node's own height stands in.
+ */
+function departsTheFrame(
+  edge: SceneEdge,
+  terminal: Point,
+  neighbour: Point,
+  frame: SceneNode | null,
+): boolean {
+  const axis = Math.abs(neighbour.x - terminal.x) >= ORTHOGONAL_EPSILON ? "x" : "y";
+  const sign = Math.sign(neighbour[axis] - terminal[axis]);
+  if (!sign) return false;
+  let reach = 0;
+  for (const point of edge.pts) reach = Math.max(reach, sign * (point[axis] - terminal[axis]));
+  if (!frame) return reach > FRAME_REACH;
+  const wall =
+    axis === "x"
+      ? sign > 0
+        ? frame.x + frame.width
+        : frame.x
+      : sign > 0
+        ? frame.y + frame.height
+        : frame.y;
+  return reach >= sign * (wall - terminal[axis]);
+}
+
+/** What a departure must cover to read as a lane when no frame encloses it. A
+    node is 38-47px tall across the corpus. */
+const FRAME_REACH = 48;
+
+/** Every defect the scene carries, counted by kind. */
+function defectTally(scene: Scene, titleBoxes: TitleBox[]): Map<string, number> {
+  const every = new Set(scene.edges.map((edge) => edge.id));
+  const tally = new Map<string, number>();
+  for (const key of inspect(scene, titleBoxes).local(every, new Map()).keys()) {
+    // Addresses carry coordinates, which move; the kind is what must not grow.
+    const kind = key.replace(/[@:].*$/, "");
+    tally.set(kind, (tally.get(kind) ?? 0) + 1);
+  }
+  return tally;
+}
+
+/**
+ * Straightens a flow whose two terminals sit on the faces that look *away* from
+ * each other, when the faces that look at each other line up.
+ *
+ * elk's default for a backward flow in a layered layout is to leave by the far
+ * side and loop round — the `attachAway` population. `scene-layout`'s port pass
+ * answers most of it by re-laying the graph out under `elk.port.side`, but it
+ * exempts anything `route-detour` flagged, on the grounds that a channel wraps by
+ * design — and the flag outlives the channel. `application-medium-page`'s F08 is
+ * the shape: it still carries the flag while leaving *Invoice issuing and
+ * sending* northward, hooking 19px back over the top of the box and descending
+ * the whole page, with a clear corridor under the box the entire way.
+ *
+ * Answered here the way §4c answers dead columns: a geometric pass over settled
+ * geometry, one flow at a time, instead of another whole-graph re-layout. The
+ * distinction is the point — re-laying out moves every box in the drawing to fix
+ * one route, and measured on this corpus that trade lost more than it won
+ * (`application-tech-stack-large` crossings 17→28, `nearParallel` through its
+ * ceiling). Re-seating one terminal cannot disturb a flow it does not touch.
+ *
+ * The construction is deliberately the simplest one that can exist: both
+ * terminals move onto the faces that look at each other, at a shared coordinate
+ * inside the overlap of those two faces, and the route becomes the straight line
+ * between them. No router, no turns, nothing to get wrong — and if the two faces
+ * do not overlap there is no candidate and the flow is left alone.
+ *
+ * Narrow on purpose: only a terminal on the face *opposite* its counterpart (a
+ * perpendicular seat is often right, and `clearSideHugs` owns the cases where one
+ * must move); never a channel; never a pinned terminal, whose side is the
+ * author's (§17). And kept only if no defect of any kind grew — measured across
+ * the whole scene, since a straightened flow can land on someone else's.
+ */
+export function reseatAwayTerminals(scene: Scene, titleBoxes: TitleBox[] = []): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const holds = (child: SceneNode, box: SceneNode) =>
+    box.container &&
+    child.x >= box.x - 1 &&
+    child.y >= box.y - 1 &&
+    child.x + child.width <= box.x + box.width + 1 &&
+    child.y + child.height <= box.y + box.height + 1;
+  const frameOf = (node: SceneNode): SceneNode | null => {
+    let held: SceneNode | null = null;
+    for (const box of scene.nodes)
+      if (box !== node && holds(node, box) && (!held || box.width * box.height < held.width * held.height))
+        held = box;
+    return held;
+  };
+
+  let before: Map<string, number> | null = null;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 3 || edge.pinned?.start || edge.pinned?.end) continue;
+    const last = edge.pts.length - 1;
+    const head = sideOf(edge.pts[0], leaves);
+    const tail = sideOf(edge.pts[last], leaves);
+    if (!head || !tail || head.node === tail.node) continue;
+
+    // Both ends must be looking the wrong way. One end facing correctly means the
+    // route is already aimed, and straightening it would drag a good terminal.
+    const headFace = faceToward(head.node, tail.node);
+    const tailFace = faceToward(tail.node, head.node);
+    if (head.side !== OPPOSITE[headFace] && tail.side !== OPPOSITE[tailFace]) continue;
+    if (departsTheFrame(edge, edge.pts[0], edge.pts[1], frameOf(head.node))) continue;
+
+    // The straight line only exists where the two facing spans overlap, and both
+    // faces must be parallel for "a shared coordinate" to mean anything.
+    const from = faceOf(head.node, headFace);
+    const to = faceOf(tail.node, tailFace);
+    const vertical = headFace === "north" || headFace === "south";
+    if (vertical !== (tailFace === "north" || tailFace === "south")) continue;
+    const lo = Math.max(from.lo, to.lo) + SIDE_INSET;
+    const hi = Math.min(from.hi, to.hi) - SIDE_INSET;
+    if (lo > hi) continue;
+    // Nearest to where the route already arrives, so the flow moves as little as
+    // the geometry allows.
+    const arrival = vertical ? edge.pts[last].x : edge.pts[last].y;
+    const along = Math.min(Math.max(arrival, lo), hi);
+    const straight = vertical
+      ? [
+          { x: along, y: from.at },
+          { x: along, y: to.at },
+        ]
+      : [
+          { x: from.at, y: along },
+          { x: to.at, y: along },
+        ];
+
+    const was = (before ??= defectTally(scene, titleBoxes));
+    const undo = edge.pts;
+    edge.pts = straight;
+    const after = defectTally(scene, titleBoxes);
+    if ([...after].every(([kind, count]) => count <= (was.get(kind) ?? 0))) before = after;
+    else edge.pts = undo;
   }
 }
 

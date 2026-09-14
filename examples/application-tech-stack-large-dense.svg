@@ -146,7 +146,7 @@
 <path d="M 1244 313.5 L 1244 330.5 L 1320 330.5 A 5 5 0 0 1 1330 330.5 L 1466 330.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1763 316 L 1615 316 L 1615 343.5 L 1591 343.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1278 205 L 1315 205 L 1315 88.5 L 1431 88.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 458 106.5 L 458 68.5 L 1432 68.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 458 106.5 L 458 73.5 L 1432 73.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 492 109.5 L 552 109.5 L 552 124.21428571428572 L 1310 124.21428571428572 A 5 5 0 0 1 1320 124.21428571428572 L 1441 124.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1278 217 L 1288 217 L 1288 218.9 L 1325 218.5 L 1325 137.5 L 1441 137.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 492 140.25 L 522 140.25 L 522 232.71428571428572 L 773 232.5 L 773 211.5 L 1174 211.25" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -176,7 +176,7 @@
 <text x="1388" y="333.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/fanout)</text>
 <text x="1674.5" y="319.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/fanout)</text>
 <text x="1315" y="101" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/direct)</text>
-<text x="945" y="71.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/direct)</text>
+<text x="945" y="76.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/direct)</text>
 <text x="996.5" y="127.60714285714286" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/direct)</text>
 <text x="1383" y="140.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/direct)</text>
 <text x="973.5" y="214.625" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>

@@ -3192,3 +3192,81 @@ test("a flow label steps off a container's outline when a seat nearby is clear",
       `${ext.y.toFixed(0)}..${(ext.y + ext.height).toFixed(0)} outline`,
   );
 });
+
+/**
+ * A run may hug the box it attaches to; it may not hug anything else (§4 sweep
+ * `sideHug`).
+ *
+ * `application-medium-page`'s `BILL_ISSUE -> PPF` is the case the exemption used
+ * to hide: it leaves *Invoice issuing and sending* northward, hooks back over the
+ * top of it, then descends the whole page flush against that same box's left
+ * border — its own source, so both terminal runs were exempt from every node of
+ * the flow rather than from the one they land on. The hook's horizontal also ran
+ * 47px along the inside of *Billing*'s top border at exactly 3.0px, a hair
+ * outside what the fixer used to reach for.
+ */
+test("a flow does not run along a border it is not attached to", async () => {
+  const { model, scene } = await build(load("dispositions/application-medium-page.cairn"));
+  const flow = model.flows.find((f) => f.to === "PPF");
+  const route = scene.edges.find((e) => e.id === flow?.id)!;
+  const source = scene.nodes.find((n) => n.id === "BILL_ISSUE")!;
+  const layer = scene.nodes.find((n) => n.id === "BILLING")!;
+  assert.ok(route && source && layer, "BILL_ISSUE -> PPF / BILLING missing");
+
+  for (let index = 0; index + 1 < route.pts.length; index++) {
+    const head = route.pts[index];
+    const tail = route.pts[index + 1];
+    const isVertical = Math.abs(head.x - tail.x) < 0.5;
+    const lo = isVertical ? Math.min(head.y, tail.y) : Math.min(head.x, tail.x);
+    const hi = isVertical ? Math.max(head.y, tail.y) : Math.max(head.x, tail.x);
+    const at = isVertical ? head.x : head.y;
+    // Only the two boxes this route used to be drawn as one line with. The flow
+    // attaches to `BILL_ISSUE`, so its stub off the border is fine — a run is
+    // charged once it shares more than the stub's span with the side.
+    for (const frame of [source, layer]) {
+      const spanLo = isVertical ? frame.y : frame.x;
+      const spanHi = isVertical ? frame.y + frame.height : frame.x + frame.width;
+      if (Math.min(hi, spanHi) - Math.max(lo, spanLo) <= 24) continue;
+      const near = isVertical ? frame.x : frame.y;
+      const far = isVertical ? frame.x + frame.width : frame.y + frame.height;
+      const gap = Math.min(Math.abs(at - near), Math.abs(at - far));
+      assert.ok(
+        gap >= 3,
+        `run ${index} of ${route.id} is ${gap.toFixed(1)}px off ${frame.id}'s ` +
+          `${isVertical ? "vertical" : "horizontal"} side`,
+      );
+    }
+  }
+});
+
+/**
+ * A flow whose two terminals sit on the faces looking away from each other is
+ * straightened onto the faces that look at each other (`reseatAwayTerminals`).
+ *
+ * `application-medium-page`'s `BILL_ISSUE -> PPF` is the shape: `route-detour`
+ * flagged it, later passes reshaped what it drew into a 19px hook over the top of
+ * *Invoice issuing and sending*, and the flag then exempted it from the port pass
+ * that answers `attachAway` — so it descended the whole page from the box's north
+ * face with a clear corridor under the south one the entire way.
+ */
+test("a flow leaves by the face that looks at its target", async () => {
+  const { scene } = await build(load("dispositions/application-medium-page.cairn"));
+  const source = scene.nodes.find((n) => n.id === "BILL_ISSUE")!;
+  const target = scene.nodes.find((n) => n.id === "PPF")!;
+  const route = scene.edges.find(
+    (e) =>
+      Math.abs(e.pts[e.pts.length - 1].y - target.y) < 2 &&
+      e.pts[e.pts.length - 1].x > target.x &&
+      e.pts[e.pts.length - 1].x < target.x + target.width,
+  )!;
+  assert.ok(source && target && route, "BILL_ISSUE -> PPF missing");
+
+  // PPF sits below BILL_ISSUE, so the flow must leave by the south face.
+  assert.ok(
+    Math.abs(route.pts[0].y - (source.y + source.height)) < 2,
+    `flow leaves at y=${route.pts[0].y.toFixed(1)}, not BILL_ISSUE's south face ` +
+      `(y=${(source.y + source.height).toFixed(1)})`,
+  );
+  // And with the faces lined up there is nothing left to turn around.
+  assert.equal(route.pts.length, 2, "a straightened flow should have no turns");
+});
