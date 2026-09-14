@@ -58,7 +58,7 @@
 <rect x="990" y="211" width="131" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1055.5" y="231.25" font-size="12.5" text-anchor="middle" fill="#17202c">Carrier tracking</text>
 <text x="1055.5" y="245.75" font-size="12.5" text-anchor="middle" fill="#17202c">(third party)</text>
-<path d="M 114 150 L 138 150 L 138 111 L 320 111" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 114 150 L 138 150 L 138 116 L 320 116" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 114 76 L 158 76" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 428 110.5 L 578 110.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 686 110.5 L 710 110.5 L 710 161.83333333333331 L 812 161.83333333333331" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -70,7 +70,7 @@
 <text x="761" y="165.08333333333331" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <text x="748.5" y="98.08333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
 <text x="824" y="199.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(MQ, JSON)</text>
-<text x="584" y="48.83333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
+<text x="584" y="36.666666666666664" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="821" y="255.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(SFTP, CSV)</text>
 <line x1="20" y1="282" x2="1111" y2="282" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="304" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>

@@ -229,6 +229,14 @@ tier 1 because it destroys attribution — a hug fix may be paid for with a
 crossing (verified on logical-archi's F02, where every re-side crosses F11's
 riser), never the reverse.
 
+"Does not attach to" is per *run*, not per flow: a route's first and last runs
+are exempt from the seat they land on and from nothing else, so a flow that
+leaves a box and then descends that same box's far side is charged. The fixer in
+`edge-tidy.ts` reaches 3.25px rather than 3 — the metric here is the yardstick
+and does not move, but a run parked at exactly 3.0 still reads as one line with
+the frame, so the pass that answers the metric is allowed to be a hair tidier
+than the floor it has to clear.
+
 ---
 
 ## Tier 2 — the line is hard to follow

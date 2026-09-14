@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1270 357" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1145 357" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="1270" height="357" fill="#ffffff"/>
+<rect width="1145" height="357" fill="#ffffff"/>
 <rect x="10" y="22.999666585017593" width="94" height="186" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="40.99966658501759" font-size="13" font-weight="bold" fill="#17202c">External consumers</text>
 <rect x="565" y="56.11214385052278" width="373" height="186" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
@@ -40,9 +40,9 @@
 <rect x="966" y="31" width="12" height="13" rx="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 970 31 H 974" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><circle cx="972" cy="36" r="2" fill="none" stroke="#3a8f8f" stroke-width="1.3"/><path d="M 968 42 q 4 -4 8 0" fill="none" stroke="#3a8f8f" stroke-width="1.3"/>
 <text x="1024" y="42.25" font-size="12.5" text-anchor="middle" fill="#17202c">Group SSO</text>
 <text x="1024" y="56.75" font-size="12.5" text-anchor="middle" fill="#17202c">provider</text>
-<rect x="1087" y="168.27481771744166" width="173" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="1173.5" y="188.52481771744166" font-size="12.5" text-anchor="middle" fill="#17202c">Payment service</text>
-<text x="1173.5" y="203.02481771744166" font-size="12.5" text-anchor="middle" fill="#17202c">provider (third party)</text>
+<rect x="950" y="168.27481771744166" width="173" height="47" rx="4" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1036.5" y="188.52481771744166" font-size="12.5" text-anchor="middle" fill="#17202c">Payment service</text>
+<text x="1036.5" y="203.02481771744166" font-size="12.5" text-anchor="middle" fill="#17202c">provider (third party)</text>
 <path d="M 95 185.4996665850176 L 207 185.4996665850176 L 207 159.21769035156535" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 89 114.9996665850176 L 89 135.71769035156535 L 168 135.71769035156535" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 243 112.21769035156535 L 243 81.96200432795885 L 426 81.96200432795885" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -50,14 +50,14 @@
 <path d="M 282 135.96769035156535 L 596 135.96769035156535" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 282 147.96769035156535 L 550 147.96769035156535 L 550 200.61214385052278 L 588 200.61214385052278" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 704 133.61214385052278 L 811 133.61214385052278" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 712 183.11214385052278 L 899.5 183.11214385052278 L 899.5 209.27481771744166 L 1087 209.27481771744166" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 712 183.11214385052278 L 899.5 183.11214385052278 L 899.5 209.27481771744166 L 950 209.27481771744166" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="243" y="100.3398473397621" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="760.5" y="31.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(OIDC, JWT)</text>
 <text x="541" y="139.21769035156535" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="416" y="151.21769035156535" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
 <text x="757.5" y="136.86214385052278" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC)</text>
 <text x="805.75" y="186.36214385052278" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(API_REST, JSON)</text>
-<line x1="20" y1="263" x2="1250" y2="263" stroke="#e6e9ee" stroke-width="1"/>
+<line x1="20" y1="263" x2="1125" y2="263" stroke="#e6e9ee" stroke-width="1"/>
 <text x="20" y="285" font-size="11" font-weight="bold" fill="#3a4553">LEGEND</text>
 <rect x="150" y="275" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
 <text x="182" y="286" font-size="10" fill="#17202c">Actor group</text>
@@ -71,12 +71,12 @@
 <text x="726" y="286" font-size="10" fill="#17202c">Application</text>
 <rect x="816" y="275" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
 <text x="848" y="286" font-size="10" fill="#17202c">Application module</text>
-<rect x="974" y="275" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
-<text x="1006" y="286" font-size="10" fill="#17202c">Datastore / registry</text>
-<rect x="150" y="297" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
-<rect x="159.3" y="300.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 161.8 300.3 H 164.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="163" cy="303.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 160.5 307.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="182" y="308" font-size="10" fill="#17202c">Identity provider (IdP)</text>
-<rect x="334" y="297" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="366" y="308" font-size="10" fill="#17202c">External system</text>
+<rect x="150" y="297" width="26" height="14" rx="3" fill="#f4edf8" stroke="#8a53a8"/>
+<text x="182" y="308" font-size="10" fill="#17202c">Datastore / registry</text>
+<rect x="318" y="297" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
+<rect x="327.3" y="300.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 329.8 300.3 H 332.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="331" cy="303.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 328.5 307.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="350" y="308" font-size="10" fill="#17202c">Identity provider (IdP)</text>
+<rect x="502" y="297" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="534" y="308" font-size="10" fill="#17202c">External system</text>
 <line x1="150" y1="327" x2="176" y2="327" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="182" y="331" font-size="10" fill="#17202c">Application flow — (protocol, format) under the label</text>
 </svg>

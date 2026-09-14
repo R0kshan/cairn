@@ -97083,6 +97083,7 @@ function runCutsForeignContainer(scene, owned, run) {
 }
 function createHugContext(scene, titleBoxes) {
   const SIDE_CLEAR = 8;
+  const HUG_REACH = 3.25;
   const leaves = scene.nodes.filter((node) => !node.container);
   const tier0Blocked = (pts, fromIdx, owns) => {
     const owned = containersHolding(scene, owns);
@@ -97121,9 +97122,9 @@ function createHugContext(scene, titleBoxes) {
     if (shared <= MIN_HUG_SPAN) return null;
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
-    if (Math.abs(run.at - nearLo) < 3)
+    if (Math.abs(run.at - nearLo) < HUG_REACH)
       return node.container ? run.at < nearLo ? nearLo - SIDE_CLEAR : nearLo + SIDE_CLEAR : nearLo - SIDE_CLEAR;
-    if (Math.abs(run.at - nearHi) < 3)
+    if (Math.abs(run.at - nearHi) < HUG_REACH)
       return node.container ? run.at > nearHi ? nearHi + SIDE_CLEAR : nearHi - SIDE_CLEAR : nearHi + SIDE_CLEAR;
     return null;
   };
@@ -97136,10 +97137,10 @@ function createHugContext(scene, titleBoxes) {
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
     let sign = 0;
     let side = 0;
-    if (Math.abs(run.at - nearLo) < 3) {
+    if (Math.abs(run.at - nearLo) < HUG_REACH) {
       side = nearLo;
       sign = node.container ? run.at < nearLo ? -1 : 1 : -1;
-    } else if (Math.abs(run.at - nearHi) < 3) {
+    } else if (Math.abs(run.at - nearHi) < HUG_REACH) {
       side = nearHi;
       sign = node.container ? run.at > nearHi ? 1 : -1 : 1;
     } else return [];
@@ -97624,8 +97625,18 @@ function slideClamp(edge, run, leaves) {
 function clearRunHug(ctx, edge, run, own) {
   const { scene, leaves, hugTargetsOf } = ctx;
   const targets = [];
+  const exempt = /* @__PURE__ */ new Set();
+  const last = edge.pts.length - 1;
+  if (run.i === 0) {
+    const seat = sideOf(edge.pts[0], leaves);
+    if (seat) exempt.add(seat.node);
+  }
+  if (run.i + 1 === last) {
+    const seat = sideOf(edge.pts[last], leaves);
+    if (seat) exempt.add(seat.node);
+  }
   for (const node of scene.nodes) {
-    if (own.has(node)) continue;
+    if (exempt.has(node)) continue;
     for (const t of hugTargetsOf(run, node)) if (!targets.includes(t)) targets.push(t);
   }
   if (!targets.length) return false;
@@ -97653,6 +97664,83 @@ function clearEdgeHugs(ctx, edge) {
       }
     }
     if (!applied) break;
+  }
+}
+var OPPOSITE = {
+  north: "south",
+  south: "north",
+  west: "east",
+  east: "west"
+};
+function faceToward(node, other) {
+  const dx = other.x + other.width / 2 - (node.x + node.width / 2);
+  const dy = other.y + other.height / 2 - (node.y + node.height / 2);
+  return Math.abs(dx) >= Math.abs(dy) ? dx < 0 ? "west" : "east" : dy < 0 ? "north" : "south";
+}
+var faceOf = (node, side) => side === "west" || side === "east" ? { at: side === "west" ? node.x : node.x + node.width, lo: node.y, hi: node.y + node.height } : { at: side === "north" ? node.y : node.y + node.height, lo: node.x, hi: node.x + node.width };
+function departsTheFrame(edge, terminal, neighbour, frame) {
+  const axis = Math.abs(neighbour.x - terminal.x) >= ORTHOGONAL_EPSILON ? "x" : "y";
+  const sign = Math.sign(neighbour[axis] - terminal[axis]);
+  if (!sign) return false;
+  let reach = 0;
+  for (const point of edge.pts) reach = Math.max(reach, sign * (point[axis] - terminal[axis]));
+  if (!frame) return reach > FRAME_REACH;
+  const wall = axis === "x" ? sign > 0 ? frame.x + frame.width : frame.x : sign > 0 ? frame.y + frame.height : frame.y;
+  return reach >= sign * (wall - terminal[axis]);
+}
+var FRAME_REACH = 48;
+function defectTally(scene, titleBoxes) {
+  const every = new Set(scene.edges.map((edge) => edge.id));
+  const tally = /* @__PURE__ */ new Map();
+  for (const key of inspect(scene, titleBoxes).local(every, /* @__PURE__ */ new Map()).keys()) {
+    const kind = key.replace(/[@:].*$/, "");
+    tally.set(kind, (tally.get(kind) ?? 0) + 1);
+  }
+  return tally;
+}
+function reseatAwayTerminals(scene, titleBoxes = []) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const holds = (child, box) => box.container && child.x >= box.x - 1 && child.y >= box.y - 1 && child.x + child.width <= box.x + box.width + 1 && child.y + child.height <= box.y + box.height + 1;
+  const frameOf = (node) => {
+    let held = null;
+    for (const box of scene.nodes)
+      if (box !== node && holds(node, box) && (!held || box.width * box.height < held.width * held.height))
+        held = box;
+    return held;
+  };
+  let before = null;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 3 || sideFixed(edge, "start") || sideFixed(edge, "end")) continue;
+    const last = edge.pts.length - 1;
+    const head = sideOf(edge.pts[0], leaves);
+    const tail = sideOf(edge.pts[last], leaves);
+    if (!head || !tail || head.node === tail.node) continue;
+    const headFace = faceToward(head.node, tail.node);
+    const tailFace = faceToward(tail.node, head.node);
+    if (head.side !== OPPOSITE[headFace] && tail.side !== OPPOSITE[tailFace]) continue;
+    if (departsTheFrame(edge, edge.pts[0], edge.pts[1], frameOf(head.node))) continue;
+    const from = faceOf(head.node, headFace);
+    const to = faceOf(tail.node, tailFace);
+    const vertical = headFace === "north" || headFace === "south";
+    if (vertical !== (tailFace === "north" || tailFace === "south")) continue;
+    const lo = Math.max(from.lo, to.lo) + SIDE_INSET;
+    const hi = Math.min(from.hi, to.hi) - SIDE_INSET;
+    if (lo > hi) continue;
+    const arrival = vertical ? edge.pts[last].x : edge.pts[last].y;
+    const along = Math.min(Math.max(arrival, lo), hi);
+    const straight = vertical ? [
+      { x: along, y: from.at },
+      { x: along, y: to.at }
+    ] : [
+      { x: from.at, y: along },
+      { x: to.at, y: along }
+    ];
+    const was = before ??= defectTally(scene, titleBoxes);
+    const undo = edge.pts;
+    edge.pts = straight;
+    const after = defectTally(scene, titleBoxes);
+    if ([...after].every(([kind, count]) => count <= (was.get(kind) ?? 0))) before = after;
+    else edge.pts = undo;
   }
 }
 function clearSideHugs(scene, titleBoxes = []) {
@@ -99257,9 +99345,10 @@ function seatAt(label, x, y) {
     height: label.height
   };
 }
-function createLabelSeatContext(scene, titleBoxes) {
+function createLabelSeatContext(scene, titleBoxes, final = false) {
   const routes = scene.edges.filter((edge) => edge.pts.length >= 2);
   const leaves = scene.nodes.filter((node) => !node.container);
+  const containers = scene.nodes.filter((node) => node.container);
   const nearestOtherSq = (box, own) => {
     let best = Number.POSITIVE_INFINITY;
     for (const other of routes) {
@@ -99271,6 +99360,18 @@ function createLabelSeatContext(scene, titleBoxes) {
   };
   const overlaps = (box, other) => box.x < other.x + other.width && other.x < box.x + box.width && box.y < other.y + other.height && other.y < box.y + box.height;
   const coversNode = (box) => leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
+  const strikesBorder = (box, textH) => {
+    if (!final) return false;
+    const words = {
+      x: box.x + BORDER_SLACK,
+      y: box.y,
+      width: Math.max(0, box.width - 2 * BORDER_SLACK),
+      height: textH > 0 ? textH : box.height
+    };
+    return containers.some(
+      (node) => overlaps(words, node) && !(words.x >= node.x && words.x + words.width <= node.x + node.width && words.y >= node.y && words.y + words.height <= node.y + node.height)
+    );
+  };
   const straddledSeat = (box, vertical, own) => {
     const lo = vertical ? box.x : box.y;
     const hi = lo + (vertical ? box.width : box.height);
@@ -99308,10 +99409,14 @@ function createLabelSeatContext(scene, titleBoxes) {
     nearestOtherSq,
     overlaps,
     coversNode,
+    strikesBorder,
     straddledSeat,
     attributableAt
   };
 }
+var LOCAL_REACH = 24;
+var SLIDE_ROOM = 12;
+var BORDER_SLACK = 4;
 var segmentIsVertical = (edge, segment) => {
   const a = edge.pts[segment];
   const b = edge.pts[segment + 1];
@@ -99334,16 +99439,46 @@ function slideSeats(label, edge, segment) {
   );
 }
 function chooseSeat(ctx, edge, label, segmentOrder) {
-  const { coversNode, straddledSeat, nearestOtherSq } = ctx;
-  for (const wantUnpierced of [true, false])
-    for (const segment of segmentOrder)
-      for (const candidate of slideSeats(label, edge, segment)) {
-        if (coversNode(candidate)) continue;
-        if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+  const { coversNode, strikesBorder, straddledSeat, nearestOtherSq } = ctx;
+  const pick = (borderClear) => {
+    for (const wantUnpierced of [true, false]) {
+      for (const segment of segmentOrder)
+        for (const candidate of slideSeats(label, edge, segment)) {
+          if (coversNode(candidate)) continue;
+          if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+          if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+          if (borderClear && strikesBorder(candidate, label.textH)) continue;
+          return candidate;
+        }
+      if (!borderClear) continue;
+      const cramped = segmentOrder.filter((segment) => {
+        const a = edge.pts[segment];
+        const b = edge.pts[segment + 1];
+        const vertical = segmentIsVertical(edge, segment);
+        const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+        return span - (vertical ? label.height : label.width) < SLIDE_ROOM;
+      });
+      for (const candidate of stretchedSeats(ctx, edge, label, cramped)) {
+        if (strikesBorder(candidate, label.textH)) continue;
         if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+        const centre = {
+          x: candidate.x + label.width / 2,
+          y: candidate.y + textLead(label),
+          width: 0,
+          height: 0
+        };
+        if (boxToPolylineSq(centre, edge.pts) > ON_LINE * ON_LINE) continue;
         return candidate;
       }
-  return null;
+    }
+    return null;
+  };
+  const plain = pick(false);
+  if (!plain || !strikesBorder(plain, label.textH)) return plain;
+  const clear = pick(true);
+  if (!clear) return plain;
+  const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
+  return moved <= LOCAL_REACH ? clear : plain;
 }
 function stretchedSeats(ctx, edge, label, segmentOrder) {
   const { coversNode, straddledSeat } = ctx;
@@ -99463,7 +99598,7 @@ function resolveLabelCollision(seated, a, b) {
   return true;
 }
 function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true) {
-  const ctx = createLabelSeatContext(scene, titleBoxes);
+  const ctx = createLabelSeatContext(scene, titleBoxes, applyOffsets);
   const seated = [];
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
@@ -100560,6 +100695,174 @@ function offsetDiagnostics(scene, model) {
   }
   return diagnostics;
 }
+function sceneSnapshots(scene) {
+  const clone = (item) => ({ ...item });
+  const capture = () => ({
+    nodes: scene.nodes.map(clone),
+    edges: scene.edges.map((edge) => ({
+      ...edge,
+      pts: edge.pts.map(clone),
+      labels: edge.labels.map(clone)
+    })),
+    pinnedBands: scene.pinnedBands?.map(clone),
+    clampedOffsets: scene.clampedOffsets && new Set(scene.clampedOffsets),
+    repairTier: scene.repairTier,
+    width: scene.width,
+    height: scene.height
+  });
+  const revert = (item, snapshot) => {
+    for (const key of Object.keys(item))
+      if (!(key in snapshot)) delete item[key];
+    Object.assign(item, snapshot);
+  };
+  const restore = (snapshot) => {
+    for (const [index, node] of scene.nodes.entries()) revert(node, snapshot.nodes[index]);
+    for (const [index, edge] of scene.edges.entries()) {
+      const was = snapshot.edges[index];
+      revert(edge, was);
+      edge.pts = was.pts.map(clone);
+      edge.labels = was.labels.map(clone);
+    }
+    scene.pinnedBands = snapshot.pinnedBands?.map(clone);
+    scene.clampedOffsets = snapshot.clampedOffsets && new Set(snapshot.clampedOffsets);
+    scene.repairTier = snapshot.repairTier;
+    scene.width = snapshot.width;
+    scene.height = snapshot.height;
+  };
+  return { capture, restore };
+}
+var RECLAIM_GAP = 12;
+var MIN_RECLAIM = 24;
+var MIN_RECLAIM_KEPT = 24;
+var RECLAIM_SHARE = 0.05;
+var RECLAIM_LIFT_SHARE = 0.15;
+function reclaimTrailingColumns(scene, model) {
+  const tops = model.elements.filter((element) => !element.parent);
+  if (tops.length < 3) return;
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const titleIndex = new Map(
+    scene.nodes.filter((node) => node.container).map((node, index) => [node.id, index])
+  );
+  const titles = titleBoxesOf(scene, model);
+  const spanOf = (ids) => {
+    let span = null;
+    const fold = (box) => {
+      const right = box.x + box.width;
+      const bottom = box.y + box.height;
+      span = span ? {
+        x: Math.min(span.x, box.x),
+        y: Math.min(span.y, box.y),
+        right: Math.max(span.right, right),
+        bottom: Math.max(span.bottom, bottom)
+      } : { x: box.x, y: box.y, right, bottom };
+    };
+    for (const id of ids) {
+      const node = nodeById.get(id);
+      if (!node) continue;
+      fold(node);
+      const index = titleIndex.get(id);
+      if (index !== void 0 && titles[index]) fold(titles[index]);
+    }
+    return span;
+  };
+  const idsOf = new Map(tops.map((element) => [element.id, subtreeIds(element)]));
+  const spans = /* @__PURE__ */ new Map();
+  for (const element of tops) {
+    const span = spanOf(idsOf.get(element.id));
+    if (span) spans.set(element.id, span);
+  }
+  if (spans.size < 3) return;
+  const sharesRows = (a, b) => a.y < b.bottom + RECLAIM_GAP && b.y < a.bottom + RECLAIM_GAP;
+  const slideRoom = (id) => {
+    const box = spans.get(id);
+    let limit = RECLAIM_GAP;
+    let blocker2 = null;
+    for (const [otherId, other] of spans) {
+      if (otherId === id || !sharesRows(box, other)) continue;
+      if (other.right > box.x) return { dx: 0, blocker: otherId };
+      if (other.right + RECLAIM_GAP > limit) {
+        limit = other.right + RECLAIM_GAP;
+        blocker2 = otherId;
+      }
+    }
+    return { dx: Math.min(0, limit - box.x), blocker: blocker2 };
+  };
+  const moves = /* @__PURE__ */ new Map();
+  const shift = (id, dx, dy) => {
+    const span = spans.get(id);
+    span.x += dx;
+    span.right += dx;
+    span.y += dy;
+    span.bottom += dy;
+    const had = moves.get(id) ?? { dx: 0, dy: 0 };
+    moves.set(id, { dx: had.dx + dx, dy: had.dy + dy });
+  };
+  const order = [...spans.keys()].sort((a, b) => spans.get(b).right - spans.get(a).right);
+  const slideAll = () => {
+    for (const id of order) {
+      const { dx } = slideRoom(id);
+      if (dx <= -MIN_RECLAIM) shift(id, dx, 0);
+    }
+  };
+  const widest = () => order.reduce((a, b) => spans.get(b).right > spans.get(a).right ? b : a);
+  const widthBefore = spans.get(widest()).right;
+  slideAll();
+  const stuck = widest();
+  const { blocker } = slideRoom(stuck);
+  if (blocker) {
+    const box = spans.get(stuck);
+    const wall = spans.get(blocker);
+    const clear = (moved) => [...spans].every(
+      ([id, other]) => id === blocker || id === stuck || !sharesRows(moved, other) || moved.right + RECLAIM_GAP <= other.x || other.right + RECLAIM_GAP <= moved.x
+    );
+    const options = [box.y - RECLAIM_GAP - wall.bottom, box.bottom + RECLAIM_GAP - wall.y].sort(
+      (a, b) => Math.abs(a) - Math.abs(b)
+    );
+    for (const dy of options) {
+      if (!dy) continue;
+      if (Math.abs(dy) > scene.height * RECLAIM_LIFT_SHARE) continue;
+      const moved = { ...wall, y: wall.y + dy, bottom: wall.bottom + dy };
+      if (moved.y < RECLAIM_GAP || !clear(moved)) continue;
+      shift(blocker, 0, dy);
+      slideAll();
+      break;
+    }
+  }
+  if (!moves.size || spans.get(widest()).right > widthBefore - MIN_RECLAIM) return;
+  const everyEdge = new Set(scene.edges.map((edge) => edge.id));
+  const profileOf = (candidate) => inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, /* @__PURE__ */ new Map());
+  const { capture, restore } = sceneSnapshots(scene);
+  const undo = capture();
+  const compact = () => compactHorizontal(scene, titleBoxesOf(scene, model));
+  compact();
+  const stayWidth = scene.width;
+  const stayHeight = scene.height;
+  const stayProfile = profileOf(scene);
+  restore(undo);
+  const offsetOf = /* @__PURE__ */ new Map();
+  for (const [rootId, delta] of moves) {
+    offsetOf.set(rootId, delta);
+    for (const id of idsOf.get(rootId))
+      if (id !== rootId) offsetOf.set(id, { dx: 0, dy: 0, parent: model.index.get(id)?.parent?.id });
+  }
+  const carried = applyNodeOffsets(scene, offsetOf);
+  scene.pinnedBands = undo.pinnedBands?.map((band) => ({ ...band }));
+  const settled = titleBoxesOf(scene, model);
+  reaimAfterOffsets(scene, settled, carried);
+  if (carried.size) optimiseRoutes(scene, settled, false, carried);
+  clearSideHugs(scene, settled);
+  anchorFlowLabels(scene, settled, false);
+  compactVertical(scene);
+  compact();
+  const was = tallyProfile(stayProfile);
+  const held = [...tallyProfile(profileOf(scene))].every(
+    ([key, entry]) => entry.count <= (was.get(key)?.count ?? 0)
+  );
+  const bar = Math.max(MIN_RECLAIM_KEPT, stayWidth * RECLAIM_SHARE);
+  const won = scene.width <= stayWidth - bar && scene.height <= stayHeight;
+  if (held && won) return;
+  restore(undo);
+}
 function runGeometryPasses(scene, model, options) {
   const { numbered, sideways } = options;
   if (options.laneOf) snapLanes(scene, options.laneOf, sideways ? "y" : "x");
@@ -100579,8 +100882,10 @@ function runGeometryPasses(scene, model, options) {
   spreadAttachments(scene);
   recordRepairs(scene, routesBefore);
   clearSideHugs(scene, settledTitles);
+  reseatAwayTerminals(scene, settledTitles);
   anchorFlowLabels(scene, settledTitles, false);
   swapCrossingSiblingSeats(scene);
+  if (!sideways) reclaimTrailingColumns(scene, model);
   if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
   fitCanvas(scene);
 }

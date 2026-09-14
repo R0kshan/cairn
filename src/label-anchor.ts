@@ -117,13 +117,20 @@ interface LabelSeatContext {
   nearestOtherSq(box: Box, own: SceneEdge): number;
   overlaps(box: Box, other: { x: number; y: number; width: number; height: number }): boolean;
   coversNode(box: Box): boolean;
+  /** Always false before the final anchor — see `createLabelSeatContext`. */
+  strikesBorder(box: Box, textH: number): boolean;
   straddledSeat(box: Box, vertical: boolean, own: SceneEdge): boolean;
   attributableAt(label: SceneLabel, at: { x: number; y: number }, edge: SceneEdge): boolean;
 }
 
-function createLabelSeatContext(scene: Scene, titleBoxes: TitleBox[]): LabelSeatContext {
+function createLabelSeatContext(
+  scene: Scene,
+  titleBoxes: TitleBox[],
+  final = false,
+): LabelSeatContext {
   const routes = scene.edges.filter((edge) => edge.pts.length >= 2);
   const leaves = scene.nodes.filter((node) => !node.container);
+  const containers = scene.nodes.filter((node) => node.container);
   /** Nearest foreign run to a box, squared. */
   const nearestOtherSq = (box: Box, own: SceneEdge): number => {
     let best = Number.POSITIVE_INFINITY;
@@ -144,6 +151,49 @@ function createLabelSeatContext(scene: Scene, titleBoxes: TitleBox[]): LabelSeat
   // only escape is to take the label off its run.
   const coversNode = (box: Box) =>
     leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
+  /**
+   * Does a container's outline run through the words?
+   *
+   * A container is not in `leaves`, and deliberately: a label *inside* a system
+   * or a zone is the normal case, and refusing those would leave most flows in a
+   * nested drawing with nowhere to sit. The stroke is the part that reads badly —
+   * it crosses the text at the same height as the letters, so the eye takes the
+   * border for an underline and the label for part of the box. A seat is struck
+   * when it is neither wholly in nor wholly out.
+   *
+   * A preference, not a refusal (see `chooseSeat`): a label with no clear seat is
+   * better on a border than off its own run.
+   */
+  const strikesBorder = (box: Box, textH: number) => {
+    // Off until the last anchor. Every pass below the mid-pipeline one routes on
+    // where labels are, so preferring a different seat there re-routes the
+    // drawing for a cosmetic gain: it cost `large-numbered` nine crossings and
+    // `infrastructure-helios-fr` a label off its line. The final anchor moves
+    // labels and nothing else, which is exactly where this belongs.
+    if (!final) return false;
+    // The words, not the seat. Two corrections, both of which decide real seats:
+    // a label is drawn with a halo inside its box, so a border grazing the box's
+    // own edge never reaches the text (1px of the *Appointment booking system*
+    // edge was refusing the seat `small`'s F04 needs); and the text rows sit at
+    // the *top* of the box with chips below (`textLead`), so testing the whole
+    // height calls a border under the words a strike.
+    const words: Box = {
+      x: box.x + BORDER_SLACK,
+      y: box.y,
+      width: Math.max(0, box.width - 2 * BORDER_SLACK),
+      height: textH > 0 ? textH : box.height,
+    };
+    return containers.some(
+      (node) =>
+        overlaps(words, node) &&
+        !(
+          words.x >= node.x &&
+          words.x + words.width <= node.x + node.width &&
+          words.y >= node.y &&
+          words.y + words.height <= node.y + node.height
+        ),
+    );
+  };
   /**
    * Is a foreign run travelling **parallel** to this seat's own run and passing
    * strictly inside its box (§4j)? A crossing run is masked by the halo and the
@@ -198,10 +248,23 @@ function createLabelSeatContext(scene: Scene, titleBoxes: TitleBox[]): LabelSeat
     nearestOtherSq,
     overlaps,
     coversNode,
+    strikesBorder,
     straddledSeat,
     attributableAt,
   };
 }
+
+/** How far a seat may move to clear a container's outline. About a label's own
+    height: enough to step over a stroke, too little to leave the neighbourhood. */
+const LOCAL_REACH = 24;
+
+/** Slide room below which a run cannot seat its label anywhere but one place —
+    `small`'s F04 carries a 116px label on a 117px run. */
+const SLIDE_ROOM = 12;
+
+/** The halo the renderer paints around label text — a border inside this of the
+    seat's edge is behind the halo, not through the words. */
+const BORDER_SLACK = 4;
 
 const segmentIsVertical = (edge: SceneEdge, segment: number): boolean => {
   const a = edge.pts[segment];
@@ -251,16 +314,60 @@ function chooseSeat(
   label: SceneLabel,
   segmentOrder: number[],
 ): Box | null {
-  const { coversNode, straddledSeat, nearestOtherSq } = ctx;
-  for (const wantUnpierced of [true, false])
-    for (const segment of segmentOrder)
-      for (const candidate of slideSeats(label, edge, segment)) {
-        if (coversNode(candidate)) continue;
-        if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+  const { coversNode, strikesBorder, straddledSeat, nearestOtherSq } = ctx;
+  const pick = (borderClear: boolean): Box | null => {
+    for (const wantUnpierced of [true, false]) {
+      for (const segment of segmentOrder)
+        for (const candidate of slideSeats(label, edge, segment)) {
+          if (coversNode(candidate)) continue;
+          if (straddledSeat(candidate, segmentIsVertical(edge, segment), edge)) continue;
+          if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+          if (borderClear && strikesBorder(candidate, label.textH)) continue;
+          return candidate;
+        }
+      if (!borderClear) continue;
+      // Overhang only where sliding cannot help: a run with less than `SLIDE_ROOM`
+      // to spare has effectively one seat on it, so the choice is overhang or wear
+      // the border. Offered more widely it starts trading real defects for a
+      // cosmetic one — `large` picked up two `titleStruck` in page and tall.
+      const cramped = segmentOrder.filter((segment) => {
+        const a = edge.pts[segment];
+        const b = edge.pts[segment + 1];
+        const vertical = segmentIsVertical(edge, segment);
+        const span = vertical ? Math.abs(b.y - a.y) : Math.abs(b.x - a.x);
+        return span - (vertical ? label.height : label.width) < SLIDE_ROOM;
+      });
+      for (const candidate of stretchedSeats(ctx, edge, label, cramped)) {
+        if (strikesBorder(candidate, label.textH)) continue;
         if (wantUnpierced && nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+        // The box may overhang its run; the text centre may not leave it. That is
+        // the rule `labelOffLine` measures, and without it the overhang buys a
+        // clear border by taking the label off its own flow — §4d for §4e, the
+        // wrong way round.
+        const centre = {
+          x: candidate.x + label.width / 2,
+          y: candidate.y + textLead(label),
+          width: 0,
+          height: 0,
+        };
+        if (boxToPolylineSq(centre, edge.pts) > ON_LINE * ON_LINE) continue;
         return candidate;
       }
-  return null;
+    }
+    return null;
+  };
+
+  const plain = pick(false);
+  if (!plain || !strikesBorder(plain, label.textH)) return plain;
+  const clear = pick(true);
+  if (!clear) return plain;
+  // A nudge, never a relocation. Searching the whole route for a clear seat finds
+  // one at the far end of the flow: on `infrastructure-helios-fr` it moved F18's
+  // label 584px and F21's 162px, off runs whose labels read fine where they were,
+  // and one of them off its line. A container's stroke through the words is worth
+  // a step along the run — `small`'s F04 needs 7.5px — and nothing more.
+  const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
+  return moved <= LOCAL_REACH ? clear : plain;
 }
 
 /**
@@ -477,7 +584,7 @@ export function anchorFlowLabels(
   titleBoxes: TitleBox[] = [],
   applyOffsets = true,
 ): void {
-  const ctx = createLabelSeatContext(scene, titleBoxes);
+  const ctx = createLabelSeatContext(scene, titleBoxes, applyOffsets);
   const seated: SeatedLabel[] = [];
 
   for (const edge of scene.edges) {
