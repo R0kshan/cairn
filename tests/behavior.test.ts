@@ -3270,3 +3270,60 @@ test("a flow leaves by the face that looks at its target", async () => {
   // And with the faces lined up there is nothing left to turn around.
   assert.equal(route.pts.length, 2, "a straightened flow should have no turns");
 });
+
+/**
+ * A route leaving a container must not turn just inside the border it is about
+ * to cross (the "skim" case in `hugTargetsOf`).
+ *
+ * `infrastructure-large-slide`'s `KAFKA_I -> BACKUP` is what found it: the route
+ * turned 3.5px under the Kafka cluster's top edge, ran 17px along the inside of
+ * it and only then crossed out — a cluttered corner wedged against the frame,
+ * with its label pinched between the two. Seventeen pixels is well short of
+ * `MIN_HUG_SPAN`, so nothing looked at it.
+ *
+ * Asserted as a property over several drawings rather than against that one
+ * route: the rule is geometric, it fired on two different views when it landed,
+ * and pinning one flow by its coordinates would pass while the general case
+ * rotted.
+ */
+test("no route turns just inside a container border it crosses", async () => {
+  const SKIM_REACH = 4.5;
+  for (const file of [
+    "dispositions/infrastructure-large-slide.cairn",
+    "dispositions/infrastructure-large-wide.cairn",
+    "infrastructure-security-edge.cairn",
+    "application-gateway-auth.cairn",
+    "logical.cairn",
+    "medium.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    const containers = scene.nodes.filter((n) => n.container);
+    for (const edge of scene.edges)
+      for (let i = 0; i + 1 < edge.pts.length; i++) {
+        const a = edge.pts[i];
+        const b = edge.pts[i + 1];
+        const vertical = Math.abs(a.x - b.x) < 0.5;
+        if (vertical === Math.abs(a.y - b.y) < 0.5) continue; // degenerate or slanted
+        const at = vertical ? a.x : a.y;
+        const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+        const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+        for (const box of containers) {
+          const spanLo = vertical ? box.y : box.x;
+          const spanHi = vertical ? box.y + box.height : box.x + box.width;
+          const nearLo = vertical ? box.x : box.y;
+          const nearHi = vertical ? box.x + box.width : box.y + box.height;
+          const within = (v: number, l: number, h: number) => v >= l - 1 && v <= h + 1;
+          // The skim shape: one end of the run inside the box's span and the
+          // other outside, with the run itself inside the box.
+          if (!within(at, nearLo, nearHi)) continue;
+          if (within(lo, spanLo, spanHi) === within(hi, spanLo, spanHi)) continue;
+          const gap = Math.min(Math.abs(at - nearLo), Math.abs(at - nearHi));
+          assert.ok(
+            gap >= SKIM_REACH,
+            `${file}: ${edge.id} run ${i} turns ${gap.toFixed(1)}px inside ${box.id}'s ` +
+              `border before crossing it`,
+          );
+        }
+      }
+  }
+});

@@ -237,6 +237,13 @@ and does not move, but a run parked at exactly 3.0 still reads as one line with
 the frame, so the pass that answers the metric is allowed to be a hair tidier
 than the floor it has to clear.
 
+The fixer also answers one shape this metric does not measure: a run with one end
+inside a container and the other outside, turning within 4.5px of the border it
+crosses. The shared span is too short to be a hug — `infrastructure-large-slide`
+covers 17px of it — but the corner and the frame converge at the crossing, so it
+reads as clutter. That case clears *outward*, putting the corner past the border,
+unlike an ordinary container hug which clears into whichever half the run sits in.
+
 ---
 
 ## Tier 2 — the line is hard to follow

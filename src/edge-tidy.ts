@@ -681,6 +681,15 @@ function createHugContext(scene: Scene, titleBoxes: TitleBox[]): HugContext {
    * `application-logistique-fr` an `attachTight` in slide.
    */
   const HUG_REACH = 3.25;
+  /**
+   * The same, for a run crossing out of the container it skims. Wider than
+   * `HUG_REACH` because this corner is read against the border it is about to
+   * meet rather than against a stretch of it: the two lines converge, so a gap
+   * `HUG_REACH` would let pass still reads as clutter at the crossing. The
+   * corpus is clean from 3.75 through 5 and `application-large-fr` picks up two
+   * jogs at 6, so this sits mid-range with margin either side.
+   */
+  const SKIM_REACH = 4.5;
   const leaves = scene.nodes.filter((node) => !node.container);
   /**
    * Tier-0 gate: the changed segments (from `fromIdx` on) may not strike a
@@ -759,17 +768,44 @@ function createHugContext(scene: Scene, titleBoxes: TitleBox[]): HugContext {
     const spanLo = run.vert ? node.y : node.x;
     const spanHi = run.vert ? node.y + node.height : node.x + node.width;
     const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
-    if (shared <= MIN_HUG_SPAN) return [];
+    // A run that starts inside a container and carries on out of it is skimming
+    // the border it is about to cross, however little of that border it covers.
+    // The reader sees the line and the frame meet at the crossing, and the corner
+    // it turned on sitting a few px inside — `infrastructure-large-slide`'s
+    // `KAFKA_I -> BACKUP` turns 3.5px under the Kafka cluster's top edge, runs
+    // 17px along the inside of it and only then crosses. Short of `MIN_HUG_SPAN`,
+    // so the plain span test never looked at it; taking the corner out past the
+    // border turns a parallel skim into a clean perpendicular crossing.
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
+    const within = (at: number, lo: number, hi: number) => at >= lo - 1 && at <= hi + 1;
+    // Exactly one end inside the container's span — the corner the route turned
+    // on — with the other end out past it, and the run itself inside the box. A
+    // run merely passing over a container has neither end inside and is not
+    // skimming anything; one with both ends inside never crosses out.
+    //
+    // Only where the span test would otherwise have refused the run outright: a
+    // run long enough to be a hug on its own terms is already handled, and the
+    // outward rule below would be arguing with the inward one over it.
+    const skimsOut =
+      shared <= MIN_HUG_SPAN &&
+      node.container &&
+      within(run.at, nearLo, nearHi) &&
+      within(run.lo, spanLo, spanHi) !== within(run.hi, spanLo, spanHi);
+    if (shared <= MIN_HUG_SPAN && !skimsOut) return [];
+    const reach = skimsOut ? SKIM_REACH : HUG_REACH;
     let sign = 0;
     let side = 0;
-    if (Math.abs(run.at - nearLo) < HUG_REACH) {
+    // A skim clears *outward*, unlike an ordinary container hug, which clears
+    // into whichever half the run already sits in. The corner is the thing being
+    // moved and the point is to put it on the far side of the border, so the
+    // route crosses once, square, on the segment that was going to cross anyway.
+    if (Math.abs(run.at - nearLo) < reach) {
       side = nearLo;
-      sign = node.container ? (run.at < nearLo ? -1 : 1) : -1;
-    } else if (Math.abs(run.at - nearHi) < HUG_REACH) {
+      sign = skimsOut ? -1 : node.container ? (run.at < nearLo ? -1 : 1) : -1;
+    } else if (Math.abs(run.at - nearHi) < reach) {
       side = nearHi;
-      sign = node.container ? (run.at > nearHi ? 1 : -1) : 1;
+      sign = skimsOut ? 1 : node.container ? (run.at > nearHi ? 1 : -1) : 1;
     } else return [];
     return [side + sign * SIDE_CLEAR, side + sign * 3.5];
   };

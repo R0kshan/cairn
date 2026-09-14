@@ -97084,6 +97084,7 @@ function runCutsForeignContainer(scene, owned, run) {
 function createHugContext(scene, titleBoxes) {
   const SIDE_CLEAR = 8;
   const HUG_REACH = 3.25;
+  const SKIM_REACH = 4.5;
   const leaves = scene.nodes.filter((node) => !node.container);
   const tier0Blocked = (pts, fromIdx, owns) => {
     const owned = containersHolding(scene, owns);
@@ -97132,17 +97133,20 @@ function createHugContext(scene, titleBoxes) {
     const spanLo = run.vert ? node.y : node.x;
     const spanHi = run.vert ? node.y + node.height : node.x + node.width;
     const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
-    if (shared <= MIN_HUG_SPAN) return [];
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
+    const within = (at, lo, hi) => at >= lo - 1 && at <= hi + 1;
+    const skimsOut = shared <= MIN_HUG_SPAN && node.container && within(run.at, nearLo, nearHi) && within(run.lo, spanLo, spanHi) !== within(run.hi, spanLo, spanHi);
+    if (shared <= MIN_HUG_SPAN && !skimsOut) return [];
+    const reach = skimsOut ? SKIM_REACH : HUG_REACH;
     let sign = 0;
     let side = 0;
-    if (Math.abs(run.at - nearLo) < HUG_REACH) {
+    if (Math.abs(run.at - nearLo) < reach) {
       side = nearLo;
-      sign = node.container ? run.at < nearLo ? -1 : 1 : -1;
-    } else if (Math.abs(run.at - nearHi) < HUG_REACH) {
+      sign = skimsOut ? -1 : node.container ? run.at < nearLo ? -1 : 1 : -1;
+    } else if (Math.abs(run.at - nearHi) < reach) {
       side = nearHi;
-      sign = node.container ? run.at > nearHi ? 1 : -1 : 1;
+      sign = skimsOut ? 1 : node.container ? run.at > nearHi ? 1 : -1 : 1;
     } else return [];
     return [side + sign * SIDE_CLEAR, side + sign * 3.5];
   };
