@@ -119,6 +119,8 @@ interface LabelSeatContext {
   coversNode(box: Box): boolean;
   /** Always false before the final anchor — see `createLabelSeatContext`. */
   strikesBorder(box: Box, textH: number): boolean;
+  /** How many container outlines cut the words. 0 before the final anchor. */
+  countBorders(box: Box, textH: number): number;
   straddledSeat(box: Box, vertical: boolean, own: SceneEdge): boolean;
   attributableAt(label: SceneLabel, at: { x: number; y: number }, edge: SceneEdge): boolean;
 }
@@ -164,13 +166,18 @@ function createLabelSeatContext(
    * A preference, not a refusal (see `chooseSeat`): a label with no clear seat is
    * better on a border than off its own run.
    */
-  const strikesBorder = (box: Box, textH: number) => {
+  const countBorders = (box: Box, textH: number): number => {
     // Off until the last anchor. Every pass below the mid-pipeline one routes on
     // where labels are, so preferring a different seat there re-routes the
     // drawing for a cosmetic gain: it cost `large-numbered` nine crossings and
-    // `infrastructure-helios-fr` a label off its line. The final anchor moves
-    // labels and nothing else, which is exactly where this belongs.
-    if (!final) return false;
+    // `infrastructure-helios-fr` a label off its line.
+    //
+    // "Last" is its own flag rather than `applyOffsets`, which is what it used to
+    // ride on. Those two only coincide on a diagram carrying an author hint — on
+    // every other drawing the hint-applying anchor never runs, so this was quietly
+    // off for the whole corpus (`infrastructure-large-page`'s F08 kept a seat
+    // across three frames with clear line above it).
+    if (!final) return 0;
     // The words, not the seat. Two corrections, both of which decide real seats:
     // a label is drawn with a halo inside its box, so a border grazing the box's
     // own edge never reaches the text (1px of the *Appointment booking system*
@@ -183,7 +190,7 @@ function createLabelSeatContext(
       width: Math.max(0, box.width - 2 * BORDER_SLACK),
       height: textH > 0 ? textH : box.height,
     };
-    return containers.some(
+    return containers.filter(
       (node) =>
         overlaps(words, node) &&
         !(
@@ -192,8 +199,9 @@ function createLabelSeatContext(
           words.y >= node.y &&
           words.y + words.height <= node.y + node.height
         ),
-    );
+    ).length;
   };
+  const strikesBorder = (box: Box, textH: number) => countBorders(box, textH) > 0;
   /**
    * Is a foreign run travelling **parallel** to this seat's own run and passing
    * strictly inside its box (§4j)? A crossing run is masked by the halo and the
@@ -249,6 +257,7 @@ function createLabelSeatContext(
     overlaps,
     coversNode,
     strikesBorder,
+    countBorders,
     straddledSeat,
     attributableAt,
   };
@@ -360,14 +369,17 @@ function chooseSeat(
   const plain = pick(false);
   if (!plain || !strikesBorder(plain, label.textH)) return plain;
   const clear = pick(true);
-  if (!clear) return plain;
   // A nudge, never a relocation. Searching the whole route for a clear seat finds
   // one at the far end of the flow: on `infrastructure-helios-fr` it moved F18's
   // label 584px and F21's 162px, off runs whose labels read fine where they were,
   // and one of them off its line. A container's stroke through the words is worth
   // a step along the run — `small`'s F04 needs 7.5px — and nothing more.
-  const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
-  return moved <= LOCAL_REACH ? clear : plain;
+  if (clear) {
+    const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
+    if (moved <= LOCAL_REACH) return clear;
+  }
+
+  return plain;
 }
 
 /**
@@ -579,12 +591,65 @@ function resolveLabelCollision(seated: SeatedLabel[], a: SeatedLabel, b: SeatedL
 }
 
 /** Positions flow labels on their routes, avoiding overlaps with nodes and other labels. */
+/**
+ * Slides a label along its own run to the seat that crosses the fewest container
+ * outlines.
+ *
+ * Runs *after* the collision rounds, and that ordering is the whole point: the
+ * seat search can prefer a clear seat, but the collision pass then re-seats from
+ * `alternatives`, which knows nothing about borders — on
+ * `infrastructure-large-page` it put F08 straight back across the *Data zone*
+ * corner after the search had moved it to open line. Overlaps are correctness and
+ * go first; this is the cosmetic pass and takes what is left.
+ *
+ * Nothing is traded for it. A label moves only along the run it already names —
+ * so attribution cannot change, which is what makes a long slide safe, unlike the
+ * cross-segment search that had to be capped at `LOCAL_REACH` — and only to a
+ * seat that clears strictly more borders while covering no node, taking no
+ * neighbour's words, and staying unpierced and unstraddled.
+ */
+function preferClearBorders(ctx: LabelSeatContext, seated: SeatedLabel[]): void {
+  const { coversNode, countBorders, straddledSeat, nearestOtherSq } = ctx;
+  for (const entry of seated) {
+    const { label, edge } = entry;
+    const host = hostSegment(label, edge);
+    if (host < 0) continue;
+    const from = { x: label.x, y: label.y };
+    let best = { ...from };
+    let bestCount = countBorders({ ...from, width: label.width, height: label.height }, label.textH);
+    if (!bestCount) continue;
+    for (const candidate of slideSeats(label, edge, host)) {
+      if (coversNode(candidate)) continue;
+      if (straddledSeat(candidate, segmentIsVertical(edge, host), edge)) continue;
+      if (nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+      const count = countBorders(candidate, label.textH);
+      if (count >= bestCount) continue;
+      // Never onto another label: the collision rounds above just finished
+      // separating these, and a tidier border is not worth an overlap (§1).
+      const clash = seated.some(
+        (other) =>
+          other !== entry &&
+          candidate.x < other.label.x + other.label.width &&
+          other.label.x < candidate.x + label.width &&
+          candidate.y < other.label.y + other.label.height &&
+          other.label.y < candidate.y + label.height,
+      );
+      if (clash) continue;
+      best = { x: candidate.x, y: candidate.y };
+      bestCount = count;
+    }
+    label.x = best.x;
+    label.y = best.y;
+  }
+}
+
 export function anchorFlowLabels(
   scene: Scene,
   titleBoxes: TitleBox[] = [],
   applyOffsets = true,
+  final = applyOffsets,
 ): void {
-  const ctx = createLabelSeatContext(scene, titleBoxes, applyOffsets);
+  const ctx = createLabelSeatContext(scene, titleBoxes, final);
   const seated: SeatedLabel[] = [];
 
   for (const edge of scene.edges) {
@@ -612,6 +677,9 @@ export function anchorFlowLabels(
       }
     if (!moved) break;
   }
+
+  // Cosmetic, and after the collision rounds for that reason — see the pass.
+  if (final) preferClearBorders(ctx, seated);
 
   // Last, so the delta is measured from the seat this pass actually chose and
   // survives every re-anchor a renderer does. An author's positioning hint is

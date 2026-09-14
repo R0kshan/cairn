@@ -681,6 +681,15 @@ function createHugContext(scene: Scene, titleBoxes: TitleBox[]): HugContext {
    * `application-logistique-fr` an `attachTight` in slide.
    */
   const HUG_REACH = 3.25;
+  /**
+   * The same, for a run crossing out of the container it skims. Wider than
+   * `HUG_REACH` because this corner is read against the border it is about to
+   * meet rather than against a stretch of it: the two lines converge, so a gap
+   * `HUG_REACH` would let pass still reads as clutter at the crossing. The
+   * corpus is clean from 3.75 through 5 and `application-large-fr` picks up two
+   * jogs at 6, so this sits mid-range with margin either side.
+   */
+  const SKIM_REACH = 4.5;
   const leaves = scene.nodes.filter((node) => !node.container);
   /**
    * Tier-0 gate: the changed segments (from `fromIdx` on) may not strike a
@@ -759,17 +768,44 @@ function createHugContext(scene: Scene, titleBoxes: TitleBox[]): HugContext {
     const spanLo = run.vert ? node.y : node.x;
     const spanHi = run.vert ? node.y + node.height : node.x + node.width;
     const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
-    if (shared <= MIN_HUG_SPAN) return [];
+    // A run that starts inside a container and carries on out of it is skimming
+    // the border it is about to cross, however little of that border it covers.
+    // The reader sees the line and the frame meet at the crossing, and the corner
+    // it turned on sitting a few px inside — `infrastructure-large-slide`'s
+    // `KAFKA_I -> BACKUP` turns 3.5px under the Kafka cluster's top edge, runs
+    // 17px along the inside of it and only then crosses. Short of `MIN_HUG_SPAN`,
+    // so the plain span test never looked at it; taking the corner out past the
+    // border turns a parallel skim into a clean perpendicular crossing.
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
+    const within = (at: number, lo: number, hi: number) => at >= lo - 1 && at <= hi + 1;
+    // Exactly one end inside the container's span — the corner the route turned
+    // on — with the other end out past it, and the run itself inside the box. A
+    // run merely passing over a container has neither end inside and is not
+    // skimming anything; one with both ends inside never crosses out.
+    //
+    // Only where the span test would otherwise have refused the run outright: a
+    // run long enough to be a hug on its own terms is already handled, and the
+    // outward rule below would be arguing with the inward one over it.
+    const skimsOut =
+      shared <= MIN_HUG_SPAN &&
+      node.container &&
+      within(run.at, nearLo, nearHi) &&
+      within(run.lo, spanLo, spanHi) !== within(run.hi, spanLo, spanHi);
+    if (shared <= MIN_HUG_SPAN && !skimsOut) return [];
+    const reach = skimsOut ? SKIM_REACH : HUG_REACH;
     let sign = 0;
     let side = 0;
-    if (Math.abs(run.at - nearLo) < HUG_REACH) {
+    // A skim clears *outward*, unlike an ordinary container hug, which clears
+    // into whichever half the run already sits in. The corner is the thing being
+    // moved and the point is to put it on the far side of the border, so the
+    // route crosses once, square, on the segment that was going to cross anyway.
+    if (Math.abs(run.at - nearLo) < reach) {
       side = nearLo;
-      sign = node.container ? (run.at < nearLo ? -1 : 1) : -1;
-    } else if (Math.abs(run.at - nearHi) < HUG_REACH) {
+      sign = skimsOut ? -1 : node.container ? (run.at < nearLo ? -1 : 1) : -1;
+    } else if (Math.abs(run.at - nearHi) < reach) {
       side = nearHi;
-      sign = node.container ? (run.at > nearHi ? 1 : -1) : 1;
+      sign = skimsOut ? 1 : node.container ? (run.at > nearHi ? 1 : -1) : 1;
     } else return [];
     return [side + sign * SIDE_CLEAR, side + sign * 3.5];
   };
@@ -1602,6 +1638,165 @@ function defectTally(scene: Scene, titleBoxes: TitleBox[]): Map<string, number> 
     tally.set(kind, (tally.get(kind) ?? 0) + 1);
   }
   return tally;
+}
+
+/**
+ * How close to a border a departing run has to be before it is worth moving out
+ * past it. Wider than `sideHug`'s 3px, because this is not that defect: at 4px a
+ * run and a frame are legally apart and still read as one thick line down the
+ * page.
+ */
+const LEAVING_REACH = 6;
+/** Where such a run is put: outside the frame, clear of it. */
+const LEAVING_CLEAR = 8;
+
+/**
+ * Would moving run `i` to `target` keep this edge's terminals on their boxes?
+ *
+ * Only the two runs that carry a terminal are at risk, and only on the axis the
+ * move changes: a terminal seated on a north or south face may slide along x and
+ * is detached by a change in y, and the other way round for east and west. A
+ * slide is also held inside the face's own span, so the endpoint cannot come to
+ * rest past the corner it belongs to.
+ */
+function terminalHolds(
+  edge: SceneEdge,
+  move: { i: number; vertical: boolean; target: number },
+  leaves: SceneNode[],
+): boolean {
+  const { i, vertical, target } = move;
+  const last = edge.pts.length - 1;
+  for (const index of [i, i + 1]) {
+    if (index !== 0 && index !== last) continue;
+    const seat = sideOf(edge.pts[index], leaves);
+    if (!seat) continue;
+    const alongX = seat.side === "north" || seat.side === "south";
+    // The move changes x on a vertical run, y on a horizontal one. Changing the
+    // coordinate the face does *not* run along lifts the terminal off it.
+    if (vertical !== alongX) return false;
+    const lo = vertical ? seat.node.x : seat.node.y;
+    const hi = lo + (vertical ? seat.node.width : seat.node.height);
+    if (target < lo + SIDE_INSET || target > hi - SIDE_INSET) return false;
+  }
+  return true;
+}
+
+/**
+ * Where a run should sit if it is skimming the inside of `frame` on its way out,
+ * or null if it is not. Split out of `clearLeavingRuns` to keep that loop
+ * readable; pure geometry either way.
+ */
+function leavingTarget(
+  a: Point,
+  b: Point,
+  frame: SceneNode,
+): { vertical: boolean; target: number } | null {
+  const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+  if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) return null;
+  // Long enough to read as a second border, and parallel to one.
+  const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+  const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+  if (hi - lo <= MIN_HUG_SPAN) return null;
+  // And actually beside the frame. Without this a run is judged on its fixed
+  // coordinate alone, so one passing far above or below a container — sharing
+  // none of its height, merely lining up with its left edge — reads as hugging a
+  // border it never comes near.
+  const acrossLo = vertical ? frame.y : frame.x;
+  const acrossHi = vertical ? frame.y + frame.height : frame.x + frame.width;
+  if (hi <= acrossLo || lo >= acrossHi) return null;
+  const at = vertical ? a.x : a.y;
+  const nearLo = vertical ? frame.x : frame.y;
+  const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
+  // Inside the frame, hugging one of its two parallel borders.
+  if (at <= nearLo || at >= nearHi) return null;
+  if (at - nearLo < LEAVING_REACH) return { vertical, target: nearLo - LEAVING_CLEAR };
+  if (nearHi - at < LEAVING_REACH) return { vertical, target: nearHi + LEAVING_CLEAR };
+  return null;
+}
+
+/**
+ * Takes a run that descends the inside of the frame it is on its way out of, and
+ * puts it on the outside.
+ *
+ * `infrastructure-large-page` is the shape: `PAYHUB_I -> PSP_EXT` turns right out
+ * of the payment hub, stops 4px short of the *Main data center* border and runs
+ * 421px down the inside of it before leaving through the bottom — two lines a
+ * hair apart for a third of the page, with the flow's label wedged in the same
+ * gap, overlapping the *Data zone* frame on one side and crossing the data-centre
+ * border on the other. Four pixels is outside `sideHug` (3px) and outside what
+ * `clearSideHugs` reaches for, so nothing owned it.
+ *
+ * Three conditions, and each one earns its place against the corpus:
+ *
+ * - **The flow is leaving.** One terminal inside the frame, the other beyond it.
+ *   A run that merely passes near a border on internal business is not on its way
+ *   anywhere and belongs where the router put it.
+ * - **The frame is outermost.** Outside a top-level site or system is the page
+ *   margin, which is open; outside a nested zone is the interior of whatever
+ *   holds it, which is where all the other runs already are. Allowing nested
+ *   frames turned eight drawings' clean sides into hugs.
+ * - **It is free.** No defect of any kind may grow, anywhere. At 4px there is no
+ *   `sideHug` on the books to pay with, so a move that buys a turn or a jog is
+ *   spending real defects on a cosmetic gain — which is how this cost
+ *   `application-queue-messaging` two turns and a jog before the guard went in.
+ *
+ * Runs after `clearSideHugs`, on settled geometry, and moves one run at a time.
+ */
+export function clearLeavingRuns(scene: Scene, titleBoxes: TitleBox[] = []): void {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const frames = scene.nodes.filter(
+    (node) =>
+      node.container &&
+      !scene.nodes.some(
+        (outer) =>
+          outer !== node &&
+          outer.container &&
+          node.x >= outer.x - 1 &&
+          node.y >= outer.y - 1 &&
+          node.x + node.width <= outer.x + outer.width + 1 &&
+          node.y + node.height <= outer.y + outer.height + 1,
+      ),
+  );
+  if (!frames.length) return;
+
+  const holds = (box: SceneNode, node: SceneNode) =>
+    node.x >= box.x - 1 &&
+    node.y >= box.y - 1 &&
+    node.x + node.width <= box.x + box.width + 1 &&
+    node.y + node.height <= box.y + box.height + 1;
+
+  let before: Map<string, number> | null = null;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const ends = [edge.pts[0], edge.pts[edge.pts.length - 1]]
+      .map((point) => sideOf(point, leaves)?.node)
+      .filter((node): node is SceneNode => !!node);
+    if (ends.length !== 2) continue;
+
+    for (const frame of frames) {
+      const inside = ends.filter((node) => holds(frame, node)).length;
+      if (inside !== 1) continue;
+      for (let i = 0; i + 1 < edge.pts.length; i++) {
+        const spot = leavingTarget(edge.pts[i], edge.pts[i + 1], frame);
+        if (!spot) continue;
+        const { vertical, target } = spot;
+        // A terminal run is movable — on `infrastructure-large-page` the run that
+        // needs moving *is* the last one — but only along the face its endpoint
+        // sits on. Sliding a terminal across its face detaches it from the box,
+        // and nothing downstream would say so: the readability profile skips a
+        // flow whose ends are unseated, so the tally below would score a
+        // disconnected route as an improvement.
+        if (!terminalHolds(edge, { i, vertical, target }, leaves)) continue;
+
+        const was = (before ??= defectTally(scene, titleBoxes));
+        const undo = edge.pts.map((point) => ({ ...point }));
+        for (const index of [i, i + 1]) edge.pts[index][vertical ? "x" : "y"] = target;
+        const after = defectTally(scene, titleBoxes);
+        if ([...after].every(([kind, count]) => count <= (was.get(kind) ?? 0))) before = after;
+        else edge.pts = undo;
+      }
+    }
+  }
 }
 
 /**

@@ -97084,6 +97084,7 @@ function runCutsForeignContainer(scene, owned, run) {
 function createHugContext(scene, titleBoxes) {
   const SIDE_CLEAR = 8;
   const HUG_REACH = 3.25;
+  const SKIM_REACH = 4.5;
   const leaves = scene.nodes.filter((node) => !node.container);
   const tier0Blocked = (pts, fromIdx, owns) => {
     const owned = containersHolding(scene, owns);
@@ -97132,17 +97133,20 @@ function createHugContext(scene, titleBoxes) {
     const spanLo = run.vert ? node.y : node.x;
     const spanHi = run.vert ? node.y + node.height : node.x + node.width;
     const shared = Math.min(run.hi, spanHi) - Math.max(run.lo, spanLo);
-    if (shared <= MIN_HUG_SPAN) return [];
     const nearLo = run.vert ? node.x : node.y;
     const nearHi = run.vert ? node.x + node.width : node.y + node.height;
+    const within = (at, lo, hi) => at >= lo - 1 && at <= hi + 1;
+    const skimsOut = shared <= MIN_HUG_SPAN && node.container && within(run.at, nearLo, nearHi) && within(run.lo, spanLo, spanHi) !== within(run.hi, spanLo, spanHi);
+    if (shared <= MIN_HUG_SPAN && !skimsOut) return [];
+    const reach = skimsOut ? SKIM_REACH : HUG_REACH;
     let sign = 0;
     let side = 0;
-    if (Math.abs(run.at - nearLo) < HUG_REACH) {
+    if (Math.abs(run.at - nearLo) < reach) {
       side = nearLo;
-      sign = node.container ? run.at < nearLo ? -1 : 1 : -1;
-    } else if (Math.abs(run.at - nearHi) < HUG_REACH) {
+      sign = skimsOut ? -1 : node.container ? run.at < nearLo ? -1 : 1 : -1;
+    } else if (Math.abs(run.at - nearHi) < reach) {
       side = nearHi;
-      sign = node.container ? run.at > nearHi ? 1 : -1 : 1;
+      sign = skimsOut ? 1 : node.container ? run.at > nearHi ? 1 : -1 : 1;
     } else return [];
     return [side + sign * SIDE_CLEAR, side + sign * 3.5];
   };
@@ -97697,6 +97701,72 @@ function defectTally(scene, titleBoxes) {
     tally.set(kind, (tally.get(kind) ?? 0) + 1);
   }
   return tally;
+}
+var LEAVING_REACH = 6;
+var LEAVING_CLEAR = 8;
+function terminalHolds(edge, move, leaves) {
+  const { i, vertical, target } = move;
+  const last = edge.pts.length - 1;
+  for (const index of [i, i + 1]) {
+    if (index !== 0 && index !== last) continue;
+    const seat = sideOf(edge.pts[index], leaves);
+    if (!seat) continue;
+    const alongX = seat.side === "north" || seat.side === "south";
+    if (vertical !== alongX) return false;
+    const lo = vertical ? seat.node.x : seat.node.y;
+    const hi = lo + (vertical ? seat.node.width : seat.node.height);
+    if (target < lo + SIDE_INSET || target > hi - SIDE_INSET) return false;
+  }
+  return true;
+}
+function leavingTarget(a, b, frame) {
+  const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+  if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) return null;
+  const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+  const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+  if (hi - lo <= MIN_HUG_SPAN) return null;
+  const acrossLo = vertical ? frame.y : frame.x;
+  const acrossHi = vertical ? frame.y + frame.height : frame.x + frame.width;
+  if (hi <= acrossLo || lo >= acrossHi) return null;
+  const at = vertical ? a.x : a.y;
+  const nearLo = vertical ? frame.x : frame.y;
+  const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
+  if (at <= nearLo || at >= nearHi) return null;
+  if (at - nearLo < LEAVING_REACH) return { vertical, target: nearLo - LEAVING_CLEAR };
+  if (nearHi - at < LEAVING_REACH) return { vertical, target: nearHi + LEAVING_CLEAR };
+  return null;
+}
+function clearLeavingRuns(scene, titleBoxes = []) {
+  const leaves = scene.nodes.filter((node) => !node.container);
+  const frames = scene.nodes.filter(
+    (node) => node.container && !scene.nodes.some(
+      (outer) => outer !== node && outer.container && node.x >= outer.x - 1 && node.y >= outer.y - 1 && node.x + node.width <= outer.x + outer.width + 1 && node.y + node.height <= outer.y + outer.height + 1
+    )
+  );
+  if (!frames.length) return;
+  const holds = (box, node) => node.x >= box.x - 1 && node.y >= box.y - 1 && node.x + node.width <= box.x + box.width + 1 && node.y + node.height <= box.y + box.height + 1;
+  let before = null;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    const ends = [edge.pts[0], edge.pts[edge.pts.length - 1]].map((point) => sideOf(point, leaves)?.node).filter((node) => !!node);
+    if (ends.length !== 2) continue;
+    for (const frame of frames) {
+      const inside = ends.filter((node) => holds(frame, node)).length;
+      if (inside !== 1) continue;
+      for (let i = 0; i + 1 < edge.pts.length; i++) {
+        const spot = leavingTarget(edge.pts[i], edge.pts[i + 1], frame);
+        if (!spot) continue;
+        const { vertical, target } = spot;
+        if (!terminalHolds(edge, { i, vertical, target }, leaves)) continue;
+        const was = before ??= defectTally(scene, titleBoxes);
+        const undo = edge.pts.map((point) => ({ ...point }));
+        for (const index of [i, i + 1]) edge.pts[index][vertical ? "x" : "y"] = target;
+        const after = defectTally(scene, titleBoxes);
+        if ([...after].every(([kind, count]) => count <= (was.get(kind) ?? 0))) before = after;
+        else edge.pts = undo;
+      }
+    }
+  }
 }
 function reseatAwayTerminals(scene, titleBoxes = []) {
   const leaves = scene.nodes.filter((node) => !node.container);
@@ -99360,18 +99430,19 @@ function createLabelSeatContext(scene, titleBoxes, final = false) {
   };
   const overlaps = (box, other) => box.x < other.x + other.width && other.x < box.x + box.width && box.y < other.y + other.height && other.y < box.y + box.height;
   const coversNode = (box) => leaves.some((node) => overlaps(box, node)) || titleBoxes.some((band) => overlaps(box, band));
-  const strikesBorder = (box, textH) => {
-    if (!final) return false;
+  const countBorders = (box, textH) => {
+    if (!final) return 0;
     const words = {
       x: box.x + BORDER_SLACK,
       y: box.y,
       width: Math.max(0, box.width - 2 * BORDER_SLACK),
       height: textH > 0 ? textH : box.height
     };
-    return containers.some(
+    return containers.filter(
       (node) => overlaps(words, node) && !(words.x >= node.x && words.x + words.width <= node.x + node.width && words.y >= node.y && words.y + words.height <= node.y + node.height)
-    );
+    ).length;
   };
+  const strikesBorder = (box, textH) => countBorders(box, textH) > 0;
   const straddledSeat = (box, vertical, own) => {
     const lo = vertical ? box.x : box.y;
     const hi = lo + (vertical ? box.width : box.height);
@@ -99410,6 +99481,7 @@ function createLabelSeatContext(scene, titleBoxes, final = false) {
     overlaps,
     coversNode,
     strikesBorder,
+    countBorders,
     straddledSeat,
     attributableAt
   };
@@ -99476,9 +99548,11 @@ function chooseSeat(ctx, edge, label, segmentOrder) {
   const plain = pick(false);
   if (!plain || !strikesBorder(plain, label.textH)) return plain;
   const clear = pick(true);
-  if (!clear) return plain;
-  const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
-  return moved <= LOCAL_REACH ? clear : plain;
+  if (clear) {
+    const moved = Math.abs(clear.x - plain.x) + Math.abs(clear.y - plain.y);
+    if (moved <= LOCAL_REACH) return clear;
+  }
+  return plain;
 }
 function stretchedSeats(ctx, edge, label, segmentOrder) {
   const { coversNode, straddledSeat } = ctx;
@@ -99597,8 +99671,35 @@ function resolveLabelCollision(seated, a, b) {
   giving.done = true;
   return true;
 }
-function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true) {
-  const ctx = createLabelSeatContext(scene, titleBoxes, applyOffsets);
+function preferClearBorders(ctx, seated) {
+  const { coversNode, countBorders, straddledSeat, nearestOtherSq } = ctx;
+  for (const entry of seated) {
+    const { label, edge } = entry;
+    const host = hostSegment(label, edge);
+    if (host < 0) continue;
+    const from = { x: label.x, y: label.y };
+    let best = { ...from };
+    let bestCount = countBorders({ ...from, width: label.width, height: label.height }, label.textH);
+    if (!bestCount) continue;
+    for (const candidate of slideSeats(label, edge, host)) {
+      if (coversNode(candidate)) continue;
+      if (straddledSeat(candidate, segmentIsVertical(edge, host), edge)) continue;
+      if (nearestOtherSq(candidate, edge) <= PIERCE * PIERCE) continue;
+      const count = countBorders(candidate, label.textH);
+      if (count >= bestCount) continue;
+      const clash = seated.some(
+        (other) => other !== entry && candidate.x < other.label.x + other.label.width && other.label.x < candidate.x + label.width && candidate.y < other.label.y + other.label.height && other.label.y < candidate.y + label.height
+      );
+      if (clash) continue;
+      best = { x: candidate.x, y: candidate.y };
+      bestCount = count;
+    }
+    label.x = best.x;
+    label.y = best.y;
+  }
+}
+function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true, final = applyOffsets) {
+  const ctx = createLabelSeatContext(scene, titleBoxes, final);
   const seated = [];
   for (const edge of scene.edges) {
     if (edge.pts.length < 2) continue;
@@ -99619,6 +99720,7 @@ function anchorFlowLabels(scene, titleBoxes = [], applyOffsets = true) {
       }
     if (!moved) break;
   }
+  if (final) preferClearBorders(ctx, seated);
   if (!applyOffsets) return;
   for (const edge of scene.edges)
     for (const label of edge.labels)
@@ -100735,6 +100837,9 @@ var RECLAIM_GAP = 12;
 var MIN_RECLAIM = 24;
 var MIN_RECLAIM_KEPT = 24;
 var RECLAIM_SHARE = 0.05;
+var RECLAIM_UNBUYABLE_TIER = 2;
+var RECLAIM_TRADE_SHARE = 0.1;
+var RECLAIM_TRADE_MIN = 200;
 var RECLAIM_LIFT_SHARE = 0.15;
 function reclaimTrailingColumns(scene, model) {
   const tops = model.elements.filter((element) => !element.parent);
@@ -100855,13 +100960,123 @@ function reclaimTrailingColumns(scene, model) {
   compactVertical(scene);
   compact();
   const was = tallyProfile(stayProfile);
-  const held = [...tallyProfile(profileOf(scene))].every(
-    ([key, entry]) => entry.count <= (was.get(key)?.count ?? 0)
-  );
+  let grewAbove = false;
+  let grewBelow = false;
+  for (const [key, entry] of tallyProfile(profileOf(scene))) {
+    if (entry.count <= (was.get(key)?.count ?? 0)) continue;
+    if (entry.tier <= RECLAIM_UNBUYABLE_TIER) grewAbove = true;
+    else grewBelow = true;
+  }
+  const saved = stayWidth - scene.width;
+  const bought = saved >= stayWidth * RECLAIM_TRADE_SHARE && saved >= RECLAIM_TRADE_MIN;
+  const held = !grewAbove && (!grewBelow || bought);
   const bar = Math.max(MIN_RECLAIM_KEPT, stayWidth * RECLAIM_SHARE);
   const won = scene.width <= stayWidth - bar && scene.height <= stayHeight;
   if (held && won) return;
   restore(undo);
+}
+var BORDER_AIR = 3;
+var ARROW_ROOM2 = 12;
+var RUN_CLEAR = 4;
+function runRoom(scene, box, side) {
+  const horizontal = side !== "bottom";
+  const acrossLo = horizontal ? box.y : box.x;
+  const acrossHi = horizontal ? box.y + box.height : box.x + box.width;
+  let free = Number.POSITIVE_INFINITY;
+  for (const edge of scene.edges)
+    for (let i = 0; i + 1 < edge.pts.length; i++) {
+      const a = edge.pts[i];
+      const b = edge.pts[i + 1];
+      const vertical = Math.abs(a.x - b.x) < 0.5;
+      if (vertical === Math.abs(a.y - b.y) < 0.5) continue;
+      if (vertical !== horizontal) continue;
+      const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+      const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+      if (hi <= acrossLo || lo >= acrossHi) continue;
+      const at = vertical ? a.x : a.y;
+      const gap = side === "left" ? box.x - at : side === "right" ? at - (box.x + box.width) : at - (box.y + box.height);
+      if (gap >= 0) free = Math.min(free, gap - RUN_CLEAR);
+    }
+  return free;
+}
+function airOutContainers(scene) {
+  const containers = scene.nodes.filter((node) => node.container);
+  if (!containers.length) return;
+  const holds = (outer, inner) => outer !== inner && inner.x >= outer.x - 1 && inner.y >= outer.y - 1 && inner.x + inner.width <= outer.x + outer.width + 1 && inner.y + inner.height <= outer.y + outer.height + 1;
+  const parentOf = (node) => {
+    let best = null;
+    for (const box of containers)
+      if (holds(box, node) && (!best || box.width * box.height < best.width * best.height))
+        best = box;
+    return best;
+  };
+  const was = new Map(scene.nodes.map((node) => [node.id, { ...node }]));
+  const grown = new Map(containers.map((box) => [box.id, { ...box }]));
+  for (const box of containers) {
+    const parent = parentOf(box);
+    const self2 = was.get(box.id);
+    const foreign = scene.nodes.filter(
+      (node) => node !== box && !holds(box, node) && !holds(node, box)
+    );
+    const room = (side) => {
+      const horizontal = side !== "bottom";
+      let free = BORDER_AIR;
+      free = Math.min(free, runRoom(scene, self2, side));
+      if (parent) {
+        const edge = was.get(parent.id);
+        const limit = side === "left" ? self2.x - edge.x : side === "right" ? edge.x + edge.width - (self2.x + self2.width) : edge.y + edge.height - (self2.y + self2.height);
+        free = Math.min(free, Math.max(0, limit - 1));
+      }
+      for (const other of foreign) {
+        const o = was.get(other.id);
+        if (horizontal) {
+          if (o.y + o.height <= self2.y || o.y >= self2.y + self2.height) continue;
+          const gap = side === "left" ? self2.x - (o.x + o.width) : o.x - (self2.x + self2.width);
+          if (gap >= 0) free = Math.min(free, gap / 2);
+        } else {
+          if (o.x + o.width <= self2.x || o.x >= self2.x + self2.width) continue;
+          const gap = o.y - (self2.y + self2.height);
+          if (gap >= 0) free = Math.min(free, gap / 2);
+        }
+      }
+      return Math.max(0, Math.floor(free));
+    };
+    const wanted = (side) => {
+      let short = 0;
+      for (const edge of scene.edges) {
+        if (edge.pts.length < 2) continue;
+        for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+          const seat = scene.nodes.find(
+            (node) => !node.container && pointOn(terminal, was.get(node.id))
+          );
+          if (!seat || !holds(box, seat)) continue;
+          const s = was.get(seat.id);
+          const outside = edge.pts.some(
+            (point) => side === "left" ? point.x < self2.x : side === "right" ? point.x > self2.x + self2.width : point.y > self2.y + self2.height
+          );
+          if (!outside) continue;
+          const gap = side === "left" ? s.x - self2.x : side === "right" ? self2.x + self2.width - (s.x + s.width) : self2.y + self2.height - (s.y + s.height);
+          const onFace = side === "bottom" ? Math.abs(terminal.y - (s.y + s.height)) < 1 : Math.abs(terminal.x - (side === "left" ? s.x : s.x + s.width)) < 1;
+          if (onFace && gap >= 0) short = Math.max(short, ARROW_ROOM2 - gap);
+        }
+      }
+      return short;
+    };
+    const left = Math.min(room("left"), wanted("left"));
+    const right = Math.min(room("right"), wanted("right"));
+    const bottom = Math.min(room("bottom"), wanted("bottom"));
+    if (left <= 0 && right <= 0 && bottom <= 0) continue;
+    const out = grown.get(box.id);
+    out.x = self2.x - Math.max(0, left);
+    out.width = self2.width + Math.max(0, left) + Math.max(0, right);
+    out.height = self2.height + Math.max(0, bottom);
+  }
+  for (const box of containers) {
+    const out = grown.get(box.id);
+    box.x = out.x;
+    box.width = out.width;
+    box.height = out.height;
+  }
 }
 function runGeometryPasses(scene, model, options) {
   const { numbered, sideways } = options;
@@ -100883,10 +101098,13 @@ function runGeometryPasses(scene, model, options) {
   recordRepairs(scene, routesBefore);
   clearSideHugs(scene, settledTitles);
   reseatAwayTerminals(scene, settledTitles);
+  clearLeavingRuns(scene, settledTitles);
   anchorFlowLabels(scene, settledTitles, false);
   swapCrossingSiblingSeats(scene);
   if (!sideways) reclaimTrailingColumns(scene, model);
   if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
+  airOutContainers(scene);
+  anchorFlowLabels(scene, titleBoxesOf(scene, model), false, true);
   fitCanvas(scene);
 }
 function laneAssignment(model, view) {
@@ -102145,6 +102363,7 @@ function render(model, view, scene, options) {
   });
   const overlapsAfter = countLabelOverlaps();
   compactVertical(scene);
+  airOutContainers(scene);
   fitCanvas(scene);
   const drawnLogos = /* @__PURE__ */ new Set();
   const { renderContainerNode, renderLeafNode } = createNodeRenderers({

@@ -220,6 +220,39 @@ and the renderer's settler. `labelStraddled` is the one tier-1 defect a pass
 avoids up front — not by scoring it, but by deriving channel lanes far enough
 from parallel runs that the label cannot land on both (§4j).*
 
+## Comparing two revisions
+
+The sweep answers *"did anything regress against the recorded floor"*. That is
+the gate, and it is deliberately unforgiving. It does not answer *"are these
+drawings better than main"* — the floor is a committed file that lags whatever
+the working tree does, and a change that improves ten drawings and regresses
+none looks the same to it as a change that does nothing.
+
+```
+npm run readability                       # working tree vs main
+npm run readability -- --base=v1.0.0-RC16 # vs any ref
+npm run readability -- --json             # for CI
+```
+
+It measures the base revision in a throwaway `git worktree`, so the working tree
+is never touched and uncommitted work is compared as it stands. This revision's
+`sweep.ts` is copied into that worktree first: every predicate lives in that one
+file and it imports only `src/`, so both sides are measured with one instrument
+and only the drawings differ. Letting each revision run its own sweep would
+compare two measurements taken with different rulers.
+
+**The verdict is the tier vector, not a single number.** Tiers are compared from
+most to least serious and the first difference decides — the same rule the ladder
+enforces (§3). No quantity of tier-3 tidying pays for one more tier-2 defect, so
+a weighted scalar would happily report the opposite of what the project accepts.
+Rates are per 1000 flow-instances, because the corpus grows and raw counts would
+read a new example as a regression.
+
+Exit status is 0 when the tier vector is better or unchanged, 1 when it is worse,
+so it drops straight into CI beside `npm run sweep`.
+
+---
+
 ### `sideHug` · ratchet
 **What you see:** a flow line merging with a node or container border so they
 read as one line.
@@ -236,6 +269,13 @@ leaves a box and then descends that same box's far side is charged. The fixer in
 and does not move, but a run parked at exactly 3.0 still reads as one line with
 the frame, so the pass that answers the metric is allowed to be a hair tidier
 than the floor it has to clear.
+
+The fixer also answers one shape this metric does not measure: a run with one end
+inside a container and the other outside, turning within 4.5px of the border it
+crosses. The shared span is too short to be a hug — `infrastructure-large-slide`
+covers 17px of it — but the corner and the frame converge at the crossing, so it
+reads as clutter. That case clears *outward*, putting the corner past the border,
+unlike an ordinary container hug which clears into whichever half the run sits in.
 
 ---
 

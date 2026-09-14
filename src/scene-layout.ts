@@ -30,6 +30,7 @@ import {
   decoincideAfterOffsets,
   clearSideHugs,
   reaimAfterOffsets,
+  clearLeavingRuns,
   reseatAwayTerminals,
   spreadAttachments,
   swapCrossingSiblingSeats,
@@ -2251,6 +2252,26 @@ const MIN_RECLAIM_KEPT = 24;
  */
 const RECLAIM_SHARE = 0.05;
 /**
+ * The worst tier a reclaim may add a defect at — nothing at this tier or better
+ * is purchasable. Tiers 0-2 are the invariants and the defects that make a flow
+ * hard to follow; 3 and 4 are the ones that make it untidy.
+ */
+const RECLAIM_UNBUYABLE_TIER = 2;
+/**
+ * And how much of the width a reclaim has to win before it may add a defect at
+ * the two bottom tiers at all. Twice the plain acceptance bar: an ordinary
+ * reclaim stays free, and only one worth a tenth of the drawing may spend.
+ */
+const RECLAIM_TRADE_SHARE = 0.1;
+/**
+ * And a floor in pixels alongside the share, because a share alone misprices a
+ * small drawing: `placement/sides` wins a larger *fraction* (12.6%) than
+ * `infrastructure-large-slide` (10.6%) while reclaiming 77px less, and on a
+ * drawing with six flows one extra weave is far more of the picture than it is
+ * among twenty. A defect has to buy real page, not just a good ratio.
+ */
+const RECLAIM_TRADE_MIN = 200;
+/**
  * And how much of the drawing's height a lift may move a box through.
  *
  * A lift is meant to step a box off rows it was not using — 21px, on the drawing
@@ -2496,10 +2517,30 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
   // totals can be compared. This is one layout with a few boxes moved, so the
   // addresses survive the move and every defect *kind* can be held to account.
   // A slide is opportunistic — worth taking only when it is free.
+  // Stricter than `noLadderRegression`, and deliberately: that rule prices a
+  // whole re-layout, where two candidates share no defect addresses and only tier
+  // totals can be compared. This is one layout with a few boxes moved, so the
+  // addresses survive the move and every defect *kind* can be held to account.
+  //
+  // Two bands, because "free or nothing" turned out too strict to be right.
+  // Anything at tier 2 or better is unbuyable — those are the defects that make a
+  // drawing wrong rather than untidy. A defect at the bottom two tiers is
+  // purchasable, but only by a *large* win: on `infrastructure-large-slide` a
+  // single tier-3 `attachAway` was refusing 217px, a tenth of the drawing, and
+  // the whole point of this pass is the page. `RECLAIM_TRADE_SHARE` is set well
+  // above the plain acceptance bar so an ordinary reclaim still has to be free —
+  // only a reclaim worth a tenth of the width may spend anything at all.
   const was = tallyProfile(stayProfile);
-  const held = [...tallyProfile(profileOf(scene))].every(
-    ([key, entry]) => entry.count <= (was.get(key)?.count ?? 0),
-  );
+  let grewAbove = false;
+  let grewBelow = false;
+  for (const [key, entry] of tallyProfile(profileOf(scene))) {
+    if (entry.count <= (was.get(key)?.count ?? 0)) continue;
+    if (entry.tier <= RECLAIM_UNBUYABLE_TIER) grewAbove = true;
+    else grewBelow = true;
+  }
+  const saved = stayWidth - scene.width;
+  const bought = saved >= stayWidth * RECLAIM_TRADE_SHARE && saved >= RECLAIM_TRADE_MIN;
+  const held = !grewAbove && (!grewBelow || bought);
   const bar = Math.max(MIN_RECLAIM_KEPT, stayWidth * RECLAIM_SHARE);
   // Narrower, and not one pixel taller. Width alone is the wrong objective — the
   // freed column has to go somewhere, and on `theme-dark` a third of the width
@@ -2511,6 +2552,208 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
   // Not worth it: back to the geometry that came in, and the column pass at the
   // call site compacts it exactly as it would have without this pass.
   restore(undo);
+}
+
+/**
+ * Room an arrowhead needs behind it, so a flow arriving from outside a container
+ * is not drawn with its head flush against the frame. The head is ~7px long and
+ * elk's container padding is 9, which left 2px — on `infrastructure-large-wide`
+ * the WAF's inbound arrow all but sat on the DMZ border.
+ */
+const BORDER_AIR = 3;
+/** Total room an arrowhead wants between the frame it crosses and the box it
+    points at: the ~7px head, plus enough that the two read apart. */
+const ARROW_ROOM = 12;
+/** And the clearance a frame must keep from a run lying outside it — just past
+    the 3px at which a run and a border read as one line (sweep `sideHug`). */
+const RUN_CLEAR = 4;
+
+/**
+ * How far a container's border may travel on `side` before it meets a route.
+ *
+ * A run lying just outside a border is why the frame cannot simply take the
+ * space: move the border onto it and the two draw as one line (`sideHug`), move
+ * it past and a route that was outside the container is suddenly cutting through
+ * it (`throughContainer`). Only runs parallel to the border matter — a
+ * perpendicular one crosses it either way.
+ */
+function runRoom(scene: Scene, box: Box, side: "left" | "right" | "bottom"): number {
+  const horizontal = side !== "bottom";
+  const acrossLo = horizontal ? box.y : box.x;
+  const acrossHi = horizontal ? box.y + box.height : box.x + box.width;
+  let free = Number.POSITIVE_INFINITY;
+  for (const edge of scene.edges)
+    for (let i = 0; i + 1 < edge.pts.length; i++) {
+      const a = edge.pts[i];
+      const b = edge.pts[i + 1];
+      const vertical = Math.abs(a.x - b.x) < 0.5;
+      if (vertical === Math.abs(a.y - b.y) < 0.5) continue;
+      if (vertical !== horizontal) continue;
+      const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+      const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+      if (hi <= acrossLo || lo >= acrossHi) continue;
+      const at = vertical ? a.x : a.y;
+      const gap =
+        side === "left"
+          ? box.x - at
+          : side === "right"
+            ? at - (box.x + box.width)
+            : at - (box.y + box.height);
+      if (gap >= 0) free = Math.min(free, gap - RUN_CLEAR);
+    }
+  return free;
+}
+
+/**
+ * Stage 4e: pushes a container's borders outward a few pixels, into space
+ * nothing is using.
+ *
+ * The complaint this answers is an arrowhead drawn hard against a container
+ * frame: a flow crossing into a zone has only the container's padding between
+ * the border and the box it points at, and the head fills almost all of it.
+ *
+ * The obvious lever is elk's own `elk.padding`, and it is the wrong one. Padding
+ * moves every child, which re-routes the whole drawing for a cosmetic gain:
+ * measured at one extra pixel it put `sideHug` through its ceiling (22 → 32) and
+ * regressed 63 drawings. Moving the *border* instead leaves every node and every
+ * route exactly where the router put them — the frame is the only thing that
+ * moves, and the gap it opens is the gap the arrowhead was missing.
+ *
+ * Runs dead last, after `compactHorizontal` and before `fitCanvas`, for that
+ * reason: nothing downstream measures geometry, so a widened frame cannot feed
+ * back into a routing decision. `fitCanvas` still sees it, so a container grown
+ * at the edge of the drawing takes the canvas with it.
+ *
+ * Each side is grown independently and only into proven free space: never past
+ * the inner edge of the container that holds it, never into another box, and
+ * never onto a route that is not already crossing that border. A side with
+ * nothing to spare simply stays where it is.
+ */
+export function airOutContainers(scene: Scene): void {
+  const containers = scene.nodes.filter((node) => node.container);
+  if (!containers.length) return;
+
+  const holds = (outer: SceneNode, inner: SceneNode) =>
+    outer !== inner &&
+    inner.x >= outer.x - 1 &&
+    inner.y >= outer.y - 1 &&
+    inner.x + inner.width <= outer.x + outer.width + 1 &&
+    inner.y + inner.height <= outer.y + outer.height + 1;
+
+  /** The smallest container holding `node`, or null for a top-level one. */
+  const parentOf = (node: SceneNode): SceneNode | null => {
+    let best: SceneNode | null = null;
+    for (const box of containers)
+      if (holds(box, node) && (!best || box.width * box.height < best.width * best.height))
+        best = box;
+    return best;
+  };
+
+  // Snapshotted before anything moves: every clamp is measured against the
+  // geometry the router produced, not against a frame an earlier iteration has
+  // already pushed out.
+  const was = new Map(scene.nodes.map((node) => [node.id, { ...node }]));
+  const grown = new Map(containers.map((box) => [box.id, { ...box }]));
+
+  for (const box of containers) {
+    const parent = parentOf(box);
+    const self = was.get(box.id)!;
+    // Anything that is neither inside this container nor the container itself
+    // bounds how far its frame may travel.
+    const foreign = scene.nodes.filter(
+      (node) => node !== box && !holds(box, node) && !holds(node, box),
+    );
+
+    const room = (side: "left" | "right" | "bottom"): number => {
+      const horizontal = side !== "bottom";
+      let free = BORDER_AIR;
+      free = Math.min(free, runRoom(scene, self, side));
+      if (parent) {
+        const edge = was.get(parent.id)!;
+        const limit =
+          side === "left"
+            ? self.x - edge.x
+            : side === "right"
+              ? edge.x + edge.width - (self.x + self.width)
+              : edge.y + edge.height - (self.y + self.height);
+        free = Math.min(free, Math.max(0, limit - 1));
+      }
+      for (const other of foreign) {
+        const o = was.get(other.id)!;
+        // Only a box the frame would actually run into: one that overlaps this
+        // container on the other axis and sits on the side being grown.
+        if (horizontal) {
+          if (o.y + o.height <= self.y || o.y >= self.y + self.height) continue;
+          const gap =
+            side === "left" ? self.x - (o.x + o.width) : o.x - (self.x + self.width);
+          if (gap >= 0) free = Math.min(free, gap / 2);
+        } else {
+          if (o.x + o.width <= self.x || o.x >= self.x + self.width) continue;
+          const gap = o.y - (self.y + self.height);
+          if (gap >= 0) free = Math.min(free, gap / 2);
+        }
+      }
+      return Math.max(0, Math.floor(free));
+    };
+
+    // Only a border an arrowhead is actually cramped against. Growing every
+    // frame by whatever it could take moves borders nothing asked to move, and
+    // each one is a chance to land on a route: measured, it put
+    // `throughContainer` through its ceiling (67 → 83). A container whose
+    // arrivals all have room is left exactly as the router drew it.
+    const wanted = (side: "left" | "right" | "bottom"): number => {
+      let short = 0;
+      for (const edge of scene.edges) {
+        if (edge.pts.length < 2) continue;
+        for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+          const seat = scene.nodes.find(
+            (node) => !node.container && pointOn(terminal, was.get(node.id)!),
+          );
+          if (!seat || !holds(box, seat)) continue;
+          const s = was.get(seat.id)!;
+          // The arrow has to be crossing *this* border to be cramped by it: the
+          // terminal sits on the facing side of its box, and the route reaches
+          // back out past the frame.
+          const outside = edge.pts.some((point) =>
+            side === "left"
+              ? point.x < self.x
+              : side === "right"
+                ? point.x > self.x + self.width
+                : point.y > self.y + self.height,
+          );
+          if (!outside) continue;
+          const gap =
+            side === "left"
+              ? s.x - self.x
+              : side === "right"
+                ? self.x + self.width - (s.x + s.width)
+                : self.y + self.height - (s.y + s.height);
+          const onFace =
+            side === "bottom"
+              ? Math.abs(terminal.y - (s.y + s.height)) < 1
+              : Math.abs(terminal.x - (side === "left" ? s.x : s.x + s.width)) < 1;
+          if (onFace && gap >= 0) short = Math.max(short, ARROW_ROOM - gap);
+        }
+      }
+      return short;
+    };
+
+    const left = Math.min(room("left"), wanted("left"));
+    const right = Math.min(room("right"), wanted("right"));
+    const bottom = Math.min(room("bottom"), wanted("bottom"));
+    if (left <= 0 && right <= 0 && bottom <= 0) continue;
+    const out = grown.get(box.id)!;
+    out.x = self.x - Math.max(0, left);
+    out.width = self.width + Math.max(0, left) + Math.max(0, right);
+    out.height = self.height + Math.max(0, bottom);
+  }
+
+  for (const box of containers) {
+    const out = grown.get(box.id)!;
+    box.x = out.x;
+    box.width = out.width;
+    box.height = out.height;
+  }
 }
 
 function runGeometryPasses(
@@ -2589,6 +2832,10 @@ function runGeometryPasses(
   // One flow at a time, on settled geometry, so it cannot disturb a route it does
   // not touch (which is exactly what re-laying out for one flow did).
   reseatAwayTerminals(scene, settledTitles);
+  // A run descending the inside of the frame it is on its way out of. Not a
+  // `sideHug` — it is legally clear of the border — but it reads as one, and the
+  // page margin outside is empty. Free moves only; see the pass.
+  clearLeavingRuns(scene, settledTitles);
   // Still without the author's offsets: this scene is a layout *candidate*, and
   // `applyAuthorPositioning` puts the hints on the one that wins.
   anchorFlowLabels(scene, settledTitles, false);
@@ -2613,6 +2860,15 @@ function runGeometryPasses(
   // measure the geometry this one leaves behind.
   if (!sideways) reclaimTrailingColumns(scene, model);
   if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
+  // A few pixels of frame, so an arrowhead arriving from outside is not drawn
+  // against the border. After every routing pass on purpose — it moves borders,
+  // never routes, and nothing below re-measures.
+  airOutContainers(scene);
+  // The one anchor that runs with nothing left to route. Every earlier one is
+  // read by a pass below it, so the seat preferences that are purely about how a
+  // label *looks* — clearing a container outline above all — have to wait until
+  // here, where moving a label cannot move anything else.
+  anchorFlowLabels(scene, titleBoxesOf(scene, model), false, true);
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.
   fitCanvas(scene);

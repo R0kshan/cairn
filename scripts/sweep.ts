@@ -47,6 +47,37 @@ const MUST_BE_ZERO = [
 // Calibrated against the corpus at the time recursive discovery started
 // covering examples/dispositions and examples/themes (4352 flow-instances,
 // 288 drawings): rate = count / totalFlows, rounded up slightly for stability.
+export const TIER: Record<string, number> = {
+  diagonal: 0,
+  throughBox: 0,
+  throughContainer: 0,
+  coincident: 0,
+  attachShared: 0,
+  labelAdrift: 0,
+  labelPierced: 0,
+  titleStruck: 0,
+  deadBand: 0,
+  labelOrphan: 1,
+  labelOffLine: 1,
+  labelStraddled: 1,
+  crossings: 2,
+  fanTangle: 2,
+  nearParallel: 2,
+  // A run riding a node or container side it does not attach to destroys the
+  // reading of the frame — the flow merges with the border and the eye cannot
+  // tell them apart, which is an attribution failure, not eye travel. Rated
+  // one tier above crossings by explicit design decision: a hug fix may be
+  // paid for with a crossing (verified geometrically forced on logical-archi's
+  // F02, where every re-side crosses F11's riser), never the reverse.
+  sideHug: 1,
+  turnHeavy: 3,
+  "jog<=6": 3,
+  "jog<=20": 3,
+  attachAway: 3,
+  longDetour: 3,
+  attachTight: 4,
+};
+
 const CEILING_RATE: Record<string, number> = {
   attachTight: 0.0003,
   "jog<=6": 0.0191,
@@ -948,7 +979,12 @@ if (jobs > 1 && !emitJson) {
     .slice(2)
     .filter(
       (arg) =>
-        !arg.startsWith("--jobs=") && !arg.startsWith("--shard=") && arg !== "--update-baseline",
+        !arg.startsWith("--jobs=") &&
+        !arg.startsWith("--shard=") &&
+        arg !== "--update-baseline" &&
+        // The parent rolls the score up from the merged totals; a child given
+        // this would answer with its own slice's score instead of its shard.
+        arg !== "--score-json",
     );
   const shards = await Promise.all(
     Array.from(
@@ -1007,6 +1043,38 @@ if (jobs > 1 && !emitJson) {
   failures.sort();
 } else {
   await sweepShard(shardIndex, shardCount);
+}
+
+/**
+ * Machine-readable readability score, for comparing one revision against another
+ * (`scripts/readability-score.ts`). Prints what the gate below judges — the same
+ * counts, rolled up by tier — and gates nothing itself, so it can be run on a
+ * revision whose baseline file is from a different commit.
+ *
+ * Rates are per 1000 flow-instances, because the corpus grows: comparing raw
+ * counts across revisions would read a new example as a regression.
+ */
+if (process.argv.includes("--score-json")) {
+  const byTier = [0, 0, 0, 0, 0];
+  for (const [kind, count] of Object.entries(totals)) byTier[TIER[kind] ?? 4] += count;
+  // Awaited, for the reason the block below documents: `process.stdout` is
+  // asynchronous when it is a pipe, and `process.exit` drops whatever has not
+  // reached the OS. This payload is ~27 KB on today's corpus — under the 64 KiB
+  // pipe buffer, but it carries a row per drawing and grows with the examples,
+  // and `readability-score.ts` reads it through a pipe.
+  await new Promise<void>((resolve, reject) => {
+    process.stdout.write(
+      `${JSON.stringify({
+        totalFlows,
+        totals,
+        byTier,
+        perDrawing: [...perDrawing].map(([tag, kinds]) => [tag, [...kinds]]),
+      })}
+`,
+      (error) => (error ? reject(error) : resolve()),
+    );
+  });
+  process.exit(0);
 }
 
 if (emitJson) {
@@ -1083,36 +1151,6 @@ if (!emitJson) {
    * separately and unconditionally; those with ceiling rates (throughContainer,
    * labelPierced, titleStruck) are also tier 0 but gated by their ceilings.
    */
-  const TIER: Record<string, number> = {
-    diagonal: 0,
-    throughBox: 0,
-    throughContainer: 0,
-    coincident: 0,
-    attachShared: 0,
-    labelAdrift: 0,
-    labelPierced: 0,
-    titleStruck: 0,
-    deadBand: 0,
-    labelOrphan: 1,
-    labelOffLine: 1,
-    labelStraddled: 1,
-    crossings: 2,
-    fanTangle: 2,
-    nearParallel: 2,
-    // A run riding a node or container side it does not attach to destroys the
-    // reading of the frame — the flow merges with the border and the eye cannot
-    // tell them apart, which is an attribution failure, not eye travel. Rated
-    // one tier above crossings by explicit design decision: a hug fix may be
-    // paid for with a crossing (verified geometrically forced on logical-archi's
-    // F02, where every re-side crosses F11's riser), never the reverse.
-    sideHug: 1,
-    turnHeavy: 3,
-    "jog<=6": 3,
-    "jog<=20": 3,
-    attachAway: 3,
-    longDetour: 3,
-    attachTight: 4,
-  };
 
   const regressions: string[] = [];
   const improvements: string[] = [];

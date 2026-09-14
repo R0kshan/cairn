@@ -2,13 +2,13 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="745" height="258" fill="#fffdf5"/>
-<rect x="10" y="41" width="82" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="41" width="85" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="59" font-size="13" font-weight="bold" fill="#17202c">Users</text>
 <rect x="186" y="22" width="386" height="113.5" rx="6" fill="#fbf4e9" stroke="#b3541e" stroke-width="1.4"/>
 <text x="196" y="40" font-size="13" font-weight="bold" fill="#17202c">Core system</text>
-<rect x="200" y="49" width="358" height="77.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="210" y="67" font-size="13" font-weight="bold" fill="#17202c">Services</text>
-<rect x="584" y="49" width="128" height="74" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="197" y="49" width="361" height="77.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="207" y="67" font-size="13" font-weight="bold" fill="#17202c">Services</text>
+<rect x="584" y="49" width="128" height="77" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="594" y="67" font-size="13" font-weight="bold" fill="#17202c">External systems</text>
 <circle cx="51" cy="78" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 40 100 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>

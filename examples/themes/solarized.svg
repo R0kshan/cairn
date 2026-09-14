@@ -2,10 +2,10 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#657b83"/></marker></defs>
 <rect width="746" height="326" fill="#fdf6e3"/>
-<rect x="10" y="22" width="88" height="164" rx="6" fill="#e3edf3" stroke="#268bd2" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="22" width="91" height="164" rx="6" fill="#e3edf3" stroke="#268bd2" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="40" font-size="13" font-weight="bold" fill="#586e75">Team</text>
-<rect x="234" y="30" width="146" height="132" rx="6" fill="#e3edf3" stroke="#268bd2" stroke-width="1.2"/>
-<text x="244" y="48" font-size="13" font-weight="bold" fill="#586e75">Core platform</text>
+<rect x="231" y="30" width="149" height="133" rx="6" fill="#e3edf3" stroke="#268bd2" stroke-width="1.2"/>
+<text x="241" y="48" font-size="13" font-weight="bold" fill="#586e75">Core platform</text>
 <circle cx="54" cy="133" r="7" fill="none" stroke="#268bd2" stroke-width="1.5"/>
 <path d="M 43 155 q 11 -19 22 0" fill="none" stroke="#268bd2" stroke-width="1.5"/>
 <text x="54" y="167" font-size="11" text-anchor="middle" fill="#073642">Developer</text>

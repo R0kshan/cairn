@@ -3270,3 +3270,234 @@ test("a flow leaves by the face that looks at its target", async () => {
   // And with the faces lined up there is nothing left to turn around.
   assert.equal(route.pts.length, 2, "a straightened flow should have no turns");
 });
+
+/**
+ * A route leaving a container must not turn just inside the border it is about
+ * to cross (the "skim" case in `hugTargetsOf`).
+ *
+ * `infrastructure-large-slide`'s `KAFKA_I -> BACKUP` is what found it: the route
+ * turned 3.5px under the Kafka cluster's top edge, ran 17px along the inside of
+ * it and only then crossed out — a cluttered corner wedged against the frame,
+ * with its label pinched between the two. Seventeen pixels is well short of
+ * `MIN_HUG_SPAN`, so nothing looked at it.
+ *
+ * Asserted as a property over several drawings rather than against that one
+ * route: the rule is geometric, it fired on two different views when it landed,
+ * and pinning one flow by its coordinates would pass while the general case
+ * rotted.
+ */
+test("no route turns just inside a container border it crosses", async () => {
+  const SKIM_REACH = 4.5;
+  for (const file of [
+    "dispositions/infrastructure-large-slide.cairn",
+    "dispositions/infrastructure-large-wide.cairn",
+    "infrastructure-security-edge.cairn",
+    "application-gateway-auth.cairn",
+    "logical.cairn",
+    "medium.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    const containers = scene.nodes.filter((n) => n.container);
+    for (const edge of scene.edges)
+      for (let i = 0; i + 1 < edge.pts.length; i++) {
+        const a = edge.pts[i];
+        const b = edge.pts[i + 1];
+        const vertical = Math.abs(a.x - b.x) < 0.5;
+        if (vertical === Math.abs(a.y - b.y) < 0.5) continue; // degenerate or slanted
+        const at = vertical ? a.x : a.y;
+        const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+        const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+        for (const box of containers) {
+          const spanLo = vertical ? box.y : box.x;
+          const spanHi = vertical ? box.y + box.height : box.x + box.width;
+          const nearLo = vertical ? box.x : box.y;
+          const nearHi = vertical ? box.x + box.width : box.y + box.height;
+          const within = (v: number, l: number, h: number) => v >= l - 1 && v <= h + 1;
+          // The skim shape: one end of the run inside the box's span and the
+          // other outside, with the run itself inside the box.
+          if (!within(at, nearLo, nearHi)) continue;
+          if (within(lo, spanLo, spanHi) === within(hi, spanLo, spanHi)) continue;
+          const gap = Math.min(Math.abs(at - nearLo), Math.abs(at - nearHi));
+          assert.ok(
+            gap >= SKIM_REACH,
+            `${file}: ${edge.id} run ${i} turns ${gap.toFixed(1)}px inside ${box.id}'s ` +
+              `border before crossing it`,
+          );
+        }
+      }
+  }
+});
+
+/**
+ * An arrowhead arriving from outside a container is not drawn against its frame
+ * (`airOutContainers`).
+ *
+ * The head is ~7px long and elk's container padding is 9, so a flow crossing into
+ * a zone had 2px between the head and the border — on `infrastructure-large-wide`
+ * the WAF's inbound arrow all but sat on the DMZ edge. Widening elk's padding is
+ * the wrong lever (it moves every child and re-routes the drawing; one extra
+ * pixel put `sideHug` through its ceiling), so the border moves outward instead
+ * and every route stays exactly where the router put it.
+ *
+ * Asserted as a property across views: the rule is geometric and applies to any
+ * container with an arrival.
+ */
+test("an arrowhead crossing into a container is not drawn on its border", async () => {
+  const ARROW_ROOM = 12;
+  for (const file of [
+    "dispositions/infrastructure-large-wide.cairn",
+    "infrastructure-medium.cairn",
+    "logical.cairn",
+    "application.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    const inside = (outer: { x: number; y: number; width: number; height: number }, n: typeof outer) =>
+      n.x >= outer.x - 1 &&
+      n.y >= outer.y - 1 &&
+      n.x + n.width <= outer.x + outer.width + 1 &&
+      n.y + n.height <= outer.y + outer.height + 1;
+    for (const box of scene.nodes.filter((n) => n.container))
+      for (const edge of scene.edges) {
+        if (edge.pts.length < 2) continue;
+        for (const terminal of [edge.pts[0], edge.pts[edge.pts.length - 1]]) {
+          const seat = scene.nodes.find(
+            (n) =>
+              !n.container &&
+              terminal.x >= n.x - 1 &&
+              terminal.x <= n.x + n.width + 1 &&
+              terminal.y >= n.y - 1 &&
+              terminal.y <= n.y + n.height + 1,
+          );
+          if (!seat || seat === box || !inside(box, seat)) continue;
+          // West arrivals only — the shape the report was about, and enough to
+          // pin the rule without restating the whole pass.
+          if (Math.abs(terminal.x - seat.x) >= 1) continue;
+          if (!edge.pts.some((p) => p.x < box.x)) continue;
+          assert.ok(
+            seat.x - box.x >= ARROW_ROOM,
+            `${file}: ${edge.id} arrives at ${seat.id} with ${(seat.x - box.x).toFixed(1)}px ` +
+              `between ${box.id}'s border and the box (need ${ARROW_ROOM})`,
+          );
+        }
+      }
+  }
+});
+
+/**
+ * A run on its way out of a container does not descend the inside of its frame
+ * (`clearLeavingRuns`).
+ *
+ * `infrastructure-large-page`'s `PAYHUB_I -> PSP_EXT` turned right out of the
+ * payment hub, stopped 4px short of the *Main data center* border and ran 421px
+ * down the inside of it before leaving through the bottom — two lines a hair
+ * apart for a third of the page. Four pixels is outside `sideHug` (3px) and
+ * outside what `clearSideHugs` reaches for, so nothing owned it.
+ *
+ * Asserted as a property: any run long enough to read as a second border, inside
+ * an outermost frame the flow is leaving, must be clear of that frame's parallel
+ * borders.
+ */
+test("a run leaving a container does not descend the inside of its frame", async () => {
+  const LEAVING_REACH = 6;
+  for (const file of [
+    "dispositions/infrastructure-large-page.cairn",
+    "dispositions/infrastructure-large-wide.cairn",
+    "logical.cairn",
+    "medium.cairn",
+  ]) {
+    const { scene } = await build(load(file));
+    const encloses = (box: { x: number; y: number; width: number; height: number }, n: typeof box) =>
+      n.x >= box.x - 1 &&
+      n.y >= box.y - 1 &&
+      n.x + n.width <= box.x + box.width + 1 &&
+      n.y + n.height <= box.y + box.height + 1;
+    const frames = scene.nodes.filter(
+      (n) => n.container && !scene.nodes.some((o) => o !== n && o.container && encloses(o, n)),
+    );
+    for (const frame of frames)
+      for (const edge of scene.edges) {
+        if (edge.pts.length < 2) continue;
+        const seats = [edge.pts[0], edge.pts[edge.pts.length - 1]].map((p) =>
+          scene.nodes.find(
+            (n) =>
+              !n.container &&
+              p.x >= n.x - 1 &&
+              p.x <= n.x + n.width + 1 &&
+              p.y >= n.y - 1 &&
+              p.y <= n.y + n.height + 1,
+          ),
+        );
+        if (seats.some((s) => !s)) continue;
+        if (seats.filter((s) => encloses(frame, s!)).length !== 1) continue;
+        for (let i = 0; i + 1 < edge.pts.length; i++) {
+          const a = edge.pts[i];
+          const b = edge.pts[i + 1];
+          const vertical = Math.abs(a.x - b.x) < 0.5;
+          if (vertical === Math.abs(a.y - b.y) < 0.5) continue;
+          const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+          const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+          if (hi - lo <= 24) continue;
+          // Beside the frame, not merely lined up with it: a run sharing none
+          // of the frame's height is not hugging its side, whatever its x.
+          const acrossLo = vertical ? frame.y : frame.x;
+          const acrossHi = vertical ? frame.y + frame.height : frame.x + frame.width;
+          if (hi <= acrossLo || lo >= acrossHi) continue;
+          const at = vertical ? a.x : a.y;
+          const nearLo = vertical ? frame.x : frame.y;
+          const nearHi = vertical ? frame.x + frame.width : frame.y + frame.height;
+          if (at <= nearLo || at >= nearHi) continue; // outside the frame is fine
+          const gap = Math.min(at - nearLo, nearHi - at);
+          assert.ok(
+            gap >= LEAVING_REACH,
+            `${file}: ${edge.id} runs ${gap.toFixed(1)}px inside ${frame.id}'s border ` +
+              `for ${(hi - lo).toFixed(0)}px on its way out`,
+          );
+        }
+      }
+  }
+});
+
+/**
+ * A label crossing container outlines slides along its own run to where it
+ * crosses fewest (`preferClearBorders`).
+ *
+ * `infrastructure-large-page`'s F08 sat where the *Data zone* corner, its
+ * PostgreSQL cluster and the data-centre border all meet, with clear line 100px
+ * above it on the same run. Its seat could never be fully clear — the run is 8px
+ * from the data-centre border and the label is 77px wide, so every seat on it
+ * crosses that one — which is why the preference has to count borders rather than
+ * ask whether any is struck.
+ */
+test("a label slides along its run to cross fewer container outlines", async () => {
+  const { scene } = await build(load("dispositions/infrastructure-large-page.cairn"));
+  // By id, not by where it landed: a coordinate window silently starts matching
+  // a different label — or nothing — the moment the layout shifts, and the test
+  // would then pass without checking anything.
+  const label = scene.edges.flatMap((e) => e.labels).find((l) => l.flowId === "F08");
+  assert.ok(label, "F08's label missing");
+  const words = {
+    x: label.x + 4,
+    y: label.y,
+    width: Math.max(0, label.width - 8),
+    height: label.textH > 0 ? label.textH : label.height,
+  };
+  const struck = scene.nodes.filter((box) => {
+    if (!box.container) return false;
+    const overlaps =
+      words.x < box.x + box.width &&
+      box.x < words.x + words.width &&
+      words.y < box.y + box.height &&
+      box.y < words.y + words.height;
+    const inside =
+      words.x >= box.x &&
+      words.x + words.width <= box.x + box.width &&
+      words.y >= box.y &&
+      words.y + words.height <= box.y + box.height;
+    return overlaps && !inside;
+  });
+  // One is unavoidable here; three is what it used to be.
+  assert.ok(
+    struck.length <= 1,
+    `label crosses ${struck.length} outlines (${struck.map((b) => b.id).join(", ")})`,
+  );
+});

@@ -25,6 +25,7 @@ import {
 } from "./geometry.ts";
 import type { Scene, SceneNode, SceneEdge, SceneLabel } from "./scene-layout.ts";
 import { compactVertical, fitCanvas } from "./compact.ts";
+import { airOutContainers } from "./scene-layout.ts";
 import { labelsSeated } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
@@ -1632,6 +1633,11 @@ export function render(
   // reorders nothing, so it cannot create an overlap, a pierce or a collision.
   // No-op when settling stranded nothing, the common case.
   compactVertical(scene);
+  // Again, for the same reason `compactVertical` runs again: a reverted repair
+  // restores the route `recordRepairs` saved, and that route may cross a frame
+  // the layout-stage pass never measured it against. Idempotent on geometry it
+  // already cleared, so it is a no-op wherever nothing was reverted.
+  airOutContainers(scene);
   // Last word on the canvas size: settling moves labels, and a reverted repair
   // restores the route it replaced, so both can land outside the frame layout
   // sized. Before the bands are built, so the legend is laid out against the

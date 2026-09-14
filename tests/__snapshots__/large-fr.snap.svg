@@ -2,31 +2,31 @@
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
 <rect width="3995" height="1614" fill="#ffffff"/>
-<rect x="224" y="801" width="113" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="224" y="801" width="116" height="249" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="234" y="819" font-size="13" font-weight="bold" fill="#17202c">Clients</text>
-<rect x="10" y="355" width="150" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="10" y="355" width="153" height="430" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="20" y="373" font-size="13" font-weight="bold" fill="#17202c">Équipes internes</text>
 <rect x="1766" y="561" width="913" height="468.7" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="1776" y="579" font-size="13" font-weight="bold" fill="#17202c">Front commerce</text>
-<rect x="1800" y="679" width="166" height="217" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1810" y="697" font-size="13" font-weight="bold" fill="#17202c">Canaux de vente</text>
-<rect x="2228" y="762.7" width="417" height="247" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<rect x="1797" y="679" width="169" height="220" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1807" y="697" font-size="13" font-weight="bold" fill="#17202c">Canaux de vente</text>
+<rect x="2228" y="762.7" width="420" height="250" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="2238" y="780.7" font-size="13" font-weight="bold" fill="#17202c">Parcours client</text>
 <rect x="397" y="218" width="1119" height="664.2" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="407" y="236" font-size="13" font-weight="bold" fill="#17202c">Cœur commerce</text>
 <rect x="1055" y="245" width="427" height="316" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="1065" y="263" font-size="13" font-weight="bold" fill="#17202c">Vente</text>
-<rect x="581" y="655.2" width="157" height="218" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="591" y="673.2" font-size="13" font-weight="bold" fill="#17202c">Offre</text>
+<rect x="578" y="655.2" width="160" height="218" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="588" y="673.2" font-size="13" font-weight="bold" fill="#17202c">Offre</text>
 <rect x="431" y="438" width="457" height="197.2" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
 <text x="441" y="456" font-size="13" font-weight="bold" fill="#17202c">Exécution</text>
 <rect x="2845" y="263" width="756" height="186" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
 <text x="2855" y="281" font-size="13" font-weight="bold" fill="#17202c">Plateforme data</text>
-<rect x="2859" y="290" width="198" height="150" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="2869" y="308" font-size="13" font-weight="bold" fill="#17202c">Collecte</text>
-<rect x="3229" y="297.8" width="358" height="96.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
-<text x="3239" y="315.8" font-size="13" font-weight="bold" fill="#17202c">Analytique</text>
-<rect x="3744" y="22" width="196" height="351" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="2856" y="290" width="204" height="150" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="2866" y="308" font-size="13" font-weight="bold" fill="#17202c">Collecte</text>
+<rect x="3226" y="297.8" width="364" height="96.5" rx="6" fill="#f6f4fb" stroke="#cf9f2f" stroke-width="1"/>
+<text x="3236" y="315.8" font-size="13" font-weight="bold" fill="#17202c">Analytique</text>
+<rect x="3744" y="22" width="196" height="354" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="3754" y="40" font-size="13" font-weight="bold" fill="#17202c">Systèmes externes</text>
 <circle cx="290" cy="923" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
 <path d="M 279 945 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
@@ -180,8 +180,8 @@
 <text x="1024.5" y="950.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">commander</text>
 <text x="1071.8" y="971" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Parcours d'achat</text>
 <text x="1071.8" y="985.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">mobile</text>
-<text x="1046.5" y="890" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Vérifier le stock et</text>
-<text x="1046.5" y="904.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">commander en magasin</text>
+<text x="1643.5" y="890" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Vérifier le stock et</text>
+<text x="1643.5" y="904.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">commander en magasin</text>
 <text x="2077" y="743.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Afficher les fiches</text>
 <text x="2077" y="758.2" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produit</text>
 <text x="2092" y="851.7" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Afficher le catalogue</text>
