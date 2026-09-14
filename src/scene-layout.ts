@@ -2251,6 +2251,26 @@ const MIN_RECLAIM_KEPT = 24;
  */
 const RECLAIM_SHARE = 0.05;
 /**
+ * The worst tier a reclaim may add a defect at — nothing at this tier or better
+ * is purchasable. Tiers 0-2 are the invariants and the defects that make a flow
+ * hard to follow; 3 and 4 are the ones that make it untidy.
+ */
+const RECLAIM_UNBUYABLE_TIER = 2;
+/**
+ * And how much of the width a reclaim has to win before it may add a defect at
+ * the two bottom tiers at all. Twice the plain acceptance bar: an ordinary
+ * reclaim stays free, and only one worth a tenth of the drawing may spend.
+ */
+const RECLAIM_TRADE_SHARE = 0.1;
+/**
+ * And a floor in pixels alongside the share, because a share alone misprices a
+ * small drawing: `placement/sides` wins a larger *fraction* (12.6%) than
+ * `infrastructure-large-slide` (10.6%) while reclaiming 77px less, and on a
+ * drawing with six flows one extra weave is far more of the picture than it is
+ * among twenty. A defect has to buy real page, not just a good ratio.
+ */
+const RECLAIM_TRADE_MIN = 200;
+/**
  * And how much of the drawing's height a lift may move a box through.
  *
  * A lift is meant to step a box off rows it was not using — 21px, on the drawing
@@ -2496,10 +2516,30 @@ function reclaimTrailingColumns(scene: Scene, model: Model): void {
   // totals can be compared. This is one layout with a few boxes moved, so the
   // addresses survive the move and every defect *kind* can be held to account.
   // A slide is opportunistic — worth taking only when it is free.
+  // Stricter than `noLadderRegression`, and deliberately: that rule prices a
+  // whole re-layout, where two candidates share no defect addresses and only tier
+  // totals can be compared. This is one layout with a few boxes moved, so the
+  // addresses survive the move and every defect *kind* can be held to account.
+  //
+  // Two bands, because "free or nothing" turned out too strict to be right.
+  // Anything at tier 2 or better is unbuyable — those are the defects that make a
+  // drawing wrong rather than untidy. A defect at the bottom two tiers is
+  // purchasable, but only by a *large* win: on `infrastructure-large-slide` a
+  // single tier-3 `attachAway` was refusing 217px, a tenth of the drawing, and
+  // the whole point of this pass is the page. `RECLAIM_TRADE_SHARE` is set well
+  // above the plain acceptance bar so an ordinary reclaim still has to be free —
+  // only a reclaim worth a tenth of the width may spend anything at all.
   const was = tallyProfile(stayProfile);
-  const held = [...tallyProfile(profileOf(scene))].every(
-    ([key, entry]) => entry.count <= (was.get(key)?.count ?? 0),
-  );
+  let grewAbove = false;
+  let grewBelow = false;
+  for (const [key, entry] of tallyProfile(profileOf(scene))) {
+    if (entry.count <= (was.get(key)?.count ?? 0)) continue;
+    if (entry.tier <= RECLAIM_UNBUYABLE_TIER) grewAbove = true;
+    else grewBelow = true;
+  }
+  const saved = stayWidth - scene.width;
+  const bought = saved >= stayWidth * RECLAIM_TRADE_SHARE && saved >= RECLAIM_TRADE_MIN;
+  const held = !grewAbove && (!grewBelow || bought);
   const bar = Math.max(MIN_RECLAIM_KEPT, stayWidth * RECLAIM_SHARE);
   // Narrower, and not one pixel taller. Width alone is the wrong objective — the
   // freed column has to go somewhere, and on `theme-dark` a third of the width

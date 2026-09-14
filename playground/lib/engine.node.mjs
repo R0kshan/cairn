@@ -100735,6 +100735,9 @@ var RECLAIM_GAP = 12;
 var MIN_RECLAIM = 24;
 var MIN_RECLAIM_KEPT = 24;
 var RECLAIM_SHARE = 0.05;
+var RECLAIM_UNBUYABLE_TIER = 2;
+var RECLAIM_TRADE_SHARE = 0.1;
+var RECLAIM_TRADE_MIN = 200;
 var RECLAIM_LIFT_SHARE = 0.15;
 function reclaimTrailingColumns(scene, model) {
   const tops = model.elements.filter((element) => !element.parent);
@@ -100855,9 +100858,16 @@ function reclaimTrailingColumns(scene, model) {
   compactVertical(scene);
   compact();
   const was = tallyProfile(stayProfile);
-  const held = [...tallyProfile(profileOf(scene))].every(
-    ([key, entry]) => entry.count <= (was.get(key)?.count ?? 0)
-  );
+  let grewAbove = false;
+  let grewBelow = false;
+  for (const [key, entry] of tallyProfile(profileOf(scene))) {
+    if (entry.count <= (was.get(key)?.count ?? 0)) continue;
+    if (entry.tier <= RECLAIM_UNBUYABLE_TIER) grewAbove = true;
+    else grewBelow = true;
+  }
+  const saved = stayWidth - scene.width;
+  const bought = saved >= stayWidth * RECLAIM_TRADE_SHARE && saved >= RECLAIM_TRADE_MIN;
+  const held = !grewAbove && (!grewBelow || bought);
   const bar = Math.max(MIN_RECLAIM_KEPT, stayWidth * RECLAIM_SHARE);
   const won = scene.width <= stayWidth - bar && scene.height <= stayHeight;
   if (held && won) return;
