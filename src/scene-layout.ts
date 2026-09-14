@@ -2175,6 +2175,305 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   return diagnostics;
 }
 
+/** Breathing room kept between a subtree this pass moves and whatever bounds it. */
+const RECLAIM_GAP = 12;
+/** Don't churn a drawing's routes to claw back less than this. */
+const MIN_RECLAIM = 24;
+/**
+ * And don't *keep* the result for less than this share of the width.
+ *
+ * Stage 5 re-settles labels and refits the canvas after every geometry pass, so
+ * what this pass measures is not the final number — a slide worth 30px here came
+ * out 26px *wider* on `medium` once its labels found their final seats. The pass
+ * exists for the pathological shape, an element in a trailing band holding a
+ * column of its own, where the gain is a tenth of the drawing and survives
+ * anything stage 5 does to it. A few percent is noise this cannot see the end of.
+ */
+const RECLAIM_SHARE = 0.05;
+
+/** A top-level subtree's extent, title overflow included — what this pass moves as one. */
+interface Reach {
+  x: number;
+  y: number;
+  right: number;
+  bottom: number;
+}
+
+/**
+ * Stage 4c½: pulls a trailing element back into the empty column beside its
+ * neighbour, and lifts the one box standing in its way when that box is the only
+ * thing holding it out there.
+ *
+ * elk draws in layers, so an element in a partition band past every other one
+ * takes a column of its own however little of that column its own rows use.
+ * `infrastructure-large-fr` is the shape: both egress externals sit in the band
+ * after `Site de secours` (`EGRESS_PARTITION`), and the flows feeding them cross
+ * 1038px and 1426px of drawing to reach a column whose only occupant is a site
+ * 180px tall standing in 504px of height. A reader would seat them beside it.
+ *
+ * `compactHorizontal` cannot do this: a column is dead to that pass only when it
+ * is dead at *every* row, and the site's rows are alive. This one asks the
+ * narrower question — dead at the rows *this subtree* occupies — which is what
+ * makes the two complementary rather than redundant.
+ *
+ * Two moves, in this order, and only ever between top-level subtrees:
+ *
+ * - **Slide.** A subtree moves left until it is `RECLAIM_GAP` from the nearest
+ *   subtree sharing a row with it. One that shares no row cannot stop it, which
+ *   is the whole point.
+ * - **Lift.** Where exactly one subtree caps the slide of whatever is setting the
+ *   drawing's width, and there is room to move it clear of those rows, it moves —
+ *   the smaller of up and down, and only into space nothing else holds.
+ *
+ * Nothing is taken on trust. The moves go on through `applyNodeOffsets`, the same
+ * path an author's `offset:` takes, so terminals are carried and elbows squared by
+ * code that already does it; the result is then kept only if the drawing got
+ * narrower *and* the ladder did not regress (§5). Anything else rolls back to the
+ * geometry that came in, to the byte — which is what keeps every drawing this
+ * cannot help byte-identical.
+ *
+ * Runs before `compactHorizontal`, not after: this pass re-routes, and the column
+ * pass is the one that has to see final geometry. That also means the canvas is
+ * re-measured there, so this pass never touches `scene.width`.
+ */
+function reclaimTrailingColumns(scene: Scene, model: Model): void {
+  const tops = model.elements.filter((element) => !element.parent);
+  // Two subtrees can only ever be side by side; a column with a hole in it needs
+  // a third to be standing in it.
+  if (tops.length < 3) return;
+
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  // `titleBoxesOf` walks the container nodes in scene order, so the two zip.
+  const titleIndex = new Map(
+    scene.nodes.filter((node) => node.container).map((node, index) => [node.id, index]),
+  );
+  const titles = titleBoxesOf(scene, model);
+
+  const spanOf = (ids: string[]): Reach | null => {
+    let span: Reach | null = null;
+    const fold = (box: Box) => {
+      const right = box.x + box.width;
+      const bottom = box.y + box.height;
+      span = span
+        ? {
+            x: Math.min(span.x, box.x),
+            y: Math.min(span.y, box.y),
+            right: Math.max(span.right, right),
+            bottom: Math.max(span.bottom, bottom),
+          }
+        : { x: box.x, y: box.y, right, bottom };
+    };
+    for (const id of ids) {
+      const node = nodeById.get(id);
+      if (!node) continue;
+      fold(node);
+      // A container title overflows its box to the right, and a slide blind to it
+      // would seat the next subtree over the top of the title.
+      const index = titleIndex.get(id);
+      if (index !== undefined && titles[index]) fold(titles[index]);
+    }
+    return span;
+  };
+
+  const idsOf = new Map(tops.map((element) => [element.id, subtreeIds(element)]));
+  const spans = new Map<string, Reach>();
+  for (const element of tops) {
+    const span = spanOf(idsOf.get(element.id)!);
+    if (span) spans.set(element.id, span);
+  }
+  if (spans.size < 3) return;
+
+  const sharesRows = (a: Reach, b: Reach) =>
+    a.y < b.bottom + RECLAIM_GAP && b.y < a.bottom + RECLAIM_GAP;
+
+  /** How far `id` can move left, and the one subtree that stops it going further. */
+  const slideRoom = (id: string): { dx: number; blocker: string | null } => {
+    const box = spans.get(id)!;
+    let limit = RECLAIM_GAP;
+    let blocker: string | null = null;
+    for (const [otherId, other] of spans) {
+      if (otherId === id || !sharesRows(box, other)) continue;
+      // Level with it or already past it: that is a swap, not a slide, and a swap
+      // is not this pass's business.
+      if (other.right > box.x) return { dx: 0, blocker: otherId };
+      if (other.right + RECLAIM_GAP > limit) {
+        limit = other.right + RECLAIM_GAP;
+        blocker = otherId;
+      }
+    }
+    return { dx: Math.min(0, limit - box.x), blocker };
+  };
+
+  const moves = new Map<string, { dx: number; dy: number }>();
+  const shift = (id: string, dx: number, dy: number) => {
+    const span = spans.get(id)!;
+    span.x += dx;
+    span.right += dx;
+    span.y += dy;
+    span.bottom += dy;
+    const had = moves.get(id) ?? { dx: 0, dy: 0 };
+    moves.set(id, { dx: had.dx + dx, dy: had.dy + dy });
+  };
+
+  // Rightmost first: a subtree cannot open room for one standing further right.
+  const order = [...spans.keys()].sort((a, b) => spans.get(b)!.right - spans.get(a)!.right);
+  const slideAll = () => {
+    for (const id of order) {
+      const { dx } = slideRoom(id);
+      if (dx <= -MIN_RECLAIM) shift(id, dx, 0);
+    }
+  };
+  const widest = () => order.reduce((a, b) => (spans.get(b)!.right > spans.get(a)!.right ? b : a));
+
+  const widthBefore = spans.get(widest())!.right;
+  slideAll();
+
+  // One lift, to part the subtree still setting the width from the one thing in
+  // its way. Only one pair is ever tried: more than that is a packer, and a
+  // packer rearranges boxes the reader is using to find their way.
+  const stuck = widest();
+  const { blocker } = slideRoom(stuck);
+  if (blocker) {
+    const box = spans.get(stuck)!;
+    const wall = spans.get(blocker)!;
+    // The pair is left out of the check: both are about to move, and the slide
+    // that follows is what puts them in the same column — on rows the lift has
+    // just made disjoint.
+    const clear = (moved: Reach) =>
+      [...spans].every(
+        ([id, other]) =>
+          id === blocker ||
+          id === stuck ||
+          !sharesRows(moved, other) ||
+          moved.right + RECLAIM_GAP <= other.x ||
+          other.right + RECLAIM_GAP <= moved.x,
+      );
+    // The wall moves, never the subtree that is stuck. Letting the stuck one move
+    // instead is the smaller delta and looks like the better deal, but it drags a
+    // flow's target off the row its label was seated on: measured, it put a
+    // `labelOffLine` on all six `application-small` dispositions for width none
+    // of them needed. The subtree that is *not* carrying the long flow is the one
+    // with room to give.
+    const options = [box.y - RECLAIM_GAP - wall.bottom, box.bottom + RECLAIM_GAP - wall.y].sort(
+      (a, b) => Math.abs(a) - Math.abs(b),
+    );
+    for (const dy of options) {
+      if (!dy) continue;
+      const moved = { ...wall, y: wall.y + dy, bottom: wall.bottom + dy };
+      if (moved.y < RECLAIM_GAP || !clear(moved)) continue;
+      shift(blocker, 0, dy);
+      slideAll();
+      break;
+    }
+  }
+
+  if (!moves.size || spans.get(widest())!.right > widthBefore - MIN_RECLAIM) return;
+
+  const everyEdge = new Set(scene.edges.map((edge) => edge.id));
+  const profileOf = (candidate: Scene) =>
+    inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, new Map());
+  // Whole objects, not the handful of fields this pass means to touch: the trial
+  // below runs the repair, the re-anchor and both compaction passes, and those
+  // set route flags (`detour`, `pinned`, `hubSided`, `repairedFrom`) a partial
+  // rollback would leave behind. Residue does not merely dirty the scene — the
+  // candidate sweep reads it, so a trial this pass threw away was picking the
+  // layout (`medium` came out 26px wider for it).
+  const clone = <T extends object>(item: T): T => ({ ...item });
+  const capture = () => ({
+    nodes: scene.nodes.map(clone),
+    edges: scene.edges.map((edge) => ({
+      ...edge,
+      pts: edge.pts.map(clone),
+      labels: edge.labels.map(clone),
+    })),
+    pinnedBands: scene.pinnedBands?.map(clone),
+    clampedOffsets: scene.clampedOffsets && new Set(scene.clampedOffsets),
+    width: scene.width,
+    height: scene.height,
+  });
+  /** Puts `item` back to `snapshot`, keys the trial added included. */
+  const revert = <T extends object>(item: T, snapshot: T) => {
+    for (const key of Object.keys(item))
+      if (!(key in snapshot)) delete (item as Record<string, unknown>)[key];
+    Object.assign(item, snapshot);
+  };
+  const restore = (snapshot: ReturnType<typeof capture>) => {
+    for (const [index, node] of scene.nodes.entries()) revert(node, snapshot.nodes[index]);
+    for (const [index, edge] of scene.edges.entries()) {
+      const was = snapshot.edges[index];
+      revert(edge, was);
+      edge.pts = was.pts.map(clone);
+      edge.labels = was.labels.map(clone);
+    }
+    scene.pinnedBands = snapshot.pinnedBands?.map(clone);
+    scene.clampedOffsets = snapshot.clampedOffsets && new Set(snapshot.clampedOffsets);
+    scene.width = snapshot.width;
+    scene.height = snapshot.height;
+  };
+  const undo = capture();
+
+  // What the drawing costs if this pass does nothing — measured through the
+  // column pass, because that is what sets `scene.width`, and a slide can just as
+  // easily block a cut it was already getting as open a new one. Comparing the
+  // raw spans instead priced two different drawings against each other and fired
+  // on `medium`, which came out 26px wider.
+  const compact = () => compactHorizontal(scene, titleBoxesOf(scene, model));
+  compact();
+  const stayWidth = scene.width;
+  const stayHeight = scene.height;
+  const stayProfile = profileOf(scene);
+  restore(undo);
+
+  const offsetOf = new Map<string, OffsetSpec>();
+  for (const [rootId, delta] of moves) {
+    offsetOf.set(rootId, delta);
+    // Descendants carry no delta of their own: `applyNodeOffsets` inherits the
+    // root's through the parent chain, which is also what holds each child inside
+    // the container it belongs to.
+    for (const id of idsOf.get(rootId)!)
+      if (id !== rootId) offsetOf.set(id, { dx: 0, dy: 0, parent: model.index.get(id)?.parent?.id });
+  }
+  const carried = applyNodeOffsets(scene, offsetOf);
+  // That pass pins the corridor a lifted box crossed, because an author who drags
+  // something across a gap meant to leave the gap there. A lift is not a
+  // preference — it is this pass taking a box off rows it was not using, and the
+  // height it vacates is exactly what `compactVertical` below is for.
+  scene.pinnedBands = undo.pinnedBands?.map(clone);
+  const settled = titleBoxesOf(scene, model);
+  // A subtree that moved this far leaves terminals on a side that no longer faces
+  // its counterpart, and routes drawn for the seat it used to have.
+  reaimAfterOffsets(scene, settled, carried);
+  if (carried.size) optimiseRoutes(scene, settled, false, carried);
+  // Labels name runs that just moved, and a band the slide emptied is dead height
+  // the vertical pass already ran past. Both are measured below, so both are put
+  // right first — judging the move on stale labels judges the wrong drawing.
+  anchorFlowLabels(scene, settled, false);
+  compactVertical(scene);
+
+  compact();
+
+  // Stricter than `noLadderRegression`, and deliberately: that rule prices a
+  // whole re-layout, where two candidates share no defect addresses and only tier
+  // totals can be compared. This is one layout with a few boxes moved, so the
+  // addresses survive the move and every defect *kind* can be held to account.
+  // A slide is opportunistic — worth taking only when it is free.
+  const was = tallyProfile(stayProfile);
+  const held = [...tallyProfile(profileOf(scene))].every(
+    ([key, entry]) => entry.count <= (was.get(key)?.count ?? 0),
+  );
+  const bar = Math.max(MIN_RECLAIM, stayWidth * RECLAIM_SHARE);
+  // Narrower, and not one pixel taller. Width alone is the wrong objective — the
+  // freed column has to go somewhere, and on `theme-dark` a third of the width
+  // came back as half again the height. Trading the axes is what the disposition
+  // choice is for (§2.1); this pass only reclaims what nothing was using, so a
+  // reclaim that costs height was not reclaiming empty space at all.
+  const won = scene.width <= stayWidth - bar && scene.height <= stayHeight;
+  if (held && won) return;
+  // Not worth it: back to the geometry that came in, and the column pass at the
+  // call site compacts it exactly as it would have without this pass.
+  restore(undo);
+}
+
 function runGeometryPasses(
   scene: Scene,
   model: Model,
@@ -2264,6 +2563,10 @@ function runGeometryPasses(
   // Reading direction only. Under `DOWN` the layers run down the page, so x is
   // the cross axis: squeezing it pulls siblings together rather than shortening
   // anything, and the sweep measured that as crossings on six drawings.
+  // The column an element in a trailing partition band takes for itself, when
+  // nothing else uses the rows beside it. Before the column pass, which has to
+  // measure the geometry this one leaves behind.
+  if (!sideways) reclaimTrailingColumns(scene, model);
   if (!sideways) compactHorizontal(scene, titleBoxesOf(scene, model));
   // Last, because every pass above moves routes and labels after the reroute's
   // own resize.

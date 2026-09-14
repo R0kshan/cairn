@@ -13,7 +13,7 @@ application-tech-stack-large-dense.cairn  dim:1914x687 n:27 e:30 ov:0  geom:a8e6
 application-tech-stack-large.cairn  dim:2213x664 n:27 e:30 ov:0  geom:8044d4093598 color:347972d640ca text:632148cd5f63
 application-tech-stack.cairn  dim:1473x219 n:13 e:10 ov:0  geom:2dba940519f7 color:d60459e79854 text:92cee4173ed3
 application.cairn  dim:1192x428 n:18 e:13 ov:0  geom:997efc5ede6e color:47e9040f5fd3 text:25578bcb9ca8
-colors-custom.cairn  dim:842x146 n:8 e:3 ov:0  geom:93bca10dd45d color:0109da9c7117 text:a233211a41f2
+colors-custom.cairn  dim:512x240 n:8 e:3 ov:0  geom:17c2caf3d11f color:0109da9c7117 text:a233211a41f2
 dispositions/application-large-page.cairn  dim:1370x1189 n:29 e:27 ov:0  geom:67f54cc8da30 color:91f4c67cfcfe text:c75d1f873e2c
 dispositions/application-large-slide.cairn  dim:2327x557 n:29 e:27 ov:0  geom:5dc297b31c02 color:91f4c67cfcfe text:c75d1f873e2c
 dispositions/application-large-tall.cairn  dim:1370x1189 n:29 e:27 ov:0  geom:67f54cc8da30 color:91f4c67cfcfe text:c75d1f873e2c
@@ -50,8 +50,8 @@ flow-labels-long-wrapped.cairn  dim:1136x398 n:10 e:6 ov:0  geom:a57865427644 co
 flow-labels-long.cairn  dim:1799x201 n:10 e:6 ov:0  geom:97a92a709922 color:d810c130ee44 text:7a0357138b89
 infrastructure-compact.cairn  dim:1413x460 n:20 e:13 ov:0  geom:fbdc01d49f8f color:2084a4be7d24 text:b9f9a3e39bf9
 infrastructure-fr.cairn  dim:1394x486 n:20 e:13 ov:0  geom:aba8fa8ef842 color:53331a267dfe text:a2932e3b3640
-infrastructure-large-fr.cairn  dim:2272x550 n:30 e:20 ov:0  geom:5ff1f224a29b color:0a48f2b9457b text:449a1bfe2ae0
-infrastructure-large.cairn  dim:2260x550 n:30 e:20 ov:0  geom:48f54a5f9df3 color:0a48f2b9457b text:9c3570b16328
+infrastructure-large-fr.cairn  dim:2098x550 n:30 e:20 ov:0  geom:8cd6c6b52df0 color:0a48f2b9457b text:449a1bfe2ae0
+infrastructure-large.cairn  dim:2083x550 n:30 e:20 ov:0  geom:90d80513bf1b color:0a48f2b9457b text:9c3570b16328
 infrastructure-medium.cairn  dim:1431x482 n:19 e:11 ov:0  geom:2463ac14baf7 color:9f50982c06c7 text:62dca69b4bd8
 infrastructure-security-edge.cairn  dim:1933x196 n:15 e:9 ov:0  geom:9f11165a4b53 color:9cf7e621136c text:fe5f4e681e74
 infrastructure-small.cairn  dim:855x213 n:9 e:3 ov:0  geom:a81f81aed6f6 color:71b3433f89b9 text:982de79fa16d
@@ -64,8 +64,8 @@ logical-fr.cairn  dim:2162x548 n:23 e:19 ov:0  geom:8ec8aef654ac color:d962b7ddc
 logical-security.cairn  dim:2137x578 n:25 e:21 ov:0  geom:da12ba8e34bd color:23d684b4e51d text:4077c8715eda
 logical.cairn  dim:2127x548 n:23 e:19 ov:0  geom:21478cb2eb9d color:d962b7ddc1c3 text:68e487464509
 medium.cairn  dim:2355x584 n:24 e:20 ov:0  geom:1bcc8f2cc50b color:2ed23f4211da text:8cc2b6297057
-placement/baseline.cairn  dim:1275x228 n:14 e:6 ov:0  geom:e97395c8e9a0 color:4d06ef3531ab text:fa3340e6308b
-placement/flow-label.cairn  dim:1112x276 n:14 e:6 ov:0  geom:d242dd0c3e45 color:4d06ef3531ab text:fa3340e6308b
+placement/baseline.cairn  dim:972x276 n:14 e:6 ov:0  geom:40d1877fd662 color:4d06ef3531ab text:fa3340e6308b
+placement/flow-label.cairn  dim:972x276 n:14 e:6 ov:0  geom:7c4d72d848bf color:4d06ef3531ab text:fa3340e6308b
 placement/queue-roles.cairn  dim:574x182 n:6 e:4 ov:0  geom:18ddeee98330 color:9d6220703546 text:fb5c17599a54
 placement/queue-sides.cairn  dim:601x182 n:6 e:4 ov:0  geom:a7b5e47f0379 color:fe599ff7de6b text:46221daea51e
 placement/reading-order.cairn  dim:516x223 n:6 e:4 ov:0  geom:654d4c71209d color:60851c0ca209 text:3d0eff13230c
@@ -73,8 +73,8 @@ placement/sides.cairn  dim:1282x241 n:14 e:6 ov:0  geom:fbc94e858e3c color:4d06e
 positioning-sides.cairn  dim:1424x323 n:12 e:10 ov:0  geom:a1ee14fc4dcf color:a2ca1ff5d080 text:4f25bcb657ce
 positioning.cairn  dim:1102x282 n:12 e:7 ov:0  geom:725012da76a0 color:c3d97904bacc text:6643f6b3a9ab
 small.cairn  dim:1302x261 n:12 e:6 ov:0  geom:f9507b5f31d4 color:b048c640e696 text:f052cb74382b
-theme-dark.cairn  dim:1256x169 n:10 e:4 ov:0  geom:8d9e038cd189 color:118c91b3f490 text:a3e28e66b9e1
-theme-light.cairn  dim:1256x169 n:10 e:4 ov:0  geom:8d9e038cd189 color:21a74bb867a3 text:a3e28e66b9e1
+theme-dark.cairn  dim:851x263 n:10 e:4 ov:0  geom:ce35c0375bb5 color:118c91b3f490 text:a3e28e66b9e1
+theme-light.cairn  dim:851x263 n:10 e:4 ov:0  geom:ce35c0375bb5 color:21a74bb867a3 text:a3e28e66b9e1
 themes/classic-dark.cairn  dim:746x200 n:9 e:7 ov:0  geom:1ef20c074e06 color:b916155c9bc1 text:bc2bd47a5fc7
 themes/classic.cairn  dim:746x200 n:9 e:7 ov:0  geom:1ef20c074e06 color:ed53414b28de text:bc2bd47a5fc7
 themes/contrast.cairn  dim:746x200 n:9 e:7 ov:0  geom:1ef20c074e06 color:a6193cf0383f text:bc2bd47a5fc7
