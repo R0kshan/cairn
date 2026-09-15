@@ -1710,6 +1710,51 @@ test("a repaired corridor clears the label band of the flow it passes under", as
   }
 });
 
+/**
+ * A riser holds a label wider than it is long, and the router knows it.
+ *
+ * `label-anchor` has always measured a vertical run against the label's
+ * *height* — words lie across the line they name, not down it. `readability.ts`,
+ * the profile `optimiseRoutes` weighs candidates with, measured both axes
+ * against the width, so any route whose only seat was a riser shorter than its
+ * label scored `unlabelled` (tier 1) and was refused however much it cleared
+ * below. INVARIANTS §3a: a gate and the pass it drives may not disagree.
+ *
+ * `small/tall` is the shape. *Appointment confirmed* left the scheduler's east
+ * face and cut across *Open / block slots* on its way down to the notifier. The
+ * untangled route — straight out of the bottom face into the notifier's top —
+ * was available the whole time and scored unlabelled, for a 113px label on a
+ * 77px riser it sits across perfectly well.
+ */
+test("a route is not refused for a riser its label fits across", async () => {
+  const { scene } = await build(load("small.cairn").replace('"\n', '"\nstyle { disposition: tall }\n'));
+  const scheduler = scene.nodes.find((n) => n.id === "SCHEDULER")!;
+  const confirmed = scene.edges.find((e) => e.id === "F03")!;
+  const openBlock = scene.edges.find((e) => e.id === "F05")!;
+
+  // Out of the bottom face, and the label seated on that riser.
+  assert.ok(
+    Math.abs(confirmed.pts[0].y - (scheduler.y + scheduler.height)) < 1,
+    `F03 must leave SCHEDULER's bottom (y=${confirmed.pts[0].y})`,
+  );
+  const label = confirmed.labels[0];
+  assert.ok(label && label.width > 0, "F03 must carry a label");
+  assert.ok(
+    Math.abs(label.x + label.width / 2 - confirmed.pts[0].x) < 2,
+    `F03's label must sit across its riser (${label.x + label.width / 2} vs ${confirmed.pts[0].x})`,
+  );
+  assert.ok(label.width > Math.abs(confirmed.pts[confirmed.pts.length - 1].y - confirmed.pts[0].y),
+    "the point of the fixture: the label is wider than the riser is long");
+
+  for (let i = 0; i + 1 < confirmed.pts.length; i++)
+    for (let j = 0; j + 1 < openBlock.pts.length; j++)
+      assert.equal(
+        segmentsCross(confirmed.pts[i], confirmed.pts[i + 1], openBlock.pts[j], openBlock.pts[j + 1]),
+        null,
+        "F03 and F05 must not cross",
+      );
+});
+
 test("font-size scales the text and is measured into the layout", async () => {
   const base =
     'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "Node label" }\nA -> B : "flow"\n';

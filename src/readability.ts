@@ -261,28 +261,104 @@ function scanDestroyed(ctx: Inspector, subj: Subject, profile: Profile): void {
 // ---- Tier 1: can this flow's labels still sit on it? -------------------------
 
 /**
+ * Room a sideways seat wants around it. Measured: exact overlap left 45 drawings
+ * a ratchet, 4px leaves 16, and 8px or more starts refusing seats that were fine
+ * and gives the improvements back.
+ */
+const SEAT_CLEAR = 4;
+
+/**
+ * Does a seat hanging off the side of its own riser come down on another flow?
+ *
+ * Only asked of a seat wider than the run it sits on. The old width-on-both-axes
+ * test was, by accident, the brake here: only a riser longer than the label could
+ * hold one, and such a label barely overhangs anything. Relaxing the span without
+ * this put eight labels on top of a foreign run — `labelPierced`, a must-be-zero —
+ * and cost 77 drawings a ratchet. Both the neighbour's words and its lines count:
+ * a seat landing on either is one `label-anchor` will not honour, and a seat this
+ * says is free that the settler then moves is worse than one refused here.
+ */
+function seatOverhangsFlow(ctx: Inspector, ownId: string, seatBox: Bounds): boolean {
+  const x1 = seatBox.x1 - SEAT_CLEAR;
+  const x2 = seatBox.x2 + SEAT_CLEAR;
+  const y1 = seatBox.y1 - SEAT_CLEAR;
+  const y2 = seatBox.y2 + SEAT_CLEAR;
+  for (const other of ctx.scene.edges) {
+    if (other.id === ownId || other.pts.length < 2) continue;
+    for (const seat of other.labels)
+      if (
+        seat.width &&
+        seat.height &&
+        x1 < seat.x + seat.width &&
+        seat.x < x2 &&
+        y1 < seat.y + seat.height &&
+        seat.y < y2
+      )
+        return true;
+    for (const run of ctx.runsFor(other, other.pts, false)) {
+      const rx1 = run.vertical ? run.at : run.lo;
+      const rx2 = run.vertical ? run.at : run.hi;
+      const ry1 = run.vertical ? run.lo : run.at;
+      const ry2 = run.vertical ? run.hi : run.at;
+      if (x1 < rx2 && rx1 < x2 && y1 < ry2 && ry1 < y2) return true;
+    }
+  }
+  return false;
+}
+
+/**
  * Does any run of `pts` offer this label a seat clear of boxes and titles?
  *
  * Mirrors `label-anchor`, which tries every run: testing only the longest let
  * the optimiser pick a route it believed seatable and landed 12 drawings on
  * `labelOffLine`. Allocation-free — this runs for every candidate of every edge.
  */
-function labelSeatable(blockers: Boxy[], pts: Point[], label: Label): boolean {
+function labelSeatable(ctx: Inspector, subj: Subject, label: Label): boolean {
+  const pts = subj.pts;
   const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+  // The longest run in the route. A riser only counts as a seat when it is the
+  // route's main line: the words hang `width/2` either side of it, so a 24px
+  // stub "holds" a 116px label the same way a 400px riser does, and `small`'s
+  // F04 took exactly that — the label swung off a corner stub and back across
+  // *External systems*' border.
+  let longest = 0;
+  for (let index = 0; index + 1 < pts.length; index++)
+    longest = Math.max(
+      longest,
+      Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y),
+    );
   for (let index = 0; index + 1 < pts.length; index++) {
     const p = pts[index];
     const q = pts[index + 1];
-    if (Math.abs(q.x - p.x) + Math.abs(q.y - p.y) < label.width) continue;
+    const dx = Math.abs(q.x - p.x);
+    const dy = Math.abs(q.y - p.y);
+    const vertical = dy > dx;
+    // The span a label needs *along* the run, which is its height on a vertical
+    // one: words lie across the line they name, not down it. `label-anchor` has
+    // always measured it this way (`hostSegment`); this asked for the width on
+    // both axes, so it called a riser unseatable whenever the label was wider
+    // than the riser was long — and `optimiseRoutes` then refused every route
+    // whose only seat was that riser. On `small-tall` that is the whole reason
+    // *Appointment confirmed* stayed on the scheduler's east face, cutting
+    // across *Open / block slots*: leaving southward was the obvious route and
+    // scored `unlabelled` for a 113px label on a 77px riser it fits across
+    // perfectly well. §3a — a gate and the pass it drives may not disagree.
+    if ((vertical ? dy : dx) < (vertical ? label.height : label.width)) continue;
+    if (vertical && dy < label.width && dy < longest) continue;
     const sx = (p.x + q.x) / 2 - label.width / 2;
     const sy = (p.y + q.y) / 2 - lead;
     const sx2 = sx + label.width;
     const sy2 = sy + label.height;
     let blocked = false;
-    for (const box of blockers)
+    for (const box of ctx.blockers)
       if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
         blocked = true;
         break;
       }
+    // A seat that reaches sideways off its own riser has to answer for what it
+    // reaches over — see `seatOverhangsFlow`.
+    if (!blocked && vertical && dy < label.width)
+      blocked = seatOverhangsFlow(ctx, subj.edge.id, { x1: sx, y1: sy, x2: sx2, y2: sy2 });
     if (!blocked) return true;
   }
   return false;
@@ -297,7 +373,7 @@ function labelSeatable(blockers: Boxy[], pts: Point[], label: Label): boolean {
 function scanLabelSeats(ctx: Inspector, subj: Subject, profile: Profile): void {
   for (const label of subj.edge.labels) {
     if (!label.width || !label.height) continue;
-    if (!labelSeatable(ctx.blockers, subj.pts, label)) profile.set(`unlabelled:${subj.edge.id}`, 1);
+    if (!labelSeatable(ctx, subj, label)) profile.set(`unlabelled:${subj.edge.id}`, 1);
   }
 }
 

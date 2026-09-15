@@ -96536,22 +96536,56 @@ function scanDestroyed(ctx, subj, profile) {
         profile.set(`title:${edge.id}~${band.x},${band.y}`, 0);
   }
 }
-function labelSeatable(blockers, pts, label) {
+var SEAT_CLEAR = 4;
+function seatOverhangsFlow(ctx, ownId, seatBox) {
+  const x1 = seatBox.x1 - SEAT_CLEAR;
+  const x2 = seatBox.x2 + SEAT_CLEAR;
+  const y1 = seatBox.y1 - SEAT_CLEAR;
+  const y2 = seatBox.y2 + SEAT_CLEAR;
+  for (const other of ctx.scene.edges) {
+    if (other.id === ownId || other.pts.length < 2) continue;
+    for (const seat of other.labels)
+      if (seat.width && seat.height && x1 < seat.x + seat.width && seat.x < x2 && y1 < seat.y + seat.height && seat.y < y2)
+        return true;
+    for (const run of ctx.runsFor(other, other.pts, false)) {
+      const rx1 = run.vertical ? run.at : run.lo;
+      const rx2 = run.vertical ? run.at : run.hi;
+      const ry1 = run.vertical ? run.lo : run.at;
+      const ry2 = run.vertical ? run.hi : run.at;
+      if (x1 < rx2 && rx1 < x2 && y1 < ry2 && ry1 < y2) return true;
+    }
+  }
+  return false;
+}
+function labelSeatable(ctx, subj, label) {
+  const pts = subj.pts;
   const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+  let longest = 0;
+  for (let index = 0; index + 1 < pts.length; index++)
+    longest = Math.max(
+      longest,
+      Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y)
+    );
   for (let index = 0; index + 1 < pts.length; index++) {
     const p = pts[index];
     const q = pts[index + 1];
-    if (Math.abs(q.x - p.x) + Math.abs(q.y - p.y) < label.width) continue;
+    const dx = Math.abs(q.x - p.x);
+    const dy = Math.abs(q.y - p.y);
+    const vertical = dy > dx;
+    if ((vertical ? dy : dx) < (vertical ? label.height : label.width)) continue;
+    if (vertical && dy < label.width && dy < longest) continue;
     const sx = (p.x + q.x) / 2 - label.width / 2;
     const sy = (p.y + q.y) / 2 - lead;
     const sx2 = sx + label.width;
     const sy2 = sy + label.height;
     let blocked = false;
-    for (const box of blockers)
+    for (const box of ctx.blockers)
       if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
         blocked = true;
         break;
       }
+    if (!blocked && vertical && dy < label.width)
+      blocked = seatOverhangsFlow(ctx, subj.edge.id, { x1: sx, y1: sy, x2: sx2, y2: sy2 });
     if (!blocked) return true;
   }
   return false;
@@ -96559,7 +96593,7 @@ function labelSeatable(blockers, pts, label) {
 function scanLabelSeats(ctx, subj, profile) {
   for (const label of subj.edge.labels) {
     if (!label.width || !label.height) continue;
-    if (!labelSeatable(ctx.blockers, subj.pts, label)) profile.set(`unlabelled:${subj.edge.id}`, 1);
+    if (!labelSeatable(ctx, subj, label)) profile.set(`unlabelled:${subj.edge.id}`, 1);
   }
 }
 function scanArrowRoom(subj, profile) {
@@ -99037,7 +99071,7 @@ function labelsSeated(edge) {
   });
 }
 var SEAT_GRID = [0, -18, 18];
-var SEAT_CLEAR = 14;
+var SEAT_CLEAR2 = 14;
 function createSeatModel(titleBoxes) {
   const blockedSpan = (node, side) => {
     const alongX = side === "north" || side === "south";
@@ -99061,7 +99095,7 @@ function createSeatModel(titleBoxes) {
     const span = blockedSpan(node, side);
     const alongX = side === "north" || side === "south";
     const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-    const made = span ? [...SEAT_GRID, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre] : SEAT_GRID;
+    const made = span ? [...SEAT_GRID, span[0] - SEAT_CLEAR2 - centre, span[1] + SEAT_CLEAR2 - centre] : SEAT_GRID;
     seatOffsetCache.set(key, made);
     return made;
   };

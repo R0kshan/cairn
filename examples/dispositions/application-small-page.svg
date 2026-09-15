@@ -31,7 +31,7 @@
 <text x="153" y="488.75" font-size="12.5" text-anchor="middle" fill="#17202c">(outsourced)</text>
 <path d="M 171 103 L 171 127 L 199 127 L 199 169" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 145 192.5 L 105 192.5 L 105 274.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 61 103 L 61 298 L 99 298" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 69 103 L 69 280.5 L 99 280.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 126 321.5 L 126 346 L 64 346 L 64 391" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 171 321.5 L 171 377 L 247 377" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 253 210 L 379 210 L 379 377 L 355 377" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>

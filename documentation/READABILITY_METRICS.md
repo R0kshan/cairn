@@ -496,6 +496,25 @@ run. So the pass records `repairedFrom` and `svg-render` audits afterwards,
 reverting the whole repair set if labels came out worse. All-or-nothing on
 purpose — making it per-edge produced `coincident` runs, a must-be-zero breach.
 
+Tier 1 is modelled by a single key, `unlabelled:<edge>` — "does this route leave
+each of its labels a seat?" — and that one key has to mean exactly what
+`label-anchor` will do later, or the router refuses routes the settler would have
+handled. It measures the span a label needs **along** the run: its width on a
+horizontal one, its **height** on a riser, since words lie across the line they
+name rather than down it (`hostSegment` has always measured it that way). Getting
+that wrong called a riser unseatable whenever the label was wider than the riser
+was long, and `small/tall`'s *Appointment confirmed* stayed on the scheduler's
+east face cutting across *Open / block slots* for exactly that reason — the
+untangled route scored `unlabelled` for a 113px label on a 77px riser.
+
+A seat on a riser hangs half the label's width off each side, so two conditions
+come with it. The riser must be the route's **longest** run: a 24px corner stub
+"holds" a 116px label on the same arithmetic as a 400px riser, and `small`'s F04
+took that seat and swung its words back across *External systems*' border. And
+the overhang may not come down on another flow's words or lines (`SEAT_CLEAR`),
+which the width test used to prevent by accident — without it eight labels landed
+on a foreign run, `labelPierced`, a must-be-zero.
+
 A second thing it cannot see: `readability.ts` carries **no straddle predicate at
 all** (`labelStraddled` lives in `sweep.ts` and `label-anchor.ts` only), so a
 corridor laid along another flow's words scores as free. Adding the predicate to
