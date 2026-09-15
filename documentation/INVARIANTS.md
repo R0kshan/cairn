@@ -928,6 +928,19 @@ down. `shiftIntoCanvas` slides the whole scene back instead, the same answer
 `route-detour` gives a top channel: clamping the element would negotiate the
 hint (§17), so the canvas moves and the delta stands (§18).
 
+That pass answers the other direction too, and for every diagram rather than only
+the hinted ones: a layout whose leftmost element ends up *inset* keeps the strip
+beside it for ever, since nothing else ever pulls a drawing back. It is seated at
+the margin instead. Both directions are one translation, which is the only move
+that cannot cost a defect — every node, run and label keeps its position relative
+to every other, so no ladder tier can change — and it is also the only one that
+leaves a delta meaning what it meant: the offsets are applied first and the shift
+carries what they produced along with everything else, so the same source renders
+the same picture and an offset written back after a drag stays valid. `layout()`
+therefore ends `applyAuthorPositioning` → `shiftIntoCanvas` → `fitCanvas`:
+seating the drawing means nothing until everything that moves it has moved it,
+and the canvas is measured around it afterwards rather than before.
+
 **A `label-offset:` moves the label and nothing else.** It is applied at the end
 of `anchorFlowLabels`, so every re-anchor re-applies it and the renderer's
 settling cannot quietly drop it — the settler skips an offset label outright.

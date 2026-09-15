@@ -1812,6 +1812,50 @@ test("two flows leaving one node side nest instead of crossing", async () => {
       );
 });
 
+/**
+ * The drawing is seated against the left margin, whichever way it has drifted.
+ *
+ * `fitCanvas` only ever grows the canvas right and down, so nothing ever pulled
+ * a drawing *back*: a layout whose leftmost element ended up inset kept the
+ * strip beside it, and an author who dragged that element inward was left with
+ * the space it vacated. 109 of the 352 swept drawings carried one, the largest
+ * 647px.
+ *
+ * A translation, so it cannot cost a defect — and for the same reason it leaves
+ * an author's `offset:` meaning what it meant, which is what makes a
+ * written-back offset safe to paste (§17).
+ */
+test("a drawing is seated at the left margin, and stays put when re-rendered", async () => {
+  const leftOf = (scene: Scene) => {
+    let minX = Number.POSITIVE_INFINITY;
+    for (const node of scene.nodes) minX = Math.min(minX, node.x);
+    for (const edge of scene.edges) {
+      for (const point of edge.pts) minX = Math.min(minX, point.x);
+      for (const label of edge.labels) if (label.width) minX = Math.min(minX, label.x);
+    }
+    return minX;
+  };
+
+  // `page` drifts these three inward by 152.5px, 37.5px and 106px respectively —
+  // a strip beside the drawing that nothing ever pulled back, because `fitCanvas`
+  // only grows right and down.
+  for (const name of ["large.cairn", "application-medium.cairn", "medium.cairn"]) {
+    const source = load(name).replace('"\n', '"\nstyle { disposition: page }\n');
+    const { scene, svg } = await build(source);
+    assert.ok(
+      leftOf(scene) <= 10.01,
+      `${name}: drawing must be seated at the margin, not ${leftOf(scene).toFixed(1)}px in`,
+    );
+    // Never past it either: the same shift answers geometry an offset pushed off
+    // the left of the canvas, which the viewBox would clip.
+    assert.ok(leftOf(scene) >= 3.9, `${name}: nothing may be drawn left of the canvas`);
+    // Deterministic, which is what makes an offset written back after a drag safe
+    // to paste: the shift is a function of the layout, not of what came before.
+    const again = await build(source);
+    assert.equal(again.svg, svg, `${name}: the same source must render identically`);
+  }
+});
+
 test("font-size scales the text and is measured into the layout", async () => {
   const base =
     'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "Node label" }\nA -> B : "flow"\n';

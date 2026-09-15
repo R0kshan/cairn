@@ -100862,9 +100862,10 @@ function applySegmentOffsets(scene, model) {
   if (clamped.length || stale.length) scene.segmentHints = { clamped, stale };
   return moved;
 }
+var LEFT_MARGIN = 10;
 function shiftIntoCanvas(scene) {
   const MARGIN = 4;
-  let minX = MARGIN;
+  let minX = Infinity;
   let minY = MARGIN;
   for (const node of scene.nodes) {
     minX = Math.min(minX, node.x);
@@ -100880,7 +100881,7 @@ function shiftIntoCanvas(scene) {
       minY = Math.min(minY, label.y);
     }
   }
-  const shiftX = minX < MARGIN ? MARGIN - minX : 0;
+  const shiftX = minX < MARGIN ? MARGIN - minX : minX > LEFT_MARGIN ? LEFT_MARGIN - minX : 0;
   const shiftY = minY < MARGIN ? MARGIN - minY : 0;
   if (!shiftX && !shiftY) return;
   for (const node of scene.nodes) {
@@ -101398,6 +101399,8 @@ function markDeclaredTerminals(edges, model, view, hubPorts) {
 async function layout(model, view) {
   const scene = await chooseLayout(model, view);
   applyAuthorPositioning(scene, model);
+  shiftIntoCanvas(scene);
+  fitCanvas(scene);
   return scene;
 }
 var pathLength2 = (pts) => pts.reduce(
@@ -101441,7 +101444,6 @@ function applyAuthorPositioning(scene, model) {
   const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
   if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
   anchorFlowLabels(scene, titleBoxesOf(scene, model));
-  shiftIntoCanvas(scene);
   fitCanvas(scene);
 }
 async function chooseLayout(model, view) {

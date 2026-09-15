@@ -2024,20 +2024,40 @@ function applySegmentOffsets(scene: Scene, model: Model): number {
   return moved;
 }
 
+/** Where the drawing's left edge is seated when it has drifted inward. */
+const LEFT_MARGIN = 10;
+
 /**
- * Slides the whole scene back to positive coordinates.
+ * Seats the drawing against the left margin, in whichever direction it has
+ * drifted.
  *
- * `fitCanvas` only ever grows the canvas right and down, so geometry an offset
- * pushed left of x=0 or above y=0 would be drawn outside it (§18). Shifting
- * everything is what `route-detour` already does for a top channel, and it is
- * the only answer that keeps the author's delta intact: clamping the element
- * would negotiate the hint (§17).
+ * Two jobs, one translation. **Left of the canvas**: `fitCanvas` only ever grows
+ * right and down, so geometry pushed past x=0 or y=0 is drawn outside the
+ * viewBox and clipped (§18) — five corpus drawings sit at a negative `minX`
+ * today. **Right of the margin**: nothing ever pulled a drawing *back*, so a
+ * layout whose leftmost element ends up inset keeps the strip beside it for
+ * ever. 109 of the 352 swept drawings carry one, `logical-helios-fr` at 647px of
+ * it, and on `infrastructure-focus-communication` it is the band under the
+ * `Gare` site that a reader sees as unfinished.
  *
- * Runs only where an offset exists, so an offset-free diagram never moves.
+ * A translation is the one move that cannot cost anything: every node, run and
+ * label keeps its position relative to every other, so no defect on the ladder
+ * can change — and the bands below are drawn from the canvas, so they follow the
+ * new left edge and the legend lines up with the drawing.
+ *
+ * It is also the one move that leaves an author's `offset:` meaning exactly what
+ * it meant. The deltas are applied before this (§17), and this shifts what they
+ * produced along with everything else, so a dragged element lands the same
+ * distance from its neighbours however far the drawing moves. Re-rendering the
+ * same source therefore gives the same picture, which is what makes a written-back
+ * offset safe to paste.
+ *
+ * Runs for every diagram, not only those carrying a hint: the inward drift is
+ * the router's, not the author's.
  */
 function shiftIntoCanvas(scene: Scene): void {
   const MARGIN = 4;
-  let minX = MARGIN;
+  let minX = Infinity;
   let minY = MARGIN;
   for (const node of scene.nodes) {
     minX = Math.min(minX, node.x);
@@ -2053,7 +2073,10 @@ function shiftIntoCanvas(scene: Scene): void {
       minY = Math.min(minY, label.y);
     }
   }
-  const shiftX = minX < MARGIN ? MARGIN - minX : 0;
+  // Left of the canvas, or inset past the margin. The band between the two is
+  // left alone, so the 234 drawings already seated at 4-10px never move.
+  const shiftX =
+    minX < MARGIN ? MARGIN - minX : minX > LEFT_MARGIN ? LEFT_MARGIN - minX : 0;
   const shiftY = minY < MARGIN ? MARGIN - minY : 0;
   if (!shiftX && !shiftY) return;
   for (const node of scene.nodes) {
@@ -3083,6 +3106,12 @@ function markDeclaredTerminals(
 export async function layout(model: Model, view: View): Promise<Scene> {
   const scene = await chooseLayout(model, view);
   applyAuthorPositioning(scene, model);
+  // The last pass that moves anything, and after the hints: a translation cannot
+  // change what any pass above decided, and seating the drawing at the margin
+  // only means anything once everything that moves it has moved it. `fitCanvas`
+  // then measures the canvas around where things ended up.
+  shiftIntoCanvas(scene);
+  fitCanvas(scene);
   return scene;
 }
 
@@ -3203,7 +3232,6 @@ function applyAuthorPositioning(scene: Scene, model: Model): void {
   // without them, so this is where a nudged label lands and where a label whose
   // flow moved catches up with it.
   anchorFlowLabels(scene, titleBoxesOf(scene, model));
-  shiftIntoCanvas(scene);
   fitCanvas(scene);
 }
 
