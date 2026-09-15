@@ -1856,6 +1856,56 @@ test("a drawing is seated at the left margin, and stays put when re-rendered", a
   }
 });
 
+test("a stranded flow is offered a corridor clear of the drawing", async () => {
+  // `Run a study` leaves the research analyst eastward and arrives at the
+  // statistical report from the north. Every L and Z between those two faces
+  // either strikes a container's name or hugs the boxes under it, so the router
+  // had nothing to offer and the flow stayed on the corridor elk drew: 3px above
+  // *Cohort building* and *Health-data anonymisation*, crossing *Share a report*
+  // twice and running near-parallel to it — five tier-2 defects at once.
+  //
+  // `approachLanes` builds the way out and was reachable only by a pinned flow.
+  // It is now reachable by any flow the ordinary side matrix has failed, and has
+  // to clear three of those defects to be worth its turns.
+  const { scene, model } = await build(load("logical-security.cairn"));
+  const study = scene.edges.find((edge) => edge.id === "F20")!;
+  const secondary = scene.nodes.find((node) => node.id === "SECONDARY")!;
+  const stats = scene.nodes.find((node) => node.id === "STATS")!;
+
+  // Over the top of the layer that holds its target, not through the gap inside.
+  const corridor = Math.min(...study.pts.map((point) => point.y));
+  assert.ok(
+    corridor < secondary.y,
+    `F20 must pass above Secondary use (corridor y=${corridor}, layer top ${secondary.y})`,
+  );
+  // And down into the report's own top face.
+  const last = study.pts[study.pts.length - 1];
+  assert.ok(
+    Math.abs(last.y - stats.y) <= 2 && last.x > stats.x && last.x < stats.x + stats.width,
+    `F20 must arrive at STATS' north face (${last.x},${last.y})`,
+  );
+
+  // Nothing left of the clutter it was carrying: no crossing with `Share a
+  // report`, and no run skimming the two boxes it used to graze.
+  const report = scene.edges.find((edge) => edge.id === "F10")!;
+  for (let i = 0; i + 1 < study.pts.length; i++)
+    for (let j = 0; j + 1 < report.pts.length; j++)
+      assert.equal(
+        segmentsCross(study.pts[i], study.pts[i + 1], report.pts[j], report.pts[j + 1]),
+        null,
+        "F20 and F10 must not cross",
+      );
+  for (const id of ["COHORT", "ANON"]) {
+    const box = scene.nodes.find((node) => node.id === id)!;
+    for (const point of study.pts)
+      assert.ok(
+        point.y < box.y - 8 || point.y > box.y + box.height + 8 || point.x < box.x || point.x > box.x + box.width,
+        `F20 must not skim ${id}`,
+      );
+  }
+  assert.ok(model.flows.some((flow) => flow.id === "F20"), "fixture: F20 is `Run a study`");
+});
+
 test("font-size scales the text and is measured into the layout", async () => {
   const base =
     'diagram logical "t"\nSTYLE\nactor-group G "g" { actor A "a" }\nsystem S "s" { block B "Node label" }\nA -> B : "flow"\n';

@@ -57,11 +57,11 @@ infrastructure-security-edge.cairn  dim:1933x196 n:15 e:9 ov:0  geom:8f5d3f70bc6
 infrastructure-small.cairn  dim:855x213 n:9 e:3 ov:0  geom:17fe0af170a9 color:71b3433f89b9 text:982de79fa16d
 infrastructure.cairn  dim:1385x486 n:20 e:13 ov:0  geom:b64a83c89ac2 color:53331a267dfe text:437985db84ae
 large-fr.cairn  dim:3995x1386 n:47 e:42 ov:0  geom:a4401e1bfbbd color:59a033bd004f text:e9f7720010f7
-large-numbered.cairn  dim:2948x838 n:47 e:42 ov:0  geom:deba909da948 color:ec1973797263 text:4f40f40b947e
+large-numbered.cairn  dim:2820x1032 n:47 e:42 ov:0  geom:527ada451342 color:ec1973797263 text:4f40f40b947e
 large.cairn  dim:3542x1203 n:47 e:42 ov:0  geom:95d232e00d63 color:59a033bd004f text:160ff12476e5
 logical-archi.cairn  dim:1638x788 n:26 e:17 ov:0  geom:38b59152f9f3 color:7fbd814cd857 text:c3d520475ecf
 logical-fr.cairn  dim:2149x548 n:23 e:19 ov:0  geom:71769325606c color:d962b7ddc1c3 text:dc87bf6a31bb
-logical-security.cairn  dim:1971x578 n:25 e:21 ov:0  geom:7cb888b52993 color:23d684b4e51d text:4077c8715eda
+logical-security.cairn  dim:1971x578 n:25 e:21 ov:0  geom:99a183ab1d9f color:23d684b4e51d text:4077c8715eda
 logical.cairn  dim:2112x548 n:23 e:19 ov:0  geom:2a15896abf73 color:d962b7ddc1c3 text:68e487464509
 medium.cairn  dim:2200x584 n:24 e:20 ov:0  geom:fd8a69adb487 color:2ed23f4211da text:8cc2b6297057
 placement/baseline.cairn  dim:972x276 n:14 e:6 ov:0  geom:6ff713429b0a color:4d06ef3531ab text:fa3340e6308b

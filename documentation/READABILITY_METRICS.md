@@ -489,6 +489,20 @@ oppose, and the U shapes `channelU` derives when they face the same way — lane
 cleared of the runs already in the drawing (§4j), so this branch produces
 candidates rather than none.
 
+The perpendicular pair is the thin one: its single L turns at one seat's own
+coordinate, and where that line is blocked the matrix has nothing else to offer.
+A flow can therefore be **stranded** — every side pair, every seat offset, and
+not one shape the ladder will take — and then it keeps whatever the layout engine
+drew, however much clutter that carries. `approachLanes` is the way out: step
+clear of the source, cross in a lane past the target's open side, come in. It is
+generated only for a stranded flow (and for a pinned one, which cannot change
+side pair at all), because the ladder is the wrong bar for judging it — a
+four-turn corridor is tier 3 and a hug or crossing tier 2, so the ladder takes
+that trade every time, and offered on those terms it put `attachAway` and
+`turnHeavy` through their ceilings across 66 drawings. Two conditions come with
+it, both measured: it must clear **three** tier-2-or-worse defects, and it may
+not seat a terminal on the face looking away from its counterpart.
+
 Ordering is fewest-turns-then-shortest, but that ranking only decides what to
 *try* first. **The best accepted candidate wins, not the first**
 (`bestSingleRoute`): every candidate is weighed, and `lessDamaged` keeps the one

@@ -99142,6 +99142,7 @@ function labelsSeated(edge) {
     return best <= SLACK_SQ;
   });
 }
+var ESCAPE_CLEARS = 3;
 var SEAT_GRID = [0, -18, 18];
 var SEAT_CLEAR2 = 14;
 function createSeatModel(titleBoxes) {
@@ -99254,10 +99255,10 @@ function createLadderModel(deps) {
     }
   };
 }
-function bestSingleRoute(o, edge) {
+function bestSingleRoute(o, edge, stranded = false) {
   let bestRoute = null;
   let bestDamage = null;
-  for (const pts of o.routesFor(edge)) {
+  for (const pts of o.routesFor(edge, stranded)) {
     const verdict = o.weigh([edge], /* @__PURE__ */ new Map([[edge.id, pts]]));
     if (!verdict) continue;
     if (!bestDamage || o.lessDamaged(verdict.damage, bestDamage)) {
@@ -99291,6 +99292,17 @@ function repairEdge(o, edge) {
   if (o.profileNow(ids).size === 0) return false;
   const best = bestSingleRoute(o, edge);
   if (best && o.tryMove([edge], /* @__PURE__ */ new Map([[edge.id, best]]))) return true;
+  const clutter = (profile) => [...profile.values()].filter((tier) => tier <= 2).length;
+  const before = o.profileNow(ids);
+  const had = clutter(before);
+  if (had >= ESCAPE_CLEARS) {
+    const wayOut = bestSingleRoute(o, edge, true);
+    const verdict = wayOut && o.weigh([edge], /* @__PURE__ */ new Map([[edge.id, wayOut]]));
+    const turnsAway = verdict && [...verdict.after.keys()].some((key) => key.startsWith("away:") && !before.has(key));
+    if (wayOut && verdict && !turnsAway && clutter(verdict.after) <= had - ESCAPE_CLEARS) {
+      if (o.tryMove([edge], /* @__PURE__ */ new Map([[edge.id, wayOut]]))) return true;
+    }
+  }
   return tryJointMove(o, edge, ids);
 }
 function repairToFixpoint(o) {
@@ -99447,7 +99459,8 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false, only) {
       const bH = horizontalSide(sides.b);
       if (aH !== bH) {
         const plainL = [a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b];
-        return [plainL, ...approachLanes(a, b, sides, subject)];
+        const offerLanes = subject.edge.pinned || subject.stranded;
+        return offerLanes ? [plainL, ...approachLanes(a, b, sides, subject)] : [plainL];
       }
       if (outward(sides.a) === outward(sides.b)) return channelU(a, b, sides.a, subject);
       if (aH)
@@ -99463,7 +99476,6 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false, only) {
       ].map((mid) => [a, { x: a.x, y: mid }, { x: b.x, y: mid }, b]);
     };
     const approachLanes = (a, b, sides, subject) => {
-      if (!subject.edge.pinned) return [];
       const aH = horizontalSide(sides.a);
       const bH = horizontalSide(sides.b);
       const beforeA = sides.a === "west" || sides.a === "north";
@@ -99497,38 +99509,42 @@ function optimiseRoutes(scene, titleBoxes = [], folded = false, only) {
       );
     };
     const routeCache = /* @__PURE__ */ new Map();
-    const routesFor = (edge) => {
-      const cacheKey = `${clock.generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
+    const routesFor = (edge, stranded = false) => {
+      const cacheKey = `${clock.generation}|${edge.id}|${stranded}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
       const cached = routeCache.get(cacheKey);
       if (cached) return cached;
       const ends = inspector.endsOf(edge.pts);
-      if (!ends[0] || !ends[1] || ends[0].node === ends[1].node) return [];
-      const subject = { ends, edge };
+      const [fromEnd, toEnd] = ends;
+      if (!fromEnd || !toEnd || fromEnd.node === toEnd.node) return [];
+      const subject = { ends, edge, stranded };
       const out = [];
       const seen = /* @__PURE__ */ new Set();
-      const aSides = sideFixed(edge, "start") ? [ends[0].side] : SIDES;
-      const bSides = sideFixed(edge, "end") ? [ends[1].side] : SIDES;
-      for (const aSide of aSides)
-        for (const bSide of bSides) {
-          const sides = { a: aSide, b: bSide };
-          for (const aOff of seatOffsetsFor(ends[0].node, aSide))
-            for (const bOff of seatOffsetsFor(ends[1].node, bSide))
-              for (const raw of shapesFor(
-                seatOn(ends[0].node, aSide, aOff),
-                seatOn(ends[1].node, bSide, bOff),
-                sides,
-                subject
-              )) {
-                const pts = raw.filter(
-                  (p, index) => index === 0 || Math.abs(p.x - raw[index - 1].x) >= ORTHOGONAL_EPSILON || Math.abs(p.y - raw[index - 1].y) >= ORTHOGONAL_EPSILON
-                );
-                if (pts.length < 2) continue;
-                const key = pts.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
-                if (seen.has(key)) continue;
-                seen.add(key);
-                out.push(pts);
-              }
-        }
+      const aSides = sideFixed(edge, "start") ? [fromEnd.side] : SIDES;
+      const bSides = sideFixed(edge, "end") ? [toEnd.side] : SIDES;
+      const sweepSides = () => {
+        for (const aSide of aSides)
+          for (const bSide of bSides) {
+            const sides = { a: aSide, b: bSide };
+            for (const aOff of seatOffsetsFor(fromEnd.node, aSide))
+              for (const bOff of seatOffsetsFor(toEnd.node, bSide))
+                for (const raw of shapesFor(
+                  seatOn(fromEnd.node, aSide, aOff),
+                  seatOn(toEnd.node, bSide, bOff),
+                  sides,
+                  subject
+                )) {
+                  const pts = raw.filter(
+                    (p, index) => index === 0 || Math.abs(p.x - raw[index - 1].x) >= ORTHOGONAL_EPSILON || Math.abs(p.y - raw[index - 1].y) >= ORTHOGONAL_EPSILON
+                  );
+                  if (pts.length < 2) continue;
+                  const key = pts.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+                  if (seen.has(key)) continue;
+                  seen.add(key);
+                  out.push(pts);
+                }
+          }
+      };
+      sweepSides();
       const squared = out.map((pts) => {
         const probe = { ...edge, pts: pts.map((p) => ({ ...p })) };
         enforceOrthogonal(probe);
