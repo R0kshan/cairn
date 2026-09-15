@@ -3106,9 +3106,10 @@ function markDeclaredTerminals(
 export async function layout(model: Model, view: View): Promise<Scene> {
   const scene = await chooseLayout(model, view);
   applyAuthorPositioning(scene, model);
-  // Last, and after the hints: a translation cannot change what any pass above
-  // decided, and seating the drawing at the margin only means anything once
-  // everything that moves it has moved it.
+  // The last pass that moves anything, and after the hints: a translation cannot
+  // change what any pass above decided, and seating the drawing at the margin
+  // only means anything once everything that moves it has moved it. `fitCanvas`
+  // then measures the canvas around where things ended up.
   shiftIntoCanvas(scene);
   fitCanvas(scene);
   return scene;
