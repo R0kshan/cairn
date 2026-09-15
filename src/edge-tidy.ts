@@ -2092,7 +2092,14 @@ function swapAddsCrossings(
   return false;
 }
 
-/** Maximal straight runs of a polyline — `{vertical, at, lo, hi}` each. */
+/**
+ * Maximal straight runs of a polyline — `{vertical, at, lo, hi}` each.
+ *
+ * *Maximal*: a route may carry a point in the middle of a straight line (a lane
+ * allocator's mid-point, a seat moved back onto its own run), and 134 corpus
+ * flows do. Emitting those as two runs would let a span test see half the line
+ * it should — `routesMerge`'s 8px overlap and §4j's label band both measure one.
+ */
 function straightRunsOf(pts: Point[]): { vertical: boolean; at: number; lo: number; hi: number }[] {
   const out: { vertical: boolean; at: number; lo: number; hi: number }[] = [];
   for (let i = 0; i + 1 < pts.length; i++) {
@@ -2100,12 +2107,16 @@ function straightRunsOf(pts: Point[]): { vertical: boolean; at: number; lo: numb
     const b = pts[i + 1];
     const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
     if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) continue;
-    out.push({
-      vertical,
-      at: vertical ? a.x : a.y,
-      lo: vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x),
-      hi: vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x),
-    });
+    const at = vertical ? a.x : a.y;
+    const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    const last = out[out.length - 1];
+    if (last && last.vertical === vertical && Math.abs(last.at - at) < ORTHOGONAL_EPSILON) {
+      last.lo = Math.min(last.lo, lo);
+      last.hi = Math.max(last.hi, hi);
+      continue;
+    }
+    out.push({ vertical, at, lo, hi });
   }
   return out;
 }
@@ -2134,11 +2145,12 @@ function labelAxisVertical(edge: SceneEdge, label: SceneLabel): boolean | null {
  * worse — the flow stayed where it was and the drawing kept the crossing the
  * move existed to clear.
  */
-function routeStraddlesLabels(pts: Point[], scene: Scene, ownId: string): boolean {
+function straddledLabels(pts: Point[], scene: Scene, skip: ReadonlySet<string>): Set<string> {
+  const hit = new Set<string>();
   const runs = straightRunsOf(pts);
   for (const other of scene.edges) {
-    if (other.id === ownId || other.pts.length < 2) continue;
-    for (const label of other.labels) {
+    if (skip.has(other.id) || other.pts.length < 2) continue;
+    for (const [index, label] of other.labels.entries()) {
       if (!label.width || !label.height) continue;
       const vertical = labelAxisVertical(other, label);
       if (vertical === null) continue;
@@ -2150,11 +2162,17 @@ function routeStraddlesLabels(pts: Point[], scene: Scene, ownId: string): boolea
         if (run.vertical !== vertical) continue;
         if (run.at <= lo + 1 || run.at >= hi - 1) continue;
         if (run.hi <= acrossLo || run.lo >= acrossHi) continue;
-        return true;
+        hit.add(`${other.id}#${index}`);
+        break;
       }
     }
   }
-  return false;
+  return hit;
+}
+
+/** Does this route lay a run under *any* of another flow's words? */
+function routeStraddlesLabels(pts: Point[], scene: Scene, ownId: string): boolean {
+  return straddledLabels(pts, scene, new Set([ownId])).size > 0;
 }
 
 
@@ -2279,13 +2297,32 @@ function applySwap(
   // moved lane: charging the plain seat swap for it as well refused swaps that
   // have been clearing crossings all along, and cost the corpus 0.602 of them
   // per 1000 flows.
-  const straddled = (pts: Point[], id: string) => routeStraddlesLabels(pts, scene, id);
-  if (
-    swap.moved &&
-    ((!straddled(A.pts, A.id) && straddled(aCandidate, A.id)) ||
-      (!straddled(B.pts, B.id) && straddled(bCandidate, B.id)))
-  )
+  //
+  // By identity, not by presence: a route already straddling one label may not
+  // pick up a second, and a bare "does it straddle anything" test reads both
+  // states as `true` and waves that through. The set may only shrink.
+  //
+  // How many, plus the identities of the labels that are *not* moving. The
+  // count is the part that holds: this runs before the final anchor, so the two
+  // swapped flows' own labels are about to be re-seated onto whatever route they
+  // end up with and where they sit now says little. On `small/tall` the pair
+  // lands briefly on each other's words and the settler lifts them straight off
+  // — one straddle traded for one, which the drawing then has neither of. On
+  // `logical-archi` the same shape grows the count 0 -> 1, and the four
+  // straddles that swap leaves behind are real.
+  const swapped = new Set([A.id, B.id]);
+  const gained = (pts: Point[], edge: SceneEdge) => {
+    const own = new Set([edge.id]);
+    if (straddledLabels(pts, scene, own).size > straddledLabels(edge.pts, scene, own).size)
+      return true;
+    // And a stranger's words may not be exchanged for another stranger's: those
+    // labels are not the ones this swap re-seats, so their identities mean
+    // exactly what they say.
+    const was = straddledLabels(edge.pts, scene, swapped);
+    for (const key of straddledLabels(pts, scene, swapped)) if (!was.has(key)) return true;
     return false;
+  };
+  if (swap.moved && (gained(aCandidate, A) || gained(bCandidate, B))) return false;
   const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
   const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
   if (!aNewSeat || !bNewSeat) return false;

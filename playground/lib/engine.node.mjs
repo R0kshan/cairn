@@ -97960,12 +97960,16 @@ function straightRunsOf(pts) {
     const b = pts[i + 1];
     const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
     if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) continue;
-    out.push({
-      vertical,
-      at: vertical ? a.x : a.y,
-      lo: vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x),
-      hi: vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x)
-    });
+    const at = vertical ? a.x : a.y;
+    const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    const last = out[out.length - 1];
+    if (last && last.vertical === vertical && Math.abs(last.at - at) < ORTHOGONAL_EPSILON) {
+      last.lo = Math.min(last.lo, lo);
+      last.hi = Math.max(last.hi, hi);
+      continue;
+    }
+    out.push({ vertical, at, lo, hi });
   }
   return out;
 }
@@ -97979,11 +97983,12 @@ function labelAxisVertical(edge, label) {
   }
   return best?.vertical ?? null;
 }
-function routeStraddlesLabels(pts, scene, ownId) {
+function straddledLabels(pts, scene, skip) {
+  const hit = /* @__PURE__ */ new Set();
   const runs = straightRunsOf(pts);
   for (const other of scene.edges) {
-    if (other.id === ownId || other.pts.length < 2) continue;
-    for (const label of other.labels) {
+    if (skip.has(other.id) || other.pts.length < 2) continue;
+    for (const [index, label] of other.labels.entries()) {
       if (!label.width || !label.height) continue;
       const vertical = labelAxisVertical(other, label);
       if (vertical === null) continue;
@@ -97995,11 +98000,15 @@ function routeStraddlesLabels(pts, scene, ownId) {
         if (run.vertical !== vertical) continue;
         if (run.at <= lo + 1 || run.at >= hi - 1) continue;
         if (run.hi <= acrossLo || run.lo >= acrossHi) continue;
-        return true;
+        hit.add(`${other.id}#${index}`);
+        break;
       }
     }
   }
-  return false;
+  return hit;
+}
+function routeStraddlesLabels(pts, scene, ownId) {
+  return straddledLabels(pts, scene, /* @__PURE__ */ new Set([ownId])).size > 0;
 }
 function routesMerge(one, two) {
   return straightRunsOf(one).some(
@@ -98065,9 +98074,16 @@ function applySwap(scene, pair2, swap, leaves) {
     if (swapAddsCrossings(scene, pair2, { a: aCandidate, b: bCandidate })) return false;
     if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return false;
     if (swapMerges(scene, pair2, { a: aCandidate, b: bCandidate })) return false;
-    const straddled = (pts, id) => routeStraddlesLabels(pts, scene, id);
-    if (swap.moved && (!straddled(A.pts, A.id) && straddled(aCandidate, A.id) || !straddled(B.pts, B.id) && straddled(bCandidate, B.id)))
+    const swapped = /* @__PURE__ */ new Set([A.id, B.id]);
+    const gained = (pts, edge) => {
+      const own = /* @__PURE__ */ new Set([edge.id]);
+      if (straddledLabels(pts, scene, own).size > straddledLabels(edge.pts, scene, own).size)
+        return true;
+      const was = straddledLabels(edge.pts, scene, swapped);
+      for (const key of straddledLabels(pts, scene, swapped)) if (!was.has(key)) return true;
       return false;
+    };
+    if (swap.moved && (gained(aCandidate, A) || gained(bCandidate, B))) return false;
     const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
     const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
     if (!aNewSeat || !bNewSeat) return false;
@@ -101702,10 +101718,14 @@ function auditRouteRepairs(deps) {
   };
   const soloProfile = () => inspect(scene, titles).local(new Set(scene.edges.map((edge) => edge.id)), /* @__PURE__ */ new Map(), true);
   const crossHarm = () => {
+    const rank = /* @__PURE__ */ new Map();
+    for (const [index, edge] of [...repaired].entries()) rank.set(edge, index);
     let count = 0;
     for (const edge of repaired)
       for (const other of scene.edges) {
         if (other === edge) continue;
+        const mine = rank.get(other);
+        if (mine !== void 0 && mine < rank.get(edge)) continue;
         for (let i = 0; i + 1 < edge.pts.length; i++)
           for (let j = 0; j + 1 < other.pts.length; j++)
             if (segmentsCross(edge.pts[i], edge.pts[i + 1], other.pts[j], other.pts[j + 1]))

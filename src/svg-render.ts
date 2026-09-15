@@ -233,10 +233,18 @@ function auditRouteRepairs(deps: {
    * comment above rules out.
    */
   const crossHarm = (): number => {
+    // Rank, so a pair of *repaired* edges — visited once from each side — is
+    // counted once, the way the pairwise scorers key on an unordered pair. Left
+    // double, such a crossing outweighs a repaired-to-fixed one two to one, and
+    // `lessDamaged` compares those counts.
+    const rank = new Map<SceneEdge, number>();
+    for (const [index, edge] of [...repaired].entries()) rank.set(edge, index);
     let count = 0;
     for (const edge of repaired)
       for (const other of scene.edges) {
         if (other === edge) continue;
+        const mine = rank.get(other);
+        if (mine !== undefined && mine < rank.get(edge)!) continue;
         for (let i = 0; i + 1 < edge.pts.length; i++)
           for (let j = 0; j + 1 < other.pts.length; j++)
             if (segmentsCross(edge.pts[i], edge.pts[i + 1], other.pts[j], other.pts[j + 1]))
