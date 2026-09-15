@@ -1733,9 +1733,10 @@ test("a route is not refused for a riser its label fits across", async () => {
   const openBlock = scene.edges.find((e) => e.id === "F05")!;
 
   // Out of the bottom face, and the label seated on that riser.
+  // Within the 1px of border air `airOutContainers` leaves an arrowhead.
   assert.ok(
-    Math.abs(confirmed.pts[0].y - (scheduler.y + scheduler.height)) < 1,
-    `F03 must leave SCHEDULER's bottom (y=${confirmed.pts[0].y})`,
+    Math.abs(confirmed.pts[0].y - (scheduler.y + scheduler.height)) <= 2,
+    `F03 must leave SCHEDULER's bottom (y=${confirmed.pts[0].y}, bottom ${scheduler.y + scheduler.height})`,
   );
   const label = confirmed.labels[0];
   assert.ok(label && label.width > 0, "F03 must carry a label");
@@ -1752,6 +1753,62 @@ test("a route is not refused for a riser its label fits across", async () => {
         segmentsCross(confirmed.pts[i], confirmed.pts[i + 1], openBlock.pts[j], openBlock.pts[j + 1]),
         null,
         "F03 and F05 must not cross",
+      );
+});
+
+/**
+ * Two flows on one node side, running out to parallel lanes, must nest.
+ *
+ * `swapCrossingSiblingSeats` has always answered the crossing two such flows
+ * make close to the node, by exchanging their seats. Where they then descend in
+ * *parallel lanes*, though, the seat is only half the order: exchanging it alone
+ * leaves the lanes inverted and the crossing exactly where it was, which is why
+ * the pass declined on `small/tall`. *Search a slot and book* left the patient's
+ * west face above *Appointment confirmation* and then descended **outside** it,
+ * so it had to cut through that flow's riser 200px down the page.
+ *
+ * The lane now travels with the seat: the upper seat takes the outer lane and
+ * the lower one the inner, and the two no longer meet.
+ */
+test("two flows leaving one node side nest instead of crossing", async () => {
+  const { scene } = await build(
+    load("small.cairn").replace('"\n', '"\nstyle { disposition: tall }\n'),
+  );
+  const patient = scene.nodes.find((n) => n.id === "PATIENT")!;
+  const search = scene.edges.find((e) => e.id === "F01")!;
+  const confirmation = scene.edges.find((e) => e.id === "F06")!;
+
+  // Both still on the patient's west face — this is about order, not sides.
+  const searchSeat = search.pts[0];
+  const confirmSeat = confirmation.pts[confirmation.pts.length - 1];
+  for (const [seat, id] of [
+    [searchSeat, "F01"],
+    [confirmSeat, "F06"],
+  ] as const)
+    assert.ok(Math.abs(seat.x - patient.x) <= 2, `${id} must sit on PATIENT's west face (${seat.x})`);
+
+  // Seat order and lane order agree: whichever sits higher runs further out.
+  const searchLane = search.pts[1].x;
+  const confirmLane = confirmation.pts[confirmation.pts.length - 2].x;
+  assert.notEqual(searchLane, confirmLane, "the two must take different lanes");
+  assert.equal(
+    searchSeat.y < confirmSeat.y,
+    searchLane < confirmLane,
+    `seat order (${searchSeat.y} vs ${confirmSeat.y}) must match lane order ` +
+      `(${searchLane} vs ${confirmLane})`,
+  );
+
+  for (let i = 0; i + 1 < search.pts.length; i++)
+    for (let j = 0; j + 1 < confirmation.pts.length; j++)
+      assert.equal(
+        segmentsCross(
+          search.pts[i],
+          search.pts[i + 1],
+          confirmation.pts[j],
+          confirmation.pts[j + 1],
+        ),
+        null,
+        "F01 and F06 must not cross",
       );
 });
 

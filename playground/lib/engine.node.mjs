@@ -97867,7 +97867,8 @@ var crossingsOf = (a, b) => {
       if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) count++;
   return count;
 };
-function buildSwap(edge, terminalIdx, newAlong, leaves) {
+function buildSwap(edge, move, leaves) {
+  const { terminalIdx, newAlong, newLane } = move;
   const pts = edge.pts.map((p) => ({ ...p }));
   const last = pts.length - 1;
   const ti = terminalIdx === 0 ? 0 : last;
@@ -97886,7 +97887,33 @@ function buildSwap(edge, terminalIdx, newAlong, leaves) {
     pts[ti].x += delta;
     pts[ni].x += delta;
   }
+  if (newLane !== void 0) {
+    const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+    if (far < 0 || far > last) return null;
+    if (v) {
+      pts[ni].x = newLane;
+      pts[far].x = newLane;
+    } else {
+      pts[ni].y = newLane;
+      pts[far].y = newLane;
+    }
+  }
   return pts;
+}
+function laneOfSwap(edge, terminalIdx, leaves) {
+  const last = edge.pts.length - 1;
+  if (last < 2) return null;
+  const ti = terminalIdx === 0 ? 0 : last;
+  const ni = terminalIdx === 0 ? 1 : last - 1;
+  const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+  if (far < 0 || far > last) return null;
+  const seat = seatWithAlong(edge.pts[ti], leaves);
+  if (!seat) return null;
+  const v = seat.side === "east" || seat.side === "west";
+  const lane = v ? edge.pts[ni].x : edge.pts[ni].y;
+  const alongUnchanged = v ? Math.abs(edge.pts[ni].y - edge.pts[ti].y) < ORTHOGONAL_EPSILON : Math.abs(edge.pts[ni].x - edge.pts[ti].x) < ORTHOGONAL_EPSILON;
+  const turns = v ? Math.abs(edge.pts[far].x - lane) < ORTHOGONAL_EPSILON : Math.abs(edge.pts[far].y - lane) < ORTHOGONAL_EPSILON;
+  return alongUnchanged && turns ? lane : null;
 }
 function wouldHug(pts, leaves) {
   const own = /* @__PURE__ */ new Set();
@@ -98007,19 +98034,48 @@ function trySwapSeats(scene, pair2, match, leaves) {
   const { a: A, b: B } = pair2;
   if (Math.abs(match.aAlong - match.bAlong) < ORTHOGONAL_EPSILON) return;
   if (crossingsOf(A.pts, B.pts) === 0) return;
-  const aCandidate = buildSwap(A, match.aIdx, match.bAlong, leaves);
-  const bCandidate = buildSwap(B, match.bIdx, match.aAlong, leaves);
-  if (!aCandidate || !bCandidate) return;
-  if (crossingsOf(aCandidate, bCandidate) > 0) return;
-  if (swapAddsCrossings(scene, pair2, { a: aCandidate, b: bCandidate })) return;
-  if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return;
-  if (swapMerges(scene, pair2, { a: aCandidate, b: bCandidate })) return;
-  const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
-  const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
-  if (!aNewSeat || !bNewSeat) return;
-  if (swapSeatsCollide(scene, pair2, [aNewSeat, bNewSeat], leaves)) return;
-  A.pts = aCandidate;
-  B.pts = bCandidate;
+  const aLane = laneOfSwap(A, match.aIdx, leaves);
+  const bLane = laneOfSwap(B, match.bIdx, leaves);
+  const shapes = [
+    {
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong }, leaves),
+      moved: false
+    }
+  ];
+  if (aLane !== null && bLane !== null && Math.abs(aLane - bLane) >= ORTHOGONAL_EPSILON)
+    shapes.push({
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong, newLane: bLane }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong, newLane: aLane }, leaves),
+      moved: true
+    });
+  for (const shape of shapes) {
+    if (!shape.a || !shape.b) continue;
+    if (crossingsOf(shape.a, shape.b) > 0) continue;
+    if (applySwap(scene, pair2, { match, next: { a: shape.a, b: shape.b }, moved: shape.moved }, leaves))
+      return;
+  }
+}
+function applySwap(scene, pair2, swap, leaves) {
+  const { match, next } = swap;
+  const { a: A, b: B } = pair2;
+  const aCandidate = next.a;
+  const bCandidate = next.b;
+  {
+    if (swapAddsCrossings(scene, pair2, { a: aCandidate, b: bCandidate })) return false;
+    if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return false;
+    if (swapMerges(scene, pair2, { a: aCandidate, b: bCandidate })) return false;
+    const straddled = (pts, id) => routeStraddlesLabels(pts, scene, id);
+    if (swap.moved && (!straddled(A.pts, A.id) && straddled(aCandidate, A.id) || !straddled(B.pts, B.id) && straddled(bCandidate, B.id)))
+      return false;
+    const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
+    const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
+    if (!aNewSeat || !bNewSeat) return false;
+    if (swapSeatsCollide(scene, pair2, [aNewSeat, bNewSeat], leaves)) return false;
+    A.pts = aCandidate;
+    B.pts = bCandidate;
+    return true;
+  }
 }
 function swapCrossingSiblingSeats(scene) {
   const leaves = scene.nodes.filter((node) => !node.container);

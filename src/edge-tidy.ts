@@ -1966,10 +1966,10 @@ const crossingsOf = (a: Point[], b: Point[]): number => {
  */
 function buildSwap(
   edge: SceneEdge,
-  terminalIdx: number,
-  newAlong: number,
+  move: { terminalIdx: number; newAlong: number; newLane?: number },
   leaves: SceneNode[],
 ): Point[] | null {
+  const { terminalIdx, newAlong, newLane } = move;
   const pts = edge.pts.map((p) => ({ ...p }));
   const last = pts.length - 1;
   const ti = terminalIdx === 0 ? 0 : last;
@@ -1988,7 +1988,48 @@ function buildSwap(
     pts[ti].x += delta;
     pts[ni].x += delta;
   }
+  if (newLane !== undefined) {
+    // The lane travels with the seat. `pts[ni]` is where the departure run
+    // turns, and the run after it lies at that coordinate, so both move.
+    const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+    if (far < 0 || far > last) return null;
+    if (v) {
+      pts[ni].x = newLane;
+      pts[far].x = newLane;
+    } else {
+      pts[ni].y = newLane;
+      pts[far].y = newLane;
+    }
+  }
   return pts;
+}
+
+/**
+ * Where a route turns after leaving its terminal — the lane it runs out in.
+ *
+ * `null` when the shape has no such turn (a straight run into the seat, or a
+ * departure that is already parallel to the face it leaves).
+ */
+function laneOfSwap(edge: SceneEdge, terminalIdx: number, leaves: SceneNode[]): number | null {
+  const last = edge.pts.length - 1;
+  if (last < 2) return null;
+  const ti = terminalIdx === 0 ? 0 : last;
+  const ni = terminalIdx === 0 ? 1 : last - 1;
+  const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+  if (far < 0 || far > last) return null;
+  const seat = seatWithAlong(edge.pts[ti], leaves);
+  if (!seat) return null;
+  const v = seat.side === "east" || seat.side === "west";
+  // The departure must actually leave the face and then turn: run out
+  // perpendicular to it, then run parallel again.
+  const lane = v ? edge.pts[ni].x : edge.pts[ni].y;
+  const alongUnchanged = v
+    ? Math.abs(edge.pts[ni].y - edge.pts[ti].y) < ORTHOGONAL_EPSILON
+    : Math.abs(edge.pts[ni].x - edge.pts[ti].x) < ORTHOGONAL_EPSILON;
+  const turns = v
+    ? Math.abs(edge.pts[far].x - lane) < ORTHOGONAL_EPSILON
+    : Math.abs(edge.pts[far].y - lane) < ORTHOGONAL_EPSILON;
+  return alongUnchanged && turns ? lane : null;
 }
 
 function wouldHug(pts: Point[], leaves: SceneNode[]): boolean {
@@ -2175,27 +2216,84 @@ function trySwapSeats(
   if (Math.abs(match.aAlong - match.bAlong) < ORTHOGONAL_EPSILON) return;
   // Only proceed if A and B actually cross right now.
   if (crossingsOf(A.pts, B.pts) === 0) return;
-  const aCandidate = buildSwap(A, match.aIdx, match.bAlong, leaves);
-  const bCandidate = buildSwap(B, match.bIdx, match.aAlong, leaves);
-  if (!aCandidate || !bCandidate) return;
-  // The mutual crossing must go away.
-  if (crossingsOf(aCandidate, bCandidate) > 0) return;
-  if (swapAddsCrossings(scene, pair, { a: aCandidate, b: bCandidate })) return;
+  // Two shapes to try, in order. The seat alone is the cheap one and answers
+  // the crossing made close to the node. Where the two flows run out to
+  // *parallel lanes*, though, the seat is only half the order: `small/tall` has
+  // *Search a slot and book* leaving the patient's west face above *Appointment
+  // confirmation* and then descending **outside** it, so one has to cut through
+  // the other's riser 200px away. Swapping the seat on its own leaves the lanes
+  // inverted and the crossing where it was — the pass declined for exactly that
+  // reason. The lane travels with the seat in the second shape, and the two
+  // flows nest.
+  const aLane = laneOfSwap(A, match.aIdx, leaves);
+  const bLane = laneOfSwap(B, match.bIdx, leaves);
+  const shapes: { a: Point[] | null; b: Point[] | null; moved: boolean }[] = [
+    {
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong }, leaves),
+      moved: false,
+    },
+  ];
+  if (aLane !== null && bLane !== null && Math.abs(aLane - bLane) >= ORTHOGONAL_EPSILON)
+    shapes.push({
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong, newLane: bLane }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong, newLane: aLane }, leaves),
+      moved: true,
+    });
+  for (const shape of shapes) {
+    if (!shape.a || !shape.b) continue;
+    // The mutual crossing must go away.
+    if (crossingsOf(shape.a, shape.b) > 0) continue;
+    if (applySwap(scene, pair, { match, next: { a: shape.a, b: shape.b }, moved: shape.moved }, leaves))
+      return;
+  }
+}
+
+/** The guards every swap shape has to clear, and the write when it does. */
+function applySwap(
+  scene: Scene,
+  pair: { a: SceneEdge; b: SceneEdge },
+  swap: { match: SwapMatch; next: { a: Point[]; b: Point[] }; moved: boolean },
+  leaves: SceneNode[],
+): boolean {
+  const { match, next } = swap;
+  const { a: A, b: B } = pair;
+  const aCandidate = next.a;
+  const bCandidate = next.b;
+  {
+  if (swapAddsCrossings(scene, pair, { a: aCandidate, b: bCandidate })) return false;
   // No new hugs on either route.
-  if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return;
+  if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return false;
   // And neither may come to rest on top of a third flow. `readability.ts` calls
   // this `merge:` and rates it tier 0, but nothing consults it here — the swap
   // has its own private tests — so a swap could ship the one defect the sweep
   // will not trade for (`coincident`, must be zero). It stayed at zero by luck:
   // steering the repair away from label straddles was enough to break it, and
   // `F09~F19` landed 2px apart on all three `infrastructure-large` dispositions.
-  if (swapMerges(scene, pair, { a: aCandidate, b: bCandidate })) return;
+  if (swapMerges(scene, pair, { a: aCandidate, b: bCandidate })) return false;
+  // A moved lane is a long run carried across the drawing, so it also answers
+  // for the words it comes to rest along. Same blind spot as `merge:` above and
+  // the same answer: `readability.ts` has no straddle predicate, so nothing
+  // upstream weighs one — `logical-archi` picked up four and
+  // `application-tech-stack-large-dense` three before this went in. Only on the
+  // moved lane: charging the plain seat swap for it as well refused swaps that
+  // have been clearing crossings all along, and cost the corpus 0.602 of them
+  // per 1000 flows.
+  const straddled = (pts: Point[], id: string) => routeStraddlesLabels(pts, scene, id);
+  if (
+    swap.moved &&
+    ((!straddled(A.pts, A.id) && straddled(aCandidate, A.id)) ||
+      (!straddled(B.pts, B.id) && straddled(bCandidate, B.id)))
+  )
+    return false;
   const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
   const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
-  if (!aNewSeat || !bNewSeat) return;
-  if (swapSeatsCollide(scene, pair, [aNewSeat, bNewSeat], leaves)) return;
+  if (!aNewSeat || !bNewSeat) return false;
+  if (swapSeatsCollide(scene, pair, [aNewSeat, bNewSeat], leaves)) return false;
   A.pts = aCandidate;
   B.pts = bCandidate;
+  return true;
+  }
 }
 
 /** Swaps attachment seats for sibling flows when it reduces crossings. */

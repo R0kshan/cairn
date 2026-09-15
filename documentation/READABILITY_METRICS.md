@@ -286,6 +286,17 @@ unlike an ordinary container hug which clears into whichever half the run sits i
 Anywhere in the drawing. Most are inherent to the topology; the avoidable ones
 come from risers placed in the wrong left-to-right order.
 
+`swapCrossingSiblingSeats` owns that last case for two flows sharing a node side,
+and it exchanges **both** halves of the order: the seat on the face, and the lane
+the flow runs out in. Exchanging the seat alone is not enough once the two
+descend in parallel lanes — the lanes stay inverted and the crossing stays where
+it was, which is how `small/tall` kept one 200px below the patient it belonged
+to. The moved lane carries one guard the plain seat swap does not: it may not
+come to rest along another flow's words. A lane is a long run carried across the
+drawing and `readability.ts` has no straddle predicate to weigh one with; without
+it `logical-archi` gained four straddles. Charging the plain swap for it as well
+refuses swaps that have been clearing crossings all along.
+
 ### `fanTangle` · ratchet
 **What you see:** two flows leaving the same side of a node and immediately
 crossing back over each other.
