@@ -97892,6 +97892,70 @@ function swapAddsCrossings(scene, pair2, next) {
   }
   return false;
 }
+function straightRunsOf(pts) {
+  const out = [];
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+    if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) continue;
+    out.push({
+      vertical,
+      at: vertical ? a.x : a.y,
+      lo: vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x),
+      hi: vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x)
+    });
+  }
+  return out;
+}
+function labelAxisVertical(edge, label) {
+  const cx = label.x + label.width / 2;
+  const cy = label.y + label.height / 2;
+  let best = null;
+  for (const run of straightRunsOf(edge.pts)) {
+    const distance = run.vertical ? Math.abs(cx - run.at) : Math.abs(cy - run.at);
+    if (!best || distance < best.distance) best = { vertical: run.vertical, distance };
+  }
+  return best?.vertical ?? null;
+}
+function routeStraddlesLabels(pts, scene, ownId) {
+  const runs = straightRunsOf(pts);
+  for (const other of scene.edges) {
+    if (other.id === ownId || other.pts.length < 2) continue;
+    for (const label of other.labels) {
+      if (!label.width || !label.height) continue;
+      const vertical = labelAxisVertical(other, label);
+      if (vertical === null) continue;
+      const lo = vertical ? label.x : label.y;
+      const hi = lo + (vertical ? label.width : label.height);
+      const acrossLo = vertical ? label.y : label.x;
+      const acrossHi = acrossLo + (vertical ? label.height : label.width);
+      for (const run of runs) {
+        if (run.vertical !== vertical) continue;
+        if (run.at <= lo + 1 || run.at >= hi - 1) continue;
+        if (run.hi <= acrossLo || run.lo >= acrossHi) continue;
+        return true;
+      }
+    }
+  }
+  return false;
+}
+function routesMerge(one, two) {
+  return straightRunsOf(one).some(
+    (a) => straightRunsOf(two).some(
+      (b) => a.vertical === b.vertical && Math.abs(a.at - b.at) < 3 && Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo) > 8
+    )
+  );
+}
+function swapMerges(scene, pair2, next) {
+  if (!routesMerge(pair2.a.pts, pair2.b.pts) && routesMerge(next.a, next.b)) return true;
+  for (const other of scene.edges) {
+    if (other === pair2.a || other === pair2.b || other.pts.length < 2) continue;
+    if (!routesMerge(pair2.a.pts, other.pts) && routesMerge(next.a, other.pts)) return true;
+    if (!routesMerge(pair2.b.pts, other.pts) && routesMerge(next.b, other.pts)) return true;
+  }
+  return false;
+}
 function swapSeatsCollide(scene, pair2, newSeats, leaves) {
   for (const other of scene.edges) {
     if (other.id === pair2.a.id || other.id === pair2.b.id) continue;
@@ -97915,6 +97979,7 @@ function trySwapSeats(scene, pair2, match, leaves) {
   if (crossingsOf(aCandidate, bCandidate) > 0) return;
   if (swapAddsCrossings(scene, pair2, { a: aCandidate, b: bCandidate })) return;
   if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return;
+  if (swapMerges(scene, pair2, { a: aCandidate, b: bCandidate })) return;
   const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
   const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
   if (!aNewSeat || !bNewSeat) return;
@@ -99196,7 +99261,17 @@ function createLaneModel(deps) {
       push(box.x, box.y, box.width, box.height);
     }
     for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
-    if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    if (clearRuns) {
+      for (const other of scene.edges) {
+        if (other.id === edge.id) continue;
+        for (const label of other.labels) {
+          if (!label.width || !label.height) continue;
+          if (labelAxisVertical(other, label) !== !vertical) continue;
+          push(label.x, label.y, label.width, label.height);
+        }
+      }
+      for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    }
     let lane = search.start;
     for (let guard = 0; guard <= blocks.length; guard++) {
       const hit = blocks.find(
@@ -99226,9 +99301,13 @@ function createLaneModel(deps) {
     const lanes = [derived, clear, outside].filter(
       (lane, index, all) => lane !== null && all.indexOf(lane) === index
     );
-    return lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
+    const routes = lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
       (lane) => vertical ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b] : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b]
     );
+    const offLabels = routes.filter(
+      (route) => !routeStraddlesLabels(route, scene, subject.edge.id)
+    );
+    return offLabels.length ? offLabels : routes;
   };
   const isChannelU = (pts) => {
     if (pts.length !== 4) return false;
@@ -101532,12 +101611,25 @@ function auditRouteRepairs(deps) {
     return harm;
   };
   const soloProfile = () => inspect(scene, titles).local(new Set(scene.edges.map((edge) => edge.id)), /* @__PURE__ */ new Map(), true);
+  const crossHarm = () => {
+    let count = 0;
+    for (const edge of repaired)
+      for (const other of scene.edges) {
+        if (other === edge) continue;
+        for (let i = 0; i + 1 < edge.pts.length; i++)
+          for (let j = 0; j + 1 < other.pts.length; j++)
+            if (segmentsCross(edge.pts[i], edge.pts[i + 1], other.pts[j], other.pts[j + 1]))
+              count++;
+      }
+    return count;
+  };
   const stateHarm = () => {
     const tiers = [0, 0, 0, 0, 0];
     for (const tier of soloProfile().values()) tiers[tier]++;
     const [labels0, labels1] = labelHarm();
     tiers[0] += labels0;
     tiers[1] += labels1;
+    tiers[2] += crossHarm();
     return tiers;
   };
   const breaches = () => {

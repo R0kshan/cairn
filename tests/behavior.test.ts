@@ -27,6 +27,7 @@ import {
 } from "../src/scene-layout.ts";
 import type { Element } from "../src/models/ast.ts";
 import { isLongDetour } from "../src/geometry.ts";
+import { segmentsCross } from "../src/edge-tidy.ts";
 import { nodeSize } from "../src/text-metrics.ts";
 import { render } from "../src/svg-render.ts";
 import { buildFlowMatrix, matrixCsv, matrixMd, matrixSvg } from "../src/flow-matrix.ts";
@@ -1616,22 +1617,97 @@ test("infrastructure models users as actor (person glyph + legend key), distinct
   assert.ok(!codes.includes("E0201"));
 });
 
-test("compact style yields a smaller canvas with zero overlaps", async () => {
+test("compact style yields a tighter box layout with zero overlaps", async () => {
   for (const f of ["small.cairn", "medium.cairn", "application.cairn", "infrastructure.cairn"]) {
     const base = load(f);
     const normal = await build(base);
     const compact = await build(base.replace('"\n', '"\nstyle { compact: on }\n'));
-    const aN = normal.scene.width * normal.scene.height;
-    const aC = compact.scene.width * compact.scene.height;
+    // The *boxes*, not the canvas. `compact` governs the spacing between nodes;
+    // the canvas is whatever `fitCanvas` has to grow to once the router has laid
+    // its corridors, and a corridor is the ladder's business, not this style's.
+    // On `small` the two disagree: compact packs the boxes tighter (1136x194 ->
+    // 1084x185) and still ends up the taller canvas, because its
+    // `SECRETARY -> SCHEDULER` corridor clears a label band 26px further down
+    // than the same corridor does at normal spacing. Asserting on the canvas
+    // there reads a readability repair as a compaction failure.
+    const boxes = (scene: Scene) => {
+      const x = Math.min(...scene.nodes.map((node) => node.x));
+      const y = Math.min(...scene.nodes.map((node) => node.y));
+      const width = Math.max(...scene.nodes.map((node) => node.x + node.width)) - x;
+      const height = Math.max(...scene.nodes.map((node) => node.y + node.height)) - y;
+      return { width, height, area: width * height };
+    };
+    const bN = boxes(normal.scene);
+    const bC = boxes(compact.scene);
     assert.ok(
-      aC < aN,
-      `${f}: compact (${compact.scene.width}x${compact.scene.height}) must be smaller than normal (${normal.scene.width}x${normal.scene.height})`,
+      bC.area < bN.area,
+      `${f}: compact boxes (${bC.width}x${bC.height}) must be tighter than normal (${bN.width}x${bN.height})`,
     );
     assert.equal(compact.overlapsAfter, 0, `${f}: compact must keep zero label overlaps`);
   }
   // compact is off by default
   const { model } = await build(load("small.cairn"));
   assert.equal(model.style.compact, false);
+});
+
+/**
+ * A corridor may not be laid under another flow's words.
+ *
+ * `laneBeyond`'s `clear` lane counts every foreign label as an obstacle, and
+ * `channelU` prefers a lane that misses them. Neither existed before: the lane
+ * allocator reserves a band for the label it is about to seat, and the route
+ * repair — which weighs candidates with `readability.ts`, a profile that has no
+ * straddle predicate at all — could not see the reservation.
+ *
+ * `small` is the shape, in both dispositions it is drawn in. `SECRETARY ->
+ * SCHEDULER` ("Open / block") used to leave the secretary's east side and run
+ * straight through `SCHEDULER -> PATIENT`'s riser. It now leaves the *south*
+ * side, takes a corridor below that flow's own corridor and its label band, and
+ * climbs into the scheduler's south face — the two no longer meet.
+ */
+test("a repaired corridor clears the label band of the flow it passes under", async () => {
+  for (const disposition of ["", "style { disposition: slide }\n"]) {
+    const base = load("small.cairn");
+    const { scene } = await build(
+      disposition ? base.replace('"\n', `"\n${disposition}`) : base,
+    );
+    const open = scene.edges.find((e) => e.id === "F05")!;
+    const confirm = scene.edges.find((e) => e.id === "F06")!;
+    const where = disposition ? "slide" : "normal";
+
+    // Bottom face at both ends: the first leg drops out of the secretary, the
+    // last climbs into the scheduler.
+    const secretary = scene.nodes.find((n) => n.id === "SECRETARY")!;
+    const scheduler = scene.nodes.find((n) => n.id === "SCHEDULER")!;
+    assert.ok(
+      Math.abs(open.pts[0].y - (secretary.y + secretary.height)) < 1,
+      `${where}: F05 must leave SECRETARY's bottom (${open.pts[0].y})`,
+    );
+    const last = open.pts[open.pts.length - 1];
+    assert.ok(
+      Math.abs(last.y - (scheduler.y + scheduler.height)) < 1,
+      `${where}: F05 must arrive at SCHEDULER's bottom (${last.y})`,
+    );
+
+    // Below F06's corridor *and* below the label seated on it — the whole point
+    // of the obstacle rule, not merely below the line.
+    const corridor = Math.max(...open.pts.map((p) => p.y));
+    for (const label of confirm.labels)
+      assert.ok(
+        corridor >= label.y + label.height,
+        `${where}: F05's corridor (${corridor}) sits in F06's label band (${label.y}..${
+          label.y + label.height
+        })`,
+      );
+
+    for (let i = 0; i + 1 < open.pts.length; i++)
+      for (let j = 0; j + 1 < confirm.pts.length; j++)
+        assert.equal(
+          segmentsCross(open.pts[i], open.pts[i + 1], confirm.pts[j], confirm.pts[j + 1]),
+          null,
+          `${where}: F05 and F06 must not cross`,
+        );
+  }
 });
 
 test("font-size scales the text and is measured into the layout", async () => {

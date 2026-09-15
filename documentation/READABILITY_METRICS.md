@@ -496,6 +496,21 @@ run. So the pass records `repairedFrom` and `svg-render` audits afterwards,
 reverting the whole repair set if labels came out worse. All-or-nothing on
 purpose — making it per-edge produced `coincident` runs, a must-be-zero breach.
 
+A second thing it cannot see: `readability.ts` carries **no straddle predicate at
+all** (`labelStraddled` lives in `sweep.ts` and `label-anchor.ts` only), so a
+corridor laid along another flow's words scores as free. Adding the predicate to
+the shared profile is not the fix — every pass that weighs with it changes at
+once, and measured it traded 57 straddles for 87 crossings across 71 drawings.
+It is answered where the corridor is *made* instead: `laneBeyond`'s `clear` lane
+treats a foreign label lying along the corridor as an obstacle, and `channelU`
+drops a candidate that straddles one — but only while another candidate
+survives, since labels are re-anchored *after* this pass and a straddle dodged
+here can reappear at the seat chosen later. Vetoing outright put
+`labelStraddled` *up* 2.8 per 1000 flows, the opposite of the point. Only labels
+along the corridor's own axis count: one seated on a run across it is passed
+under for a few pixels, which is not §4j, and blocking on those cost seven
+drawings their ratchets.
+
 ---
 
 ## Changing a ceiling
