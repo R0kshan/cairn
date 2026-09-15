@@ -29,6 +29,7 @@ import { airOutContainers } from "./scene-layout.ts";
 import { labelsSeated } from "./edge-tidy.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
 import { titleBoxesOf } from "./route-detour.ts";
+import { segmentsCross } from "./edge-tidy.ts";
 import { inspect } from "./readability.ts";
 import { chipW, techText, wrapText, fontSizes, GLYPH_GUTTER, LOGO_GUTTER } from "./text-metrics.ts";
 import { logoAttributionComment } from "./logo-attribution.ts";
@@ -214,12 +215,52 @@ function auditRouteRepairs(deps: {
    * obstacle. The pairwise phase is the expensive half, and crossings are the
    * router's business, already weighed.
    */
+  /**
+   * Crossings the repaired flows make, counted against every other route.
+   *
+   * The one pairwise defect this audit cannot skip. "Crossings are the router's
+   * business, already weighed" holds for the *repair* — the router chose it —
+   * and not at all for the revert, which restores a route the router rejected
+   * and nothing has weighed since. On `small-slide` the layout had already
+   * routed `SECRETARY -> SCHEDULER` out of the secretary's south face and along
+   * the bottom, clear of `SCHEDULER -> PATIENT` coming back the other way; the
+   * audit then reverted it to the older route straight through that flow, and
+   * scored the trade as free because it never looked.
+   *
+   * Affordable because only the repaired edges move: every other route is fixed,
+   * so their crossings with each other cannot change and need not be counted.
+   * That is a handful of edges against the rest, not the full pairwise sweep the
+   * comment above rules out.
+   */
+  const crossHarm = (): number => {
+    // Rank, so a pair of *repaired* edges — visited once from each side — is
+    // counted once, the way the pairwise scorers key on an unordered pair. Left
+    // double, such a crossing outweighs a repaired-to-fixed one two to one, and
+    // `lessDamaged` compares those counts.
+    const rank = new Map<SceneEdge, number>();
+    for (const [index, edge] of [...repaired].entries()) rank.set(edge, index);
+    let count = 0;
+    for (const edge of repaired)
+      for (const other of scene.edges) {
+        if (other === edge) continue;
+        const mine = rank.get(other);
+        if (mine !== undefined && mine < rank.get(edge)!) continue;
+        for (let i = 0; i + 1 < edge.pts.length; i++)
+          for (let j = 0; j + 1 < other.pts.length; j++)
+            if (segmentsCross(edge.pts[i], edge.pts[i + 1], other.pts[j], other.pts[j + 1]))
+              count++;
+      }
+    return count;
+  };
+
   const stateHarm = (): number[] => {
     const tiers = [0, 0, 0, 0, 0];
     for (const tier of soloProfile().values()) tiers[tier]++;
     const [labels0, labels1] = labelHarm();
     tiers[0] += labels0;
     tiers[1] += labels1;
+    // Crossings are tier 2 (see `TIER` in scripts/sweep.ts).
+    tiers[2] += crossHarm();
     return tiers;
   };
 

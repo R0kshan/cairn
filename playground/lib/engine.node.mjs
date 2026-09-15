@@ -96536,22 +96536,56 @@ function scanDestroyed(ctx, subj, profile) {
         profile.set(`title:${edge.id}~${band.x},${band.y}`, 0);
   }
 }
-function labelSeatable(blockers, pts, label) {
+var SEAT_CLEAR = 4;
+function seatOverhangsFlow(ctx, ownId, seatBox) {
+  const x1 = seatBox.x1 - SEAT_CLEAR;
+  const x2 = seatBox.x2 + SEAT_CLEAR;
+  const y1 = seatBox.y1 - SEAT_CLEAR;
+  const y2 = seatBox.y2 + SEAT_CLEAR;
+  for (const other of ctx.scene.edges) {
+    if (other.id === ownId || other.pts.length < 2) continue;
+    for (const seat of other.labels)
+      if (seat.width && seat.height && x1 < seat.x + seat.width && seat.x < x2 && y1 < seat.y + seat.height && seat.y < y2)
+        return true;
+    for (const run of ctx.runsFor(other, other.pts, false)) {
+      const rx1 = run.vertical ? run.at : run.lo;
+      const rx2 = run.vertical ? run.at : run.hi;
+      const ry1 = run.vertical ? run.lo : run.at;
+      const ry2 = run.vertical ? run.hi : run.at;
+      if (x1 < rx2 && rx1 < x2 && y1 < ry2 && ry1 < y2) return true;
+    }
+  }
+  return false;
+}
+function labelSeatable(ctx, subj, label) {
+  const pts = subj.pts;
   const lead = label.textH > 0 ? label.textH / 2 : label.height / 2;
+  let longest = 0;
+  for (let index = 0; index + 1 < pts.length; index++)
+    longest = Math.max(
+      longest,
+      Math.abs(pts[index + 1].x - pts[index].x) + Math.abs(pts[index + 1].y - pts[index].y)
+    );
   for (let index = 0; index + 1 < pts.length; index++) {
     const p = pts[index];
     const q = pts[index + 1];
-    if (Math.abs(q.x - p.x) + Math.abs(q.y - p.y) < label.width) continue;
+    const dx = Math.abs(q.x - p.x);
+    const dy = Math.abs(q.y - p.y);
+    const vertical = dy > dx;
+    if ((vertical ? dy : dx) < (vertical ? label.height : label.width)) continue;
+    if (vertical && dy < label.width && dy < longest) continue;
     const sx = (p.x + q.x) / 2 - label.width / 2;
     const sy = (p.y + q.y) / 2 - lead;
     const sx2 = sx + label.width;
     const sy2 = sy + label.height;
     let blocked = false;
-    for (const box of blockers)
+    for (const box of ctx.blockers)
       if (sx < box.x + box.width && box.x < sx2 && sy < box.y + box.height && box.y < sy2) {
         blocked = true;
         break;
       }
+    if (!blocked && vertical && dy < label.width)
+      blocked = seatOverhangsFlow(ctx, subj.edge.id, { x1: sx, y1: sy, x2: sx2, y2: sy2 });
     if (!blocked) return true;
   }
   return false;
@@ -96559,7 +96593,7 @@ function labelSeatable(blockers, pts, label) {
 function scanLabelSeats(ctx, subj, profile) {
   for (const label of subj.edge.labels) {
     if (!label.width || !label.height) continue;
-    if (!labelSeatable(ctx.blockers, subj.pts, label)) profile.set(`unlabelled:${subj.edge.id}`, 1);
+    if (!labelSeatable(ctx, subj, label)) profile.set(`unlabelled:${subj.edge.id}`, 1);
   }
 }
 function scanArrowRoom(subj, profile) {
@@ -97833,7 +97867,8 @@ var crossingsOf = (a, b) => {
       if (segmentsCross(a[i], a[i + 1], b[j], b[j + 1])) count++;
   return count;
 };
-function buildSwap(edge, terminalIdx, newAlong, leaves) {
+function buildSwap(edge, move, leaves) {
+  const { terminalIdx, newAlong, newLane } = move;
   const pts = edge.pts.map((p) => ({ ...p }));
   const last = pts.length - 1;
   const ti = terminalIdx === 0 ? 0 : last;
@@ -97852,7 +97887,33 @@ function buildSwap(edge, terminalIdx, newAlong, leaves) {
     pts[ti].x += delta;
     pts[ni].x += delta;
   }
+  if (newLane !== void 0) {
+    const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+    if (far < 0 || far > last) return null;
+    if (v) {
+      pts[ni].x = newLane;
+      pts[far].x = newLane;
+    } else {
+      pts[ni].y = newLane;
+      pts[far].y = newLane;
+    }
+  }
   return pts;
+}
+function laneOfSwap(edge, terminalIdx, leaves) {
+  const last = edge.pts.length - 1;
+  if (last < 2) return null;
+  const ti = terminalIdx === 0 ? 0 : last;
+  const ni = terminalIdx === 0 ? 1 : last - 1;
+  const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+  if (far < 0 || far > last) return null;
+  const seat = seatWithAlong(edge.pts[ti], leaves);
+  if (!seat) return null;
+  const v = seat.side === "east" || seat.side === "west";
+  const lane = v ? edge.pts[ni].x : edge.pts[ni].y;
+  const alongUnchanged = v ? Math.abs(edge.pts[ni].y - edge.pts[ti].y) < ORTHOGONAL_EPSILON : Math.abs(edge.pts[ni].x - edge.pts[ti].x) < ORTHOGONAL_EPSILON;
+  const turns = v ? Math.abs(edge.pts[far].x - lane) < ORTHOGONAL_EPSILON : Math.abs(edge.pts[far].y - lane) < ORTHOGONAL_EPSILON;
+  return alongUnchanged && turns ? lane : null;
 }
 function wouldHug(pts, leaves) {
   const own = /* @__PURE__ */ new Set();
@@ -97892,6 +97953,79 @@ function swapAddsCrossings(scene, pair2, next) {
   }
   return false;
 }
+function straightRunsOf(pts) {
+  const out = [];
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+    if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) continue;
+    const at = vertical ? a.x : a.y;
+    const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    const last = out[out.length - 1];
+    if (last && last.vertical === vertical && Math.abs(last.at - at) < ORTHOGONAL_EPSILON) {
+      last.lo = Math.min(last.lo, lo);
+      last.hi = Math.max(last.hi, hi);
+      continue;
+    }
+    out.push({ vertical, at, lo, hi });
+  }
+  return out;
+}
+function labelAxisVertical(edge, label) {
+  const cx = label.x + label.width / 2;
+  const cy = label.y + label.height / 2;
+  let best = null;
+  for (const run of straightRunsOf(edge.pts)) {
+    const distance = run.vertical ? Math.abs(cx - run.at) : Math.abs(cy - run.at);
+    if (!best || distance < best.distance) best = { vertical: run.vertical, distance };
+  }
+  return best?.vertical ?? null;
+}
+function straddledLabels(pts, scene, skip) {
+  const hit = /* @__PURE__ */ new Set();
+  const runs = straightRunsOf(pts);
+  for (const other of scene.edges) {
+    if (skip.has(other.id) || other.pts.length < 2) continue;
+    for (const [index, label] of other.labels.entries()) {
+      if (!label.width || !label.height) continue;
+      const vertical = labelAxisVertical(other, label);
+      if (vertical === null) continue;
+      const lo = vertical ? label.x : label.y;
+      const hi = lo + (vertical ? label.width : label.height);
+      const acrossLo = vertical ? label.y : label.x;
+      const acrossHi = acrossLo + (vertical ? label.height : label.width);
+      for (const run of runs) {
+        if (run.vertical !== vertical) continue;
+        if (run.at <= lo + 1 || run.at >= hi - 1) continue;
+        if (run.hi <= acrossLo || run.lo >= acrossHi) continue;
+        hit.add(`${other.id}#${index}`);
+        break;
+      }
+    }
+  }
+  return hit;
+}
+function routeStraddlesLabels(pts, scene, ownId) {
+  return straddledLabels(pts, scene, /* @__PURE__ */ new Set([ownId])).size > 0;
+}
+function routesMerge(one, two) {
+  return straightRunsOf(one).some(
+    (a) => straightRunsOf(two).some(
+      (b) => a.vertical === b.vertical && Math.abs(a.at - b.at) < 3 && Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo) > 8
+    )
+  );
+}
+function swapMerges(scene, pair2, next) {
+  if (!routesMerge(pair2.a.pts, pair2.b.pts) && routesMerge(next.a, next.b)) return true;
+  for (const other of scene.edges) {
+    if (other === pair2.a || other === pair2.b || other.pts.length < 2) continue;
+    if (!routesMerge(pair2.a.pts, other.pts) && routesMerge(next.a, other.pts)) return true;
+    if (!routesMerge(pair2.b.pts, other.pts) && routesMerge(next.b, other.pts)) return true;
+  }
+  return false;
+}
 function swapSeatsCollide(scene, pair2, newSeats, leaves) {
   for (const other of scene.edges) {
     if (other.id === pair2.a.id || other.id === pair2.b.id) continue;
@@ -97909,18 +98043,55 @@ function trySwapSeats(scene, pair2, match, leaves) {
   const { a: A, b: B } = pair2;
   if (Math.abs(match.aAlong - match.bAlong) < ORTHOGONAL_EPSILON) return;
   if (crossingsOf(A.pts, B.pts) === 0) return;
-  const aCandidate = buildSwap(A, match.aIdx, match.bAlong, leaves);
-  const bCandidate = buildSwap(B, match.bIdx, match.aAlong, leaves);
-  if (!aCandidate || !bCandidate) return;
-  if (crossingsOf(aCandidate, bCandidate) > 0) return;
-  if (swapAddsCrossings(scene, pair2, { a: aCandidate, b: bCandidate })) return;
-  if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return;
-  const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
-  const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
-  if (!aNewSeat || !bNewSeat) return;
-  if (swapSeatsCollide(scene, pair2, [aNewSeat, bNewSeat], leaves)) return;
-  A.pts = aCandidate;
-  B.pts = bCandidate;
+  const aLane = laneOfSwap(A, match.aIdx, leaves);
+  const bLane = laneOfSwap(B, match.bIdx, leaves);
+  const shapes = [
+    {
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong }, leaves),
+      moved: false
+    }
+  ];
+  if (aLane !== null && bLane !== null && Math.abs(aLane - bLane) >= ORTHOGONAL_EPSILON)
+    shapes.push({
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong, newLane: bLane }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong, newLane: aLane }, leaves),
+      moved: true
+    });
+  for (const shape of shapes) {
+    if (!shape.a || !shape.b) continue;
+    if (crossingsOf(shape.a, shape.b) > 0) continue;
+    if (applySwap(scene, pair2, { match, next: { a: shape.a, b: shape.b }, moved: shape.moved }, leaves))
+      return;
+  }
+}
+function applySwap(scene, pair2, swap, leaves) {
+  const { match, next } = swap;
+  const { a: A, b: B } = pair2;
+  const aCandidate = next.a;
+  const bCandidate = next.b;
+  {
+    if (swapAddsCrossings(scene, pair2, { a: aCandidate, b: bCandidate })) return false;
+    if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return false;
+    if (swapMerges(scene, pair2, { a: aCandidate, b: bCandidate })) return false;
+    const swapped = /* @__PURE__ */ new Set([A.id, B.id]);
+    const gained = (pts, edge) => {
+      const own = /* @__PURE__ */ new Set([edge.id]);
+      if (straddledLabels(pts, scene, own).size > straddledLabels(edge.pts, scene, own).size)
+        return true;
+      const was = straddledLabels(edge.pts, scene, swapped);
+      for (const key of straddledLabels(pts, scene, swapped)) if (!was.has(key)) return true;
+      return false;
+    };
+    if (swap.moved && (gained(aCandidate, A) || gained(bCandidate, B))) return false;
+    const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
+    const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
+    if (!aNewSeat || !bNewSeat) return false;
+    if (swapSeatsCollide(scene, pair2, [aNewSeat, bNewSeat], leaves)) return false;
+    A.pts = aCandidate;
+    B.pts = bCandidate;
+    return true;
+  }
 }
 function swapCrossingSiblingSeats(scene) {
   const leaves = scene.nodes.filter((node) => !node.container);
@@ -98972,7 +99143,7 @@ function labelsSeated(edge) {
   });
 }
 var SEAT_GRID = [0, -18, 18];
-var SEAT_CLEAR = 14;
+var SEAT_CLEAR2 = 14;
 function createSeatModel(titleBoxes) {
   const blockedSpan = (node, side) => {
     const alongX = side === "north" || side === "south";
@@ -98996,7 +99167,7 @@ function createSeatModel(titleBoxes) {
     const span = blockedSpan(node, side);
     const alongX = side === "north" || side === "south";
     const centre = alongX ? node.x + node.width / 2 : node.y + node.height / 2;
-    const made = span ? [...SEAT_GRID, span[0] - SEAT_CLEAR - centre, span[1] + SEAT_CLEAR - centre] : SEAT_GRID;
+    const made = span ? [...SEAT_GRID, span[0] - SEAT_CLEAR2 - centre, span[1] + SEAT_CLEAR2 - centre] : SEAT_GRID;
     seatOffsetCache.set(key, made);
     return made;
   };
@@ -99196,7 +99367,17 @@ function createLaneModel(deps) {
       push(box.x, box.y, box.width, box.height);
     }
     for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
-    if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    if (clearRuns) {
+      for (const other of scene.edges) {
+        if (other.id === edge.id) continue;
+        for (const label of other.labels) {
+          if (!label.width || !label.height) continue;
+          if (labelAxisVertical(other, label) !== !vertical) continue;
+          push(label.x, label.y, label.width, label.height);
+        }
+      }
+      for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    }
     let lane = search.start;
     for (let guard = 0; guard <= blocks.length; guard++) {
       const hit = blocks.find(
@@ -99226,9 +99407,13 @@ function createLaneModel(deps) {
     const lanes = [derived, clear, outside].filter(
       (lane, index, all) => lane !== null && all.indexOf(lane) === index
     );
-    return lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
+    const routes = lanes.filter((lane) => before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far).map(
       (lane) => vertical ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b] : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b]
     );
+    const offLabels = routes.filter(
+      (route) => !routeStraddlesLabels(route, scene, subject.edge.id)
+    );
+    return offLabels.length ? offLabels : routes;
   };
   const isChannelU = (pts) => {
     if (pts.length !== 4) return false;
@@ -101532,12 +101717,29 @@ function auditRouteRepairs(deps) {
     return harm;
   };
   const soloProfile = () => inspect(scene, titles).local(new Set(scene.edges.map((edge) => edge.id)), /* @__PURE__ */ new Map(), true);
+  const crossHarm = () => {
+    const rank = /* @__PURE__ */ new Map();
+    for (const [index, edge] of [...repaired].entries()) rank.set(edge, index);
+    let count = 0;
+    for (const edge of repaired)
+      for (const other of scene.edges) {
+        if (other === edge) continue;
+        const mine = rank.get(other);
+        if (mine !== void 0 && mine < rank.get(edge)) continue;
+        for (let i = 0; i + 1 < edge.pts.length; i++)
+          for (let j = 0; j + 1 < other.pts.length; j++)
+            if (segmentsCross(edge.pts[i], edge.pts[i + 1], other.pts[j], other.pts[j + 1]))
+              count++;
+      }
+    return count;
+  };
   const stateHarm = () => {
     const tiers = [0, 0, 0, 0, 0];
     for (const tier of soloProfile().values()) tiers[tier]++;
     const [labels0, labels1] = labelHarm();
     tiers[0] += labels0;
     tiers[1] += labels1;
+    tiers[2] += crossHarm();
     return tiers;
   };
   const breaches = () => {

@@ -286,6 +286,17 @@ unlike an ordinary container hug which clears into whichever half the run sits i
 Anywhere in the drawing. Most are inherent to the topology; the avoidable ones
 come from risers placed in the wrong left-to-right order.
 
+`swapCrossingSiblingSeats` owns that last case for two flows sharing a node side,
+and it exchanges **both** halves of the order: the seat on the face, and the lane
+the flow runs out in. Exchanging the seat alone is not enough once the two
+descend in parallel lanes — the lanes stay inverted and the crossing stays where
+it was, which is how `small/tall` kept one 200px below the patient it belonged
+to. The moved lane carries one guard the plain seat swap does not: it may not
+come to rest along another flow's words. A lane is a long run carried across the
+drawing and `readability.ts` has no straddle predicate to weigh one with; without
+it `logical-archi` gained four straddles. Charging the plain swap for it as well
+refuses swaps that have been clearing crossings all along.
+
 ### `fanTangle` · ratchet
 **What you see:** two flows leaving the same side of a node and immediately
 crossing back over each other.
@@ -495,6 +506,40 @@ its label seat, and which label the settler lifts is not a fact until settling h
 run. So the pass records `repairedFrom` and `svg-render` audits afterwards,
 reverting the whole repair set if labels came out worse. All-or-nothing on
 purpose — making it per-edge produced `coincident` runs, a must-be-zero breach.
+
+Tier 1 is modelled by a single key, `unlabelled:<edge>` — "does this route leave
+each of its labels a seat?" — and that one key has to mean exactly what
+`label-anchor` will do later, or the router refuses routes the settler would have
+handled. It measures the span a label needs **along** the run: its width on a
+horizontal one, its **height** on a riser, since words lie across the line they
+name rather than down it (`hostSegment` has always measured it that way). Getting
+that wrong called a riser unseatable whenever the label was wider than the riser
+was long, and `small/tall`'s *Appointment confirmed* stayed on the scheduler's
+east face cutting across *Open / block slots* for exactly that reason — the
+untangled route scored `unlabelled` for a 113px label on a 77px riser.
+
+A seat on a riser hangs half the label's width off each side, so two conditions
+come with it. The riser must be the route's **longest** run: a 24px corner stub
+"holds" a 116px label on the same arithmetic as a 400px riser, and `small`'s F04
+took that seat and swung its words back across *External systems*' border. And
+the overhang may not come down on another flow's words or lines (`SEAT_CLEAR`),
+which the width test used to prevent by accident — without it eight labels landed
+on a foreign run, `labelPierced`, a must-be-zero.
+
+A second thing it cannot see: `readability.ts` carries **no straddle predicate at
+all** (`labelStraddled` lives in `sweep.ts` and `label-anchor.ts` only), so a
+corridor laid along another flow's words scores as free. Adding the predicate to
+the shared profile is not the fix — every pass that weighs with it changes at
+once, and measured it traded 57 straddles for 87 crossings across 71 drawings.
+It is answered where the corridor is *made* instead: `laneBeyond`'s `clear` lane
+treats a foreign label lying along the corridor as an obstacle, and `channelU`
+drops a candidate that straddles one — but only while another candidate
+survives, since labels are re-anchored *after* this pass and a straddle dodged
+here can reappear at the seat chosen later. Vetoing outright put
+`labelStraddled` *up* 2.8 per 1000 flows, the opposite of the point. Only labels
+along the corridor's own axis count: one seated on a run across it is passed
+under for a few pixels, which is not §4j, and blocking on those cost seven
+drawings their ratchets.
 
 ---
 

@@ -16,7 +16,7 @@
  * to the node side it belongs to.
  */
 
-import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
+import type { Scene, SceneEdge, SceneLabel, SceneNode } from "./scene-layout.ts";
 import { inspect, ladderVerdict } from "./readability.ts";
 import type { Profile } from "./readability.ts";
 import {
@@ -83,7 +83,7 @@ const SEAT_OFFSETS = [0, -18, 18, -36, 36];
 
 /** Where two orthogonal segments properly cross, or null (strict, so a shared
  *  endpoint is not a crossing — that's `attachShared`, not a tangle). */
-const segmentsCross = (a1: Point, a2: Point, b1: Point, b2: Point): Point | null => {
+export const segmentsCross = (a1: Point, a2: Point, b1: Point, b2: Point): Point | null => {
   const side = (p: Point, q: Point, r: Point) =>
     (q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x);
   const d1 = side(b1, b2, a1) > 0;
@@ -1966,10 +1966,10 @@ const crossingsOf = (a: Point[], b: Point[]): number => {
  */
 function buildSwap(
   edge: SceneEdge,
-  terminalIdx: number,
-  newAlong: number,
+  move: { terminalIdx: number; newAlong: number; newLane?: number },
   leaves: SceneNode[],
 ): Point[] | null {
+  const { terminalIdx, newAlong, newLane } = move;
   const pts = edge.pts.map((p) => ({ ...p }));
   const last = pts.length - 1;
   const ti = terminalIdx === 0 ? 0 : last;
@@ -1988,7 +1988,48 @@ function buildSwap(
     pts[ti].x += delta;
     pts[ni].x += delta;
   }
+  if (newLane !== undefined) {
+    // The lane travels with the seat. `pts[ni]` is where the departure run
+    // turns, and the run after it lies at that coordinate, so both move.
+    const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+    if (far < 0 || far > last) return null;
+    if (v) {
+      pts[ni].x = newLane;
+      pts[far].x = newLane;
+    } else {
+      pts[ni].y = newLane;
+      pts[far].y = newLane;
+    }
+  }
   return pts;
+}
+
+/**
+ * Where a route turns after leaving its terminal — the lane it runs out in.
+ *
+ * `null` when the shape has no such turn (a straight run into the seat, or a
+ * departure that is already parallel to the face it leaves).
+ */
+function laneOfSwap(edge: SceneEdge, terminalIdx: number, leaves: SceneNode[]): number | null {
+  const last = edge.pts.length - 1;
+  if (last < 2) return null;
+  const ti = terminalIdx === 0 ? 0 : last;
+  const ni = terminalIdx === 0 ? 1 : last - 1;
+  const far = terminalIdx === 0 ? ni + 1 : ni - 1;
+  if (far < 0 || far > last) return null;
+  const seat = seatWithAlong(edge.pts[ti], leaves);
+  if (!seat) return null;
+  const v = seat.side === "east" || seat.side === "west";
+  // The departure must actually leave the face and then turn: run out
+  // perpendicular to it, then run parallel again.
+  const lane = v ? edge.pts[ni].x : edge.pts[ni].y;
+  const alongUnchanged = v
+    ? Math.abs(edge.pts[ni].y - edge.pts[ti].y) < ORTHOGONAL_EPSILON
+    : Math.abs(edge.pts[ni].x - edge.pts[ti].x) < ORTHOGONAL_EPSILON;
+  const turns = v
+    ? Math.abs(edge.pts[far].x - lane) < ORTHOGONAL_EPSILON
+    : Math.abs(edge.pts[far].y - lane) < ORTHOGONAL_EPSILON;
+  return alongUnchanged && turns ? lane : null;
 }
 
 function wouldHug(pts: Point[], leaves: SceneNode[]): boolean {
@@ -2051,6 +2092,118 @@ function swapAddsCrossings(
   return false;
 }
 
+/**
+ * Maximal straight runs of a polyline — `{vertical, at, lo, hi}` each.
+ *
+ * *Maximal*: a route may carry a point in the middle of a straight line (a lane
+ * allocator's mid-point, a seat moved back onto its own run), and 134 corpus
+ * flows do. Emitting those as two runs would let a span test see half the line
+ * it should — `routesMerge`'s 8px overlap and §4j's label band both measure one.
+ */
+function straightRunsOf(pts: Point[]): { vertical: boolean; at: number; lo: number; hi: number }[] {
+  const out: { vertical: boolean; at: number; lo: number; hi: number }[] = [];
+  for (let i = 0; i + 1 < pts.length; i++) {
+    const a = pts[i];
+    const b = pts[i + 1];
+    const vertical = Math.abs(a.x - b.x) < ORTHOGONAL_EPSILON;
+    if (vertical === Math.abs(a.y - b.y) < ORTHOGONAL_EPSILON) continue;
+    const at = vertical ? a.x : a.y;
+    const lo = vertical ? Math.min(a.y, b.y) : Math.min(a.x, b.x);
+    const hi = vertical ? Math.max(a.y, b.y) : Math.max(a.x, b.x);
+    const last = out[out.length - 1];
+    if (last && last.vertical === vertical && Math.abs(last.at - at) < ORTHOGONAL_EPSILON) {
+      last.lo = Math.min(last.lo, lo);
+      last.hi = Math.max(last.hi, hi);
+      continue;
+    }
+    out.push({ vertical, at, lo, hi });
+  }
+  return out;
+}
+
+/** Which way a label's own flow runs where the label sits — the axis a foreign
+ *  run has to share to read as a second line under the words (§4j). */
+function labelAxisVertical(edge: SceneEdge, label: SceneLabel): boolean | null {
+  const cx = label.x + label.width / 2;
+  const cy = label.y + label.height / 2;
+  let best: { vertical: boolean; distance: number } | null = null;
+  for (const run of straightRunsOf(edge.pts)) {
+    const distance = run.vertical ? Math.abs(cx - run.at) : Math.abs(cy - run.at);
+    if (!best || distance < best.distance) best = { vertical: run.vertical, distance };
+  }
+  return best?.vertical ?? null;
+}
+
+/**
+ * Would this route lay one of its runs under *another flow's* words, along the
+ * axis that flow runs — sweep `labelStraddled`, §4j?
+ *
+ * Used to drop a corridor from the candidate list rather than to refuse the move
+ * that carries it, and the difference matters: `channelU` offers several lanes,
+ * so discarding the bad one leaves the repair free to take a good one. Refusing
+ * at the acceptance gate instead abandons the whole move, which measured far
+ * worse — the flow stayed where it was and the drawing kept the crossing the
+ * move existed to clear.
+ */
+function straddledLabels(pts: Point[], scene: Scene, skip: ReadonlySet<string>): Set<string> {
+  const hit = new Set<string>();
+  const runs = straightRunsOf(pts);
+  for (const other of scene.edges) {
+    if (skip.has(other.id) || other.pts.length < 2) continue;
+    for (const [index, label] of other.labels.entries()) {
+      if (!label.width || !label.height) continue;
+      const vertical = labelAxisVertical(other, label);
+      if (vertical === null) continue;
+      const lo = vertical ? label.x : label.y;
+      const hi = lo + (vertical ? label.width : label.height);
+      const acrossLo = vertical ? label.y : label.x;
+      const acrossHi = acrossLo + (vertical ? label.height : label.width);
+      for (const run of runs) {
+        if (run.vertical !== vertical) continue;
+        if (run.at <= lo + 1 || run.at >= hi - 1) continue;
+        if (run.hi <= acrossLo || run.lo >= acrossHi) continue;
+        hit.add(`${other.id}#${index}`);
+        break;
+      }
+    }
+  }
+  return hit;
+}
+
+/** Does this route lay a run under *any* of another flow's words? */
+function routeStraddlesLabels(pts: Point[], scene: Scene, ownId: string): boolean {
+  return straddledLabels(pts, scene, new Set([ownId])).size > 0;
+}
+
+
+/** Do these two routes have parallel runs lying on each other — sweep
+ *  `coincident`, `readability.ts`'s `merge:` (gap under 3px over more than 8). */
+function routesMerge(one: Point[], two: Point[]): boolean {
+  return straightRunsOf(one).some((a) =>
+    straightRunsOf(two).some(
+      (b) =>
+        a.vertical === b.vertical &&
+        Math.abs(a.at - b.at) < 3 &&
+        Math.min(a.hi, b.hi) - Math.max(a.lo, b.lo) > 8,
+    ),
+  );
+}
+
+/** Would this swap put either route on top of a run it was clear of? */
+function swapMerges(
+  scene: Scene,
+  pair: { a: SceneEdge; b: SceneEdge },
+  next: { a: Point[]; b: Point[] },
+): boolean {
+  if (!routesMerge(pair.a.pts, pair.b.pts) && routesMerge(next.a, next.b)) return true;
+  for (const other of scene.edges) {
+    if (other === pair.a || other === pair.b || other.pts.length < 2) continue;
+    if (!routesMerge(pair.a.pts, other.pts) && routesMerge(next.a, other.pts)) return true;
+    if (!routesMerge(pair.b.pts, other.pts) && routesMerge(next.b, other.pts)) return true;
+  }
+  return false;
+}
+
 /** Neither new terminal may collide with a third edge's attachment. */
 function swapSeatsCollide(
   scene: Scene,
@@ -2081,20 +2234,103 @@ function trySwapSeats(
   if (Math.abs(match.aAlong - match.bAlong) < ORTHOGONAL_EPSILON) return;
   // Only proceed if A and B actually cross right now.
   if (crossingsOf(A.pts, B.pts) === 0) return;
-  const aCandidate = buildSwap(A, match.aIdx, match.bAlong, leaves);
-  const bCandidate = buildSwap(B, match.bIdx, match.aAlong, leaves);
-  if (!aCandidate || !bCandidate) return;
-  // The mutual crossing must go away.
-  if (crossingsOf(aCandidate, bCandidate) > 0) return;
-  if (swapAddsCrossings(scene, pair, { a: aCandidate, b: bCandidate })) return;
+  // Two shapes to try, in order. The seat alone is the cheap one and answers
+  // the crossing made close to the node. Where the two flows run out to
+  // *parallel lanes*, though, the seat is only half the order: `small/tall` has
+  // *Search a slot and book* leaving the patient's west face above *Appointment
+  // confirmation* and then descending **outside** it, so one has to cut through
+  // the other's riser 200px away. Swapping the seat on its own leaves the lanes
+  // inverted and the crossing where it was — the pass declined for exactly that
+  // reason. The lane travels with the seat in the second shape, and the two
+  // flows nest.
+  const aLane = laneOfSwap(A, match.aIdx, leaves);
+  const bLane = laneOfSwap(B, match.bIdx, leaves);
+  const shapes: { a: Point[] | null; b: Point[] | null; moved: boolean }[] = [
+    {
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong }, leaves),
+      moved: false,
+    },
+  ];
+  if (aLane !== null && bLane !== null && Math.abs(aLane - bLane) >= ORTHOGONAL_EPSILON)
+    shapes.push({
+      a: buildSwap(A, { terminalIdx: match.aIdx, newAlong: match.bAlong, newLane: bLane }, leaves),
+      b: buildSwap(B, { terminalIdx: match.bIdx, newAlong: match.aAlong, newLane: aLane }, leaves),
+      moved: true,
+    });
+  for (const shape of shapes) {
+    if (!shape.a || !shape.b) continue;
+    // The mutual crossing must go away.
+    if (crossingsOf(shape.a, shape.b) > 0) continue;
+    if (applySwap(scene, pair, { match, next: { a: shape.a, b: shape.b }, moved: shape.moved }, leaves))
+      return;
+  }
+}
+
+/** The guards every swap shape has to clear, and the write when it does. */
+function applySwap(
+  scene: Scene,
+  pair: { a: SceneEdge; b: SceneEdge },
+  swap: { match: SwapMatch; next: { a: Point[]; b: Point[] }; moved: boolean },
+  leaves: SceneNode[],
+): boolean {
+  const { match, next } = swap;
+  const { a: A, b: B } = pair;
+  const aCandidate = next.a;
+  const bCandidate = next.b;
+  {
+  if (swapAddsCrossings(scene, pair, { a: aCandidate, b: bCandidate })) return false;
   // No new hugs on either route.
-  if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return;
+  if (wouldHug(aCandidate, leaves) || wouldHug(bCandidate, leaves)) return false;
+  // And neither may come to rest on top of a third flow. `readability.ts` calls
+  // this `merge:` and rates it tier 0, but nothing consults it here — the swap
+  // has its own private tests — so a swap could ship the one defect the sweep
+  // will not trade for (`coincident`, must be zero). It stayed at zero by luck:
+  // steering the repair away from label straddles was enough to break it, and
+  // `F09~F19` landed 2px apart on all three `infrastructure-large` dispositions.
+  if (swapMerges(scene, pair, { a: aCandidate, b: bCandidate })) return false;
+  // A moved lane is a long run carried across the drawing, so it also answers
+  // for the words it comes to rest along. Same blind spot as `merge:` above and
+  // the same answer: `readability.ts` has no straddle predicate, so nothing
+  // upstream weighs one — `logical-archi` picked up four and
+  // `application-tech-stack-large-dense` three before this went in. Only on the
+  // moved lane: charging the plain seat swap for it as well refused swaps that
+  // have been clearing crossings all along, and cost the corpus 0.602 of them
+  // per 1000 flows.
+  //
+  // By identity, not by presence: a route already straddling one label may not
+  // pick up a second, and a bare "does it straddle anything" test reads both
+  // states as `true` and waves that through. The set may only shrink.
+  //
+  // How many, plus the identities of the labels that are *not* moving. The
+  // count is the part that holds: this runs before the final anchor, so the two
+  // swapped flows' own labels are about to be re-seated onto whatever route they
+  // end up with and where they sit now says little. On `small/tall` the pair
+  // lands briefly on each other's words and the settler lifts them straight off
+  // — one straddle traded for one, which the drawing then has neither of. On
+  // `logical-archi` the same shape grows the count 0 -> 1, and the four
+  // straddles that swap leaves behind are real.
+  const swapped = new Set([A.id, B.id]);
+  const gained = (pts: Point[], edge: SceneEdge) => {
+    const own = new Set([edge.id]);
+    if (straddledLabels(pts, scene, own).size > straddledLabels(edge.pts, scene, own).size)
+      return true;
+    // And a stranger's words may not be exchanged for another stranger's: those
+    // labels are not the ones this swap re-seats, so their identities mean
+    // exactly what they say.
+    const was = straddledLabels(edge.pts, scene, swapped);
+    for (const key of straddledLabels(pts, scene, swapped)) if (!was.has(key)) return true;
+    return false;
+  };
+  if (swap.moved && (gained(aCandidate, A) || gained(bCandidate, B))) return false;
   const aNewSeat = seatWithAlong(aCandidate[match.aIdx === 0 ? 0 : aCandidate.length - 1], leaves);
   const bNewSeat = seatWithAlong(bCandidate[match.bIdx === 0 ? 0 : bCandidate.length - 1], leaves);
-  if (!aNewSeat || !bNewSeat) return;
-  if (swapSeatsCollide(scene, pair, [aNewSeat, bNewSeat], leaves)) return;
+  if (!aNewSeat || !bNewSeat) return false;
+  if (swapSeatsCollide(scene, pair, [aNewSeat, bNewSeat], leaves)) return false;
   A.pts = aCandidate;
   B.pts = bCandidate;
+  return true;
+  }
 }
 
 /** Swaps attachment seats for sibling flows when it reduces crossings. */
@@ -4339,7 +4575,34 @@ function createLaneModel(deps: {
       push(box.x, box.y, box.width, box.height);
     }
     for (const band of titleBoxes) push(band.x, band.y, band.width, band.height);
-    if (clearRuns) for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    // The `clear` lane avoids another flow's words as well as its runs. A
+    // container's title is already an obstacle here for the reason a label is: a
+    // corridor laid under text reads as a second line through it (§4e for a
+    // title, §4j for a label). Without this the repair put `small-slide`'s
+    // `SECRETARY -> SCHEDULER` 20px under `SCHEDULER -> PATIENT`, which is where
+    // that flow's 52px label already sat — the lane allocator had reserved the
+    // band, and the repair knew nothing about it.
+    //
+    // Only on this lane, beside the runs: `derived` is the tight one, and adding
+    // labels there sent several flows to the same first-clear lane, which is
+    // `coincident` — a must-be-zero invariant — ten times over.
+    //
+    // Its own labels are not obstacles: they are re-anchored to whatever route it
+    // ends up with, so where they sit now says nothing.
+    if (clearRuns) {
+      for (const other of scene.edges) {
+        if (other.id === edge.id) continue;
+        for (const label of other.labels) {
+          if (!label.width || !label.height) continue;
+          // Only a label lying *along* this corridor. One seated on a run across
+          // it is passed under for a few pixels, which is not §4j and not worth a
+          // lane; blocking on those re-seated labels all over the corpus.
+          if (labelAxisVertical(other, label) !== !vertical) continue;
+          push(label.x, label.y, label.width, label.height);
+        }
+      }
+      for (const block of parallelRunBlocks(edge, vertical)) blocks.push(block);
+    }
 
     let lane = search.start;
     for (let guard = 0; guard <= blocks.length; guard++) {
@@ -4399,13 +4662,28 @@ function createLaneModel(deps: {
     const lanes = [derived, clear, outside].filter(
       (lane, index, all): lane is number => lane !== null && all.indexOf(lane) === index,
     );
-    return lanes
+    const routes = lanes
       .filter((lane) => (before ? lane >= 2 && lane < near : lane <= limit - 2 && lane > far))
       .map((lane) =>
         vertical
           ? [a, { x: a.x, y: lane }, { x: b.x, y: lane }, b]
           : [a, { x: lane, y: a.y }, { x: lane, y: b.y }, b],
       );
+    // A corridor laid under a neighbour's words is a *preference* against, not a
+    // veto: the profile the repair weighs candidates with has no straddle
+    // predicate, so such a lane looks free to it, and `laneBeyond` already offers
+    // one clear of those labels — on `small-slide` it offered y=248 and the
+    // repair took y=223 anyway, straight through `SCHEDULER -> PATIENT`'s label.
+    //
+    // Only when something survives, though. Labels are re-anchored *after* this
+    // pass, so a straddle avoided here can reappear at a seat chosen later;
+    // dropping the last candidate turns that into an abandoned move and a route
+    // left where it was. Measured: vetoing outright put `labelStraddled` up 2.8
+    // per 1000 flows — the opposite of the point.
+    const offLabels = routes.filter(
+      (route) => !routeStraddlesLabels(route, scene, subject.edge.id),
+    );
+    return offLabels.length ? offLabels : routes;
   };
 
   /**
