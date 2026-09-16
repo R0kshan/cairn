@@ -12,26 +12,13 @@ All notable changes to the cairn project will be documented in this file.
 - `load-balancer` in the infrastructure view — a répartiteur de charge with its own fan glyph, distinct from `gateway`
 
 ### Changed
-- A flow the router has no shape for is now offered a corridor clear of the drawing, instead of keeping the one elk drew
-- A drawing is seated against the left margin, so no empty strip is left beside it and nothing is drawn outside the viewBox
-- Two flows leaving the same node side now nest instead of crossing, the higher seat taking the outer lane
-- A riser is measured against the height of the label it carries rather than its width, so a route is no longer refused for a label that fits across it
-- A repaired corridor no longer runs under the words of the flow it passes
-- A sibling-seat swap may no longer land a flow on top of a third one
-- The route-repair audit now counts the crossings a revert would bring back
+- Fewer crossings and detours: a flow with no workable shape takes a corridor clear of the drawing, flows leaving one side nest instead of crossing, a flow pointing backwards is straightened onto the facing sides, and a riser is no longer refused for a label that fits across it
+- Flows keep clear of the frames they pass: none runs along a border it is not attached to, one leaving a site or system goes outside the frame rather than down the inside of it, a route turns outside the border it crosses, and a container edge gives an inbound arrowhead up to 3px
+- Flow labels stay readable: a label slides along its run to the seat that crosses fewest outlines, none sits across a container outline when a seat within 24px is clear, and no repaired corridor runs under a neighbouring label
+- Less empty page: drawings are seated against the left margin, columns nothing is drawn in are reclaimed in the reading direction, a trailing element slides back beside the rows it shares, and the trailing-column reclaim may now buy a large win with a bottom-tier defect
 - `compact` is asserted on the boxes rather than on the canvas, which the router's corridors size
-- A flow label crossing container outlines slides along its own run to the seat that crosses fewest, on every diagram rather than only on hinted ones
-- A flow on its way out of a site or system runs outside the frame instead of descending the inside of it
-- A container border moves out by up to 3px where an inbound arrowhead would otherwise be drawn against it, leaving every node and route where the router put it
-- A route leaving a container turns outside the border it is about to cross, instead of just inside it
-- The trailing-column reclaim may spend a tier-3 or tier-4 defect on a reclaim worth both a tenth of the width and 200px; tier 2 and better stay unbuyable
-- A flow whose two ends sit on the faces looking away from each other is straightened onto the faces that look at each other
-- A flow no longer runs along a border it is not attached to
-- A flow label no longer sits across a container outline when a seat within 24px of it is clear
-- An element in a trailing layout band slides back to the first thing sharing a row with it, instead of taking a column of its own
-- Columns nothing is drawn in are reclaimed in the reading direction (`wide`/`slide`), the mirror of the existing empty-band reclaim
-- A WAF is drawn as a `firewall` in every example, appliance or software alike
-- The infrastructure examples use `datastore`, `cluster` and `load-balancer` instead of working around them
+- Route repairs are checked against the rest of the drawing: a sibling-seat swap may not land a flow on a third one, and a revert is charged for the crossings it brings back
+- The examples use the view's own vocabulary: `datastore`, `cluster` and `load-balancer` instead of workarounds, and a WAF drawn as a `firewall` whether appliance or software
 
 ## [v1.0.0-RC16](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC16) - 2026-09-13
 
