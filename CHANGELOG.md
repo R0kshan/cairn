@@ -2,7 +2,7 @@
 
 All notable changes to the cairn project will be documented in this file.
 
-## Unreleased
+## [v1.0.0-RC16](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC17) - 2026-09-16
 
 ### Added
 - `security` in the logical view — authentication, anonymisation or encryption as a business capability; it may sit anywhere, unconnected included
