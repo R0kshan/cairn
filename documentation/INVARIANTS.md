@@ -561,16 +561,15 @@ lane's own entry and exit, so routing one would silently overrule the pin — an
 backward flow is the case an author is most likely to be pinning.
 
 **A channel crossing sits under the content it actually passes, and nothing
-else.** The lanes are an x-interval packing, so the flows sharing one are exactly
-those whose spans do *not* overlap — and a shared depth let the deepest obstacle
-under any of them set the depth for all, with the ordering rule then pushing
-every lane below it down too. `logical-helios-fr` paid 192px of empty band for
-it: an actor column on the far left reaching past the system box set the depth
-for a flow 1200px away that only crosses the system box. Each crossing therefore
-takes the anchor, the clearance search and the label height of **its own span**;
-only crossings that genuinely share x still have to stay ordered, which is what
-keeps enclosing spans outside the ones they enclose (§4f). Gated by the sweep's
-per-drawing baseline and `tests/behavior.test.ts`.
+else.** Lanes pack x-intervals, so the flows sharing one are exactly those whose
+spans do *not* overlap; one depth for all of them let the deepest obstacle under
+any one set it for every one, and the ordering rule then pushed the lanes below
+it down too — 192px of empty band on `logical-helios-fr`, where a flow crossing
+only the system box took its depth from an actor column 1200px away. Each
+crossing therefore takes the anchor, clearance search and label height of **its
+own span**; only crossings that share x stay ordered, which keeps enclosing spans
+outside the ones they enclose (§4f). Gated by the per-drawing baseline and
+`tests/behavior.test.ts`.
 
 ## 12. Element kind validity per view
 

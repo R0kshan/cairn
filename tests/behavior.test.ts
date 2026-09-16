@@ -279,12 +279,6 @@ test("an `offset:` moves what it names and leaves the rest of the drawing alone"
   }
 });
 
-/** A committed route that spends a point in line with the segment beside it. */
-interface Junction {
-  edge: Scene["edges"][number];
-  runs: ReturnType<typeof straightRuns>;
-}
-
 test("a run is the straight line the reader sees, however many points it spends", async () => {
   // Routes carry redundant points: `applyNodeOffsets` splices an elbow that can
   // land in line with the segment beside it, and the committed examples hold
@@ -318,59 +312,57 @@ test("a run is the straight line the reader sees, however many points it spends"
   );
 
   // And on a real drawing: find a route that spends three points on one line,
-  // slide that line, and check the whole thing came along.
-  //
-  // The fixture is a search, not a name. Which drawing carries such a junction
-  // is a property of where the router leaves its elbows, so naming one made an
-  // honest routing improvement elsewhere fail here for want of a fixture —
-  // `large-fr` lost its last redundant point to a channel-lane fix.
-  let picked: { src: string; plain: Awaited<ReturnType<typeof build>>; found: Junction } | null =
-    null;
+  // slide that line, and check the whole thing came along. A search, not a name
+  // — which drawing carries such a junction moves with the router, and naming
+  // one made an honest routing fix elsewhere fail here for want of a fixture.
   for (const name of [
     "logical-security.cairn",
     "medium.cairn",
     "application-large-fr.cairn",
     "large-fr.cairn",
   ]) {
-    const source = readFileSync(join(ROOT, "examples", name), "utf8");
-    const built = await build(source);
-    const junction = built.scene.edges
+    const src = readFileSync(join(ROOT, "examples", name), "utf8");
+    const plain = await build(src);
+    const found = plain.scene.edges
       .map((edge) => ({ edge, runs: straightRuns(edge.pts) }))
       .find(({ edge, runs }) => runs.length < edge.pts.length - 1);
-    if (junction) {
-      picked = { src: source, plain: built, found: junction };
-      break;
-    }
-  }
-  assert.ok(picked, "fixture: expected a committed route with a redundant point on a run");
-  const { src, plain, found } = picked;
-  const index = found.runs.findIndex((run) => run.to - run.from > 1);
-  const run = found.runs[index];
-  const before = found.edge.pts.map((point) => ({ ...point }));
+    if (!found) continue;
 
-  const flow = plain.model.flows.find((candidate) => candidate.id === found.edge.id)!;
-  const lines = src.split("\n");
-  lines[flow.span.line - 1] += ` { segment-offset: ${index + 1}, 20 }`;
-  const slid = await build(lines.join("\n"));
-  const after = slid.scene.edges.find((edge) => edge.id === found.edge.id)!.pts;
+    const index = found.runs.findIndex((run) => run.to - run.from > 1);
+    const run = found.runs[index];
+    const before = found.edge.pts.map((point) => ({ ...point }));
 
-  assert.equal(after.length, before.length, "a slide must not change how many points a route has");
-  // Every point of the run moves by the same amount — which is the delta, or
-  // less where the element side a terminal sits on cut it short. What must not
-  // happen is one point moving and its neighbour on the same line staying put.
-  const shift = (i: number) => (run.vertical ? after[i].x - before[i].x : after[i].y - before[i].y);
-  assert.notEqual(shift(run.from), 0, "the run did not move at all");
-  for (let i = run.from; i <= run.to; i++)
+    const flow = plain.model.flows.find((candidate) => candidate.id === found.edge.id)!;
+    const lines = src.split("\n");
+    lines[flow.span.line - 1] += ` { segment-offset: ${index + 1}, 20 }`;
+    const slid = await build(lines.join("\n"));
+    const after = slid.scene.edges.find((edge) => edge.id === found.edge.id)!.pts;
+
     assert.equal(
-      shift(i),
-      shift(run.from),
-      `point ${i} of the run was left behind — the line would be slanted`,
+      after.length,
+      before.length,
+      "a slide must not change how many points a route has",
     );
-  for (let i = 1; i < after.length; i++)
-    assert.ok(
-      Math.abs(after[i - 1].x - after[i].x) < 0.5 || Math.abs(after[i - 1].y - after[i].y) < 0.5,
-      `segment ${i} of ${found.edge.id} runs off the orthogonal`,
-    );
+    // Every point of the run moves by the same amount — which is the delta, or
+    // less where the element side a terminal sits on cut it short. What must not
+    // happen is one point moving and its neighbour on the same line staying put.
+    const shift = (i: number) =>
+      run.vertical ? after[i].x - before[i].x : after[i].y - before[i].y;
+    assert.notEqual(shift(run.from), 0, "the run did not move at all");
+    for (let i = run.from; i <= run.to; i++)
+      assert.equal(
+        shift(i),
+        shift(run.from),
+        `point ${i} of the run was left behind — the line would be slanted`,
+      );
+    for (let i = 1; i < after.length; i++)
+      assert.ok(
+        Math.abs(after[i - 1].x - after[i].x) < 0.5 || Math.abs(after[i - 1].y - after[i].y) < 0.5,
+        `segment ${i} of ${found.edge.id} runs off the orthogonal`,
+      );
+    return;
+  }
+  assert.fail("fixture: expected a committed route with a redundant point on a run");
 });
 
 test("a moved element leaves no spur behind on the flows it carries", async () => {
@@ -1882,23 +1874,21 @@ test("a drawing is seated at the left margin, and stays put when re-rendered", a
 });
 
 test("a channel crossing hugs the content it passes, not the drawing's deepest box", async () => {
-  // Lanes are an x-interval packing, so the flows sharing one are exactly those
-  // whose spans do *not* overlap. Giving all of them one y let the deepest thing
-  // under any of them set the depth for all: on `logical-helios-fr` the actor
-  // column on the far left reaches 230px below the system box, and the flow
-  // passing under it shared a lane with `ALPHA -> messagerie siège`, which only
-  // crosses the system box. That one was anchored on the actor column it never
-  // goes near, and the two lanes below it were then held under *that* by the
-  // ordering rule — three flows and 192px of empty band, for one flow's obstacle
-  // 1200px away (INVARIANTS §11).
+  // Lanes pack x-intervals, so the flows sharing one are exactly those whose
+  // spans do *not* overlap — and one y for all of them let the deepest thing
+  // under any one set the depth for every one. `ALPHA -> messagerie siège`
+  // crosses only the system box, shared a lane with a flow passing under the
+  // actor column 230px deeper, and took that column's depth; the ordering rule
+  // then held the two lanes below it down too. 192px of empty band for one
+  // flow's obstacle 1200px away (INVARIANTS §11).
   const { scene } = await build(load("anonymized/logical-helios-fr.cairn"));
   const detours = scene.edges.filter((edge) => edge.detour);
   assert.ok(detours.length >= 3, `fixture: expected channel detours (got ${detours.length})`);
 
   const actors = scene.nodes.find((node) => node.id === "ACT_PASSIF")!;
   const system = scene.nodes.find((node) => node.id === "SYS_HELIOS")!;
-  // The actor column is the deepest box in the drawing and none of these flows
-  // passes under it — that is the whole point of the fixture.
+  // The fixture only bites while the actor column is the deepest box and no
+  // detour passes under it.
   assert.ok(
     actors.y + actors.height > system.y + system.height,
     "fixture: the actor column must reach below the system box",
@@ -1918,8 +1908,8 @@ test("a channel crossing hugs the content it passes, not the drawing's deepest b
       `${edge.id} sits ${(deepest - (actors.y + actors.height)).toFixed(0)}px below a box it never passes under`,
     );
   }
-  // And with the lanes back against the content, no band of nothing is left
-  // under the drawing for the canvas to carry.
+  // And with the runs back against the content, no empty band is left under the
+  // drawing for the canvas to carry.
   let nodeBottom = 0;
   for (const node of scene.nodes) nodeBottom = Math.max(nodeBottom, node.y + node.height);
   let inkBottom = nodeBottom;
