@@ -1897,11 +1897,18 @@ test("a stranded flow is offered a corridor clear of the drawing", async () => {
       );
   for (const id of ["COHORT", "ANON"]) {
     const box = scene.nodes.find((node) => node.id === id)!;
-    for (const point of study.pts)
+    // Whole segments, not endpoints: a run crosses the box with both of its
+    // ends outside it, on opposite sides.
+    const clears = (lo: number, hi: number, from: number, to: number) =>
+      Math.max(lo, from) > Math.min(hi, to);
+    for (let i = 0; i + 1 < study.pts.length; i++) {
+      const [a, b] = [study.pts[i], study.pts[i + 1]];
       assert.ok(
-        point.y < box.y - 8 || point.y > box.y + box.height + 8 || point.x < box.x || point.x > box.x + box.width,
+        clears(Math.min(a.x, b.x), Math.max(a.x, b.x), box.x - 8, box.x + box.width + 8) ||
+          clears(Math.min(a.y, b.y), Math.max(a.y, b.y), box.y - 8, box.y + box.height + 8),
         `F20 must not skim ${id}`,
       );
+    }
   }
   assert.ok(model.flows.some((flow) => flow.id === "F20"), "fixture: F20 is `Run a study`");
 });

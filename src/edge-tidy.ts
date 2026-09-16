@@ -4370,12 +4370,18 @@ function bestSingleRoute(
   o: RouteOptimiser,
   edge: SceneEdge,
   stranded = false,
+  eligible?: (verdict: { after: Profile; damage: number[] }) => boolean,
 ): Point[] | null {
   let bestRoute: Point[] | null = null;
   let bestDamage: number[] | null = null;
   for (const pts of o.routesFor(edge, stranded)) {
     const verdict = o.weigh([edge], new Map([[edge.id, pts]]));
     if (!verdict) continue;
+    // Ranked among the candidates that pass the caller's own guards, not ranked
+    // and then guarded: the least-damaged candidate can be the one the guard
+    // throws out, and the flow would keep the route it was stranded on while an
+    // eligible candidate sat further down the list.
+    if (eligible && !eligible(verdict)) continue;
     if (!bestDamage || o.lessDamaged(verdict.damage, bestDamage)) {
       bestDamage = verdict.damage;
       bestRoute = pts;
@@ -4444,18 +4450,19 @@ function repairEdge(o: RouteOptimiser, edge: SceneEdge): boolean {
   const before = o.profileNow(ids);
   const had = clutter(before);
   if (had >= ESCAPE_CLEARS) {
-    const wayOut = bestSingleRoute(o, edge, true);
-    const verdict = wayOut && o.weigh([edge], new Map([[edge.id, wayOut]]));
     // And it may not seat a terminal on the face looking away from its
     // counterpart. The corridor leaves by a side of its own choosing, so it can
     // always find one — and `away` is tier 3, which the ladder lets it buy with
     // the tier-2 clutter it is clearing. `attachAway` is the corpus metric for it
     // and the one this cost most: 59.0 -> 68.1 per 1000 flows before the guard.
-    const turnsAway =
-      verdict &&
-      [...verdict.after.keys()].some((key) => key.startsWith("away:") && !before.has(key));
-    if (wayOut && verdict && !turnsAway && clutter(verdict.after) <= had - ESCAPE_CLEARS)
-      if (o.tryMove([edge], new Map([[edge.id, wayOut]]))) return true;
+    //
+    // Both conditions gate the *candidates*, not the winner: the corridor search
+    // hands back the ordinary shapes too, so several can be accepted at once.
+    const buysItsWayIn = (verdict: { after: Profile }) =>
+      ![...verdict.after.keys()].some((key) => key.startsWith("away:") && !before.has(key)) &&
+      clutter(verdict.after) <= had - ESCAPE_CLEARS;
+    const wayOut = bestSingleRoute(o, edge, true, buysItsWayIn);
+    if (wayOut && o.tryMove([edge], new Map([[edge.id, wayOut]]))) return true;
   }
   return tryJointMove(o, edge, ids);
 }
