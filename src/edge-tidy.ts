@@ -4070,7 +4070,21 @@ export function labelsSeated(edge: SceneEdge): boolean {
 interface RouteSubject {
   ends: ReturnType<ReturnType<typeof inspect>["endsOf"]>;
   edge: SceneEdge;
+  /** Has every ordinary shape for this flow been refused at tier 0? */
+  stranded: boolean;
 }
+
+/**
+ * How much clutter the escape corridor has to clear to be worth its turns.
+ *
+ * The reason a bar is needed at all is the ladder's own ranking: turns are tier 3
+ * and hugs and crossings tier 2, so a four-turn corridor that clears a single hug
+ * always looks like a good trade, and measurably is not. Calibrated against the
+ * corpus with the `away` guard below in place, per-drawing regressions against
+ * improvements: 2 -> 4/16, **3 -> 0/14**, 4 -> 13/20. Three is the turn, not
+ * merely the first value that passed. See `repairEdge`.
+ */
+const ESCAPE_CLEARS = 3;
 
 /** One lane search: the span to clear, where to start, and which way to go. */
 interface LaneSearch {
@@ -4330,7 +4344,7 @@ function createLadderModel(deps: {
 interface RouteOptimiser {
   ordered: SceneEdge[];
   profileNow: (ids: Set<string>) => Profile;
-  routesFor: (edge: SceneEdge) => Point[][];
+  routesFor: (edge: SceneEdge, stranded?: boolean) => Point[][];
   weigh: (
     group: SceneEdge[],
     overrides: Map<string, Point[]>,
@@ -4352,12 +4366,22 @@ interface RouteOptimiser {
  * strict, so an earlier candidate keeps the win unless a later one is genuinely
  * less damaged.
  */
-function bestSingleRoute(o: RouteOptimiser, edge: SceneEdge): Point[] | null {
+function bestSingleRoute(
+  o: RouteOptimiser,
+  edge: SceneEdge,
+  stranded = false,
+  eligible?: (verdict: { after: Profile; damage: number[] }) => boolean,
+): Point[] | null {
   let bestRoute: Point[] | null = null;
   let bestDamage: number[] | null = null;
-  for (const pts of o.routesFor(edge)) {
+  for (const pts of o.routesFor(edge, stranded)) {
     const verdict = o.weigh([edge], new Map([[edge.id, pts]]));
     if (!verdict) continue;
+    // Ranked among the candidates that pass the caller's own guards, not ranked
+    // and then guarded: the least-damaged candidate can be the one the guard
+    // throws out, and the flow would keep the route it was stranded on while an
+    // eligible candidate sat further down the list.
+    if (eligible && !eligible(verdict)) continue;
     if (!bestDamage || o.lessDamaged(verdict.damage, bestDamage)) {
       bestDamage = verdict.damage;
       bestRoute = pts;
@@ -4405,6 +4429,41 @@ function repairEdge(o: RouteOptimiser, edge: SceneEdge): boolean {
   // Single move first — cheapest, and most defects yield to it.
   const best = bestSingleRoute(o, edge);
   if (best && o.tryMove([edge], new Map([[edge.id, best]]))) return true;
+  // Stranded: the whole ordinary side matrix — every side pair, every seat
+  // offset — and not one shape the ladder would take. Only now is the escape
+  // corridor generated, and it has to buy its way in.
+  //
+  // The ladder alone is not the right bar for it. A four-turn detour is tier 3,
+  // a hug or a crossing tier 2, so the ladder takes the trade every time — and
+  // the corpus says readers do not: offered on the ladder's terms it put
+  // `attachAway` 386 -> 483 and `turnHeavy` 860 -> 967, both through their
+  // ceilings, across 66 drawings. So it must clear three tier-2-or-worse defects
+  // at once. A flow with one hug is untidy; a flow with three is stranded, and
+  // the turns are worth it.
+  //
+  // `logical-security`'s *Run a study* is the case: an east seat on the analyst,
+  // a north seat on the report, and every L and Z between them either strikes a
+  // container's name or hugs the boxes under it. It sat on a corridor 3px above
+  // two of them, crossing another flow twice, running near-parallel to it and
+  // hugging both — five tier-2 defects for one turn.
+  const clutter = (profile: Profile) => [...profile.values()].filter((tier) => tier <= 2).length;
+  const before = o.profileNow(ids);
+  const had = clutter(before);
+  if (had >= ESCAPE_CLEARS) {
+    // And it may not seat a terminal on the face looking away from its
+    // counterpart. The corridor leaves by a side of its own choosing, so it can
+    // always find one — and `away` is tier 3, which the ladder lets it buy with
+    // the tier-2 clutter it is clearing. `attachAway` is the corpus metric for it
+    // and the one this cost most: 59.0 -> 68.1 per 1000 flows before the guard.
+    //
+    // Both conditions gate the *candidates*, not the winner: the corridor search
+    // hands back the ordinary shapes too, so several can be accepted at once.
+    const buysItsWayIn = (verdict: { after: Profile }) =>
+      ![...verdict.after.keys()].some((key) => key.startsWith("away:") && !before.has(key)) &&
+      clutter(verdict.after) <= had - ESCAPE_CLEARS;
+    const wayOut = bestSingleRoute(o, edge, true, buysItsWayIn);
+    if (wayOut && o.tryMove([edge], new Map([[edge.id, wayOut]]))) return true;
+  }
   return tryJointMove(o, edge, ids);
 }
 
@@ -4754,7 +4813,13 @@ export function optimiseRoutes(
       const bH = horizontalSide(sides.b);
       if (aH !== bH) {
         const plainL = [a, aH ? { x: b.x, y: a.y } : { x: a.x, y: b.y }, b];
-        return [plainL, ...approachLanes(a, b, sides, subject)];
+        // The approach is a *fallback*, not an addition. Offered alongside the L
+        // wherever the L is merely unlovely, it gets taken on ties and the corpus
+        // pays in shape: `attachAway` 386 -> 481 and `turnHeavy` 860 -> 969, both
+        // through their ceilings, across 64 drawings. Offered only where the L
+        // destroys something, it answers the case it exists for and nothing else.
+        const offerLanes = subject.edge.pinned || subject.stranded;
+        return offerLanes ? [plainL, ...approachLanes(a, b, sides, subject)] : [plainL];
       }
       if (outward(sides.a) === outward(sides.b)) return channelU(a, b, sides.a, subject);
       if (aH)
@@ -4786,8 +4851,18 @@ export function optimiseRoutes(
      * are offered: the obstacle-derived one, and the one that also clears
      * parallel runs (§4j).
      *
-     * Pinned edges only. Unpinned ones have the whole side matrix to search, and
-     * widening it for them costs build time the ladder does not pay back.
+     * Reached two ways. A **pinned** flow gets it for any L, because it may not
+     * take another side pair and without an alternative it keeps whatever elk
+     * drew. An **unpinned** one gets it only when it is *stranded* — when the
+     * whole ordinary side matrix has been tried and not one shape in it was
+     * accepted, which `repairEdge` is the only place that knows —
+     * it has the whole side matrix to search, and offering the escape wherever
+     * the L is merely unlovely had it taken on ties, which cost the corpus two
+     * ceilings. `logical-security`'s *Run a study* is the case that needs it: an
+     * east seat, a north seat, and every L and Z between them either strikes the
+     * *Secondary use* name or the portal's own, so the flow stayed on a corridor
+     * 3px above two boxes, crossing another flow twice and running near-parallel
+     * to it — five tier-2 defects the router had no shape to answer with.
      */
     const approachLanes = (
       a: Point,
@@ -4795,7 +4870,6 @@ export function optimiseRoutes(
       sides: { a: Side; b: Side },
       subject: RouteSubject,
     ): Point[][] => {
-      if (!subject.edge.pinned) return [];
       const aH = horizontalSide(sides.a);
       const bH = horizontalSide(sides.b);
       // Both legs get a searched lane, not a fixed step: the leg leaving `a` has
@@ -4837,19 +4911,20 @@ export function optimiseRoutes(
 
     /** Candidate routes for one edge, cheapest-looking first, de-duplicated. */
     const routeCache = new Map<string, Point[][]>();
-    const routesFor = (edge: SceneEdge): Point[][] => {
+    const routesFor = (edge: SceneEdge, stranded = false): Point[][] => {
       // Keyed on the current route *and* the generation. The endpoints alone
       // were enough while candidates depended only on the two nodes; a channel
       // lane now clears the runs already in the drawing (§4j), so an accepted
       // move elsewhere can change what this edge's candidates are.
-      const cacheKey = `${clock.generation}|${edge.id}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
+      const cacheKey = `${clock.generation}|${edge.id}|${stranded}|${edge.pts[0].x},${edge.pts[0].y}|${edge.pts[edge.pts.length - 1].x},${edge.pts[edge.pts.length - 1].y}`;
       const cached = routeCache.get(cacheKey);
       if (cached) return cached;
       const ends = inspector.endsOf(edge.pts);
-      if (!ends[0] || !ends[1] || ends[0].node === ends[1].node) return [];
+      const [fromEnd, toEnd] = ends;
+      if (!fromEnd || !toEnd || fromEnd.node === toEnd.node) return [];
       // Built once per edge and once per side pair respectively, so the seat
       // loops below still pass plain values (C7).
-      const subject: RouteSubject = { ends, edge };
+      const subject: RouteSubject = { ends, edge, stranded };
       const out: Point[][] = [];
       const seen = new Set<string>();
       // A fixed end is only ever offered the side it already sits on: the repair
@@ -4857,32 +4932,35 @@ export function optimiseRoutes(
       // decided for it — the author's pin, or the queue cap `hubFlowSides` chose,
       // which is where the reader looks for the producers and the consumers. The
       // free end of a half-fixed flow keeps the full search.
-      const aSides: Side[] = sideFixed(edge, "start") ? [ends[0].side] : SIDES;
-      const bSides: Side[] = sideFixed(edge, "end") ? [ends[1].side] : SIDES;
-      for (const aSide of aSides)
-        for (const bSide of bSides) {
-          const sides = { a: aSide, b: bSide };
-          for (const aOff of seatOffsetsFor(ends[0].node, aSide))
-            for (const bOff of seatOffsetsFor(ends[1].node, bSide))
-              for (const raw of shapesFor(
-                seatOn(ends[0].node, aSide, aOff),
-                seatOn(ends[1].node, bSide, bOff),
-                sides,
-                subject,
-              )) {
-                const pts = raw.filter(
-                  (p, index) =>
-                    index === 0 ||
-                    Math.abs(p.x - raw[index - 1].x) >= ORTHOGONAL_EPSILON ||
-                    Math.abs(p.y - raw[index - 1].y) >= ORTHOGONAL_EPSILON,
-                );
-                if (pts.length < 2) continue;
-                const key = pts.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
-                if (seen.has(key)) continue;
-                seen.add(key);
-                out.push(pts);
-              }
-        }
+      const aSides: Side[] = sideFixed(edge, "start") ? [fromEnd.side] : SIDES;
+      const bSides: Side[] = sideFixed(edge, "end") ? [toEnd.side] : SIDES;
+      const sweepSides = () => {
+        for (const aSide of aSides)
+          for (const bSide of bSides) {
+            const sides = { a: aSide, b: bSide };
+            for (const aOff of seatOffsetsFor(fromEnd.node, aSide))
+              for (const bOff of seatOffsetsFor(toEnd.node, bSide))
+                for (const raw of shapesFor(
+                  seatOn(fromEnd.node, aSide, aOff),
+                  seatOn(toEnd.node, bSide, bOff),
+                  sides,
+                  subject,
+                )) {
+                  const pts = raw.filter(
+                    (p, index) =>
+                      index === 0 ||
+                      Math.abs(p.x - raw[index - 1].x) >= ORTHOGONAL_EPSILON ||
+                      Math.abs(p.y - raw[index - 1].y) >= ORTHOGONAL_EPSILON,
+                  );
+                  if (pts.length < 2) continue;
+                  const key = pts.map((p) => `${Math.round(p.x)},${Math.round(p.y)}`).join(" ");
+                  if (seen.has(key)) continue;
+                  seen.add(key);
+                  out.push(pts);
+                }
+          }
+      };
+      sweepSides();
       // Fewest turns, then shortest — the maintainer's ranking, used only to
       // decide which candidates to *try* first. Acceptance is the ladder's.
       // Square every candidate *before* scoring it. Applying orthogonality after
