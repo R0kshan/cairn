@@ -906,30 +906,19 @@ function resolveLanePosition(lc: LaneContext, span: LaneSpan, direction: 1 | -1)
   return position;
 }
 
-/** A run already placed, and what it occupies once its label is under it. */
-interface PlacedRun {
-  left: number;
-  right: number;
-  y: number;
-  labelHeight: number;
-}
-
 /**
  * Where each flow of `subset` crosses the channel, keyed by flow id.
  *
- * Per flow, not per lane. A lane is an x-interval packing — first fit, so the
- * flows sharing one are precisely those whose spans do *not* overlap — and
- * giving all of them one y made the deepest content under any of them set the
- * depth for all. `logical-helios-fr` is the case: an actor column on the far
- * left reaches 230px below the system box, and the flow passing under it shared
- * a lane with one that only crosses the system box. That one was anchored on the
- * actor column it never passes under, and the two lanes below it were then held
- * under *that* by the ordering rule — three flows and 190px of white band, for
- * one flow's obstacle 1200px away.
+ * Per flow, not per lane. A lane is a first-fit packing of x-intervals, so its
+ * members are exactly the flows whose spans do *not* overlap — and one y for all
+ * of them let the deepest content under any one set the depth for all, the
+ * ordering rule then holding every lane below it down too. `logical-helios-fr`
+ * paid 190px of white band for it, anchoring a flow that crosses only the system
+ * box on an actor column 1200px away that it never passes under.
  *
- * Disjoint runs cannot cross, so nothing needs them level. Each takes the
- * anchor, the clearance search and the label height of its own span, and only
- * the runs that genuinely overlap in x still have to stay ordered.
+ * Disjoint runs cannot cross, so nothing needs them level: each takes the
+ * anchor, clearance search and label height of its own span, and only runs that
+ * overlap in x stay ordered.
  */
 function laneOffsets(
   lc: LaneContext,
@@ -942,7 +931,7 @@ function laneOffsets(
     const lane = lc.laneIndexOf.get(plan.edge.id)!;
     byLane.set(lane, [...(byLane.get(lane) ?? []), plan]);
   }
-  const placed: PlacedRun[] = [];
+  const placed: { left: number; right: number; y: number; labelHeight: number }[] = [];
   const positions = new Map<string, number>();
   // Lane order is the nesting order (`assignLanes`), so a span that encloses
   // another is always placed after it and can be held outside it.
@@ -954,16 +943,14 @@ function laneOffsets(
       // The one container this flow never leaves is open to it; every other is
       // an obstacle.
       const exempt = sharedEnclosers(lc.containerNodes, plan);
-      // Labels sit on the *outer* side of their lane, away from the drawing. The
-      // top channel always did; the bottom channel used to put them between the
-      // content and the lane, which pushed every bottom lane out by a whole label
-      // and left a conspicuous gap against the container it hugged on the other
-      // side.
+      // Labels sit on the *outer* side of the run, away from the drawing, so the
+      // run itself can hug the content. Putting them between the two pushed every
+      // bottom lane out by a whole label.
       const ownPosition =
         spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
-      // Runs that share x stay ordered: a deeper one never rises above a
-      // shallower one, which is what keeps enclosing spans outside the ones they
-      // enclose. Runs that share none are free of each other.
+      // Runs that share x stay ordered — a deeper one never rises above a
+      // shallower one, which keeps enclosing spans outside the ones they enclose.
+      // Runs that share none are free of each other.
       const over = placed.filter((run) => run.left < right && left < run.right);
       const start = over.reduce(
         (held, run) =>
