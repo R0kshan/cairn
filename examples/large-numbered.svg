@@ -144,7 +144,7 @@
 <path d="M 1367 474.1666666666667 L 1526 474.1666666666667 A 5 5 0 0 1 1536 474.1666666666667 L 1541 474.1666666666667 L 1541 447.5 L 1571 447.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1572 465 L 1560 465 L 1560 866.5 L 981 866.5 A 5 5 0 0 0 971 866.5 L 844 866.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1655 525.5 L 1655 499.5 L 1747 499.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1789 505.5 L 1789 721.5 L 1647 721.5 A 5 5 0 0 0 1637 721.5 L 1631 721.5 A 5 5 0 0 0 1621 721.5 L 1565 721.5 A 5 5 0 0 0 1555 721.5 L 1217 721.5 L 1217 415 L 1259 415" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1789 505.5 L 1789 724.5 L 1647 724.5 A 5 5 0 0 0 1637 724.5 L 1631 724.5 A 5 5 0 0 0 1621 724.5 L 1565 724.5 A 5 5 0 0 0 1555 724.5 L 1217 724.5 L 1217 415 L 1259 415" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1626 639.5 L 1626 933.5 L 981 933.5 A 5 5 0 0 0 971 933.5 L 844 933.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1666 424 L 1666 254 L 1166 254 A 5 5 0 0 0 1156 254 L 1156 254 A 5 5 0 0 0 1146 254 L 1146 254 A 5 5 0 0 0 1136 254 L 814 254 L 814 765" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 845 776.75 L 921 776.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -200,8 +200,8 @@
 <text x="1242" y="417.85" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">11</text>
 <text x="1235" y="936.35" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">12</text>
 <text x="1235" y="936.35" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">12</text>
-<text x="814" y="569.975" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">13</text>
-<text x="814" y="569.975" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">13</text>
+<text x="814" y="574.1" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">13</text>
+<text x="814" y="574.1" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">13</text>
 <text x="883" y="779.6" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">14</text>
 <text x="883" y="779.6" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">14</text>
 <text x="2578" y="770.85" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">15</text>
@@ -254,8 +254,8 @@
 <text x="1642" y="833.6" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">38</text>
 <text x="911" y="746.5375" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">39</text>
 <text x="911" y="746.5375" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">39</text>
-<text x="308.75" y="509.6833333333333" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">40</text>
-<text x="308.75" y="509.6833333333333" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">40</text>
+<text x="308.75" y="509.68333333333334" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">40</text>
+<text x="308.75" y="509.68333333333334" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">40</text>
 <text x="2618" y="730.35" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">41</text>
 <text x="2618" y="730.35" font-size="10.5" text-anchor="middle" fill="#3a4553" font-weight="bold">41</text>
 <text x="2136.5" y="590.1" font-size="10.5" text-anchor="middle" fill="#ffffff" stroke="#ffffff" stroke-width="3" stroke-linejoin="round" font-weight="bold">42</text>
