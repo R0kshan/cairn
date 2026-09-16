@@ -414,7 +414,7 @@ dispositions/large-page/page	crossings	82
 dispositions/large-page/page	fanTangle	2
 dispositions/large-page/page	jog<=20	1
 dispositions/large-page/page	jog<=6	1
-dispositions/large-page/page	longDetour	6
+dispositions/large-page/page	longDetour	5
 dispositions/large-page/page	nearParallel	1
 dispositions/large-page/page	titleStruck	3
 dispositions/large-page/page	turnHeavy	13
@@ -432,7 +432,7 @@ dispositions/large-page/tall	crossings	82
 dispositions/large-page/tall	fanTangle	2
 dispositions/large-page/tall	jog<=20	1
 dispositions/large-page/tall	jog<=6	1
-dispositions/large-page/tall	longDetour	6
+dispositions/large-page/tall	longDetour	5
 dispositions/large-page/tall	nearParallel	1
 dispositions/large-page/tall	titleStruck	3
 dispositions/large-page/tall	turnHeavy	13
@@ -453,7 +453,7 @@ dispositions/large-slide/page	crossings	82
 dispositions/large-slide/page	fanTangle	2
 dispositions/large-slide/page	jog<=20	1
 dispositions/large-slide/page	jog<=6	1
-dispositions/large-slide/page	longDetour	6
+dispositions/large-slide/page	longDetour	5
 dispositions/large-slide/page	nearParallel	1
 dispositions/large-slide/page	titleStruck	3
 dispositions/large-slide/page	turnHeavy	13
@@ -471,7 +471,7 @@ dispositions/large-slide/tall	crossings	82
 dispositions/large-slide/tall	fanTangle	2
 dispositions/large-slide/tall	jog<=20	1
 dispositions/large-slide/tall	jog<=6	1
-dispositions/large-slide/tall	longDetour	6
+dispositions/large-slide/tall	longDetour	5
 dispositions/large-slide/tall	nearParallel	1
 dispositions/large-slide/tall	titleStruck	3
 dispositions/large-slide/tall	turnHeavy	13
@@ -492,7 +492,7 @@ dispositions/large-tall/page	crossings	82
 dispositions/large-tall/page	fanTangle	2
 dispositions/large-tall/page	jog<=20	1
 dispositions/large-tall/page	jog<=6	1
-dispositions/large-tall/page	longDetour	6
+dispositions/large-tall/page	longDetour	5
 dispositions/large-tall/page	nearParallel	1
 dispositions/large-tall/page	titleStruck	3
 dispositions/large-tall/page	turnHeavy	13
@@ -510,7 +510,7 @@ dispositions/large-tall/tall	crossings	82
 dispositions/large-tall/tall	fanTangle	2
 dispositions/large-tall/tall	jog<=20	1
 dispositions/large-tall/tall	jog<=6	1
-dispositions/large-tall/tall	longDetour	6
+dispositions/large-tall/tall	longDetour	5
 dispositions/large-tall/tall	nearParallel	1
 dispositions/large-tall/tall	titleStruck	3
 dispositions/large-tall/tall	turnHeavy	13
@@ -747,17 +747,14 @@ large-fr/tall	labelStraddled	3
 large-fr/tall	longDetour	7
 large-fr/tall	titleStruck	1
 large-fr/tall	turnHeavy	13
-large-fr/wide	attachAway	2
-large-fr/wide	crossings	124
-large-fr/wide	fanTangle	1
-large-fr/wide	jog<=20	5
-large-fr/wide	jog<=6	4
+large-fr/wide	attachAway	4
+large-fr/wide	crossings	100
+large-fr/wide	jog<=20	6
+large-fr/wide	jog<=6	1
 large-fr/wide	labelOffLine	1
-large-fr/wide	labelStraddled	4
-large-fr/wide	longDetour	1
-large-fr/wide	nearParallel	1
-large-fr/wide	throughContainer	1
-large-fr/wide	turnHeavy	23
+large-fr/wide	labelStraddled	2
+large-fr/wide	nearParallel	3
+large-fr/wide	turnHeavy	20
 large-numbered/page	attachAway	2
 large-numbered/page	crossings	95
 large-numbered/page	fanTangle	1
@@ -791,7 +788,7 @@ large/page	crossings	82
 large/page	fanTangle	2
 large/page	jog<=20	1
 large/page	jog<=6	1
-large/page	longDetour	6
+large/page	longDetour	5
 large/page	nearParallel	1
 large/page	titleStruck	3
 large/page	turnHeavy	13
@@ -809,7 +806,7 @@ large/tall	crossings	82
 large/tall	fanTangle	2
 large/tall	jog<=20	1
 large/tall	jog<=6	1
-large/tall	longDetour	6
+large/tall	longDetour	5
 large/tall	nearParallel	1
 large/tall	titleStruck	3
 large/tall	turnHeavy	13
@@ -828,7 +825,7 @@ large/wide	turnHeavy	19
 logical-archi/page	attachAway	5
 logical-archi/page	crossings	25
 logical-archi/page	jog<=6	1
-logical-archi/page	longDetour	5
+logical-archi/page	longDetour	4
 logical-archi/page	nearParallel	2
 logical-archi/page	turnHeavy	6
 logical-archi/slide	attachAway	3
@@ -839,7 +836,7 @@ logical-archi/slide	turnHeavy	5
 logical-archi/tall	attachAway	5
 logical-archi/tall	crossings	25
 logical-archi/tall	jog<=6	1
-logical-archi/tall	longDetour	5
+logical-archi/tall	longDetour	4
 logical-archi/tall	nearParallel	2
 logical-archi/tall	turnHeavy	6
 logical-archi/wide	attachAway	3

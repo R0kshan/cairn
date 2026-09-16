@@ -1,189 +1,189 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2608 1170" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2558 978" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2608" height="1170" fill="#ffffff"/>
-<rect x="25" y="22" width="199" height="334" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="35" y="40" font-size="13" font-weight="bold" fill="#17202c">Acteurs niveau siège</text>
-<rect x="214" y="367" width="193" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="224" y="385" font-size="13" font-weight="bold" fill="#17202c">Acteurs niveau Agence</text>
-<rect x="296" y="468" width="106" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="306" y="486" font-size="13" font-weight="bold" fill="#17202c">Acteurs passifs</text>
-<rect x="638" y="67" width="1277" height="429.1666666666667" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
-<text x="648" y="85" font-size="13" font-weight="bold" fill="#17202c">SI HELIOS</text>
-<rect x="1614" y="94" width="267" height="250" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="1624" y="112" font-size="13" font-weight="bold" fill="#17202c">Niveau Siège</text>
-<rect x="672" y="284.6666666666667" width="611" height="182.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
-<text x="682" y="302.6666666666667" font-size="13" font-weight="bold" fill="#17202c">Niveau Agence</text>
-<rect x="2393" y="67" width="169" height="248" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
-<text x="2403" y="85" font-size="13" font-weight="bold" fill="#17202c">SI Tierces</text>
-<circle cx="124.5" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 113.5 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="124.5" y="93" font-size="11" text-anchor="middle" fill="#20364c">Informateur HELIOS au siège</text>
-<circle cx="171" cy="133" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 160 155 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="171" y="167" font-size="11" text-anchor="middle" fill="#20364c">Coordinateur</text>
-<circle cx="137" cy="292" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 126 314 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="137" y="326" font-size="11" text-anchor="middle" fill="#20364c">Administrateur </text>
-<text x="137" y="337" font-size="11" text-anchor="middle" fill="#20364c">fonctionnel &amp; technique</text>
-<circle cx="152.5" cy="207" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 141.5 229 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="152.5" y="241" font-size="11" text-anchor="middle" fill="#20364c">Mainteneurs des </text>
-<text x="152.5" y="252" font-size="11" text-anchor="middle" fill="#20364c">équipements HELIOS</text>
-<circle cx="310.5" cy="404" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 299.5 426 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="310.5" y="438" font-size="11" text-anchor="middle" fill="#20364c">Opérateur HELIOS en agence</text>
-<circle cx="349" cy="590" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 338 612 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="349" y="624" font-size="11" text-anchor="middle" fill="#20364c">Client</text>
-<circle cx="349" cy="664" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 338 686 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="349" y="698" font-size="11" text-anchor="middle" fill="#20364c">Chauffeur </text>
-<text x="349" y="709" font-size="11" text-anchor="middle" fill="#20364c">livreur</text>
-<circle cx="349" cy="505" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<path d="M 338 527 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
-<text x="349" y="539" font-size="11" text-anchor="middle" fill="#20364c">Responsable </text>
-<text x="349" y="550" font-size="11" text-anchor="middle" fill="#20364c">d'agence</text>
-<rect x="1643" y="121" width="229" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1757.5" y="144" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion de la messagerie siège</text>
-<rect x="1682" y="180" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1757.5" y="203" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des données</text>
-<rect x="1643" y="239" width="145" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1715.5" y="262" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du système</text>
-<rect x="1645.3333333333333" y="297" width="222" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1756.3333333333333" y="320" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du Suivi des tournées</text>
-<rect x="692.5" y="370.6666666666667" width="222" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="803.5" y="393.6666666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du Suivi des tournées</text>
-<rect x="682" y="311.6666666666667" width="236" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="800" y="334.6666666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion de la messagerie agence</text>
-<rect x="1143" y="347" width="131" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="1208.5" y="370" font-size="12.5" text-anchor="middle" fill="#17202c">Écrans en agence</text>
-<rect x="2402" y="268" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2477.5" y="291" font-size="12.5" text-anchor="middle" fill="#17202c">AFFICHAGE DES ZONES</text>
-<rect x="2423.5" y="152" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2477.5" y="175" font-size="12.5" text-anchor="middle" fill="#17202c">ALPHA</text>
-<rect x="2423.5" y="210" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2477.5" y="233" font-size="12.5" text-anchor="middle" fill="#17202c">BRAVO</text>
-<rect x="2445" y="94" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
-<text x="2499" y="117" font-size="12.5" text-anchor="middle" fill="#17202c">SOCLE 2</text>
-<path d="M 215 94 L 1739.5 94 L 1739.5 121" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 215 314.5 L 623 314.5 L 623 263.6666666666667 L 1293 263.6666666666667 A 5 5 0 0 1 1303 263.6666666666667 L 1580 263.6666666666667 A 5 5 0 0 1 1590 263.6666666666667 L 1643 263.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 215 128 L 1643 128" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 215 229.5 L 623 229.5 L 623 252 L 1293 252 A 5 5 0 0 1 1303 252 L 1580 252 A 5 5 0 0 1 1590 252 L 1643 251.66666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 392 394 L 392 343.6666666666667 L 682 343.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 402 598 L 613 598 L 613 360 L 947 360 A 5 5 0 0 1 957 360 L 1143 359.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1757.5 121 L 1757.5 58 L 215 58" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 692.5 402.6666666666667 L 618 402.6666666666667 A 5 5 0 0 0 608 402.6666666666667 L 545.25 402.6666666666667 L 398 403" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1872 146.33333333333334 L 1888.3333333333333 146.33333333333334 A 5 5 0 0 1 1898.3333333333333 146.33333333333334 L 2378 146 L 2378 171 L 2423.5 171" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1757.5 219 L 1757.5 229 L 1888.3333333333333 229 A 5 5 0 0 1 1898.3333333333333 229 L 2423.5 229" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1867.3333333333333 316 L 1896 316 L 1896 487.16666666666674 L 1590 487.16666666666674 A 5 5 0 0 0 1580 487.16666666666674 L 957 487.16666666666674 A 5 5 0 0 0 947 487.16666666666674 L 847.5 487.16666666666674 A 5 5 0 0 0 837.5 487.16666666666674 L 657 487.16666666666674 L 657 419.6666666666667 L 803.5 419.6666666666667 L 803.5 409.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 914.5 402.6666666666667 L 947 402.6666666666667 A 5 5 0 0 1 957 402.6666666666667 L 1580 402.6666666666667 A 5 5 0 0 1 1590 402.6666666666667 L 1891.3333333333333 402.6666666666667 L 1891.3333333333333 329 L 1867.3333333333333 329" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 919 330.6666666666667 L 1298 330.6666666666667 L 1298 171.16666666666669 L 1580 171.16666666666669 A 5 5 0 0 1 1590 171.16666666666669 L 1757.5 171.16666666666669 L 1757.5 160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2499 94 L 2499 57 L 1893.3333333333333 57 L 1893.3333333333333 304 L 1867.3333333333333 304" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2531.5 171 L 2581.5 171 L 2581.5 738 L 2482.5 738 A 5 5 0 0 0 2472.5 738 L 1585 738 L 1585 152 L 1643 152" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2477.5 306 L 2477.5 804 L 957 804 A 5 5 0 0 0 947 804 L 842.5 804 L 842.5 408.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2531.5 229 L 2576.5 229 A 5 5 0 0 1 2586.5 229 L 2597.5 229 L 2597.5 884 L 952 884 L 952 342.6666666666667 L 918 342.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 914.5 380.1666666666667 L 947 380.1666666666667 A 5 5 0 0 1 957 380.1666666666667 L 1133 380.1666666666667 L 1133 372.33333333333337 L 1143 372.33333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="977.25" y="90" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Composer, recevoir et diffuser</text>
-<text x="977.25" y="104.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">les messages, et paramétrage</text>
-<rect x="910.75" y="112.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="937.75" y="123.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<rect x="968.75" y="112.5" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1006.25" y="123.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
-<text x="286" y="317.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Paramétrer le système</text>
-<rect x="248.5" y="325.75" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="286" y="336.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
-<text x="601" y="124" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffuser messages</text>
-<text x="601" y="138.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'incident</text>
-<rect x="574" y="146.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="601" y="157.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="419" y="218.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Commander mise hors/en </text>
-<text x="419" y="232.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">service d'un </text>
-<text x="419" y="247.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">équipement d'affichage</text>
-<rect x="381.5" y="255.25" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="419" y="266.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
-<text x="503.25" y="332.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Rédaction et diffusion </text>
-<text x="503.25" y="346.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des messages à </text>
-<text x="503.25" y="361.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">destination du siège</text>
-<rect x="476.25" y="369.4166666666667" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="503.25" y="380.4166666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="507.5" y="601.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consulter</text>
-<rect x="483.5" y="609.25" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="507.5" y="620.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
-<text x="1284.875" y="61.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alerter messages de provenance divers (agence, ALPHA)</text>
-<rect x="1257.875" y="69.25" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1284.875" y="80.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="471.625" y="406.08333333333337" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alerter incohérence</text>
-<text x="2125" y="149.41666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffusion tps réel de messages d'incident sur les secteurs 1 et 2 </text>
-<rect x="2098" y="157.41666666666669" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="2125" y="168.41666666666669" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="2090.5" y="225" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Export des données temps réel et </text>
-<text x="2090.5" y="239.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">configuration</text>
-<text x="1276.5" y="475.91666666666674" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffusion informations </text>
-<text x="1276.5" y="490.41666666666674" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et messages de prochaines tournées </text>
-<text x="1276.5" y="504.91666666666674" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">saisies par l'informateur HELIOS du siège</text>
-<rect x="1249.5" y="512.9166666666667" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1276.5" y="523.9166666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="1402.9166666666665" y="391.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission des </text>
-<text x="1402.9166666666665" y="405.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages saisis par l'agent</text>
-<text x="1402.9166666666665" y="420.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round"> d'exploitation en agence</text>
-<rect x="1375.9166666666665" y="428.4166666666667" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1402.9166666666665" y="439.4166666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="1298" y="193.16666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Récupérer et archiver</text>
-<text x="1298" y="207.66666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round"> la messagerie diffusée</text>
-<text x="1298" y="222.16666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round"> localement en agence</text>
-<rect x="1271" y="230.16666666666669" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1298" y="241.16666666666669" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="2196.1666666666665" y="53" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission des données</text>
-<text x="2196.1666666666665" y="67.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de circulation , missions et zones</text>
-<rect x="2137.1666666666665" y="75.5" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="2196.1666666666665" y="86.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Position et créneau</text>
-<text x="2083.25" y="734" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission  messages</text>
-<text x="2083.25" y="748.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'incident des  réseaux logistiques  souhaités</text>
-<rect x="2056.25" y="756.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="2083.25" y="767.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="1660" y="785.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission de</text>
-<text x="1660" y="800" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">la liste des 6 prochaines</text>
-<text x="1660" y="814.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et identité de la tournée de tête </text>
-<text x="1660" y="829" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">pour contrôle périodique</text>
-<rect x="1601" y="837" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1660" y="848" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Position et créneau</text>
-<text x="1774.75" y="880" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notifications charge </text>
-<text x="1774.75" y="894.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et messagerie clients</text>
-<rect x="1750.75" y="902.5" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1774.75" y="913.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
-<text x="1023.75" y="376.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffusion des informations</text>
-<text x="1023.75" y="390.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">aux clients</text>
-<rect x="999.75" y="398.6666666666667" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1023.75" y="409.6666666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
-<line x1="20" y1="952" x2="2588" y2="952" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="974" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
-<rect x="150" y="964" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="209" y="975" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Position et créneau</text>
-<rect x="150" y="988" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="177" y="999" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
-<text x="214" y="999" font-size="10" fill="#79828f">— Messages d'information / incident / liste de messages (messagerie)</text>
-<rect x="150" y="1012" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="174" y="1023" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
-<text x="208" y="1023" font-size="10" fill="#79828f">— Information charge du réseau</text>
-<rect x="150" y="1036" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="187.5" y="1047" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
-<text x="235" y="1047" font-size="10" fill="#79828f">— Configuration du système</text>
-<rect x="150" y="1060" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
-<text x="190" y="1071" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
-<text x="240" y="1071" font-size="10" fill="#79828f">porté par le flux</text>
-<line x1="20" y1="1098" x2="2588" y2="1098" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="1120" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="1110" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
-<text x="182" y="1121" font-size="10" fill="#17202c">Groupe d'acteurs</text>
-<rect x="298" y="1110" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
-<text x="330" y="1121" font-size="10" fill="#17202c">Système</text>
-<rect x="399" y="1110" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
-<text x="431" y="1121" font-size="10" fill="#17202c">Couche</text>
-<rect x="495" y="1110" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="527" y="1121" font-size="10" fill="#17202c">Bloc fonctionnel</text>
-<rect x="643" y="1110" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="675" y="1121" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="1140" x2="176" y2="1140" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="1144" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
+<rect width="2558" height="978" fill="#ffffff"/>
+<rect x="10" y="22" width="202" height="334" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="20" y="40" font-size="13" font-weight="bold" fill="#17202c">Acteurs niveau siège</text>
+<rect x="199" y="367" width="196" height="90" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="209" y="385" font-size="13" font-weight="bold" fill="#17202c">Acteurs niveau Agence</text>
+<rect x="281" y="468" width="106" height="260" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="291" y="486" font-size="13" font-weight="bold" fill="#17202c">Acteurs passifs</text>
+<rect x="623" y="67" width="1242" height="429.1666666666667" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="633" y="85" font-size="13" font-weight="bold" fill="#17202c">SI HELIOS</text>
+<rect x="1564" y="94" width="270" height="250" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="1574" y="112" font-size="13" font-weight="bold" fill="#17202c">Niveau Siège</text>
+<rect x="655" y="284.6666666666667" width="613" height="182.5" rx="6" fill="#fdfaf0" stroke="#cf9f2f" stroke-width="1"/>
+<text x="665" y="302.6666666666667" font-size="13" font-weight="bold" fill="#17202c">Niveau Agence</text>
+<rect x="2343" y="67" width="169" height="251" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="2353" y="85" font-size="13" font-weight="bold" fill="#17202c">SI Tierces</text>
+<circle cx="109.5" cy="59" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 98.5 81 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="109.5" y="93" font-size="11" text-anchor="middle" fill="#20364c">Informateur HELIOS au siège</text>
+<circle cx="156" cy="133" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 145 155 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="156" y="167" font-size="11" text-anchor="middle" fill="#20364c">Coordinateur</text>
+<circle cx="122" cy="292" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 111 314 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="122" y="326" font-size="11" text-anchor="middle" fill="#20364c">Administrateur </text>
+<text x="122" y="337" font-size="11" text-anchor="middle" fill="#20364c">fonctionnel &amp; technique</text>
+<circle cx="137.5" cy="207" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 126.5 229 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="137.5" y="241" font-size="11" text-anchor="middle" fill="#20364c">Mainteneurs des </text>
+<text x="137.5" y="252" font-size="11" text-anchor="middle" fill="#20364c">équipements HELIOS</text>
+<circle cx="295.5" cy="404" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 284.5 426 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="295.5" y="438" font-size="11" text-anchor="middle" fill="#20364c">Opérateur HELIOS en agence</text>
+<circle cx="334" cy="590" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 323 612 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="334" y="624" font-size="11" text-anchor="middle" fill="#20364c">Client</text>
+<circle cx="334" cy="664" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 323 686 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="334" y="698" font-size="11" text-anchor="middle" fill="#20364c">Chauffeur </text>
+<text x="334" y="709" font-size="11" text-anchor="middle" fill="#20364c">livreur</text>
+<circle cx="334" cy="505" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 323 527 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="334" y="539" font-size="11" text-anchor="middle" fill="#20364c">Responsable </text>
+<text x="334" y="550" font-size="11" text-anchor="middle" fill="#20364c">d'agence</text>
+<rect x="1593" y="121" width="229" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1707.5" y="144" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion de la messagerie siège</text>
+<rect x="1632" y="180" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1707.5" y="203" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion des données</text>
+<rect x="1593" y="239" width="145" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1665.5" y="262" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du système</text>
+<rect x="1595.3333333333333" y="297" width="222" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1706.3333333333333" y="320" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du Suivi des tournées</text>
+<rect x="677.5" y="370.6666666666667" width="222" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="788.5" y="393.6666666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion du Suivi des tournées</text>
+<rect x="667" y="311.6666666666667" width="236" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="785" y="334.6666666666667" font-size="12.5" text-anchor="middle" fill="#17202c">Gestion de la messagerie agence</text>
+<rect x="1128" y="347" width="131" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1193.5" y="370" font-size="12.5" text-anchor="middle" fill="#17202c">Écrans en agence</text>
+<rect x="2352" y="268" width="151" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2427.5" y="291" font-size="12.5" text-anchor="middle" fill="#17202c">AFFICHAGE DES ZONES</text>
+<rect x="2373.5" y="152" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2427.5" y="175" font-size="12.5" text-anchor="middle" fill="#17202c">ALPHA</text>
+<rect x="2373.5" y="210" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2427.5" y="233" font-size="12.5" text-anchor="middle" fill="#17202c">BRAVO</text>
+<rect x="2395" y="94" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="2449" y="117" font-size="12.5" text-anchor="middle" fill="#17202c">SOCLE 2</text>
+<path d="M 200 94 L 1689.5 94 L 1689.5 121" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 200 314.5 L 608 314.5 L 608 263.6666666666667 L 1278 263.6666666666667 A 5 5 0 0 1 1288 263.6666666666667 L 1530 263.6666666666667 A 5 5 0 0 1 1540 263.6666666666667 L 1593 263.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 200 128 L 1593 128" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 200 229.5 L 608 229.5 L 608 252 L 1278 252 A 5 5 0 0 1 1288 252 L 1530 252 A 5 5 0 0 1 1540 252 L 1593 251.66666666666669" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 377 394 L 377 343.6666666666667 L 667 343.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 387 598 L 598 598 L 598 360 L 932 360 A 5 5 0 0 1 942 360 L 1128 359.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1707.5 121 L 1707.5 58 L 200 58" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 677.5 402.6666666666667 L 603 402.6666666666667 A 5 5 0 0 0 593 402.6666666666667 L 530.25 402.6666666666667 L 383 403" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1822 146.33333333333334 L 1838.3333333333333 146.33333333333334 A 5 5 0 0 1 1848.3333333333333 146.33333333333334 L 2328 146 L 2328 171 L 2373.5 171" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1707.5 219 L 1707.5 229 L 1838.3333333333333 229 A 5 5 0 0 1 1848.3333333333333 229 L 2373.5 229" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1817.3333333333333 316 L 1846 316 L 1846 487.16666666666674 L 1540 487.16666666666674 A 5 5 0 0 0 1530 487.16666666666674 L 942 487.16666666666674 A 5 5 0 0 0 932 487.16666666666674 L 832.5 487.16666666666674 A 5 5 0 0 0 822.5 487.16666666666674 L 642 487.16666666666674 L 642 419.6666666666667 L 788.5 419.6666666666667 L 788.5 409.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 899.5 402.6666666666667 L 932 402.6666666666667 A 5 5 0 0 1 942 402.6666666666667 L 1530 402.6666666666667 A 5 5 0 0 1 1540 402.6666666666667 L 1841.3333333333333 402.6666666666667 L 1841.3333333333333 329 L 1817.3333333333333 329" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 904 330.6666666666667 L 1283 330.6666666666667 L 1283 171.16666666666669 L 1530 171.16666666666669 A 5 5 0 0 1 1540 171.16666666666669 L 1707.5 171.16666666666669 L 1707.5 160" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2449 94 L 2449 57 L 1843.3333333333333 57 L 1843.3333333333333 304 L 1817.3333333333333 304" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2481.5 171 L 2531.5 171 L 2531.5 506.16666666666674 L 2432.5 506.16666666666674 A 5 5 0 0 0 2422.5 506.16666666666674 L 1535 506.16666666666674 L 1535 152 L 1593 152" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2427.5 306 L 2427.5 572.1666666666667 L 942 572.1666666666667 A 5 5 0 0 0 932 572.1666666666667 L 827.5 572.1666666666667 L 827.5 408.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2481.5 229 L 2526.5 229 A 5 5 0 0 1 2536.5 229 L 2547.5 229 L 2547.5 667.1666666666667 L 937 667.1666666666667 L 937 342.6666666666667 L 903 342.6666666666667" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 899.5 380.1666666666667 L 932 380.1666666666667 A 5 5 0 0 1 942 380.1666666666667 L 1118 380.1666666666667 L 1118 372.33333333333337 L 1128 372.33333333333337" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="944.75" y="90" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Composer, recevoir et diffuser</text>
+<text x="944.75" y="104.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">les messages, et paramétrage</text>
+<rect x="878.25" y="112.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="905.25" y="123.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<rect x="936.25" y="112.5" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="973.75" y="123.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
+<text x="271" y="317.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Paramétrer le système</text>
+<rect x="233.5" y="325.75" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="271" y="336.75" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
+<text x="1215.75" y="124" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffuser messages</text>
+<text x="1215.75" y="138.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'incident</text>
+<rect x="1188.75" y="146.5" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1215.75" y="157.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="404" y="218.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Commander mise hors/en </text>
+<text x="404" y="232.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">service d'un </text>
+<text x="404" y="247.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">équipement d'affichage</text>
+<rect x="366.5" y="255.25" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="404" y="266.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
+<text x="488.25" y="332.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Rédaction et diffusion </text>
+<text x="488.25" y="346.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des messages à </text>
+<text x="488.25" y="361.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">destination du siège</text>
+<rect x="461.25" y="369.4166666666667" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="488.25" y="380.4166666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="492.5" y="601.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consulter</text>
+<rect x="468.5" y="609.25" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="492.5" y="620.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
+<text x="1243.625" y="61.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alerter messages de provenance divers (agence, ALPHA)</text>
+<rect x="1216.625" y="69.25" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1243.625" y="80.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="456.625" y="406.08333333333337" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alerter incohérence</text>
+<text x="2093.5" y="149.41666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffusion tps réel de messages d'incident sur les secteurs 1 et 2 </text>
+<rect x="2066.5" y="157.41666666666669" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="2093.5" y="168.41666666666669" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="2040.5" y="225" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Export des données temps réel et </text>
+<text x="2040.5" y="239.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">configuration</text>
+<text x="1244" y="475.91666666666674" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffusion informations </text>
+<text x="1244" y="490.41666666666674" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et messages de prochaines tournées </text>
+<text x="1244" y="504.91666666666674" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">saisies par l'informateur HELIOS du siège</text>
+<rect x="1217" y="512.9166666666667" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1244" y="523.9166666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="1370.4166666666665" y="391.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission des </text>
+<text x="1370.4166666666665" y="405.9166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">messages saisis par l'agent</text>
+<text x="1370.4166666666665" y="420.4166666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round"> d'exploitation en agence</text>
+<rect x="1343.4166666666665" y="428.4166666666667" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1370.4166666666665" y="439.4166666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="1283" y="193.16666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Récupérer et archiver</text>
+<text x="1283" y="207.66666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round"> la messagerie diffusée</text>
+<text x="1283" y="222.16666666666669" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round"> localement en agence</text>
+<rect x="1256" y="230.16666666666669" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1283" y="241.16666666666669" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="2146.1666666666665" y="53" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission des données</text>
+<text x="2146.1666666666665" y="67.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">de circulation , missions et zones</text>
+<rect x="2087.1666666666665" y="75.5" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="2146.1666666666665" y="86.5" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Position et créneau</text>
+<text x="2033.25" y="502.16666666666674" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission  messages</text>
+<text x="2033.25" y="516.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'incident des  réseaux logistiques  souhaités</text>
+<rect x="2006.25" y="524.6666666666667" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="2033.25" y="535.6666666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="1627.5" y="553.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission de</text>
+<text x="1627.5" y="568.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">la liste des 6 prochaines</text>
+<text x="1627.5" y="582.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et identité de la tournée de tête </text>
+<text x="1627.5" y="597.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">pour contrôle périodique</text>
+<rect x="1568.5" y="605.1666666666667" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1627.5" y="616.1666666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Position et créneau</text>
+<text x="1742.25" y="663.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Notifications charge </text>
+<text x="1742.25" y="677.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">et messagerie clients</text>
+<rect x="1718.25" y="685.6666666666667" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1742.25" y="696.6666666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
+<text x="1008.75" y="376.1666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Diffusion des informations</text>
+<text x="1008.75" y="390.6666666666667" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">aux clients</text>
+<rect x="984.75" y="398.6666666666667" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1008.75" y="409.6666666666667" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
+<line x1="20" y1="760" x2="2538" y2="760" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="782" font-size="11" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
+<rect x="150" y="772" width="118" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="209" y="783" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Position et créneau</text>
+<rect x="150" y="796" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="177" y="807" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Message</text>
+<text x="214" y="807" font-size="10" fill="#79828f">— Messages d'information / incident / liste de messages (messagerie)</text>
+<rect x="150" y="820" width="48" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="174" y="831" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Charge</text>
+<text x="208" y="831" font-size="10" fill="#79828f">— Information charge du réseau</text>
+<rect x="150" y="844" width="75" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="187.5" y="855" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramétrage</text>
+<text x="235" y="855" font-size="10" fill="#79828f">— Configuration du système</text>
+<rect x="150" y="868" width="80" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="190" y="879" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
+<text x="240" y="879" font-size="10" fill="#79828f">porté par le flux</text>
+<line x1="20" y1="906" x2="2538" y2="906" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="928" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="918" width="26" height="14" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="182" y="929" font-size="10" fill="#17202c">Groupe d'acteurs</text>
+<rect x="298" y="918" width="26" height="14" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="330" y="929" font-size="10" fill="#17202c">Système</text>
+<rect x="399" y="918" width="26" height="14" rx="3" fill="#fdfaf0" stroke="#cf9f2f"/>
+<text x="431" y="929" font-size="10" fill="#17202c">Couche</text>
+<rect x="495" y="918" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="527" y="929" font-size="10" fill="#17202c">Bloc fonctionnel</text>
+<rect x="643" y="918" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="675" y="929" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="948" x2="176" y2="948" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="952" font-size="10" fill="#17202c">Flux fonctionnel (libellé = données échangées)</text>
 </svg>

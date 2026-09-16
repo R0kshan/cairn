@@ -279,6 +279,12 @@ test("an `offset:` moves what it names and leaves the rest of the drawing alone"
   }
 });
 
+/** A committed route that spends a point in line with the segment beside it. */
+interface Junction {
+  edge: Scene["edges"][number];
+  runs: ReturnType<typeof straightRuns>;
+}
+
 test("a run is the straight line the reader sees, however many points it spends", async () => {
   // Routes carry redundant points: `applyNodeOffsets` splices an elbow that can
   // land in line with the segment beside it, and the committed examples hold
@@ -313,12 +319,31 @@ test("a run is the straight line the reader sees, however many points it spends"
 
   // And on a real drawing: find a route that spends three points on one line,
   // slide that line, and check the whole thing came along.
-  const src = readFileSync(join(ROOT, "examples/large-fr.cairn"), "utf8");
-  const plain = await build(src);
-  const found = plain.scene.edges
-    .map((edge) => ({ edge, runs: straightRuns(edge.pts) }))
-    .find(({ edge, runs }) => runs.length < edge.pts.length - 1);
-  assert.ok(found, "fixture: expected a committed route with a redundant point on a run");
+  //
+  // The fixture is a search, not a name. Which drawing carries such a junction
+  // is a property of where the router leaves its elbows, so naming one made an
+  // honest routing improvement elsewhere fail here for want of a fixture —
+  // `large-fr` lost its last redundant point to a channel-lane fix.
+  let picked: { src: string; plain: Awaited<ReturnType<typeof build>>; found: Junction } | null =
+    null;
+  for (const name of [
+    "logical-security.cairn",
+    "medium.cairn",
+    "application-large-fr.cairn",
+    "large-fr.cairn",
+  ]) {
+    const source = readFileSync(join(ROOT, "examples", name), "utf8");
+    const built = await build(source);
+    const junction = built.scene.edges
+      .map((edge) => ({ edge, runs: straightRuns(edge.pts) }))
+      .find(({ edge, runs }) => runs.length < edge.pts.length - 1);
+    if (junction) {
+      picked = { src: source, plain: built, found: junction };
+      break;
+    }
+  }
+  assert.ok(picked, "fixture: expected a committed route with a redundant point on a run");
+  const { src, plain, found } = picked;
   const index = found.runs.findIndex((run) => run.to - run.from > 1);
   const run = found.runs[index];
   const before = found.edge.pts.map((point) => ({ ...point }));
@@ -1854,6 +1879,58 @@ test("a drawing is seated at the left margin, and stays put when re-rendered", a
     const again = await build(source);
     assert.equal(again.svg, svg, `${name}: the same source must render identically`);
   }
+});
+
+test("a channel crossing hugs the content it passes, not the drawing's deepest box", async () => {
+  // Lanes are an x-interval packing, so the flows sharing one are exactly those
+  // whose spans do *not* overlap. Giving all of them one y let the deepest thing
+  // under any of them set the depth for all: on `logical-helios-fr` the actor
+  // column on the far left reaches 230px below the system box, and the flow
+  // passing under it shared a lane with `ALPHA -> messagerie siège`, which only
+  // crosses the system box. That one was anchored on the actor column it never
+  // goes near, and the two lanes below it were then held under *that* by the
+  // ordering rule — three flows and 192px of empty band, for one flow's obstacle
+  // 1200px away (INVARIANTS §11).
+  const { scene } = await build(load("anonymized/logical-helios-fr.cairn"));
+  const detours = scene.edges.filter((edge) => edge.detour);
+  assert.ok(detours.length >= 3, `fixture: expected channel detours (got ${detours.length})`);
+
+  const actors = scene.nodes.find((node) => node.id === "ACT_PASSIF")!;
+  const system = scene.nodes.find((node) => node.id === "SYS_HELIOS")!;
+  // The actor column is the deepest box in the drawing and none of these flows
+  // passes under it — that is the whole point of the fixture.
+  assert.ok(
+    actors.y + actors.height > system.y + system.height,
+    "fixture: the actor column must reach below the system box",
+  );
+  for (const edge of detours) {
+    const left = Math.min(...edge.pts.map((point) => point.x));
+    assert.ok(
+      left > actors.x + actors.width,
+      `fixture: ${edge.id} must not pass under the actor column`,
+    );
+    const deepest = Math.max(
+      ...edge.pts.map((point) => point.y),
+      ...edge.labels.map((label) => label.y + label.height),
+    );
+    assert.ok(
+      deepest <= actors.y + actors.height,
+      `${edge.id} sits ${(deepest - (actors.y + actors.height)).toFixed(0)}px below a box it never passes under`,
+    );
+  }
+  // And with the lanes back against the content, no band of nothing is left
+  // under the drawing for the canvas to carry.
+  let nodeBottom = 0;
+  for (const node of scene.nodes) nodeBottom = Math.max(nodeBottom, node.y + node.height);
+  let inkBottom = nodeBottom;
+  for (const edge of scene.edges) {
+    for (const point of edge.pts) inkBottom = Math.max(inkBottom, point.y);
+    for (const label of edge.labels) inkBottom = Math.max(inkBottom, label.y + label.height);
+  }
+  assert.ok(
+    inkBottom <= nodeBottom,
+    `${(inkBottom - nodeBottom).toFixed(0)}px of drawing hangs below every box in it`,
+  );
 });
 
 test("a stranded flow is offered a corridor clear of the drawing", async () => {

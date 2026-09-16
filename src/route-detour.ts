@@ -906,51 +906,76 @@ function resolveLanePosition(lc: LaneContext, span: LaneSpan, direction: 1 | -1)
   return position;
 }
 
+/** A run already placed, and what it occupies once its label is under it. */
+interface PlacedRun {
+  left: number;
+  right: number;
+  y: number;
+  labelHeight: number;
+}
+
 /**
- * Where each lane of `subset` sits. Spacing uses the label heights that lane
- * carries, and it is pushed further only to clear geometry sharing its x-span.
+ * Where each flow of `subset` crosses the channel, keyed by flow id.
+ *
+ * Per flow, not per lane. A lane is an x-interval packing — first fit, so the
+ * flows sharing one are precisely those whose spans do *not* overlap — and
+ * giving all of them one y made the deepest content under any of them set the
+ * depth for all. `logical-helios-fr` is the case: an actor column on the far
+ * left reaches 230px below the system box, and the flow passing under it shared
+ * a lane with one that only crosses the system box. That one was anchored on the
+ * actor column it never passes under, and the two lanes below it were then held
+ * under *that* by the ordering rule — three flows and 190px of white band, for
+ * one flow's obstacle 1200px away.
+ *
+ * Disjoint runs cannot cross, so nothing needs them level. Each takes the
+ * anchor, the clearance search and the label height of its own span, and only
+ * the runs that genuinely overlap in x still have to stay ordered.
  */
-function laneOffsets(lc: LaneContext, subset: Plan[], direction: 1 | -1, anchor: number): number[] {
+function laneOffsets(
+  lc: LaneContext,
+  subset: Plan[],
+  direction: 1 | -1,
+  anchor: number,
+): Map<string, number> {
   const byLane = new Map<number, Plan[]>();
   for (const plan of subset) {
     const lane = lc.laneIndexOf.get(plan.edge.id)!;
     byLane.set(lane, [...(byLane.get(lane) ?? []), plan]);
   }
-  const labelHeights: number[] = [];
-  const positions: number[] = [];
-  for (let lane = 0; lane < byLane.size; lane++) {
-    const members = byLane.get(lane) ?? [];
-    const labelHeight = Math.max(
-      0,
-      ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height)),
-    );
-    const left = Math.min(...members.map(spanLeft));
-    const right = Math.max(...members.map(spanRight));
-    // Only a container holding *every* flow on this lane may be entered.
-    const exempt = new Set<string>();
-    if (members.length) {
-      const perMember = members.map((plan) => sharedEnclosers(lc.containerNodes, plan));
-      for (const id of perMember[0])
-        if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
+  const placed: PlacedRun[] = [];
+  const positions = new Map<string, number>();
+  // Lane order is the nesting order (`assignLanes`), so a span that encloses
+  // another is always placed after it and can be held outside it.
+  for (let lane = 0; lane < byLane.size; lane++)
+    for (const plan of byLane.get(lane) ?? []) {
+      const labelHeight = Math.max(0, ...plan.edge.labels.map((label) => label.height));
+      const left = spanLeft(plan);
+      const right = spanRight(plan);
+      // The one container this flow never leaves is open to it; every other is
+      // an obstacle.
+      const exempt = sharedEnclosers(lc.containerNodes, plan);
+      // Labels sit on the *outer* side of their lane, away from the drawing. The
+      // top channel always did; the bottom channel used to put them between the
+      // content and the lane, which pushed every bottom lane out by a whole label
+      // and left a conspicuous gap against the container it hugged on the other
+      // side.
+      const ownPosition =
+        spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
+      // Runs that share x stay ordered: a deeper one never rises above a
+      // shallower one, which is what keeps enclosing spans outside the ones they
+      // enclose. Runs that share none are free of each other.
+      const over = placed.filter((run) => run.left < right && left < run.right);
+      const start = over.reduce(
+        (held, run) =>
+          direction > 0
+            ? Math.max(held, run.y + run.labelHeight + 14)
+            : Math.min(held, run.y - (run.labelHeight + 14)),
+        ownPosition,
+      );
+      const y = resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction);
+      placed.push({ left, right, y, labelHeight });
+      positions.set(plan.edge.id, y);
     }
-    // Labels sit on the *outer* side of their lane, away from the drawing. The
-    // top channel always did; the bottom channel used to put them between the
-    // content and the lane, which pushed every bottom lane out by a whole label
-    // and left a conspicuous gap against the container it hugged on the other
-    // side.
-    const ownPosition =
-      spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
-    // Lanes stay ordered: a deeper lane never rises above a shallower one,
-    // which is what keeps enclosing spans outside the ones they enclose.
-    const start =
-      lane === 0
-        ? ownPosition
-        : direction > 0
-          ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14)
-          : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
-    labelHeights.push(labelHeight);
-    positions.push(resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction));
-  }
   return positions;
 }
 
@@ -1128,9 +1153,8 @@ export function rerouteDetours(
   const topLaneY = laneOffsets(lanes, topPlans, -1, channel.minNodeTop);
 
   for (const plan of plans) {
-    const lane = lanes.laneIndexOf.get(plan.edge.id)!;
-    if (isTop(plan)) emitTopRoute(plan, topLaneY[lane], numbered);
-    else if (isBottom(plan)) emitBottomRoute(plan, bottomLaneY[lane], numbered);
+    if (isTop(plan)) emitTopRoute(plan, topLaneY.get(plan.edge.id)!, numbered);
+    else if (isBottom(plan)) emitBottomRoute(plan, bottomLaneY.get(plan.edge.id)!, numbered);
   }
 
   if (topPlans.length) shiftAboveOrigin(scene);

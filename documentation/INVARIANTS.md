@@ -560,6 +560,18 @@ One exception: a flow whose terminals the author pinned (`A.top -> B.right`,
 lane's own entry and exit, so routing one would silently overrule the pin — and a
 backward flow is the case an author is most likely to be pinning.
 
+**A channel crossing sits under the content it actually passes, and nothing
+else.** The lanes are an x-interval packing, so the flows sharing one are exactly
+those whose spans do *not* overlap — and a shared depth let the deepest obstacle
+under any of them set the depth for all, with the ordering rule then pushing
+every lane below it down too. `logical-helios-fr` paid 192px of empty band for
+it: an actor column on the far left reaching past the system box set the depth
+for a flow 1200px away that only crosses the system box. Each crossing therefore
+takes the anchor, the clearance search and the label height of **its own span**;
+only crossings that genuinely share x still have to stay ordered, which is what
+keeps enclosing spans outside the ones they enclose (§4f). Gated by the sweep's
+per-drawing baseline and `tests/behavior.test.ts`.
+
 ## 12. Element kind validity per view
 
 Element kinds are restricted by view. Examples: `queue`, `gateway`, `auth` and
