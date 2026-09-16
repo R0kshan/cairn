@@ -96107,27 +96107,24 @@ function laneOffsets(lc, subset, direction, anchor) {
     const lane = lc.laneIndexOf.get(plan.edge.id);
     byLane.set(lane, [...byLane.get(lane) ?? [], plan]);
   }
-  const labelHeights = [];
-  const positions = [];
-  for (let lane = 0; lane < byLane.size; lane++) {
-    const members = byLane.get(lane) ?? [];
-    const labelHeight = Math.max(
-      0,
-      ...members.flatMap((plan) => plan.edge.labels.map((label) => label.height))
-    );
-    const left = Math.min(...members.map(spanLeft));
-    const right = Math.max(...members.map(spanRight));
-    const exempt = /* @__PURE__ */ new Set();
-    if (members.length) {
-      const perMember = members.map((plan) => sharedEnclosers(lc.containerNodes, plan));
-      for (const id of perMember[0])
-        if (perMember.every((enclosers) => enclosers.has(id))) exempt.add(id);
+  const placed = [];
+  const positions = /* @__PURE__ */ new Map();
+  for (let lane = 0; lane < byLane.size; lane++)
+    for (const plan of byLane.get(lane) ?? []) {
+      const labelHeight = Math.max(0, ...plan.edge.labels.map((label) => label.height));
+      const left = spanLeft(plan);
+      const right = spanRight(plan);
+      const exempt = sharedEnclosers(lc.containerNodes, plan);
+      const ownPosition = spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
+      const over = placed.filter((run) => run.left < right && left < run.right);
+      const start = over.reduce(
+        (held, run) => direction > 0 ? Math.max(held, run.y + run.labelHeight + 14) : Math.min(held, run.y - (run.labelHeight + 14)),
+        ownPosition
+      );
+      const y = resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction);
+      placed.push({ left, right, y, labelHeight });
+      positions.set(plan.edge.id, y);
     }
-    const ownPosition = spanAnchor(lc.scene, { left, right, exempt }, direction, anchor) + direction * CHANNEL_GAP;
-    const start = lane === 0 ? ownPosition : direction > 0 ? Math.max(ownPosition, positions[lane - 1] + labelHeights[lane - 1] + 14) : Math.min(ownPosition, positions[lane - 1] - (labelHeights[lane - 1] + 14));
-    labelHeights.push(labelHeight);
-    positions.push(resolveLanePosition(lc, { left, right, exempt, labelHeight, start }, direction));
-  }
   return positions;
 }
 function placeLaneLabels(edge, span, laneY, outward) {
@@ -96263,9 +96260,8 @@ function rerouteDetours(scene, model, numbered, titleBoxes = []) {
   const bottomLaneY = laneOffsets(lanes, bottomPlans, 1, channel.maxNodeBottom);
   const topLaneY = laneOffsets(lanes, topPlans, -1, channel.minNodeTop);
   for (const plan of plans) {
-    const lane = lanes.laneIndexOf.get(plan.edge.id);
-    if (isTop(plan)) emitTopRoute(plan, topLaneY[lane], numbered);
-    else if (isBottom(plan)) emitBottomRoute(plan, bottomLaneY[lane], numbered);
+    if (isTop(plan)) emitTopRoute(plan, topLaneY.get(plan.edge.id), numbered);
+    else if (isBottom(plan)) emitBottomRoute(plan, bottomLaneY.get(plan.edge.id), numbered);
   }
   if (topPlans.length) shiftAboveOrigin(scene);
   resizeScene(scene);
@@ -99255,12 +99251,13 @@ function createLadderModel(deps) {
     }
   };
 }
-function bestSingleRoute(o, edge, stranded = false) {
+function bestSingleRoute(o, edge, stranded = false, eligible) {
   let bestRoute = null;
   let bestDamage = null;
   for (const pts of o.routesFor(edge, stranded)) {
     const verdict = o.weigh([edge], /* @__PURE__ */ new Map([[edge.id, pts]]));
     if (!verdict) continue;
+    if (eligible && !eligible(verdict)) continue;
     if (!bestDamage || o.lessDamaged(verdict.damage, bestDamage)) {
       bestDamage = verdict.damage;
       bestRoute = pts;
@@ -99296,12 +99293,9 @@ function repairEdge(o, edge) {
   const before = o.profileNow(ids);
   const had = clutter(before);
   if (had >= ESCAPE_CLEARS) {
-    const wayOut = bestSingleRoute(o, edge, true);
-    const verdict = wayOut && o.weigh([edge], /* @__PURE__ */ new Map([[edge.id, wayOut]]));
-    const turnsAway = verdict && [...verdict.after.keys()].some((key) => key.startsWith("away:") && !before.has(key));
-    if (wayOut && verdict && !turnsAway && clutter(verdict.after) <= had - ESCAPE_CLEARS) {
-      if (o.tryMove([edge], /* @__PURE__ */ new Map([[edge.id, wayOut]]))) return true;
-    }
+    const buysItsWayIn = (verdict) => ![...verdict.after.keys()].some((key) => key.startsWith("away:") && !before.has(key)) && clutter(verdict.after) <= had - ESCAPE_CLEARS;
+    const wayOut = bestSingleRoute(o, edge, true, buysItsWayIn);
+    if (wayOut && o.tryMove([edge], /* @__PURE__ */ new Map([[edge.id, wayOut]]))) return true;
   }
   return tryJointMove(o, edge, ids);
 }
@@ -103167,7 +103161,7 @@ function layoutBoxes(model, scene) {
 }
 
 // src/api.ts
-var version = true ? "1.0.0-RC16" : pkg.version;
+var version = true ? "1.0.0-RC17" : pkg.version;
 
 // src/playground.ts
 var ElkClass = import_elk_bundled.default;
