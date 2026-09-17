@@ -93229,9 +93229,9 @@ function readOffsetPair(p) {
     span: { line: dx.span.line, col: dx.span.col, len: dy.span.col + dy.span.len - dx.span.col }
   };
 }
-function tryOffsetEntry(p, parent) {
+function tryPairEntry(p, parent, entry, put) {
   const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
-  if (!parent || !matchToken("id", "offset")) return false;
+  if (!parent || !matchToken("id", entry.key)) return false;
   const mark = save();
   const keyToken = advance();
   if (!matchToken("colon")) {
@@ -93241,18 +93241,39 @@ function tryOffsetEntry(p, parent) {
   advance();
   const pair2 = readOffsetPair(p);
   if (!pair2) {
-    reportCoded(
-      "E0109",
-      "`offset` expects two whole numbers \u2014 `offset: <dx>, <dy>`",
-      keyToken.span,
-      "e.g. `offset: 40, -20` \u2014 40px right and 20px up from where the layout put it"
-    );
+    reportCoded(entry.code, entry.message, keyToken.span, entry.help);
     syncToNextLine();
     return true;
   }
-  parent.offset = pair2;
+  put(parent, pair2);
   return true;
 }
+var tryOffsetEntry = (p, parent) => tryPairEntry(
+  p,
+  parent,
+  {
+    key: "offset",
+    code: "E0109",
+    message: "`offset` expects two whole numbers \u2014 `offset: <dx>, <dy>`",
+    help: "e.g. `offset: 40, -20` \u2014 40px right and 20px up from where the layout put it"
+  },
+  (element, pair2) => {
+    element.offset = pair2;
+  }
+);
+var trySizeEntry = (p, parent) => tryPairEntry(
+  p,
+  parent,
+  {
+    key: "size",
+    code: "E0110",
+    message: "`size` expects two whole numbers \u2014 `size: <dw>, <dh>`",
+    help: "e.g. `size: 120, 40` \u2014 120px wider and 40px taller than the layout made it"
+  },
+  (element, pair2) => {
+    element.size = { dw: pair2.dx, dh: pair2.dy, span: pair2.span };
+  }
+);
 function tryLogoEntry(p, parent) {
   const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
   if (!parent || !matchToken("id", "logo")) return false;
@@ -93496,7 +93517,7 @@ function parse(src) {
     }
     if (tryStyleBlock(parent)) return;
     if (tryOrderEntry(parser, parent)) return;
-    if (tryOffsetEntry(parser, parent)) return;
+    if (tryOffsetEntry(parser, parent) || trySizeEntry(parser, parent)) return;
     if (tryLogoEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;
@@ -94648,6 +94669,7 @@ function validate(model) {
     ...checkNesting(elements, view),
     ...checkFlows(model, view),
     ...checkEndpointRoles(model, view),
+    ...checkSizes(elements, view),
     ...checkLogos(elements, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
@@ -94686,6 +94708,21 @@ function checkUnknownKinds(elements, view) {
       span: element.kindSpan,
       note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
       help: suggestion ? `did you mean \`${suggestion}\`?` : void 0
+    });
+  }
+  return diagnostics;
+}
+function checkSizes(elements, view) {
+  const diagnostics = [];
+  for (const element of elements) {
+    if (!element.size || view.containerKinds.includes(element.kind)) continue;
+    diagnostics.push({
+      code: "E0226",
+      severity: "error",
+      message: `\`${element.kind}\` is not a container, so it has no \`size\` to give`,
+      span: element.size.span,
+      note: `the \`${view.name}\` view accepts \`size\` on: ${view.containerKinds.join(", ")}`,
+      help: "a leaf box is sized by its own label \u2014 set `label-padding:` in `style` to change how tightly, or nudge this one with `offset:`"
     });
   }
   return diagnostics;
@@ -100713,6 +100750,165 @@ function stampLabelOffsets(edges, model) {
   }
 }
 var pointOn = (point, box) => point.x >= box.x - 1 && point.x <= box.x + box.width + 1 && point.y >= box.y - 1 && point.y <= box.y + box.height + 1;
+function containerSizeBounds(scene, model) {
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const pad = containerPad(model);
+  const bounds = /* @__PURE__ */ new Map();
+  const walk = (elements) => {
+    for (const element of elements) {
+      walk(element.children);
+      const node = nodeById.get(element.id);
+      if (node?.container) bounds.set(element.id, contentFloor({ node, element, nodeById, pad }));
+    }
+  };
+  walk(model.elements);
+  return bounds;
+}
+var containerPad = (model) => model.style.containerPadding ?? (model.style.compact ? 7 : 9);
+var MIN_SIBLING_GAP = 20;
+var kidsOf = (box) => box.element.children.map((child) => box.nodeById.get(child.id)).filter((child) => !!child);
+function freeBands(box, axis) {
+  const { node, pad } = box;
+  const { min, size } = AXIS[axis];
+  const spans = kidsOf(box).map((kid) => ({ start: kid[min], end: kid[min] + kid[size] })).sort((a, b) => a.start - b.start || a.end - b.end);
+  const merged = [];
+  for (const span of spans) {
+    const last = merged[merged.length - 1];
+    if (last && span.start <= last.end) last.end = Math.max(last.end, span.end);
+    else merged.push({ ...span });
+  }
+  if (!merged.length) return [];
+  const bands = [];
+  const add = (start, end, keep) => {
+    if (end - start > keep) bands.push({ start, end, spare: end - start - keep });
+  };
+  add(node[min], merged[0].start, pad);
+  for (let i = 0; i + 1 < merged.length; i++)
+    add(merged[i].end, merged[i + 1].start, MIN_SIBLING_GAP);
+  add(merged[merged.length - 1].end, node[min] + node[size], pad);
+  return bands;
+}
+var AXIS = {
+  x: { min: "x", size: "width" },
+  y: { min: "y", size: "height" }
+};
+function holdsChildren(box) {
+  const { node, pad } = box;
+  const kids = kidsOf(box);
+  if (!kids.length) return { minWidth: pad * 2, minHeight: pad * 2 };
+  return {
+    minWidth: Math.max(...kids.map((kid) => kid.x + kid.width)) + pad - node.x,
+    minHeight: Math.max(...kids.map((kid) => kid.y + kid.height)) + pad - node.y
+  };
+}
+function contentFloor(box) {
+  const { node, pad } = box;
+  if (!kidsOf(box).length) return { minWidth: pad * 2, minHeight: pad * 2 };
+  const spare = (axis) => freeBands(box, axis).reduce((total, band) => total + band.spare, 0);
+  return { minWidth: node.width - spare("x"), minHeight: node.height - spare("y") };
+}
+function squeezeInside(box, axis, target) {
+  const { min, size } = AXIS[axis];
+  const need = box.node[size] - target;
+  if (need <= 0) return;
+  const bands = freeBands(box, axis);
+  const spare = bands.reduce((total, band) => total + band.spare, 0);
+  if (spare <= 0) return;
+  const share = Math.min(1, need / spare);
+  const shiftAt = (at) => bands.reduce((total, band) => at >= band.end ? total + band.spare * share : total, 0);
+  for (const child of box.element.children) {
+    const kid = box.nodeById.get(child.id);
+    if (!kid) continue;
+    const shift = shiftAt(kid[min]);
+    if (!shift) continue;
+    for (const id of subtreeIds(child)) {
+      const inside = box.nodeById.get(id);
+      if (inside) inside[min] -= shift;
+    }
+  }
+}
+function applyContainerSizes(scene, model) {
+  const carried = /* @__PURE__ */ new Set();
+  const wanted = /* @__PURE__ */ new Map();
+  const walk = (elements) => {
+    for (const element of elements) {
+      if (element.size) wanted.set(element.id, element.size);
+      walk(element.children);
+    }
+  };
+  walk(model.elements);
+  if (!wanted.size) return carried;
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const pad = containerPad(model);
+  const clampedSpans = /* @__PURE__ */ new Set();
+  const before = new Map(
+    scene.nodes.map((node) => [
+      node.id,
+      { x: node.x, y: node.y, width: node.width, height: node.height }
+    ])
+  );
+  for (const [id, spec] of wanted) {
+    const node = nodeById.get(id);
+    const element = model.index.get(id);
+    if (!node || !element) continue;
+    const box = { node, element, nodeById, pad };
+    const floor = contentFloor(box);
+    const width = Math.max(node.width + spec.dw, floor.minWidth);
+    const height = Math.max(node.height + spec.dh, floor.minHeight);
+    if (width !== node.width + spec.dw || height !== node.height + spec.dh)
+      clampedSpans.add(spec.span);
+    squeezeInside(box, "x", width);
+    squeezeInside(box, "y", height);
+    node.width = width;
+    node.height = height;
+  }
+  const containWithin = (elements) => {
+    for (const element of elements) {
+      containWithin(element.children);
+      const node = nodeById.get(element.id);
+      if (!node?.container) continue;
+      const holds = holdsChildren({ node, element, nodeById, pad });
+      node.width = Math.max(node.width, holds.minWidth);
+      node.height = Math.max(node.height, holds.minHeight);
+    }
+  };
+  containWithin(model.elements);
+  if (clampedSpans.size) scene.clampedSizes = clampedSpans;
+  const seats = [];
+  for (const node of scene.nodes) {
+    const was = before.get(node.id);
+    if (!was) continue;
+    const moved = {
+      dx: node.x - was.x,
+      dy: node.y - was.y,
+      dw: node.width - was.width,
+      dh: node.height - was.height
+    };
+    if (!moved.dx && !moved.dy && !moved.dw && !moved.dh) continue;
+    seats.push({ box: was, ...moved });
+  }
+  seats.sort((a, b) => a.box.width * a.box.height - b.box.width * b.box.height);
+  if (!seats.length) return carried;
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    for (const which of ["first", "last"]) {
+      const terminal = edge.pts[which === "first" ? 0 : edge.pts.length - 1];
+      const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
+      if (!seat) continue;
+      const onRight = Math.abs(terminal.x - (seat.box.x + seat.box.width)) < SEGMENT_EPSILON;
+      const onBottom = Math.abs(terminal.y - (seat.box.y + seat.box.height)) < SEGMENT_EPSILON;
+      const delta = {
+        dx: seat.dx + (onRight ? seat.dw : 0),
+        dy: seat.dy + (onBottom ? seat.dh : 0)
+      };
+      if (!delta.dx && !delta.dy) continue;
+      carried.add(edge.id);
+      carryTerminal(edge, which, delta);
+    }
+  }
+  for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
+  return carried;
+}
 function applyNodeOffsets(scene, offsetOf) {
   const carried = /* @__PURE__ */ new Set();
   if (!offsetOf.size) return carried;
@@ -100777,18 +100973,22 @@ function applyNodeOffsets(scene, offsetOf) {
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || !seat.delta.dx && !seat.delta.dy) continue;
       carried.add(edge.id);
-      const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
-      const neighbour = edge.pts[neighbourIndex];
-      const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
-      terminal.x += seat.delta.dx;
-      terminal.y += seat.delta.dy;
-      const elbow = wasHorizontal ? { x: neighbour.x, y: terminal.y } : { x: terminal.x, y: neighbour.y };
-      const degenerate = Math.abs(elbow.x - terminal.x) < 0.5 && Math.abs(elbow.y - terminal.y) < 0.5 || Math.abs(elbow.x - neighbour.x) < 0.5 && Math.abs(elbow.y - neighbour.y) < 0.5;
-      if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
+      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta);
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
   return carried;
+}
+function carryTerminal(edge, which, delta) {
+  const end = which === "first" ? 0 : edge.pts.length - 1;
+  const terminal = edge.pts[end];
+  const neighbour = edge.pts[which === "first" ? 1 : edge.pts.length - 2];
+  const wasHorizontal = Math.abs(terminal.y - neighbour.y) < SEGMENT_EPSILON;
+  terminal.x += delta.dx;
+  terminal.y += delta.dy;
+  const elbow = wasHorizontal ? { x: neighbour.x, y: terminal.y } : { x: terminal.x, y: neighbour.y };
+  const degenerate = Math.abs(elbow.x - terminal.x) < SEGMENT_EPSILON && Math.abs(elbow.y - terminal.y) < SEGMENT_EPSILON || Math.abs(elbow.x - neighbour.x) < SEGMENT_EPSILON && Math.abs(elbow.y - neighbour.y) < SEGMENT_EPSILON;
+  if (!degenerate) edge.pts.splice(which === "first" ? 1 : edge.pts.length - 1, 0, elbow);
 }
 function dropRedundantPoints(pts) {
   const inLine = (a, b, c) => Math.abs(a.x - b.x) < SEGMENT_EPSILON && Math.abs(b.x - c.x) < SEGMENT_EPSILON || Math.abs(a.y - b.y) < SEGMENT_EPSILON && Math.abs(b.y - c.y) < SEGMENT_EPSILON;
@@ -100919,6 +101119,35 @@ function shiftIntoCanvas(scene) {
   scene.width += shiftX;
   scene.height += shiftY;
 }
+function sizeOverlaps(scene, model, overlap) {
+  const sized = /* @__PURE__ */ new Map();
+  const family = /* @__PURE__ */ new Map();
+  const walk = (elements, ancestors) => {
+    for (const element of elements) {
+      if (element.size) sized.set(element.id, element.size.span);
+      family.set(element.id, /* @__PURE__ */ new Set([...ancestors, ...subtreeIds(element)]));
+      walk(element.children, [...ancestors, element.id]);
+    }
+  };
+  walk(model.elements, []);
+  if (!sized.size) return [];
+  const diagnostics = [];
+  for (const node of scene.nodes) {
+    const span = sized.get(node.id);
+    if (!span) continue;
+    const kin = family.get(node.id);
+    const struck = scene.nodes.find((other) => !kin.has(other.id) && overlap(node, other));
+    if (!struck) continue;
+    diagnostics.push({
+      code: "W0572",
+      severity: "warning",
+      message: `\`size\` on \`${node.id}\` overlaps \`${struck.id}\``,
+      span,
+      help: "the resize is applied as written \u2014 make it smaller, or give the drawing room with `order:`"
+    });
+  }
+  return diagnostics;
+}
 function offsetDiagnostics(scene, model) {
   const hints = [];
   for (const span of scene.segmentHints?.stale ?? [])
@@ -100937,6 +101166,14 @@ function offsetDiagnostics(scene, model) {
       span,
       help: "the run carries a terminal, so it can only slide as far as the side that terminal sits on \u2014 pin the side with `ID.side`, or move the element instead"
     });
+  for (const span of scene.clampedSizes ?? [])
+    hints.push({
+      code: "W0575",
+      severity: "warning",
+      message: "`size` was limited to keep this container around its own children",
+      span,
+      help: "a container is drawn around what it holds, which is not negotiable \u2014 resize or move the children first if the box has to be smaller"
+    });
   const spans = /* @__PURE__ */ new Map();
   const walk = (elements, inherited) => {
     for (const element of elements) {
@@ -100947,8 +101184,9 @@ function offsetDiagnostics(scene, model) {
   };
   walk(model.elements);
   for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
-  if (!spans.size) return hints;
   const overlap = (a, b) => a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  hints.push(...sizeOverlaps(scene, model, overlap));
+  if (!spans.size) return hints;
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
   const diagnostics = [...hints];
@@ -101426,9 +101664,10 @@ function refuseScenicRepairs(scene, before) {
   }
 }
 function applyAuthorPositioning(scene, model) {
+  const resized = applyContainerSizes(scene, model);
   const offsets = offsetAssignment(model);
-  if (offsets.size) {
-    const carried = applyNodeOffsets(scene, offsets);
+  if (offsets.size || resized.size) {
+    const carried = /* @__PURE__ */ new Set([...resized, ...applyNodeOffsets(scene, offsets)]);
     for (const edge of scene.edges) if (carried.has(edge.id)) edge.repairedFrom = void 0;
     const titles = titleBoxesOf(scene, model);
     reaimAfterOffsets(scene, titles, carried);
@@ -101452,7 +101691,7 @@ function applyAuthorPositioning(scene, model) {
         edge.repairedFrom = void 0;
   }
   const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
-  if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
+  if (!offsets.size && !resized.size && !nudgedRuns && !nudgedLabels) return;
   anchorFlowLabels(scene, titleBoxesOf(scene, model));
   fitCanvas(scene);
 }
@@ -103076,6 +103315,7 @@ function layoutBoxes(model, scene) {
       declarations.set(element.id, {
         line: element.kindSpan.line,
         offsetSpan: element.offset?.span,
+        sizeSpan: element.size?.span,
         parent
       });
       walk(element.children, element.id);
@@ -103083,6 +103323,7 @@ function layoutBoxes(model, scene) {
   };
   walk(model.elements);
   const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
+  const sizeBounds = containerSizeBounds(scene, model);
   const boxes = [];
   const leaves = scene.nodes.filter((node) => !node.container);
   for (const node of scene.nodes) {
@@ -103096,6 +103337,7 @@ function layoutBoxes(model, scene) {
       width: node.width,
       height: node.height,
       container: node.container,
+      resize: sizeBounds.get(node.id),
       ...declaration
     });
   }

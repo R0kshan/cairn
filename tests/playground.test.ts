@@ -51,6 +51,11 @@ test("browser bundle renders a large diagram with no `process` global", async ()
 async function pageWriteback(): Promise<{
   writeOffset: (source: string, box: Record<string, unknown>, dx: number, dy: number) => string;
   writeSide: (source: string, box: Record<string, unknown>, side: string) => string;
+  writeResize: (
+    source: string,
+    box: Record<string, unknown>,
+    delta: { dw: number; dh: number; dx: number; dy: number },
+  ) => string;
 }> {
   const html = readFileSync(join(ROOT, "playground/index.html"), "utf8");
   const start = html.indexOf("// #region drag-writeback");
@@ -64,10 +69,13 @@ async function pageWriteback(): Promise<{
     "writeSide",
     "readSpan",
     "writeOffset",
+    "writeResize",
   ])
     assert.ok(source.includes(`function ${name}(`), `\`${name}\` left the marked region`);
   return import(
-    `data:text/javascript,${encodeURIComponent(`${source}\nexport { writeOffset, writeSide };`)}`
+    `data:text/javascript,${encodeURIComponent(
+      `${source}\nexport { writeOffset, writeSide, writeResize };`,
+    )}`
   );
 }
 
@@ -239,4 +247,200 @@ test("dragging a flow end writes the `ID.side` the DSL already has", async () =>
   assert.equal(flowOf(both).fromSide?.value, "left");
   assert.equal(flowOf(both).toSide?.value, "bottom");
   assert.equal(flowOf(both).to, "M1");
+});
+
+const RESIZE_SRC = `diagram logical "t"
+system SYS "My system" {
+  layer FRONT "Front office" {
+    block PORTAL "Portal"
+  }
+}
+actor-group G "Actors" {
+  actor USER "User"
+}
+USER -> PORTAL "Signs in"
+`;
+
+test("a resize writes DSL the parser reads back as the same size", async () => {
+  const { writeResize } = await pageWriteback();
+  const { parse } = await import("../src/parser.ts");
+  const systemOf = (src: string) => parse(src).model.elements[0];
+  const clean = (src: string) =>
+    assert.equal(parse(src).diags.filter((d) => d.severity === "error").length, 0, src);
+
+  // An east or south grip changes the extent and nothing else. The container's
+  // body is already open, so the statement goes on its own indented line.
+  const grown = writeResize(RESIZE_SRC, { id: "SYS", line: 2 }, { dw: 120, dh: 40, dx: 0, dy: 0 });
+  clean(grown);
+  assert.equal(systemOf(grown).size?.dw, 120);
+  assert.equal(systemOf(grown).size?.dh, 40);
+  assert.match(grown, /\n {2}size: 120, 40(\s|$)/, "written the way the DSL is written by hand");
+
+  // Dragging again adds to what is there, like every other hint.
+  const again = writeResize(
+    grown,
+    { id: "SYS", sizeSpan: systemOf(grown).size!.span },
+    { dw: -20, dh: 10, dx: 0, dy: 0 },
+  );
+  clean(again);
+  assert.equal(systemOf(again).size?.dw, 100);
+  assert.equal(systemOf(again).size?.dh, 50);
+
+  // A north or west grip moves the corner as well, so one gesture writes both
+  // hints — and the two must not land on top of each other.
+  const both = writeResize(RESIZE_SRC, { id: "SYS", line: 2 }, { dw: 30, dh: 0, dx: -30, dy: 0 });
+  clean(both);
+  assert.equal(systemOf(both).size?.dw, 30, "the extent");
+  assert.equal(systemOf(both).offset?.dx, -30, "and the corner that came with it");
+
+  // Re-dragging that pair rewrites both spans. They sit on one line, so the
+  // later one has to be replaced first or the second splice lands inside the
+  // first — which is the bug this ordering exists to prevent.
+  const parsed = systemOf(both);
+  const redragged = writeResize(
+    both,
+    { id: "SYS", sizeSpan: parsed.size!.span, offsetSpan: parsed.offset!.span },
+    { dw: 5, dh: 0, dx: -5, dy: 0 },
+  );
+  clean(redragged);
+  assert.equal(systemOf(redragged).size?.dw, 35);
+  assert.equal(systemOf(redragged).offset?.dx, -35);
+
+  // Every body shape a container declaration can have, the same four the offset
+  // writeback is held to.
+  const BODIES: [string, string][] = [
+    ["open at end of line", 'system X "IHM SIET\\nPCC" {\n  block B "B"\n}'],
+    ["one-line body", 'system X "IHM SIET\\nPCC" { block B "B" }'],
+    ["label holding a brace", 'system X "IHM {SIET}" { block B "B" }'],
+  ];
+  for (const [shape, declaration] of BODIES) {
+    const source = `diagram logical "t"\n${declaration}\nactor-group G "g" { actor A "a" }\nA -> B "Request"\n`;
+    const written = writeResize(source, { id: "X", line: 2 }, { dw: -167, dh: 47, dx: 0, dy: 0 });
+    clean(written);
+    // Whitespace is asserted, not just re-parsability: `47block` lexes as two
+    // tokens by luck, and source that leans on that is one lexer change from
+    // being corrupt.
+    assert.match(written, /size: -167, 47(\s|$)/, shape);
+    const element = parse(written).model.elements.find((e) => e.id === "X")!;
+    assert.equal(element.size?.dw, -167, shape);
+    assert.equal(element.size?.dh, 47, shape);
+    assert.equal(element.children[0]?.id, "B", `${shape}: the children survived`);
+  }
+});
+
+/**
+ * Lifts the page's grip geometry out of `index.html`, the same way the writeback
+ * is lifted — this is the arithmetic that has to agree with the engine's clamp,
+ * so it is tested against the engine's own bounds rather than hand-written ones.
+ */
+async function pageGeometry(): Promise<{
+  GRIP_NAMES: string[];
+  gripPoint: (box: Box, grip: string) => { x: number; y: number };
+  resized: (box: Box, grip: string, dx: number, dy: number) => Box;
+}> {
+  const html = readFileSync(join(ROOT, "playground/index.html"), "utf8");
+  const start = html.indexOf("// #region resize-geometry");
+  const end = html.indexOf("// #endregion resize-geometry");
+  assert.ok(start >= 0 && end > start, "the resize-geometry markers are gone from the playground");
+  const source = html.slice(start, end);
+  return import(
+    `data:text/javascript,${encodeURIComponent(
+      `${source}\nexport { GRIP_NAMES, gripPoint, resized };`,
+    )}`
+  );
+}
+
+interface Box {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  resize?: { minWidth: number; minHeight: number };
+}
+
+test("a resize grip pulls the face it is on and anchors the opposite one", async () => {
+  const { GRIP_NAMES, gripPoint, resized } = await pageGeometry();
+  // Room to move in every direction, so this case is about the arithmetic alone.
+  const box: Box = {
+    x: 100, y: 50, width: 200, height: 100,
+    resize: { minWidth: 20, minHeight: 20 },
+  };
+  assert.deepEqual(GRIP_NAMES, ["nw", "n", "ne", "w", "e", "sw", "s", "se"]);
+  assert.deepEqual(gripPoint(box, "nw"), { x: 100, y: 50 });
+  assert.deepEqual(gripPoint(box, "se"), { x: 300, y: 150 });
+  assert.deepEqual(gripPoint(box, "n"), { x: 200, y: 50 });
+
+  // East and south move the far face: the box grows, the corner stays.
+  assert.deepEqual(resized(box, "e", 40, 999), { what: "element", x: 100, y: 50, width: 240, height: 100 });
+  assert.deepEqual(resized(box, "s", 999, 30), { what: "element", x: 100, y: 50, width: 200, height: 130 });
+  // West and north move the near face: dragging *left* makes it wider and moves
+  // the corner by exactly what it won, so the far edge holds still.
+  const west = resized(box, "w", -40, 0);
+  assert.deepEqual(west, { what: "element", x: 60, y: 50, width: 240, height: 100 });
+  assert.equal(west.x + west.width, box.x + box.width, "the east edge is the anchor");
+  const north = resized(box, "n", 0, -30);
+  assert.equal(north.y, 20);
+  assert.equal(north.y + north.height, box.y + box.height, "the south edge is the anchor");
+  // A corner pulls both axes at once.
+  assert.deepEqual(resized(box, "nw", -10, -20), { what: "element", x: 90, y: 30, width: 210, height: 120 });
+  // A side grip never touches the other axis, whatever the pointer did.
+  for (const [grip, axis] of [["n", "width"], ["s", "width"], ["e", "height"], ["w", "height"]] as const)
+    assert.equal(resized(box, grip, 77, 77)[axis], box[axis], `${grip} must not change ${axis}`);
+
+  // The floor is the engine's, not a rule re-derived here: a pull past it stops
+  // there, and the anchored edge still holds.
+  const tight: Box = { ...box, resize: { minWidth: 180, minHeight: 90 } };
+  assert.equal(resized(tight, "e", -999, 0).width, 180, "held at its own children");
+  const heldWest = resized(tight, "w", 999, 0);
+  assert.equal(heldWest.width, 180);
+  assert.equal(heldWest.x + heldWest.width, box.x + box.width, "floored, and still anchored east");
+  // And nothing stops it growing: a container dragged past its parent is not cut
+  // back, the parent grows with it.
+  assert.equal(resized(tight, "e", 5000, 0).width, 5200);
+  assert.equal(resized(tight, "w", -5000, 0).width, 5200);
+});
+
+test("the playground's floor is the engine's, to the pixel", async () => {
+  const { resized } = await pageGeometry();
+  const { compile } = await import("../src/compile.ts");
+  const source = `diagram logical "t"
+system SYS "My system" {
+  layer FRONT "Front office" {
+    block PORTAL "Portal"
+  }
+}
+actor-group G "Actors" {
+  actor USER "User"
+}
+USER -> PORTAL "Signs in"
+`;
+  const boxOf = (result: { boxes: unknown[] | null }, id: string) =>
+    (result.boxes as { id: string; what: string; [k: string]: unknown }[]).find(
+      (b) => b.id === id && b.what === "element",
+    ) as unknown as Box & { id: string };
+
+  const plain = await compile(source);
+  const front = boxOf(plain, "FRONT");
+  // What a grip dragged 400px right would leave, per the page…
+  const promised = resized(front, "e", 400, 0);
+  // …and what the engine actually draws for the `size:` that drag would write.
+  const written = source.replace(
+    'layer FRONT "Front office" {',
+    `layer FRONT "Front office" { size: ${promised.width - front.width}, 0`,
+  );
+  const rendered = await compile(written);
+  const drawn = boxOf(rendered, "FRONT");
+  assert.equal(
+    drawn.width,
+    promised.width,
+    "the ghost promised a width the engine refused to draw",
+  );
+  // That drag takes the layer well past the system around it, which is the case
+  // the ghost used to over-promise on: the engine clamped the child back and the
+  // resize did nothing. The parent grows instead.
+  const parent = boxOf(rendered, "SYS");
+  assert.ok(
+    parent.x + parent.width >= drawn.x + drawn.width,
+    "the parent must have grown to hold the resized layer",
+  );
 });

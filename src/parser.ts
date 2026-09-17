@@ -325,12 +325,21 @@ function readOffsetPair(p: Parser): { dx: number; dy: number; span: Span } | nul
   };
 }
 
-/** `offset: <dx>, <dy>` inside an element body. Backtracks when `offset` is not
- *  followed by a colon, so `offset` stays usable as an id. Layout like `order:`,
- *  not cosmetics — hence a statement of its own rather than a `style` property. */
-function tryOffsetEntry(p: Parser, parent: Element | null): boolean {
+/**
+ * A `key: <a>, <b>` pair inside an element body — one grammar, two meanings:
+ * `offset:` for where the layout put the element, `size:` for how big it made
+ * it. Backtracks when the key is not followed by a colon, so both stay usable
+ * as ids. Layout like `order:`, not cosmetics — hence statements of their own
+ * rather than `style` properties.
+ */
+function tryPairEntry(
+  p: Parser,
+  parent: Element | null,
+  entry: { key: "offset" | "size"; code: string; message: string; help: string },
+  put: (element: Element, pair: { dx: number; dy: number; span: Span }) => void,
+): boolean {
   const { matchToken, advance, reportCoded, save, restore, syncToNextLine } = p;
-  if (!parent || !matchToken("id", "offset")) return false;
+  if (!parent || !matchToken("id", entry.key)) return false;
   const mark = save();
   const keyToken = advance();
   if (!matchToken("colon")) {
@@ -340,18 +349,43 @@ function tryOffsetEntry(p: Parser, parent: Element | null): boolean {
   advance();
   const pair = readOffsetPair(p);
   if (!pair) {
-    reportCoded(
-      "E0109",
-      "`offset` expects two whole numbers — `offset: <dx>, <dy>`",
-      keyToken.span,
-      "e.g. `offset: 40, -20` — 40px right and 20px up from where the layout put it",
-    );
+    reportCoded(entry.code, entry.message, keyToken.span, entry.help);
     syncToNextLine();
     return true;
   }
-  parent.offset = pair;
+  put(parent, pair);
   return true;
 }
+
+const tryOffsetEntry = (p: Parser, parent: Element | null): boolean =>
+  tryPairEntry(
+    p,
+    parent,
+    {
+      key: "offset",
+      code: "E0109",
+      message: "`offset` expects two whole numbers — `offset: <dx>, <dy>`",
+      help: "e.g. `offset: 40, -20` — 40px right and 20px up from where the layout put it",
+    },
+    (element, pair) => {
+      element.offset = pair;
+    },
+  );
+
+const trySizeEntry = (p: Parser, parent: Element | null): boolean =>
+  tryPairEntry(
+    p,
+    parent,
+    {
+      key: "size",
+      code: "E0110",
+      message: "`size` expects two whole numbers — `size: <dw>, <dh>`",
+      help: "e.g. `size: 120, 40` — 120px wider and 40px taller than the layout made it",
+    },
+    (element, pair) => {
+      element.size = { dw: pair.dx, dh: pair.dy, span: pair.span };
+    },
+  );
 
 /** `logo: <name>` or `logo: "<path>"` inside an element body. Backtracks when
  *  `logo` is not followed by a colon, so `logo` stays usable as an id. Content
@@ -634,7 +668,7 @@ export function parse(src: string): { model: Model; diags: Diagnostic[] } {
     }
     if (tryStyleBlock(parent)) return;
     if (tryOrderEntry(parser, parent)) return;
-    if (tryOffsetEntry(parser, parent)) return;
+    if (tryOffsetEntry(parser, parent) || trySizeEntry(parser, parent)) return;
     if (tryLogoEntry(parser, parent)) return;
     if (!parent && tryLegendBlock(parser)) return;
     if (!parent && tryBusinessObject(parser)) return;

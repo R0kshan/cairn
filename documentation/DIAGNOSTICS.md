@@ -36,6 +36,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0101–E0104 | error | Syntax / style-value errors |
 | E0106 | error | `order:` value is not a whole number ≥ 0 |
 | E0109 | error | `offset:` / `label-offset:` is not a pair of whole numbers (`offset: 40, -20`), or `segment-offset:` is not a run number of 1 or more and a whole delta (`segment-offset: 2, -18`) |
+| E0110 | error | `size:` is not a pair of whole numbers (`size: 120, 40`) |
 | E0200 / E0201 | error | Unknown diagram type / element kind (with did-you-mean) |
 | E0202 | error | Duplicate identifier (flat ID namespace, shared with business objects) |
 | E0203 | error | Flow without a label |
@@ -45,6 +46,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0223 | error | Unknown suffix on a flow endpoint — neither a side nor a role (`A.middle -> B`) |
 | E0224 | error | Endpoint role without a queue at the other end of the flow (`A.producer -> B`) |
 | E0225 | error | A flow's queue endpoint carries both a declared side and a role (`A.producer -> Q.right`) |
+| E0226 | error | `size:` on an element that is not a container — a leaf box is sized by its own label |
 | E0240 | error | Infrastructure flow without a protocol (required in this view, even when the label is omitted) |
 | W0501 | warning | No actor declared (logical) |
 | W0502 | warning | Element without a label (its ID is displayed as-is) |
@@ -54,9 +56,10 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | W0540 | warning | Application system-to-system flow without a protocol (actor flows exempt) |
 | W0570 | warning | Declared attachment side the layout could not honor |
 | W0571 | warning | Endpoint resolved as a declared id, so its `.side` / `.role` reading was dropped |
-| W0572 | warning | An `offset:` / `label-offset:` landed something on something else — honored as written, reported rather than repaired |
+| W0572 | warning | An `offset:`, `label-offset:` or `size:` landed something on something else — honored as written, reported rather than repaired |
 | W0573 | warning | An `offset:` was limited to keep the element inside its container, or a `segment-offset:` to keep the flow on the element it attaches to |
 | W0574 | warning | A `segment-offset:` names a run the flow's route does not have — run numbers renumber when a route gains or loses a turn |
+| W0575 | warning | A `size:` ran out of room: shrinking stops once the empty bands between the children are closed. Growing is never limited — a container past its parent makes the parent grow too |
 
 ## Exit codes
 

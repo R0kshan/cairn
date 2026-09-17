@@ -19,6 +19,7 @@ import {
   attachSideDiagnostics,
   offsetDiagnostics,
   beatsRelayout,
+  containerSizeBounds,
   noLadderRegression,
   nodeCoverage,
   straightRuns,
@@ -744,6 +745,217 @@ USER -> M1 : "Request"
       `offset: ${offset} was clamped without saying so`,
     );
   }
+});
+
+const SIZED_SRC = (body: string) => `diagram logical "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+system SYS "My system" {${body}
+  layer FRONT "Front office" {
+    block PORTAL "Portal"
+  }
+}
+G -> PORTAL "Signs in"
+`;
+
+/** Two children with a wide gap between them — the room a shrink comes from. */
+const GAPPED_SRC = (body: string) => `diagram logical "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+system SYS "My system" {${body}
+  layer FRONT "Front office" {
+    block PORTAL "Portal"
+  }
+  layer BACK "Back office" {
+    block CORE "Business core"
+  }
+}
+G -> PORTAL "Signs in"
+PORTAL -> CORE "Opens a case"
+`;
+
+/** The scene box of one element, by id. */
+const boxOf = (scene: Scene, id: string) => scene.nodes.find((node) => node.id === id)!;
+
+test("`size:` grows a container by the delta, and carries the flows on the borders it moved", async () => {
+  // A container is the one thing in a drawing with a size worth arguing about:
+  // a leaf is whatever its label needs, a container is only ever "big enough for
+  // what is in it". The hint is a delta on that, for the same reason `offset:`
+  // is one — elk still sizes the container from its content, so an absolute box
+  // would go stale the moment a child is added.
+  const plain = await build(SIZED_SRC(""));
+  const grown = await build(SIZED_SRC("\n  size: 120, 40"));
+  const before = boxOf(plain.scene, "SYS");
+  const after = boxOf(grown.scene, "SYS");
+  assert.equal(after.width - before.width, 120, "the width the author asked for");
+  assert.equal(after.height - before.height, 40, "and the height");
+  // The top-left corner is the anchor: growing happens to the right and down, so
+  // a resize never moves the thing it resizes.
+  assert.equal(after.x, before.x, "the left edge stays put");
+  assert.equal(after.y, before.y, "and the top one");
+  // Children do not move with it — the room opens around them.
+  assert.equal(boxOf(grown.scene, "PORTAL").x, boxOf(plain.scene, "PORTAL").x);
+  assert.deepEqual(
+    offsetDiagnostics(grown.scene, grown.model).filter((d) => d.code === "W0575"),
+    [],
+    "a resize with room to take is not negotiated",
+  );
+
+  // The flow arrives on a border that moved, so its terminal moved with it —
+  // and the route it left behind is still orthogonal (§3, tier 0).
+  const flow = grown.scene.edges.find((edge) => edge.id === "F01")!;
+  const terminal = flow.pts[0];
+  const actors = boxOf(grown.scene, "G");
+  assert.ok(
+    Math.abs(terminal.x - (actors.x + actors.width)) < 1 ||
+      Math.abs(terminal.y - (actors.y + actors.height)) < 1 ||
+      Math.abs(terminal.x - actors.x) < 1 ||
+      Math.abs(terminal.y - actors.y) < 1,
+    `F01 must still meet a side of G (${terminal.x},${terminal.y})`,
+  );
+  for (let i = 1; i < flow.pts.length; i++)
+    assert.ok(
+      Math.abs(flow.pts[i - 1].x - flow.pts[i].x) < 0.5 ||
+        Math.abs(flow.pts[i - 1].y - flow.pts[i].y) < 0.5,
+      `segment ${i} of F01 runs off the orthogonal`,
+    );
+});
+
+test("`size:` is floored by what a container holds, and never by what holds it", async () => {
+  // The floor is nesting, not taste (§7): a container drawn inside its own child
+  // is not a resized container, it is a broken drawing. Everything else about a
+  // resize is honored as written (§17).
+  const shrunk = await build(SIZED_SRC("\n  size: -400, -400"));
+  const after = boxOf(shrunk.scene, "SYS");
+  const front = boxOf(shrunk.scene, "FRONT");
+  assert.ok(
+    after.x + after.width >= front.x + front.width &&
+      after.y + after.height >= front.y + front.height,
+    "a container may not shrink inside its own children",
+  );
+  assert.ok(
+    offsetDiagnostics(shrunk.scene, shrunk.model).some((d) => d.code === "W0575"),
+    "and says so when it is cut short",
+  );
+
+  // Upward there is no clamp at all: an inner container that outgrows its frame
+  // makes the frame grow, because "big enough for what is in it" is what a
+  // container *is*. Cutting the child back instead refused the resize outright.
+  const plain = await build(SIZED_SRC(""));
+  const inner = await build(
+    SIZED_SRC("").replace(
+      'layer FRONT "Front office" {',
+      'layer FRONT "Front office" { size: 300, 120',
+    ),
+  );
+  const child = boxOf(inner.scene, "FRONT");
+  const wasChild = boxOf(plain.scene, "FRONT");
+  assert.equal(child.width - wasChild.width, 300, "the child got the width it asked for");
+  assert.equal(child.height - wasChild.height, 120, "and the height");
+
+  // And the parent opens up by just enough to keep holding it — not by more.
+  const parent = boxOf(inner.scene, "SYS");
+  assert.ok(
+    parent.x + parent.width >= child.x + child.width &&
+      parent.y + parent.height >= child.y + child.height,
+    "the parent must contain the grown child",
+  );
+  const wasParent = boxOf(plain.scene, "SYS");
+  const slack = (box: typeof parent, kid: typeof child) => ({
+    x: box.x + box.width - (kid.x + kid.width),
+    y: box.y + box.height - (kid.y + kid.height),
+  });
+  const now = slack(parent, child);
+  const was = slack(wasParent, wasChild);
+  assert.ok(now.x <= was.x + 1, `only just: ${now.x}px of slack against ${was.x}`);
+  assert.ok(now.y <= was.y + 1, `only just: ${now.y}px of slack against ${was.y}`);
+  assert.deepEqual(
+    offsetDiagnostics(inner.scene, inner.model).filter((d) => d.code === "W0575"),
+    [],
+    "nothing was negotiated, so nothing is reported",
+  );
+});
+
+test("a negative `size:` closes the empty room between a container's children", async () => {
+  // A container is sized by elk to hug what it holds, so its border has no slack
+  // of its own — measured on every container of a realistic drawing, 0 to 5px.
+  // Asked to shrink, it either takes the room from the gaps *between* its
+  // children or does nothing at all, and doing nothing is what a resize grip
+  // that refuses to move looks like.
+  const plain = await build(GAPPED_SRC(""));
+  const wasFront = boxOf(plain.scene, "FRONT");
+  const wasBack = boxOf(plain.scene, "BACK");
+  const wasGap = wasBack.x - (wasFront.x + wasFront.width);
+  assert.ok(wasGap > 60, `fixture: expected a wide gap between the layers (${wasGap}px)`);
+
+  const tighter = await build(GAPPED_SRC("\n  size: -40, 0"));
+  const sys = boxOf(tighter.scene, "SYS");
+  const front = boxOf(tighter.scene, "FRONT");
+  const back = boxOf(tighter.scene, "BACK");
+  assert.equal(sys.width, boxOf(plain.scene, "SYS").width - 40, "the container narrowed as asked");
+  // The children keep their own size and their order; the gap is what gave way.
+  assert.equal(front.width, wasFront.width, "a child is moved, never resized");
+  assert.equal(back.width, wasBack.width);
+  assert.ok(front.x < back.x, "and the reading order is unchanged");
+  // Every empty band gives up the same *proportion*, so the drawing tightens
+  // evenly instead of collapsing one gap to nothing while the others sit full.
+  const gap = back.x - (front.x + front.width);
+  assert.ok(gap < wasGap, `the gap between the layers gave way (${wasGap} -> ${gap})`);
+  assert.ok(gap >= wasGap - 40, "and no band gave up more than the whole squeeze");
+  assert.deepEqual(
+    offsetDiagnostics(tighter.scene, tighter.model).filter((d) => d.code === "W0575"),
+    [],
+    "there was room, so nothing was negotiated",
+  );
+
+  // Past the point where the gaps are gone it stops, and says so. The children
+  // still clear each other — a squeeze never draws two boxes touching.
+  const floored = await build(GAPPED_SRC("\n  size: -4000, 0"));
+  const [left, right] = [boxOf(floored.scene, "FRONT"), boxOf(floored.scene, "BACK")];
+  assert.ok(
+    right.x - (left.x + left.width) >= 20,
+    `children must keep a gap (${right.x - (left.x + left.width)}px)`,
+  );
+  assert.ok(
+    left.x >= boxOf(floored.scene, "SYS").x,
+    "and stay inside the container that holds them",
+  );
+  assert.ok(
+    offsetDiagnostics(floored.scene, floored.model).some((d) => d.code === "W0575"),
+    "a shrink with no room left to take says so",
+  );
+
+  // The flow between the two layers is carried by the child that moved, and the
+  // route it leaves is still orthogonal (§3, tier 0).
+  const flow = tighter.scene.edges.find((edge) => edge.id === "F02")!;
+  for (let i = 1; i < flow.pts.length; i++)
+    assert.ok(
+      Math.abs(flow.pts[i - 1].x - flow.pts[i].x) < 0.5 ||
+        Math.abs(flow.pts[i - 1].y - flow.pts[i].y) < 0.5,
+      `segment ${i} of F02 runs off the orthogonal`,
+    );
+});
+
+test("`size:` is a container's knob, and the engine says where it may stop", async () => {
+  // A leaf is sized by its own label, so a delta there would argue with the one
+  // thing that decides it.
+  const onLeaf = check(SIZED_SRC("").replace('block PORTAL "Portal"', 'block PORTAL "Portal" { size: 40, 10 }'));
+  assert.ok(onLeaf.codes.includes("E0226"), `expected E0226, got ${onLeaf.codes.join(", ")}`);
+
+  // And the bounds an editor stops a resize handle at are the engine's own, not
+  // a rule re-derived in the playground — a guard that measured this differently
+  // would promise a box the engine then refuses to draw (§3a).
+  const { scene, model } = await build(SIZED_SRC(""));
+  const bounds = containerSizeBounds(scene, model);
+  const front = bounds.get("FRONT")!;
+  const portal = boxOf(scene, "PORTAL");
+  assert.ok(front.minWidth > 0 && front.minHeight > 0, "a container is floored by its content");
+  assert.ok(
+    front.minWidth >= portal.x + portal.width - boxOf(scene, "FRONT").x,
+    "the floor still holds the child it contains",
+  );
 });
 
 test("a container's own offset is not clamped, and it carries its children", async () => {

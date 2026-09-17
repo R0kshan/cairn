@@ -35,6 +35,7 @@ Scaffold a file with `cairn new` — `-L` logical, `-A` application,
 **Positioning controls, one line each:**
 [`order:`](#order-n--reading-order) reading order ·
 [`offset:`](#offset-dx-dy--nudge-an-element) move an element ·
+[`size:`](#size-dw-dh--resize-a-container) resize a container ·
 [`label-offset:`](#label-offset-dx-dy--nudge-a-flows-label) move a flow label ·
 [`segment-offset:`](#segment-offset-run-delta--slide-one-run-of-a-route) slide one run of a route ·
 [`ID.side`](#idside--which-side-a-flow-attaches-to) pin an attachment side ·
@@ -70,7 +71,8 @@ CAPTURE -> EVENTS "Order created" (MQ, JSON) { label: below }
   (`F01`, `F02`…). A duplicate is a diagnostic with a rename suggestion.
 - **Element labels** are `"` quoted free text. `\n` forces a line break.
   Omit the label and the element renders as its bare ID, with **W0502**.
-- **An element body** holds child elements plus `order:` and `offset:`
+- **An element body** holds child elements plus `order:`, `offset:` and — on a
+  container — `size:`
   ([Positioning controls](#positioning-controls)), `logo:` ([Logos](#logos))
   and `style { … }` (§2).
 - **Comments** start with `#` and run to end of line.
@@ -362,6 +364,7 @@ is opt-in; a file using none of them renders exactly as it always did.
 |---|---|---|
 | `order: <n>` | element body | where the element sits in the reading order |
 | `offset: <dx>, <dy>` | element body | the element, in pixels |
+| `size: <dw>, <dh>` | container body | how much room the container has, in pixels |
 | `label-offset: <dx>, <dy>` | flow inline block | that flow's label |
 | `segment-offset: <run>, <delta>` | flow inline block | one run of that flow's route |
 | `ID.side` | either flow endpoint | which side of an element the flow meets |
@@ -427,6 +430,43 @@ along with.
 **An offset is honored, never negotiated** (INVARIANTS §17), containment aside.
 An element landed on another, or a label on an element, still ships as asked and
 the collision is reported as **W0572**.
+
+#### `size: <dw>, <dh>` — resize a container
+
+`dw` is wider, `dh` is taller; either may be negative. Anything but a pair of
+whole numbers is **E0110**. This is what the playground writes when you drag a
+container's resize grip.
+
+```cairn
+system SYS "My system" {
+  size: 120, 40
+  layer FRONT "Front office" { block PORTAL "Portal" }
+}
+```
+
+- **Containers only.** A leaf box is sized by the label in it, so a delta there
+  would argue with the one thing that decides it — **E0226**. Change how tightly
+  every box hugs its text with `label-padding:` in `style` instead.
+- **It is a delta, not a box.** elk still sizes the container from what it
+  holds, so the hint survives adding a child rather than pinning a number the
+  drawing has outgrown.
+- **The top-left corner is the anchor.** Room opens to the right and down, and
+  the children inside do not move. Dragging the north or west grip in the
+  playground writes an `offset:` for the corner and a `size:` for the rest.
+- **It re-flows nothing**, like every other hint: the neighbours stay where they
+  are, and a container grown onto one is drawn as asked with the overlap
+  reported as **W0572**.
+- **Shrinking closes the gaps inside.** A container is sized to hug what it
+  holds, so its border has no slack of its own — the room is between its
+  children, and a negative `dw` takes it from there. Every empty band gives up
+  the same proportion, so the group tightens evenly; the children keep their own
+  size and their reading order, and never end up closer than 20px. Once the
+  bands are gone the shrink stops and reports **W0575**.
+- **Growing is not limited at all.** A container enlarged past the one that
+  holds it makes *that* one grow, by just enough to keep holding it, and on up
+  the chain. Nothing is reported — a container is whatever is big enough for
+  what is in it, so this is the frame following its content, not a hint being
+  negotiated.
 
 #### `label-offset: <dx>, <dy>` — nudge a flow's label
 
