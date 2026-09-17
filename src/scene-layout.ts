@@ -1791,7 +1791,7 @@ const kidsOf = (box: SizedContainer): SceneNode[] =>
 /** One band of empty space inside a container, along whichever axis is being
     measured, and how much of it a squeeze may take. */
 interface FreeBand {
-  start: number;
+  /** Where it ends — what a squeeze measures a shift from. */
   end: number;
   spare: number;
 }
@@ -1824,7 +1824,7 @@ function freeBands(box: SizedContainer, axis: Axis): FreeBand[] {
   if (!merged.length) return [];
   const bands: FreeBand[] = [];
   const add = (start: number, end: number, keep: number) => {
-    if (end - start > keep) bands.push({ start, end, spare: end - start - keep });
+    if (end - start > keep) bands.push({ end, spare: end - start - keep });
   };
   add(node[min], merged[0].start, pad);
   for (let i = 0; i + 1 < merged.length; i++)
@@ -1864,11 +1864,13 @@ function holdsChildren(box: SizedContainer): SizeBounds {
  * every spare band inside it.
  */
 function contentFloor(box: SizedContainer): SizeBounds {
-  const { node, pad } = box;
-  if (!kidsOf(box).length) return { minWidth: pad * 2, minHeight: pad * 2 };
+  // No special case for a container holding nothing: it has no bands, so this
+  // returns the size it already is. Reporting `pad * 2` there would promise a
+  // floor `squeezeInside` cannot reach, which is the one thing sharing this
+  // function with the playground exists to prevent (§3a).
   const spare = (axis: Axis) =>
     freeBands(box, axis).reduce((total, band) => total + band.spare, 0);
-  return { minWidth: node.width - spare("x"), minHeight: node.height - spare("y") };
+  return { minWidth: box.node.width - spare("x"), minHeight: box.node.height - spare("y") };
 }
 
 /**
@@ -2481,17 +2483,21 @@ function sizeOverlaps(
   model: Model,
   overlap: (a: Box, b: Box) => boolean,
 ): Diagnostic[] {
+  // The family sets are built only for the containers that carry a hint — a
+  // drawing with none pays one flat scan and nothing else.
   const sized = new Map<string, Span>();
+  for (const element of model.index.values())
+    if (element.size) sized.set(element.id, element.size.span);
+  if (!sized.size) return [];
   const family = new Map<string, Set<string>>();
   const walk = (elements: Element[], ancestors: string[]): void => {
     for (const element of elements) {
-      if (element.size) sized.set(element.id, element.size.span);
-      family.set(element.id, new Set([...ancestors, ...subtreeIds(element)]));
+      if (sized.has(element.id))
+        family.set(element.id, new Set([...ancestors, ...subtreeIds(element)]));
       walk(element.children, [...ancestors, element.id]);
     }
   };
   walk(model.elements, []);
-  if (!sized.size) return [];
 
   const diagnostics: Diagnostic[] = [];
   for (const node of scene.nodes) {

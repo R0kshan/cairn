@@ -100780,7 +100780,7 @@ function freeBands(box, axis) {
   if (!merged.length) return [];
   const bands = [];
   const add = (start, end, keep) => {
-    if (end - start > keep) bands.push({ start, end, spare: end - start - keep });
+    if (end - start > keep) bands.push({ end, spare: end - start - keep });
   };
   add(node[min], merged[0].start, pad);
   for (let i = 0; i + 1 < merged.length; i++)
@@ -100802,10 +100802,8 @@ function holdsChildren(box) {
   };
 }
 function contentFloor(box) {
-  const { node, pad } = box;
-  if (!kidsOf(box).length) return { minWidth: pad * 2, minHeight: pad * 2 };
   const spare = (axis) => freeBands(box, axis).reduce((total, band) => total + band.spare, 0);
-  return { minWidth: node.width - spare("x"), minHeight: node.height - spare("y") };
+  return { minWidth: box.node.width - spare("x"), minHeight: box.node.height - spare("y") };
 }
 function squeezeInside(box, axis, target) {
   const { min, size } = AXIS[axis];
@@ -101121,16 +101119,18 @@ function shiftIntoCanvas(scene) {
 }
 function sizeOverlaps(scene, model, overlap) {
   const sized = /* @__PURE__ */ new Map();
+  for (const element of model.index.values())
+    if (element.size) sized.set(element.id, element.size.span);
+  if (!sized.size) return [];
   const family = /* @__PURE__ */ new Map();
   const walk = (elements, ancestors) => {
     for (const element of elements) {
-      if (element.size) sized.set(element.id, element.size.span);
-      family.set(element.id, /* @__PURE__ */ new Set([...ancestors, ...subtreeIds(element)]));
+      if (sized.has(element.id))
+        family.set(element.id, /* @__PURE__ */ new Set([...ancestors, ...subtreeIds(element)]));
       walk(element.children, [...ancestors, element.id]);
     }
   };
   walk(model.elements, []);
-  if (!sized.size) return [];
   const diagnostics = [];
   for (const node of scene.nodes) {
     const span = sized.get(node.id);
