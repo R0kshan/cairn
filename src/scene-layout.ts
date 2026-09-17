@@ -164,6 +164,13 @@ export interface Scene {
    */
   clampedSizes?: Set<Span>;
   /**
+   * What each `size:` actually came to, per element — the delta as drawn rather
+   * than as written, which differ wherever the floor cut one short. An editor
+   * continues its next drag from this, or it writes a number the floor swallows
+   * again and the container does not move.
+   */
+  appliedSizes?: Map<string, { dw: number; dh: number }>;
+  /**
    * Spans of the `segment-offset:` entries a route could not honor as written:
    * `clamped` was cut short to keep a terminal on the element side it sits on,
    * `stale` named a run the route does not have. `offsetDiagnostics` turns them
@@ -1935,6 +1942,7 @@ function applyContainerSizes(scene: Scene, model: Model): Set<string> {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const pad = containerPad(model);
   const clampedSpans = new Set<Span>();
+  const applied = new Map<string, { dw: number; dh: number }>();
   // Snapshot before any border moves: a terminal is matched against the box it
   // was seated on, not one a later step has already grown.
   const before = new Map(
@@ -1957,6 +1965,10 @@ function applyContainerSizes(scene: Scene, model: Model): Set<string> {
     const height = Math.max(node.height + spec.dh, floor.minHeight);
     if (width !== node.width + spec.dw || height !== node.height + spec.dh)
       clampedSpans.add(spec.span);
+    // What the hint *became*, which is not what it said wherever the floor cut
+    // it short. An editor has to continue from the drawn size or its next drag
+    // writes a number the floor swallows again, and the box does not move.
+    applied.set(id, { dw: width - node.width, dh: height - node.height });
     squeezeInside(box, "x", width);
     squeezeInside(box, "y", height);
     node.width = width;
@@ -1984,6 +1996,7 @@ function applyContainerSizes(scene: Scene, model: Model): Set<string> {
   containWithin(model.elements);
 
   if (clampedSpans.size) scene.clampedSizes = clampedSpans;
+  scene.appliedSizes = applied;
   // Every box this pass touched, against where it was. A squeeze moves boxes and
   // a resize moves borders, so a seat carries both — smallest first, because a
   // terminal inside a container is seated on the leaf and only the leaf's own

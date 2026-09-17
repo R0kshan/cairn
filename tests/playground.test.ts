@@ -536,3 +536,50 @@ test("resetting the flows drops their hints and keeps the container dispositions
   const plain = 'diagram logical "t"\nA -> B "Plain"\n';
   assert.equal(stripFlowHints(plain), plain);
 });
+
+test("a second resize drag continues from the size the drawing shows", async () => {
+  const { writeResize } = await pageWriteback();
+  const { parse } = await import("../src/parser.ts");
+  const { compile } = await import("../src/compile.ts");
+
+  // A `size:` well past the floor, so the engine cuts it short and the number in
+  // the source stops describing the box on screen.
+  const source = `diagram logical "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+system SYS "My system" {
+  size: -4000, 0
+  layer FRONT "Front office" {
+    block PORTAL "Portal"
+  }
+}
+G -> PORTAL "Signs in"
+`;
+  const boxOf = (result: { boxes: unknown[] | null }, id: string) =>
+    (result.boxes as Record<string, unknown>[]).find(
+      (b) => b.id === id && b.what === "element",
+    ) as unknown as Box & { sizeApplied?: { dw: number; dh: number }; sizeSpan?: unknown };
+
+  const clamped = await compile(source);
+  const sys = boxOf(clamped, "SYS");
+  assert.ok(sys.sizeApplied, "the box reports what the hint came to");
+  assert.notEqual(sys.sizeApplied!.dw, -4000, "and it is not what the hint said");
+
+  // Widen it by 30. Continuing from the written -4000 would write -3970, which
+  // the floor swallows again: the drag would do nothing, and so would the next.
+  const widened = writeResize(source, sys as unknown as Record<string, unknown>, {
+    dw: 30,
+    dh: 0,
+    dx: 0,
+    dy: 0,
+  });
+  assert.equal(parse(widened).diags.filter((d) => d.severity === "error").length, 0, widened);
+  assert.equal(
+    parse(widened).model.elements[1].size?.dw,
+    sys.sizeApplied!.dw + 30,
+    "the new hint continues from the applied delta",
+  );
+  const after = boxOf(await compile(widened), "SYS");
+  assert.equal(after.width, sys.width + 30, "so the box actually grows by the drag");
+});

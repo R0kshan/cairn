@@ -1063,15 +1063,22 @@ function writeOffset(source, box, dx, dy) {
  */
 function writeResize(source, box, delta) {
   const edits = [];
+  // A `size:` continues from what it *became*, not from what it says. The two
+  // differ wherever the floor cut the hint short, and adding to the written
+  // number then writes another one the floor swallows: the box on screen would
+  // sit still through several drags before the arithmetic caught up with it.
   if (delta.dw || delta.dh)
-    edits.push({ key: 'size', span: box.sizeSpan, dx: delta.dw, dy: delta.dh });
+    edits.push({
+      key: 'size', span: box.sizeSpan, dx: delta.dw, dy: delta.dh,
+      base: box.sizeApplied && { dx: box.sizeApplied.dw, dy: box.sizeApplied.dh },
+    });
   if (delta.dx || delta.dy)
     edits.push({ key: 'offset', span: box.offsetSpan, dx: delta.dx, dy: delta.dy });
   let text = source;
   const replaced = edits.filter(edit => edit.span);
   replaced.sort((a, b) => b.span.line - a.span.line || b.span.col - a.span.col);
   for (const edit of replaced) {
-    const current = readSpan(text, edit.span);
+    const current = edit.base ?? readSpan(text, edit.span);
     text = spliceSpan(text, edit.span, `${current.dx + edit.dx}, ${current.dy + edit.dy}`);
   }
   const fresh = edits.filter(edit => !edit.span);
@@ -1230,7 +1237,10 @@ preview.addEventListener('pointermove', e => {
     const { dx, dy } = rawDelta(e);
     const rect = resized(dragStart.box, dragStart.grip, dx, dy);
     showOverlay(GHOST, rect);
-    placeGrips(rect, dragStart.grip);
+    // Over the held box, not the bare rectangle: `resized` returns geometry
+    // alone, and grips are only drawn for something `resizable` recognises —
+    // which needs the `container` and `resize` fields the held box carries.
+    placeGrips({ ...dragStart.box, ...rect }, dragStart.grip);
     return;
   }
   const { dx, dy } = dragDelta(e);

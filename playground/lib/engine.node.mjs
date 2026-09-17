@@ -100839,6 +100839,7 @@ function applyContainerSizes(scene, model) {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
   const pad = containerPad(model);
   const clampedSpans = /* @__PURE__ */ new Set();
+  const applied = /* @__PURE__ */ new Map();
   const before = new Map(
     scene.nodes.map((node) => [
       node.id,
@@ -100855,6 +100856,7 @@ function applyContainerSizes(scene, model) {
     const height = Math.max(node.height + spec.dh, floor.minHeight);
     if (width !== node.width + spec.dw || height !== node.height + spec.dh)
       clampedSpans.add(spec.span);
+    applied.set(id, { dw: width - node.width, dh: height - node.height });
     squeezeInside(box, "x", width);
     squeezeInside(box, "y", height);
     node.width = width;
@@ -100872,6 +100874,7 @@ function applyContainerSizes(scene, model) {
   };
   containWithin(model.elements);
   if (clampedSpans.size) scene.clampedSizes = clampedSpans;
+  scene.appliedSizes = applied;
   const seats = [];
   for (const node of scene.nodes) {
     const was = before.get(node.id);
@@ -103338,6 +103341,7 @@ function layoutBoxes(model, scene) {
       height: node.height,
       container: node.container,
       resize: sizeBounds.get(node.id),
+      sizeApplied: scene.appliedSizes?.get(node.id),
       ...declaration
     });
   }

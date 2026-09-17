@@ -86,6 +86,13 @@ export interface LayoutBox {
    */
   sizeSpan?: Span;
   /**
+   * What that `size:` came to, as drawn — which is not what it says wherever the
+   * floor cut it short. An editor adds its drag to *this* and writes the sum, so
+   * a second drag continues from the box on screen rather than from a number the
+   * floor will swallow again. Absent when the element declares no `size:`.
+   */
+  sizeApplied?: { dw: number; dh: number };
+  /**
    * How far a `size:` may take this container: never inside its own children,
    * never outside its parent. Container `"element"` boxes only.
    *
@@ -218,6 +225,7 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
       height: node.height,
       container: node.container,
       resize: sizeBounds.get(node.id),
+      sizeApplied: scene.appliedSizes?.get(node.id),
       ...declaration,
     });
   }
