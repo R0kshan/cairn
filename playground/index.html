@@ -77,12 +77,23 @@
      handle, so it is a filled dot rather than another line. */
   #routes .hover-dot { fill:var(--accent); fill-opacity:.3; stroke:var(--accent); stroke-width:2; }
   #routes .ghost-dot { fill:none; stroke:var(--accent); stroke-width:2.5; stroke-dasharray:4 3; }
+  /* The eight grips on a hovered container. Squares, not dots: a dot on a
+     border already means a flow terminal, and two handles that look alike on
+     the same line is the one confusion worth spending markup to avoid. */
+  #routes .grip { fill:#ffffff; stroke:var(--accent); stroke-width:1.5; }
+  #routes .grip-live { fill:var(--accent); }
   #preview.draggable { cursor:move; }
   /* A run slides along its normal and nowhere else, so the cursor says which
      way before the drag starts rather than after it refuses to follow. */
   #preview.slide-x { cursor:ew-resize; }
   #preview.slide-y { cursor:ns-resize; }
   #preview.grab { cursor:grab; }
+  /* A resize grip names the corner or side it pulls, the way every window
+     manager does, so the direction is known before the drag starts. */
+  #preview.size-n, #preview.size-s { cursor:ns-resize; }
+  #preview.size-e, #preview.size-w { cursor:ew-resize; }
+  #preview.size-nw, #preview.size-se { cursor:nwse-resize; }
+  #preview.size-ne, #preview.size-sw { cursor:nesw-resize; }
 </style>
 </head>
 <body>
@@ -97,6 +108,7 @@
   <select id="theme" title="Preview theme (overrides the diagram's own theme)">
     <option value="">theme: as written</option>
   </select>
+  <button id="reset-flows" title="Drop every segment-offset: and label-offset: — the flows you placed by hand go back to automatic routing against the containers as they now are">Reset flows</button>
   <button id="share">Copy share link</button>
   <button id="embed" title="A live SVG URL served by /api/svg — embed it in a README or docs">Copy embed URL</button>
   <button id="download">Download SVG</button>
@@ -378,6 +390,14 @@ document.getElementById('templates').addEventListener('change', e => {
 // --- Share / embed / download ----------------------------------------------
 function flash(msg) { note.textContent = msg; clearTimeout(flash._t); flash._t = setTimeout(() => note.textContent = '', 2200); }
 
+document.getElementById('reset-flows').addEventListener('click', () => {
+  const cleared = stripFlowHints(editor.value);
+  if (cleared === editor.value) return flash('no flow hints to clear');
+  editor.value = cleared;
+  flash('flow hints cleared — the router picks the routes again ✓');
+  run();
+});
+
 document.getElementById('share').addEventListener('click', async () => {
   location.hash = 'src=' + b64encode(editor.value);
   await navigator.clipboard.writeText(location.href);
@@ -601,6 +621,124 @@ function diagramPoint(e) {
     shrink with the drawing, not with the zoom. */
 const SEGMENT_GRAB_PX = 5;
 
+// --- Resize grips ------------------------------------------------------------
+// A container is the one thing in the drawing with a size of its own to argue
+// about: a leaf box is whatever its label needs, but a container is only ever
+// "big enough for what is in it", and an author often wants more room than that.
+// So a hovered container puts eight grips on its border, and a drag on one
+// writes a `size:` — the same contract as `offset:`, a delta on what the layout
+// computed rather than an absolute box that would go stale the moment a child
+// is added.
+//
+// The floor comes from the engine (`box.resize`), never from a rule re-derived
+// here: the pass that applies the hint floors it at exactly that number, so a
+// grip stopped there promises the box that will actually be drawn. There is no
+// ceiling — a container dragged past its parent makes the parent grow with it.
+
+// The grip geometry below is lifted out between these markers by
+// `tests/playground.test.ts`, the same way the writeback is: a clamp that
+// disagreed with the engine would promise a box it then refuses to draw.
+// #region resize-geometry
+/** The eight grips, as the unit position of each along the box. */
+const GRIP_AT = {
+  nw: { x: 0, y: 0 }, n: { x: 0.5, y: 0 }, ne: { x: 1, y: 0 },
+  w:  { x: 0, y: 0.5 },                    e:  { x: 1, y: 0.5 },
+  sw: { x: 0, y: 1 }, s: { x: 0.5, y: 1 }, se: { x: 1, y: 1 },
+};
+const GRIP_NAMES = Object.keys(GRIP_AT);
+
+/** How close the pointer has to be to a grip to take hold of it, in screen
+    pixels — wider than the run band, since a grip sits on a border a run may
+    also be near. */
+const GRIP_GRAB_PX = 7;
+
+/** Where one grip sits on `box`, in diagram coordinates. */
+const gripPoint = (box, grip) => ({
+  x: box.x + GRIP_AT[grip].x * box.width,
+  y: box.y + GRIP_AT[grip].y * box.height,
+});
+
+/**
+ * The box a drag on `grip` would leave, already held inside the engine's own
+ * bounds — so the ghost and the drawing cannot disagree.
+ *
+ * A grip on the north or west face moves the corner as well as the size, which
+ * is why a drag there writes two hints: `offset:` for the corner, `size:` for
+ * the rest. The east and south faces leave the corner alone and write one.
+ */
+function resized(box, grip, dx, dy) {
+  const pull = GRIP_AT[grip];
+  const wide = pull.x !== 0.5, tall = pull.y !== 0.5;
+  const { minWidth, minHeight } = box.resize;
+  // A west pull grows the box as the pointer goes left, so the delta is negated;
+  // an east pull takes it as it comes. Same on the other axis. Only the floor
+  // stops it: growing past the parent is allowed, and the parent follows.
+  const width = wide ? Math.max(box.width + (pull.x ? dx : -dx), minWidth) : box.width;
+  const height = tall ? Math.max(box.height + (pull.y ? dy : -dy), minHeight) : box.height;
+  // The face the grip is on is the one that moves; the opposite one is the
+  // anchor, so a west pull turns the width it won into a leftward shift.
+  return {
+    what: 'element',
+    x: box.x - (wide && !pull.x ? width - box.width : 0),
+    y: box.y - (tall && !pull.y ? height - box.height : 0),
+    width,
+    height,
+  };
+}
+// #endregion resize-geometry
+
+/** Only a container the engine gave bounds for can be resized — which is every
+    container, and nothing else. */
+const resizable = box => box?.what === 'element' && box.container && !!box.resize;
+
+/** One overlay square per grip, drawn in screen pixels like the terminal dot,
+    so a grip is the same size to aim at whatever the drawing is scaled to. */
+const GRIP_SIZE_PX = 9;
+const GRIPS = GRIP_NAMES.map(() => overlayShape('rect', 'grip', { rx: 2 }));
+
+const hideGrips = () => { for (const shape of GRIPS) shape.style.display = 'none'; };
+
+/** Draws the grips of `box`, with `live` — the one being dragged or hovered —
+    filled in. */
+function placeGrips(box, live = null) {
+  if (!resizable(box) || !parkRoutes()) return hideGrips();
+  GRIP_NAMES.forEach((grip, index) => {
+    const shape = GRIPS[index];
+    const at = gripPoint(box, grip);
+    shape.style.display = 'block';
+    shape.setAttribute('class', grip === live ? 'grip grip-live' : 'grip');
+    shape.setAttribute('width', GRIP_SIZE_PX);
+    shape.setAttribute('height', GRIP_SIZE_PX);
+    shape.setAttribute('x', at.x * zoom - GRIP_SIZE_PX / 2);
+    shape.setAttribute('y', at.y * zoom - GRIP_SIZE_PX / 2);
+  });
+}
+
+/** Containers, innermost first — the order both the grip search and the hover
+    highlight want, so an inner layer wins over the system around it. */
+const containersByArea = () =>
+  (lastBoxes ?? []).filter(resizable).sort((a, b) => a.width * a.height - b.width * b.height);
+
+/** The innermost container the pointer is inside, or null. */
+function containerUnder(point) {
+  if (!point) return null;
+  return containersByArea().find(box =>
+    point.x >= box.x && point.x <= box.x + box.width &&
+    point.y >= box.y && point.y <= box.y + box.height) ?? null;
+}
+
+/** The grip nearest the pointer on `box`, within the grab radius. */
+function gripAt(box, point) {
+  if (!resizable(box) || !point) return null;
+  let best = null;
+  for (const grip of GRIP_NAMES) {
+    const at = gripPoint(box, grip);
+    const distance = Math.hypot(point.x - at.x, point.y - at.y);
+    if (distance <= GRIP_GRAB_PX / zoom && (!best || distance < best.distance)) best = { grip, distance };
+  }
+  return best?.grip ?? null;
+}
+
 /** A run is vertical when its two endpoints share an x. */
 const isVertical = box => Math.abs(box.points[0].x - box.points[1].x) < 0.5;
 
@@ -686,6 +824,26 @@ function boxAt(point) {
     .sort((a, b) => a.width * a.height - b.width * b.height);
   return terminalAt(point) ??
     inside.find(b => b.what === 'label') ?? segmentAt(point) ?? inside[0] ?? null;
+}
+
+/**
+ * What the pointer has hold of, and on which resize grip if any.
+ *
+ * A grip ranks below a terminal and above everything else: a terminal and a grip
+ * can land on the same point — both live on a container's border — and a flow
+ * that could not be re-attached is the worse loss, since a grip has seven
+ * others. Below that, a grip beats the box it belongs to, or the border would be
+ * a place you can only move the container from.
+ */
+function grabAt(point) {
+  const terminal = terminalAt(point);
+  if (terminal) return { box: terminal, grip: null };
+  for (const box of containersByArea()) {
+    const grip = gripAt(box, point);
+    if (grip) return { box, grip };
+  }
+  const box = boxAt(point);
+  return box ? { box, grip: null } : null;
 }
 
 /**
@@ -888,6 +1046,97 @@ function writeOffset(source, box, dx, dy) {
   lines[index] = insertInBlock(line, `offset: ${dx}, ${dy}`);
   return lines.join('\n');
 }
+
+/**
+ * Writes a resize into the source and returns the new text.
+ *
+ * Up to two statements, because a grip on the north or west face moves the
+ * container's corner as well as its size: `size:` for the extent, `offset:` for
+ * the corner that came with it. Both are deltas and both add to whatever is
+ * already there, so a second drag continues the first.
+ *
+ * Replacements go in **last span first**. Two hints on one element can sit on
+ * the same line, and rewriting an earlier one shifts every column after it —
+ * which is exactly how a second edit lands in the middle of the first. Going
+ * backwards leaves every span still to be used untouched. Insertions follow, on
+ * a line no replacement has been near.
+ */
+function writeResize(source, box, delta) {
+  const edits = [];
+  // A `size:` continues from what it *became*, not from what it says. The two
+  // differ wherever the floor cut the hint short, and adding to the written
+  // number then writes another one the floor swallows: the box on screen would
+  // sit still through several drags before the arithmetic caught up with it.
+  if (delta.dw || delta.dh)
+    edits.push({
+      key: 'size', span: box.sizeSpan, dx: delta.dw, dy: delta.dh,
+      base: box.sizeApplied && { dx: box.sizeApplied.dw, dy: box.sizeApplied.dh },
+    });
+  if (delta.dx || delta.dy)
+    edits.push({ key: 'offset', span: box.offsetSpan, dx: delta.dx, dy: delta.dy });
+  let text = source;
+  const replaced = edits.filter(edit => edit.span);
+  replaced.sort((a, b) => b.span.line - a.span.line || b.span.col - a.span.col);
+  for (const edit of replaced) {
+    const current = edit.base ?? readSpan(text, edit.span);
+    text = spliceSpan(text, edit.span, `${current.dx + edit.dx}, ${current.dy + edit.dy}`);
+  }
+  const fresh = edits.filter(edit => !edit.span);
+  if (!fresh.length) return text;
+  const statement = fresh.map(edit => `${edit.key}: ${edit.dx}, ${edit.dy}`).join(' ');
+  const lines = text.split('\n');
+  const index = box.line - 1;
+  const line = lines[index];
+  if (line === undefined) return text;
+  // A container's body is always open at the end of its declaration line — it
+  // has children to hold — so the statement goes on its own indented line, the
+  // way the DSL is written by hand. The inline shapes are still handled, for a
+  // container that happens to have none.
+  if (braceIndex(line) === line.trimEnd().length - 1) {
+    lines.splice(index + 1, 0, `${line.match(/^\s*/)[0]}  ${statement}`);
+    return lines.join('\n');
+  }
+  lines[index] = insertInBlock(line, statement);
+  return lines.join('\n');
+}
+/**
+ * Every `segment-offset:` and `label-offset:` taken out of `source`.
+ *
+ * What "re-optimise the flows" can honestly mean. A route this page drew is
+ * elk's, chosen before any container was resized, and nothing downstream can
+ * re-derive it — re-running the route repair over every flow was measured to
+ * change nothing, because it is already at its fixpoint. What *can* be undone is
+ * the hand-placing: drop the hints and the router picks the flows again, against
+ * the containers as they now are.
+ *
+ * Element `offset:` and `size:` are left alone. Those are the dispositions the
+ * author is keeping; it is the flows drawn for the *old* ones that are stale.
+ *
+ * Quoted text is masked first, so a flow labelled `"label-offset: 1, 2"` keeps
+ * its label — the same care `braceIndex` takes, for the same reason.
+ */
+function stripFlowHints(source) {
+  // The trailing run of spaces goes with the hint, or removing one from the
+  // middle of a block leaves `{  stroke: dashed }` with a gap in it.
+  const HINT = /\b(?:segment-offset|label-offset)\s*:\s*-?\d+\s*,\s*-?\d+\s*/g;
+  const clean = (line) => {
+    let out = '';
+    let at = 0;
+    for (const hit of maskQuoted(line).matchAll(HINT)) {
+      out += line.slice(at, hit.index);
+      at = hit.index + hit[0].length;
+    }
+    if (!at) return line;
+    out += line.slice(at);
+    // The inline block that held nothing else goes with them, rather than
+    // leaving `A -> B "x" {  }` behind.
+    // Anchored on the brace, not on the space before it: `maskQuoted` blanks the
+    // label, so a leading `\s*` would match back across it and eat the label too.
+    const empty = maskQuoted(out).search(/\{\s*\}\s*$/);
+    return (empty < 0 ? out : out.slice(0, empty)).replace(/\s+$/, '');
+  };
+  return source.split('\n').map(clean).join('\n');
+}
 // #endregion drag-writeback
 
 /**
@@ -906,6 +1155,15 @@ function holdInParent(box, dx, dy) {
 }
 
 let dragStart = null;
+
+/** How far this drag has travelled, in whole diagram pixels and held by nothing
+    — what a resize works from, since the engine's own bounds hold it instead. */
+function rawDelta(e, fromX = dragStart.clientX, fromY = dragStart.clientY) {
+  return {
+    dx: Math.round((e.clientX - fromX) / zoom),
+    dy: Math.round((e.clientY - fromY) / zoom),
+  };
+}
 
 /**
  * How far this drag has moved, in whole diagram pixels and already held inside
@@ -937,22 +1195,33 @@ function dragDelta(e, box = dragStart.box, fromX = dragStart.clientX, fromY = dr
   return { dx: Math.round(held.dx), dy: Math.round(held.dy) };
 }
 
+/** Clears every cursor the preview can be wearing, so one place owns the list. */
+const CURSOR_CLASSES = ['draggable', 'slide-x', 'slide-y', 'grab',
+  ...GRIP_NAMES.map(grip => `size-${grip}`)];
+
 preview.addEventListener('pointermove', e => {
   if (dragStart || panStart) return;
-  const box = boxAt(diagramPoint(e));
+  const point = diagramPoint(e);
+  const held = grabAt(point);
+  const box = held?.box ?? null;
   const run = box?.what === 'segment';
   const terminal = box?.what === 'terminal';
-  preview.classList.toggle('draggable', !!box && !run && !terminal);
-  preview.classList.toggle('slide-x', run && isVertical(box));
-  preview.classList.toggle('slide-y', run && !isVertical(box));
-  preview.classList.toggle('grab', terminal);
+  preview.classList.remove(...CURSOR_CLASSES);
+  if (held?.grip) preview.classList.add(`size-${held.grip}`);
+  else if (terminal) preview.classList.add('grab');
+  else if (run) preview.classList.add(isVertical(box) ? 'slide-x' : 'slide-y');
+  else if (box) preview.classList.add('draggable');
   if (box) showOverlay(HOVER, box);
   else hideOverlay(HOVER);
+  // The grips of the container in reach, whether or not the pointer is on one:
+  // an affordance you only see once you are already on it is one nobody finds.
+  placeGrips(held?.grip ? held.box : containerUnder(point), held?.grip);
 });
 
 preview.addEventListener('pointerleave', () => {
   hideOverlay(HOVER);
-  preview.classList.remove('draggable', 'slide-x', 'slide-y', 'grab');
+  hideGrips();
+  preview.classList.remove(...CURSOR_CLASSES);
 });
 
 preview.addEventListener('pointermove', e => {
@@ -961,18 +1230,50 @@ preview.addEventListener('pointermove', e => {
     Math.abs(e.clientX - dragStart.clientX) > DRAG_THRESHOLD_PX ||
     Math.abs(e.clientY - dragStart.clientY) > DRAG_THRESHOLD_PX;
   if (!dragStart.moved) return;
-  const { dx, dy } = dragDelta(e);
   hideOverlay(HOVER);   // the ghost speaks for the drag from here
+  // A resize is not a move: the ghost is the box the drop would leave, so it is
+  // drawn as a rectangle of its own rather than the held box shifted.
+  if (dragStart.grip) {
+    const { dx, dy } = rawDelta(e);
+    const rect = resized(dragStart.box, dragStart.grip, dx, dy);
+    showOverlay(GHOST, rect);
+    // Over the held box, not the bare rectangle: `resized` returns geometry
+    // alone, and grips are only drawn for something `resizable` recognises —
+    // which needs the `container` and `resize` fields the held box carries.
+    placeGrips({ ...dragStart.box, ...rect }, dragStart.grip);
+    return;
+  }
+  const { dx, dy } = dragDelta(e);
   showOverlay(GHOST, dragStart.box, dx, dy);
 });
 
 function endDrag(e) {
   if (!dragStart) return;
-  const { box, clientX, clientY, moved } = dragStart;
+  const { box, grip, clientX, clientY, moved } = dragStart;
   dragStart = null;
   hideOverlay(GHOST);
+  hideGrips();
   preview.releasePointerCapture(e.pointerId);
   if (!moved) return;
+  // A resize writes what the *box* changed by, not what the pointer travelled:
+  // the engine's bounds have already held the drag, so the two differ the moment
+  // a container meets its own children.
+  if (grip) {
+    const { dx, dy } = rawDelta(e, clientX, clientY);
+    const rect = resized(box, grip, dx, dy);
+    const delta = {
+      dw: rect.width - box.width,
+      dh: rect.height - box.height,
+      dx: rect.x - box.x,
+      dy: rect.y - box.y,
+    };
+    if (!delta.dw && !delta.dh && !delta.dx && !delta.dy) return;
+    editor.value = writeResize(editor.value, box, delta);
+    const signed = value => `${value >= 0 ? '+' : ''}${value}`;
+    flash(`${box.id} resized ${signed(delta.dw)}, ${signed(delta.dh)}`);
+    run();
+    return;
+  }
   // A terminal is re-attached, not nudged: what a drop settles is which side of
   // the element the flow meets, and the layout answers for the seat on it.
   if (box.what === 'terminal') {
@@ -1006,9 +1307,9 @@ preview.addEventListener('pointerdown', e => {
   e.preventDefault();   // otherwise the browser starts dragging the SVG itself
   // An element under the pointer takes the drag; empty canvas still pans, so
   // both gestures live on the same button without a mode to switch between.
-  const box = boxAt(diagramPoint(e));
-  if (box) {
-    dragStart = { box, clientX: e.clientX, clientY: e.clientY, moved: false };
+  const held = grabAt(diagramPoint(e));
+  if (held) {
+    dragStart = { ...held, clientX: e.clientX, clientY: e.clientY, moved: false };
     preview.setPointerCapture(e.pointerId);
     return;
   }

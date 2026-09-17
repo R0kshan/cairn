@@ -18,6 +18,7 @@ import { validate } from "./validator.ts";
 import {
   layout,
   attachSideDiagnostics,
+  containerSizeBounds,
   offsetDiagnostics,
   segmentSlideRange,
   straightRuns,
@@ -28,7 +29,7 @@ import { buildFlowMatrix } from "./flow-matrix.ts";
 import type { FlowMatrix } from "./models/matrix.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import type { AttachSide, Model, Span } from "./models/ast.ts";
-import type { Scene } from "./scene-layout.ts";
+import type { Scene, SizeBounds } from "./scene-layout.ts";
 import { resolveThemeSpec } from "./theme-spec.ts";
 import type { ThemeOverrides } from "./theme-spec.ts";
 
@@ -79,6 +80,27 @@ export interface LayoutBox {
   line: number;
   /** Span of the `dx, dy` an author already wrote, so an editor can replace it. */
   offsetSpan?: Span;
+  /**
+   * Span of the `dw, dh` of a `size:`, the same way — `"element"` boxes on a
+   * container only, since that is the only thing a `size:` may name.
+   */
+  sizeSpan?: Span;
+  /**
+   * What that `size:` came to, as drawn — which is not what it says wherever the
+   * floor cut it short. An editor adds its drag to *this* and writes the sum, so
+   * a second drag continues from the box on screen rather than from a number the
+   * floor will swallow again. Absent when the element declares no `size:`.
+   */
+  sizeApplied?: { dw: number; dh: number };
+  /**
+   * How far a `size:` may take this container: never inside its own children,
+   * never outside its parent. Container `"element"` boxes only.
+   *
+   * The engine's own numbers, not a rule an editor re-derives — the pass that
+   * applies the hint clamps by exactly this, so a resize handle stopped here
+   * promises the box that will actually be drawn.
+   */
+  resize?: SizeBounds;
   /**
    * Which run of the route this is, counted from 1 — `"segment"` boxes only, and
    * what a `segment-offset:` names.
@@ -168,12 +190,16 @@ export async function compile(source: string, options?: CompileOptions): Promise
 
 /** Pairs the finished geometry with the source spans an editor writes back to. */
 function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
-  const declarations = new Map<string, { line: number; offsetSpan?: Span; parent?: string }>();
+  const declarations = new Map<
+    string,
+    { line: number; offsetSpan?: Span; sizeSpan?: Span; parent?: string }
+  >();
   const walk = (elements: Model["elements"], parent?: string): void => {
     for (const element of elements) {
       declarations.set(element.id, {
         line: element.kindSpan.line,
         offsetSpan: element.offset?.span,
+        sizeSpan: element.size?.span,
         parent,
       });
       walk(element.children, element.id);
@@ -182,6 +208,7 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
   walk(model.elements);
   const flowById = new Map(model.flows.map((flow) => [flow.id, flow]));
 
+  const sizeBounds = containerSizeBounds(scene, model);
   const boxes: LayoutBox[] = [];
   // A terminal is seated on a leaf, never on the box drawn around it — the same
   // rule the slide bounds are measured by.
@@ -197,6 +224,8 @@ function layoutBoxes(model: Model, scene: Scene): LayoutBox[] {
       width: node.width,
       height: node.height,
       container: node.container,
+      resize: sizeBounds.get(node.id),
+      sizeApplied: scene.appliedSizes?.get(node.id),
       ...declaration,
     });
   }

@@ -40,6 +40,7 @@ export function validate(model: Model): Diagnostic[] {
     ...checkNesting(elements, view),
     ...checkFlows(model, view),
     ...checkEndpointRoles(model, view),
+    ...checkSizes(elements, view),
     ...checkLogos(elements, view),
     ...checkBusinessObjects(model, view),
     ...checkMinimumCounts(elements, model, view),
@@ -81,6 +82,44 @@ function checkUnknownKinds(elements: Element[], view: View): Diagnostic[] {
       note: `the \`${view.name}\` view defines: ${view.kinds.join(", ")}`,
       help: suggestion ? `did you mean \`${suggestion}\`?` : undefined,
     });
+  }
+  return diagnostics;
+}
+
+/**
+ * `size:` is a container's knob. A leaf box is sized by the label in it — the
+ * uniform node width, or `label-padding:` where an author wants the boxes to hug
+ * their text — so a delta there would argue with the one thing that decides it.
+ * A container has no such measure of its own: it is whatever holds its children,
+ * which is exactly the size a resize handle has something to say about.
+ */
+function checkSizes(elements: Element[], view: View): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+  for (const element of elements) {
+    if (!element.size) continue;
+    if (!view.containerKinds.includes(element.kind))
+      diagnostics.push({
+        code: "E0226",
+        severity: "error",
+        message: `\`${element.kind}\` is not a container, so it has no \`size\` to give`,
+        span: element.size.span,
+        note: `the \`${view.name}\` view accepts \`size\` on: ${view.containerKinds.join(", ")}`,
+        help: "a leaf box is sized by its own label — set `label-padding:` in `style` to change how tightly, or nudge this one with `offset:`",
+      });
+    // A container kind holding nothing is not drawn as a container: there is no
+    // frame to size, so the layout gives it a plain box sized by its own label,
+    // exactly like a leaf. Accepting `size:` there promised a knob that then had
+    // nothing to turn — it could only ever grow, never shrink below the label,
+    // and the playground could offer it no grip.
+    else if (!element.children.length)
+      diagnostics.push({
+        code: "E0226",
+        severity: "error",
+        message: `\`${element.id}\` holds nothing, so it is drawn as a plain box rather than a container`,
+        span: element.size.span,
+        note: "a container's size is the room around what it holds — with no children there is no room to give",
+        help: "put the elements it contains inside it, or drop the `size:` and nudge this one with `offset:`",
+      });
   }
   return diagnostics;
 }

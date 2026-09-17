@@ -157,6 +157,20 @@ export interface Scene {
    */
   clampedOffsets?: Set<string>;
   /**
+   * Spans of the `size:` hints a container's own children or its parent cut
+   * short — the same negotiation `clampedOffsets` records, from the other end
+   * (§17). Spans rather than ids: a `size:` names one container, so there is
+   * nothing to attribute back through a parent chain.
+   */
+  clampedSizes?: Set<Span>;
+  /**
+   * What each `size:` actually came to, per element — the delta as drawn rather
+   * than as written, which differ wherever the floor cut one short. An editor
+   * continues its next drag from this, or it writes a number the floor swallows
+   * again and the container does not move.
+   */
+  appliedSizes?: Map<string, { dw: number; dh: number }>;
+  /**
    * Spans of the `segment-offset:` entries a route could not honor as written:
    * `clamped` was cut short to keep a terminal on the element side it sits on,
    * `stale` named a run the route does not have. `offsetDiagnostics` turns them
@@ -1689,11 +1703,370 @@ interface OffsetSpec {
 }
 
 /** Is `point` on or inside `box`, within a pixel of its border? */
+/** How far off a border a terminal may sit and still count as seated on it —
+    `airOutContainers` moves borders after the terminals are placed. */
+const ON_BORDER = 1;
+
 const pointOn = (point: Point, box: Box): boolean =>
   point.x >= box.x - 1 &&
   point.x <= box.x + box.width + 1 &&
   point.y >= box.y - 1 &&
   point.y <= box.y + box.height + 1;
+
+/**
+ * Resizes the containers the author pulled a handle on, and carries every flow
+ * terminal sitting on a border that moved.
+ *
+ * A delta on what the layout computed, like `offset:` and for the same reason:
+ * elk sizes a container from the content it holds, so a hint naming an absolute
+ * box would go stale the moment a child is added. The top-left corner stays put
+ * — growing is done to the right and down, and a handle on the other two sides
+ * writes an `offset:` for the move and a `size:` for the rest.
+ *
+ * Nothing re-flows. A container grown into its neighbour is drawn as asked and
+ * the overlap reported (W0572), exactly as an `offset:` is (§17). One clamp
+ * bounds it, and it is nesting rather than taste (§7): a container may not
+ * shrink inside its own children (W0575).
+ *
+ * Upward there is no clamp. A container grown past its parent makes the *parent*
+ * grow — by just enough to keep holding it, and on up the chain. Cutting the
+ * child back to fit instead refused the resize outright, which is the whole
+ * gesture doing nothing.
+ *
+ * Runs before `applyNodeOffsets`, which holds each child inside its parent —
+ * the room a parent has to give must be settled before anything is held in it.
+ *
+ * Returns the flows whose terminal it carried, for the same re-aim and repair
+ * an offset's carried flows get.
+ */
+/** The smallest a `size:` may leave one container: what it holds, plus the gap
+    the layout keeps around it. Absolute pixels, not a delta — the hint is a
+    delta, but what floors it is where the geometry already is.
+
+    There is no ceiling. A container that outgrows its parent is not clamped; the
+    parent grows to hold it (`containWithin`). */
+export interface SizeBounds {
+  minWidth: number;
+  minHeight: number;
+}
+
+/**
+ * The floor under each container's `size:`, on the geometry as it stands.
+ *
+ * Exported because two callers must agree on it to the pixel: the pass that
+ * applies the hint, and `compile()`'s boxes, which is how an editor knows where
+ * to stop a resize handle. A guard that measured this differently from the pass
+ * would let the playground promise a box the engine then refuses to draw (§3a).
+ */
+export function containerSizeBounds(scene: Scene, model: Model): Map<string, SizeBounds> {
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const pad = containerPad(model);
+  const bounds = new Map<string, SizeBounds>();
+  const walk = (elements: Element[]): void => {
+    for (const element of elements) {
+      walk(element.children);
+      const node = nodeById.get(element.id);
+      if (node?.container) bounds.set(element.id, contentFloor({ node, element, nodeById, pad }));
+    }
+  };
+  walk(model.elements);
+  return bounds;
+}
+
+/** The gap the layout keeps between a container's border and what it holds — so
+    a resized container reads like every other one rather than shrink-wrapped. */
+const containerPad = (model: Model) =>
+  model.style.containerPadding ?? (model.style.compact ? 7 : 9);
+
+/** What is left between two children a squeeze has pushed together. Matches
+    `compactHorizontal`'s column gap: elk leaves exactly this either side of a
+    centred edge label, so a band already sized to one is not taken. */
+const MIN_SIBLING_GAP = 20;
+
+/** One container and the scene around it — what every size measurement needs,
+    bundled so the four of them travel together instead of as four parameters. */
+interface SizedContainer {
+  node: SceneNode;
+  element: Element;
+  nodeById: Map<string, SceneNode>;
+  /** The gap the layout keeps between the border and what it holds. */
+  pad: number;
+}
+
+/** Its direct children, as scene boxes. */
+const kidsOf = (box: SizedContainer): SceneNode[] =>
+  box.element.children
+    .map((child) => box.nodeById.get(child.id))
+    .filter((child): child is SceneNode => !!child);
+
+/** One band of empty space inside a container, along whichever axis is being
+    measured, and how much of it a squeeze may take. */
+interface FreeBand {
+  /** Where it ends — what a squeeze measures a shift from. */
+  end: number;
+  spare: number;
+}
+
+/**
+ * The empty bands inside `node` along one axis, in order.
+ *
+ * A band is free where no child sits across it — merged extents, so two children
+ * stacked on the other axis hold their column between them exactly as one wide
+ * child would. The bands at the two ends keep the container's padding; the ones
+ * between children keep `MIN_SIBLING_GAP`, and only what is over those is spare.
+ *
+ * This is where a shrink comes from. A container hugs its children — elk sizes
+ * it that way — so its border has nothing to give: the room is the gaps *inside*
+ * it, and closing them is the only thing "make this narrower" can mean without
+ * moving a box outside the container or drawing it over its own content.
+ */
+function freeBands(box: SizedContainer, axis: Axis): FreeBand[] {
+  const { node, pad } = box;
+  const { min, size } = AXIS[axis];
+  const spans = kidsOf(box)
+    .map((kid) => ({ start: kid[min], end: kid[min] + kid[size] }))
+    .sort((a, b) => a.start - b.start || a.end - b.end);
+  const merged: { start: number; end: number }[] = [];
+  for (const span of spans) {
+    const last = merged[merged.length - 1];
+    if (last && span.start <= last.end) last.end = Math.max(last.end, span.end);
+    else merged.push({ ...span });
+  }
+  if (!merged.length) return [];
+  const bands: FreeBand[] = [];
+  const add = (start: number, end: number, keep: number) => {
+    if (end - start > keep) bands.push({ end, spare: end - start - keep });
+  };
+  add(node[min], merged[0].start, pad);
+  for (let i = 0; i + 1 < merged.length; i++)
+    add(merged[i].end, merged[i + 1].start, MIN_SIBLING_GAP);
+  add(merged[merged.length - 1].end, node[min] + node[size], pad);
+  return bands;
+}
+
+/** Which scene-box fields one axis reads. */
+type Axis = "x" | "y";
+const AXIS = {
+  x: { min: "x", size: "width" },
+  y: { min: "y", size: "height" },
+} as const satisfies Record<Axis, { min: "x" | "y"; size: "width" | "height" }>;
+
+/**
+ * The smallest box that still *contains* this container's children where they
+ * currently sit, with the padding around them.
+ *
+ * Not the same question as `contentFloor`, and neither bounds the other: this
+ * one asks how big a container must be for what is in it, which is what makes a
+ * parent grow when a child outgrows it. `contentFloor` asks how small it can be
+ * squeezed, which is a statement about the empty room *between* those children.
+ */
+function holdsChildren(box: SizedContainer): SizeBounds {
+  const { node, pad } = box;
+  const kids = kidsOf(box);
+  if (!kids.length) return { minWidth: pad * 2, minHeight: pad * 2 };
+  return {
+    minWidth: Math.max(...kids.map((kid) => kid.x + kid.width)) + pad - node.x,
+    minHeight: Math.max(...kids.map((kid) => kid.y + kid.height)) + pad - node.y,
+  };
+}
+
+/**
+ * The smallest box this container can be squeezed into: what it is now, less
+ * every spare band inside it.
+ */
+function contentFloor(box: SizedContainer): SizeBounds {
+  // No special case for a container holding nothing: it has no bands, so this
+  // returns the size it already is. Reporting `pad * 2` there would promise a
+  // floor `squeezeInside` cannot reach, which is the one thing sharing this
+  // function with the playground exists to prevent (§3a).
+  const spare = (axis: Axis) =>
+    freeBands(box, axis).reduce((total, band) => total + band.spare, 0);
+  return { minWidth: box.node.width - spare("x"), minHeight: box.node.height - spare("y") };
+}
+
+/**
+ * Closes the empty bands inside `node` along one axis until it is `target` long,
+ * moving each child — and its whole subtree — that sits past one.
+ *
+ * This is what makes "narrower" mean anything. A container is sized by elk to
+ * hug its children, so its border has no slack of its own: asked to shrink, it
+ * either takes the room from the gaps between what it holds or does nothing at
+ * all, and doing nothing is what a resize grip that refuses to move looks like.
+ *
+ * The bands give up their spare room in proportion, so the drawing keeps its
+ * shape as it tightens rather than collapsing one gap first. A band is never
+ * taken below `MIN_SIBLING_GAP` — or the container's own padding at the two ends
+ * — so children never touch, and the fraction is capped at 1, which is exactly
+ * the floor `contentFloor` reports.
+ *
+ * Right to left, accumulating: everything past a band shifts by what every band
+ * before it gave up, which is the same monotone piecewise map `compactVertical`
+ * uses. Growing needs none of this — the far border simply moves out — so this
+ * returns untouched for any `target` at or above the current size.
+ */
+function squeezeInside(box: SizedContainer, axis: Axis, target: number): void {
+  const { min, size } = AXIS[axis];
+  const need = box.node[size] - target;
+  if (need <= 0) return;
+  const bands = freeBands(box, axis);
+  const spare = bands.reduce((total, band) => total + band.spare, 0);
+  if (spare <= 0) return;
+  const share = Math.min(1, need / spare);
+  // How far something at `at` slides back, which is what every band before it
+  // gave up. The first band is at the container's own leading edge and moves
+  // everything inside; the last sits against the far border and moves nothing.
+  const shiftAt = (at: number) =>
+    bands.reduce((total, band) => (at >= band.end ? total + band.spare * share : total), 0);
+  for (const child of box.element.children) {
+    const kid = box.nodeById.get(child.id);
+    if (!kid) continue;
+    const shift = shiftAt(kid[min]);
+    if (!shift) continue;
+    for (const id of subtreeIds(child)) {
+      const inside = box.nodeById.get(id);
+      if (inside) inside[min] -= shift;
+    }
+  }
+}
+
+function applyContainerSizes(scene: Scene, model: Model): Set<string> {
+  const carried = new Set<string>();
+  const wanted = new Map<string, { dw: number; dh: number; span: Span }>();
+  // Post-order: a container's floor is measured from the children it holds, so
+  // they have to have finished resizing before it is asked how small it can be.
+  // Parent-first left an ancestor clamped against its descendants' *old* extent
+  // — shrink a system and a layer inside it together and the system stopped 98px
+  // short of what the layer had just freed, with a W0575 to say so.
+  const walk = (elements: Element[]): void => {
+    for (const element of elements) {
+      walk(element.children);
+      if (element.size) wanted.set(element.id, element.size);
+    }
+  };
+  walk(model.elements);
+  if (!wanted.size) return carried;
+
+  const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
+  const pad = containerPad(model);
+  const clampedSpans = new Set<Span>();
+  const applied = new Map<string, { dw: number; dh: number }>();
+  // Snapshot before any border moves: a terminal is matched against the box it
+  // was seated on, not one a later step has already grown.
+  const before = new Map(
+    scene.nodes.map((node) => [
+      node.id,
+      { x: node.x, y: node.y, width: node.width, height: node.height },
+    ]),
+  );
+
+  // What the author asked for. Growing just moves the far border out; shrinking
+  // closes the empty bands inside, because a container hugs its children and has
+  // nothing else to give.
+  for (const [id, spec] of wanted) {
+    const node = nodeById.get(id);
+    const element = model.index.get(id);
+    if (!node || !element) continue;
+    const box = { node, element, nodeById, pad };
+    const floor = contentFloor(box);
+    const width = Math.max(node.width + spec.dw, floor.minWidth);
+    const height = Math.max(node.height + spec.dh, floor.minHeight);
+    if (width !== node.width + spec.dw || height !== node.height + spec.dh)
+      clampedSpans.add(spec.span);
+    squeezeInside(box, "x", width);
+    squeezeInside(box, "y", height);
+    node.width = width;
+    node.height = height;
+  }
+
+  // And every ancestor then opens up just enough to keep holding what it holds.
+  // A container grown past its parent is not cut back to fit — the parent makes
+  // room, because "big enough for what is in it" is what a container *is*, and
+  // an author who enlarges an inner layer means the layer, not the layer as far
+  // as its current frame happens to allow.
+  //
+  // Post-order, so a container is squared up only once the children it must
+  // contain have finished growing, and the cascade reaches the root in one pass.
+  const containWithin = (elements: Element[]): void => {
+    for (const element of elements) {
+      containWithin(element.children);
+      const node = nodeById.get(element.id);
+      if (!node?.container) continue;
+      const holds = holdsChildren({ node, element, nodeById, pad });
+      node.width = Math.max(node.width, holds.minWidth);
+      node.height = Math.max(node.height, holds.minHeight);
+    }
+  };
+  containWithin(model.elements);
+
+  // What each hint *became*, measured after containment rather than inside the
+  // loop above. Two things move a container that the number it declares does not
+  // describe: the floor cutting a shrink short, and a *descendant's* `size:`
+  // growing it to keep holding the child. An editor continuing from anything but
+  // the drawn size writes a number one of the two swallows again, and the box
+  // sits still through the drag.
+  //
+  // `clampedSpans` stays on the floor comparison above: growing to hold a child
+  // is containment doing its job, not a hint being negotiated, so it is not
+  // W0575.
+  for (const id of wanted.keys()) {
+    const node = nodeById.get(id);
+    const was = before.get(id);
+    if (node && was)
+      applied.set(id, { dw: node.width - was.width, dh: node.height - was.height });
+  }
+
+  if (clampedSpans.size) scene.clampedSizes = clampedSpans;
+  scene.appliedSizes = applied;
+  // Every box this pass touched, against where it was. A squeeze moves boxes and
+  // a resize moves borders, so a seat carries both — smallest first, because a
+  // terminal inside a container is seated on the leaf and only the leaf's own
+  // change describes where it went.
+  const seats: { box: Box; dx: number; dy: number; dw: number; dh: number }[] = [];
+  for (const node of scene.nodes) {
+    const was = before.get(node.id);
+    if (!was) continue;
+    const moved = {
+      dx: node.x - was.x,
+      dy: node.y - was.y,
+      dw: node.width - was.width,
+      dh: node.height - was.height,
+    };
+    if (!moved.dx && !moved.dy && !moved.dw && !moved.dh) continue;
+    seats.push({ box: was, ...moved });
+  }
+  seats.sort((a, b) => a.box.width * a.box.height - b.box.width * b.box.height);
+  if (!seats.length) return carried;
+
+  for (const edge of scene.edges) {
+    if (edge.pts.length < 2) continue;
+    for (const which of ["first", "last"] as const) {
+      const terminal = edge.pts[which === "first" ? 0 : edge.pts.length - 1];
+      const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
+      if (!seat) continue;
+      // A box that moved takes its whole border with it; a box that was resized
+      // moves only its east and south faces, the top-left corner being the
+      // anchor. A seat on the north or west face of a resized box therefore
+      // stays exactly where it was.
+      //
+      // Matched to the same tolerance `pointOn` bounds the box by, not to
+      // `SEGMENT_EPSILON`: this stage runs after `airOutContainers`, which moves
+      // a container's borders a pixel or two off the terminals already seated on
+      // them. At half a pixel the east face of a grown container missed every
+      // one of them and left its flows detached inside it.
+      const onRight = terminal.x >= seat.box.x + seat.box.width - ON_BORDER;
+      const onBottom = terminal.y >= seat.box.y + seat.box.height - ON_BORDER;
+      const delta = {
+        dx: seat.dx + (onRight ? seat.dw : 0),
+        dy: seat.dy + (onBottom ? seat.dh : 0),
+      };
+      if (!delta.dx && !delta.dy) continue;
+      carried.add(edge.id);
+      carryTerminal(edge, which, delta);
+    }
+  }
+  for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
+  return carried;
+}
 
 /**
  * Moves the nodes the author nudged, and carries every flow terminal seated on
@@ -1813,29 +2186,47 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): Set<
       if (!seat || (!seat.delta.dx && !seat.delta.dy)) continue;
       // Named for the re-aim below, which is only ever this pass's business.
       carried.add(edge.id);
-      const neighbourIndex = end === 0 ? 1 : edge.pts.length - 2;
-      const neighbour = edge.pts[neighbourIndex];
-      const wasHorizontal = Math.abs(terminal.y - neighbour.y) < 0.5;
-      terminal.x += seat.delta.dx;
-      terminal.y += seat.delta.dy;
-      // The elbow goes on the *neighbour's* side of the move, so the terminal
-      // keeps meeting its box across the border rather than along it. Squaring
-      // the other way is orthogonal too, but it turns this end's approach a
-      // quarter turn: a seat on a west side gets a vertical last segment, and
-      // the arrowhead then points down the border it lands on. Where the
-      // neighbour is the flow's *other* terminal the turn only moves to that
-      // end, which is what `reaimAfterOffsets` is there to settle.
-      const elbow = wasHorizontal
-        ? { x: neighbour.x, y: terminal.y }
-        : { x: terminal.x, y: neighbour.y };
-      const degenerate =
-        (Math.abs(elbow.x - terminal.x) < 0.5 && Math.abs(elbow.y - terminal.y) < 0.5) ||
-        (Math.abs(elbow.x - neighbour.x) < 0.5 && Math.abs(elbow.y - neighbour.y) < 0.5);
-      if (!degenerate) edge.pts.splice(end === 0 ? 1 : edge.pts.length - 1, 0, elbow);
+      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta);
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
   return carried;
+}
+
+/**
+ * Moves one end of a route by `delta` and squares the elbow beside it.
+ *
+ * The elbow goes on the *neighbour's* side of the move, so the terminal keeps
+ * meeting its box across the border rather than along it. Squaring the other way
+ * is orthogonal too, but it turns this end's approach a quarter turn: a seat on
+ * a west side gets a vertical last segment, and the arrowhead then points down
+ * the border it lands on. Where the neighbour is the flow's *other* terminal the
+ * turn only moves to that end, which is what `reaimAfterOffsets` settles.
+ *
+ * Shared by the two hints that move a terminal without asking the router: an
+ * `offset:` that carries the box it is seated on, and a `size:` that moves the
+ * border under it.
+ */
+function carryTerminal(
+  edge: SceneEdge,
+  which: "first" | "last",
+  delta: { dx: number; dy: number },
+): void {
+  const end = which === "first" ? 0 : edge.pts.length - 1;
+  const terminal = edge.pts[end];
+  const neighbour = edge.pts[which === "first" ? 1 : edge.pts.length - 2];
+  const wasHorizontal = Math.abs(terminal.y - neighbour.y) < SEGMENT_EPSILON;
+  terminal.x += delta.dx;
+  terminal.y += delta.dy;
+  const elbow = wasHorizontal
+    ? { x: neighbour.x, y: terminal.y }
+    : { x: terminal.x, y: neighbour.y };
+  const degenerate =
+    (Math.abs(elbow.x - terminal.x) < SEGMENT_EPSILON &&
+      Math.abs(elbow.y - terminal.y) < SEGMENT_EPSILON) ||
+    (Math.abs(elbow.x - neighbour.x) < SEGMENT_EPSILON &&
+      Math.abs(elbow.y - neighbour.y) < SEGMENT_EPSILON);
+  if (!degenerate) edge.pts.splice(which === "first" ? 1 : edge.pts.length - 1, 0, elbow);
 }
 
 /**
@@ -2118,6 +2509,53 @@ function shiftIntoCanvas(scene: Scene): void {
  * overlap between two elements neither of which was nudged is the layout's
  * business, not this warning's.
  */
+/**
+ * W0572 for a container a `size:` grew onto something.
+ *
+ * Its own family is not something: a container is drawn around its children and
+ * inside its parent, so only a node on neither side of it counts — which is a
+ * sibling, a cousin, or anything else the drawing puts beside it. The hint still
+ * ships as written (§17); this only says so out loud.
+ */
+function sizeOverlaps(
+  scene: Scene,
+  model: Model,
+  overlap: (a: Box, b: Box) => boolean,
+): Diagnostic[] {
+  // The family sets are built only for the containers that carry a hint — a
+  // drawing with none pays one flat scan and nothing else.
+  const sized = new Map<string, Span>();
+  for (const element of model.index.values())
+    if (element.size) sized.set(element.id, element.size.span);
+  if (!sized.size) return [];
+  const family = new Map<string, Set<string>>();
+  const walk = (elements: Element[], ancestors: string[]): void => {
+    for (const element of elements) {
+      if (sized.has(element.id))
+        family.set(element.id, new Set([...ancestors, ...subtreeIds(element)]));
+      walk(element.children, [...ancestors, element.id]);
+    }
+  };
+  walk(model.elements, []);
+
+  const diagnostics: Diagnostic[] = [];
+  for (const node of scene.nodes) {
+    const span = sized.get(node.id);
+    if (!span) continue;
+    const kin = family.get(node.id)!;
+    const struck = scene.nodes.find((other) => !kin.has(other.id) && overlap(node, other));
+    if (!struck) continue;
+    diagnostics.push({
+      code: "W0572",
+      severity: "warning",
+      message: `\`size\` on \`${node.id}\` overlaps \`${struck.id}\``,
+      span,
+      help: "the resize is applied as written — make it smaller, or give the drawing room with `order:`",
+    });
+  }
+  return diagnostics;
+}
+
 export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   const hints: Diagnostic[] = [];
   for (const span of scene.segmentHints?.stale ?? [])
@@ -2136,6 +2574,14 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
       span,
       help: "the run carries a terminal, so it can only slide as far as the side that terminal sits on — pin the side with `ID.side`, or move the element instead",
     });
+  for (const span of scene.clampedSizes ?? [])
+    hints.push({
+      code: "W0575",
+      severity: "warning",
+      message: "`size` was limited to keep this container around its own children",
+      span,
+      help: "a container is drawn around what it holds, which is not negotiable — resize or move the children first if the box has to be smaller",
+    });
   // A descendant carried by its container's offset is answerable to *that*
   // offset: the container is what the author moved, so an overlap its children
   // cause is reported against the container's span, not passed over for having
@@ -2150,10 +2596,12 @@ export function offsetDiagnostics(scene: Scene, model: Model): Diagnostic[] {
   };
   walk(model.elements);
   for (const flow of model.flows) if (flow.labelOffset) spans.set(flow.id, flow.labelOffset.span);
-  if (!spans.size) return hints;
 
   const overlap = (a: Box, b: Box): boolean =>
     a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
+  hints.push(...sizeOverlaps(scene, model, overlap));
+  if (!spans.size) return hints;
+
   const leaves = scene.nodes.filter((node) => !node.container);
   const labels = scene.edges.flatMap((edge) => edge.labels);
   const diagnostics: Diagnostic[] = [...hints];
@@ -3171,13 +3619,16 @@ export function refuseScenicRepairs(scene: Scene, before: Map<string, Point[]>):
 }
 
 function applyAuthorPositioning(scene: Scene, model: Model): void {
+  // Sizes first: `applyNodeOffsets` holds each child inside its parent, so the
+  // room a parent has to give must already be the room the drawing will show.
+  const resized = applyContainerSizes(scene, model);
   const offsets = offsetAssignment(model);
-  if (offsets.size) {
-    // The flows whose terminal the move carried. Everything repaired below is
-    // scoped to them: an author who nudges one box is asking for that box and
-    // its own flows to follow, never for the rest of the drawing to be
-    // re-routed (§17).
-    const carried = applyNodeOffsets(scene, offsets);
+  if (offsets.size || resized.size) {
+    // The flows whose terminal a hint carried — a box that moved, or a border
+    // that grew out from under one. Everything repaired below is scoped to them:
+    // an author who nudges or resizes one box is asking for that box and its own
+    // flows to follow, never for the rest of the drawing to be re-routed (§17).
+    const carried = new Set([...resized, ...applyNodeOffsets(scene, offsets)]);
     // The renderer may undo a route repair by restoring `repairedFrom`, and for
     // a flow this stage just moved that snapshot is of geometry that no longer
     // exists — it was taken before the delta, against the node's old seat, so
@@ -3227,7 +3678,7 @@ function applyAuthorPositioning(scene: Scene, model: Model): void {
       if (model.flows.find((flow) => flow.id === edge.id)?.segmentOffsets?.length)
         edge.repairedFrom = undefined;
   const nudgedLabels = scene.edges.some((edge) => edge.labels.some((label) => label.offset));
-  if (!offsets.size && !nudgedRuns && !nudgedLabels) return;
+  if (!offsets.size && !resized.size && !nudgedRuns && !nudgedLabels) return;
   // With the author's offsets this time: every anchor before this one ran
   // without them, so this is where a nudged label lands and where a label whose
   // flow moved catches up with it.

@@ -707,11 +707,11 @@ That is a known limitation, not a guarantee.
 
 ## 17. Author positioning hints are honored, not negotiated
 
-Five opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
+Six opt-in DSL controls (`DSL_SPEC.md` § Positioning controls) let the author
 override layout: `order:` on an element, `offset:` / `label-offset:` /
 `segment-offset:` on an element, a flow label or one run of a flow's route,
-`ID.side` on a flow endpoint, and the arrow glyph's line style. Three rules hold
-for them.
+`size:` on a container, `ID.side` on a flow endpoint, and the arrow glyph's line
+style. Three rules hold for them.
 
 **`order:` reads along the drawing at the root, across it inside a container.**
 A top-level `order:` becomes a partition band (§9), and a band is a contiguous
@@ -951,6 +951,67 @@ the same picture and an offset written back after a drag stays valid. `layout()`
 therefore ends `applyAuthorPositioning` → `shiftIntoCanvas` → `fitCanvas`:
 seating the drawing means nothing until everything that moves it has moved it,
 and the canvas is measured around it afterwards rather than before.
+
+**A `size:` is a delta on what a container holds, and it moves nothing else.**
+A container is the one element with a size worth arguing about: a leaf is
+whatever its label needs, a container is only ever "big enough for what is in
+it", and an author often wants more room than that. So `size: <dw>, <dh>` adds
+room to the right and down, with the top-left corner as the anchor — the
+children inside do not move, and neither do the neighbours outside. A leaf that
+declares one is **E0226**: there the box is the label's business, and
+`label-padding:` is the knob.
+
+A delta, for the reason an `offset:` is one. elk sizes a container from the
+content it holds, so a hint naming an absolute width would go stale the moment a
+child is added — and a container smaller than what it contains is not a resized
+container, it is a broken drawing.
+
+**Shrinking closes the bands inside, because the border has nothing to give.**
+elk sizes a container to hug its children, so the slack at its edge is 0 to 5px
+on every container of a realistic drawing — a negative `dw` that only moved the
+border would do nothing at all, which is what a resize grip refusing to follow
+the pointer looks like. The room is the empty bands *between* the children, and
+`squeezeInside` takes it from there: bands are the columns (or rows) no child
+sits across, merged, so two children stacked on the other axis hold the column
+between them exactly as one wide child would. Each gives up the same
+**proportion**, so the group tightens evenly instead of collapsing one gap to
+nothing, and the shift is the monotone piecewise map `compactVertical` uses.
+Children keep their own size and their reading order, and never come closer than
+`MIN_SIBLING_GAP`.
+
+That bound is the floor, and `containerSizeBounds` computes it: what the
+container is now, less every spare band inside it. It is **exported and shared**
+— the pass floors by it, and `compile()`'s boxes report it so an editor can stop
+a resize grip at exactly the same place. A guard that re-derived this would let
+the playground promise a box the engine then refuses to draw (§3a). A `size:` the
+floor cuts short is **W0575**.
+
+Two floors, and neither bounds the other, so they are two functions:
+`contentFloor` answers *how small can this be squeezed*, a statement about the
+empty room between the children; `holdsChildren` answers *how big must this be
+for what is in it*, which is what makes a parent grow. Conflating them made a
+parent stop growing for a child that had outgrown it.
+
+**Growing has no clamp: the frame follows its content.** A container enlarged
+past the one that holds it does *not* get cut back — `containWithin` grows the
+parent by just enough to keep holding it, post-order so the cascade reaches the
+root in one pass. The first version clamped upward too and was wrong in the only
+way that matters: enlarging an inner layer did nothing at all, because the layer
+was already flush against its frame. "Big enough for what is in it" is what a
+container *is*, so an author enlarging one means the container, not the container
+as far as its current frame happens to allow. Nothing is reported for it — the
+hint was honored in full, and the parent's new size is a consequence of nesting
+rather than a second hint. The parent may then overlap *its* neighbour, which is
+**W0572** like any other.
+
+Everything else about it is honored, not negotiated. A container grown onto its
+neighbour is drawn as asked and the overlap reported as **W0572** — the same
+answer an `offset:` gets, and for the same reason. The pass runs first in
+`applyAuthorPositioning`, before `applyNodeOffsets`: that pass holds each child
+inside its parent, so the room a parent has to give must already be the room the
+drawing will show. Terminals sitting on a border that moved are carried by
+`carryTerminal`, the elbow-squaring an offset's carried terminals have always
+used, and the flows they belong to join the same scoped repair.
 
 **A `label-offset:` moves the label and nothing else.** It is applied at the end
 of `anchorFlowLabels`, so every re-anchor re-applies it and the renderer's

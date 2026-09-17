@@ -100,6 +100,18 @@ export interface Element {
    */
   offset?: { dx: number; dy: number; span: Span };
   /**
+   * Author-declared extra room in this container, in canvas pixels
+   * (`size: 120, 40`). Same delta contract as `offset:` and for the same
+   * reason: elk sizes a container from the content it holds, so a hint that
+   * named an absolute box would go stale the moment a child is added. Containers
+   * only (**E0226**) — a leaf is sized by its own label. Growing moves the far
+   * border out; shrinking closes the empty bands between the children, which is
+   * the only slack a container that hugs its content has, and stops when they
+   * are gone (**W0575**). Bigger than its own parent is not clamped: the parent
+   * grows to keep holding it. Opt-in: an element without one renders unchanged.
+   */
+  size?: { dw: number; dh: number; span: Span };
+  /**
    * Tech-stack logo drawn in the element's corner (`logo: react`, or
    * `logo: "./logos/acme.svg"` for a file). `source` records which of the two
    * the author wrote, because a bare name resolves against the built-in set
@@ -298,6 +310,12 @@ export const explanations: Record<string, string> = {
     "An `offset:` (or `label-offset:`) moved something onto something else. The hint is still honored — an author's positioning request is not negotiated — but the drawing now has an overlap the layout would never have produced on its own, so it is reported rather than left to be discovered in a review. Reduce the offset, or move the element with `order:` instead.",
   W0573:
     "An `offset:` was cut short so the element stays inside the container that holds it. Nesting is what a diagram *means* — a block drawn outside its system reads as a broken drawing, not a nudged one — so containment wins over the nudge here, and this is the one place a positioning hint is negotiated rather than honored outright. Nudge the container instead if the whole group belongs elsewhere, or use a smaller offset.",
+  E0110:
+    "`size:` takes two whole numbers — `size: <dw>, <dh>` — the pixels of room to add to this container, rightward and downward, on top of what the layout gave it. Either may be negative. A delta rather than a box, for the same reason `offset:` is one: elk still sizes a container from what it holds, so a hint naming an absolute width would go stale the moment a child is added.",
+  E0226:
+    "`size:` is a container's knob, and a container is something *drawn* as one. A leaf box is sized by the label in it — the uniform node width, or the tighter fit `label-padding:` asks for — so a delta there would argue with the one thing that decides it. A container kind holding nothing is the same case: with no children there is no frame, the layout gives it a plain box sized by its own label, and there is no room around anything to give. Put the elements it contains inside it, use `label-padding:` in `style` to change how tightly every box hugs its text, or `offset:` to move this one.",
+  W0575:
+    "A `size:` ran out of room. A container is sized to hug what it holds, so its border has no slack of its own — shrinking closes the empty bands *between* its children instead, and stops once those are down to the minimum gap. Growing has no limit at all: a container enlarged past the one that holds it makes that one grow too. Everything else is honored as written, so a container grown onto a neighbour is drawn as asked and reported as W0572. To make this box smaller still, move or resize what is inside it.",
   W0571:
     "An endpoint reads `ID.side`, but `ID.side` is itself a declared element, and a declared id always wins — so the flow attaches to that element and no side is pinned. Rename the element if you meant the side.",
 };
