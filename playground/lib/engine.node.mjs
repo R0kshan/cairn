@@ -100920,7 +100920,12 @@ function applyContainerSizes(scene, model) {
       };
       if (!delta.dx && !delta.dy) continue;
       carried.add(edge.id);
-      carryTerminal(edge, which, delta);
+      carryTerminal(edge, which, delta, {
+        x: seat.box.x + seat.dx,
+        y: seat.box.y + seat.dy,
+        width: seat.box.width + seat.dw,
+        height: seat.box.height + seat.dh
+      });
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
@@ -100990,19 +100995,32 @@ function applyNodeOffsets(scene, offsetOf) {
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || !seat.delta.dx && !seat.delta.dy) continue;
       carried.add(edge.id);
-      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta);
+      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta, {
+        x: seat.box.x + seat.delta.dx,
+        y: seat.box.y + seat.delta.dy,
+        width: seat.box.width,
+        height: seat.box.height
+      });
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
   return carried;
 }
-function carryTerminal(edge, which, delta) {
+function carryTerminal(edge, which, delta, face) {
   const end = which === "first" ? 0 : edge.pts.length - 1;
   const terminal = edge.pts[end];
   const neighbour = edge.pts[which === "first" ? 1 : edge.pts.length - 2];
   const wasHorizontal = Math.abs(terminal.y - neighbour.y) < SEGMENT_EPSILON;
   terminal.x += delta.dx;
   terminal.y += delta.dy;
+  const slide = wasHorizontal ? { along: "y", low: face.y, high: face.y + face.height } : { along: "x", low: face.x, high: face.x + face.width };
+  const residual = neighbour[slide.along] - terminal[slide.along];
+  const seat = Math.min(
+    Math.max(neighbour[slide.along], slide.low + SEAT_INSET),
+    Math.max(slide.high - SEAT_INSET, slide.low + SEAT_INSET)
+  );
+  if (Math.abs(residual) < ARROW_ROOM2 && Math.abs(seat - neighbour[slide.along]) < SEGMENT_EPSILON)
+    terminal[slide.along] = seat;
   const elbow = wasHorizontal ? { x: neighbour.x, y: terminal.y } : { x: terminal.x, y: neighbour.y };
   const degenerate = Math.abs(elbow.x - terminal.x) < SEGMENT_EPSILON && Math.abs(elbow.y - terminal.y) < SEGMENT_EPSILON || Math.abs(elbow.x - neighbour.x) < SEGMENT_EPSILON && Math.abs(elbow.y - neighbour.y) < SEGMENT_EPSILON;
   if (!degenerate) edge.pts.splice(which === "first" ? 1 : edge.pts.length - 1, 0, elbow);

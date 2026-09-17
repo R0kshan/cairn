@@ -2061,7 +2061,12 @@ function applyContainerSizes(scene: Scene, model: Model): Set<string> {
       };
       if (!delta.dx && !delta.dy) continue;
       carried.add(edge.id);
-      carryTerminal(edge, which, delta);
+      carryTerminal(edge, which, delta, {
+        x: seat.box.x + seat.dx,
+        y: seat.box.y + seat.dy,
+        width: seat.box.width + seat.dw,
+        height: seat.box.height + seat.dh,
+      });
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
@@ -2186,7 +2191,12 @@ function applyNodeOffsets(scene: Scene, offsetOf: Map<string, OffsetSpec>): Set<
       if (!seat || (!seat.delta.dx && !seat.delta.dy)) continue;
       // Named for the re-aim below, which is only ever this pass's business.
       carried.add(edge.id);
-      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta);
+      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta, {
+        x: seat.box.x + seat.delta.dx,
+        y: seat.box.y + seat.delta.dy,
+        width: seat.box.width,
+        height: seat.box.height,
+      });
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
@@ -2211,6 +2221,7 @@ function carryTerminal(
   edge: SceneEdge,
   which: "first" | "last",
   delta: { dx: number; dy: number },
+  face: Box,
 ): void {
   const end = which === "first" ? 0 : edge.pts.length - 1;
   const terminal = edge.pts[end];
@@ -2218,6 +2229,26 @@ function carryTerminal(
   const wasHorizontal = Math.abs(terminal.y - neighbour.y) < SEGMENT_EPSILON;
   terminal.x += delta.dx;
   terminal.y += delta.dy;
+  // A nudge of a few pixels across the run does not need an elbow — it needs the
+  // seat to slide. Where along its face a terminal sits is the layout's business,
+  // so for a residual too small to carry an arrowhead (§4i) the seat moves to
+  // meet the run instead of the run bending to reach the seat. Dragging a block
+  // 4px down otherwise left `(611,110) (611,106)`: a 4px stub lying on the
+  // border with the head drawn along it, and the label 23px adrift of the run it
+  // names, which is a tier-0 breach (§4a).
+  //
+  // Only the small case. A real relocation is what the elbow is for, and sliding
+  // a seat that far would shuffle it past the siblings sharing the face.
+  const slide = wasHorizontal
+    ? { along: "y" as const, low: face.y, high: face.y + face.height }
+    : { along: "x" as const, low: face.x, high: face.x + face.width };
+  const residual = neighbour[slide.along] - terminal[slide.along];
+  const seat = Math.min(
+    Math.max(neighbour[slide.along], slide.low + SEAT_INSET),
+    Math.max(slide.high - SEAT_INSET, slide.low + SEAT_INSET),
+  );
+  if (Math.abs(residual) < ARROW_ROOM && Math.abs(seat - neighbour[slide.along]) < SEGMENT_EPSILON)
+    terminal[slide.along] = seat;
   const elbow = wasHorizontal
     ? { x: neighbour.x, y: terminal.y }
     : { x: terminal.x, y: neighbour.y };
