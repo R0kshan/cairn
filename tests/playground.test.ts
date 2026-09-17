@@ -41,6 +41,38 @@ test("browser bundle renders a large diagram with no `process` global", async ()
   );
 });
 
+/**
+ * The page's own inline module has to *parse*, or the browser stops before it
+ * ever imports the engine and every visitor gets "loading engine…" for ever.
+ *
+ * Nothing else here catches that. The bundle test loads the bundle, and the
+ * writeback tests lift one marked region out of the page — a syntax error a few
+ * lines outside it leaves both green and the page dead. Shipped exactly that
+ * way once: an escaped apostrophe lost its backslash, the string ran to the end
+ * of the line, and the page never ran a statement.
+ *
+ * `new Function` compiles without executing, which is the whole check: no DOM,
+ * no imports resolved, just "would the browser accept this".
+ */
+test("the playground page's inline module parses", () => {
+  const html = readFileSync(join(ROOT, "playground/index.html"), "utf8");
+  const scripts = [...html.matchAll(/<script type="module">([\s\S]*?)<\/script>/g)];
+  assert.ok(scripts.length, "expected an inline module in the page");
+  for (const [, body] of scripts) {
+    // Its `import` statements are legal only in a module, so they are dropped —
+    // the rest of the body is what a typo lands in. Line-wise rather than by
+    // regex: the stripping must not itself be the thing that is subtly wrong.
+    const withoutImports = body
+      .split("\n")
+      .map((line) => (line.trimStart().startsWith("import ") ? "" : line))
+      .join("\n");
+    assert.doesNotThrow(
+      () => new Function(withoutImports),
+      "the page's inline module does not parse — the browser would stop before loading the engine",
+    );
+  }
+});
+
 // ---------- drag writeback ----------
 
 /**
@@ -56,6 +88,7 @@ async function pageWriteback(): Promise<{
     box: Record<string, unknown>,
     delta: { dw: number; dh: number; dx: number; dy: number },
   ) => string;
+  stripFlowHints: (source: string) => string;
 }> {
   const html = readFileSync(join(ROOT, "playground/index.html"), "utf8");
   const start = html.indexOf("// #region drag-writeback");
@@ -70,11 +103,12 @@ async function pageWriteback(): Promise<{
     "readSpan",
     "writeOffset",
     "writeResize",
+    "stripFlowHints",
   ])
     assert.ok(source.includes(`function ${name}(`), `\`${name}\` left the marked region`);
   return import(
     `data:text/javascript,${encodeURIComponent(
-      `${source}\nexport { writeOffset, writeSide, writeResize };`,
+      `${source}\nexport { writeOffset, writeSide, writeResize, stripFlowHints };`,
     )}`
   );
 }
@@ -443,4 +477,62 @@ USER -> PORTAL "Signs in"
     parent.x + parent.width >= drawn.x + drawn.width,
     "the parent must have grown to hold the resized layer",
   );
+});
+
+test("resetting the flows drops their hints and keeps the container dispositions", async () => {
+  const { stripFlowHints } = await pageWriteback();
+  const { parse } = await import("../src/parser.ts");
+
+  const source = [
+    'diagram logical "t"',
+    'actor-group G "Actors" {',
+    '  actor USER "User"',
+    "}",
+    'system SYS "My system" {',
+    "  size: 120, 40",
+    '  layer FRONT "Front office" {',
+    "    offset: 10, -5",
+    '    block PORTAL "Portal"',
+    "  }",
+    "}",
+    'USER -> PORTAL "Signs in" { segment-offset: 2, -18 segment-offset: 4, 12 }',
+    'USER -> FRONT "Consults" { label-offset: 12, -6 stroke: dashed }',
+    'PORTAL -> USER "Answers" { stroke: dotted }',
+  ].join("\n");
+
+  const cleared = stripFlowHints(source);
+  const model = parse(cleared).model;
+  assert.equal(parse(cleared).diags.filter((d) => d.severity === "error").length, 0, cleared);
+
+  // Every flow hint is gone, both keys and both entries of the repeated one.
+  assert.deepEqual(
+    model.flows.map((flow) => [flow.segmentOffsets?.length ?? 0, flow.labelOffset ? 1 : 0]),
+    [
+      [0, 0],
+      [0, 0],
+      [0, 0],
+    ],
+  );
+  // The container dispositions are what the author is keeping — only the flows
+  // drawn for the *old* ones are stale.
+  const system = model.elements.find((e) => e.id === "SYS")!;
+  assert.equal(system.size?.dw, 120, "`size:` survives");
+  assert.equal(system.size?.dh, 40);
+  assert.equal(system.children[0].offset?.dx, 10, "and so does `offset:`");
+
+  // Anything else sharing the inline block stays, and a block emptied by the
+  // strip goes rather than being left as `{  }`.
+  assert.equal(model.flows[1].style?.stroke?.style, "dashed", "a sibling property is untouched");
+  assert.equal(model.flows[2].style?.stroke?.style, "dotted", "a flow with no hint is untouched");
+  assert.match(cleared, /USER -> PORTAL "Signs in"$/m, "the emptied block went with the hints");
+  assert.doesNotMatch(cleared, /\{\s*\}/, "no empty block is left behind");
+
+  // A label that merely reads like a hint is text, not a hint.
+  const labelled = 'diagram logical "t"\nA -> B "label-offset: 1, 2"\n';
+  assert.equal(stripFlowHints(labelled), labelled, "a quoted label is not a hint");
+
+  // And a source with nothing to clear comes back identical, which is what the
+  // button reads to tell you it did nothing.
+  const plain = 'diagram logical "t"\nA -> B "Plain"\n';
+  assert.equal(stripFlowHints(plain), plain);
 });

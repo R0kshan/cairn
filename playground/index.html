@@ -108,6 +108,7 @@
   <select id="theme" title="Preview theme (overrides the diagram's own theme)">
     <option value="">theme: as written</option>
   </select>
+  <button id="reset-flows" title="Drop every segment-offset: and label-offset: — the flows you placed by hand go back to automatic routing against the containers as they now are">Reset flows</button>
   <button id="share">Copy share link</button>
   <button id="embed" title="A live SVG URL served by /api/svg — embed it in a README or docs">Copy embed URL</button>
   <button id="download">Download SVG</button>
@@ -388,6 +389,14 @@ document.getElementById('templates').addEventListener('change', e => {
 
 // --- Share / embed / download ----------------------------------------------
 function flash(msg) { note.textContent = msg; clearTimeout(flash._t); flash._t = setTimeout(() => note.textContent = '', 2200); }
+
+document.getElementById('reset-flows').addEventListener('click', () => {
+  const cleared = stripFlowHints(editor.value);
+  if (cleared === editor.value) return flash('no flow hints to clear');
+  editor.value = cleared;
+  flash('flow hints cleared — the router picks the routes again ✓');
+  run();
+});
 
 document.getElementById('share').addEventListener('click', async () => {
   location.hash = 'src=' + b64encode(editor.value);
@@ -1082,6 +1091,44 @@ function writeResize(source, box, delta) {
   }
   lines[index] = insertInBlock(line, statement);
   return lines.join('\n');
+}
+/**
+ * Every `segment-offset:` and `label-offset:` taken out of `source`.
+ *
+ * What "re-optimise the flows" can honestly mean. A route this page drew is
+ * elk's, chosen before any container was resized, and nothing downstream can
+ * re-derive it — re-running the route repair over every flow was measured to
+ * change nothing, because it is already at its fixpoint. What *can* be undone is
+ * the hand-placing: drop the hints and the router picks the flows again, against
+ * the containers as they now are.
+ *
+ * Element `offset:` and `size:` are left alone. Those are the dispositions the
+ * author is keeping; it is the flows drawn for the *old* ones that are stale.
+ *
+ * Quoted text is masked first, so a flow labelled `"label-offset: 1, 2"` keeps
+ * its label — the same care `braceIndex` takes, for the same reason.
+ */
+function stripFlowHints(source) {
+  // The trailing run of spaces goes with the hint, or removing one from the
+  // middle of a block leaves `{  stroke: dashed }` with a gap in it.
+  const HINT = /\b(?:segment-offset|label-offset)\s*:\s*-?\d+\s*,\s*-?\d+\s*/g;
+  const clean = (line) => {
+    let out = '';
+    let at = 0;
+    for (const hit of maskQuoted(line).matchAll(HINT)) {
+      out += line.slice(at, hit.index);
+      at = hit.index + hit[0].length;
+    }
+    if (!at) return line;
+    out += line.slice(at);
+    // The inline block that held nothing else goes with them, rather than
+    // leaving `A -> B "x" {  }` behind.
+    // Anchored on the brace, not on the space before it: `maskQuoted` blanks the
+    // label, so a leading `\s*` would match back across it and eat the label too.
+    const empty = maskQuoted(out).search(/\{\s*\}\s*$/);
+    return (empty < 0 ? out : out.slice(0, empty)).replace(/\s+$/, '');
+  };
+  return source.split('\n').map(clean).join('\n');
 }
 // #endregion drag-writeback
 
