@@ -444,9 +444,12 @@ system SYS "My system" {
 }
 ```
 
-- **Containers only.** A leaf box is sized by the label in it, so a delta there
-  would argue with the one thing that decides it — **E0226**. Change how tightly
-  every box hugs its text with `label-padding:` in `style` instead.
+- **Containers only**, and a container means something *drawn* as one. A leaf
+  box is sized by the label in it, so a delta there would argue with the one
+  thing that decides it — **E0226**. A container kind holding nothing is the
+  same case: with no children the layout gives it a plain box sized by its own
+  label, so it is **E0226** too. Change how tightly every box hugs its text with
+  `label-padding:` in `style` instead.
 - **It is a delta, not a box.** elk still sizes the container from what it
   holds, so the hint survives adding a child rather than pinning a number the
   drawing has outgrown.

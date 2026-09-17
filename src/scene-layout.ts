@@ -1703,6 +1703,10 @@ interface OffsetSpec {
 }
 
 /** Is `point` on or inside `box`, within a pixel of its border? */
+/** How far off a border a terminal may sit and still count as seated on it —
+    `airOutContainers` moves borders after the terminals are placed. */
+const ON_BORDER = 1;
+
 const pointOn = (point: Point, box: Box): boolean =>
   point.x >= box.x - 1 &&
   point.x <= box.x + box.width + 1 &&
@@ -1928,12 +1932,15 @@ function squeezeInside(box: SizedContainer, axis: Axis, target: number): void {
 function applyContainerSizes(scene: Scene, model: Model): Set<string> {
   const carried = new Set<string>();
   const wanted = new Map<string, { dw: number; dh: number; span: Span }>();
-  // Pre-order, so a container is always resized before the children it gives
-  // room to and after the parent whose room bounds it.
+  // Post-order: a container's floor is measured from the children it holds, so
+  // they have to have finished resizing before it is asked how small it can be.
+  // Parent-first left an ancestor clamped against its descendants' *old* extent
+  // — shrink a system and a layer inside it together and the system stopped 98px
+  // short of what the layer had just freed, with a W0575 to say so.
   const walk = (elements: Element[]): void => {
     for (const element of elements) {
-      if (element.size) wanted.set(element.id, element.size);
       walk(element.children);
+      if (element.size) wanted.set(element.id, element.size);
     }
   };
   walk(model.elements);
@@ -2027,8 +2034,14 @@ function applyContainerSizes(scene: Scene, model: Model): Set<string> {
       // moves only its east and south faces, the top-left corner being the
       // anchor. A seat on the north or west face of a resized box therefore
       // stays exactly where it was.
-      const onRight = Math.abs(terminal.x - (seat.box.x + seat.box.width)) < SEGMENT_EPSILON;
-      const onBottom = Math.abs(terminal.y - (seat.box.y + seat.box.height)) < SEGMENT_EPSILON;
+      //
+      // Matched to the same tolerance `pointOn` bounds the box by, not to
+      // `SEGMENT_EPSILON`: this stage runs after `airOutContainers`, which moves
+      // a container's borders a pixel or two off the terminals already seated on
+      // them. At half a pixel the east face of a grown container missed every
+      // one of them and left its flows detached inside it.
+      const onRight = terminal.x >= seat.box.x + seat.box.width - ON_BORDER;
+      const onBottom = terminal.y >= seat.box.y + seat.box.height - ON_BORDER;
       const delta = {
         dx: seat.dx + (onRight ? seat.dw : 0),
         dy: seat.dy + (onBottom ? seat.dh : 0),

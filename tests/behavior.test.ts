@@ -756,7 +756,11 @@ system SYS "My system" {${body}
     block PORTAL "Portal"
   }
 }
+external EXT "External systems" {
+  block PARTNER "Partner service"
+}
 G -> PORTAL "Signs in"
+SYS.right -> PARTNER "Exports"
 `;
 
 /** Two children with a wide gap between them — the room a shrink comes from. */
@@ -803,24 +807,27 @@ test("`size:` grows a container by the delta, and carries the flows on the borde
     "a resize with room to take is not negotiated",
   );
 
-  // The flow arrives on a border that moved, so its terminal moved with it —
-  // and the route it left behind is still orthogonal (§3, tier 0).
-  const flow = grown.scene.edges.find((edge) => edge.id === "F01")!;
-  const terminal = flow.pts[0];
-  const actors = boxOf(grown.scene, "G");
+  // F02 leaves SYS by the east face — the one a widening moves — so its terminal
+  // has to move with it. Left behind, the flow starts inside the container it is
+  // supposed to leave, which is what happened while the border was matched to
+  // half a pixel: `airOutContainers` shifts a border after the terminals are
+  // seated on it, so every one of them missed.
+  const exported = grown.scene.edges.find((edge) => edge.id === "F02")!;
+  const seat = exported.pts[0];
+  const wasSeat = plain.scene.edges.find((edge) => edge.id === "F02")!.pts[0];
+  assert.equal(seat.x - wasSeat.x, 120, "the terminal on SYS's east face moved with it");
   assert.ok(
-    Math.abs(terminal.x - (actors.x + actors.width)) < 1 ||
-      Math.abs(terminal.y - (actors.y + actors.height)) < 1 ||
-      Math.abs(terminal.x - actors.x) < 1 ||
-      Math.abs(terminal.y - actors.y) < 1,
-    `F01 must still meet a side of G (${terminal.x},${terminal.y})`,
+    seat.x >= after.x + after.width - 1,
+    `F02 must still meet SYS's east face (${seat.x} against ${after.x + after.width})`,
   );
-  for (let i = 1; i < flow.pts.length; i++)
-    assert.ok(
-      Math.abs(flow.pts[i - 1].x - flow.pts[i].x) < 0.5 ||
-        Math.abs(flow.pts[i - 1].y - flow.pts[i].y) < 0.5,
-      `segment ${i} of F01 runs off the orthogonal`,
-    );
+  // And the route it left behind is still orthogonal (§3, tier 0).
+  for (const flow of [grown.scene.edges.find((edge) => edge.id === "F01")!, exported])
+    for (let i = 1; i < flow.pts.length; i++)
+      assert.ok(
+        Math.abs(flow.pts[i - 1].x - flow.pts[i].x) < 0.5 ||
+          Math.abs(flow.pts[i - 1].y - flow.pts[i].y) < 0.5,
+        `segment ${i} of ${flow.id} runs off the orthogonal`,
+      );
 });
 
 test("`size:` is floored by what a container holds, and never by what holds it", async () => {

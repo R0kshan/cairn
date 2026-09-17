@@ -94715,15 +94715,25 @@ function checkUnknownKinds(elements, view) {
 function checkSizes(elements, view) {
   const diagnostics = [];
   for (const element of elements) {
-    if (!element.size || view.containerKinds.includes(element.kind)) continue;
-    diagnostics.push({
-      code: "E0226",
-      severity: "error",
-      message: `\`${element.kind}\` is not a container, so it has no \`size\` to give`,
-      span: element.size.span,
-      note: `the \`${view.name}\` view accepts \`size\` on: ${view.containerKinds.join(", ")}`,
-      help: "a leaf box is sized by its own label \u2014 set `label-padding:` in `style` to change how tightly, or nudge this one with `offset:`"
-    });
+    if (!element.size) continue;
+    if (!view.containerKinds.includes(element.kind))
+      diagnostics.push({
+        code: "E0226",
+        severity: "error",
+        message: `\`${element.kind}\` is not a container, so it has no \`size\` to give`,
+        span: element.size.span,
+        note: `the \`${view.name}\` view accepts \`size\` on: ${view.containerKinds.join(", ")}`,
+        help: "a leaf box is sized by its own label \u2014 set `label-padding:` in `style` to change how tightly, or nudge this one with `offset:`"
+      });
+    else if (!element.children.length)
+      diagnostics.push({
+        code: "E0226",
+        severity: "error",
+        message: `\`${element.id}\` holds nothing, so it is drawn as a plain box rather than a container`,
+        span: element.size.span,
+        note: "a container's size is the room around what it holds \u2014 with no children there is no room to give",
+        help: "put the elements it contains inside it, or drop the `size:` and nudge this one with `offset:`"
+      });
   }
   return diagnostics;
 }
@@ -100749,6 +100759,7 @@ function stampLabelOffsets(edges, model) {
     for (const label of edge.labels) label.offset = { dx: declared.dx, dy: declared.dy };
   }
 }
+var ON_BORDER = 1;
 var pointOn = (point, box) => point.x >= box.x - 1 && point.x <= box.x + box.width + 1 && point.y >= box.y - 1 && point.y <= box.y + box.height + 1;
 function containerSizeBounds(scene, model) {
   const nodeById = new Map(scene.nodes.map((node) => [node.id, node]));
@@ -100830,8 +100841,8 @@ function applyContainerSizes(scene, model) {
   const wanted = /* @__PURE__ */ new Map();
   const walk = (elements) => {
     for (const element of elements) {
-      if (element.size) wanted.set(element.id, element.size);
       walk(element.children);
+      if (element.size) wanted.set(element.id, element.size);
     }
   };
   walk(model.elements);
@@ -100896,8 +100907,8 @@ function applyContainerSizes(scene, model) {
       const terminal = edge.pts[which === "first" ? 0 : edge.pts.length - 1];
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat) continue;
-      const onRight = Math.abs(terminal.x - (seat.box.x + seat.box.width)) < SEGMENT_EPSILON;
-      const onBottom = Math.abs(terminal.y - (seat.box.y + seat.box.height)) < SEGMENT_EPSILON;
+      const onRight = terminal.x >= seat.box.x + seat.box.width - ON_BORDER;
+      const onBottom = terminal.y >= seat.box.y + seat.box.height - ON_BORDER;
       const delta = {
         dx: seat.dx + (onRight ? seat.dw : 0),
         dy: seat.dy + (onBottom ? seat.dh : 0)
