@@ -2334,6 +2334,106 @@ function applySwap(
 }
 
 /** Swaps attachment seats for sibling flows when it reduces crossings. */
+/**
+ * Takes back a turn the offset pass put in.
+ *
+ * Carrying a terminal splices an elbow to keep the route orthogonal (§17), so a
+ * run that was straight before the nudge comes out bent: dragging a block 32px
+ * up left its inbound flow reaching a 22px riser into its underside, where the
+ * two faces still shared room to run straight across. The turn is an artifact of
+ * the carry rather than a routing decision, so it is undone where the faces line
+ * up — seated at `MIN_SIDE_INSET`, the same squeeze a crowded side takes.
+ *
+ * Deliberately *not* in the router. Offering this seat to every drawing measured
+ * worse (`labelStraddled` and `jog<=20` up on three): more candidates is not
+ * better routing when nothing scores a turn. Here the set is flows the carry
+ * bent, on the author-hint path, so a drawing that declares no hint never
+ * reaches it and auto-routing is byte-identical.
+ *
+ * Opportunistic, like `swapCrossingSiblingSeats`: taken only when the straight
+ * run hits no box, lies clear of every other run, and lands on no one else's
+ * seat. Anything less and it is left as it is.
+ */
+export function straightenCarriedRuns(
+  scene: Scene,
+  titleBoxes: TitleBox[],
+  only: ReadonlySet<string>,
+): void {
+  if (!only.size) return;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const ctx = createTidyContext(scene, leaves, titleBoxes, false);
+  const seats = scene.edges.flatMap((edge) =>
+    edge.pts.length >= 2 ? [edge.pts[0], edge.pts[edge.pts.length - 1]] : [],
+  );
+
+  for (const edge of scene.edges) {
+    // Three points or more is a route with a turn in it; a pinned end is the
+    // author's and may not be re-seated (§17).
+    if (!only.has(edge.id) || edge.pts.length < 3) continue;
+    if (edge.pinned?.start || edge.pinned?.end) continue;
+    const src = sideOf(edge.pts[0], leaves);
+    const dst = sideOf(edge.pts[edge.pts.length - 1], leaves);
+    if (!src || !dst || src.node === dst.node) continue;
+
+    // Which pair of faces a straight run would join. Derived from where the two
+    // boxes now sit rather than from where the terminals happen to be: the carry
+    // may have left one of them on a face that no longer points at anything
+    // (§4c), which is the case that produces the riser into an underside.
+    const alongY = src.side === "east" || src.side === "west";
+    const rightwards = dst.node.x > src.node.x;
+    const downwards = dst.node.y > src.node.y;
+    const srcSide: Side = alongY ? (rightwards ? "east" : "west") : downwards ? "south" : "north";
+    const dstSide: Side = alongY ? (rightwards ? "west" : "east") : downwards ? "north" : "south";
+
+    const span = (node: SceneNode): [number, number] =>
+      alongY
+        ? [node.y + MIN_SIDE_INSET, node.y + node.height - MIN_SIDE_INSET]
+        : [node.x + MIN_SIDE_INSET, node.x + node.width - MIN_SIDE_INSET];
+    const [srcLo, srcHi] = span(src.node);
+    const [dstLo, dstHi] = span(dst.node);
+    const low = Math.max(srcLo, dstLo);
+    const high = Math.min(srcHi, dstHi);
+    if (low > high) continue;
+    const at = Math.round((low + high) / 2);
+
+    const seatOnFace = (node: SceneNode, side: Side): Point =>
+      side === "north"
+        ? { x: at, y: node.y }
+        : side === "south"
+          ? { x: at, y: node.y + node.height }
+          : side === "west"
+            ? { x: node.x, y: at }
+            : { x: node.x + node.width, y: at };
+    const from = seatOnFace(src.node, srcSide);
+    const to = seatOnFace(dst.node, dstSide);
+    // The boxes have to be clear of each other on the run's own axis, or the
+    // "straight" run would leave through the back of its own box.
+    const travel = alongY ? to.x - from.x : to.y - from.y;
+    const outward = (side: Side) => (side === "east" || side === "south" ? 1 : -1);
+    if (travel === 0 || Math.sign(travel) !== outward(srcSide)) continue;
+
+    const lane = alongY ? [from.x, to.x] : [from.y, to.y];
+    const runFrom = Math.min(lane[0], lane[1]);
+    const runTo = Math.max(lane[0], lane[1]);
+    if (ctx.runHitsNode(!alongY, at, runFrom, runTo)) continue;
+    const others = ctx.runsExcept(edge.id);
+    if (!ctx.runIsClear(alongY ? others.horizontal : others.vertical, at, runFrom, runTo)) continue;
+    // Two terminals in one place is a tier-0 breach, so the new seats have to be
+    // somewhere nobody else already sits.
+    const mine = [edge.pts[0], edge.pts[edge.pts.length - 1]];
+    const taken = (seat: Point) =>
+      seats.some(
+        (other) =>
+          !mine.includes(other) &&
+          Math.abs(other.x - seat.x) < MIN_ATTACH_GAP &&
+          Math.abs(other.y - seat.y) < MIN_ATTACH_GAP,
+      );
+    if (taken(from) || taken(to)) continue;
+    edge.pts = [from, to];
+  }
+}
+
 export function swapCrossingSiblingSeats(scene: Scene): void {
   const leaves = scene.nodes.filter((node) => !node.container);
   const endsOf = (edge: SceneEdge) => [

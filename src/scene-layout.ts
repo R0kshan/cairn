@@ -30,6 +30,7 @@ import {
   decoincideAfterOffsets,
   clearSideHugs,
   reaimAfterOffsets,
+  straightenCarriedRuns,
   clearLeavingRuns,
   reseatAwayTerminals,
   spreadAttachments,
@@ -3650,6 +3651,9 @@ export function refuseScenicRepairs(scene: Scene, before: Map<string, Point[]>):
 }
 
 function applyAuthorPositioning(scene: Scene, model: Model): void {
+  // How many straight runs each route spends before any hint touches it, so the
+  // turns the *carry* adds can be told from the ones the router chose.
+  const runsBefore = new Map(scene.edges.map((edge) => [edge.id, straightRuns(edge.pts).length]));
   // Sizes first: `applyNodeOffsets` holds each child inside its parent, so the
   // room a parent has to give must already be the room the drawing will show.
   const resized = applyContainerSizes(scene, model);
@@ -3700,6 +3704,21 @@ function applyAuthorPositioning(scene: Scene, model: Model): void {
       // the same way it does inside `tidyEdges`.
       decoincideAfterOffsets(scene, titles, repairable);
     }
+    // Last, the turns the carry itself put in. `optimiseRoutes` above will not
+    // touch these: it replaces a route only to clear a *defect*, and a needless
+    // turn is not one — the straight run was among its candidates and lost to a
+    // route that scored exactly as well. So the elbow is taken back here, on the
+    // flows that did not have it before the hint.
+    const bent = new Set(
+      scene.edges
+        .filter(
+          (edge) =>
+            carried.has(edge.id) &&
+            straightRuns(edge.pts).length > (runsBefore.get(edge.id) ?? 0),
+        )
+        .map((edge) => edge.id),
+    );
+    straightenCarriedRuns(scene, titles, bent);
   }
   const nudgedRuns = applySegmentOffsets(scene, model);
   // Same again for a run the author slid: the snapshot is of the route before

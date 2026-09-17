@@ -98136,6 +98136,52 @@ function applySwap(scene, pair2, swap, leaves) {
     return true;
   }
 }
+function straightenCarriedRuns(scene, titleBoxes, only) {
+  if (!only.size) return;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const ctx = createTidyContext(scene, leaves, titleBoxes, false);
+  const seats = scene.edges.flatMap(
+    (edge) => edge.pts.length >= 2 ? [edge.pts[0], edge.pts[edge.pts.length - 1]] : []
+  );
+  for (const edge of scene.edges) {
+    if (!only.has(edge.id) || edge.pts.length < 3) continue;
+    if (edge.pinned?.start || edge.pinned?.end) continue;
+    const src = sideOf(edge.pts[0], leaves);
+    const dst = sideOf(edge.pts[edge.pts.length - 1], leaves);
+    if (!src || !dst || src.node === dst.node) continue;
+    const alongY = src.side === "east" || src.side === "west";
+    const rightwards = dst.node.x > src.node.x;
+    const downwards = dst.node.y > src.node.y;
+    const srcSide = alongY ? rightwards ? "east" : "west" : downwards ? "south" : "north";
+    const dstSide = alongY ? rightwards ? "west" : "east" : downwards ? "north" : "south";
+    const span = (node) => alongY ? [node.y + MIN_SIDE_INSET, node.y + node.height - MIN_SIDE_INSET] : [node.x + MIN_SIDE_INSET, node.x + node.width - MIN_SIDE_INSET];
+    const [srcLo, srcHi] = span(src.node);
+    const [dstLo, dstHi] = span(dst.node);
+    const low = Math.max(srcLo, dstLo);
+    const high = Math.min(srcHi, dstHi);
+    if (low > high) continue;
+    const at = Math.round((low + high) / 2);
+    const seatOnFace = (node, side) => side === "north" ? { x: at, y: node.y } : side === "south" ? { x: at, y: node.y + node.height } : side === "west" ? { x: node.x, y: at } : { x: node.x + node.width, y: at };
+    const from = seatOnFace(src.node, srcSide);
+    const to = seatOnFace(dst.node, dstSide);
+    const travel = alongY ? to.x - from.x : to.y - from.y;
+    const outward = (side) => side === "east" || side === "south" ? 1 : -1;
+    if (travel === 0 || Math.sign(travel) !== outward(srcSide)) continue;
+    const lane = alongY ? [from.x, to.x] : [from.y, to.y];
+    const runFrom = Math.min(lane[0], lane[1]);
+    const runTo = Math.max(lane[0], lane[1]);
+    if (ctx.runHitsNode(!alongY, at, runFrom, runTo)) continue;
+    const others = ctx.runsExcept(edge.id);
+    if (!ctx.runIsClear(alongY ? others.horizontal : others.vertical, at, runFrom, runTo)) continue;
+    const mine = [edge.pts[0], edge.pts[edge.pts.length - 1]];
+    const taken = (seat) => seats.some(
+      (other) => !mine.includes(other) && Math.abs(other.x - seat.x) < MIN_ATTACH_GAP && Math.abs(other.y - seat.y) < MIN_ATTACH_GAP
+    );
+    if (taken(from) || taken(to)) continue;
+    edge.pts = [from, to];
+  }
+}
 function swapCrossingSiblingSeats(scene) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const endsOf = (edge) => [
@@ -101701,6 +101747,7 @@ function refuseScenicRepairs(scene, before) {
   }
 }
 function applyAuthorPositioning(scene, model) {
+  const runsBefore = new Map(scene.edges.map((edge) => [edge.id, straightRuns(edge.pts).length]));
   const resized = applyContainerSizes(scene, model);
   const offsets = offsetAssignment(model);
   if (offsets.size || resized.size) {
@@ -101720,6 +101767,12 @@ function applyAuthorPositioning(scene, model) {
       refuseScenicRepairs(scene, before);
       decoincideAfterOffsets(scene, titles, repairable);
     }
+    const bent = new Set(
+      scene.edges.filter(
+        (edge) => carried.has(edge.id) && straightRuns(edge.pts).length > (runsBefore.get(edge.id) ?? 0)
+      ).map((edge) => edge.id)
+    );
+    straightenCarriedRuns(scene, titles, bent);
   }
   const nudgedRuns = applySegmentOffsets(scene, model);
   if (nudgedRuns) {

@@ -1024,6 +1024,51 @@ MFA -> PORTAL "Verified identity"
   );
 });
 
+test("an offset does not leave a flow reaching into the underside of the box it moved", async () => {
+  // Carrying a terminal splices an elbow to keep the route orthogonal, so a run
+  // that was straight before the nudge comes out bent. Dragging the portal 32px
+  // up left `MFA -> PORTAL` as `(501,122) (653,122) (653,100)` — right, then a
+  // 22px riser poking into the box's underside — where the two faces still
+  // shared room to run straight across.
+  //
+  // `optimiseRoutes` will not take that back: it replaces a route only to clear
+  // a defect, and a needless turn is not one, so the straight run was among its
+  // candidates and lost to a route scoring exactly as well.
+  const SRC = (portal: string) => `diagram logical "t"
+actor-group ACTORS "Actors" {
+  actor USER "User"
+}
+system SYS "My system" {
+  layer FRONT "Front office" {
+    block PORTAL "Portal"${portal}
+    security MFA "Strong authentication" { offset: 25, 1 }
+  }
+}
+USER -> MFA "Signs in"
+MFA -> PORTAL "Verified identity"
+`;
+  const { scene } = await build(SRC(" { offset: -15, -32 }"));
+  const verified = scene.edges.find((edge) => edge.id === "F02")!;
+  const portal = scene.nodes.find((node) => node.id === "PORTAL")!;
+  const mfa = scene.nodes.find((node) => node.id === "MFA")!;
+
+  // PORTAL ends up above MFA, which is the placement that used to bend it.
+  assert.ok(portal.y < mfa.y, "fixture: the portal must be dragged clear above MFA");
+  assert.equal(verified.pts.length, 2, `F02 must run straight: ${JSON.stringify(verified.pts)}`);
+  assert.equal(verified.pts[0].y, verified.pts[1].y, "and horizontally");
+  // Out of MFA's east face and into PORTAL's west face — the two that face each
+  // other — rather than up into the underside.
+  assert.ok(Math.abs(verified.pts[0].x - (mfa.x + mfa.width)) < 1, "leaves MFA's east face");
+  assert.ok(Math.abs(verified.pts[1].x - portal.x) < 1, "arrives at PORTAL's west face");
+
+  // The straightening is for turns the *carry* added, so a drawing whose routes
+  // the hint never bent keeps exactly the geometry it had.
+  const plain = await build(SRC(""));
+  const untouched = plain.scene.edges.find((edge) => edge.id === "F01")!;
+  const nudged = scene.edges.find((edge) => edge.id === "F01")!;
+  assert.equal(untouched.pts.length, nudged.pts.length, "F01 keeps its shape");
+});
+
 test("a container's own offset is not clamped, and it carries its children", async () => {
   const plain = await build(NESTED_SRC(""));
   const moved = await build(NESTED_SRC("\n  offset: 0, 300"));
