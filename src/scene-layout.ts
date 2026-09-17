@@ -1972,10 +1972,6 @@ function applyContainerSizes(scene: Scene, model: Model): Set<string> {
     const height = Math.max(node.height + spec.dh, floor.minHeight);
     if (width !== node.width + spec.dw || height !== node.height + spec.dh)
       clampedSpans.add(spec.span);
-    // What the hint *became*, which is not what it said wherever the floor cut
-    // it short. An editor has to continue from the drawn size or its next drag
-    // writes a number the floor swallows again, and the box does not move.
-    applied.set(id, { dw: width - node.width, dh: height - node.height });
     squeezeInside(box, "x", width);
     squeezeInside(box, "y", height);
     node.width = width;
@@ -2001,6 +1997,23 @@ function applyContainerSizes(scene: Scene, model: Model): Set<string> {
     }
   };
   containWithin(model.elements);
+
+  // What each hint *became*, measured after containment rather than inside the
+  // loop above. Two things move a container that the number it declares does not
+  // describe: the floor cutting a shrink short, and a *descendant's* `size:`
+  // growing it to keep holding the child. An editor continuing from anything but
+  // the drawn size writes a number one of the two swallows again, and the box
+  // sits still through the drag.
+  //
+  // `clampedSpans` stays on the floor comparison above: growing to hold a child
+  // is containment doing its job, not a hint being negotiated, so it is not
+  // W0575.
+  for (const id of wanted.keys()) {
+    const node = nodeById.get(id);
+    const was = before.get(id);
+    if (node && was)
+      applied.set(id, { dw: node.width - was.width, dh: node.height - was.height });
+  }
 
   if (clampedSpans.size) scene.clampedSizes = clampedSpans;
   scene.appliedSizes = applied;

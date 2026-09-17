@@ -100867,7 +100867,6 @@ function applyContainerSizes(scene, model) {
     const height = Math.max(node.height + spec.dh, floor.minHeight);
     if (width !== node.width + spec.dw || height !== node.height + spec.dh)
       clampedSpans.add(spec.span);
-    applied.set(id, { dw: width - node.width, dh: height - node.height });
     squeezeInside(box, "x", width);
     squeezeInside(box, "y", height);
     node.width = width;
@@ -100884,6 +100883,12 @@ function applyContainerSizes(scene, model) {
     }
   };
   containWithin(model.elements);
+  for (const id of wanted.keys()) {
+    const node = nodeById.get(id);
+    const was = before.get(id);
+    if (node && was)
+      applied.set(id, { dw: node.width - was.width, dh: node.height - was.height });
+  }
   if (clampedSpans.size) scene.clampedSizes = clampedSpans;
   scene.appliedSizes = applied;
   const seats = [];

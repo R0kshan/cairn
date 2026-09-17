@@ -583,3 +583,48 @@ G -> PORTAL "Signs in"
   const after = boxOf(await compile(widened), "SYS");
   assert.equal(after.width, sys.width + 30, "so the box actually grows by the drag");
 });
+
+test("a resize continues from the drawn size when a child grew its parent", async () => {
+  const { writeResize } = await pageWriteback();
+  const { parse } = await import("../src/parser.ts");
+  const { compile } = await import("../src/compile.ts");
+
+  // The parent is widened by containment, not by its own hint: the layer asks
+  // for +300 and the system grows to keep holding it. The system's own `size:`
+  // says 10, and the box on screen is 300 wider than it started.
+  const source = `diagram logical "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+system SYS "My system" {
+  size: 10, 0
+  layer FRONT "Front office" {
+    size: 300, 0
+    block PORTAL "Portal"
+  }
+}
+G -> PORTAL "Signs in"
+`;
+  const boxOf = (result: { boxes: unknown[] | null }, id: string) =>
+    (result.boxes as Record<string, unknown>[]).find(
+      (b) => b.id === id && b.what === "element",
+    ) as unknown as Box & { sizeApplied?: { dw: number; dh: number } };
+
+  const nested = await compile(source);
+  const sys = boxOf(nested, "SYS");
+  assert.equal(sys.sizeApplied?.dw, 300, "the applied delta is what containment left, not `10`");
+
+  // Widen the *parent* by 20. Continuing from the declared 10 would write 30,
+  // which containment overrides right back to where it was — the drag would
+  // land in the source and nowhere on screen.
+  const widened = writeResize(source, sys as unknown as Record<string, unknown>, {
+    dw: 20,
+    dh: 0,
+    dx: 0,
+    dy: 0,
+  });
+  assert.equal(parse(widened).diags.filter((d) => d.severity === "error").length, 0, widened);
+  assert.equal(boxOf(await compile(widened), "SYS").width, sys.width + 20, "the parent grows by 20");
+  // And the child is untouched by its parent's drag.
+  assert.equal(boxOf(await compile(widened), "FRONT").width, boxOf(nested, "FRONT").width);
+});
