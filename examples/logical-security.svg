@@ -85,7 +85,7 @@
 <path d="M 859 395.75 L 1196.7142857142858 395.75 A 5 5 0 0 1 1206.7142857142858 395.75 L 1430.7142857142858 395.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 106 360.8 L 211 360.8 L 211 306.75 L 268 306.75 A 5 5 0 0 1 278 306.75 L 412.5 306.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 526.5 310.41666666666674 L 883 310.4166666666667 L 883 383.75 L 1196.7142857142858 383.75 A 5 5 0 0 1 1206.7142857142858 383.75 L 1430.7142857142858 383.75" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 1538.7142857142858 375.66666666666663 L 1802 375.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1538.7142857142858 375.66666666666663 L 1802 375.66666666666663" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 131.5 161 L 327 161 L 327 99 L 1034 99 L 1034 282 L 1147.7142857142858 282" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1255.7142857142858 299.5 L 1466.7142857142858 299.5 L 1466.7142857142858 360" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 106 348.8 L 198 349 L 198 273 L 268 273 A 5 5 0 0 1 278 273 L 347 273 L 347 119 L 376 119 A 5 5 0 0 1 386 119 L 1024 119 L 1024 349 L 1147.7142857142858 349" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
@@ -121,9 +121,9 @@
 <text x="883" y="352.25000000000006" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">sharing rules</text>
 <rect x="856" y="360.25000000000006" width="54" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="883" y="371.25000000000006" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Consent</text>
-<text x="1670.357142857143" y="378.8333333333333" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Fetch the care history</text>
-<rect x="1624.857142857143" y="386.8333333333333" width="91" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="1670.357142857143" y="397.8333333333333" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Medical record</text>
+<text x="1670.357142857143" y="378.91666666666663" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Fetch the care history</text>
+<rect x="1624.857142857143" y="386.91666666666663" width="91" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1670.357142857143" y="397.91666666666663" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Medical record</text>
 <text x="229.25" y="164.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Share a report</text>
 <rect x="186.25" y="172.25" width="86" height="15" rx="7.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
 <text x="229.25" y="183.25" font-size="9.5" text-anchor="middle" fill="#6a5111" font-weight="bold">Care document</text>

@@ -7,6 +7,9 @@ All notable changes to the cairn project will be documented in this file.
 ### Added
 - `size: <dw>, <dh>` resizes a container — by hand in the DSL, or **in the playground** by dragging any of its eight grips, which writes the key for you — and a **Reset flows** button drops the `segment-offset:` and `label-offset:` hints so the router places the flows again against the containers as they now are
 
+### Fixed
+- Dragging an element no longer leaves the flow it carries bent: a run that was straight before the nudge is straightened again between the sides the two boxes now face each other with, instead of reaching a short riser into the underside of the box that moved
+
 ## [v1.0.0-RC17](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC17) - 2026-09-16
 
 ### Added

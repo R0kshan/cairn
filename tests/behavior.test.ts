@@ -965,6 +965,111 @@ test("`size:` is a container's knob, and the engine says where it may stop", asy
   );
 });
 
+test("a few-pixel offset slides the seat rather than leaving a stub under the arrowhead", async () => {
+  // Nudging a block 4px carried its terminal 4px down its own face and spliced an
+  // elbow to square the approach, which left the run ending `(611,110) (611,106)`
+  // — a 4px stub lying on the border with the arrowhead drawn along it (§4i), and
+  // the label 23px off the run it names, which is a tier-0 breach (§4a).
+  //
+  // Where along a face a terminal sits is the layout's business, so a residual
+  // too small to carry an arrowhead moves the seat to meet the run instead.
+  const source = `diagram logical "t"
+actor-group ACTORS "Actors" {
+  actor USER "User"
+}
+system SYS "My system" {
+  layer FRONT "Front office" {
+    offset: 39, 2
+    block PORTAL "Portal" { offset: -60, -4 }
+    security MFA "Strong authentication"
+  }
+}
+USER -> MFA "Signs in"
+MFA -> PORTAL "Verified identity"
+`;
+  const { scene, model } = await build(source);
+  const verified = scene.edges.find((edge) => edge.id === "F02")!;
+
+  // No end of the route may be a stub: either the run reaches the seat straight,
+  // or it turns far enough out that the head has room.
+  for (const [from, to] of [
+    [0, 1],
+    [verified.pts.length - 1, verified.pts.length - 2],
+  ]) {
+    const span =
+      Math.abs(verified.pts[to].x - verified.pts[from].x) +
+      Math.abs(verified.pts[to].y - verified.pts[from].y);
+    assert.ok(span >= 12, `F02's terminal run is a ${span.toFixed(0)}px stub: ${JSON.stringify(verified.pts)}`);
+  }
+  // It still meets the box it names, and it is still orthogonal.
+  const portal = scene.nodes.find((node) => node.id === "PORTAL")!;
+  const arrival = verified.pts[verified.pts.length - 1];
+  assert.ok(
+    arrival.x >= portal.x - 1 &&
+      arrival.x <= portal.x + portal.width + 1 &&
+      arrival.y >= portal.y - 1 &&
+      arrival.y <= portal.y + portal.height + 1,
+    `F02 must still meet PORTAL (${arrival.x},${arrival.y})`,
+  );
+  for (let i = 1; i < verified.pts.length; i++)
+    assert.ok(
+      Math.abs(verified.pts[i - 1].x - verified.pts[i].x) < 0.5 ||
+        Math.abs(verified.pts[i - 1].y - verified.pts[i].y) < 0.5,
+      `segment ${i} of F02 runs off the orthogonal`,
+    );
+  // And the label is back on the run it names — `labelAdrift` is must-be-zero.
+  assert.deepEqual(
+    offsetDiagnostics(scene, model).filter((d) => d.code === "W0572" && d.message.includes("F02")),
+    [],
+  );
+});
+
+test("an offset does not leave a flow reaching into the underside of the box it moved", async () => {
+  // Carrying a terminal splices an elbow to keep the route orthogonal, so a run
+  // that was straight before the nudge comes out bent. Dragging the portal 32px
+  // up left `MFA -> PORTAL` as `(501,122) (653,122) (653,100)` — right, then a
+  // 22px riser poking into the box's underside — where the two faces still
+  // shared room to run straight across.
+  //
+  // `optimiseRoutes` will not take that back: it replaces a route only to clear
+  // a defect, and a needless turn is not one, so the straight run was among its
+  // candidates and lost to a route scoring exactly as well.
+  const SRC = (portal: string) => `diagram logical "t"
+actor-group ACTORS "Actors" {
+  actor USER "User"
+}
+system SYS "My system" {
+  layer FRONT "Front office" {
+    block PORTAL "Portal"${portal}
+    security MFA "Strong authentication" { offset: 25, 1 }
+  }
+}
+USER -> MFA "Signs in"
+MFA -> PORTAL "Verified identity"
+`;
+  const { scene } = await build(SRC(" { offset: -15, -32 }"));
+  const verified = scene.edges.find((edge) => edge.id === "F02")!;
+  const portal = scene.nodes.find((node) => node.id === "PORTAL")!;
+  const mfa = scene.nodes.find((node) => node.id === "MFA")!;
+
+  // PORTAL ends up above MFA, which is the placement that used to bend it.
+  assert.ok(portal.y < mfa.y, "fixture: the portal must be dragged clear above MFA");
+  assert.equal(verified.pts.length, 2, `F02 must run straight: ${JSON.stringify(verified.pts)}`);
+  assert.equal(verified.pts[0].y, verified.pts[1].y, "and horizontally");
+  // Out of MFA's east face and into PORTAL's west face — the two that face each
+  // other — rather than up into the underside.
+  assert.ok(Math.abs(verified.pts[0].x - (mfa.x + mfa.width)) < 1, "leaves MFA's east face");
+  assert.ok(Math.abs(verified.pts[1].x - portal.x) < 1, "arrives at PORTAL's west face");
+
+  // The straightening is for turns the *carry* added, so a drawing whose routes
+  // the hint never bent keeps exactly the geometry it had — every point of it,
+  // not merely the same number of them.
+  const plain = await build(SRC(""));
+  const untouched = plain.scene.edges.find((edge) => edge.id === "F01")!;
+  const nudged = scene.edges.find((edge) => edge.id === "F01")!;
+  assert.deepEqual(nudged.pts, untouched.pts, "F01 keeps its geometry, point for point");
+});
+
 test("a container's own offset is not clamped, and it carries its children", async () => {
   const plain = await build(NESTED_SRC(""));
   const moved = await build(NESTED_SRC("\n  offset: 0, 300"));

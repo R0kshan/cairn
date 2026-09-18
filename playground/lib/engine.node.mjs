@@ -98136,6 +98136,58 @@ function applySwap(scene, pair2, swap, leaves) {
     return true;
   }
 }
+function straightenCarriedRuns(scene, titleBoxes, only) {
+  if (!only.size) return;
+  const leaves = scene.nodes.filter((node) => !node.container);
+  if (!leaves.length) return;
+  const ctx = createTidyContext(scene, leaves, titleBoxes, false);
+  const strikesTitle = (at, from, to, horizontal) => {
+    const lo = Math.min(from, to);
+    const hi = Math.max(from, to);
+    return titleBoxes.some(
+      (band) => horizontal ? at > band.y && at < band.y + band.height && lo < band.x + band.width && hi > band.x : at > band.x && at < band.x + band.width && lo < band.y + band.height && hi > band.y
+    );
+  };
+  const taken = (seat, mine) => scene.edges.some(
+    (other) => other !== mine && other.pts.length >= 2 && [other.pts[0], other.pts[other.pts.length - 1]].some(
+      (end) => Math.abs(end.x - seat.x) < MIN_ATTACH_GAP && Math.abs(end.y - seat.y) < MIN_ATTACH_GAP
+    )
+  );
+  for (const edge of scene.edges) {
+    if (!only.has(edge.id) || edge.pts.length < 3) continue;
+    if (edge.pinned?.start || edge.pinned?.end) continue;
+    const src = sideOf(edge.pts[0], leaves);
+    const dst = sideOf(edge.pts[edge.pts.length - 1], leaves);
+    if (!src || !dst || src.node === dst.node) continue;
+    const alongY = src.side === "east" || src.side === "west";
+    const rightwards = dst.node.x > src.node.x;
+    const downwards = dst.node.y > src.node.y;
+    const srcSide = alongY ? rightwards ? "east" : "west" : downwards ? "south" : "north";
+    const dstSide = alongY ? rightwards ? "west" : "east" : downwards ? "north" : "south";
+    const span = (node) => alongY ? [node.y + MIN_SIDE_INSET, node.y + node.height - MIN_SIDE_INSET] : [node.x + MIN_SIDE_INSET, node.x + node.width - MIN_SIDE_INSET];
+    const [srcLo, srcHi] = span(src.node);
+    const [dstLo, dstHi] = span(dst.node);
+    const low = Math.max(srcLo, dstLo);
+    const high = Math.min(srcHi, dstHi);
+    if (low > high) continue;
+    const at = Math.round((low + high) / 2);
+    const seatOnFace = (node, side) => side === "north" ? { x: at, y: node.y } : side === "south" ? { x: at, y: node.y + node.height } : side === "west" ? { x: node.x, y: at } : { x: node.x + node.width, y: at };
+    const from = seatOnFace(src.node, srcSide);
+    const to = seatOnFace(dst.node, dstSide);
+    const travel = alongY ? to.x - from.x : to.y - from.y;
+    const outward = (side) => side === "east" || side === "south" ? 1 : -1;
+    if (travel === 0 || Math.sign(travel) !== outward(srcSide)) continue;
+    const lane = alongY ? [from.x, to.x] : [from.y, to.y];
+    const runFrom = Math.min(lane[0], lane[1]);
+    const runTo = Math.max(lane[0], lane[1]);
+    if (ctx.runHitsNode(!alongY, at, runFrom, runTo)) continue;
+    if (strikesTitle(at, runFrom, runTo, alongY)) continue;
+    const others = ctx.runsExcept(edge.id);
+    if (!ctx.runIsClear(alongY ? others.horizontal : others.vertical, at, runFrom, runTo)) continue;
+    if (taken(from, edge) || taken(to, edge)) continue;
+    edge.pts = [from, to];
+  }
+}
 function swapCrossingSiblingSeats(scene) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const endsOf = (edge) => [
@@ -100920,7 +100972,12 @@ function applyContainerSizes(scene, model) {
       };
       if (!delta.dx && !delta.dy) continue;
       carried.add(edge.id);
-      carryTerminal(edge, which, delta);
+      carryTerminal(edge, which, delta, {
+        x: seat.box.x + seat.dx,
+        y: seat.box.y + seat.dy,
+        width: seat.box.width + seat.dw,
+        height: seat.box.height + seat.dh
+      });
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
@@ -100990,19 +101047,32 @@ function applyNodeOffsets(scene, offsetOf) {
       const seat = seats.find((candidate) => pointOn(terminal, candidate.box));
       if (!seat || !seat.delta.dx && !seat.delta.dy) continue;
       carried.add(edge.id);
-      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta);
+      carryTerminal(edge, end === 0 ? "first" : "last", seat.delta, {
+        x: seat.box.x + seat.delta.dx,
+        y: seat.box.y + seat.delta.dy,
+        width: seat.box.width,
+        height: seat.box.height
+      });
     }
   }
   for (const edge of scene.edges) if (carried.has(edge.id)) dropRedundantPoints(edge.pts);
   return carried;
 }
-function carryTerminal(edge, which, delta) {
+function carryTerminal(edge, which, delta, face) {
   const end = which === "first" ? 0 : edge.pts.length - 1;
   const terminal = edge.pts[end];
   const neighbour = edge.pts[which === "first" ? 1 : edge.pts.length - 2];
   const wasHorizontal = Math.abs(terminal.y - neighbour.y) < SEGMENT_EPSILON;
   terminal.x += delta.dx;
   terminal.y += delta.dy;
+  const slide = wasHorizontal ? { along: "y", low: face.y, high: face.y + face.height } : { along: "x", low: face.x, high: face.x + face.width };
+  const residual = neighbour[slide.along] - terminal[slide.along];
+  const seat = Math.min(
+    Math.max(neighbour[slide.along], slide.low + SEAT_INSET),
+    Math.max(slide.high - SEAT_INSET, slide.low + SEAT_INSET)
+  );
+  if (Math.abs(residual) < ARROW_ROOM2 && Math.abs(seat - neighbour[slide.along]) < SEGMENT_EPSILON)
+    terminal[slide.along] = seat;
   const elbow = wasHorizontal ? { x: neighbour.x, y: terminal.y } : { x: terminal.x, y: neighbour.y };
   const degenerate = Math.abs(elbow.x - terminal.x) < SEGMENT_EPSILON && Math.abs(elbow.y - terminal.y) < SEGMENT_EPSILON || Math.abs(elbow.x - neighbour.x) < SEGMENT_EPSILON && Math.abs(elbow.y - neighbour.y) < SEGMENT_EPSILON;
   if (!degenerate) edge.pts.splice(which === "first" ? 1 : edge.pts.length - 1, 0, elbow);
@@ -101683,6 +101753,7 @@ function refuseScenicRepairs(scene, before) {
   }
 }
 function applyAuthorPositioning(scene, model) {
+  const runsBefore = new Map(scene.edges.map((edge) => [edge.id, straightRuns(edge.pts).length]));
   const resized = applyContainerSizes(scene, model);
   const offsets = offsetAssignment(model);
   if (offsets.size || resized.size) {
@@ -101702,6 +101773,12 @@ function applyAuthorPositioning(scene, model) {
       refuseScenicRepairs(scene, before);
       decoincideAfterOffsets(scene, titles, repairable);
     }
+    const bent = new Set(
+      scene.edges.filter(
+        (edge) => carried.has(edge.id) && straightRuns(edge.pts).length > (runsBefore.get(edge.id) ?? 0)
+      ).map((edge) => edge.id)
+    );
+    straightenCarriedRuns(scene, titles, bent);
   }
   const nudgedRuns = applySegmentOffsets(scene, model);
   if (nudgedRuns) {
