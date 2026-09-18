@@ -2436,7 +2436,7 @@ export function straightenCarriedRuns(
     // "straight" run would leave through the back of its own box.
     const travel = alongY ? to.x - from.x : to.y - from.y;
     const outward = (side: Side) => (side === "east" || side === "south" ? 1 : -1);
-    if (travel === 0 || Math.sign(travel) !== outward(srcSide)) continue;
+    if (Math.sign(travel) !== outward(srcSide)) continue;
 
     const lane = alongY ? [from.x, to.x] : [from.y, to.y];
     const runFrom = Math.min(lane[0], lane[1]);
