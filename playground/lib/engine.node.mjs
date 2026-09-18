@@ -98141,8 +98141,17 @@ function straightenCarriedRuns(scene, titleBoxes, only) {
   const leaves = scene.nodes.filter((node) => !node.container);
   if (!leaves.length) return;
   const ctx = createTidyContext(scene, leaves, titleBoxes, false);
-  const seats = scene.edges.flatMap(
-    (edge) => edge.pts.length >= 2 ? [edge.pts[0], edge.pts[edge.pts.length - 1]] : []
+  const strikesTitle = (at, from, to, horizontal) => {
+    const lo = Math.min(from, to);
+    const hi = Math.max(from, to);
+    return titleBoxes.some(
+      (band) => horizontal ? at > band.y && at < band.y + band.height && lo < band.x + band.width && hi > band.x : at > band.x && at < band.x + band.width && lo < band.y + band.height && hi > band.y
+    );
+  };
+  const taken = (seat, mine) => scene.edges.some(
+    (other) => other !== mine && other.pts.length >= 2 && [other.pts[0], other.pts[other.pts.length - 1]].some(
+      (end) => Math.abs(end.x - seat.x) < MIN_ATTACH_GAP && Math.abs(end.y - seat.y) < MIN_ATTACH_GAP
+    )
   );
   for (const edge of scene.edges) {
     if (!only.has(edge.id) || edge.pts.length < 3) continue;
@@ -98172,13 +98181,10 @@ function straightenCarriedRuns(scene, titleBoxes, only) {
     const runFrom = Math.min(lane[0], lane[1]);
     const runTo = Math.max(lane[0], lane[1]);
     if (ctx.runHitsNode(!alongY, at, runFrom, runTo)) continue;
+    if (strikesTitle(at, runFrom, runTo, alongY)) continue;
     const others = ctx.runsExcept(edge.id);
     if (!ctx.runIsClear(alongY ? others.horizontal : others.vertical, at, runFrom, runTo)) continue;
-    const mine = [edge.pts[0], edge.pts[edge.pts.length - 1]];
-    const taken = (seat) => seats.some(
-      (other) => !mine.includes(other) && Math.abs(other.x - seat.x) < MIN_ATTACH_GAP && Math.abs(other.y - seat.y) < MIN_ATTACH_GAP
-    );
-    if (taken(from) || taken(to)) continue;
+    if (taken(from, edge) || taken(to, edge)) continue;
     edge.pts = [from, to];
   }
 }

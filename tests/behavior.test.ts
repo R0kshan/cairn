@@ -1062,11 +1062,12 @@ MFA -> PORTAL "Verified identity"
   assert.ok(Math.abs(verified.pts[1].x - portal.x) < 1, "arrives at PORTAL's west face");
 
   // The straightening is for turns the *carry* added, so a drawing whose routes
-  // the hint never bent keeps exactly the geometry it had.
+  // the hint never bent keeps exactly the geometry it had — every point of it,
+  // not merely the same number of them.
   const plain = await build(SRC(""));
   const untouched = plain.scene.edges.find((edge) => edge.id === "F01")!;
   const nudged = scene.edges.find((edge) => edge.id === "F01")!;
-  assert.equal(untouched.pts.length, nudged.pts.length, "F01 keeps its shape");
+  assert.deepEqual(nudged.pts, untouched.pts, "F01 keeps its geometry, point for point");
 });
 
 test("a container's own offset is not clamped, and it carries its children", async () => {
