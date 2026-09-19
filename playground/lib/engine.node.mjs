@@ -93143,19 +93143,26 @@ function resolveEndpointSuffixes(splits, model, diagnostics) {
   const sideOf2 = (text) => ATTACH_SIDES.includes(text);
   const roleOf = (text) => ATTACH_ROLES.includes(text);
   for (const split of splits) {
-    const last = split.parts[split.parts.length - 1].text;
-    const isSide = sideOf2(last);
-    const isRole = roleOf(last);
     if (model.index.has(split.raw)) {
-      if (isSide || isRole)
+      let head = split.parts.length;
+      while (head > 1 && (sideOf2(split.parts[head - 1].text) || roleOf(split.parts[head - 1].text)))
+        head--;
+      const shadowed = split.parts.slice(head).map((part) => part.text);
+      if (shadowed.length) {
+        const base = split.parts.slice(0, head).map((part) => part.text).join(".");
+        const reading = [
+          shadowed.some((text) => roleOf(text)) ? "a role" : "",
+          shadowed.some((text) => sideOf2(text)) ? "an attachment side" : ""
+        ].filter(Boolean);
         diagnostics.push({
           code: "W0571",
           severity: "warning",
-          message: `\`${split.raw}\` is a declared element, so \`.${last}\` is not read as ${isSide ? "an attachment side" : "a role"}`,
+          message: `\`${split.raw}\` is a declared element, so \`.${shadowed.join(".")}\` is not read as ${reading.join(" and ")}`,
           span: split.rawSpan,
           note: "a declared id always wins over the `ID.side` reading",
-          help: isSide ? `rename the element if you meant to attach the flow to the ${last} side of \`${split.parts.slice(0, -1).map((part) => part.text).join(".")}\`` : `rename the element if you meant \`${split.parts.slice(0, -1).map((part) => part.text).join(".")}\` to be the ${last} of the queue at the other end`
+          help: `rename the element if you meant \`.${shadowed.join(".")}\` on \`${base}\``
         });
+      }
       continue;
     }
     let cut = 0;

@@ -230,29 +230,33 @@ function resolveEndpointSuffixes(
   const sideOf = (text: string) => (ATTACH_SIDES as string[]).includes(text);
   const roleOf = (text: string) => (ATTACH_ROLES as string[]).includes(text);
   for (const split of splits) {
-    const last = split.parts[split.parts.length - 1].text;
-    const isSide = sideOf(last);
-    const isRole = roleOf(last);
     if (model.index.has(split.raw)) {
-      if (isSide || isRole)
+      // Everything a suffix reading *would* have taken, which is the trailing
+      // run of side and role words — all of it dropped together, so the warning
+      // names the whole run rather than its last word over a base that may
+      // never have been declared (`A.producer` in `A.producer.top`).
+      let head = split.parts.length;
+      while (head > 1 && (sideOf(split.parts[head - 1].text) || roleOf(split.parts[head - 1].text)))
+        head--;
+      const shadowed = split.parts.slice(head).map((part) => part.text);
+      if (shadowed.length) {
+        const base = split.parts
+          .slice(0, head)
+          .map((part) => part.text)
+          .join(".");
+        const reading = [
+          shadowed.some((text) => roleOf(text)) ? "a role" : "",
+          shadowed.some((text) => sideOf(text)) ? "an attachment side" : "",
+        ].filter(Boolean);
         diagnostics.push({
           code: "W0571",
           severity: "warning",
-          message: `\`${split.raw}\` is a declared element, so \`.${last}\` is not read as ${
-            isSide ? "an attachment side" : "a role"
-          }`,
+          message: `\`${split.raw}\` is a declared element, so \`.${shadowed.join(".")}\` is not read as ${reading.join(" and ")}`,
           span: split.rawSpan,
           note: "a declared id always wins over the `ID.side` reading",
-          help: isSide
-            ? `rename the element if you meant to attach the flow to the ${last} side of \`${split.parts
-                .slice(0, -1)
-                .map((part) => part.text)
-                .join(".")}\``
-            : `rename the element if you meant \`${split.parts
-                .slice(0, -1)
-                .map((part) => part.text)
-                .join(".")}\` to be the ${last} of the queue at the other end`,
+          help: `rename the element if you meant \`.${shadowed.join(".")}\` on \`${base}\``,
         });
+      }
       continue;
     }
     // Longest prefix first, so an id that happens to end in `.producer` is

@@ -544,7 +544,8 @@ POSTING.bottom -> LEDGER_DB.top (JDBC)
 end and the point it meets its element shows as a circle; drag it to another
 side and `APP -> DB` becomes `APP.top -> DB`. An endpoint that already names a
 side has that word replaced, not appended. An endpoint naming a role
-(`CAPTURE.producer`) offers no handle — a side and a role together is **E0225**.
+(`CAPTURE.producer`) offers no handle — the side goes on by hand there, as a
+second suffix (`CAPTURE.producer.top`).
 
 #### A queue's flows are sided for you
 

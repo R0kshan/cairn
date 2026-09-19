@@ -126,8 +126,9 @@ export interface LayoutBox {
    * `span` is what an editor replaces to move the attachment: the side the
    * author declared when there is one, and otherwise the endpoint's id, which
    * takes an `ID.side` suffix in its place. An endpoint that names a *role*
-   * (`CAPTURE.producer`) gets no terminal box at all — a side and a role on one
-   * endpoint is E0225, so there is nothing an editor could write there.
+   * (`CAPTURE.producer`) gets no terminal box at all: a side accumulates onto a
+   * role in the DSL (`CAPTURE.producer.top`), but neither span an editor
+   * replaces is the place to write it, so that one stays a hand edit.
    */
   endpoint?: { end: "from" | "to"; element: string; side?: AttachSide; span: Span };
 }

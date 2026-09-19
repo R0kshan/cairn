@@ -3406,7 +3406,10 @@ test("a side and a role accumulate on one endpoint, in either order", async () =
   const shadowed = check(
     'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module A.producer.top "literal"\n}\nqueue Q "Notifications"\nA.producer.top -> Q (AMQP)\n',
   );
-  assert.ok(shadowed.codes.includes("W0571"));
+  const dropped = shadowed.diags.find((diagnostic) => diagnostic.code === "W0571")!;
+  // The whole dropped run is named, not its last word over an `A.producer` that
+  // was never declared.
+  assert.match(dropped.message, /`\.producer\.top` is not read as a role and an attachment side/);
   assert.equal(shadowed.model.flows[0].from, "A.producer.top");
   assert.equal(shadowed.model.flows[0].fromSide, undefined);
   assert.equal(shadowed.model.flows[0].fromRole, undefined);
