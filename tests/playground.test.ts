@@ -88,6 +88,7 @@ async function pageWriteback(): Promise<{
     box: Record<string, unknown>,
     delta: { dw: number; dh: number; dx: number; dy: number },
   ) => string;
+  writeWrap: (source: string, line: number) => string;
   stripFlowHints: (source: string) => string;
 }> {
   const html = readFileSync(join(ROOT, "playground/index.html"), "utf8");
@@ -103,12 +104,13 @@ async function pageWriteback(): Promise<{
     "readSpan",
     "writeOffset",
     "writeResize",
+    "writeWrap",
     "stripFlowHints",
   ])
     assert.ok(source.includes(`function ${name}(`), `\`${name}\` left the marked region`);
   return import(
     `data:text/javascript,${encodeURIComponent(
-      `${source}\nexport { writeOffset, writeSide, writeResize, stripFlowHints };`,
+      `${source}\nexport { writeOffset, writeSide, writeResize, writeWrap, stripFlowHints };`,
     )}`
   );
 }
@@ -239,6 +241,38 @@ test("a drag writes DSL the parser reads back as the same offset", async () => {
   assert.equal(parse(written).diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(parse(written).model.flows[0].label, "step {1}", "the label was rewritten");
   assert.equal(parse(written).model.flows[0].labelOffset?.dx, 12);
+});
+
+test("the wrap button writes a `flow-label-wrap` the parser reads back", async () => {
+  const { writeWrap } = await pageWriteback();
+  const { parse } = await import("../src/parser.ts");
+  const flowOf = (src: string) => parse(src).model.flows[0];
+
+  // No inline block yet: the click has to open one. "Request" is 7 characters,
+  // so half of it is 4.
+  const wrapped = writeWrap(DRAG_SRC, 8);
+  assert.equal(parse(wrapped).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(flowOf(wrapped).labelWrap, 4);
+  assert.equal(flowOf(wrapped).label, "Request", "the label was rewritten");
+
+  // Clicking again replaces the value instead of writing a second key.
+  const again = writeWrap(wrapped, 8);
+  assert.equal(parse(again).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(flowOf(again).labelWrap, 4);
+  assert.equal(again.match(/flow-label-wrap/g)?.length, 1);
+
+  // A block that is already there is joined, not replaced.
+  const styled = writeWrap(DRAG_SRC.replace('"Request"', '"Request" { stroke: dashed }'), 8);
+  assert.equal(parse(styled).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(flowOf(styled).labelWrap, 4);
+  assert.equal(flowOf(styled).style?.stroke?.style, "dashed");
+
+  // A label with a brace in it stays a label, and a flow with none is left alone.
+  const braced = writeWrap(DRAG_SRC.replace('"Request"', '"step {1} now"'), 8);
+  assert.equal(parse(braced).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(flowOf(braced).label, "step {1} now");
+  assert.equal(flowOf(braced).labelWrap, 6);
+  assert.equal(writeWrap(DRAG_SRC, 4), DRAG_SRC, "a line with no label is left as it is");
 });
 
 test("dragging a flow end writes the `ID.side` the DSL already has", async () => {
