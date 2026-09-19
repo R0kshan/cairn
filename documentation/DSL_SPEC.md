@@ -531,7 +531,9 @@ POSTING.bottom -> LEDGER_DB.top (JDBC)
 ```
 
 - A declared ID always wins over a side reading (`.` is a legal ID character),
-  and the dropped side is reported as **W0571**.
+  and the dropped side is reported as **W0571**. When several readings are
+  possible the longest declared ID is the element: `A.producer` declared is that
+  element, not `A` plus a role.
 - An unknown side name is **E0223**.
 - A pin is a request: one the layout cannot reach is dropped rather than forced
   into an unreadable route, and reported as **W0570**.
@@ -590,6 +592,23 @@ draw that flow the way the data runs.
 Three rules: the other end must be a queue (**E0224**); the queue end must not
 also carry a side (**E0225**); an unknown suffix is **E0223**.
 
+#### Suffixes accumulate
+
+A side and a role answer different questions — the side is where the flow
+leaves *this* element, the role which cap it meets on the queue — so one
+endpoint may carry both, in either order:
+
+```cairn
+CLIENT.producer.top -> Q_MYQUEUE (AMQP)   # leaves CLIENT's top, meets the left cap
+CLIENT.top.producer -> Q_MYQUEUE (AMQP)   # the same flow
+```
+
+Two suffixes of the *same* kind (`A.top.bottom`, `A.producer.consumer`) are a
+contradiction: the first stands and the second is **E0227**. A declared ID still
+wins over the whole reading, however many dots it has (**W0571**), and the
+playground offers no drag handle on an endpoint naming a role — it writes
+`ID.side` only, and appending to a role is a hand edit.
+
 #### Arrow glyph — the flow's line style
 
 `->` solid (default), `-->` dashed, `..>` dotted. An inline `{ stroke: dashed }`
@@ -615,11 +634,12 @@ it. cairn defines these readings; they are not lifted from a standard.
 
 #### Examples
 
-Six files in [`examples/placement/`](../examples/placement) show these controls:
-`baseline.cairn` declares none, `sides.cairn` adds `ID.side` pins,
+Seven files in [`examples/placement/`](../examples/placement) show these
+controls: `baseline.cairn` declares none, `sides.cairn` adds `ID.side` pins,
 `reading-order.cairn` sequences two backends with `order:`, `flow-label.cairn`
 moves a flow label, `queue-sides.cairn` declares nothing and takes the derived
-queue sides, and `queue-roles.cairn` draws every flow *at* the queue with roles.
+queue sides, `queue-roles.cairn` draws every flow *at* the queue with roles, and
+`queue-roles-sided.cairn` adds a side to each of those roles.
 
 ### Logos
 

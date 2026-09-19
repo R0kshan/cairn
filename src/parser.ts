@@ -176,94 +176,148 @@ function parseElement(p: Parser, sourceToken: Token, parent: Element | null): vo
 }
 
 /**
- * An endpoint written `ID.suffix` — `.` is a legal id character, so the split is
- * only a *candidate* here: `resolveEndpointSuffixes` decides against
- * `model.index` whether the whole text is an id, or an id plus an attachment
- * side (`APP.right`) or a role (`CAPTURE.producer`).
+ * An endpoint written `ID.suffix…` — `.` is a legal id character, so the split
+ * is only a *candidate* here: `resolveEndpointSuffixes` decides against
+ * `model.index` whether the whole text is an id, or an id plus attachment
+ * suffixes — a side (`APP.right`), a role (`CAPTURE.producer`), or one of each
+ * (`CAPTURE.producer.top`), which answer different questions and so accumulate.
  */
 interface EndpointSplit {
   flow: Flow;
   end: "from" | "to";
   raw: string;
   rawSpan: Span;
-  base: string;
-  baseSpan: Span;
-  suffix: string;
-  suffixSpan: Span;
-}
-
-/** Splits `ID.suffix` on the last `.`; null when there is no dot to split on. */
-function splitEndpoint(token: Token, flow: Flow, end: "from" | "to"): EndpointSplit | null {
-  const dot = token.text.lastIndexOf(".");
-  if (dot <= 0 || dot === token.text.length - 1) return null;
-  const base = token.text.slice(0, dot);
-  const suffix = token.text.slice(dot + 1);
-  return {
-    flow,
-    end,
-    raw: token.text,
-    rawSpan: token.span,
-    base,
-    baseSpan: { line: token.span.line, col: token.span.col, len: base.length },
-    suffix,
-    suffixSpan: { line: token.span.line, col: token.span.col + dot + 1, len: suffix.length },
-  };
+  /** Every dot-separated part of the text, each with the span it occupies. */
+  parts: { text: string; span: Span }[];
 }
 
 /**
- * Decides, per endpoint written with a dot, whether it names an element, an
- * element plus an attachment side (`APP.right`), or an element plus a role
- * towards the queue at the other end (`CAPTURE.producer`). A declared id always
- * wins — an element may legitimately be called `API.right` — so the suffix
- * reading only applies when the whole text is unknown and the base is known.
+ * Cuts `ID.a.b` into its dot-separated parts; null when there is nothing to
+ * cut — no dot, or a dot at either end, where the text is an id and only an id.
+ * How many of the parts are the id is not decided here: that needs the index.
+ */
+function splitEndpoint(token: Token, flow: Flow, end: "from" | "to"): EndpointSplit | null {
+  const texts = token.text.split(".");
+  if (texts.length < 2 || texts.some((text) => !text)) return null;
+  let col = token.span.col;
+  const parts = texts.map((text) => {
+    const span = { line: token.span.line, col, len: text.length };
+    col += text.length + 1; // the part and the `.` that followed it
+    return { text, span };
+  });
+  return { flow, end, raw: token.text, rawSpan: token.span, parts };
+}
+
+/**
+ * Decides, per endpoint written with a dot, whether it names an element, or an
+ * element followed by attachment suffixes: a side (`APP.right`), a role towards
+ * the queue at the other end (`CAPTURE.producer`), or both, in either order
+ * (`CAPTURE.producer.top`). The two answer different questions — a side is
+ * where the flow leaves *this* element, a role which cap it meets on the queue
+ * — so they accumulate instead of competing. Two of the same kind do compete,
+ * and that is E0227.
+ *
+ * A declared id always wins — an element may legitimately be called `API.right`
+ * — so the suffix reading only applies when the whole text is unknown. The
+ * longest declared prefix is the element, for the same reason: `A.producer`
+ * declared is that element, not `A` plus a role.
  */
 function resolveEndpointSuffixes(
   splits: EndpointSplit[],
   model: Model,
   diagnostics: Diagnostic[],
 ): void {
+  const sideOf = (text: string) => (ATTACH_SIDES as string[]).includes(text);
+  const roleOf = (text: string) => (ATTACH_ROLES as string[]).includes(text);
   for (const split of splits) {
-    const isSide = ATTACH_SIDES.includes(split.suffix as AttachSide);
-    const isRole = ATTACH_ROLES.includes(split.suffix as AttachRole);
+    const last = split.parts[split.parts.length - 1].text;
+    const isSide = sideOf(last);
+    const isRole = roleOf(last);
     if (model.index.has(split.raw)) {
       if (isSide || isRole)
         diagnostics.push({
           code: "W0571",
           severity: "warning",
-          message: `\`${split.raw}\` is a declared element, so \`.${split.suffix}\` is not read as ${
+          message: `\`${split.raw}\` is a declared element, so \`.${last}\` is not read as ${
             isSide ? "an attachment side" : "a role"
           }`,
           span: split.rawSpan,
           note: "a declared id always wins over the `ID.side` reading",
           help: isSide
-            ? `rename the element if you meant to attach the flow to the ${split.suffix} side of \`${split.base}\``
-            : `rename the element if you meant \`${split.base}\` to be the ${split.suffix} of the queue at the other end`,
+            ? `rename the element if you meant to attach the flow to the ${last} side of \`${split.parts
+                .slice(0, -1)
+                .map((part) => part.text)
+                .join(".")}\``
+            : `rename the element if you meant \`${split.parts
+                .slice(0, -1)
+                .map((part) => part.text)
+                .join(".")}\` to be the ${last} of the queue at the other end`,
         });
       continue;
     }
-    if (!model.index.has(split.base)) continue; // unknown either way — E0220 reports it
-    if (!isSide && !isRole)
-      diagnostics.push({
-        code: "E0223",
-        severity: "error",
-        message: `unknown endpoint suffix \`${split.suffix}\``,
-        span: split.suffixSpan,
-        note: "an endpoint names either the side it attaches to, as the diagram is read, or its role towards a queue",
-        help: "use `left`, `right`, `top` or `bottom` — `APP.right -> DB.left` — or `producer` / `consumer`, e.g. `CAPTURE.producer -> EVENTS`",
-      });
-    // The endpoint is rebound to the base either way: with an unknown suffix the
-    // element is still identified, so E0223 reports the real problem alone
-    // instead of trailing an `unknown reference` for the same text.
-    const side = isSide ? { value: split.suffix as AttachSide, span: split.suffixSpan } : undefined;
-    const role = isRole ? { value: split.suffix as AttachRole, span: split.suffixSpan } : undefined;
+    // Longest prefix first, so an id that happens to end in `.producer` is
+    // preferred over reading that word as a role.
+    let cut = 0;
+    for (let take = split.parts.length - 1; take >= 1; take--) {
+      const base = split.parts
+        .slice(0, take)
+        .map((part) => part.text)
+        .join(".");
+      if (model.index.has(base)) {
+        cut = take;
+        break;
+      }
+    }
+    if (!cut) continue; // unknown either way — E0220 reports it
+    let side: { value: AttachSide; span: Span } | undefined;
+    let role: { value: AttachRole; span: Span } | undefined;
+    for (const part of split.parts.slice(cut)) {
+      const partIsSide = sideOf(part.text);
+      const partIsRole = roleOf(part.text);
+      if (!partIsSide && !partIsRole) {
+        diagnostics.push({
+          code: "E0223",
+          severity: "error",
+          message: `unknown endpoint suffix \`${part.text}\``,
+          span: part.span,
+          note: "an endpoint names either the side it attaches to, as the diagram is read, or its role towards a queue",
+          help: "use `left`, `right`, `top` or `bottom` — `APP.right -> DB.left` — or `producer` / `consumer`, e.g. `CAPTURE.producer -> EVENTS`, or one of each: `CAPTURE.producer.top -> EVENTS`",
+        });
+        continue;
+      }
+      // The first of each kind stands, so the reported one is the extra rather
+      // than a silent last-wins the author would have to know about.
+      const held = partIsSide ? side : role;
+      if (held) {
+        diagnostics.push({
+          code: "E0227",
+          severity: "error",
+          message: `this endpoint already names ${partIsSide ? `the \`${held.value}\` side` : `the \`${held.value}\` role`}`,
+          span: part.span,
+          note: `\`${split.raw}\` names two ${partIsSide ? "attachment sides" : "roles"}, and only one can hold`,
+          help: partIsSide
+            ? "keep one side — a side and a *role* do accumulate, e.g. `CAPTURE.producer.top`"
+            : "keep one role — a role and a *side* do accumulate, e.g. `CAPTURE.producer.top`",
+        });
+        continue;
+      }
+      if (partIsSide) side = { value: part.text as AttachSide, span: part.span };
+      else role = { value: part.text as AttachRole, span: part.span };
+    }
+    // The endpoint is rebound to the base whatever the suffixes said: with an
+    // unknown one the element is still identified, so E0223 reports the real
+    // problem alone instead of trailing an `unknown reference` for the same text.
+    const baseParts = split.parts.slice(0, cut);
+    const baseText = baseParts.map((part) => part.text).join(".");
+    const baseSpan = { line: split.rawSpan.line, col: split.rawSpan.col, len: baseText.length };
     if (split.end === "from") {
-      split.flow.from = split.base;
-      split.flow.fromSpan = split.baseSpan;
+      split.flow.from = baseText;
+      split.flow.fromSpan = baseSpan;
       split.flow.fromSide = side;
       split.flow.fromRole = role;
     } else {
-      split.flow.to = split.base;
-      split.flow.toSpan = split.baseSpan;
+      split.flow.to = baseText;
+      split.flow.toSpan = baseSpan;
       split.flow.toSide = side;
       split.flow.toRole = role;
     }

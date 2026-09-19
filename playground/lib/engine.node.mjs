@@ -93129,57 +93129,86 @@ function parseElement(p, sourceToken, parent) {
   (parent ? parent.children : model.elements).push(element);
 }
 function splitEndpoint(token, flow, end) {
-  const dot = token.text.lastIndexOf(".");
-  if (dot <= 0 || dot === token.text.length - 1) return null;
-  const base = token.text.slice(0, dot);
-  const suffix = token.text.slice(dot + 1);
-  return {
-    flow,
-    end,
-    raw: token.text,
-    rawSpan: token.span,
-    base,
-    baseSpan: { line: token.span.line, col: token.span.col, len: base.length },
-    suffix,
-    suffixSpan: { line: token.span.line, col: token.span.col + dot + 1, len: suffix.length }
-  };
+  const texts = token.text.split(".");
+  if (texts.length < 2 || texts.some((text) => !text)) return null;
+  let col = token.span.col;
+  const parts = texts.map((text) => {
+    const span = { line: token.span.line, col, len: text.length };
+    col += text.length + 1;
+    return { text, span };
+  });
+  return { flow, end, raw: token.text, rawSpan: token.span, parts };
 }
 function resolveEndpointSuffixes(splits, model, diagnostics) {
+  const sideOf2 = (text) => ATTACH_SIDES.includes(text);
+  const roleOf = (text) => ATTACH_ROLES.includes(text);
   for (const split of splits) {
-    const isSide = ATTACH_SIDES.includes(split.suffix);
-    const isRole = ATTACH_ROLES.includes(split.suffix);
+    const last = split.parts[split.parts.length - 1].text;
+    const isSide = sideOf2(last);
+    const isRole = roleOf(last);
     if (model.index.has(split.raw)) {
       if (isSide || isRole)
         diagnostics.push({
           code: "W0571",
           severity: "warning",
-          message: `\`${split.raw}\` is a declared element, so \`.${split.suffix}\` is not read as ${isSide ? "an attachment side" : "a role"}`,
+          message: `\`${split.raw}\` is a declared element, so \`.${last}\` is not read as ${isSide ? "an attachment side" : "a role"}`,
           span: split.rawSpan,
           note: "a declared id always wins over the `ID.side` reading",
-          help: isSide ? `rename the element if you meant to attach the flow to the ${split.suffix} side of \`${split.base}\`` : `rename the element if you meant \`${split.base}\` to be the ${split.suffix} of the queue at the other end`
+          help: isSide ? `rename the element if you meant to attach the flow to the ${last} side of \`${split.parts.slice(0, -1).map((part) => part.text).join(".")}\`` : `rename the element if you meant \`${split.parts.slice(0, -1).map((part) => part.text).join(".")}\` to be the ${last} of the queue at the other end`
         });
       continue;
     }
-    if (!model.index.has(split.base)) continue;
-    if (!isSide && !isRole)
-      diagnostics.push({
-        code: "E0223",
-        severity: "error",
-        message: `unknown endpoint suffix \`${split.suffix}\``,
-        span: split.suffixSpan,
-        note: "an endpoint names either the side it attaches to, as the diagram is read, or its role towards a queue",
-        help: "use `left`, `right`, `top` or `bottom` \u2014 `APP.right -> DB.left` \u2014 or `producer` / `consumer`, e.g. `CAPTURE.producer -> EVENTS`"
-      });
-    const side = isSide ? { value: split.suffix, span: split.suffixSpan } : void 0;
-    const role = isRole ? { value: split.suffix, span: split.suffixSpan } : void 0;
+    let cut = 0;
+    for (let take = split.parts.length - 1; take >= 1; take--) {
+      const base = split.parts.slice(0, take).map((part) => part.text).join(".");
+      if (model.index.has(base)) {
+        cut = take;
+        break;
+      }
+    }
+    if (!cut) continue;
+    let side;
+    let role;
+    for (const part of split.parts.slice(cut)) {
+      const partIsSide = sideOf2(part.text);
+      const partIsRole = roleOf(part.text);
+      if (!partIsSide && !partIsRole) {
+        diagnostics.push({
+          code: "E0223",
+          severity: "error",
+          message: `unknown endpoint suffix \`${part.text}\``,
+          span: part.span,
+          note: "an endpoint names either the side it attaches to, as the diagram is read, or its role towards a queue",
+          help: "use `left`, `right`, `top` or `bottom` \u2014 `APP.right -> DB.left` \u2014 or `producer` / `consumer`, e.g. `CAPTURE.producer -> EVENTS`, or one of each: `CAPTURE.producer.top -> EVENTS`"
+        });
+        continue;
+      }
+      const held = partIsSide ? side : role;
+      if (held) {
+        diagnostics.push({
+          code: "E0227",
+          severity: "error",
+          message: `this endpoint already names ${partIsSide ? `the \`${held.value}\` side` : `the \`${held.value}\` role`}`,
+          span: part.span,
+          note: `\`${split.raw}\` names two ${partIsSide ? "attachment sides" : "roles"}, and only one can hold`,
+          help: partIsSide ? "keep one side \u2014 a side and a *role* do accumulate, e.g. `CAPTURE.producer.top`" : "keep one role \u2014 a role and a *side* do accumulate, e.g. `CAPTURE.producer.top`"
+        });
+        continue;
+      }
+      if (partIsSide) side = { value: part.text, span: part.span };
+      else role = { value: part.text, span: part.span };
+    }
+    const baseParts = split.parts.slice(0, cut);
+    const baseText = baseParts.map((part) => part.text).join(".");
+    const baseSpan = { line: split.rawSpan.line, col: split.rawSpan.col, len: baseText.length };
     if (split.end === "from") {
-      split.flow.from = split.base;
-      split.flow.fromSpan = split.baseSpan;
+      split.flow.from = baseText;
+      split.flow.fromSpan = baseSpan;
       split.flow.fromSide = side;
       split.flow.fromRole = role;
     } else {
-      split.flow.to = split.base;
-      split.flow.toSpan = split.baseSpan;
+      split.flow.to = baseText;
+      split.flow.toSpan = baseSpan;
       split.flow.toSide = side;
       split.flow.toRole = role;
     }

@@ -3376,6 +3376,42 @@ test("a role needs a queue at the other end (E0224), and never a side with it (E
   assert.ok(unknown.codes.includes("E0223"));
 });
 
+test("a side and a role accumulate on one endpoint, in either order", async () => {
+  // They answer different questions — the side is where the flow leaves `A`,
+  // the role which cap it meets on the queue — so writing both is not the
+  // contradiction E0225 reports at the *queue* end.
+  const src = (endpoint: string) =>
+    `diagram application "t"\napplication APP "App" {\n  module A "A"\n}\nqueue Q "Notifications"\n${endpoint} -> Q (AMQP)\n`;
+  for (const endpoint of ["A.producer.top", "A.top.producer"]) {
+    const { scene, model } = await build(src(endpoint));
+    const flow = model.flows[0];
+    assert.equal(flow.from, "A");
+    assert.equal(flow.fromSide?.value, "top");
+    assert.equal(flow.fromRole?.value, "producer");
+    assert.deepEqual(check(src(endpoint)).codes, []);
+    assert.equal(sideOfTerminal(scene, flow.id, "A", "start"), "top");
+    assert.equal(sideOfTerminal(scene, flow.id, "Q", "finish"), "left");
+  }
+
+  // Twice the same kind is the contradiction — one of each is not.
+  assert.ok(check(src("A.top.bottom")).codes.includes("E0227"));
+  assert.ok(check(src("A.producer.consumer")).codes.includes("E0227"));
+  // An unknown part is still E0223 on its own, and the element still resolves.
+  const stray = check(src("A.middle.top"));
+  assert.ok(stray.codes.includes("E0223"));
+  assert.ok(!stray.codes.includes("E0220"));
+  assert.equal(stray.model.flows[0].fromSide?.value, "top");
+
+  // A declared id beats the whole reading, however many dots it has.
+  const shadowed = check(
+    'diagram application "t"\napplication APP "App" {\n  module A "A"\n  module A.producer.top "literal"\n}\nqueue Q "Notifications"\nA.producer.top -> Q (AMQP)\n',
+  );
+  assert.ok(shadowed.codes.includes("W0571"));
+  assert.equal(shadowed.model.flows[0].from, "A.producer.top");
+  assert.equal(shadowed.model.flows[0].fromSide, undefined);
+  assert.equal(shadowed.model.flows[0].fromRole, undefined);
+});
+
 test("a derived queue side yields to an author pin, and is never pinned itself", async () => {
   const { scene, model } = await build(
     'diagram application "t"\napplication APP "App" {\n  module P1 "Producer one"\n  module C1 "Consumer one"\n}\nqueue Q "Events"\nP1 -> Q.bottom (MQ, JSON)\nQ -> C1 (MQ, JSON)\n',
