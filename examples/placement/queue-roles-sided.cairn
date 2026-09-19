@@ -1,0 +1,32 @@
+diagram application "Notification bus — roles, with the leaving side pinned"
+
+# `queue-roles.cairn` with one addition: each endpoint names a *side* as well as
+# its role. The two suffixes accumulate and answer different questions — the
+# role says which cap of the queue the flow meets (`producer` left, `consumer`
+# right), the side which edge of its own element it leaves from. Written in
+# either order: `CAPTURE.producer.top` and `VALIDATE.top.producer` both read as
+# a producer leaving the top.
+#
+# The producers here leave upward and the consumers downward, so the two groups
+# separate above and below the bus instead of fanning out of the facing sides.
+# See documentation/DSL_SPEC.md § Positioning controls
+
+application ORDERS "Order platform" { logo: spring
+  module CAPTURE  "Order\ncapture"
+  module VALIDATE "Order\nvalidation"
+}
+
+queue QUEUE_NOTIF "Notification\nqueue" { logo: rabbitmq }
+
+application MAILER "Mail sender" { logo: nodedotjs }
+application PUSHER "Push sender" { logo: go }
+
+CAPTURE.producer.top  -> QUEUE_NOTIF (AMQP)
+VALIDATE.top.producer -> QUEUE_NOTIF (AMQP)
+
+MAILER.consumer.bottom -> QUEUE_NOTIF (AMQP)
+PUSHER.bottom.consumer -> QUEUE_NOTIF (AMQP)
+
+legend {
+  note "`.producer.top` is both: the queue's producer cap, left from the element's top edge"
+}

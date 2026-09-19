@@ -1071,9 +1071,10 @@ replaces — the side word when one is declared, the endpoint's id otherwise, wh
 takes an `ID.side` in its place. So dragging an end in the playground produces
 exactly the source an author would have typed, and the pin is then honored by the
 same passes that have always honored one: nothing in the pipeline learns that an
-editor was involved. An endpoint naming a role gets no box, because a side and a
-role on one endpoint is E0225 — an editor is not given a handle that can only
-write a diagnostic.
+editor was involved. An endpoint naming a role gets no box: a side and a role do
+accumulate there (`CAPTURE.producer.top`), but the span an editor replaces is
+the id or the side word, and neither is what a role endpoint needs appending to
+— that suffix goes on by hand.
 
 What an offset may not do is disappear. Where one lands an element on another,
 or a label on an element, the drawing ships exactly as written and the collision

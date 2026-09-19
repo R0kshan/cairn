@@ -289,7 +289,9 @@ export const explanations: Record<string, string> = {
   W0540:
     'C4 container-diagram practice: inter-process relationships should be labelled with their technology/protocol ("the how, not just the what"). Human/actor interactions are exempt. Add `(API_REST, JSON)` after the label, or ignore if the diagram is intentionally functional-only.',
   E0223:
-    "Unknown endpoint suffix. A flow endpoint may name the side it attaches to — `APP.right -> DB.left` — using the diagram as it is read: `left`, `right`, `top`, `bottom`. It may instead name its role towards a queue at the other end: `producer` or `consumer`. A declared side is a hint, not a guarantee: one the layout cannot reach is dropped with a W0570 warning rather than forced.",
+    "Unknown endpoint suffix. A flow endpoint may name the side it attaches to — `APP.right -> DB.left` — using the diagram as it is read: `left`, `right`, `top`, `bottom`. It may instead name its role towards a queue at the other end: `producer` or `consumer`. It may name one of each, in either order (`CAPTURE.producer.top`). A declared side is a hint, not a guarantee: one the layout cannot reach is dropped with a W0570 warning rather than forced.",
+  E0227:
+    "One endpoint names two attachment sides, or two roles, and only one of each can hold: `A.top.bottom` asks for two sides of the same element, `A.producer.consumer` for two caps of the same queue. The first one written stands. A side and a *role* are a different matter \u2014 they answer different questions, so `CAPTURE.producer.top -> EVENTS` is read as both: the flow leaves CAPTURE's top and meets the queue's producer cap.",
   E0224:
     "An endpoint role says what this element does with the *queue* at the other end of the flow (`CAPTURE.producer -> EVENTS`), so the other end has to be one. Point the flow at a queue, or drop the role — between two ordinary elements the arrow already says everything a role would.",
   E0225:

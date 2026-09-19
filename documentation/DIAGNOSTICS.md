@@ -46,6 +46,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | E0223 | error | Unknown suffix on a flow endpoint — neither a side nor a role (`A.middle -> B`) |
 | E0224 | error | Endpoint role without a queue at the other end of the flow (`A.producer -> B`) |
 | E0225 | error | A flow's queue endpoint carries both a declared side and a role (`A.producer -> Q.right`) |
+| E0227 | error | One flow endpoint names two attachment sides or two roles (`A.top.bottom`) — a side and a role do accumulate (`A.producer.top`) |
 | E0226 | error | `size:` on something not drawn as a container — a kind that is not one, or a container kind holding nothing (both are plain boxes sized by their own label) |
 | E0240 | error | Infrastructure flow without a protocol (required in this view, even when the label is omitted) |
 | W0501 | warning | No actor declared (logical) |

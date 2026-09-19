@@ -66,6 +66,7 @@ logical.cairn  dim:2112x548 n:23 e:19 ov:0  geom:2a15896abf73 color:d962b7ddc1c3
 medium.cairn  dim:2200x584 n:24 e:20 ov:0  geom:fd8a69adb487 color:2ed23f4211da text:8cc2b6297057
 placement/baseline.cairn  dim:972x276 n:14 e:6 ov:0  geom:6ff713429b0a color:4d06ef3531ab text:fa3340e6308b
 placement/flow-label.cairn  dim:972x276 n:14 e:6 ov:0  geom:43bcd811f4e8 color:4d06ef3531ab text:fa3340e6308b
+placement/queue-roles-sided.cairn  dim:574x259 n:6 e:4 ov:0  geom:bdeb6f75286d color:9d6220703546 text:3f36ea1b2fde
 placement/queue-roles.cairn  dim:574x182 n:6 e:4 ov:0  geom:c8b39804c97e color:9d6220703546 text:fb5c17599a54
 placement/queue-sides.cairn  dim:601x182 n:6 e:4 ov:0  geom:36650cfc58dd color:fe599ff7de6b text:46221daea51e
 placement/reading-order.cairn  dim:516x223 n:6 e:4 ov:0  geom:7598928c88cf color:60851c0ca209 text:3d0eff13230c

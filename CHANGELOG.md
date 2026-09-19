@@ -5,6 +5,7 @@ All notable changes to the cairn project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- Flow endpoint suffixes accumulate: `CLIENT.producer.top -> Q (AMQP)` reads both — the role names the queue cap, the side where the flow leaves the element — in either order. Two of the same kind (`A.top.bottom`) is the new **E0227** — see `examples/placement/queue-roles-sided.cairn`
 - **Playground:** a hovered flow label offers a wrap button, which writes that flow's own `flow-label-wrap: <n>` — half the label's width, so most labels come out on two lines; the key works by hand in any editor too
 - `size: <dw>, <dh>` resizes a container — by hand in the DSL, or **in the playground** by dragging any of its eight grips, which writes the key for you — and a **Reset flows** button drops the `segment-offset:` and `label-offset:` hints so the router places the flows again against the containers as they now are
 
