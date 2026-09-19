@@ -67,6 +67,14 @@
   #hover { position:absolute; pointer-events:none; border:1.5px solid var(--accent);
            background:rgba(108,182,255,.07); border-radius:4px; display:none;
            box-shadow:0 0 0 3px rgba(108,182,255,.13); }
+  /* The one edit a drag cannot make to a flow label: reflow it narrower.
+     Sits on the label's top-right corner, and is the only overlay that takes
+     the pointer — everything else here is decoration over the drawing. */
+  #wrap-icon { position:absolute; display:none; width:20px; height:20px; padding:0;
+               font:13px/17px -apple-system,'Segoe UI',Roboto,sans-serif; text-align:center;
+               cursor:pointer; background:var(--panel); color:var(--text);
+               border:1px solid var(--accent); border-radius:4px; }
+  #wrap-icon:hover { background:var(--accent); color:#10151a; }
   /* A run of a route is a line, so its overlay is one too. Both polylines live
      in one overlay <svg> laid over the drawing. */
   #routes { position:absolute; pointer-events:none; overflow:visible; display:none; }
@@ -589,6 +597,13 @@ const overlayShape = (tag, className, attributes = {}) => {
   routes.append(shape);
   return shape;
 };
+// Wrapping a flow label is the one thing no drag can express, so it gets a
+// button — on the label the pointer is over, since that is what it acts on.
+const wrapIcon = document.createElement('button');
+wrapIcon.id = 'wrap-icon';
+wrapIcon.type = 'button';
+wrapIcon.textContent = '\u21b5';
+wrapIcon.title = 'Wrap this flow label, at half its width';
 /** One overlay in each shape per role, so a box, a run and a terminal all light
     up the same way: a rectangle, a line, a dot. */
 const HOVER = {
@@ -602,7 +617,7 @@ const GHOST = {
   dot: overlayShape('circle', 'ghost-dot', { r: 7 }),
 };
 /** Every overlay lives in the preview, which `run()` empties on every render. */
-const addOverlays = () => preview.append(hover, ghost, routes);
+const addOverlays = () => preview.append(hover, ghost, routes, wrapIcon);
 addOverlays();
 
 // Below this, a drag is a click that wobbled — panning, or nothing at all.
@@ -856,16 +871,25 @@ function grabAt(point) {
  * `SVGElement`, so it reads `undefined` there and every coordinate built on it
  * comes out `NaN` — which the browser drops, parking the overlay in the corner.
  */
-function placeOverlay(el, box, dx = 0, dy = 0) {
+function overlayOrigin() {
   const svg = preview.querySelector('svg');
-  if (!svg) return;
+  if (!svg) return null;
   const svgRect = svg.getBoundingClientRect();
   const paneRect = preview.getBoundingClientRect();
-  const originX = svgRect.left - paneRect.left + preview.scrollLeft;
-  const originY = svgRect.top - paneRect.top + preview.scrollTop;
+  return {
+    x: svgRect.left - paneRect.left + preview.scrollLeft,
+    y: svgRect.top - paneRect.top + preview.scrollTop,
+    width: svgRect.width,
+    height: svgRect.height,
+  };
+}
+
+function placeOverlay(el, box, dx = 0, dy = 0) {
+  const origin = overlayOrigin();
+  if (!origin) return;
   el.style.display = 'block';
-  el.style.left   = (originX + (box.x + dx) * zoom) + 'px';
-  el.style.top    = (originY + (box.y + dy) * zoom) + 'px';
+  el.style.left   = (origin.x + (box.x + dx) * zoom) + 'px';
+  el.style.top    = (origin.y + (box.y + dy) * zoom) + 'px';
   el.style.width  = (box.width * zoom) + 'px';
   el.style.height = (box.height * zoom) + 'px';
 }
@@ -878,15 +902,13 @@ function placeOverlay(el, box, dx = 0, dy = 0) {
  * cheaper moment to notice than the one that is about to draw on it.
  */
 function parkRoutes() {
-  const svg = preview.querySelector('svg');
-  if (!svg) return false;
-  const svgRect = svg.getBoundingClientRect();
-  const paneRect = preview.getBoundingClientRect();
+  const origin = overlayOrigin();
+  if (!origin) return false;
   routes.style.display = 'block';
-  routes.style.left   = (svgRect.left - paneRect.left + preview.scrollLeft) + 'px';
-  routes.style.top    = (svgRect.top - paneRect.top + preview.scrollTop) + 'px';
-  routes.style.width  = svgRect.width + 'px';
-  routes.style.height = svgRect.height + 'px';
+  routes.style.left   = origin.x + 'px';
+  routes.style.top    = origin.y + 'px';
+  routes.style.width  = origin.width + 'px';
+  routes.style.height = origin.height + 'px';
   return true;
 }
 
@@ -912,7 +934,24 @@ const hideOverlay = pair => {
   pair.box.style.display = 'none';
   pair.route.style.display = 'none';
   pair.dot.style.display = 'none';
+  if (pair === HOVER) wrapIcon.style.display = 'none';
 };
+
+/** Side of the square button, in screen pixels — it is aimed at with a pointer,
+    so it keeps its size whatever the drawing is scaled to. */
+const WRAP_ICON_PX = 20;
+
+/** Parks the wrap button on the top-right corner of a hovered flow label, and
+    remembers the line it would rewrite. Anything else hovered hides it. */
+function placeWrapIcon(box) {
+  wrapIcon.style.display = 'none';
+  const origin = box.what === 'label' ? overlayOrigin() : null;
+  if (!origin) return;
+  wrapIcon.line = box.line;
+  wrapIcon.style.display = 'block';
+  wrapIcon.style.left = (origin.x + (box.x + box.width) * zoom - WRAP_ICON_PX / 2) + 'px';
+  wrapIcon.style.top  = (origin.y + box.y * zoom - WRAP_ICON_PX / 2) + 'px';
+}
 
 /** Lights up what the pointer holds, in the shape that fits it. */
 function showOverlay(pair, box, dx = 0, dy = 0) {
@@ -920,6 +959,7 @@ function showOverlay(pair, box, dx = 0, dy = 0) {
   if (box.what === 'terminal') placeDot(pair.dot, box.x + dx, box.y + dy);
   else if (box.what === 'segment') placeRoute(pair.route, box, dx, dy);
   else placeOverlay(pair.box, box, dx, dy);
+  if (pair === HOVER) placeWrapIcon(box);
 }
 
 // The writeback below is pure text surgery on the DSL, and `tests/playground.test.ts`
@@ -1099,6 +1139,54 @@ function writeResize(source, box, delta) {
   lines[index] = insertInBlock(line, statement);
   return lines.join('\n');
 }
+
+/**
+ * Wraps one flow's label, by writing the `flow-label-wrap: <n>` the DSL already
+ * has for it — the same contract as a drag: the source says it, the engine
+ * draws it, and the file stays one an author could have typed.
+ *
+ * The width written is half the label. That is a *width*, not a line count:
+ * `wrapText` breaks on word boundaries only, so a one-word label stays on one
+ * line however narrow the half, and three long words come out on three. Two
+ * even lines is the common case, not a promise — the button says "wrap", and
+ * the number is there to be edited by hand afterwards.
+ *
+ * Wraps already on the line are replaced, not added to: the parser applies
+ * entries in source order, so a stale duplicate further along the line would
+ * win over the one just written. The number is derived from the label either
+ * way, so re-clicking settles on the same value.
+ */
+function writeWrap(source, line) {
+  const lines = source.split('\n');
+  const text = lines[line - 1];
+  if (text === undefined) return source;
+  // The flow's label is the first quoted run on its line; everything quoted
+  // after it belongs to an inline property.
+  const label = text.match(/"((?:[^"\\]|\\.)*)"/)?.[1];
+  if (!label) return source;
+  const statement = `flow-label-wrap: ${Math.max(1, Math.ceil(label.length / 2))}`;
+  // Masked, so a flow labelled `"flow-label-wrap: 4"` keeps its label — the
+  // same care `braceIndex` takes, for the same reason. The mask is the same
+  // length as the line, so its indices are the line's.
+  const written = [...maskQuoted(text).matchAll(/\bflow-label-wrap\s*:\s*\d+\s*/g)];
+  if (!written.length) {
+    lines[line - 1] = insertInBlock(text, statement);
+    return lines.join('\n');
+  }
+  // Back to front, so a hit still to be used keeps the index it was found at.
+  // Only the first keeps a value; the rest go, spacing and all.
+  let out = text;
+  for (let i = written.length - 1; i >= 0; i--) {
+    const hit = written[i];
+    // The run of spaces the key was followed by belongs to the line, not to the
+    // key — kept, or replacing the only wrap would reflow the block around it.
+    const keep = i === 0 ? statement + hit[0].slice(hit[0].trimEnd().length) : '';
+    out = out.slice(0, hit.index) + keep + out.slice(hit.index + hit[0].length);
+  }
+  lines[line - 1] = out;
+  return lines.join('\n');
+}
+
 /**
  * Every `segment-offset:` and `label-offset:` taken out of `source`.
  *
@@ -1199,8 +1287,20 @@ function dragDelta(e, box = dragStart.box, fromX = dragStart.clientX, fromY = dr
 const CURSOR_CLASSES = ['draggable', 'slide-x', 'slide-y', 'grab',
   ...GRIP_NAMES.map(grip => `size-${grip}`)];
 
+// The pointer sitting on the button is still on the label as far as this page
+// is concerned — recomputing the hover there would hide the button under it.
+wrapIcon.addEventListener('pointerdown', e => e.stopPropagation());
+wrapIcon.addEventListener('click', () => {
+  const next = writeWrap(editor.value, wrapIcon.line);
+  if (next === editor.value) return;
+  editor.value = next;
+  wrapIcon.style.display = 'none';
+  flash('flow label wrapped');
+  run();
+});
+
 preview.addEventListener('pointermove', e => {
-  if (dragStart || panStart) return;
+  if (dragStart || panStart || e.target === wrapIcon) return;
   const point = diagramPoint(e);
   const held = grabAt(point);
   const box = held?.box ?? null;
