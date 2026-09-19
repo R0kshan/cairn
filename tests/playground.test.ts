@@ -267,12 +267,40 @@ test("the wrap button writes a `flow-label-wrap` the parser reads back", async (
   assert.equal(flowOf(styled).labelWrap, 4);
   assert.equal(flowOf(styled).style?.stroke?.style, "dashed");
 
+  // Duplicates on one line are normalised away: the parser applies entries in
+  // source order, so leaving a later one behind would let it win.
+  const twice = writeWrap(
+    DRAG_SRC.replace('"Request"', '"Request" { flow-label-wrap: 3 flow-label-wrap: 9 }'),
+    8,
+  );
+  assert.equal(parse(twice).diags.filter((d) => d.severity === "error").length, 0);
+  assert.equal(twice.match(/flow-label-wrap/g)?.length, 1);
+  assert.equal(flowOf(twice).labelWrap, 4);
+
   // A label with a brace in it stays a label, and a flow with none is left alone.
   const braced = writeWrap(DRAG_SRC.replace('"Request"', '"step {1} now"'), 8);
   assert.equal(parse(braced).diags.filter((d) => d.severity === "error").length, 0);
   assert.equal(flowOf(braced).label, "step {1} now");
   assert.equal(flowOf(braced).labelWrap, 6);
   assert.equal(writeWrap(DRAG_SRC, 4), DRAG_SRC, "a line with no label is left as it is");
+});
+
+test("the wrap button writes a width, not a line count", async () => {
+  const { writeWrap } = await pageWriteback();
+  const { parse } = await import("../src/parser.ts");
+  const { wrapText } = await import("../src/text-metrics.ts");
+  const wrapOf = (label: string) =>
+    parse(writeWrap(DRAG_SRC.replace('"Request"', `"${label}"`), 8)).model.flows[0].labelWrap!;
+
+  // `wrapText` breaks on word boundaries only, so half a label is two lines
+  // only when the words allow it. One word stays on one line however narrow
+  // the half, and three long words come out on three. The button promises a
+  // width; the author edits the number by hand from there.
+  assert.equal(wrapOf("Request"), 4);
+  assert.equal(wrapText("Request", wrapOf("Request")).split("\n").length, 1);
+  assert.equal(wrapOf("four four four"), 7);
+  assert.equal(wrapText("four four four", wrapOf("four four four")).split("\n").length, 3);
+  assert.equal(wrapText("Send order", wrapOf("Send order")).split("\n").length, 2);
 });
 
 test("dragging a flow end writes the `ID.side` the DSL already has", async () => {

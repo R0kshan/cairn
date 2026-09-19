@@ -67,7 +67,7 @@
   #hover { position:absolute; pointer-events:none; border:1.5px solid var(--accent);
            background:rgba(108,182,255,.07); border-radius:4px; display:none;
            box-shadow:0 0 0 3px rgba(108,182,255,.13); }
-  /* The one edit a drag cannot make to a flow label: reflow it onto two lines.
+  /* The one edit a drag cannot make to a flow label: reflow it narrower.
      Sits on the label's top-right corner, and is the only overlay that takes
      the pointer — everything else here is decoration over the drawing. */
   #wrap-icon { position:absolute; display:none; width:20px; height:20px; padding:0;
@@ -603,7 +603,7 @@ const wrapIcon = document.createElement('button');
 wrapIcon.id = 'wrap-icon';
 wrapIcon.type = 'button';
 wrapIcon.textContent = '\u21b5';
-wrapIcon.title = 'Wrap this flow label onto two lines';
+wrapIcon.title = 'Wrap this flow label, at half its width';
 /** One overlay in each shape per role, so a box, a run and a terminal all light
     up the same way: a rectangle, a line, a dot. */
 const HOVER = {
@@ -1145,14 +1145,16 @@ function writeResize(source, box, delta) {
  * has for it — the same contract as a drag: the source says it, the engine
  * draws it, and the file stays one an author could have typed.
  *
- * The width is half the label, which is what "wrap this" means for a label
- * written on one line: two roughly even lines. `wrapText` never splits a word,
- * so a half narrower than the longest word costs nothing — that word simply
- * takes a line of its own.
+ * The width written is half the label. That is a *width*, not a line count:
+ * `wrapText` breaks on word boundaries only, so a one-word label stays on one
+ * line however narrow the half, and three long words come out on three. Two
+ * even lines is the common case, not a promise — the button says "wrap", and
+ * the number is there to be edited by hand afterwards.
  *
- * A wrap already on the line is replaced rather than added to: a second key
- * would be a duplicate the parser has no reason to forgive, and the number is
- * derived from the label either way, so re-clicking settles on the same value.
+ * Wraps already on the line are replaced, not added to: the parser applies
+ * entries in source order, so a stale duplicate further along the line would
+ * win over the one just written. The number is derived from the label either
+ * way, so re-clicking settles on the same value.
  */
 function writeWrap(source, line) {
   const lines = source.split('\n');
@@ -1165,11 +1167,23 @@ function writeWrap(source, line) {
   const statement = `flow-label-wrap: ${Math.max(1, Math.ceil(label.length / 2))}`;
   // Masked, so a flow labelled `"flow-label-wrap: 4"` keeps its label — the
   // same care `braceIndex` takes, for the same reason. The mask is the same
-  // length as the line, so its index is the line's.
-  const written = maskQuoted(text).match(/\bflow-label-wrap\s*:\s*\d+/);
-  lines[line - 1] = written
-    ? text.slice(0, written.index) + statement + text.slice(written.index + written[0].length)
-    : insertInBlock(text, statement);
+  // length as the line, so its indices are the line's.
+  const written = [...maskQuoted(text).matchAll(/\bflow-label-wrap\s*:\s*\d+\s*/g)];
+  if (!written.length) {
+    lines[line - 1] = insertInBlock(text, statement);
+    return lines.join('\n');
+  }
+  // Back to front, so a hit still to be used keeps the index it was found at.
+  // Only the first keeps a value; the rest go, spacing and all.
+  let out = text;
+  for (let i = written.length - 1; i >= 0; i--) {
+    const hit = written[i];
+    // The run of spaces the key was followed by belongs to the line, not to the
+    // key — kept, or replacing the only wrap would reflow the block around it.
+    const keep = i === 0 ? statement + hit[0].slice(hit[0].trimEnd().length) : '';
+    out = out.slice(0, hit.index) + keep + out.slice(hit.index + hit[0].length);
+  }
+  lines[line - 1] = out;
   return lines.join('\n');
 }
 

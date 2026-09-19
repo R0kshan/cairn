@@ -5,7 +5,7 @@ All notable changes to the cairn project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **Playground:** a hovered flow label offers a wrap button, which writes that flow's own `flow-label-wrap: <n>` — half the label, so it comes out on two lines; the key works by hand in any editor too
+- **Playground:** a hovered flow label offers a wrap button, which writes that flow's own `flow-label-wrap: <n>` — half the label's width, so most labels come out on two lines; the key works by hand in any editor too
 - `size: <dw>, <dh>` resizes a container — by hand in the DSL, or **in the playground** by dragging any of its eight grips, which writes the key for you — and a **Reset flows** button drops the `segment-offset:` and `label-offset:` hints so the router places the flows again against the containers as they now are
 
 ### Fixed
