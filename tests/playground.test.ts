@@ -690,3 +690,53 @@ G -> PORTAL "Signs in"
   // And the child is untouched by its parent's drag.
   assert.equal(boxOf(await compile(widened), "FRONT").width, boxOf(nested, "FRONT").width);
 });
+
+// ---------- flow highlight ----------
+
+/**
+ * A hovered flow label lights up the whole route it names, which means joining
+ * the per-run boxes back into one polyline. Lifted from the page for the same
+ * reason the writeback is: a join that disagreed with the order `boxes` lists
+ * runs in would draw a zigzag over the diagram.
+ */
+test("a flow label's route joins its runs end to end", async () => {
+  const html = readFileSync(join(ROOT, "playground/index.html"), "utf8");
+  const start = html.indexOf("// #region flow-highlight");
+  const end = html.indexOf("// #endregion flow-highlight");
+  assert.ok(start >= 0 && end > start, "the flow-highlight markers are gone from the playground");
+  const { flowPoints } = (await import(
+    `data:text/javascript,${encodeURIComponent(
+      `${html.slice(start, end)}\nexport { flowPoints };`,
+    )}`
+  )) as {
+    flowPoints: (
+      boxes: Record<string, unknown>[],
+      id: string,
+    ) => { x: number; y: number }[] | null;
+  };
+
+  const { compile } = await import("../src/compile.ts");
+  const { boxes } = await compile(`diagram application "t"
+actor-group G "Actors" {
+  actor USER "User"
+}
+application APP "App" {
+  module M1 "Mod one"
+}
+USER -> M1 : "Request"
+`);
+  const all = boxes as unknown as Record<string, unknown>[];
+  const label = all.find((b) => b.what === "label");
+  assert.ok(label, "expected a flow label box");
+  const runs = all.filter((b) => b.what === "segment" && b.id === label.id);
+  assert.ok(runs.length, "expected the labelled flow to have runs");
+
+  const points = flowPoints(all, label.id as string);
+  assert.equal(points?.length, runs.length + 1, "one point per run, plus the start");
+  runs.forEach((run, index) => {
+    const [a, b] = run.points as { x: number; y: number }[];
+    assert.deepEqual(points?.[index], a, `run ${index + 1} starts where the polyline does`);
+    assert.deepEqual(points?.[index + 1], b, `run ${index + 1} ends where the polyline does`);
+  });
+  assert.equal(flowPoints(all, "NOPE"), null, "a flow with no runs draws nothing");
+});

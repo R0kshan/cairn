@@ -611,6 +611,9 @@ const HOVER = {
   route: overlayShape('polyline', 'hover-route'),
   dot: overlayShape('circle', 'hover-dot', { r: 6 }),
 };
+// A flow label names a route, and a dense diagram has plenty of both: lighting
+// the whole route up with the label says which flow is about to be nudged.
+const flowRoute = overlayShape('polyline', 'hover-route');
 const GHOST = {
   box: ghost,
   route: overlayShape('polyline', 'ghost-route'),
@@ -934,6 +937,7 @@ const hideOverlay = pair => {
   pair.box.style.display = 'none';
   pair.route.style.display = 'none';
   pair.dot.style.display = 'none';
+  flowRoute.style.display = 'none';
   if (pair === HOVER) wrapIcon.style.display = 'none';
 };
 
@@ -953,12 +957,29 @@ function placeWrapIcon(box) {
   wrapIcon.style.top  = (origin.y + box.y * zoom - WRAP_ICON_PX / 2) + 'px';
 }
 
+/**
+ * The whole route of flow `id` as one point list — its runs joined end to end,
+ * which is the order `boxes` lists them in, each run starting where the last
+ * ended. Null when the flow has no runs, which is what `placeRoute` wants.
+ */
+// #region flow-highlight
+function flowPoints(boxes, id) {
+  const runs = boxes.filter(b => b.what === 'segment' && b.id === id);
+  return runs.length ? [runs[0].points[0], ...runs.map(r => r.points[1])] : null;
+}
+// #endregion flow-highlight
+
 /** Lights up what the pointer holds, in the shape that fits it. */
 function showOverlay(pair, box, dx = 0, dy = 0) {
   hideOverlay(pair);
   if (box.what === 'terminal') placeDot(pair.dot, box.x + dx, box.y + dy);
   else if (box.what === 'segment') placeRoute(pair.route, box, dx, dy);
   else placeOverlay(pair.box, box, dx, dy);
+  // The route stays where it is while the label moves: a `label-offset:` shifts
+  // the label alone, so a route dragged along with it would promise a re-route
+  // the engine is not going to make.
+  const route = box.what === 'label' ? flowPoints(lastBoxes ?? [], box.id) : null;
+  if (route) placeRoute(flowRoute, { points: route });
   if (pair === HOVER) placeWrapIcon(box);
 }
 
