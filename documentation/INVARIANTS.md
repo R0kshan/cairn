@@ -50,7 +50,7 @@ you what a violation looks like when you cause one.
 
 | # | Invariant | Enforced in | Gate |
 |---:|---|---|---|
-| 1 | Zero label overlaps | `svg-render` label settling | zero |
+| 1 | Zero label overlaps | `label-settle`, run by `svg-render` | zero |
 | 2 | Byte-deterministic output | arithmetic discipline in the output path | reference (`corpus.digest`, snapshots) |
 | 3 | Readability gated by the sweep | every geometry pass | zero + ratchet + `readability.baseline` |
 | 4 | Flow labels required and attributable (§4a–§4j) | `validator`, `label-anchor`, `edge-tidy`, `svg-render` | zero (`labelAdrift`) + ratchet |
@@ -65,7 +65,7 @@ you what a violation looks like when you cause one.
 | 13 | `cairn new` never overwrites | `cli.ts` (`wx` = `O_CREAT\|O_EXCL`) | test |
 | 14 | Snapshot & corpus gates | `tests/corpus.ts` | reference |
 | 15 | Flow matrix export | `flow-matrix` | reference + test |
-| 16 | Flow positioning is blind to the DSL | `edge-tidy`, `route-detour`, `label-anchor`, `compact`, `readability` | structural + test |
+| 16 | Flow positioning is blind to the DSL | `edge-tidy`, `route-detour`, `label-anchor`, `compact`, `readability`, `label-settle` | structural + test |
 | 17 | Author positioning hints honored, not negotiated | `parser`, `scene-layout`, `edge-tidy`, `label-anchor` | reference + test |
 | 18 | Nothing is drawn outside the canvas | `compact` (`fitCanvas`), called by `scene-layout` and `svg-render` | test |
 
@@ -671,9 +671,10 @@ Enforced structurally and by test:
 
 - `edge-tidy`, `label-anchor`, `compact` and `readability` import nothing but
   `scene-layout` types and `geometry` — they *cannot* see a kind.
-- `route-detour` is the one pass importing `Model`, and only for style and
-  metrics: `model.style.font.size`, `model.style.compact`, and `model.flows`
-  for numbering. Never a kind.
+- Two passes import `Model`, both only for style and metrics, never a kind:
+  `route-detour` for `model.style.font.size`, `model.style.compact` and
+  `model.flows` for numbering, and `label-settle` for the requested `above` /
+  `below` label position, which it applies as a plain offset.
 - `tests/dsl-agnostic.test.ts` fails if any kind or view name from the `views`
   registry appears in those sources, so the check covers kinds added later.
 

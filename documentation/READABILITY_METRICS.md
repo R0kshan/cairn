@@ -293,8 +293,8 @@ descend in parallel lanes — the lanes stay inverted and the crossing stays whe
 it was, which is how `small/tall` kept one 200px below the patient it belonged
 to. The moved lane carries one guard the plain seat swap does not: it may not
 come to rest along another flow's words. A lane is a long run carried across the
-drawing and `readability.ts` has no straddle predicate to weigh one with; without
-it `logical-archi` gained four straddles. Charging the plain swap for it as well
+drawing and the router's own profile does not weigh one with a straddle
+predicate; without this guard `logical-archi` gained four straddles. Charging the plain swap for it as well
 refuses swaps that have been clearing crossings all along.
 
 ### `fanTangle` · ratchet
@@ -521,7 +521,7 @@ run. So the pass records `repairedFrom` and `svg-render` audits afterwards,
 reverting the whole repair set if labels came out worse. All-or-nothing on
 purpose — making it per-edge produced `coincident` runs, a must-be-zero breach.
 
-Tier 1 is modelled by a single key, `unlabelled:<edge>` — "does this route leave
+Tier 1 is modelled by `unlabelled:<edge>` — "does this route leave
 each of its labels a seat?" — and that one key has to mean exactly what
 `label-anchor` will do later, or the router refuses routes the settler would have
 handled. It measures the span a label needs **along** the run: its width on a
@@ -540,12 +540,34 @@ the overhang may not come down on another flow's words or lines (`SEAT_CLEAR`),
 which the width test used to prevent by accident — without it eight labels landed
 on a foreign run, `labelPierced`, a must-be-zero.
 
-A second thing it cannot see: `readability.ts` carries **no straddle predicate at
-all** (`labelStraddled` lives in `sweep.ts` and `label-anchor.ts` only), so a
-corridor laid along another flow's words scores as free. Adding the predicate to
-the shared profile is not the fix — every pass that weighs with it changes at
-once, and measured it traded 57 straddles for 87 crossings across 71 drawings.
-It is answered where the corridor is *made* instead: `laneBeyond`'s `clear` lane
+Seatability is all a *router* can ask, because it is weighing routes no label has
+been anchored against yet. A pass weighing whole laid-out **scenes** is in a
+different position: `anchorFlowLabels` has already run, so it can ask where each
+label actually is. `inspect` takes an optional set of the flows the author asked
+to caption `above`/`below` — ids only, built in `scene-layout`, so §16 holds — and
+with it adds `offLine:<edge>`, the §4d defect itself, for any on-line label whose
+text centre lands more than `ON_LINE_SLACK` from its own run. The predicate,
+`labelOffRunSq`, is the one the sweep's `labelOffLine` gate calls (§3a): judging
+layouts on seatability alone let the selector pick scenes the gate then charged,
+and sharing the predicate took the corpus from 59 `labelOffLine` to 42.
+The same scan charges `straddled:<edge>` for an on-line label with a foreign run
+parallel under its words, through the `straddledBy` the sweep's own
+`labelStraddled` gate calls.
+
+Both are measured on *settled* labels. `layoutProfileOf` runs
+`createLabelSettler` over a snapshot of the candidate before profiling it and
+rolls the snapshot back afterwards: profiled where `anchorFlowLabels` parked
+them, the corpus shows 11 straddles against the 20 the finished drawings have,
+because settling is what walks a label onto a corridor. That is why the settler
+is its own module rather than part of `svg-render`.
+
+Straddles are seen the same way, and only there. `straddledBy` lives in
+`readability.ts` and the sweep calls it, but `scanLabelPlacement` is the only
+scan that consults it, so it reaches the pass choosing a layout and no other.
+Putting it in the *shared* profile is still not the fix — every pass that weighs
+with it changes at once, and measured that traded 57 straddles for 87 crossings
+across 71 drawings. For the router the corridor is answered where it is *made*
+instead: `laneBeyond`'s `clear` lane
 treats a foreign label lying along the corridor as an obstacle, and `channelU`
 drops a candidate that straddles one — but only while another candidate
 survives, since labels are re-anchored *after* this pass and a straddle dodged

@@ -39,6 +39,7 @@ import {
 } from "./edge-tidy.ts";
 import { inspect, type Profile } from "./readability.ts";
 import { anchorFlowLabels } from "./label-anchor.ts";
+import { createLabelSettler } from "./label-settle.ts";
 import { subtreeIds, indexElementsById } from "./element-tree.ts";
 
 /**
@@ -577,6 +578,42 @@ function longDetourCount(scene: Scene, model: Model): number {
  * constrained pass was buying attachAway fixes with container hugs and labels
  * parked on title bands it could not see.
  */
+/**
+ * Flows the author asked to caption above or below their run. Those labels are
+ * off their line by construction, so §4d — and `readability`'s `offLine` scan —
+ * exempt them.
+ */
+const offLineFlows = (model: Model): Set<string> =>
+  new Set(
+    model.flows
+      .filter((flow) => (flow.style?.label ?? model.style.flowLabel) !== "on-line")
+      .map((flow) => flow.id),
+  );
+
+/**
+ * What a whole-layout choice is judged on: the ladder plus the gate's blind
+ * spots. Unlike a router weighing candidate routes, this sees anchored labels,
+ * so `offLine` lets the ladder charge the §4d defect itself.
+ */
+const layoutProfileOf = (candidate: Scene, model: Model, offLine: Set<string>): Profile => {
+  const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
+  // Labels are judged where they will actually land, not where `anchorFlowLabels`
+  // parked them: settling is what puts a label on a corridor, and profiled before
+  // it the corpus shows 11 straddles against the 20 the finished drawings have.
+  // On a snapshot because `settleLabelPositions` is not idempotent and the winner
+  // is settled again by the renderer.
+  const { capture, restore } = sceneSnapshots(candidate);
+  const undo = capture();
+  createLabelSettler({ scene: candidate, model }).settleLabelPositions();
+  const profile = inspect(candidate, titleBoxesOf(candidate, model), offLine).local(
+    everyEdge,
+    new Map(),
+  );
+  restore(undo);
+  for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
+  return profile;
+};
+
 function selectionExtras(scene: Scene, model: Model): Profile {
   const extra: Profile = new Map();
   const edgeEnds = new Map(model.flows.map((flow) => [flow.id, new Set([flow.from, flow.to])]));
@@ -671,14 +708,16 @@ function relayoutVerdict(before: Profile, after: Profile): number {
  * ties on every tier and draws the same diagram in two thirds of the area is the
  * one to keep, so ties count as admissible here and only a gain refuses.
  */
+/** Defects per ladder tier — what every whole-layout verdict is compared on. */
+function tierTotals(profile: Profile): number[] {
+  const totals = [0, 0, 0, 0, 0];
+  for (const { tier, count } of tallyProfile(profile).values()) totals[tier] += count;
+  return totals;
+}
+
 export function noLadderRegression(before: Profile, after: Profile): boolean {
-  const perTier = (profile: Profile) => {
-    const totals = [0, 0, 0, 0, 0];
-    for (const { tier, count } of tallyProfile(profile).values()) totals[tier] += count;
-    return totals;
-  };
-  const was = perTier(before);
-  const now = perTier(after);
+  const was = tierTotals(before);
+  const now = tierTotals(after);
   // Tier *totals*, not per-defect identity: two independent layouts share almost
   // no defect addresses, so a key-by-key rule refuses even a candidate that
   // halves the crossings.
@@ -689,7 +728,242 @@ export function noLadderRegression(before: Profile, after: Profile): boolean {
   // candidate may not weave one flow to buy it. Measured, too: allowing the
   // trade sent the corpus `turnHeavy` and `nearParallel` ratchets through their
   // ceilings while the area it bought was a few percent.
-  return now.every((count, tier) => count <= was[tier]);
+  if (!now.every((count, tier) => count <= was[tier])) return false;
+  return true;
+}
+
+/**
+ * No label left on a run it was not already on.
+ *
+ * `noLadderRegression` compares tier *totals*, which cannot see a defect move:
+ * `large-fr/wide` swapped `straddled:F04` for `straddled:F08` at an unchanged
+ * tier-1 total and came out with one straddle more than the base. Keying on
+ * identity is sound for these two where it is not for a crossing — both are
+ * addressed by edge id, which survives a relayout, whereas `cross:A~B@x,y`
+ * carries coordinates two independent layouts never share.
+ *
+ * Deliberately not every tier-1 key. `unlabelled` is a *prediction* that a route
+ * leaves its label a seat, with no counterpart in the sweep; holding it to
+ * identity too refuses an ordering `medium` improves on, for a defect that never
+ * reaches the drawing. These two are the ones the gate charges (§3a).
+ *
+ * And only the ordering search is held to it — `denserLayout` was calibrated
+ * against the totals rule and tightening it there costs `medium` a label seat.
+ */
+const noLabelMoved = (before: Profile, after: Profile): boolean => {
+  // A candidate that strictly lowers the tier is improving, not churning, and is
+  // allowed to land the remaining defect somewhere new: `medium`'s ordering does
+  // exactly that and the key it gains here never reaches the drawing. It is the
+  // swap at an unchanged total that this refuses.
+  if (tierTotals(after)[1] < tierTotals(before)[1]) return true;
+  for (const key of after.keys())
+    if ((key.startsWith("offLine:") || key.startsWith("straddled:")) && !before.has(key))
+      return false;
+  return true;
+};
+
+/**
+ * How many candidate layouts one drawing may spend on child ordering.
+ *
+ * ponytail: a flat budget, spent on the biggest containers first. A container of
+ * n children has n! orders and a drawing has several containers, so the true
+ * search is unbounded; this buys the wins that are there without letting a dense
+ * drawing cost a hundred layouts.
+ *
+ * 8, measured — not a round number. At 12 the corpus gains three more improved
+ * drawings and loses `application-medium-page`: its BILL_ISSUE -> PPF came back
+ * with a 24px step although the departure sits well inside PPF's top face, which
+ * no ratchet charges (`jog<=20` stops below it, `AWAY_TOL` calls it aligned) and
+ * `edge-tidy` cannot collapse afterwards (`JOG_SNAP`). Charging that band in the
+ * profile was tried and is much worse — it distorts every comparison and cost 28
+ * drawings. Deeper orders are simply likelier to find one of these unpriced
+ * defects, so the budget is where the search stops before it starts trading
+ * against things the ladder cannot see. Spend it smarter — biggest-defect-first
+ * rather than biggest-container-first — before raising it.
+ */
+const ORDER_BUDGET = 8;
+
+/** Orders of `count` items, in a deterministic sequence, capped at `limit`. */
+function orderingsOf(count: number, limit: number): number[][] {
+  const out: number[][] = [];
+  const walk = (chosen: number[], left: number[]): void => {
+    if (out.length >= limit) return;
+    if (!left.length) {
+      out.push(chosen);
+      return;
+    }
+    for (const [index, value] of left.entries())
+      walk([...chosen, value], left.filter((_, other) => other !== index));
+  };
+  walk([], [...Array(count).keys()]);
+  return out;
+}
+
+/**
+ * The containers a defect actually passes through.
+ *
+ * Re-ordering a container that reads perfectly cannot improve it and costs a
+ * layout per ordering tried, so the search is pointed at the containers the
+ * ladder is already complaining about. `infrastructure-medium` scores zero on
+ * every tier and now spends nothing at all; searching it wholesale cost twelve
+ * seconds to confirm it was already right.
+ *
+ * A defect names the flows it involves, so the flows are read straight out of
+ * the profile keys and followed to the containers holding either end — and up
+ * the parent chain, since a crossing inside a layer is equally the system's
+ * problem. Tier 3 and 4 are left out: they are the polish tiers, and chasing a
+ * jog is not worth a re-layout.
+ */
+function defectBearingContainers(model: Model, profile: Profile): Set<string> {
+  const flows = new Map(model.flows.map((flow) => [flow.id, flow]));
+  const hot = new Set<string>();
+  for (const [key, tier] of profile) {
+    if (tier > 2) continue;
+    for (const id of key.match(/F\d+/g) ?? []) {
+      const flow = flows.get(id);
+      if (!flow) continue;
+      for (const end of [flow.from, flow.to]) {
+        let at = model.index.get(end)?.parent;
+        while (at) {
+          hot.add(at.id);
+          at = at.parent;
+        }
+      }
+    }
+  }
+  return hot;
+}
+
+/**
+ * Containers whose children this pass may re-order, biggest first.
+ *
+ * A container where any child declares `order:` is left alone entirely: the
+ * author sequenced that group and re-ordering the rest of it would fight them
+ * for the same axis (§17). Biggest first because that is where the orders — and
+ * so the wins — are; ties keep document order so the search is deterministic.
+ */
+function orderableContainers(elements: Element[]): Element[] {
+  const out: Element[] = [];
+  const walk = (els: Element[]): void => {
+    for (const element of els) {
+      if (element.children.length >= 2 && !element.children.some((child) => child.order))
+        out.push(element);
+      walk(element.children);
+    }
+  };
+  walk(elements);
+  return out.map((element, index) => ({ element, index })).sort(
+    (a, b) => b.element.children.length - a.element.children.length || a.index - b.index,
+  ).map((entry) => entry.element);
+}
+
+/** Laying a candidate out and judging it — shared by both refinement passes. */
+interface ElkPass {
+  layout: (spec: GraphOptions | undefined) => Promise<unknown>;
+  toScene: (laidOut: LaidOutNode) => Scene;
+  profile: (scene: Scene) => Profile;
+}
+
+/**
+ * The two refinements on the layout elk drew unaided: how each container's
+ * children are ordered, then whether a denser arrangement of the whole reads as
+ * well. Ordering first — it changes what "dense" is measuring.
+ *
+ * Both are gated the same way and neither may make a drawing read worse, so the
+ * pair returns the base untouched wherever there is nothing to find.
+ */
+async function refineLayout(
+  base: Scene,
+  model: Model,
+  aspectTarget: boolean,
+  elkPass: ElkPass,
+): Promise<{ scene: Scene; options?: GraphOptions }> {
+  const ordered = await bestChildOrder(base, model, elkPass);
+  if (aspectTarget || nodeCoverage(ordered) >= DENSE_ENOUGH) return { scene: ordered };
+  const denser = await denserLayout(ordered, elkPass);
+  return denser ? { scene: denser.scene, options: denser.options } : { scene: ordered };
+}
+
+/**
+ * The child ordering that reads best, or the scene as it came if none beats it.
+ *
+ * elk lays a container's children out from their edges alone; the one thing that
+ * reaches them is the position cairn already emits for `order:`. Left unset the
+ * arrangement is elk's own, and it is often not the readable one —
+ * `application-large`'s order-management zone came out with 16 crossings where an
+ * ordering of the same three blocks has 6, in a drawing 8% narrower.
+ *
+ * Searched, not derived. The obvious heuristic is a barycentre — order each child
+ * by where the things it talks to sit — and it was measured first: worse on every
+ * drawing tried, and it put three crossings into `infrastructure-medium`, which
+ * has none. Adjacent swaps miss the wins too: the order-management win is a
+ * rotation, and both of its adjacent swaps lose.
+ *
+ * One container at a time, biggest first, each search starting from whatever the
+ * previous one settled on: the orders interact, so this is a greedy pass rather
+ * than a joint optimum. Every candidate is a whole layout, so `ORDER_BUDGET`
+ * caps how many a drawing may spend.
+ *
+ * The gate is `noLadderRegression` plus a strict gain — the same rule
+ * `denserLayout` uses, so an ordering is adopted only when the drawing reads
+ * better or reads the same in less space, and never when it reads worse.
+ */
+async function bestChildOrder(base: Scene, model: Model, elkPass: ElkPass): Promise<Scene> {
+  const deps = elkPass;
+  let winner = base;
+  let winnerProfile = deps.profile(base);
+  const hot = defectBearingContainers(model, winnerProfile);
+  const containers = orderableContainers(model.elements).filter((c) => hot.has(c.id));
+  if (!containers.length) return base;
+  let spent = 0;
+
+  for (const container of containers) {
+    const kids = container.children;
+    const orders = orderingsOf(kids.length, Math.max(0, ORDER_BUDGET - spent));
+    if (orders.length < 2) break;
+    // Graphs are built synchronously, so every candidate's order can be stamped
+    // on, read into a graph and taken off again before anything is awaited —
+    // the model is shared, and one `await` between stamping and building would
+    // let the next candidate overwrite it.
+    const started = orders.map((order) => {
+      order.forEach((seat, index) => {
+        kids[index].order = { value: seat + 1, span: kids[index].idSpan };
+      });
+      const pending = deps.layout(undefined);
+      for (const kid of kids) kid.order = undefined;
+      return pending;
+    });
+    spent += started.length;
+    const settled = await Promise.allSettled(started);
+    let bestIndex = -1;
+    for (const [index, result] of settled.entries()) {
+      if (result.status !== "fulfilled") continue;
+      const candidate = deps.toScene(result.value as LaidOutNode);
+      const profile = deps.profile(candidate);
+      if (!noLadderRegression(winnerProfile, profile)) continue;
+      if (!noLabelMoved(winnerProfile, profile)) continue;
+      const held = tierTotals(winnerProfile);
+      const readsBetter = tierTotals(profile).some((count, tier) => count < held[tier]);
+      const area = candidate.width * candidate.height;
+      const heldArea = winner.width * winner.height;
+      // An ordering may not buy a cleaner drawing with a bigger one. Without
+      // this an ordering that cleared a crossing was taken at +14% area, which is
+      // the opposite of what the pass is for.
+      if (area > heldArea) continue;
+      if (!readsBetter && area >= heldArea) continue;
+      winner = candidate;
+      winnerProfile = profile;
+      bestIndex = index;
+    }
+    // Keep the winning order on the model so the next container searches against
+    // the drawing this one settled, and so the final graph carries it.
+    if (bestIndex >= 0)
+      orders[bestIndex].forEach((seat, index) => {
+        kids[index].order = { value: seat + 1, span: kids[index].idSpan };
+      });
+    if (spent >= ORDER_BUDGET) break;
+  }
+  return winner;
 }
 
 /**
@@ -747,11 +1021,7 @@ export function nodeCoverage(scene: Scene): number {
  */
 async function denserLayout(
   base: Scene,
-  elkPass: {
-    layout: (spec: GraphOptions) => Promise<unknown>;
-    toScene: (laidOut: LaidOutNode) => Scene;
-    profile: (scene: Scene) => Profile;
-  },
+  elkPass: ElkPass,
 ): Promise<{ scene: Scene; options: GraphOptions } | null> {
   /**
    * Two knobs, both measured against the whole corpus: fewer layers, or a
@@ -3885,26 +4155,19 @@ async function chooseLayout(model: Model, view: View): Promise<Scene> {
   }
   const layoutMs = Date.now() - startTime;
   let base = sceneFromResult(result, layoutMs, winnerOptions);
-  /** What a whole-layout choice is judged on: the ladder plus the gate's blind spots. */
-  const layoutProfile = (candidate: Scene): Profile => {
-    const everyEdge = new Set(candidate.edges.map((edge) => edge.id));
-    const profile = inspect(candidate, titleBoxesOf(candidate, model)).local(everyEdge, new Map());
-    for (const [key, tier] of selectionExtras(candidate, model)) profile.set(key, tier);
-    return profile;
-  };
-  if (!aspectTarget && nodeCoverage(base) < DENSE_ENOUGH) {
-    const denser = await denserLayout(base, {
-      layout: (spec) => elk.layout(makeGraph(winnerDirection, spec)) as Promise<unknown>,
-      // Its specs carry the hub ports (none of them sets `hubPorts: false`), and
-      // a candidate elk refuses is dropped rather than retried without them.
-      toScene: (laidOut) => sceneFromResult(laidOut, Date.now() - startTime),
-      profile: layoutProfile,
-    });
-    if (denser) {
-      base = denser.scene;
-      winnerOptions = denser.options;
-    }
-  }
+  const offLine = offLineFlows(model);
+  const layoutProfile = (candidate: Scene) => layoutProfileOf(candidate, model, offLine);
+  // Two refinements on the layout elk drew unaided — how a container's children
+  // are ordered, and whether a denser arrangement of the whole reads as well.
+  const refined = await refineLayout(base, model, !!aspectTarget, {
+    // Its specs carry the hub ports (none of them sets `hubPorts: false`), and
+    // a candidate elk refuses is dropped rather than retried without them.
+    layout: (spec) => elk.layout(makeGraph(winnerDirection, spec)) as Promise<unknown>,
+    toScene: (laidOut) => sceneFromResult(laidOut, Date.now() - startTime),
+    profile: layoutProfile,
+  });
+  base = refined.scene;
+  winnerOptions = refined.options ?? winnerOptions;
   const baseProfile = layoutProfile(base);
   // The playground bundles this module for the browser, where `process` does
   // not exist; reach it through `globalThis` so the switch is simply absent

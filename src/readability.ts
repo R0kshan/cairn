@@ -10,12 +10,15 @@
  * A change is judged on the whole scene and may only trade downwards.
  *
  * Tier 1 is only partly modelled: labels are settled after every geometry pass,
- * so the profile carries one Tier 1 key, `unlabelled:<edge>`. The rest belongs
- * to `label-anchor` and `settleLabelPositions` (§4a, §4d).
+ * so a pass judging *proposed routes* gets one Tier 1 key, `unlabelled:<edge>` —
+ * does the route leave a seat at all. A pass judging whole laid-out scenes has
+ * anchored labels and also gets `offLine:<edge>`, the §4d defect itself. The
+ * rest belongs to `label-anchor` and `settleLabelPositions` (§4a, §4d).
  */
 
-import type { Scene, SceneEdge, SceneNode } from "./scene-layout.ts";
-import type { Point, TitleBox } from "./geometry.ts";
+import type { Scene, SceneEdge, SceneNode, SceneLabel } from "./scene-layout.ts";
+import type { Box, Point, TitleBox } from "./geometry.ts";
+import { boxToSegmentSq } from "./geometry.ts";
 
 /** Defect identity → tier. Identity, so a defect that *moves* is visible. */
 export type Profile = Map<string, number>;
@@ -45,6 +48,80 @@ const ARROW_ROOM = 14;
 const HUG_CLEAR = 8;
 /** How much a run must travel alongside a border before hugging it is visible. */
 const HUG_RUN = 12;
+/**
+ * How far a label's text centre may sit from its own run and still count as
+ * *on* it (§4d). Not 0: seats are computed from segment midpoints in floating
+ * point and a terminal run can shift by a fraction after seating, so a
+ * sub-pixel gap is arithmetic, not placement. 2 is well under the ~3px offset
+ * elk uses when it parks a label beside a line, so this still catches the
+ * "caption floating next to the flow" case it exists to forbid.
+ */
+export const ON_LINE_SLACK = 2;
+
+/**
+ * Which run of `pts` a label is seated on, and how far off it the text sits.
+ *
+ * Measured from the *text centre*, not the box centre: the rows sit at the top
+ * and a protocol line and chips fill the rest, so centring the box puts the run
+ * between text and chip — neither on the line nor under it.
+ *
+ * `vertical` is the axis of the nearest run, which is what "parallel" means to
+ * `labelStraddled`; it is only meaningful once `offSq` is inside
+ * `ON_LINE_SLACK²`, since a label off its line has no host run (§4d, §4j).
+ *
+ * Shared with the sweep's `labelOffLine` and `labelStraddled` gates, so the pass
+ * that chooses a layout and the gate that judges it measure the same thing (§3a).
+ */
+export function labelHostRun(label: SceneLabel, pts: Point[]): { offSq: number; vertical: boolean } {
+  const dot = {
+    x: label.x + label.width / 2,
+    y: label.y + (label.textH > 0 ? label.textH / 2 : label.height / 2),
+    width: 0,
+    height: 0,
+  };
+  let offSq = Number.POSITIVE_INFINITY;
+  let vertical = false;
+  for (let index = 0; index + 1 < pts.length; index++) {
+    const d = boxToSegmentSq(dot, pts[index], pts[index + 1]);
+    if (d >= offSq) continue;
+    offSq = d;
+    vertical = orthOf(pts[index], pts[index + 1]);
+  }
+  return { offSq, vertical };
+}
+
+/**
+ * The first foreign run travelling **parallel to the label's own** and passing
+ * inside its box, or `""` (§4j).
+ *
+ * Strictly inside, not merely touching: a run grazing the box edge is what the
+ * text halo exists for, and it does not read as a second line under the words.
+ * It is the line between the first and last letter that does.
+ */
+export function straddledBy(
+  label: Box,
+  vertical: boolean,
+  ownId: string,
+  edges: { id: string; pts: Point[] }[],
+): string {
+  const lo = vertical ? label.x : label.y;
+  const hi = lo + (vertical ? label.width : label.height);
+  for (const other of edges) {
+    if (other.id === ownId || other.pts.length < 2) continue;
+    for (let index = 0; index + 1 < other.pts.length; index++) {
+      const a = other.pts[index];
+      const b = other.pts[index + 1];
+      const runVertical = Math.abs(a.x - b.x) < 0.5;
+      const runHorizontal = Math.abs(a.y - b.y) < 0.5;
+      if (runVertical === runHorizontal) continue; // zero-length or diagonal
+      if (runVertical !== vertical) continue;
+      if (boxToSegmentSq(label, a, b) > 0) continue;
+      const at = vertical ? a.x : a.y;
+      if (at > lo + 1 && at < hi - 1) return other.id;
+    }
+  }
+  return "";
+}
 
 const orthOf = (a: Point, b: Point) => Math.abs(a.x - b.x) < 0.5;
 
@@ -199,6 +276,11 @@ interface Inspector {
   holds: Map<string, Set<string>>;
   /** Leaves and title bands together — what a label seat may not overlap. */
   blockers: Boxy[];
+  /**
+   * Flows the author asked to label off the line, or undefined when the caller
+   * has no settled labels to judge. Absent, `scanLabelPlacement` stays silent.
+   */
+  offLine?: Set<string>;
   runsFor: (edge: SceneEdge, pts: Point[], overridden: boolean) => Run[];
   endsFor: (edge: SceneEdge, pts: Point[], overridden: boolean) => Ends;
   boundsFor: (edge: SceneEdge, pts: Point[], overridden: boolean) => Bounds;
@@ -377,6 +459,36 @@ function scanLabelSeats(ctx: Inspector, subj: Subject, profile: Profile): void {
   }
 }
 
+/**
+ * Where the label actually *is*, for the callers that have one to look at.
+ *
+ * `scanLabelSeats` asks whether a route leaves room for a seat; this asks
+ * whether the label took one. A router choosing between candidate routes can
+ * only have the first question answered, but a pass choosing between whole
+ * laid-out scenes has anchored labels in hand — and judging those on
+ * seatability alone let it pick layouts the gate then charged `labelOffLine`.
+ *
+ * Runs only for edges whose route is the one the label was anchored against, and
+ * only for labels the author left on the line: an `above`/`below` label is off
+ * its run by construction and §4d does not apply to it.
+ */
+function scanLabelPlacement(ctx: Inspector, subj: Subject, profile: Profile): void {
+  if (!ctx.offLine || ctx.offLine.has(subj.edge.id)) return;
+  for (const label of subj.edge.labels) {
+    if (!label.width || !label.height) continue;
+    const { offSq, vertical } = labelHostRun(label, subj.pts);
+    if (offSq > ON_LINE_SLACK * ON_LINE_SLACK) {
+      profile.set(`offLine:${subj.edge.id}`, 1);
+      continue;
+    }
+    // Only for a label on its own run: §4j is about a *second* line appearing
+    // under the words, and a label that has already left its line is charged
+    // `offLine` above rather than twice for one displacement.
+    if (straddledBy(label, vertical, subj.edge.id, ctx.scene.edges))
+      profile.set(`straddled:${subj.edge.id}`, 1);
+  }
+}
+
 // ---- Tier 2: the flow stays attributable, but reads wrong --------------------
 
 /**
@@ -552,7 +664,7 @@ function scanPairs(ctx: Inspector, subj: Subject, query: Query): void {
  * these edges, if their routes were these?" — cheaply enough to sit inside a
  * candidate loop.
  */
-export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
+export function inspect(scene: Scene, titleBoxes: TitleBox[] = [], offLine?: Set<string>) {
   const leaves = scene.nodes.filter((node) => !node.container);
   const boxes = scene.nodes.filter((node) => node.container);
   const holds = containment(scene, boxes);
@@ -576,6 +688,7 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
     boxes,
     holds,
     blockers: [...leaves, ...titleBoxes],
+    offLine,
     runsFor: runs.get,
     endsFor: ends.get,
     boundsFor: bounds.get,
@@ -605,6 +718,9 @@ export function inspect(scene: Scene, titleBoxes: TitleBox[] = []) {
 
       scanDestroyed(ctx, subj, profile);
       scanLabelSeats(ctx, subj, profile);
+      // A label is anchored against the route it is drawn on; an override is a
+      // route it has never seen, so its position says nothing about this one.
+      if (!overrides.has(edge.id)) scanLabelPlacement(ctx, subj, profile);
       scanArrowRoom(subj, profile);
       scanBorderHugs(ctx, subj, profile);
       scanEyeTravel(subj, profile);

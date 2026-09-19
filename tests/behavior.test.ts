@@ -256,11 +256,23 @@ test("an `offset:` moves what it names and leaves the rest of the drawing alone"
     const before = seat(plain.scene);
     for (const node of nudged.scene.nodes) {
       if (node.id === id) continue;
-      assert.equal(
-        `${node.x - shift.x},${node.y - shift.y}`,
-        before.get(node.id),
-        `nudging ${id} moved ${node.id}`,
-      );
+      const here = `${node.x - shift.x},${node.y - shift.y}`;
+      // A container is a frame, not a seat. `airOutContainers` runs dead last and
+      // grows a border by up to `BORDER_AIR` when an arrowhead crossing it is
+      // cramped — and re-aiming the nudged element's own flows, which this test
+      // allows below, can cramp one. So a frame may breathe outwards by that much;
+      // a layout re-derived around the hint moves it further, or inwards.
+      if (node.container) {
+        const was = before.get(node.id)!.split(",").map(Number);
+        const dx = was[0] - (node.x - shift.x);
+        const dy = was[1] - (node.y - shift.y);
+        assert.ok(
+          dx >= 0 && dx <= 3 && dy >= 0 && dy <= 3,
+          `nudging ${id} moved ${node.id}: ${before.get(node.id)} -> ${here}`,
+        );
+        continue;
+      }
+      assert.equal(here, before.get(node.id), `nudging ${id} moved ${node.id}`);
     }
 
     // Flows touching the nudged element are carried with it and may be re-aimed;

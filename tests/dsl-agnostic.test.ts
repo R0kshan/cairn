@@ -26,6 +26,7 @@ const POSITIONING_PASSES = [
   "label-anchor.ts",
   "compact.ts",
   "readability.ts",
+  "label-settle.ts",
 ];
 
 /** Every element kind and view name the DSL knows about. */
@@ -54,14 +55,19 @@ for (const pass of POSITIONING_PASSES) {
   });
 }
 
-test("only route-detour reaches for the Model, and only for style (INVARIANTS §16)", () => {
+test("only the style readers reach for the Model (INVARIANTS §16)", () => {
   // Match the specifier, not the whole statement: the `from "…"` clause stays
   // on one line in both the single-line and the multi-line import form, so
   // reformatting a grown import cannot silently switch this check off.
+  //
+  // Two passes, both for style and neither for a kind: `route-detour` reads the
+  // font size, `compact` and flow numbering; `label-settle` reads the requested
+  // `above`/`below` label position, which is a style the author sets and the
+  // settler applies as a plain offset. The kind test above still covers both.
   const importsModel = POSITIONING_PASSES.filter((pass) =>
     codeOf(pass).includes('from "./models/ast.ts"'),
   );
-  assert.deepEqual(importsModel, ["route-detour.ts"]);
+  assert.deepEqual(importsModel, ["route-detour.ts", "label-settle.ts"]);
 });
 
 test("no positioning pass imports the views registry (INVARIANTS §16)", () => {

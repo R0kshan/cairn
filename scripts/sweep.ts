@@ -31,6 +31,8 @@ import { layout } from "../src/scene-layout.ts";
 import { render } from "../src/svg-render.ts";
 import { views } from "../src/views.ts";
 import { titleBoxesOf } from "../src/route-detour.ts";
+import { labelHostRun, straddledBy, ON_LINE_SLACK } from "../src/readability.ts";
+import { boxToPolylineSq } from "../src/geometry.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const DISPOSITIONS = ["wide", "slide", "page", "tall"] as const;
@@ -245,99 +247,6 @@ const LABEL_ATTACHED = 6;
  * the box is still legible — it is the line crossing the words that isn't.
  */
 const PIERCE_SLACK = 1;
-
-/**
- * How far a label's text centre may sit from its own run and still count as
- * *on* it (invariant §4d). Not 0: seats are computed from segment midpoints in
- * floating point and a terminal run can shift by a fraction after seating, so a
- * sub-pixel gap is arithmetic, not placement. 2 is well under the ~3px offset
- * elk uses when it parks a label beside a line, so this still catches the
- * "caption floating next to the flow" case it exists to forbid.
- */
-const ON_LINE_SLACK = 2;
-
-/**
- * Which of a flow's own segments the label is seated on — the one its *text
- * centre* lies on, which is what §4d makes the label's line. `null` when the
- * centre is on no segment, i.e. the label is off its line and §4j does not
- * apply to it.
- *
- * Returned as an axis rather than an index: everything downstream only needs
- * to know which direction "parallel" means here.
- */
-const hostRunOf = (l: Box & { textH: number }, pts: Point[]): boolean | null => {
-  const dot = {
-    x: l.x + l.width / 2,
-    y: l.y + (l.textH > 0 ? l.textH / 2 : l.height / 2),
-    width: 0,
-    height: 0,
-  };
-  let best = Number.POSITIVE_INFINITY;
-  let vertical: boolean | null = null;
-  for (let i = 0; i + 1 < pts.length; i++) {
-    const d = boxToSegmentSq(dot, pts[i], pts[i + 1]);
-    if (d >= best) continue;
-    best = d;
-    vertical = Math.abs(pts[i].x - pts[i + 1].x) < 0.5;
-  }
-  return best <= ON_LINE_SLACK * ON_LINE_SLACK ? vertical : null;
-};
-
-/**
- * The first foreign run travelling **parallel to the label's own** and passing
- * inside its box, or `""`.
- *
- * Strictly inside, not within `PIERCE_SLACK`: a run grazing the box edge is
- * what the text halo exists for, and it does not read as a second line under
- * the words. It is the line between the first and last letter that does.
- */
-const straddledBy = (
-  l: Box,
-  vertical: boolean,
-  ownId: string,
-  edges: { id: string; pts: Point[] }[],
-): string => {
-  const lo = vertical ? l.x : l.y;
-  const hi = lo + (vertical ? l.width : l.height);
-  for (const o of edges) {
-    if (o.id === ownId || o.pts.length < 2) continue;
-    for (let i = 0; i + 1 < o.pts.length; i++) {
-      const a = o.pts[i];
-      const b = o.pts[i + 1];
-      const runVertical = Math.abs(a.x - b.x) < 0.5;
-      const runHorizontal = Math.abs(a.y - b.y) < 0.5;
-      if (runVertical === runHorizontal) continue; // zero-length or diagonal
-      if (runVertical !== vertical) continue;
-      if (boxToSegmentSq(l, a, b) > 0) continue;
-      const at = vertical ? a.x : a.y;
-      if (at > lo + 1 && at < hi - 1) return o.id;
-    }
-  }
-  return "";
-};
-
-/**
- * Squared distance from a label box to one segment. Every segment is
- * orthogonal by the time this runs (`diagonal` is a must-be-zero invariant),
- * so the per-axis gaps are independent and this is exact — no sampling, which
- * is what keeps a labels × edges scan affordable over the whole corpus. On a
- * diagonal it degrades to the distance to the segment's bounding box, an
- * underestimate: it can miss a defect, never invent one.
- */
-const boxToSegmentSq = (box: Box, a: Point, b: Point): number => {
-  const dx = Math.max(0, box.x - Math.max(a.x, b.x), Math.min(a.x, b.x) - (box.x + box.width));
-  const dy = Math.max(0, box.y - Math.max(a.y, b.y), Math.min(a.y, b.y) - (box.y + box.height));
-  return dx * dx + dy * dy;
-};
-
-const boxToPolylineSq = (box: Box, pts: Point[]): number => {
-  let best = Number.POSITIVE_INFINITY;
-  for (let i = 0; i + 1 < pts.length; i++) {
-    const d = boxToSegmentSq(box, pts[i], pts[i + 1]);
-    if (d < best) best = d;
-  }
-  return best;
-};
 
 /**
  * How far from a node a crossing still counts as part of its fan. Inside this
@@ -693,14 +602,7 @@ async function sweepShard(shardIndex: number, shardCount: number): Promise<void>
           // centre is not the text centre whenever a protocol line or a chip
           // hangs below, and centring the box is what used to leave the run
           // running under the words instead of through them.
-          const textCentre = {
-            x: l.x + l.width / 2,
-            y: l.y + (l.textH > 0 ? l.textH / 2 : l.height / 2),
-          };
-          const onRun = boxToPolylineSq(
-            { x: textCentre.x, y: textCentre.y, width: 0, height: 0 },
-            e.pts,
-          );
+          const { offSq: onRun, vertical: hostVertical } = labelHostRun(l, e.pts);
           const onLine = onRun <= ON_LINE_SLACK * ON_LINE_SLACK;
           // Charged only where the author asked for a label *on* the run. An
           // `above`/`below` position (style block or inline `{ label: … }`) lifts
@@ -740,8 +642,7 @@ async function sweepShard(shardIndex: number, shardCount: number): Promise<void>
           // Charged only for on-line labels because an off-line one is already
           // `labelPierced` above; this is the population that rule skips.
           if (onLine) {
-            const host = hostRunOf(l, e.pts);
-            const straddler = host === null ? "" : straddledBy(l, host, e.id, scene.edges);
+            const straddler = straddledBy(l, hostVertical, e.id, scene.edges);
             if (straddler)
               note("labelStraddled", `${e.id} "${text}" run ${straddler} parallel under its words`);
           }
