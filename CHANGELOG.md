@@ -2,7 +2,7 @@
 
 All notable changes to the cairn project will be documented in this file.
 
-## [Unreleased]
+## [v1.0.0-RC18](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC18) - 2026-09-20
 
 ### Added
 - Flow endpoint suffixes accumulate: `CLIENT.producer.top -> Q (AMQP)` reads both — the role names the queue cap, the side where the flow leaves the element — in either order. Two of the same kind (`A.top.bottom`) is the new **E0227** — see `examples/placement/queue-roles-sided.cairn`
