@@ -93970,7 +93970,7 @@ var logicalView = {
   ],
   isolatedWarn: {
     code: "W0510",
-    kinds: ["block"],
+    kinds: ["block", "security"],
     message: "isolated element: no incoming or outgoing flow"
   },
   defaults: {

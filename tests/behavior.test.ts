@@ -2802,14 +2802,14 @@ test("security is a logical-view kind, unknown in the other two", () => {
       `${view} must not accept \`security\``,
     );
 
-  // Left out of `isolatedWarn` on purpose: a capability can apply to a record
-  // rather than to an exchange, so standing alone is not a defect.
+  // In `isolatedWarn` like `block`: a capability no flow reaches never says what
+  // it protects.
   const alone = check(
     'diagram logical "t"\nactor-group G "g" { actor A "a" }\n' +
       'system S "s" { layer L "l" { block B "b" security ANON "anonymisation" } }\n' +
       'A -> B "asks"\n',
   );
-  assert.ok(!alone.codes.includes("W0510"), "an unconnected security function is not warned");
+  assert.ok(alone.codes.includes("W0510"), "an unconnected security function is warned");
 });
 
 test("queue is a valid kind in application & infrastructure, unknown in logical", () => {
