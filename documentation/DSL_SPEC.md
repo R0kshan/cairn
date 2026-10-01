@@ -126,8 +126,9 @@ moves between them. No technology, no deployment.
 anonymisation, encryption of a held record — the controls a business feels. It
 is deliberately not the `auth` kind the other two views carry: `auth` is a piece
 of middleware, this view holds no technology, and anonymisation is not
-authentication. Unlike `block` it may sit anywhere, and an unconnected one is
-not warned — a capability can apply to a record rather than to an exchange.
+authentication. Unlike `block` it may sit anywhere, but like `block` it must be
+reached by a flow — an unconnected one warns (**W0510**): a capability nothing
+exchanges with says nothing about what it protects.
 
 **The flow label is mandatory** (**E0203**) — this view exists to name the
 exchange. No technical tail.
@@ -144,8 +145,8 @@ COM_CTR -> OBS "Alerts and notifications" [BO_MSG]
 They render as a chip under the flow label, plus a registry band under the
 canvas.
 
-A file with no `actor` warns (**W0501**); a `block` with no flow warns
-(**W0510**).
+A file with no `actor` warns (**W0501**); a `block` or `security` with no flow
+warns (**W0510**).
 
 ```cairn
 diagram logical "Appointment booking — logical view"
