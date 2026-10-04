@@ -931,6 +931,12 @@ interface GraphOptions {
    */
   hubPorts?: boolean;
   /**
+   * `false` also leaves out the author's `ID.side` ports — the very last retry,
+   * after elk crashed on every ported graph (`withHubPortFallback`). A side
+   * dropped this way still surfaces as W0570 (`attachSideDiagnostics`).
+   */
+  declaredPorts?: boolean;
+  /**
    * Overrides elk's post-compaction strategy. Only the hub-port retry sets it:
    * the scanline failure elk raises on a hub-ported graph comes from that phase,
    * and a differently-compacted layout that honors the ports beats one that
@@ -1414,11 +1420,13 @@ function buildElkGraph(
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, model.style.flowLabelWrap)),
   };
-  applyDeclaredPorts(
-    graph,
-    model,
-    options?.hubPorts === false ? new Map() : hubFlowSides(model, view),
-  );
+  if (options?.declaredPorts !== false) {
+    applyDeclaredPorts(
+      graph,
+      model,
+      options?.hubPorts === false ? new Map() : hubFlowSides(model, view),
+    );
+  }
   return graph;
 }
 
@@ -3483,14 +3491,19 @@ async function withHubPortFallback(
   // Loosen post-compaction first — locking its constraints, then skipping it —
   // and drop the ports only if neither lays out: a slightly roomier drawing that
   // attaches where a queue reads beats a tighter one that does not.
-  const rungs: GraphOptions[] =
-    options?.hubPorts === false
+  // Last of all the author's own sides go too: elk also crashes on some
+  // hierarchical DOWN graphs with a declared port (a null layer in crossing
+  // minimisation), and W0570 tells the author the side was dropped.
+  const rungs: GraphOptions[] = [
+    ...(options?.hubPorts === false
       ? []
       : [
-          { ...options, postCompaction: "EDGE_LENGTH_CONSTRAINT_LOCKING" },
-          { ...options, postCompaction: "NONE" },
+          { ...options, postCompaction: "EDGE_LENGTH_CONSTRAINT_LOCKING" as const },
+          { ...options, postCompaction: "NONE" as const },
           { ...options, hubPorts: false },
-        ];
+        ]),
+    ...(options?.declaredPorts === false ? [] : [{ ...options, hubPorts: false, declaredPorts: false }]),
+  ];
   try {
     return { result: await run(options), options };
   } catch (error) {

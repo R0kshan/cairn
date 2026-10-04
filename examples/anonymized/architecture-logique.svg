@@ -1,0 +1,250 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1764 1411.100000000001" font-family="Helvetica,Arial,sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#1f77b4"/></marker>
+<marker id="arr1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#d62728"/></marker>
+<marker id="arr2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#2e8b57"/></marker>
+<marker id="arr3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#9467bd"/></marker>
+<marker id="arr4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#8c564b"/></marker>
+<marker id="arr5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#c1288a"/></marker>
+<marker id="arr6" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#0e8ea6"/></marker>
+<marker id="arr7" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#9a9a1e"/></marker>
+<marker id="arr8" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#e07b00"/></marker>
+<marker id="arr9" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#5a5a5a"/></marker>
+<marker id="arr10" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+<path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
+<rect width="1764" height="1411.100000000001" fill="#ffffff"/>
+<rect x="40.5" y="400" width="134" height="186" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="50.5" y="418" font-size="14.5" font-weight="bold" fill="#17202c">Acteurs internes</text>
+<rect x="40.5" y="175" width="120" height="214" rx="6" fill="#e9f2fb" stroke="#1f77b4" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="50.5" y="193" font-size="14.5" font-weight="bold" fill="#17202c">Partenaires</text>
+<text x="50.5" y="207" font-size="14.5" font-weight="bold" fill="#17202c">externes — avec</text>
+<text x="50.5" y="221" font-size="14.5" font-weight="bold" fill="#17202c">accès au système</text>
+<rect x="470.5" y="211" width="866" height="392.84000000000003" rx="6" fill="#fbf4e9" stroke="#c17d1c" stroke-width="1.2"/>
+<text x="480.5" y="229" font-size="14.5" font-weight="bold" fill="#17202c">Plateforme</text>
+<text x="480.5" y="243" font-size="14.5" font-weight="bold" fill="#17202c">(cible)</text>
+<rect x="1539.5" y="22" width="160" height="636" rx="6" fill="#f4eff8" stroke="#8659a6" stroke-width="1.2" stroke-dasharray="5 3"/>
+<text x="1549.5" y="40" font-size="14.5" font-weight="bold" fill="#17202c">Systèmes</text>
+<text x="1549.5" y="54" font-size="14.5" font-weight="bold" fill="#17202c">externes</text>
+<circle cx="106" cy="437" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 95 459 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="106" y="471" font-size="12.5" text-anchor="middle" fill="#20364c">Opérateur</text>
+<text x="106" y="482" font-size="12.5" text-anchor="middle" fill="#20364c">interne</text>
+<circle cx="106" cy="522" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 95 544 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="106" y="556" font-size="12.5" text-anchor="middle" fill="#20364c">Administrateur</text>
+<text x="106" y="567" font-size="12.5" text-anchor="middle" fill="#20364c">fonctionnel</text>
+<circle cx="99" cy="325" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 88 347 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="99" y="359" font-size="12.5" text-anchor="middle" fill="#20364c">Partenaire</text>
+<text x="99" y="370" font-size="12.5" text-anchor="middle" fill="#20364c">distributeur</text>
+<circle cx="102.5" cy="240" r="7" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<path d="M 91.5 262 q 11 -19 22 0" fill="none" stroke="#1f5e91" stroke-width="1.5"/>
+<text x="102.5" y="274" font-size="12.5" text-anchor="middle" fill="#20364c">Prestataire</text>
+<text x="102.5" y="285" font-size="12.5" text-anchor="middle" fill="#20364c">agréé</text>
+<rect x="499.5" y="525.6133333333333" width="144" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="571.5" y="548.6133333333333" font-size="14" text-anchor="middle" fill="#17202c">Flux partenaires</text>
+<rect x="865.5" y="378.28" width="108" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="919.5" y="399.28" font-size="14" text-anchor="middle" fill="#17202c">Gestion des</text>
+<text x="919.5" y="415.28" font-size="14" text-anchor="middle" fill="#17202c">dossiers</text>
+<rect x="1210.5" y="508.55999999999995" width="108" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1264.5" y="529.56" font-size="14" text-anchor="middle" fill="#17202c">Contrôle</text>
+<text x="1264.5" y="545.56" font-size="14" text-anchor="middle" fill="#17202c">d'anomalies</text>
+<rect x="508.5" y="252" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="562.5" y="275" font-size="14" text-anchor="middle" fill="#17202c">Agrément</text>
+<rect x="1210.5" y="379.28" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1264.5" y="402.28" font-size="14" text-anchor="middle" fill="#17202c">Stockage</text>
+<rect x="1204.5" y="437.28" width="120" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1264.5" y="458.28" font-size="14" text-anchor="middle" fill="#17202c">Génération de</text>
+<text x="1264.5" y="474.28" font-size="14" text-anchor="middle" fill="#17202c">documents</text>
+<rect x="517.5" y="467.61333333333334" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="571.5" y="490.61333333333334" font-size="14" text-anchor="middle" fill="#17202c">Catalogue</text>
+<rect x="1210.5" y="282" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1264.5" y="305" font-size="14" text-anchor="middle" fill="#17202c">Traces</text>
+<rect x="499.5" y="397.61333333333334" width="108" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="553.5" y="420.61333333333334" font-size="14" text-anchor="middle" fill="#17202c">Paramétrage</text>
+<rect x="1551.5" y="261" width="108" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1605.5" y="282" font-size="14" text-anchor="middle" fill="#17202c">Outil</text>
+<text x="1605.5" y="298" font-size="14" text-anchor="middle" fill="#17202c">décisionnel</text>
+<rect x="1551.5" y="133" width="136" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1619.5" y="156" font-size="14" text-anchor="middle" fill="#17202c">Géolocalisation</text>
+<rect x="1565.5" y="331" width="108" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1619.5" y="352" font-size="14" text-anchor="middle" fill="#17202c">SI Donneur</text>
+<text x="1619.5" y="368" font-size="14" text-anchor="middle" fill="#17202c">d'ordre</text>
+<rect x="1567.5" y="529" width="120" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1627.5" y="550" font-size="14" text-anchor="middle" fill="#17202c">Logiciels des</text>
+<text x="1627.5" y="566" font-size="14" text-anchor="middle" fill="#17202c">prestataires</text>
+<rect x="1574.5" y="471" width="113" height="38" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1631" y="494" font-size="14" text-anchor="middle" fill="#17202c">Fournisseurs</text>
+<rect x="1551.5" y="191" width="108" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1605.5" y="212" font-size="14" text-anchor="middle" fill="#17202c">Organisme</text>
+<text x="1605.5" y="228" font-size="14" text-anchor="middle" fill="#17202c">partenaire</text>
+<rect x="1574.5" y="63" width="113" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1631" y="84" font-size="14" text-anchor="middle" fill="#17202c">Référentiels</text>
+<text x="1631" y="100" font-size="14" text-anchor="middle" fill="#17202c">externes</text>
+<rect x="1551.5" y="599" width="136" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1619.5" y="620" font-size="14" text-anchor="middle" fill="#17202c">Service d'envoi</text>
+<text x="1619.5" y="636" font-size="14" text-anchor="middle" fill="#17202c">de courriers</text>
+<rect x="1551.5" y="401" width="108" height="50" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
+<text x="1605.5" y="422" font-size="14" text-anchor="middle" fill="#17202c">Stockage de</text>
+<text x="1605.5" y="438" font-size="14" text-anchor="middle" fill="#17202c">fichiers</text>
+<path d="M 1687.5 554 L 1709.5 554 L 1709.5 668 L 924.5 668 A 5 5 0 0 0 914.5 668 L 664.5 668 A 5 5 0 0 0 654.5 668 L 571.5 668 L 571.5 563.6133333333333" fill="none" stroke="#1f77b4" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1673.5 356 L 1723.5 356 L 1723.5 739.28 L 919.5 739.28 L 919.5 428.28" fill="none" stroke="#d62728" stroke-width="1.3" marker-end="url(#arr1)"/>
+<path d="M 148.5 347.5 L 211.5 347.5 A 5 5 0 0 1 221.5 347.5 L 557.5 347.5 A 5 5 0 0 1 567.5 347.5 L 901.5 347.5 L 901.5 378.28" fill="none" stroke="#2e8b57" stroke-width="1.3" marker-end="url(#arr2)"/>
+<path d="M 67 441.5 L 4 441.5 L 4 165 L 937.5 165 L 937.5 378.28" fill="none" stroke="#9467bd" stroke-width="1.3" marker-end="url(#arr3)"/>
+<path d="M 148.5 251.66666666666669 L 425.5 252 L 425.5 282 L 508.5 282" fill="none" stroke="#8c564b" stroke-width="1.3" marker-end="url(#arr4)"/>
+<path d="M 148.5 273.3333333333333 L 216.5 273 L 216.5 373 L 403.5 373 L 403.5 446 L 825.5 445.61333333333334 L 825.5 386.28 L 865.5 386.28" fill="none" stroke="#8c564b" stroke-width="1.3" marker-end="url(#arr4)"/>
+<path d="M 562.5 291 L 562.5 356.28 L 896.5 356.28 A 5 5 0 0 1 906.5 356.28 L 932.5 356.28 A 5 5 0 0 1 942.5 356.28 L 978.5 356.28 A 5 5 0 0 1 988.5 356.28 L 1565.5 356" fill="none" stroke="#c1288a" stroke-width="1.3" marker-end="url(#arr5)"/>
+<path d="M 616.5 271 L 932.5 271 A 5 5 0 0 1 942.5 271 L 1090.5 271 A 5 5 0 0 1 1100.5 271 L 1348.5 271 L 1348.5 214 L 1551.5 214" fill="none" stroke="#c1288a" stroke-width="1.3" marker-end="url(#arr5)"/>
+<path d="M 1574.5 88 L 1084 88 L 1084 258 L 942.5 258 A 5 5 0 0 0 932.5 258 L 616.5 258" fill="none" stroke="#0e8ea6" stroke-width="1.3" marker-end="url(#arr6)"/>
+<path d="M 1551.5 152 L 1095.5 152 L 1095.5 284 L 942.5 284 A 5 5 0 0 0 932.5 284 L 616.5 284" fill="none" stroke="#9a9a1e" stroke-width="1.3" marker-end="url(#arr7)"/>
+<path d="M 1324.5 462.28 L 1359.5 462 L 1359.5 624 L 1551.5 624" fill="none" stroke="#e07b00" stroke-width="1.3" marker-end="url(#arr8)"/>
+<path d="M 1318.5 533.56 L 1348.5 534 L 1348.5 614 L 924.5 614 A 5 5 0 0 0 914.5 614 L 664.5 614 A 5 5 0 0 0 654.5 614 L 576.5 614 A 5 5 0 0 0 566.5 614 L 25.5 614 L 25.5 460 L 67 460" fill="none" stroke="#5a5a5a" stroke-width="1.3" marker-end="url(#arr9)"/>
+<path d="M 1687.5 490 L 1718.5 490 A 5 5 0 0 1 1728.5 490 L 1753.5 490 L 1753.5 818.8399999999999 L 659.5 818.8399999999999 L 659.5 498.61333333333334 L 625.5 498.61333333333334" fill="none" stroke="#1f77b4" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 1318.5 398.28 L 1359.5 398 L 1359.5 427 L 1551.5 427" fill="none" stroke="#d62728" stroke-width="1.3" marker-end="url(#arr1)"/>
+<path d="M 1318.5 314 L 1342.5 314 L 1342.5 286 L 1551.5 286" fill="none" stroke="#2e8b57" stroke-width="1.3" marker-end="url(#arr2)"/>
+<path d="M 162.5 518 L 216 518 L 216 429.61333333333334 L 398.5 429.61333333333334 A 5 5 0 0 1 408.5 429.61333333333334 L 499.5 429.61333333333334" fill="none" stroke="#9467bd" stroke-width="1.3" marker-end="url(#arr3)"/>
+<path d="M 643.5 544.6133333333333 L 654.5 544.6133333333333 A 5 5 0 0 1 664.5 544.6133333333333 L 901.5 544.6133333333333 L 901.5 428.28" fill="none" stroke="#8c564b" stroke-width="1.3" marker-end="url(#arr4)"/>
+<path d="M 625.5 486.61333333333334 L 845.5 486.61333333333334 L 845.5 410.28 L 865.5 410.28" fill="none" stroke="#c1288a" stroke-width="1.3" marker-end="url(#arr5)"/>
+<path d="M 973.5 398.28 L 1210.5 398.28" fill="none" stroke="#0e8ea6" stroke-width="1.3" marker-end="url(#arr6)"/>
+<path d="M 973.5 410.28 L 993.5 410.28 L 993.5 462.28 L 1204.5 462.28" fill="none" stroke="#0e8ea6" stroke-width="1.3" marker-end="url(#arr6)"/>
+<path d="M 973.5 386.28 L 983.5 386.28 L 983.5 301 L 1210.5 301" fill="none" stroke="#0e8ea6" stroke-width="1.3" marker-end="url(#arr6)"/>
+<path d="M 937.5 428.28 L 937.5 515.56 L 1210.5 515.56" fill="none" stroke="#0e8ea6" stroke-width="1.3" marker-end="url(#arr6)"/>
+<text x="1140.5" y="664" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande de dossier ou</text>
+<text x="1140.5" y="680" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">facturation</text>
+<rect x="1078.5" y="688.28" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1108.5" y="700.5799999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<rect x="1142.5" y="688.28" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1172.5" y="700.5799999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Facture</text>
+<text x="1321.5" y="735.28" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission des clients</text>
+<text x="1321.5" y="751.28" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">éligibles</text>
+<rect x="1217.5" y="759.56" width="144" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1289.5" y="771.8599999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Éligibilité du client</text>
+<rect x="1365.5" y="759.56" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1395.5" y="771.8599999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="525" y="335.5" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Saisie, consultation et</text>
+<text x="525" y="351.5" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">mise à jour manuelle d'un</text>
+<text x="525" y="367.5" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">dossier</text>
+<rect x="495" y="375.78" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="525" y="388.08" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="470.75" y="169" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Consultation d'un dossier</text>
+<rect x="440.75" y="177.28" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="470.75" y="189.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="331" y="247.83333333333334" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande d'agrément auprès</text>
+<text x="331" y="263.83333333333337" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'un réseau</text>
+<rect x="298" y="272.11333333333334" width="66" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="331" y="284.41333333333336" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Agrément</text>
+<text x="310" y="369" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande de dossier via</text>
+<text x="310" y="385" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">portail</text>
+<rect x="277" y="393.28" width="66" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="310" y="405.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Agrément</text>
+<text x="1489.5" y="352.14" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Envoi du fichier des</text>
+<text x="1489.5" y="368.14" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">prestataires agréés</text>
+<rect x="1429.5" y="376.41999999999996" width="120" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1489.5" y="388.71999999999997" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Prestataire agréé</text>
+<text x="1450" y="202" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Envoi du fichier des</text>
+<text x="1450" y="218" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">prestataires agréés à</text>
+<text x="1450" y="234" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">l'organisme</text>
+<rect x="1390" y="242.27999999999997" width="120" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1450" y="254.57999999999998" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Prestataire agréé</text>
+<text x="1329.25" y="92" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission coordonnées</text>
+<rect x="1287.25" y="100.28" width="84" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1329.25" y="112.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Coordonnées</text>
+<text x="1323.5" y="156" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission coordonnées</text>
+<rect x="1281.5" y="164.28" width="84" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1323.5" y="176.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Coordonnées</text>
+<text x="1455.5" y="628" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Envoi de courrier</text>
+<rect x="1422.5" y="636.28" width="66" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1455.5" y="648.5799999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Courrier</text>
+<text x="112.5" y="610" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Alerte d'anomalie</text>
+<text x="112.5" y="626" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">restituée à l'opérateur</text>
+<rect x="52.5" y="634.28" width="120" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="112.5" y="646.5799999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Alerte d'anomalie</text>
+<text x="1206.5" y="806.8399999999999" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission des</text>
+<text x="1206.5" y="822.8399999999999" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">références et offre</text>
+<text x="1206.5" y="838.8399999999999" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">produits</text>
+<rect x="1146.5" y="847.1199999999999" width="120" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1206.5" y="859.4199999999998" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Article référencé</text>
+<text x="1455.5" y="431" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Dépôt</text>
+<rect x="1389.5" y="439.28" width="132" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1455.5" y="451.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Pièce justificative</text>
+<text x="1447" y="290" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Envoi de décision</text>
+<rect x="1414" y="298.28" width="66" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1447" y="310.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Décision</text>
+<text x="216" y="477.8066666666667" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Paramétrage</text>
+<rect x="180" y="486.0866666666667" width="72" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="216" y="498.3866666666667" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramètre</text>
+<text x="772.5" y="548.6133333333333" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission flux</text>
+<rect x="742.5" y="556.8933333333333" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="772.5" y="569.1933333333333" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="752.5" y="490.61333333333334" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission article</text>
+<rect x="692.5" y="498.8933333333333" width="120" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="752.5" y="511.1933333333333" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Article référencé</text>
+<text x="1092" y="402.28" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande de dépôt en GED</text>
+<rect x="1026" y="410.55999999999995" width="132" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1092" y="422.85999999999996" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Pièce justificative</text>
+<text x="1099" y="458.28" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande d'édition d'un</text>
+<text x="1099" y="474.28" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">courrier</text>
+<rect x="1069" y="482.55999999999995" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1099" y="494.85999999999996" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<text x="1097" y="305" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Commande de produit</text>
+<rect x="1064" y="313.28" width="66" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1097" y="325.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Matériel</text>
+<text x="1074" y="525.56" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Transmission au contrôle</text>
+<text x="1074" y="541.56" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">d'anomalies</text>
+<rect x="1044" y="549.8399999999999" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="1074" y="562.1399999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<line x1="20" y1="899" x2="1744" y2="899" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="924.8" font-size="12.3" font-weight="bold" fill="#3a4553">OBJETS MÉTIER</text>
+<rect x="150" y="913.4" width="60" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="180" y="925.6999999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
+<rect x="150" y="940.3" width="120" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="210" y="952.5999999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Article référencé</text>
+<rect x="150" y="967.1999999999999" width="144" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="222" y="979.4999999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Éligibilité du client</text>
+<rect x="150" y="994.0999999999999" width="60" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="180" y="1006.3999999999999" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Facture</text>
+<rect x="150" y="1020.9999999999999" width="66" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="183" y="1033.3" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Agrément</text>
+<rect x="150" y="1047.8999999999999" width="120" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="210" y="1060.1999999999998" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Prestataire agréé</text>
+<rect x="150" y="1074.8" width="132" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="216" y="1087.1" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Pièce justificative</text>
+<rect x="150" y="1101.7" width="66" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="183" y="1114" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Courrier</text>
+<rect x="150" y="1128.6000000000001" width="120" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="210" y="1140.9" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Alerte d'anomalie</text>
+<rect x="150" y="1155.5000000000002" width="66" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="183" y="1167.8000000000002" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Matériel</text>
+<rect x="150" y="1182.4000000000003" width="66" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="183" y="1194.7000000000003" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Décision</text>
+<rect x="150" y="1209.3000000000004" width="60" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="180" y="1221.6000000000004" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Demande</text>
+<rect x="150" y="1236.2000000000005" width="72" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="186" y="1248.5000000000005" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Paramètre</text>
+<rect x="150" y="1263.1000000000006" width="84" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="192" y="1275.4000000000005" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Coordonnées</text>
+<rect x="150" y="1290.0000000000007" width="90" height="16.8" rx="8.4" fill="#fff2d4" stroke="#d3a01f"/>
+<text x="195" y="1302.3000000000006" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Objet métier</text>
+<text x="250" y="1302.6000000000006" font-size="11.2" fill="#79828f">porté par le flux</text>
+<line x1="20" y1="1330.9000000000008" x2="1744" y2="1330.9000000000008" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="1356.7000000000007" font-size="12.3" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="1345.3000000000009" width="29.1" height="15.7" rx="3" fill="#e9f2fb" stroke="#1f77b4" stroke-dasharray="5 3"/>
+<text x="185.8" y="1357.9000000000008" font-size="11.2" fill="#17202c">Groupe d'acteurs</text>
+<rect x="315.70000000000005" y="1345.3000000000009" width="29.1" height="15.7" rx="3" fill="#fbf4e9" stroke="#c17d1c"/>
+<text x="351.50000000000006" y="1357.9000000000008" font-size="11.2" fill="#17202c">Système</text>
+<rect x="428.40000000000003" y="1345.3000000000009" width="29.1" height="15.7" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="464.20000000000005" y="1357.9000000000008" font-size="11.2" fill="#17202c">Bloc fonctionnel</text>
+<rect x="594.1" y="1345.3000000000009" width="29.1" height="15.7" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="629.9" y="1357.9000000000008" font-size="11.2" fill="#17202c">Système externe</text>
+<line x1="150" y1="1378.200000000001" x2="179.1" y2="1378.200000000001" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr10)"/>
+<text x="185.8" y="1383.600000000001" font-size="11.2" fill="#17202c">Flux fonctionnel (libellé = données échangées) — couleur = source</text>
+</svg>

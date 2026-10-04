@@ -1,0 +1,94 @@
+diagram logical "Refonte de la plateforme — vue logique"
+
+# ---- acteurs ----
+
+actor-group AG_INT "Acteurs internes" {
+  actor ACT_10 "Opérateur interne"
+  actor ACT_11 "Administrateur\nfonctionnel"
+}
+
+actor-group AG_PART "Partenaires externes — avec accès au système" {
+  actor ACT_12 "Partenaire\ndistributeur"
+  actor ACT_13 "Prestataire\nagréé"
+}
+
+# ---- plateforme cible ----
+
+system SYS_01 "Plateforme (cible)" {
+  block BF_05 "Flux partenaires"
+  block BF_03 "Gestion des\ndossiers"
+  block BF_08 "Contrôle\nd'anomalies"
+  block BF_02 "Agrément"
+  block BF_11 "Stockage"
+  block BF_10 "Génération\nde documents"
+  block BF_01 "Catalogue"
+  block BF_15 "Traces"
+  block BF_13 "Paramétrage"
+}
+
+# ---- systèmes hors plateforme ----
+
+external EXT "Systèmes externes" {
+  block SYS_03 "Outil décisionnel"
+  block SYS_04 "Géolocalisation"
+  block SYS_10 "SI Donneur\nd'ordre"
+  block SYS_11 "Logiciels des\nprestataires"
+  block SYS_12 "Fournisseurs"
+  block SYS_13 "Organisme partenaire"
+  block SYS_14 "Référentiels\nexternes"
+  block SYS_16 "Service d'envoi\nde courriers"
+  block SYS_17 "Stockage de fichiers"
+}
+
+# ---- objets métier ----
+
+business-object BO_DOS "Dossier"
+business-object BO_ACT "Article référencé"
+business-object BO_ELI "Éligibilité du client"
+business-object BO_FAC "Facture"
+business-object BO_AGR "Agrément"
+business-object BO_PRA "Prestataire agréé"
+business-object BO_DOC "Pièce justificative"
+business-object BO_COU "Courrier"
+business-object BO_ALR "Alerte d'anomalie"
+business-object BO_CMD "Matériel"
+business-object BO_IND "Décision"
+business-object BO_DEM "Demande"
+business-object BO_PAR "Paramètre"
+business-object BO_COORD "Coordonnées"
+
+# ---- flux ----
+
+SYS_11 -> BF_05 "Demande de dossier ou facturation" [BO_DOS, BO_FAC]
+SYS_10 -> BF_03 "Transmission des clients éligibles" [BO_ELI, BO_DOS]
+ACT_12 -> BF_03 "Saisie, consultation et mise à jour manuelle d'un dossier" [BO_DOS]
+ACT_10 -> BF_03.top "Consultation d'un dossier" [BO_DOS]
+
+ACT_13 -> BF_02 "Demande d'agrément auprès d'un réseau" [BO_AGR]
+ACT_13 -> BF_03 "Demande de dossier via portail" [BO_AGR] { segment-offset: 3, -120 }
+BF_02.bottom -> SYS_10 "Envoi du fichier des prestataires agréés" [BO_PRA]
+BF_02 -> SYS_13 "Envoi du fichier des prestataires agréés à l'organisme" [BO_PRA]
+SYS_14 -> BF_02 "Transmission coordonnées" [BO_COORD]
+SYS_04 -> BF_02 "Transmission coordonnées" [BO_COORD]
+BF_10 -> SYS_16 "Envoi de courrier" [BO_COU]
+BF_08 -> ACT_10 "Alerte d'anomalie restituée à l'opérateur" [BO_ALR]
+SYS_12 -> BF_01 "Transmission des références et offre produits" [BO_ACT]
+BF_11 -> SYS_17 "Dépôt" [BO_DOC]
+BF_15 -> SYS_03 "Envoi de décision" [BO_IND]
+ACT_11 -> BF_13 "Paramétrage" [BO_PAR] { segment-offset: 2, -115 }
+BF_05 -> BF_03 "Transmission flux" [BO_DOS]
+BF_01 -> BF_03 "Transmission article" [BO_ACT]
+BF_03 -> BF_11 "Demande de dépôt en GED" [BO_DOC]
+BF_03 -> BF_10 "Demande d'édition d'un courrier" [BO_DOS]
+BF_03 -> BF_15 "Commande de produit" [BO_CMD]
+BF_03 -> BF_08 "Transmission au contrôle d'anomalies" [BO_DOS]
+
+style {
+  disposition: wide
+  theme: light
+  lang: fr
+  flow-color: by-source
+  label-wrap: 16
+  flow-label-wrap: 26
+  font-size: 14
+}
