@@ -3525,17 +3525,21 @@ async function withHubPortFallback(
  * re-siding a terminal and differently when they count defects — see
  * `SceneEdge.hubSided`.
  *
- * `hubPorts` is whether the layout being described actually carried those ports.
- * When `withHubPortFallback` climbed down from them, elk picked those sides
- * unaided: marking them would fix an arbitrary side and stop `optimiseRoutes`
- * from repairing what the fallback already cost.
+ * `laidOutWith` is what the layout being described was actually built with.
+ * When `withHubPortFallback` climbed down from the hub ports, elk picked those
+ * sides unaided: marking them would fix an arbitrary side and stop
+ * `optimiseRoutes` from repairing what the fallback already cost. The same holds
+ * for the author's `ID.side` once the last rung drops the declared ports too —
+ * W0570 reports the drop, and pinning elk's guess would also stop the repair.
  */
 function markDeclaredTerminals(
   edges: SceneEdge[],
   model: Model,
   view: View,
-  hubPorts: boolean,
+  laidOutWith: GraphOptions | undefined,
 ): void {
+  const hubPorts = laidOutWith?.hubPorts !== false;
+  const declaredPorts = laidOutWith?.declaredPorts !== false;
   // A role counts as a pin, not as a derived side: it is written in the same
   // slot as `ID.side`, and it names the cap at the *other* end of the flow
   // (`CAPTURE.producer -> EVENTS` fixes the EVENTS end). The spec promises the
@@ -3545,12 +3549,13 @@ function markDeclaredTerminals(
   // Only when elk was actually handed the hub ports: after the fallback the cap
   // is elk's own guess, and freezing a guess is worse than leaving it free.
   const rolePin = (role: AttachRole | undefined) => hubPorts && !!role;
+  const sidePin = (side: { value: AttachSide } | undefined) => declaredPorts && !!side;
   const pinnedFlows = new Map(
     model.flows
       .filter(
         (flow) =>
-          flow.fromSide ||
-          flow.toSide ||
+          sidePin(flow.fromSide) ||
+          sidePin(flow.toSide) ||
           rolePin(flow.fromRole?.value) ||
           rolePin(flow.toRole?.value),
       )
@@ -3559,8 +3564,8 @@ function markDeclaredTerminals(
           [
             flow.id,
             {
-              start: !!flow.fromSide || rolePin(flow.toRole?.value),
-              end: !!flow.toSide || rolePin(flow.fromRole?.value),
+              start: sidePin(flow.fromSide) || rolePin(flow.toRole?.value),
+              end: sidePin(flow.toSide) || rolePin(flow.fromRole?.value),
             },
           ] as const,
       ),
@@ -3810,7 +3815,7 @@ async function chooseLayout(model: Model, view: View): Promise<Scene> {
     // traversed in.
     const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
     for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
-    markDeclaredTerminals(edges, model, view, laidOutWith?.hubPorts !== false);
+    markDeclaredTerminals(edges, model, view, laidOutWith);
     stampLabelOffsets(edges, model);
 
     const scene: Scene = {

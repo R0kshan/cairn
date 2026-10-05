@@ -144,8 +144,8 @@
 <text x="331" y="284.41333333333336" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Agrément</text>
 <text x="310" y="369" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Demande de dossier via</text>
 <text x="310" y="385" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">portail</text>
-<rect x="277" y="393.28" width="66" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
-<text x="310" y="405.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Agrément</text>
+<rect x="280" y="393.28" width="60" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>
+<text x="310" y="405.58" font-size="10.6" text-anchor="middle" fill="#6a5111" font-weight="bold">Dossier</text>
 <text x="1489.5" y="352.14" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Envoi du fichier des</text>
 <text x="1489.5" y="368.14" font-size="13" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">prestataires agréés</text>
 <rect x="1429.5" y="376.41999999999996" width="120" height="17" rx="8.5" fill="#fff2d4" stroke="#d3a01f" stroke-width="1"/>

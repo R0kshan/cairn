@@ -65,7 +65,7 @@ ACT_12 -> BF_03 "Saisie, consultation et mise à jour manuelle d'un dossier" [BO
 ACT_10 -> BF_03.top "Consultation d'un dossier" [BO_DOS]
 
 ACT_13 -> BF_02 "Demande d'agrément auprès d'un réseau" [BO_AGR]
-ACT_13 -> BF_03 "Demande de dossier via portail" [BO_AGR] { segment-offset: 3, -120 }
+ACT_13 -> BF_03 "Demande de dossier via portail" [BO_DOS] { segment-offset: 3, -120 }
 BF_02.bottom -> SYS_10 "Envoi du fichier des prestataires agréés" [BO_PRA]
 BF_02 -> SYS_13 "Envoi du fichier des prestataires agréés à l'organisme" [BO_PRA]
 SYS_14 -> BF_02 "Transmission coordonnées" [BO_COORD]
