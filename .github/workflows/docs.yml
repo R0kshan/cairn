@@ -1,0 +1,46 @@
+# Builds the MkDocs site (mkdocs.yml) on every PR that touches it, and deploys
+# it to GitHub Pages from main. Requires Settings → Pages → Source: GitHub Actions.
+name: docs
+on:
+  push:
+    branches: [main]
+    paths: &docs-paths
+      - documentation/**
+      - examples/*.svg
+      - mkdocs.yml
+      - requirements-docs.txt
+      - scripts/mkdocs_hooks.py
+      - .github/workflows/docs.yml
+  pull_request:
+    paths: *docs-paths
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with: { persist-credentials: false }
+      - run: |
+          python3 -m venv .venv
+          .venv/bin/pip install -r requirements-docs.txt
+          .venv/bin/mkdocs build --strict
+      - if: github.event_name == 'push'
+        uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with: { path: site }
+
+  deploy:
+    if: github.event_name == 'push'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write     # publish the site
+      id-token: write  # OIDC token deploy-pages verifies the run with
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

@@ -636,7 +636,7 @@ it. cairn defines these readings; they are not lifted from a standard.
 
 #### Examples
 
-Seven files in [`examples/placement/`](../examples/placement) show these
+Seven files in [`examples/placement/`](https://github.com/R0kshan/cairn/tree/main/examples/placement) show these
 controls: `baseline.cairn` declares none, `sides.cairn` adds `ID.side` pins,
 `reading-order.cairn` sequences two backends with `order:`, `flow-label.cairn`
 moves a flow label, `queue-sides.cairn` declares nothing and takes the derived
@@ -865,7 +865,7 @@ const { svg } = await compile(source, {
 
 `resolveThemeSpec()` validates a palette up front and throws the same error. A
 complete example ships in
-[`examples/themes/midnight.json`](../examples/themes/midnight.json).
+[`examples/themes/midnight.json`](https://github.com/R0kshan/cairn/blob/main/examples/themes/midnight.json).
 
 ## 3. Flow matrix
 
