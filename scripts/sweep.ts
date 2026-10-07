@@ -25,6 +25,7 @@
 import { readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import type { Element } from "../src/models/ast.ts";
 import { parse } from "../src/parser.ts";
 import { validate } from "../src/validator.ts";
 import { layout } from "../src/scene-layout.ts";
@@ -450,7 +451,19 @@ async function sweepShard(shardIndex: number, shardCount: number): Promise<void>
     .sort()
     .filter((_, index) => index % shardCount === shardIndex - 1)) {
     const base = readFileSync(join(ROOT, "examples", file), "utf8").replace(/\r\n/g, "\n");
-    for (const disp of DISPOSITIONS) {
+    // Positioning hints (`offset:`, `size:`, `label-offset:`, `segment-offset:`)
+    // are pixel deltas the author tuned against the disposition the source
+    // declares; replayed on another disposition they land on unrelated geometry.
+    // Such a fixture is swept in its own disposition only.
+    const declared = parse(base).model;
+    const hinted = (elements: Element[]): boolean =>
+      elements.some((e) => e.offset || e.size || hinted(e.children));
+    const dispositions =
+      hinted(declared.elements) ||
+      declared.flows.some((f) => f.labelOffset || f.segmentOffsets?.length)
+        ? [declared.style.disposition]
+        : DISPOSITIONS;
+    for (const disp of dispositions) {
       const tag = `${file.replace(".cairn", "")}/${disp}`;
       let scene: Awaited<ReturnType<typeof layout>>;
       let model: ReturnType<typeof parse>["model"];

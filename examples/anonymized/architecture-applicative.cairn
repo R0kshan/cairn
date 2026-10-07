@@ -1,0 +1,109 @@
+diagram application "Refonte de la plateforme — vue applicative d'ensemble"
+
+
+# ---- acteurs ----
+actor-group AG_INT "Acteurs internes" {
+  actor ACT_10 "Opérateur interne"
+  actor ACT_11 "Administrateur\nfonctionnel"
+}
+
+actor-group AG_PART "Partenaires externes" {
+  actor ACT_12 "Partenaire\ndistributeur"
+  actor ACT_13 "Prestataire\nagréé"
+}
+
+idp EXT_07 "Fournisseur d'identité"
+
+# ---- passerelle, porteuse de l'IHM ----
+
+application APP_00 "Reverse proxy" {
+  offset: 22, 0
+  logo: nginx
+  module MOD_RP "Mod OIDC"
+  module MOD_IHM "IHM web" {logo: angular}
+}
+
+# ---- noyau metier ----
+
+application APP_01 "Backend modulaire core-metier" {
+  logo: spring
+  module MOD_FLX "core-flux-partenaires"
+  module MOD_DOS "core-dossiers"
+  module MOD_CAT "core-catalogue"
+  module MOD_AGR "core-agrement"
+  module MOD_ANO "core-anomalies"
+  module MOD_EDT "core-documents"
+  module MOD_GED "core-stockage"
+  module MOD_PAR "core-parametrage"
+  module MOD_TRC "core-trace"
+  module MOD_HAB "core-habilitation"
+}
+
+application APP_02 "Batch de facturation" {
+  logo: spring
+}
+
+# ---- banques de donnees ----
+
+datastore BDD_01 "BDD relationnelle" { logo: postgresql }
+
+# ---- systemes tiers ----
+
+external SI_TIERS "Systemes tiers et connexes" {
+  external EXT_01 "SI Donneur d'ordre"
+  external EXT_02 "Logiciels des\nprestataires"
+  external EXT_03 "Fournisseurs"
+  external EXT_04 "Organisme partenaire"
+  external EXT_05 "Référentiels\nexternes"
+  external EXT_06 "Outil e-mailing"
+  external EXT_08 "Outil de géolocalisation"
+  external EXT_09 "Outil décisionnel"
+  external EXT_10 "Stockage de fichiers"
+}
+
+# ============================================================================
+# FLUX — sens du declenchement de l'action.
+# Les appels entre modules du noyau ne sont pas representes : ils sont en
+# processus et figurent dans la vue logique.
+# ============================================================================
+
+# ---- authentification ----
+AG_INT -> EXT_07 (HTTPS, OIDC)
+AG_INT -> APP_00 (HTTPS)
+AG_PART -> EXT_07 (HTTPS, OIDC)
+AG_PART -> APP_00(HTTPS) { segment-offset: 3, 34 segment-offset: 4, 51 }
+MOD_RP.right -> APP_01 "JWT" (HTTPS/mTLS, REST)
+
+# ---- partenaires vers les modules proprietaires ----
+EXT_02 -> MOD_FLX "XML + JWT" (HTTPS, mTLS)
+EXT_04 -> MOD_AGR "JWT" (HTTPS/mTLS, REST) { segment-offset: 4, 349 }
+EXT_01 -> MOD_AGR "XML + JWT" (HTTPS/mTLS, REST) { segment-offset: 4, 311 }
+EXT_01 -> MOD_DOS "XML + JWT" (HTTPS/mTLS, REST)  { segment-offset: 4, -15 segment-offset: 5, 15 }
+
+# ---- les modules proprietaires vers les tiers ----
+
+MOD_DOS -> EXT_01 "XML" (HTTPS)
+MOD_AGR -> EXT_01 (HTTPS/mTLS)
+MOD_AGR -> EXT_08 (HTTPS)
+MOD_EDT -> EXT_06 (HTTPS)
+MOD_GED -> EXT_10 (HTTPS)
+MOD_CAT -> EXT_03 (HTTPS)
+MOD_DOS -> EXT_09 (HTTPS)
+MOD_DOS -> EXT_05 (HTTPS)
+
+# ---- les traitements proprietaires vers les tiers ----
+APP_02 -> EXT_01 "XML" (HTTPS, mTLS) { segment-offset: 2, 25 }
+
+# ---- persistance ----
+APP_01 -> BDD_01.bottom (JDBC)
+APP_02 -> BDD_01 (JDBC)
+
+style {
+  disposition: slide
+  theme: light
+  lang: fr
+  flow-color: by-source
+  label-wrap: 18
+  flow-label-wrap: 24
+  font-size: 12
+}
