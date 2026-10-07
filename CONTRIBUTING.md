@@ -104,7 +104,7 @@ needs, so bump it on purpose).
 ```sh
 pip install -r requirements-docs.txt
 mkdocs serve                  # live preview at http://127.0.0.1:8000
-mkdocs build --strict         # what CI runs: any broken link or anchor fails
+mkdocs build --strict         # what CI runs: any broken internal link or anchor fails
 ```
 
 - **Write the pages as plain GitHub Markdown.** They are read on GitHub too.

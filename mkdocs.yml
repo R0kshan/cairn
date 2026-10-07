@@ -41,6 +41,9 @@ markdown_extensions:
   - toc:
       permalink: true
 
+watch:
+  - examples                  # the hook publishes examples/*.svg from here
+
 hooks:
   - scripts/mkdocs_hooks.py
 

@@ -24,7 +24,7 @@ Each image is rendered by the cairn CLI from a `.cairn` source in
 
 ![Small infrastructure view](examples/infrastructure-small.svg)
 
-Its flow matrix, from `cairn matrix --format svg`:
+Its flow matrix, from `cairn matrix examples/infrastructure-small.cairn --format svg`:
 
 ![Flow matrix of the infrastructure view](examples/infrastructure-small.flow.svg)
 
