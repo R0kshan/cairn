@@ -3292,6 +3292,17 @@ test("the derived queue sides stay left and right in a `tall` drawing", async ()
   assert.equal(sideOfTerminal(scene, flowFrom("Q").id, "Q", "start"), "right");
 });
 
+test("a declared side elk crashes on is dropped, not fatal", async () => {
+  // `VM_RP.bottom` laid out downward makes elk throw `Cannot read properties of
+  // null (reading 'p')` in crossing minimisation; `withHubPortFallback` retries
+  // without the declared ports and W0570 reports the side instead.
+  const src = readFileSync(join(EX, "anonymized/architecture-physique.cairn"), "utf8");
+  for (const disposition of ["page", "tall"]) {
+    const { scene } = await build(src.replace("disposition: wide", `disposition: ${disposition}`));
+    assert.ok(scene.edges.length > 0, disposition);
+  }
+});
+
 test("`.producer` / `.consumer` put a flow on the queue cap its role names", async () => {
   // Both flows are drawn *at* the queue, which is how a reader looks at a bus:
   // everything touches it. The roles say which cap each one meets.

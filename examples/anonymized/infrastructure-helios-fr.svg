@@ -1,42 +1,42 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2650 1114" font-family="Helvetica,Arial,sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2650 1084" font-family="Helvetica,Arial,sans-serif">
 <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
 <path d="M0,0 L10,5 L0,10 z" fill="#5a6675"/></marker></defs>
-<rect width="2650" height="1114" fill="#ffffff"/>
+<rect width="2650" height="1084" fill="#ffffff"/>
 <rect x="392" y="216" width="324" height="114" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="402" y="234" font-size="13" font-weight="bold" fill="#17202c">Cloud — exposition publique</text>
-<rect x="404" y="241" width="300" height="82" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
+<rect x="404" y="241" width="305" height="82.71428571428572" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="414" y="259" font-size="13" font-weight="bold" fill="#17202c">Zone d'exposition</text>
 <rect x="820" y="179" width="1151" height="466.5" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="830" y="197" font-size="13" font-weight="bold" fill="#17202c">Cloud — région unique</text>
 <rect x="832" y="215" width="784" height="423.5" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="842" y="233" font-size="13" font-weight="bold" fill="#17202c">Zone réseau siège (pare-feu)</text>
-<rect x="882.6666666666666" y="244.5" width="129" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="892.6666666666666" y="262.5" font-size="13" font-weight="bold" fill="#17202c">VM RP</text>
-<text x="892.6666666666666" y="276.5" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
-<rect x="1174" y="332" width="170" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="1184" y="350" font-size="13" font-weight="bold" fill="#17202c">VM applicative</text>
-<text x="1184" y="364" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
-<rect x="864" y="420" width="157" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<rect x="877.6666666666666" y="244.5" width="139" height="96" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="887.6666666666666" y="262.5" font-size="13" font-weight="bold" fill="#17202c">VM RP</text>
+<text x="887.6666666666666" y="276.5" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
+<rect x="1169" y="332" width="180" height="96" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1179" y="350" font-size="13" font-weight="bold" fill="#17202c">VM applicative</text>
+<text x="1179" y="364" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
+<rect x="864" y="420" width="162" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="874" y="438" font-size="13" font-weight="bold" fill="#17202c">VM broker</text>
 <text x="874" y="452" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
-<rect x="1471" y="324.5" width="115" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="1481" y="342.5" font-size="13" font-weight="bold" fill="#17202c">VM base de données</text>
-<text x="1481" y="356.5" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
-<rect x="887.3333333333334" y="540.5" width="122" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<rect x="1466" y="324.5" width="120" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1476" y="342.5" font-size="13" font-weight="bold" fill="#17202c">VM base de données</text>
+<text x="1476" y="356.5" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
+<rect x="887.3333333333334" y="540.5" width="127" height="96" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
 <text x="897.3333333333334" y="558.5" font-size="13" font-weight="bold" fill="#17202c">VM orchestration</text>
 <text x="897.3333333333334" y="572.5" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
 <rect x="1743" y="356" width="216" height="123" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="1753" y="374" font-size="13" font-weight="bold" fill="#17202c">Zone de secours agence</text>
-<rect x="1755" y="381" width="192" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="1765" y="399" font-size="13" font-weight="bold" fill="#17202c">VM cloud de secours</text>
-<text x="1765" y="413" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
+<rect x="1750" y="381" width="202" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="1760" y="399" font-size="13" font-weight="bold" fill="#17202c">VM cloud de secours</text>
+<text x="1760" y="413" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
 <rect x="2114" y="455" width="245" height="155" rx="6" fill="#f3f5f6" stroke="#7c8794" stroke-width="1.4"/>
 <text x="2124" y="473" font-size="13" font-weight="bold" fill="#17202c">Agence (1 des 67 du réseau)</text>
 <rect x="2126" y="480" width="221" height="123" rx="6" fill="#eef6ff" stroke="#1a8f66" stroke-width="1.2" stroke-dasharray="5 3"/>
 <text x="2136" y="498" font-size="13" font-weight="bold" fill="#17202c">Réseau local agence (pare-feu)</text>
-<rect x="2138" y="505" width="197" height="91" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
-<text x="2148" y="523" font-size="13" font-weight="bold" fill="#17202c">Serveur local</text>
-<text x="2148" y="537" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
+<rect x="2133" y="505" width="202" height="96" rx="6" fill="#ffffff" stroke="#48546a" stroke-width="1.5"/>
+<text x="2143" y="523" font-size="13" font-weight="bold" fill="#17202c">Serveur local</text>
+<text x="2143" y="537" font-size="13" font-weight="bold" fill="#17202c">Ubuntu 24.04 LTS</text>
 <rect x="17" y="173" width="204" height="45" rx="4" fill="#ffffff" stroke="#48546a" stroke-width="1.3"/>
 <rect x="25" y="181" width="14" height="9" rx="1" fill="none" stroke="#48546a" stroke-width="1.3"/><path d="M 32 190 V 193" fill="none" stroke="#48546a" stroke-width="1.3"/><path d="M 27 193 H 37" fill="none" stroke="#48546a" stroke-width="1.3"/>
 <text x="132" y="192.25" font-size="12.5" text-anchor="middle" fill="#17202c">Poste siège</text>
@@ -106,15 +106,15 @@
 <path d="M 263 492 L 273 492 L 273 549 L 377 549 L 377 480.1 L 569 480.1 A 5 5 0 0 1 579 480.1 L 891 480.1" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1259 416 L 1259 505 L 1014 505" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1014 489 L 1254 489 A 5 5 0 0 1 1264 489 L 1626 489 A 5 5 0 0 1 1636 489 L 2099 489 L 2099 559 L 2145 559" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2227 589 L 2227 729 L 874 729 L 874 492.1 L 892 492.1" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2227 589 L 2227 699 L 874 699 L 874 492.1 L 892 492.1" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1014 474 L 1036 474 L 1036 401 L 1181 400.99999999999994" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<path d="M 2265 589 L 2265 802.5 L 574 802.5 L 574 311.7142857142857" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2265 589 L 2265 772.5 L 574 772.5 L 574 311.7142857142857" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1002.3333333333334 609.5 L 1986 609.5 L 1986 574 L 2145 574" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2187 589 L 2187 655.5 L 948.3333333333334 655.5 L 948.3333333333334 624.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 1002.3333333333333 594.5 L 1631 594.5 L 1631 450 L 1762 450" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
 <path d="M 721 65 L 1728 65 L 1728 435 L 1762 435" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
 <path d="M 1940 442.5 L 1986 442.5 L 1986 44 L 721 44" fill="none" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
-<path d="M 2302 589 L 2302 606.5 L 2504 606.5" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<path d="M 2302 589 L 2302 618 L 2504 618" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <path d="M 2308 550 L 2406 550 L 2406 573 L 2504 573" fill="none" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
 <text x="289" y="170.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AUTH_01 —</text>
 <text x="289" y="184.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">accès</text>
@@ -137,10 +137,10 @@
 <text x="1694.3333333333333" y="316.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">OAuth2 /</text>
 <text x="1694.3333333333333" y="331.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">OIDC</text>
 <text x="1694.3333333333333" y="345.75" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
-<text x="998.6666666666666" y="341.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">IHM servie</text>
-<text x="998.6666666666666" y="356" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">vers le</text>
-<text x="998.6666666666666" y="370.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">backend</text>
-<text x="998.6666666666666" y="385" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTP/8080)</text>
+<text x="998.6666666666666" y="353.625" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">IHM servie</text>
+<text x="998.6666666666666" y="368.125" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">vers le</text>
+<text x="998.6666666666666" y="382.625" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">backend</text>
+<text x="998.6666666666666" y="397.125" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTP/8080)</text>
 <text x="1407.5" y="382" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">DB_01 —</text>
 <text x="1407.5" y="396.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">persistance</text>
 <text x="1407.5" y="411" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(JDBC/5432)</text>
@@ -164,38 +164,38 @@
 <text x="325" y="552.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">file</text>
 <text x="325" y="566.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Q_BRAVO</text>
 <text x="325" y="581.25" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/5672)</text>
-<text x="1259" y="434.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">SIEGE_AGENCE_01</text>
-<text x="1259" y="449" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">— file</text>
-<text x="1259" y="463.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Q_SIEGE_GST</text>
-<text x="1259" y="478" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/5672)</text>
+<text x="1259" y="438.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">SIEGE_AGENCE_01</text>
+<text x="1259" y="453.375" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">— file</text>
+<text x="1259" y="467.875" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Q_SIEGE_GST</text>
+<text x="1259" y="482.375" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/5672)</text>
 <text x="1433.75" y="470.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">SIEGE_AGENCE_02</text>
 <text x="1433.75" y="485" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">—</text>
 <text x="1433.75" y="499.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">réception</text>
 <text x="1433.75" y="514" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">en agence</text>
 <text x="1433.75" y="528.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/5672)</text>
-<text x="1550.5" y="717.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_SIEGE_01</text>
-<text x="1550.5" y="732.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">— file</text>
-<text x="1550.5" y="746.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Q_AGENCE_GST</text>
-<text x="1550.5" y="761.25" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/5672)</text>
+<text x="1550.5" y="687.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_SIEGE_01</text>
+<text x="1550.5" y="702.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">— file</text>
+<text x="1550.5" y="716.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Q_AGENCE_GST</text>
+<text x="1550.5" y="731.25" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/5672)</text>
 <text x="1108.5" y="382.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_SIEGE_02</text>
 <text x="1108.5" y="397" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">—</text>
 <text x="1108.5" y="411.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">réception</text>
 <text x="1108.5" y="426" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">au siège</text>
 <text x="1108.5" y="440.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(AMQP/5672)</text>
-<text x="1419.5" y="784" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_BRAVO_01</text>
-<text x="1419.5" y="798.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">—</text>
-<text x="1419.5" y="813" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">abonnement</text>
-<text x="1419.5" y="827.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">BRAVO</text>
-<text x="1419.5" y="842" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
+<text x="1419.5" y="754" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_BRAVO_01</text>
+<text x="1419.5" y="768.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">—</text>
+<text x="1419.5" y="783" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">abonnement</text>
+<text x="1419.5" y="797.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">BRAVO</text>
+<text x="1419.5" y="812" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(HTTPS/443)</text>
 <text x="2065.5" y="555.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">ORCH_01 —</text>
 <text x="2065.5" y="570" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">pilotage</text>
 <text x="2065.5" y="584.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des 67</text>
 <text x="2065.5" y="599" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">agents</text>
 <text x="2065.5" y="613.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP/4647)</text>
-<text x="1567.6666666666667" y="644.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">ORCH_02 —</text>
-<text x="1567.6666666666667" y="658.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">heartbeat</text>
-<text x="1567.6666666666667" y="673.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des agents</text>
-<text x="1567.6666666666667" y="687.75" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP/4647)</text>
+<text x="2187" y="612.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">ORCH_02 —</text>
+<text x="2187" y="627.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">heartbeat</text>
+<text x="2187" y="641.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des agents</text>
+<text x="2187" y="656.25" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP/4647)</text>
 <text x="1631" y="503.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">Niveau 4 —</text>
 <text x="1631" y="518.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">déploiement</text>
 <text x="1631" y="532.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">VM de</text>
@@ -205,53 +205,53 @@
 <text x="1728" y="253.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">tunnel</text>
 <text x="1728" y="267.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">WireGuard</text>
 <text x="1728" y="282.25" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(UDP/41641)</text>
-<text x="1986" y="224.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">VPN_02 —</text>
-<text x="1986" y="239.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">réponse</text>
-<text x="1986" y="253.75" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">via le</text>
-<text x="1986" y="268.25" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">tunnel</text>
-<text x="1986" y="282.75" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(UDP/41641)</text>
-<text x="2459" y="588" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_INT_01</text>
-<text x="2459" y="602.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">— suivi</text>
-<text x="2459" y="617" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des</text>
-<text x="2459" y="631.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">tournées</text>
-<text x="2459" y="646" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(RS422)</text>
+<text x="1986" y="62.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">VPN_02 —</text>
+<text x="1986" y="77" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">réponse</text>
+<text x="1986" y="91.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">via le</text>
+<text x="1986" y="106" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">tunnel</text>
+<text x="1986" y="120.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(UDP/41641)</text>
+<text x="2459" y="599.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_INT_01</text>
+<text x="2459" y="614" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">— suivi</text>
+<text x="2459" y="628.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">des</text>
+<text x="2459" y="643" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">tournées</text>
+<text x="2459" y="657.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(RS422)</text>
 <text x="2357" y="531.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">AGENCE_INT_02</text>
 <text x="2357" y="546" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">— 6</text>
 <text x="2357" y="560.5" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">prochaines</text>
 <text x="2357" y="575" font-size="11.5" text-anchor="middle" fill="#3a4553" font-style="italic" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">tournées</text>
 <text x="2357" y="589.5" font-size="9" text-anchor="middle" fill="#79828f" stroke="#ffffff" stroke-width="4" paint-order="stroke" stroke-linejoin="round">(TCP)</text>
-<line x1="20" y1="878" x2="2630" y2="878" stroke="#e6e9ee" stroke-width="1"/>
-<text x="20" y="900" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
-<rect x="150" y="890" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<rect x="158.6" y="892.6" width="8.8" height="5.6" rx="0.6" fill="none" stroke="#48546a" stroke-width="0.8"/><path d="M 163 898.3 V 900.1" fill="none" stroke="#48546a" stroke-width="0.8"/><path d="M 159.9 900.1 H 166.1" fill="none" stroke="#48546a" stroke-width="0.8"/><text x="182" y="901" font-size="10" fill="#17202c">Poste de travail</text>
-<circle cx="311" cy="893" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<path d="M 306 903 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
-<text x="330" y="901" font-size="10" fill="#17202c">Utilisateur / consommateur</text>
-<rect x="498" y="890" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
-<text x="530" y="901" font-size="10" fill="#17202c">Site / centre de données</text>
-<rect x="687" y="890" width="26" height="14" rx="3" fill="#eef6ff" stroke="#1a8f66" stroke-dasharray="5 3"/>
-<text x="719" y="901" font-size="10" fill="#17202c">Zone réseau</text>
-<rect x="809" y="890" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
-<path d="M 817.6 892.6 V 901.4 M 826.4 892.6 V 901.4" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 818.9 897 H 825.1" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 823.3 895.1 l 1.9 1.9 l -1.9 1.9" fill="none" stroke="#b85a30" stroke-width="0.8"/><text x="841" y="901" font-size="10" fill="#17202c">Passerelle / proxy</text>
-<rect x="967" y="890" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
-<text x="999" y="901" font-size="10" fill="#17202c">Serveur / VM</text>
-<rect x="1094" y="890" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
-<text x="1126" y="901" font-size="10" fill="#17202c">Application déployée</text>
-<rect x="1262" y="890" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
-<rect x="1271.3" y="893.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1273.8 893.3 H 1276.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="1275" cy="896.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1272.5 900.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="1294" y="901" font-size="10" fill="#17202c">Fournisseur d'identité (IdP)</text>
-<rect x="1472" y="890" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
-<text x="1504" y="901" font-size="10" fill="#17202c">Système externe</text>
-<line x1="150" y1="920" x2="176" y2="920" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="924" font-size="10" fill="#17202c">Flux technique (protocole, port)</text>
-<line x1="150" y1="944" x2="176" y2="944" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
-<text x="182" y="948" font-size="10" fill="#17202c">Lien permanent — trafic nominal</text>
-<line x1="376" y1="944" x2="402" y2="944" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
-<text x="408" y="948" font-size="10" fill="#17202c">Dépendance — hors trafic nominal</text>
-<text x="150" y="972" font-size="10" fill="#17202c" font-style="italic">Vue mono-région : une seule région cloud représentée. La bascule inter-région (LB_01/LB_02, région A active / région B passive) est décrite dans la vue multi-région.</text>
-<text x="150" y="992" font-size="10" fill="#17202c" font-style="italic">Vue par réseau : les flux inter-réseaux (INTR_01/INTR_02, siège R1 &lt;-&gt; siège R2) sortent du périmètre de ce schéma.</text>
-<text x="150" y="1012" font-size="10" fill="#17202c" font-style="italic">Traits pleins : flux nominaux. Pointillés : secours niveau 4 (VM cloud déployée par l'orchestrateur, accès par tunnel chiffré depuis le poste opérateur en 4G).</text>
-<text x="150" y="1032" font-size="10" fill="#17202c" font-style="italic">Le serveur d'orchestration n'est pas redondé : les agents en agence se reconnectent seuls et les jobs déjà lancés continuent de tourner.</text>
-<text x="150" y="1052" font-size="10" fill="#17202c" font-style="italic">Le pare-feu isole les zones siège et agence ; Nginx n'accepte que les adresses IP du Load Balancer managé.</text>
-<text x="150" y="1072" font-size="10" fill="#17202c" font-style="italic">En niveau 4, la VM cloud ne dispose pas d'interface RS422 : les écrans en agence restent inopérants jusqu'au remplacement du matériel (SLA 4 h).</text>
-<text x="150" y="1092" font-size="10" fill="#17202c" font-style="italic">Ports non précisés au dossier : valeur par défaut du protocole. Matrice des flux techniques jointe au dossier d'architecture.</text>
+<line x1="20" y1="848" x2="2630" y2="848" stroke="#e6e9ee" stroke-width="1"/>
+<text x="20" y="870" font-size="11" font-weight="bold" fill="#3a4553">LÉGENDE</text>
+<rect x="150" y="860" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<rect x="158.6" y="862.6" width="8.8" height="5.6" rx="0.6" fill="none" stroke="#48546a" stroke-width="0.8"/><path d="M 163 868.3 V 870.1" fill="none" stroke="#48546a" stroke-width="0.8"/><path d="M 159.9 870.1 H 166.1" fill="none" stroke="#48546a" stroke-width="0.8"/><text x="182" y="871" font-size="10" fill="#17202c">Poste de travail</text>
+<circle cx="311" cy="863" r="3" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<path d="M 306 873 q 5 -7 10 0" fill="none" stroke="#1f5e91" stroke-width="1.2"/>
+<text x="330" y="871" font-size="10" fill="#17202c">Utilisateur / consommateur</text>
+<rect x="498" y="860" width="26" height="14" rx="3" fill="#f3f5f6" stroke="#7c8794"/>
+<text x="530" y="871" font-size="10" fill="#17202c">Site / centre de données</text>
+<rect x="687" y="860" width="26" height="14" rx="3" fill="#eef6ff" stroke="#1a8f66" stroke-dasharray="5 3"/>
+<text x="719" y="871" font-size="10" fill="#17202c">Zone réseau</text>
+<rect x="809" y="860" width="26" height="14" rx="3" fill="#f5e6dd" stroke="#b85a30"/>
+<path d="M 817.6 862.6 V 871.4 M 826.4 862.6 V 871.4" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 818.9 867 H 825.1" fill="none" stroke="#b85a30" stroke-width="0.8"/><path d="M 823.3 865.1 l 1.9 1.9 l -1.9 1.9" fill="none" stroke="#b85a30" stroke-width="0.8"/><text x="841" y="871" font-size="10" fill="#17202c">Passerelle / proxy</text>
+<rect x="967" y="860" width="26" height="14" rx="3" fill="#ffffff" stroke="#48546a"/>
+<text x="999" y="871" font-size="10" fill="#17202c">Serveur / VM</text>
+<rect x="1094" y="860" width="26" height="14" rx="3" fill="#fdf4e3" stroke="#c88a2e"/>
+<text x="1126" y="871" font-size="10" fill="#17202c">Application déployée</text>
+<rect x="1262" y="860" width="26" height="14" rx="3" fill="#e0f0f0" stroke="#3a8f8f"/>
+<rect x="1271.3" y="863.3" width="7.5" height="8.1" rx="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1273.8 863.3 H 1276.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><circle cx="1275" cy="866.4" r="1.3" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><path d="M 1272.5 870.1 q 2.5 -2.5 5 0" fill="none" stroke="#3a8f8f" stroke-width="0.8"/><text x="1294" y="871" font-size="10" fill="#17202c">Fournisseur d'identité (IdP)</text>
+<rect x="1472" y="860" width="26" height="14" rx="3" fill="#f4eff8" stroke="#8659a6" stroke-dasharray="5 3"/>
+<text x="1504" y="871" font-size="10" fill="#17202c">Système externe</text>
+<line x1="150" y1="890" x2="176" y2="890" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="894" font-size="10" fill="#17202c">Flux technique (protocole, port)</text>
+<line x1="150" y1="914" x2="176" y2="914" stroke="#5a6675" stroke-width="1.3" marker-end="url(#arr)"/>
+<text x="182" y="918" font-size="10" fill="#17202c">Lien permanent — trafic nominal</text>
+<line x1="376" y1="914" x2="402" y2="914" stroke="#5a6675" stroke-width="1.3" stroke-dasharray="2 2.5" marker-end="url(#arr)"/>
+<text x="408" y="918" font-size="10" fill="#17202c">Dépendance — hors trafic nominal</text>
+<text x="150" y="942" font-size="10" fill="#17202c" font-style="italic">Vue mono-région : une seule région cloud représentée. La bascule inter-région (LB_01/LB_02, région A active / région B passive) est décrite dans la vue multi-région.</text>
+<text x="150" y="962" font-size="10" fill="#17202c" font-style="italic">Vue par réseau : les flux inter-réseaux (INTR_01/INTR_02, siège R1 &lt;-&gt; siège R2) sortent du périmètre de ce schéma.</text>
+<text x="150" y="982" font-size="10" fill="#17202c" font-style="italic">Traits pleins : flux nominaux. Pointillés : secours niveau 4 (VM cloud déployée par l'orchestrateur, accès par tunnel chiffré depuis le poste opérateur en 4G).</text>
+<text x="150" y="1002" font-size="10" fill="#17202c" font-style="italic">Le serveur d'orchestration n'est pas redondé : les agents en agence se reconnectent seuls et les jobs déjà lancés continuent de tourner.</text>
+<text x="150" y="1022" font-size="10" fill="#17202c" font-style="italic">Le pare-feu isole les zones siège et agence ; Nginx n'accepte que les adresses IP du Load Balancer managé.</text>
+<text x="150" y="1042" font-size="10" fill="#17202c" font-style="italic">En niveau 4, la VM cloud ne dispose pas d'interface RS422 : les écrans en agence restent inopérants jusqu'au remplacement du matériel (SLA 4 h).</text>
+<text x="150" y="1062" font-size="10" fill="#17202c" font-style="italic">Ports non précisés au dossier : valeur par défaut du protocole. Matrice des flux techniques jointe au dossier d'architecture.</text>
 </svg>

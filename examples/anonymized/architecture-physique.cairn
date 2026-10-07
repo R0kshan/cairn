@@ -1,0 +1,84 @@
+diagram infrastructure "Focus — flux inter-regions, entrees et sorties"
+style {
+  lang: fr
+  disposition: wide
+  compact: on
+  label-wrap: 17
+  flow-label-wrap: 17
+  theme: light
+  fill network-zone: #eef6ff
+}
+
+# Ne montre que ce qui franchit la frontiere d'une region. Les appels sortants
+# sont factorises par la passerelle, qui porte l'adresse source stable.
+actor NAV_TOUS "Opérateur / Donneur d'ordre / Prestataire / Exploitant"
+
+site CLOUD_PUBLIC "Points d'entree" {
+  offset: -42, -139
+  network-zone Z_EDGE "Exposition hébergeur cloud" {
+    load-balancer LB_PUB "LB  app.example.org"
+    load-balancer LB_FLUX "LB flux.example.org"
+  }
+}
+
+site CLOUD_PROD "Region (x3)" {
+
+  network-zone Z_Public "Réseau accès multi-région" {
+    server VM_RP "VM Reverse proxy (x2)" {
+      offset: 20, -19
+      app-instance APP_00 "Reverse proxy (OIDC + IHM)"
+    }
+
+    server VM_API "VM core-metier (x2)" {
+      size: 15, 0
+      app-instance APP_01 "core-metier"
+    }
+
+    server VM_BATCH "VM Batch (x2)" {
+      offset: -19, -16
+      app-instance APP_02 "Batch de facturation"
+    }
+
+    server VM_BDD_PRIM "VM BDD Primary (x1)" {
+      size: 19, 0
+      datastore BDD_01 "BDD"
+    }
+   server VM_BDD_REP "VM BDD Replica(x2)" {
+      datastore  BDD_02 "BDD"
+    }
+
+   datastore S3 "Stockage objet"
+  }
+}
+
+idp IDP "Fournisseur d'identite"  { offset: 3, 31 }
+
+external SI_TIERS "Systemes tiers et connexes" {
+  external EXT_SI_DO "SI Donneur d'ordre"
+  external EXT_OUTILS_PRE "Logiciels des prestataires"
+  external EXT_ORG "Organisme partenaire"
+  external EXT_AUTRES "Fournisseurs · Outil e-mailing ·\ngeolocalisation · Outils decisionnel ·\nReferentiels  · GED"
+}
+
+# Flux utilisateurs vers la plateforme
+NAV_TOUS -> LB_PUB (HTTPS)
+NAV_TOUS -> IDP (HTTPS)
+
+# Flux SI tiers vers la plateforme
+EXT_SI_DO  -> LB_FLUX (HTTPS/mTLS)
+EXT_OUTILS_PRE -> LB_FLUX (HTTPS/mTLS)
+
+# Flux internes
+VM_RP.bottom -> VM_API (HTTPS)
+VM_BATCH -> BDD_01 (TCP)
+BDD_01 -> BDD_02 "Synchronisation" (TCP)
+VM_BDD_PRIM -> S3 "Sauvegarde" (HTTP)
+APP_01  -> S3 (HTTP)
+
+# Flux LB vers Réseau région
+LB_PUB -> APP_00  (HTTPS)
+LB_FLUX -> APP_01 (HTTPS)
+
+# Flux plateforme vers SI Tiers
+APP_01 -> EXT_AUTRES  (HTTPS)
+APP_01  -> EXT_ORG (HTTPS)
