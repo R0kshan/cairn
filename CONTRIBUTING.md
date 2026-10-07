@@ -54,13 +54,14 @@ Invariants detailed in [`AGENTS.md`](./AGENTS.md#non-negotiable-invariants). In 
 | You changed a `.cairn` source file (bug fix / feature) | ✅ must pass | ✅ must pass | ✅ run if output changed | ✅ run if output changed |
 | You changed the render/layout pipeline | ✅ must pass | ✅ must pass | ✅ run | ✅ run |
 
-The table above covers the render pipeline. Three things it doesn't:
+The table above covers the render pipeline. Four things it doesn't:
 
 | You changed… | Also run |
 |---|---|
 | `package.json`'s `files` / `exports` / `bin` / `prepack`, or a publish-path build script (`scripts/build-cli.sh`, `scripts/build-api.sh`) | `npm run test:npm` |
 | bundling or the elkjs worker | `npm run test:binary` |
 | anything under `src/` | rebuild the playground bundles — [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src) |
+| `documentation/index.md`, `DSL_SPEC.md`, `DIAGNOSTICS.md`, `mkdocs.yml` or `scripts/mkdocs_hooks.py` | `mkdocs build --strict` — see [Documentation site](#documentation-site) |
 
 **`npm test` cannot see packaging** — it runs from the repo, not the tarball.
 `npm run test:npm` packs, installs into a throwaway consumer and exercises both
@@ -90,6 +91,32 @@ attaching on the wrong side of their target. CLI-only — the playground bundles
 run in a browser, where the switch reads as absent rather than throwing (see
 [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#no-node-globals-in-engine-code)).
 Nothing in the repo sets it, so it must never change committed output.
+
+## Documentation site
+
+The user reference is published to GitHub Pages with MkDocs. It is built from
+`documentation/` — `index.md`, `DSL_SPEC.md` and `DIAGNOSTICS.md` only; the
+maintainer docs are excluded in `mkdocs.yml` and stay on GitHub. The toolchain
+is Python and kept out of `package.json`, pinned exactly in
+`requirements-docs.txt` (MkDocs 2.0 drops the plugin and theme system Material
+needs, so bump it on purpose).
+
+```sh
+pip install -r requirements-docs.txt
+mkdocs serve                  # live preview at http://127.0.0.1:8000
+mkdocs build --strict         # what CI runs: any broken internal link or anchor fails
+```
+
+- **Write the pages as plain GitHub Markdown.** They are read on GitHub too.
+  `scripts/mkdocs_hooks.py` makes heading anchors match GitHub's, so an in-page
+  link like `#order-n--reading-order` resolves in both places.
+- **Link anything outside `documentation/` by its GitHub URL** — the site cannot
+  reach `../examples/`. The one exception is `examples/*.svg`, which the hook
+  publishes at `examples/` on the site; reference those as `examples/<name>.svg`
+  from `index.md`.
+- **Deploys are automatic.** `.github/workflows/docs.yml` builds on every PR
+  touching the docs and deploys from `main`; it needs Settings → Pages → Source
+  set to *GitHub Actions*.
 
 ## Opening a PR
 

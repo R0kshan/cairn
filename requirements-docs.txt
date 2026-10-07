@@ -1,0 +1,4 @@
+# Docs site toolchain (mkdocs.yml). Exact pins: MkDocs 2.0 drops the plugin
+# and theme system Material depends on, so a bump here is a deliberate move.
+mkdocs==1.6.1
+mkdocs-material==9.7.7

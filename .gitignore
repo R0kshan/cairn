@@ -32,3 +32,5 @@ graphify-out/
 opencode.jsonc
 # Throwaway worktree used by scripts/readability-score.ts
 .readability-score-base/
+site/
+__pycache__/

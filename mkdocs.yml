@@ -1,0 +1,51 @@
+# pip install -r requirements-docs.txt && mkdocs serve
+site_name: cairn
+site_description: Architecture diagrams as code — typed views, semantic layout, no label overlap
+repo_url: https://github.com/R0kshan/cairn
+edit_uri: edit/main/documentation/
+docs_dir: documentation
+
+# Maintainer docs stay on GitHub; the site is the user reference.
+exclude_docs: |
+  README.md
+  ARCHITECTURE.md
+  INVARIANTS.md
+  PLAYGROUND_BUILD.md
+  READABILITY_METRICS.md
+  internals/
+  research/
+
+nav:
+  - Home: index.md
+  - DSL reference: DSL_SPEC.md
+  - Diagnostics: DIAGNOSTICS.md
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle: { icon: material/brightness-7, name: Dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle: { icon: material/brightness-4, name: Light mode }
+
+markdown_extensions:
+  - tables
+  - admonition
+  - pymdownx.superfences
+  - pymdownx.highlight
+  - toc:
+      permalink: true
+
+watch:
+  - examples                  # the hook publishes examples/*.svg from here
+
+hooks:
+  - scripts/mkdocs_hooks.py
+
+validation:
+  anchors: warn
