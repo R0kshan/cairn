@@ -13,6 +13,8 @@ import { loadChromium } from './lib.mjs';
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const out = join(root, 'documentation', 'assets', 'playground-demo.gif');
 const PORT = 8766;
+// Where the identity provider is dropped, relative to the auth middleware.
+const DRAG_IDP = { dx: 185, dy: -15 };
 const W = 1440, H = 600;
 
 const server = spawn('python3', ['-m', 'http.server', String(PORT), '-d', join(root, 'playground')], { stdio: 'ignore' });
@@ -97,21 +99,18 @@ await pause(300);
 await page.selectOption('#theme', 'nord');
 await pause(1600);
 
-// 4. Drag an element — the DSL gains an `offset:` hint
-const psp = await centerOf(svgText('Payment provider'));
-await drag(psp, { x: psp.x - 60, y: psp.y + 28 });
+// 4. Drag an element — the layout is automatic, but here the identity
+// provider landed at the far right, stretching its (OIDC, JWT) flow across
+// the whole diagram. Pull it in next to the auth middleware; the DSL gains an
+// `offset:` hint, so the CLI renders the same thing.
+const idp = await centerOf(svgText('Identity provider'));
+const auth = await centerOf(svgText('Auth middleware'));
+await drag(idp, { x: auth.x + DRAG_IDP.dx, y: idp.y + DRAG_IDP.dy });
 await pause(400);
-await caretAfterLine('external PSP', true);
-await pause(1600);
+await caretAfterLine('idp IDP', true);
+await pause(2400);
 
-// 5. Drag a flow label — `label-offset:` lands on the flow line
-const label = await centerOf(svgText('Charge card'));
-await drag(label, { x: label.x - 10, y: label.y - 18 });
-await pause(400);
-await caretAfterLine('API    -> PSP', true);
-await pause(2000);
-
-// 6. Rest on the result
+// 5. Rest on the result
 await moveTo(W * 0.7, H * 0.8);
 await pause(2400);
 

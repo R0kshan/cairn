@@ -18,5 +18,7 @@ resolve a local or global install, or `PLAYWRIGHT_MODULE=/path/to/playwright`.
   typing is simulated. Edit the `session` list to change the story.
 - **Playground** — drives the committed `playground/` build, i.e. what Vercel
   serves. Rebuild it first (`npm run build:playground`) if `src/` changed.
-  The drag distances are tuned to the application template's layout; if the
-  template or the layout engine changes, re-check the last frames.
+  The drag (`DRAG_IDP`) is tuned to the application template's layout — it
+  pulls the identity provider in from the far right so its flow gets short.
+  If the template or the layout engine changes, re-check the last frames:
+  the drag should visibly improve the diagram, not just move something.

@@ -75,9 +75,9 @@ Scaffold, validate, explain a diagnostic, build to SVG and export the flow matri
 
 ### Playground
 
-Start from a template, type and watch the preview follow, switch theme, then drag an element and a flow label — each drag is written back into the source as an `offset:` / `label-offset:` hint.
+Start from a template, type and watch the preview follow, switch theme, then drag an element where the automatic layout placed it awkwardly — the drag is written back into the source as an `offset:` hint, so the CLI renders the same result.
 
-<p align="center"><img src="./documentation/assets/playground-demo.gif" alt="Playground: template, live typing, theme switch, dragging an element and a flow label" width="900"></p>
+<p align="center"><img src="./documentation/assets/playground-demo.gif" alt="Playground: template, live typing, theme switch, dragging an element into place" width="900"></p>
 
 ## Preview
 
