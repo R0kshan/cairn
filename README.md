@@ -67,6 +67,18 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
 
 Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/) (elements are and labels are manually draggable with DSL updated automatically with corresponding offsets).
 
+### CLI
+
+Scaffold, validate, explain a diagnostic, build to SVG and export the flow matrix — see [Commands](#commands) for every option.
+
+<p align="center"><img src="./documentation/assets/cli-demo.gif" alt="Terminal session: cairn new, validate (with an error), explain, build and matrix" width="760"></p>
+
+### Playground
+
+Start from a template, type and watch the preview follow, switch theme, then drag an element and a flow label — each drag is written back into the source as an `offset:` / `label-offset:` hint.
+
+<p align="center"><img src="./documentation/assets/playground-demo.gif" alt="Playground: template, live typing, theme switch, dragging an element and a flow label" width="900"></p>
+
 ## Preview
 
 Every image below is rendered by cairn CLI from a `.cairn` source in [`examples/`](examples/) — plain SVG, zero label overlaps.
