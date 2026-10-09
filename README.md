@@ -75,9 +75,9 @@ Scaffold, validate, explain a diagnostic, build to SVG and export the flow matri
 
 ### Playground
 
-Start from a template, type and watch the preview follow, switch theme, then drag an element where the automatic layout placed it awkwardly — the drag is written back into the source as an `offset:` hint, so the CLI renders the same result.
+One short story through every tool in the [playground](https://cairn-psi-five.vercel.app/): start from a template, add a payment provider and let the diagnostics catch a typo, preview a theme, then tidy what the automatic layout got wrong — wrap a long flow label, re-attach a flow to another side of its target, drag an element in, zoom on the detail, slide one run of a route and move a label clear of the frame — and finish by sharing a link and downloading the SVG and the flow matrix. Every adjustment is written back into the source as a hint (`flow-label-wrap:`, `PSP.left`, `offset:`, `segment-offset:`, `label-offset:`), so the CLI renders the same diagram.
 
-<p align="center"><img src="./documentation/assets/playground-demo.gif" alt="Playground: template, live typing, theme switch, dragging an element into place" width="900"></p>
+<p align="center"><img src="./documentation/assets/playground-demo.gif" alt="Playground walkthrough: template, typo caught by diagnostics, theme, label wrap, flow re-attached, element dragged, zoom, route segment slid, label moved, share and export" width="900"></p>
 
 ## Preview
 
