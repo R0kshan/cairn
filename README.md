@@ -14,6 +14,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 
 - [Why cairn?](#why-cairn)
 - [Usage](#usage)
+- [Demo](#demo)
 - [Preview](#preview)
 - [Installation](#installation)
 - [Commands](#commands)
@@ -65,19 +66,38 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
 
 ## Usage
 
-Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/) (elements are and labels are manually draggable with DSL updated automatically with corresponding offsets).
+Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/) (elements are and labels are manually draggable with DSL updated automatically with corresponding offsets). See both in action in the [Demo](#demo) below.
 
-### CLI
+## Demo
 
-The CLI in its natural habitat — the source edited in VS Code, the commands run in its integrated terminal: scaffold, add a flow, let `validate` catch the typo and `explain` the rule, fix it, `build` the SVG and open it beside the source, then `watch` to have the preview follow every save — an unfinished flow turns it into an error panel, a missing protocol is flagged as a warning, the finished flow builds clean — and export the flow matrix. See [Commands](#commands) for every option.
-
-<p align="center"><img src="./documentation/assets/cli-demo.gif" alt="VS Code: cairn new, edit the .cairn source, validate catches a typo, explain, build, the SVG previewed beside the source and refreshed by cairn watch on save through an error, a warning and a clean build, then cairn matrix" width="900"></p>
+Two short recordings, each one small story from first line to exported diagram. Every output in them is real.
 
 ### Playground
 
-One short story through every tool in the [playground](https://cairn-psi-five.vercel.app/): start from a template, add a payment provider and let the diagnostics catch a typo, preview a theme, then tidy what the automatic layout got wrong — wrap a long flow label, re-attach a flow to another side of its target, drag an element in, zoom on the detail, slide one run of a route and move a label clear of the frame — and finish by sharing a link and downloading the SVG and the flow matrix. Every adjustment is written back into the source as a hint (`flow-label-wrap:`, `PSP.left`, `offset:`, `segment-offset:`, `label-offset:`), so the CLI renders the same diagram.
+No install — open the [playground](https://cairn-psi-five.vercel.app/), write on the left, the diagram follows on the right:
+
+- start from a template, and let the diagnostics catch a typo — click one to jump to its line
+- preview a theme, and fit the diagram to the pane
+- tidy what the automatic layout got wrong: wrap a long flow label, re-attach a flow to another side of its target, drag an element in, zoom on the detail, slide one run of a route, move a label clear of the frame
+- share a link, download the SVG and the flow matrix
+
+Every adjustment is written back into the source as a hint (`flow-label-wrap:`, `PSP.left`, `offset:`, `segment-offset:`, `label-offset:`), so the CLI renders the same diagram.
 
 <p align="center"><img src="./documentation/assets/playground-demo.gif" alt="Playground walkthrough: template, typo caught by diagnostics, theme, label wrap, flow re-attached, element dragged, zoom, route segment slid, label moved, share and export" width="900"></p>
+
+### CLI
+
+The CLI in its natural habitat — the source edited in VS Code, the commands run in its integrated terminal:
+
+- `cairn new` scaffolds a typed starter file
+- `cairn validate` catches a typo with line, column and a hint; `cairn explain` gives the rule behind it
+- `cairn build` renders the SVG, opened beside the source
+- `cairn watch` keeps that preview fresh on every save — an unfinished flow turns it into an error panel, a missing protocol is flagged as a warning, the finished flow builds clean
+- `cairn matrix` exports the flow matrix
+
+See [Commands](#commands) for every option.
+
+<p align="center"><img src="./documentation/assets/cli-demo.gif" alt="VS Code: cairn new, edit the .cairn source, validate catches a typo, explain, build, the SVG previewed beside the source and refreshed by cairn watch on save through an error, a warning and a clean build, then cairn matrix" width="900"></p>
 
 ## Preview
 
