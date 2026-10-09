@@ -86,7 +86,9 @@ async function drag(from, to, steps = 32) {
 }
 const svgText = label => page.locator('#preview svg text', { hasText: label }).first();
 async function settle() { await pause(350); await page.waitForFunction(() => !document.getElementById('stat').textContent.includes('…')); }
-async function fit() { await clickEl(page.locator('#zoom-fit')); await pause(500); }
+// Clicks fit, pausing on the button first so the click — and the zoom readout
+// changing next to it — registers before the drawing jumps.
+async function fit() { await moveToEl(page.locator('#zoom-fit')); await pause(600); await page.locator('#zoom-fit').click(); await pause(700); }
 
 // Hovers each point until the preview wears `cursor` — what the playground
 // shows over a flow's end (`grab`) or one run of a route (`slide-x`/`slide-y`).
@@ -144,18 +146,7 @@ await settle();
 await pause(1500);
 await step('template');
 
-// 2. The diagram is wide — give it the room
-await caption('Wide diagram — drag the splitter to give the preview more room');
-// The splitter's right half sits under the preview (negative margin): grab
-// its left edge.
-const splitBox = await boxOf(page.locator('#splitter'));
-const split = { x: splitBox.x + 2, y: splitBox.y + splitBox.height / 2 };
-await drag(split, { x: W * 0.33, y: split.y }, 26);
-await fit();
-await pause(900);
-await step('split');
-
-// 3. Type — and let the diagnostics catch the typo
+// 2. Type — and let the diagnostics catch the typo
 await caption('Edit the source — the preview re-renders as you type');
 await moveTo(200, 430);
 await caretAfter('external PARTNER');
@@ -172,10 +163,21 @@ await highlight('PSPP');
 await pause(500);
 await page.keyboard.type('PSP', { delay: 90 });
 await settle();
-await fit();
 await caption(null);
 await pause(900);
 await step('fixed');
+
+// 3. The diagram grew wider than the pane — make room, then fit it
+await caption('The diagram now overflows the pane — drag the splitter for more room…');
+// The splitter's right half sits under the preview (negative margin): grab
+// its left edge.
+const splitBox = await boxOf(page.locator('#splitter'));
+const split = { x: splitBox.x + 2, y: splitBox.y + splitBox.height / 2 };
+await drag(split, { x: W * 0.33, y: split.y }, 26);
+await caption('…then <b>fit</b> it to the pane');
+await fit();
+await pause(1400);
+await step('split');
 
 // 4. Theme preview
 await caption('Preview it in any built-in theme');
@@ -193,7 +195,6 @@ await moveTo(longLabel.x, longLabel.y);
 await pause(700);
 await clickEl(page.locator('#wrap-icon'));
 await settle();
-await fit();
 await highlight('flow-label-wrap');
 await pause(1600);
 await step('wrap');
@@ -269,8 +270,9 @@ await pause(1800);
 await step('label');
 
 // 11. Back to the whole picture, then share and export
+await caption('Done with the detail — <b>fit</b> brings the whole diagram back');
 await fit();
-await pause(1200);
+await pause(1800);
 await caption('Every drag is text in the source — share it as a link…');
 await clickEl(page.locator('#share'));
 await pause(1400);
