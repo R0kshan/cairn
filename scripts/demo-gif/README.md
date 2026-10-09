@@ -4,18 +4,24 @@ Regenerates `documentation/assets/cli-demo.gif` and
 `documentation/assets/playground-demo.gif`.
 
 ```sh
-node scripts/demo-gif/cli-demo.mjs          # terminal session
+node scripts/demo-gif/cli-demo.mjs          # VS Code: editor + integrated terminal
 node scripts/demo-gif/playground-demo.mjs   # playground walkthrough
 ```
 
-Needs `ffmpeg`, `script` (util-linux), `python3` (serves `playground/`) and
-Playwright with Chromium. Playwright is deliberately **not** a devDependency —
-this is an occasional docs chore, not part of dev, test or publish; the scripts
-resolve a local or global install, or `PLAYWRIGHT_MODULE=/path/to/playwright`.
+Needs `ffmpeg`, `python3` (serves `playground/`), Playwright with Chromium,
+and for the CLI demo [code-server](https://github.com/coder/code-server) —
+VS Code in the browser. Its standalone release bundles the Node it needs; put
+`code-server` on the PATH or set `CODE_SERVER=/path/to/bin/code-server`.
+Neither is a devDependency — this is an occasional docs chore, not part of
+dev, test or publish; the scripts resolve a local or global Playwright, or
+`PLAYWRIGHT_MODULE=/path/to/playwright`.
 
-- **CLI** — the commands really run in a temp directory through a
-  pseudo-terminal, so every output (colours included) is genuine; only the
-  typing is simulated. Edit the `session` list to change the story.
+- **CLI** — a real VS Code (code-server, with a throwaway profile and
+  workspace) and a real shell running the CLI from `src/`: the `.cairn` source
+  is edited in the editor, every command runs in the integrated terminal, and
+  the SVG opens in VS Code's image preview, which `cairn watch` keeps fresh.
+  Only the mouse and keyboard are scripted. Edit the steps in
+  `cli-demo.mjs`; `STEPS=<dir>` saves a PNG after each one.
 - **Playground** — drives the committed `playground/` build, i.e. what Vercel
   serves. Rebuild it first (`npm run build:playground`) if `src/` changed.
   Each step fixes something the automatic layout really got wrong, and a

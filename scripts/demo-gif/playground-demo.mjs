@@ -9,12 +9,12 @@
 // way a person finds them — by hovering until the playground's cursor changes —
 // so the script follows the layout instead of hard-coding pixels.
 // See scripts/demo-gif/README.md. `STEPS=<dir>` also saves a PNG per step.
-import { spawn, execFileSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readdirSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadChromium } from './lib.mjs';
+import { loadChromium, demoOverlay, setCaption, videoToGif } from './lib.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const out = join(root, 'documentation', 'assets', 'playground-demo.gif');
@@ -34,42 +34,15 @@ const context = await browser.newContext({
   recordVideo: { dir: videoDir, size: { width: W, height: H } },
   permissions: ['clipboard-read', 'clipboard-write'],
 });
-// Headless Chromium records no pointer, so draw one that tracks mouse events,
-// and a caption bar that says what each step is for.
-await context.addInitScript(() => {
-  try { localStorage.removeItem('cairn:split'); } catch {}
-  addEventListener('DOMContentLoaded', () => {
-    const c = document.createElement('div');
-    c.innerHTML = '<svg width="22" height="22" viewBox="0 0 22 22"><path d="M3 2l14 9-6.5 1.2L14 19l-2.6 1.2-3.3-6.8L3 18z" fill="#fff" stroke="#000" stroke-width="1.3" stroke-linejoin="round"/></svg>';
-    Object.assign(c.style, { position: 'fixed', left: '0', top: '0', zIndex: 99999, pointerEvents: 'none', transform: 'translate(-3px,-2px)' });
-    document.body.appendChild(c);
-    const move = e => { c.style.left = e.clientX + 'px'; c.style.top = e.clientY + 'px'; };
-    addEventListener('pointermove', move, true);
-    addEventListener('pointerdown', move, true);
-    const cap = document.createElement('div');
-    cap.id = 'demo-caption';
-    Object.assign(cap.style, {
-      position: 'fixed', right: '18px', bottom: '42px', zIndex: 99998, pointerEvents: 'none',
-      maxWidth: '640px', padding: '9px 14px', borderRadius: '8px', display: 'none',
-      background: 'rgba(13,17,23,.92)', color: '#e6edf3', border: '1px solid #3d444d',
-      font: '15px/1.4 system-ui, sans-serif', boxShadow: '0 4px 18px rgba(0,0,0,.35)',
-    });
-    document.body.appendChild(cap);
-  });
-});
+await context.addInitScript(() => { try { localStorage.removeItem('cairn:split'); } catch {} });
+await context.addInitScript(demoOverlay);
 const page = await context.newPage();
 const pause = ms => page.waitForTimeout(ms);
 let stepNo = 0;
 async function step(name) {
   if (stepsDir) await page.screenshot({ path: join(stepsDir, `${String(++stepNo).padStart(2, '0')}-${name}.png`) });
 }
-async function caption(html) {
-  await page.evaluate(h => {
-    const cap = document.getElementById('demo-caption');
-    cap.innerHTML = h ?? '';
-    cap.style.display = h ? 'block' : 'none';
-  }, html);
-}
+const caption = html => setCaption(page, html);
 
 async function moveTo(x, y, steps = 22) { await page.mouse.move(x, y, { steps }); }
 async function boxOf(locator) { return locator.boundingBox(); }
@@ -299,13 +272,7 @@ await browser.close();
 server.kill();
 
 const webm = join(videoDir, readdirSync(videoDir).find(f => f.endsWith('.webm')));
-const palette = join(videoDir, 'palette.png');
-// mpdecimate drops the near-identical frames of every pause (most of the
-// recording); vfr keeps each remaining frame on screen for as long as it was.
-const vf = 'fps=8,mpdecimate=hi=768:lo=320:frac=0.4';
 // Trim the first half-second: it is the blank page before navigation.
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '0.6', '-i', webm, '-vf', `${vf},palettegen=stats_mode=diff:max_colors=96`, palette]);
-execFileSync('ffmpeg', ['-y', '-loglevel', 'error', '-ss', '0.6', '-i', webm, '-i', palette, '-lavfi',
-  `${vf}[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle`, '-fps_mode', 'vfr', '-loop', '0', out]);
+videoToGif(webm, out, { trim: 0.6 });
 rmSync(videoDir, { recursive: true, force: true });
 console.log(`✓ ${out}`);

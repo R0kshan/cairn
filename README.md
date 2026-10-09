@@ -69,9 +69,9 @@ Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/) (ele
 
 ### CLI
 
-Scaffold, validate, explain a diagnostic, build to SVG and export the flow matrix — see [Commands](#commands) for every option.
+The CLI in its natural habitat — the source edited in VS Code, the commands run in its integrated terminal: scaffold, add a flow, let `validate` catch the typo and `explain` the rule, fix it, `build` the SVG and open it beside the source, then `watch` to have the preview follow every save, and export the flow matrix. See [Commands](#commands) for every option.
 
-<p align="center"><img src="./documentation/assets/cli-demo.gif" alt="Terminal session: cairn new, validate (with an error), explain, build and matrix" width="760"></p>
+<p align="center"><img src="./documentation/assets/cli-demo.gif" alt="VS Code: cairn new, edit the .cairn source, validate catches a typo, explain, build, the SVG previewed beside the source and refreshed by cairn watch on save, then cairn matrix" width="900"></p>
 
 ### Playground
 
