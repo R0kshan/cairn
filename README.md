@@ -66,7 +66,7 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
 
 ## Usage
 
-Either use the cli or the [ playground](https://cairn-psi-five.vercel.app/) (elements are and labels are manually draggable with DSL updated automatically with corresponding offsets). See both in action in the [Demo](#demo) below.
+Either use the CLI or the [playground](https://cairn-psi-five.vercel.app/) (elements and labels are manually draggable, and the DSL is updated automatically with the corresponding offsets). See both in action in the [Demo](#demo) below.
 
 ## Demo
 

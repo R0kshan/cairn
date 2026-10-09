@@ -66,9 +66,12 @@ export function videoToGif(webm, out, { trim = 0, width } = {}) {
   const palette = join(dir, 'palette.png');
   const vf = `fps=8,mpdecimate=hi=768:lo=320:frac=0.4${width ? `,scale=${width}:-1:flags=lanczos` : ''}`;
   const input = ['-y', '-loglevel', 'error', '-ss', String(trim), '-i', webm];
-  execFileSync('ffmpeg', [...input, '-vf', `${vf},palettegen=stats_mode=diff:max_colors=96`, palette]);
-  execFileSync('ffmpeg', [...input, '-i', palette, '-lavfi',
-    `${vf}[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle`, '-fps_mode', 'vfr', '-loop', '0', out]);
-  rmSync(dir, { recursive: true, force: true });
+  try {
+    execFileSync('ffmpeg', [...input, '-vf', `${vf},palettegen=stats_mode=diff:max_colors=96`, palette]);
+    execFileSync('ffmpeg', [...input, '-i', palette, '-lavfi',
+      `${vf}[x];[x][1:v]paletteuse=dither=none:diff_mode=rectangle`, '-fps_mode', 'vfr', '-loop', '0', out]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
   if (!existsSync(out)) throw new Error(`ffmpeg produced no ${out}`);
 }

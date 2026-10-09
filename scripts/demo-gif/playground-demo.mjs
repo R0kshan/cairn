@@ -24,6 +24,10 @@ const stepsDir = process.env.STEPS;
 if (stepsDir) mkdirSync(stepsDir, { recursive: true });
 
 const server = spawn('python3', ['-m', 'http.server', String(PORT), '-d', join(root, 'playground')], { stdio: 'ignore' });
+// Stopped however the script ends — a failed step would otherwise leave it
+// holding the port for the next run.
+process.on('exit', () => { try { server.kill(); } catch {} });
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => process.exit(1));
 await new Promise(r => setTimeout(r, 800));
 
 const videoDir = mkdtempSync(join(tmpdir(), 'cairn-pg-'));
