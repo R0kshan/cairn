@@ -246,15 +246,32 @@ await step('build');
 // 6. Watch: rebuild on every save, the open preview follows
 await caption('<code>cairn watch</code> rebuilds on every save — the open preview follows');
 await run('clear && cairn watch shop.cairn --theme nord', { wait: false, hold: 1800 });
-await caption('Add a session cache, save…');
+// Three saves of a flow still being written: unfinished (error), then
+// without its protocol (warning), then complete — watch reports each, and the
+// preview follows.
+await caption('Add a session cache and save mid-flow — the quote not closed yet…');
 await focusEditor();
 await goToLine(17);
 await typeLines('\ndatastore CACHE "Session cache"');
 await page.keyboard.press('Control+End');
-await typeLines('\nM1   -> CACHE "Cache sessions" (RESP)');
+await typeLines('\nM1   -> CACHE "Cache sessions');
 await save();
-await caption('…and the diagram is already up to date');
-await pause(2600);
+await caption('…watch reports the error; the preview turns into an error panel, not a stale diagram');
+await pause(3400);
+await step('watch-error');
+await caption('Close the quote, save: the diagram is back — with a warning, no protocol yet');
+await focusEditor();
+await page.keyboard.press('Control+End');
+await page.keyboard.type('"', { delay: 120 });
+await save();
+await pause(3200);
+await step('watch-warning');
+await caption('Add the protocol, save: a clean build, and the preview is up to date');
+await focusEditor();
+await page.keyboard.press('Control+End');
+await page.keyboard.type(' (RESP)', { delay: 70 });
+await save();
+await pause(2800);
 await step('watch');
 await focusTerminal();
 await page.keyboard.press('Control+C');
