@@ -20,6 +20,7 @@ nav:
   - DSL reference: DSL_SPEC.md
   - Diagnostics: DIAGNOSTICS.md
   - Use with AI agents: AI_AGENTS.md
+  - cairn and C4: C4_COMPARISON.md
 
 theme:
   name: material

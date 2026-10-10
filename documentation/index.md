@@ -64,3 +64,5 @@ cairn build my-system.cairn
 Then read the [DSL reference](DSL_SPEC.md). Every error and warning code is in
 [Diagnostics](DIAGNOSTICS.md). To have an AI agent write diagrams for you, see
 [Use with AI agents](AI_AGENTS.md).
+
+Coming from C4? See [cairn and C4](C4_COMPARISON.md).
