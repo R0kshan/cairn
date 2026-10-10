@@ -63,3 +63,5 @@ cairn build my-system.cairn
 
 Then read the [DSL reference](DSL_SPEC.md). Every error and warning code is in
 [Diagnostics](DIAGNOSTICS.md).
+
+Coming from C4? See [cairn and C4](C4_COMPARISON.md).

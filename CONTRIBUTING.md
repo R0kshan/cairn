@@ -61,7 +61,7 @@ The table above covers the render pipeline. Four things it doesn't:
 | `package.json`'s `files` / `exports` / `bin` / `prepack`, or a publish-path build script (`scripts/build-cli.sh`, `scripts/build-api.sh`) | `npm run test:npm` |
 | bundling or the elkjs worker | `npm run test:binary` |
 | anything under `src/` | rebuild the playground bundles — [PLAYGROUND_BUILD.md](documentation/PLAYGROUND_BUILD.md#update-playground-after-modifying-src) |
-| `documentation/index.md`, `DSL_SPEC.md`, `DIAGNOSTICS.md`, `mkdocs.yml` or `scripts/mkdocs_hooks.py` | `mkdocs build --strict` — see [Documentation site](#documentation-site) |
+| `documentation/index.md`, `DSL_SPEC.md`, `DIAGNOSTICS.md`, `C4_COMPARISON.md`, `mkdocs.yml` or `scripts/mkdocs_hooks.py` | `mkdocs build --strict` — see [Documentation site](#documentation-site) |
 
 **`npm test` cannot see packaging** — it runs from the repo, not the tarball.
 `npm run test:npm` packs, installs into a throwaway consumer and exercises both
@@ -95,7 +95,7 @@ Nothing in the repo sets it, so it must never change committed output.
 ## Documentation site
 
 The user reference is published to GitHub Pages with MkDocs. It is built from
-`documentation/` — `index.md`, `DSL_SPEC.md` and `DIAGNOSTICS.md` only; the
+`documentation/` — `index.md`, `DSL_SPEC.md`, `DIAGNOSTICS.md` and `C4_COMPARISON.md` only; the
 maintainer docs are excluded in `mkdocs.yml` and stay on GitHub. The toolchain
 is Python and kept out of `package.json`, pinned exactly in
 `requirements-docs.txt` (MkDocs 2.0 drops the plugin and theme system Material
