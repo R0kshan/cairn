@@ -27,8 +27,12 @@
   "bin": {
     "cairn": "bin/cairn.mjs"
   },
+  "types": "./dist/types/playground.d.ts",
   "exports": {
-    ".": "./dist/cairn.mjs",
+    ".": {
+      "types": "./dist/types/playground.d.ts",
+      "default": "./dist/cairn.mjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {
@@ -37,6 +41,7 @@
   "files": [
     "bin/cairn.mjs",
     "dist/cairn.mjs",
+    "dist/types/",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md",
     "licenses/"

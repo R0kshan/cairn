@@ -17,6 +17,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Demo](#demo)
 - [Preview](#preview)
 - [Installation](#installation)
+- [Use as a library](#use-as-a-library)
 - [Commands](#commands)
 - [License](#license)
 - [More](#more)
@@ -335,6 +336,25 @@ git clone https://github.com/R0kshan/cairn && cd cairn
 npm install
 npm run cairn -- --help          # or: node bin/cairn.js --help
 ```
+
+## Use as a library
+
+The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn). One ESM module runs in the browser (Vite, webpack, esbuild…) and in Node, has zero dependencies (elkjs is inlined), and ships its TypeScript declarations.
+
+```sh
+npm install @r0kshan/cairn@unstable
+```
+
+```ts
+import { compile, matrixCsv } from "@r0kshan/cairn";
+
+const { svg, diagnostics, matrix } = await compile(source, { theme: "dark", matrix: true });
+if (svg) container.innerHTML = svg;            // null when the source has errors
+for (const d of diagnostics) console.warn(d.code, d.message);
+if (matrix) download(matrixCsv(matrix));       // same bytes as `cairn matrix`
+```
+
+`compile(source, options?)` never throws on a bad diagram — errors come back in `diagnostics` and `svg` is `null`. It throws `ThemeSpecError` only for a malformed custom `theme` object. Logos given as file paths need their `data:` URIs passed in `options.logos`, since the engine does no filesystem work. The API is pre-1.0: expect it to move with the grammar until v1.0.0.
 
 ## Commands
 

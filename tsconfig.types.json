@@ -1,0 +1,17 @@
+{
+  // Declarations for the npm entry (`dist/cairn.mjs`), run by scripts/build-api.sh.
+  // The base config is `noEmit` for typechecking; this one only emits `.d.ts`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "rewriteRelativeImportExtensions": true,
+    "rootDir": "src",
+    "outDir": "dist/types",
+    // Consumers get no @types/node; the public types must not need it.
+    "types": []
+  },
+  "include": [],
+  "files": ["src/playground.ts"]
+}

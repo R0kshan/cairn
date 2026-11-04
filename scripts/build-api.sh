@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Bundle the engine for the npm channel:  src/playground.ts -> dist/cairn.mjs
+# (+ its .d.ts declarations -> dist/types/)
 #
 # This is what `import { compile } from "@r0kshan/cairn"` resolves to. Built from
 # `playground.ts` rather than `api.ts` because `api.ts` is deliberately
@@ -42,4 +43,10 @@ npx --no-install esbuild src/playground.ts \
   --log-level=warning \
   --outfile="$OUT"
 
-echo "✓ $OUT ($(du -h "$OUT" | cut -f1))"
+# Type declarations for `exports["."].types`. Emitted from the same entry, so the
+# types describe exactly what the bundle exports. `rm` first: a module deleted
+# from src/ must not leave a stale .d.ts in the tarball.
+rm -rf dist/types
+npx --no-install tsc -p tsconfig.types.json
+
+echo "✓ $OUT ($(du -h "$OUT" | cut -f1)) + dist/types/"
