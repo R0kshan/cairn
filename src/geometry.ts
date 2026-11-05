@@ -129,3 +129,14 @@ export const boxToPolylineSq = (box: Box, points: Point[]) => {
   }
   return best;
 };
+
+/** The smallest a `size:` may leave one container: what it holds, plus the gap
+    the layout keeps around it. Absolute pixels, not a delta — the hint is a
+    delta, but what floors it is where the geometry already is.
+
+    There is no ceiling. A container that outgrows its parent is not clamped; the
+    parent grows to hold it (`containWithin`). */
+export interface SizeBounds {
+  minWidth: number;
+  minHeight: number;
+}

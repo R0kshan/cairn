@@ -253,4 +253,37 @@ FIXTURE="$PWD/examples/application-medium.cairn"
   ' "$FIXTURE" "$EXPECTED_VERSION"
 ) || { echo "✗ import surface check failed"; exit 1; }
 
+# The `types` condition is as silent as the rest: a bad path there publishes
+# cleanly and TypeScript consumers fall back to an implicit-any error (or, with
+# skipLibCheck, to nothing). Typecheck a consumer against the INSTALLED package
+# with no @types/node and no elkjs, so a declaration leaking either fails here.
+# Both resolutions a consumer is likely to use: Node's and a bundler's (Vite).
+# `@ts-expect-error` makes the check two-sided: if the types degrade to `any`,
+# the expected error vanishes and tsc fails on the unused directive.
+echo "• typechecking a consumer against the package's declarations…"
+# `moduleResolution: "node"` (node10) ignores `exports` and reads only the
+# top-level `types` — Mercator's tsconfig uses it (issue #38). TS 7 removed that
+# mode, so it can't be typechecked here; assert the two fields agree instead.
+(cd "$PKG_DIR" && node -e '
+  const p = require("./package.json");
+  if (p.types !== p.exports["."].types) throw new Error(`types ${p.types} != exports types ${p.exports["."].types}`);
+  require("node:fs").accessSync(p.types);
+') || { echo "✗ top-level \`types\` missing or out of sync with exports"; exit 1; }
+TSC="$PWD/node_modules/typescript/bin/tsc"
+cat > "$TMP/consumer/check.mts" <<'EOF'
+import { compile, type CompileResult, type Diagnostic } from "@r0kshan/cairn";
+const result: CompileResult = await compile("diagram logical \"t\"", { matrix: true });
+const diagnostics: Diagnostic[] = result.diagnostics;
+const svg: string | null = result.svg;
+// @ts-expect-error — source must be a string
+await compile(42);
+export { diagnostics, svg };
+EOF
+for RESOLUTION in "--module nodenext --moduleResolution nodenext" "--module esnext --moduleResolution bundler"; do
+  # shellcheck disable=SC2086 # word-splitting the flag pair is the point
+  (cd "$TMP/consumer" && node "$TSC" --noEmit --strict --skipLibCheck false --types "" \
+    --target esnext $RESOLUTION check.mts) \
+    || { echo "✗ consumer typecheck failed ($RESOLUTION)"; exit 1; }
+done
+
 echo "✓ npm package smoke passed — the published CLI runs and the package entry imports and compiles"

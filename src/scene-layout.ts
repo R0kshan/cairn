@@ -22,7 +22,7 @@ import {
 import { foldedLayout } from "./slide-fold.ts";
 import { getElk } from "./elk-engine.ts";
 import { rerouteDetours, titleBoxesOf } from "./route-detour.ts";
-import { type Box, type Point, type TitleBox, isLongDetour } from "./geometry.ts";
+import { type Box, type Point, type SizeBounds, type TitleBox, isLongDetour } from "./geometry.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import { compactHorizontal, compactVertical, fitCanvas } from "./compact.ts";
 import {
@@ -1748,17 +1748,6 @@ const pointOn = (point: Point, box: Box): boolean =>
  * Returns the flows whose terminal it carried, for the same re-aim and repair
  * an offset's carried flows get.
  */
-/** The smallest a `size:` may leave one container: what it holds, plus the gap
-    the layout keeps around it. Absolute pixels, not a delta — the hint is a
-    delta, but what floors it is where the geometry already is.
-
-    There is no ceiling. A container that outgrows its parent is not clamped; the
-    parent grows to hold it (`containWithin`). */
-export interface SizeBounds {
-  minWidth: number;
-  minHeight: number;
-}
-
 /**
  * The floor under each container's `size:`, on the geometry as it stands.
  *
