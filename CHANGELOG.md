@@ -5,7 +5,7 @@ All notable changes to the cairn project will be documented in this file.
 ## [Unreleased]
 
 ### Added
-- **npm:** `@r0kshan/cairn` ships TypeScript declarations (`exports["."].types`), and the README documents library use ([#38](https://github.com/R0kshan/cairn/issues/38))
+- **npm:** `@r0kshan/cairn` ships TypeScript declarations (`exports["."].types`), and the README documents library use
 
 ### Changed
 - An unconnected `security` in the logical view now warns (**W0510**)

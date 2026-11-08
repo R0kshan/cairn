@@ -30,8 +30,6 @@ import type { FlowMatrix } from "./models/matrix.ts";
 import type { Diagnostic } from "./models/diagnostic.ts";
 import type { AttachSide, Model, Span } from "./models/ast.ts";
 import type { Scene } from "./scene-layout.ts";
-// From geometry.ts, not scene-layout.ts: it is public (LayoutBox.resize), and
-// scene-layout pulls elkjs types into the published declarations.
 import type { SizeBounds } from "./geometry.ts";
 import { resolveThemeSpec } from "./theme-spec.ts";
 import type { ThemeOverrides } from "./theme-spec.ts";

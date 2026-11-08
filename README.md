@@ -354,7 +354,10 @@ for (const d of diagnostics) console.warn(d.code, d.message);
 if (matrix) download(matrixCsv(matrix));       // same bytes as `cairn matrix`
 ```
 
-`compile(source, options?)` never throws on a bad diagram — errors come back in `diagnostics` and `svg` is `null`. It throws `ThemeSpecError` only for a malformed custom `theme` object. Logos given as file paths need their `data:` URIs passed in `options.logos`, since the engine does no filesystem work. The API is pre-1.0: expect it to move with the grammar until v1.0.0.
+> `compile(source, options?)` never throws on a bad diagram, errors come back in `diagnostics` and `svg` is `null`. 
+It throws `ThemeSpecError` only for a malformed custom `theme` object. 
+Logos given as file paths need their `data:` URIs passed in `options.logos`, since the engine does no filesystem work. 
+The API is pre-1.0: expect it to move with the grammar until v1.0.0.
 
 ## Commands
 
