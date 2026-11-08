@@ -135,7 +135,11 @@ export const boxToPolylineSq = (box: Box, points: Point[]) => {
     delta, but what floors it is where the geometry already is.
 
     There is no ceiling. A container that outgrows its parent is not clamped; the
-    parent grows to hold it (`containWithin`). */
+    parent grows to hold it (`containWithin`).
+
+    Lives here, not in `scene-layout.ts`, because `LayoutBox.resize` puts it in
+    the published types: declaring it there would pull `scene-layout.d.ts`, and
+    with it `elkjs`, into what npm consumers typecheck. */
 export interface SizeBounds {
   minWidth: number;
   minHeight: number;

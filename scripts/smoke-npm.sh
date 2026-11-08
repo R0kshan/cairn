@@ -271,13 +271,17 @@ echo "• typechecking a consumer against the package's declarations…"
 ') || { echo "✗ top-level \`types\` missing or out of sync with exports"; exit 1; }
 TSC="$PWD/node_modules/typescript/bin/tsc"
 cat > "$TMP/consumer/check.mts" <<'EOF'
-import { compile, type CompileResult, type Diagnostic } from "@r0kshan/cairn";
+import { compile, matrixCsv, type CompileResult, type Diagnostic, type ThemeOverrides } from "@r0kshan/cairn";
 const result: CompileResult = await compile("diagram logical \"t\"", { matrix: true });
 const diagnostics: Diagnostic[] = result.diagnostics;
 const svg: string | null = result.svg;
+// The README's example: a matrix requested is a matrix exportable.
+const csv: string | undefined = result.matrix ? matrixCsv(result.matrix) : undefined;
+const theme: ThemeOverrides = { extends: "dark", dark: true, pal: { bg: "#123456" } };
+await compile("diagram logical \"t\"", { theme });
 // @ts-expect-error — source must be a string
 await compile(42);
-export { diagnostics, svg };
+export { diagnostics, svg, csv };
 EOF
 for RESOLUTION in "--module nodenext --moduleResolution nodenext" "--module esnext --moduleResolution bundler"; do
   # shellcheck disable=SC2086 # word-splitting the flag pair is the point

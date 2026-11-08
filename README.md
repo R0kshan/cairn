@@ -345,14 +345,26 @@ The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0k
 npm install @r0kshan/cairn@unstable
 ```
 
-```ts
-import { compile, matrixCsv } from "@r0kshan/cairn";
+In the browser, with any bundler (Vite shown):
 
+```ts
+// Lazy import: the module inlines elkjs (~3.6 MB unminified), so load it when a diagram is needed.
+const { compile, matrixCsv } = await import("@r0kshan/cairn");
+
+const source = document.querySelector<HTMLTextAreaElement>("#source")!.value;
 const { svg, diagnostics, matrix } = await compile(source, { theme: "dark", matrix: true });
-if (svg) container.innerHTML = svg;            // null when the source has errors
+
+if (svg) document.querySelector("#diagram")!.innerHTML = svg;   // null when the source has errors
 for (const d of diagnostics) console.warn(d.code, d.message);
-if (matrix) download(matrixCsv(matrix));       // same bytes as `cairn matrix`
+
+if (matrix) {                                                   // same bytes as `cairn matrix`
+  const csv = new Blob([matrixCsv(matrix)], { type: "text/csv" });
+  const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(csv), download: "flows.csv" });
+  link.click();
+}
 ```
+
+In Node, the same import works unchanged: `import { compile } from "@r0kshan/cairn"`.
 
 > `compile(source, options?)` never throws on a bad diagram, errors come back in `diagnostics` and `svg` is `null`. 
 It throws `ThemeSpecError` only for a malformed custom `theme` object. 

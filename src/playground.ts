@@ -1,5 +1,8 @@
 /**
- * Browser entry for the web playground. Injects a browser-side ELK factory, then
+ * `@r0kshan/cairn`: compile `.cairn` source to SVG, in the browser or in Node.
+ * Start with `compile(source, options?)`. Pre-1.0: the API moves with the grammar.
+ *
+ * Also the browser entry for the web playground. Injects a browser-side ELK factory, then
  * re-exports the public surface from `./api.ts` — which is deliberately
  * environment-neutral, so without this injection `elk-engine.ts` would fall back
  * to `elk-worker.ts`, Node-shaped code with no business in a browser bundle.
