@@ -130,16 +130,10 @@ export const boxToPolylineSq = (box: Box, points: Point[]) => {
   return best;
 };
 
-/** The smallest a `size:` may leave one container: what it holds, plus the gap
-    the layout keeps around it. Absolute pixels, not a delta — the hint is a
-    delta, but what floors it is where the geometry already is.
+/** The smallest a `size:` may leave a container (its content plus layout gap),
+    in absolute pixels. No ceiling: an outgrown parent grows (`containWithin`).
 
-    There is no ceiling. A container that outgrows its parent is not clamped; the
-    parent grows to hold it (`containWithin`).
-
-    Lives here, not in `scene-layout.ts`, because `LayoutBox.resize` puts it in
-    the published types: declaring it there would pull `scene-layout.d.ts`, and
-    with it `elkjs`, into what npm consumers typecheck. */
+    Here, not in `scene-layout.ts`, so the published types don't pull in elkjs. */
 export interface SizeBounds {
   minWidth: number;
   minHeight: number;

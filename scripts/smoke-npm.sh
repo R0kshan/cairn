@@ -253,17 +253,12 @@ FIXTURE="$PWD/examples/application-medium.cairn"
   ' "$FIXTURE" "$EXPECTED_VERSION"
 ) || { echo "✗ import surface check failed"; exit 1; }
 
-# The `types` condition is as silent as the rest: a bad path there publishes
-# cleanly and TypeScript consumers fall back to an implicit-any error (or, with
-# skipLibCheck, to nothing). Typecheck a consumer against the INSTALLED package
-# with no @types/node and no elkjs, so a declaration leaking either fails here.
-# Both resolutions a consumer is likely to use: Node's and a bundler's (Vite).
-# `@ts-expect-error` makes the check two-sided: if the types degrade to `any`,
-# the expected error vanishes and tsc fails on the unused directive.
+# A bad `types` path publishes cleanly, so typecheck a consumer against the
+# installed package (no @types/node, no elkjs), under Node and bundler resolution.
+# `@ts-expect-error` fails tsc if the types degrade to `any`.
 echo "• typechecking a consumer against the package's declarations…"
-# `moduleResolution: "node"` (node10) ignores `exports` and reads only the
-# top-level `types` — Mercator's tsconfig uses it (issue #38). TS 7 removed that
-# mode, so it can't be typechecked here; assert the two fields agree instead.
+# node10 resolution reads only top-level `types` (issue #38) and TS 7 dropped it,
+# so assert it matches `exports` instead.
 (cd "$PKG_DIR" && node -e '
   const p = require("./package.json");
   if (p.types !== p.exports["."].types) throw new Error(`types ${p.types} != exports types ${p.exports["."].types}`);

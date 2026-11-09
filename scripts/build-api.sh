@@ -43,9 +43,7 @@ npx --no-install esbuild src/playground.ts \
   --log-level=warning \
   --outfile="$OUT"
 
-# Type declarations for `exports["."].types`. Emitted from the same entry, so the
-# types describe exactly what the bundle exports. `rm` first: a module deleted
-# from src/ must not leave a stale .d.ts in the tarball.
+# Declarations from the same entry as the bundle. `rm` first so no stale .d.ts ships.
 rm -rf dist/types
 npx --no-install tsc -p tsconfig.types.json
 

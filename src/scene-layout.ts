@@ -1902,30 +1902,17 @@ function squeezeInside(box: SizedContainer, axis: Axis, target: number): void {
 }
 
 /**
- * Resizes the containers the author pulled a handle on, and carries every flow
- * terminal sitting on a border that moved.
+ * Applies `size:` hints and carries flow terminals on borders that moved.
  *
- * A delta on what the layout computed, like `offset:` and for the same reason:
- * elk sizes a container from the content it holds, so a hint naming an absolute
- * box would go stale the moment a child is added. The top-left corner stays put
- * — growing is done to the right and down, and a handle on the other two sides
- * writes an `offset:` for the move and a `size:` for the rest.
+ * A delta on elk's computed size (an absolute box would go stale when a child is
+ * added). Top-left stays put; top/left handles write an `offset:` plus a `size:`.
  *
- * Nothing re-flows. A container grown into its neighbour is drawn as asked and
- * the overlap reported (W0572), exactly as an `offset:` is (§17). One clamp
- * bounds it, and it is nesting rather than taste (§7): a container may not
- * shrink inside its own children (W0575).
+ * Nothing re-flows: overlap with a neighbour is reported (W0572, §17). Only clamp:
+ * no shrinking inside own children (W0575, §7). A child outgrowing its parent
+ * grows the parent, up the chain.
  *
- * Upward there is no clamp. A container grown past its parent makes the *parent*
- * grow — by just enough to keep holding it, and on up the chain. Cutting the
- * child back to fit instead refused the resize outright, which is the whole
- * gesture doing nothing.
- *
- * Runs before `applyNodeOffsets`, which holds each child inside its parent —
- * the room a parent has to give must be settled before anything is held in it.
- *
- * Returns the flows whose terminal it carried, for the same re-aim and repair
- * an offset's carried flows get.
+ * Runs before `applyNodeOffsets`, so parents are sized before children are held.
+ * Returns the carried flows, for re-aim and repair.
  */
 function applyContainerSizes(scene: Scene, model: Model): Set<string> {
   const carried = new Set<string>();
