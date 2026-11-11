@@ -348,11 +348,16 @@ npm install @r0kshan/cairn@unstable
 ```ts
 import { compile } from "@r0kshan/cairn";
 
+const source = `diagram logical "Shop"
+actor-group USERS "Users" { actor CUSTOMER "Customer" }
+system SHOP "Web shop" { block WEB "Storefront" }
+CUSTOMER -> WEB "browses"`;
+
 const { svg, diagnostics } = await compile(source, { theme: "dark" });
 // svg is null when the source has errors; diagnostics says why
 ```
 
-Browser setup, flow matrix export and error handling: [`LIBRARY.md`](documentation/LIBRARY.md).
+Browser setup, flow matrix export and error handling: [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md).
 
 ## Commands
 

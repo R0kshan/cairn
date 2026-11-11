@@ -17,7 +17,7 @@ const { compile, matrixCsv } = await import("@r0kshan/cairn");
 const source = document.querySelector<HTMLTextAreaElement>("#source")!.value;
 const { svg, diagnostics, matrix } = await compile(source, { theme: "dark", matrix: true });
 
-if (svg) document.querySelector("#diagram")!.innerHTML = svg;   // null when the source has errors
+document.querySelector("#diagram")!.innerHTML = svg ?? "";     // svg is null when the source has errors
 for (const d of diagnostics) console.warn(d.code, d.message);
 
 if (matrix) {                                                   // same bytes as `cairn matrix`
