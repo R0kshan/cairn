@@ -480,7 +480,7 @@ Diagrams you produce are yours — cairn claims nothing in them. The brands draw
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
-- [`LIBRARY.md`](documentation/LIBRARY.md) — using the engine from JavaScript or TypeScript.
+- [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md) — using the engine from JavaScript or TypeScript.
 - [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
 - [`documentation/`](documentation/) — architecture, invariants, DSL and internals.
