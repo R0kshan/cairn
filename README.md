@@ -339,37 +339,20 @@ npm run cairn -- --help          # or: node bin/cairn.js --help
 
 ## Use as a library
 
-The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn). One ESM module runs in the browser (Vite, webpack, esbuild…) and in Node, has zero dependencies (elkjs is inlined), and ships its TypeScript declarations.
+The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn): one zero-dependency ESM module for the browser and Node, with TypeScript declarations.
 
 ```sh
 npm install @r0kshan/cairn@unstable
 ```
 
-In the browser, with any bundler (Vite shown):
-
 ```ts
-// Lazy import: the module inlines elkjs (~3.6 MB unminified), so load it when a diagram is needed.
-const { compile, matrixCsv } = await import("@r0kshan/cairn");
+import { compile } from "@r0kshan/cairn";
 
-const source = document.querySelector<HTMLTextAreaElement>("#source")!.value;
-const { svg, diagnostics, matrix } = await compile(source, { theme: "dark", matrix: true });
-
-if (svg) document.querySelector("#diagram")!.innerHTML = svg;   // null when the source has errors
-for (const d of diagnostics) console.warn(d.code, d.message);
-
-if (matrix) {                                                   // same bytes as `cairn matrix`
-  const csv = new Blob([matrixCsv(matrix)], { type: "text/csv" });
-  const link = Object.assign(document.createElement("a"), { href: URL.createObjectURL(csv), download: "flows.csv" });
-  link.click();
-}
+const { svg, diagnostics } = await compile(source, { theme: "dark" });
+// svg is null when the source has errors; diagnostics says why
 ```
 
-In Node, the same import works unchanged: `import { compile } from "@r0kshan/cairn"`.
-
-> `compile(source, options?)` never throws on a bad diagram, errors come back in `diagnostics` and `svg` is `null`. 
-It throws `ThemeSpecError` only for a malformed custom `theme` object. 
-Logos given as file paths need their `data:` URIs passed in `options.logos`, since the engine does no filesystem work. 
-The API is pre-1.0: expect it to move with the grammar until v1.0.0.
+Browser setup, flow matrix export and error handling: [`LIBRARY.md`](documentation/LIBRARY.md).
 
 ## Commands
 
@@ -492,6 +475,7 @@ Diagrams you produce are yours — cairn claims nothing in them. The brands draw
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
+- [`LIBRARY.md`](documentation/LIBRARY.md) — using the engine from JavaScript or TypeScript.
 - [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
 - [`documentation/`](documentation/) — architecture, invariants, DSL and internals.

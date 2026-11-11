@@ -8,6 +8,7 @@ supporting detail they point into.
 |---|---|
 | [`DSL_SPEC.md`](./DSL_SPEC.md) | Writing or changing `.cairn` syntax |
 | [`DIAGNOSTICS.md`](./DIAGNOSTICS.md) | Adding or looking up a diagnostic code |
+| [`LIBRARY.md`](./LIBRARY.md) | Calling the engine from JavaScript or TypeScript (`@r0kshan/cairn`) |
 | [`READABILITY.md`](./READABILITY.md) | Understanding what the sweep gate measures and why — same weight as the invariants |
 | [`PLAYGROUND_BUILD.md`](./PLAYGROUND_BUILD.md) | Rebuilding the browser/node bundles after touching `src/` |
 | [`decisions/`](./decisions/) | Architecture Decision Records — settled *why* questions; check before re-proposing an approach |

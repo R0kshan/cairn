@@ -270,7 +270,7 @@ import { compile, matrixCsv, type CompileResult, type Diagnostic, type ThemeOver
 const result: CompileResult = await compile("diagram logical \"t\"", { matrix: true });
 const diagnostics: Diagnostic[] = result.diagnostics;
 const svg: string | null = result.svg;
-// The README's example: a matrix requested is a matrix exportable.
+// documentation/LIBRARY.md's example: a matrix requested is a matrix exportable.
 const csv: string | undefined = result.matrix ? matrixCsv(result.matrix) : undefined;
 const theme: ThemeOverrides = { extends: "dark", dark: true, pal: { bg: "#123456" } };
 await compile("diagram logical \"t\"", { theme });
