@@ -339,25 +339,7 @@ npm run cairn -- --help          # or: node bin/cairn.js --help
 
 ## Use as a library
 
-The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn): one zero-dependency ESM module for the browser and Node, with TypeScript declarations.
-
-```sh
-npm install @r0kshan/cairn@unstable
-```
-
-```ts
-import { compile } from "@r0kshan/cairn";
-
-const source = `diagram logical "Shop"
-actor-group USERS "Users" { actor CUSTOMER "Customer" }
-system SHOP "Web shop" { block WEB "Storefront" }
-CUSTOMER -> WEB "browses"`;
-
-const { svg, diagnostics } = await compile(source, { theme: "dark" });
-// svg is null when the source has errors; diagnostics says why
-```
-
-Browser setup, flow matrix export and error handling: [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md).
+The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn) for the browser and Node. Installation, usage, flow matrix export and error handling: [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md).
 
 ## Commands
 
