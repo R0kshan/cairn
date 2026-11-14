@@ -253,4 +253,36 @@ FIXTURE="$PWD/examples/application-medium.cairn"
   ' "$FIXTURE" "$EXPECTED_VERSION"
 ) || { echo "✗ import surface check failed"; exit 1; }
 
+# A bad `types` path publishes cleanly, so typecheck a consumer against the
+# installed package (no @types/node, no elkjs), under Node and bundler resolution.
+# `@ts-expect-error` fails tsc if the types degrade to `any`.
+echo "• typechecking a consumer against the package's declarations…"
+# node10 resolution reads only top-level `types` (issue #38) and TS 7 dropped it,
+# so assert it matches `exports` instead.
+(cd "$PKG_DIR" && node -e '
+  const p = require("./package.json");
+  if (p.types !== p.exports["."].types) throw new Error(`types ${p.types} != exports types ${p.exports["."].types}`);
+  require("node:fs").accessSync(p.types);
+') || { echo "✗ top-level \`types\` missing or out of sync with exports"; exit 1; }
+TSC="$PWD/node_modules/typescript/bin/tsc"
+cat > "$TMP/consumer/check.mts" <<'EOF'
+import { compile, matrixCsv, type CompileResult, type Diagnostic, type ThemeOverrides } from "@r0kshan/cairn";
+const result: CompileResult = await compile("diagram logical \"t\"", { matrix: true });
+const diagnostics: Diagnostic[] = result.diagnostics;
+const svg: string | null = result.svg;
+// documentation/LIBRARY.md's example: a matrix requested is a matrix exportable.
+const csv: string | undefined = result.matrix ? matrixCsv(result.matrix) : undefined;
+const theme: ThemeOverrides = { extends: "dark", dark: true, pal: { bg: "#123456" } };
+await compile("diagram logical \"t\"", { theme });
+// @ts-expect-error — source must be a string
+await compile(42);
+export { diagnostics, svg, csv };
+EOF
+for RESOLUTION in "--module nodenext --moduleResolution nodenext" "--module esnext --moduleResolution bundler"; do
+  # shellcheck disable=SC2086 # word-splitting the flag pair is the point
+  (cd "$TMP/consumer" && node "$TSC" --noEmit --strict --skipLibCheck false --types "" \
+    --target esnext $RESOLUTION check.mts) \
+    || { echo "✗ consumer typecheck failed ($RESOLUTION)"; exit 1; }
+done
+
 echo "✓ npm package smoke passed — the published CLI runs and the package entry imports and compiles"

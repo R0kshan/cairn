@@ -129,3 +129,12 @@ export const boxToPolylineSq = (box: Box, points: Point[]) => {
   }
   return best;
 };
+
+/** The smallest a `size:` may leave a container (its content plus layout gap),
+    in absolute pixels. No ceiling: an outgrown parent grows (`containWithin`).
+
+    Here, not in `scene-layout.ts`, so the published types don't pull in elkjs. */
+export interface SizeBounds {
+  minWidth: number;
+  minHeight: number;
+}

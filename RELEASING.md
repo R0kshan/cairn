@@ -95,10 +95,10 @@ the help text as a side effect, and an undeclared one people could come to
 depend on. `scripts/smoke-npm.sh` asserts both halves: the entry imports and
 compiles a real diagram, and everything else stays shut.
 
-Still missing, tracked in [#38](https://github.com/R0kshan/cairn/issues/38):
-generated `.d.ts` declarations (`tsconfig.json` is `noEmit`, so this needs its
-own build config) and a browser-usage section in the README. TypeScript
-consumers get the engine but no types until then.
+Type declarations are emitted alongside, by `tsconfig.types.json` (the base
+config is `noEmit`), into `dist/types/` and wired up as `exports["."].types`.
+`scripts/smoke-npm.sh` typechecks a consumer against the installed package with
+no `@types/node` and no elkjs, so a declaration that leaks either fails there.
 
 **Both surfaces ship pre-bundled.** `prepack` runs `scripts/build-cli.sh` and
 `scripts/build-api.sh`, esbuilding `src/cli-npm.ts` → `bin/cairn.mjs` and

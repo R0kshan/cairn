@@ -12,6 +12,8 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { compile, matrixCsv, matrixSvg, resolveThemeSpec, ThemeSpecError } from "../src/api.ts";
 import { themeNames } from "../src/themes.ts";
+import { setElkFactory } from "../src/elk-engine.ts";
+import { nodeElkFactory } from "../src/elk-worker.ts";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const EX = join(ROOT, "examples");
@@ -230,4 +232,19 @@ test("every built-in themes the matrix, not just light and dark", async () => {
   const nord = await compile(src, { theme: "nord", matrix: true });
   const light = await compile(src, { matrix: true });
   assert.notEqual(background(matrixSvg(nord.matrix!)), background(matrixSvg(light.matrix!)));
+});
+
+test("an ELK failure comes back as an E0000 diagnostic, not a rejection", async () => {
+  // Every fallback rung reaches the same broken engine, so layout() rethrows.
+  setElkFactory(() => ({ layout: () => Promise.reject(new Error("elk exploded")) }) as never);
+  try {
+    const result = await compile(load("infrastructure.cairn"), { matrix: true });
+    assert.equal(result.svg, null);
+    assert.equal(result.metrics, null);
+    assert.ok(result.matrix, "the matrix reads the model only, so it survives");
+    const error = result.diagnostics.find((diagnostic) => diagnostic.code === "E0000");
+    assert.match(error?.message ?? "", /elk exploded/);
+  } finally {
+    setElkFactory(nodeElkFactory);
+  }
 });

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Bundle the engine for the npm channel:  src/playground.ts -> dist/cairn.mjs
+# (+ its .d.ts declarations -> dist/types/)
 #
 # This is what `import { compile } from "@r0kshan/cairn"` resolves to. Built from
 # `playground.ts` rather than `api.ts` because `api.ts` is deliberately
@@ -42,4 +43,8 @@ npx --no-install esbuild src/playground.ts \
   --log-level=warning \
   --outfile="$OUT"
 
-echo "✓ $OUT ($(du -h "$OUT" | cut -f1))"
+# Declarations from the same entry as the bundle. `rm` first so no stale .d.ts ships.
+rm -rf dist/types
+npx --no-install tsc -p tsconfig.types.json
+
+echo "✓ $OUT ($(du -h "$OUT" | cut -f1)) + dist/types/"
