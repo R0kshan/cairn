@@ -165,7 +165,20 @@ export async function compile(source: string, options?: CompileOptions): Promise
   // Before layout: the matrix reads the model only, so it survives an ELK failure
   // and costs nothing when it wasn't asked for.
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
-  const scene = await layout(model, view);
+  let scene: Scene;
+  try {
+    scene = await layout(model, view);
+  } catch (error: unknown) {
+    // ELK can still fail after every fallback; that is an engine fault, not the
+    // embedder's, so it comes back as data like any other error.
+    diags.push({
+      code: "E0000",
+      severity: "error",
+      message: `layout failed: ${error instanceof Error ? error.message : String(error)}`,
+      span: { line: 0, col: 0, len: 0 },
+    });
+    return { svg: null, diagnostics: diags, metrics: null, matrix, boxes: null };
+  }
   // Post-layout: whether a declared attachment side actually survived is only
   // knowable from the finished geometry (W0570).
   diags.push(...attachSideDiagnostics(scene, model));

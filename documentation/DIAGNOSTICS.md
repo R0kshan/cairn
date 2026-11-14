@@ -32,7 +32,7 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 
 | Code | Severity | Meaning |
 |---|---|---|
-| E0000 | error | Internal `watch` error (build threw outside normal validation) — rendered as an SVG error panel rather than left as a stale diagram |
+| E0000 | error | Internal error: the engine threw outside normal validation. `compile()` returns a layout failure as this code with `svg: null`; `cairn watch` renders any build failure as an SVG error panel rather than leaving a stale diagram |
 | E0101–E0104 | error | Syntax / style-value errors |
 | E0106 | error | `order:` value is not a whole number ≥ 0 |
 | E0109 | error | `offset:` / `label-offset:` is not a pair of whole numbers (`offset: 40, -20`), or `segment-offset:` is not a run number of 1 or more and a whole delta (`segment-offset: 2, -18`) |
