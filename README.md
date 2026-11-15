@@ -71,7 +71,7 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
 
 Projects that integrate cairn:
 
-- **[Mercator](https://github.com/sourcentis/mercator)** — open-source information system mapping tool. Embeds the [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn) engine to render its architecture diagrams, since release [2026.11.15](https://github.com/sourcentis/mercator/releases/tag/2026.11.15) ([#38](https://github.com/R0kshan/cairn/issues/38)).
+- **[Mercator](https://github.com/sourcentis/mercator)**
 
 Using cairn in your project? Open a PR to add it here.
 
