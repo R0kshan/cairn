@@ -4,14 +4,11 @@
 
 ## In short,
 
-Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
-
-## Status
-
-**Ongoing development** - Pre-releases are available. Stable version will be release when all opened issues are resolved.
+Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format.
 
 ## Table of contents
 
+- [Used by](#used-by)
 - [Why cairn?](#why-cairn)
 - [Usage](#usage)
 - [Demo](#demo)
@@ -21,6 +18,14 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Commands](#commands)
 - [License](#license)
 - [More](#more)
+
+## Used by
+
+Projects that integrate cairn:
+
+- [Mercator](https://github.com/sourcentis/mercator) - Cairn usage featured in [Mercator's Mkdocs](https://sourcentis.github.io/mercator/cairn/)
+
+Using cairn in your project? Feel free to open a PR to add it here.
 
 ## Why cairn?
 
