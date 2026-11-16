@@ -8,8 +8,8 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 
 ## Table of contents
 
-- [Why cairn?](#why-cairn)
 - [Used by](#used-by)
+- [Why cairn?](#why-cairn)
 - [Usage](#usage)
 - [Demo](#demo)
 - [Preview](#preview)
