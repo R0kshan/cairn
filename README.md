@@ -4,11 +4,7 @@
 
 ## In short,
 
-Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format. 
-
-## Status
-
-**Ongoing development** - Pre-releases are available. Stable version will be release when all opened issues are resolved.
+Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) based diagram-as-code tool specialised in these three software architecture views : `logical`, `application` and `infrastructure`, with the aim to follow the requirements of the  methodology. This tool  comes with a CLI and a [browser playground](https://cairn-psi-five.vercel.app/), both providing template initializing for each type of diagram, validation, live previous, and export to SVG and PNG format.
 
 ## Table of contents
 
@@ -22,6 +18,14 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Commands](#commands)
 - [License](#license)
 - [More](#more)
+
+## Used by
+
+Projects that integrate cairn:
+
+- **[Mercator](https://github.com/sourcentis/mercator)**
+
+Using cairn in your project? Feel free to open a PR to add it here.
 
 ## Why cairn?
 
@@ -65,15 +69,6 @@ As a result here's a comparaison of the same diagram done with D2 (ELK Layout) v
       <td>The overlapping labels have been addressed.</td>
     </tr>
     </table>
-
-
-## Used by
-
-Projects that integrate cairn:
-
-- **[Mercator](https://github.com/sourcentis/mercator)**
-
-Using cairn in your project? Open a PR to add it here.
 
 ## Usage
 
