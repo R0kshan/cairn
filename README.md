@@ -23,7 +23,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 
 Projects that integrate cairn:
 
-- **[Mercator](https://github.com/sourcentis/mercator)**
+- [Mercator](https://github.com/sourcentis/mercator) - Cairn usage featured in [Mercator's Mkdocs](https://sourcentis.github.io/mercator/cairn/)
 
 Using cairn in your project? Feel free to open a PR to add it here.
 
