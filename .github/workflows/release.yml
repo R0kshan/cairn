@@ -98,6 +98,7 @@ jobs:
     permissions:
       contents: read
       id-token: write      # OIDC token for trusted publishing + provenance
+      packages: write      # mirror to GitHub Packages (repo sidebar listing)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with: { persist-credentials: false }
@@ -140,6 +141,29 @@ jobs:
           esac
           echo "publishing $VERSION to dist-tag $DIST_TAG"
           npm publish --tag "$DIST_TAG"
+
+      # Mirror to GitHub Packages so the package shows in the repo's "Packages"
+      - name: Publish to GitHub Packages
+        env:
+          GH_TOKEN_PKG: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          REGISTRY=https://npm.pkg.github.com
+
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc-github"
+          echo '//npm.pkg.github.com/:_authToken=${GH_TOKEN_PKG}' > "$NPM_CONFIG_USERCONFIG"
+
+          if [ -n "$(npm view "@r0kshan/cairn@$VERSION" version --registry "$REGISTRY" 2>/dev/null)" ]; then
+            echo "$VERSION is already on GitHub Packages — skipping publish"
+            exit 0
+          fi
+
+          case "$VERSION" in
+            *-*) DIST_TAG=unstable ;;
+            *)   DIST_TAG=latest ;;
+          esac
+          echo "publishing $VERSION to GitHub Packages, dist-tag $DIST_TAG"
+          npm publish --registry "$REGISTRY" --tag "$DIST_TAG"
 
   taps:
     needs: binaries
