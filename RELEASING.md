@@ -174,6 +174,10 @@ npm i -g @r0kshan/cairn@unstable
   credential from the `id-token: write` permission, and npm attaches provenance
   for free. If you are ever tempted to add a token to unblock a failed publish,
   fix the trusted-publisher config instead.
+- The `publish` job also mirrors the package to GitHub Packages
+  (`npm.pkg.github.com`) so it appears in the repo's "Packages" sidebar. That
+  step authenticates with the job's own `GITHUB_TOKEN` (`packages: write`), not
+  a stored secret. npmjs remains the install channel.
 
 ## Local dry-run of the packaging step
 

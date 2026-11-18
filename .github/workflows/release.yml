@@ -98,6 +98,7 @@ jobs:
     permissions:
       contents: read
       id-token: write      # OIDC token for trusted publishing + provenance
+      packages: write      # mirror to GitHub Packages (repo sidebar listing)
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with: { persist-credentials: false }
@@ -140,6 +141,38 @@ jobs:
           esac
           echo "publishing $VERSION to dist-tag $DIST_TAG"
           npm publish --tag "$DIST_TAG"
+
+      # Mirror to GitHub Packages so the package shows in the repo's "Packages"
+      # sidebar. npmjs stays the install channel: GitHub's npm registry needs an
+      # auth token even to install public packages. Runs after npmjs so the
+      # immutable public channel isn't held up by the mirror; a failure here is
+      # fixed by re-running the job (npmjs is skipped as already published).
+      # The scope must equal the repo owner lowercased (@r0kshan); package.json's
+      # `repository` field links the package to this repo.
+      - name: Publish to GitHub Packages
+        env:
+          GH_TOKEN_PKG: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          REGISTRY=https://npm.pkg.github.com
+
+          # Separate userconfig so the token never lands in the checkout and the
+          # npmjs auth above is untouched. npm expands ${GH_TOKEN_PKG} itself.
+          export NPM_CONFIG_USERCONFIG="$RUNNER_TEMP/.npmrc-github"
+          # shellcheck disable=SC2016 # literal on purpose: npm expands it, not the shell
+          echo '//npm.pkg.github.com/:_authToken=${GH_TOKEN_PKG}' > "$NPM_CONFIG_USERCONFIG"
+
+          if [ -n "$(npm view "@r0kshan/cairn@$VERSION" version --registry "$REGISTRY" 2>/dev/null)" ]; then
+            echo "$VERSION is already on GitHub Packages — skipping publish"
+            exit 0
+          fi
+
+          case "$VERSION" in
+            *-*) DIST_TAG=unstable ;;
+            *)   DIST_TAG=latest ;;
+          esac
+          echo "publishing $VERSION to GitHub Packages, dist-tag $DIST_TAG"
+          npm publish --registry "$REGISTRY" --tag "$DIST_TAG"
 
   taps:
     needs: binaries
