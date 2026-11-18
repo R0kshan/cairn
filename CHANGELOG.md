@@ -5,6 +5,7 @@ All notable changes to the cairn project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Agent Skill** (`skills/cairn/`, #5): teaches AI agents to pick a view, write a valid `.cairn` file, and loop on `cairn validate --strict` until it is clean with zero label overlaps; `tests/skill.test.ts` compiles its examples and checks its kind table and diagnostic codes against the engine
 - **npm:** `@r0kshan/cairn` ships TypeScript declarations (`exports["."].types`), and the README documents library use
 
 ### Changed

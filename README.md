@@ -15,6 +15,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Preview](#preview)
 - [Installation](#installation)
 - [Use as a library](#use-as-a-library)
+- [Use with AI agents](#use-with-ai-agents)
 - [Commands](#commands)
 - [License](#license)
 - [More](#more)
@@ -345,6 +346,19 @@ npm run cairn -- --help          # or: node bin/cairn.js --help
 ## Use as a library
 
 The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn) for the browser and Node. Installation, usage, flow matrix export and error handling: [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md).
+
+## Use with AI agents
+
+[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is an [Agent Skill](https://agentskills.io) that teaches an AI agent to write cairn diagrams: which view to pick, the kinds and nesting rules of each, the conventions of a French architecture dossier, and a validate → fix → build loop that only stops at zero diagnostics and zero label overlaps. Every example in it is compiled by `npm test`, so it can't drift from the engine.
+
+Copy the folder where your agent looks for skills — for Claude Code, `~/.claude/skills/cairn/` (all projects) or `.claude/skills/cairn/` (one project):
+
+```sh
+git clone --depth 1 https://github.com/R0kshan/cairn /tmp/cairn
+cp -r /tmp/cairn/skills/cairn ~/.claude/skills/
+```
+
+Then ask for a view in plain words: *"draw the infrastructure view of our order platform, with its flow matrix"*. The agent needs a `cairn` on its path, or Node to run `npx @r0kshan/cairn@unstable`.
 
 ## Commands
 
