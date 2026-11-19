@@ -15,6 +15,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Preview](#preview)
 - [Installation](#installation)
 - [Use as a library](#use-as-a-library)
+- [Use with AI agents](#use-with-ai-agents)
 - [Commands](#commands)
 - [License](#license)
 - [More](#more)
@@ -345,6 +346,15 @@ npm run cairn -- --help          # or: node bin/cairn.js --help
 ## Use as a library
 
 The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn) for the browser and Node. Installation, usage, flow matrix export and error handling: [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md).
+
+## Use with AI agents
+
+[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io). It points an AI agent at the spec for the cairn version it has installed, then has it loop on `cairn validate --strict` until the file is clean. For Claude Code, copy the folder to `~/.claude/skills/` (all projects) or `.claude/skills/` (one project):
+
+```sh
+git clone --depth 1 https://github.com/R0kshan/cairn /tmp/cairn
+cp -r /tmp/cairn/skills/cairn ~/.claude/skills/
+```
 
 ## Commands
 
