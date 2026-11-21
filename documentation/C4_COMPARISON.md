@@ -88,11 +88,11 @@ the DSL, so the source stays free of layout details.
 cairn's layout is specialised for dense architecture views. Every build measures
 label overlaps, and CI keeps them at zero across all the examples. Every flow
 stays its own arrow with its own label, and the output is deterministic, so a
-small edit doesn't reshuffle the picture. When the automatic layout still gets
-something wrong, the [positioning controls](DSL_SPEC.md#positioning-controls)
-and the playground's drag-to-adjust write the fix back into the `.cairn` file as
-hints (`offset:`, `label-offset:`, `segment-offset:`, `ID.side`), so the
-placement is versioned with the diagram and the CLI renders it the same way.
+small edit doesn't reshuffle the picture. As in Structurizr, manual placement
+is also possible: with the [positioning controls](DSL_SPEC.md#positioning-controls),
+or by dragging in the playground, which writes each move into the `.cairn` file
+as a hint (`offset:`, `label-offset:`, `segment-offset:`, `ID.side`). The
+placement is versioned with the diagram, and the CLI renders it the same way.
 
 ### Validation
 
