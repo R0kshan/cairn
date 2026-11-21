@@ -19,7 +19,7 @@ make different choices everywhere else.
 | **Core abstractions** | Person, software system, container, component, plus code | Kinds typed per view: actors, functional blocks, applications, modules, queues, datastores, sites, network zones, servers, clusters, firewalls… |
 | **Views** | System context, container, component, code; also system landscape, dynamic and deployment | [`logical`](DSL_SPEC.md#11-logical-view--diagram-logical), [`application`](DSL_SPEC.md#12-application-view--diagram-application), [`infrastructure`](DSL_SPEC.md#13-infrastructure-view--diagram-infrastructure) |
 | **Source of truth** | In model-based tools (Structurizr, LikeC4), one model that every view is derived from | One `.cairn` file per diagram. There are no imports across files. |
-| **Main goal** | A shared vocabulary for software structure, at the right level of abstraction for each audience | Dense views that stay readable (no overlapping labels, deterministic layout) and that fit an architecture document |
+| **Main goal** | A shared vocabulary for software structure, at the right level of abstraction for each audience | Dense views that stay readable (automatic layout keeps labels from overlapping, deterministic output) and that fit an architecture document |
 
 ## Where they differ
 
@@ -47,7 +47,7 @@ on one page, and its layout is built to keep that readable.
 | **Spacing** | Fixed gaps between elements, adjusted by hand per view | Unused space is reclaimed after layout, without making the diagram harder to read |
 | **Manual placement** | In Structurizr's diagram editor, free to arrange any diagram the way you want | With the [positioning controls](DSL_SPEC.md#positioning-controls), or by dragging in the playground |
 | **Where manual positions live** | Outside the DSL, in a JSON version of the workspace, matched back to elements by name each time the DSL loads | In the DSL itself, as hints: `offset:`, `label-offset:`, `segment-offset:`, `ID.side` |
-| **What the source alone gives you** | A DSL free of layout details; the placement comes from the workspace JSON kept alongside it | The whole diagram, placement included: the `.cairn` file renders the same way in the playground, the CLI or CI, with no separate layout file |
+| **What the source alone gives you** | A DSL free of layout details; the placement comes from the workspace JSON kept alongside it | The whole diagram, placement included: the `.cairn` file renders the same way in the playground, the CLI or CI, with no separate layout file. Logos read from a file and custom themes are the exception: the CLI resolves them, the playground does not |
 
 On top of that, every cairn build:
 

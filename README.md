@@ -47,7 +47,7 @@ Furthermore, complexe software architecture with many flows and component genera
 | **French or English output.** | `style { lang: fr }` localizes band titles, legend, and matrix headers while keeping keywords English for portable sources (open to adding other languages if you find this usefull) |
 | **In-built themes and customizable colours** | Whether using the default or a chosen in-built theme, element colours can be overriden  for all elements of a given kind in the `style` block |
 
-> Cairn is not a replacement for general diagram tools; for flowcharts, sequence, ER diagrams, or C4-level software-structure modeling — see [cairn and C4](https://github.com/R0kshan/cairn/blob/main/documentation/C4_COMPARISON.md) for a detailed comparison.
+> Cairn is not a replacement for general diagram tools; for flowcharts, sequence or ER diagrams, Mermaid or D2 remain the better fit. For C4-level software-structure modelling, see [cairn and C4](https://github.com/R0kshan/cairn/blob/main/documentation/C4_COMPARISON.md) for a detailed comparison.
 
 As a result here's a comparaison of the same diagram done with D2 (ELK Layout) vs Cairn (tuned ELK Layout) : 
 
