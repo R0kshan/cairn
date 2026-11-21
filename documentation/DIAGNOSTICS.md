@@ -1,6 +1,6 @@
 # Diagnostic codes
 
-Every issue cairn reports carries a stable code. Codes are namespaced by severity and phase: `E01xx` = syntax, `E02xx` = view schema, `W05xx` = completeness / best-practice warnings. Gaps in numbering are reserved for future codes — a gap does not mean a code was removed.
+Every issue cairn reports carries a stable code. Codes are namespaced by severity and phase: `E01xx` = syntax, `E02xx` = view schema, `W05xx` = completeness / best-practice warnings. Gaps in numbering are reserved for future codes — a gap does not mean a code was removed. The one exception is **W0540** (application flow without a protocol), removed after v1.0.0-RC18; a removed code is never reused.
 
 Run `cairn explain <CODE>` for the rationale behind any rule (e.g. `cairn explain E0240`).
 
@@ -54,7 +54,6 @@ Errors block a build; warnings are printed but do not (unless `--strict` is set)
 | W0510 | warning | Isolated element (no incoming or outgoing flow) |
 | W0520 | warning | Too dense for a readable slide / page — split the view |
 | W0530 | warning | Business object never carried by any flow |
-| W0540 | warning | Application system-to-system flow without a protocol (actor flows exempt) |
 | W0570 | warning | Declared attachment side the layout could not honor |
 | W0571 | warning | Endpoint resolved as a declared id, so its `.side` / `.role` reading was dropped |
 | W0572 | warning | An `offset:`, `label-offset:` or `size:` landed something on something else — honored as written, reported rather than repaired |

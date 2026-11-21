@@ -1463,7 +1463,7 @@ test("unknown kind suggests the nearest valid kind", () => {
   assert.match(d.help ?? "", /system/);
 });
 
-test("infrastructure requires protocol (E0240), application recommends it (W0540, actors exempt)", () => {
+test("infrastructure requires protocol (E0240); application flows need none", () => {
   const infra = check(
     'diagram infrastructure "t"\nsite S "s" {\n network-zone Z "z" {\n server V "v" { app-instance A "a" }\n server V2 "v2" { app-instance B "b" }\n }\n}\nA -> B : "x"\n',
   );
@@ -1472,7 +1472,7 @@ test("infrastructure requires protocol (E0240), application recommends it (W0540
   const app = check(
     'diagram application "t"\nactor-group G "g" { actor U "u" }\napplication P "p" { module M "m" }\ndatastore D "d"\nU -> M : "human"\nM -> D : "sys"\n',
   );
-  assert.equal(app.diags.filter((d) => d.code === "W0540").length, 1); // only the system flow
+  assert.deepEqual(app.diags, []); // no tail is fine in the application view, actor or not
 });
 
 test("business objects: unknown ref E0221, unused W0530", () => {
