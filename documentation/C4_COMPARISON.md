@@ -90,9 +90,9 @@ label overlaps, and CI keeps them at zero across all the examples. Every flow
 stays its own arrow with its own label, and the output is deterministic, so a
 small edit doesn't reshuffle the picture.
 
-As in Structurizr, manual placement is also possible, with the
+As in Structurizr, manual placement is also possible with cairn, through the
 [positioning controls](DSL_SPEC.md#positioning-controls) or by dragging in the
-playground. The difference is where it goes: every move is written into the DSL
+playground. Contrary to Structurizr: every move is written into the DSL
 itself, as a hint (`offset:`, `label-offset:`, `segment-offset:`, `ID.side`).
 The `.cairn` file alone carries the whole diagram, placement included, so it
 always renders the same way, in the playground, the CLI or CI, with no separate
@@ -116,9 +116,7 @@ behind it. See [Diagnostics](DIAGNOSTICS.md).
 
 Every cairn view exports a [flow matrix](DSL_SPEC.md#3-flow-matrix) (CSV,
 Markdown or SVG): one row per flow, endpoints annotated with their zone or
-application. This is the *matrice des flux techniques* that French
-enterprise-architecture dossiers require, and it can be localised with
-`style { lang: fr }`. Structurizr and LikeC4 export diagrams (PlantUML,
+application. Structurizr and LikeC4 export diagrams (PlantUML,
 Mermaid, DOT, D2…) and the model itself, but no flow table: you would script
 one from the model.
 
