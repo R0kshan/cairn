@@ -351,14 +351,16 @@ The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0k
 
 [`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io). It points an AI agent at the spec for the cairn version it has installed, then has it loop on `cairn validate --strict` until the file is clean.
 
-**Claude Code**: install it as a plugin, from a Claude Code session. `--sparse` fetches only the plugin files (about 0.5 MB) instead of cloning the whole repository:
+**Claude Code**: install it as a plugin, from a terminal. `--sparse` fetches only the plugin files (about 0.5 MB) instead of cloning the whole repository:
 
-```text
-/plugin marketplace add R0kshan/cairn --sparse .claude-plugin skills
-/plugin install cairn@cairn
+```sh
+claude plugin marketplace add R0kshan/cairn --sparse .claude-plugin skills
+claude plugin install cairn@cairn
 ```
 
-Updates follow this repository: turn on auto-update for the `cairn` marketplace in `/plugin`, or run `/plugin marketplace update cairn`.
+Inside a Claude Code session, `/plugin marketplace add R0kshan/cairn` then `/plugin install cairn@cairn` also works, but `/plugin` can't take `--sparse`, so it clones the whole repository (about 43 MB).
+
+Updates follow this repository: turn on auto-update for the `cairn` marketplace in `/plugin`, or run `claude plugin marketplace update cairn`.
 
 **Other agents**: the skill is a single file. Download it to wherever your agent loads skills from (for Claude Code without the plugin, `~/.claude/skills/`):
 
