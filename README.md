@@ -349,7 +349,17 @@ The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0k
 
 ## Use with AI agents
 
-[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io). It points an AI agent at the spec for the cairn version it has installed, then has it loop on `cairn validate --strict` until the file is clean. For Claude Code, copy the folder to `~/.claude/skills/` (all projects) or `.claude/skills/` (one project):
+[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io). It points an AI agent at the spec for the cairn version it has installed, then has it loop on `cairn validate --strict` until the file is clean.
+
+**Claude Code**: install it as a plugin, from a Claude Code session:
+
+```text
+/plugin install cairn --marketplace R0kshan/cairn
+```
+
+On Claude Code older than 2.1.275, run it in two steps: `/plugin marketplace add R0kshan/cairn`, then `/plugin install cairn@cairn`. Updates follow this repository; turn on auto-update for the `cairn` marketplace in `/plugin`, or run `/plugin marketplace update cairn`.
+
+**Other agents**: copy the folder to wherever your agent loads skills from (for Claude Code without the plugin, `~/.claude/skills/`):
 
 ```sh
 git clone --depth 1 https://github.com/R0kshan/cairn /tmp/cairn
