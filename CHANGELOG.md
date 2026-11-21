@@ -9,6 +9,7 @@ All notable changes to the cairn project will be documented in this file.
 - **npm:** `@r0kshan/cairn` ships TypeScript declarations (`exports["."].types`), and the README documents library use
 
 ### Changed
+- An application flow with no technology tail no longer warns: **W0540** is removed, and the code will not be reused
 - An unconnected `security` in the logical view now warns (**W0510**)
 
 ## [v1.0.0-RC18](https://github.com/R0kshan/cairn/releases/tag/v1.0.0-RC18) - 2026-09-20

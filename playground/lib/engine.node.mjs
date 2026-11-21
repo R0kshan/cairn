@@ -93929,7 +93929,6 @@ var logicalView = {
     dotted: "D\xE9pendance \u2014 aucune donn\xE9e \xE9chang\xE9e"
   },
   flowTechRequired: null,
-  flowTechRecommended: null,
   businessObjects: true,
   partitions: { "actor-group": 0, system: 1, security: 1, external: 2 },
   flowLabelRequired: {
@@ -94122,11 +94121,6 @@ var applicationView = {
   },
   flowLabelRequired: null,
   flowTechRequired: null,
-  flowTechRecommended: {
-    code: "W0540",
-    message: "system-to-system flow without protocol",
-    help: 'add the technology: `A -> B "\u2026" (API_REST, JSON)` (C4 practice: label the how, not just the what)'
-  },
   nesting: [
     {
       code: "E0213",
@@ -94329,7 +94323,6 @@ var infrastructureView = {
     dotted: "D\xE9pendance \u2014 hors trafic nominal"
   },
   flowLabelRequired: null,
-  flowTechRecommended: null,
   flowTechRequired: {
     code: "E0240",
     message: "technical flow without protocol",
@@ -94887,10 +94880,6 @@ function checkEndpointRoles(model, view) {
 }
 function checkFlows(model, view) {
   const diagnostics = [];
-  const isActor = (id) => {
-    const kind = model.index.get(id)?.kind;
-    return kind === "actor" || kind === "actor-group";
-  };
   for (const flow of model.flows) {
     for (const [reference, span] of [
       [flow.from, flow.fromSpan],
@@ -94906,16 +94895,6 @@ function checkFlows(model, view) {
           help: suggestion ? `did you mean \`${suggestion}\`?` : "declare this element before referencing it"
         });
       }
-    }
-    if (view.flowTechRecommended && !flow.tech?.protocol && !isActor(flow.from) && !isActor(flow.to)) {
-      diagnostics.push({
-        code: view.flowTechRecommended.code,
-        severity: "warning",
-        message: view.flowTechRecommended.message,
-        span: flow.span,
-        note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
-        help: view.flowTechRecommended.help
-      });
     }
     if (view.flowTechRequired && !flow.tech?.protocol) {
       diagnostics.push({
@@ -100689,11 +100668,13 @@ function buildElkGraph(ctx, direction, options) {
     }),
     edges: model.flows.map((flow) => elkFlowEdge(flow, ctx, model.style.flowLabelWrap))
   };
-  applyDeclaredPorts(
-    graph,
-    model,
-    options?.hubPorts === false ? /* @__PURE__ */ new Map() : hubFlowSides(model, view)
-  );
+  if (options?.declaredPorts !== false) {
+    applyDeclaredPorts(
+      graph,
+      model,
+      options?.hubPorts === false ? /* @__PURE__ */ new Map() : hubFlowSides(model, view)
+    );
+  }
   return graph;
 }
 function recordRepairs(scene, routesBefore) {
@@ -101728,10 +101709,13 @@ var ASPECT_TARGETS = {
 };
 async function withHubPortFallback(elk, makeGraph, direction, options) {
   const run = async (spec) => await elk.layout(makeGraph(direction, spec));
-  const rungs = options?.hubPorts === false ? [] : [
-    { ...options, postCompaction: "EDGE_LENGTH_CONSTRAINT_LOCKING" },
-    { ...options, postCompaction: "NONE" },
-    { ...options, hubPorts: false }
+  const rungs = [
+    ...options?.hubPorts === false ? [] : [
+      { ...options, postCompaction: "EDGE_LENGTH_CONSTRAINT_LOCKING" },
+      { ...options, postCompaction: "NONE" },
+      { ...options, hubPorts: false }
+    ],
+    ...options?.declaredPorts === false ? [] : [{ ...options, hubPorts: false, declaredPorts: false }]
   ];
   try {
     return { result: await run(options), options };
@@ -101746,17 +101730,20 @@ async function withHubPortFallback(elk, makeGraph, direction, options) {
     throw error;
   }
 }
-function markDeclaredTerminals(edges, model, view, hubPorts) {
+function markDeclaredTerminals(edges, model, view, laidOutWith) {
+  const hubPorts = laidOutWith?.hubPorts !== false;
+  const declaredPorts = laidOutWith?.declaredPorts !== false;
   const rolePin = (role) => hubPorts && !!role;
+  const sidePin = (side) => declaredPorts && !!side;
   const pinnedFlows = new Map(
     model.flows.filter(
-      (flow) => flow.fromSide || flow.toSide || rolePin(flow.fromRole?.value) || rolePin(flow.toRole?.value)
+      (flow) => sidePin(flow.fromSide) || sidePin(flow.toSide) || rolePin(flow.fromRole?.value) || rolePin(flow.toRole?.value)
     ).map(
       (flow) => [
         flow.id,
         {
-          start: !!flow.fromSide || rolePin(flow.toRole?.value),
-          end: !!flow.toSide || rolePin(flow.fromRole?.value)
+          start: sidePin(flow.fromSide) || rolePin(flow.toRole?.value),
+          end: sidePin(flow.toSide) || rolePin(flow.fromRole?.value)
         }
       ]
     )
@@ -101868,7 +101855,7 @@ async function chooseLayout(model, view) {
     const edges = collectSceneEdges(result2, origins, numbered, edgeFontSize);
     const reversed = new Set(model.flows.filter(laidOutReversed).map((flow) => flow.id));
     for (const edge of edges) if (reversed.has(edge.id)) edge.pts.reverse();
-    markDeclaredTerminals(edges, model, view, laidOutWith?.hubPorts !== false);
+    markDeclaredTerminals(edges, model, view, laidOutWith);
     stampLabelOffsets(edges, model);
     const scene = {
       width: Math.ceil(result2.width),
@@ -103423,7 +103410,18 @@ async function compile(source, options) {
   }
   const view = views[model.type];
   const matrix = options?.matrix ? buildFlowMatrix(model, view) : null;
-  const scene = await layout(model, view);
+  let scene;
+  try {
+    scene = await layout(model, view);
+  } catch (error) {
+    diags.push({
+      code: "E0000",
+      severity: "error",
+      message: `layout failed: ${error instanceof Error ? error.message : String(error)}`,
+      span: { line: 0, col: 0, len: 0 }
+    });
+    return { svg: null, diagnostics: diags, metrics: null, matrix, boxes: null };
+  }
   diags.push(...attachSideDiagnostics(scene, model));
   const { svg, overlapsAfter } = render(model, view, scene, { logos: options?.logos, theme });
   diags.push(...offsetDiagnostics(scene, model));

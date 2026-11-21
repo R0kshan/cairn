@@ -100,7 +100,7 @@ listed in §2.
 | View | Element kinds | Flow rules |
 |---|---|---|
 | `logical` | actor-group, actor, system, layer, block, security, external | label **required** (**E0203**); no technical tail; business objects via `[REFS]` (logical only — elsewhere is **E0222**) |
-| `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label optional; `(protocol, format)` recommended between non-actors (**W0540**) |
+| `application` | actor-group, actor, system, application, module, gateway, auth, idp, queue, datastore, external | label optional; `(protocol, format)` optional |
 | `infrastructure` | actor, device, site, network-zone, cluster, server, app-instance, queue, datastore, gateway, load-balancer, firewall, auth, idp, external | label optional; protocol **required** (**E0240**): `(HTTPS/443)` |
 
 Nesting is checked against each view's rules (**E0210–E0218**). In the tables
@@ -204,8 +204,8 @@ them.
 
 The flow label is optional and usually omitted — the technical tail is the
 interesting half. Omit the label and the tail becomes the arrow's label; give
-both and the tail renders as a smaller grey sub-line. A flow between two
-non-actor elements with no tail warns (**W0540**). Business objects are rejected
+both and the tail renders as a smaller grey sub-line. A flow with no tail is
+fine. Business objects are rejected
 (**E0222**). An unconnected `module`, `gateway`, `auth`, `idp`, `queue` or
 `datastore` warns (**W0510**).
 

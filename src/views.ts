@@ -110,11 +110,6 @@ export interface View {
     message: string;
     help: string;
   } | null;
-  flowTechRecommended: {
-    code: string;
-    message: string;
-    help: string;
-  } | null;
   nesting: NestingRule[];
   minCounts: {
     code: string;
@@ -180,7 +175,6 @@ const logicalView: View = {
     dotted: "D\u00e9pendance — aucune donn\u00e9e \u00e9chang\u00e9e",
   },
   flowTechRequired: null,
-  flowTechRecommended: null,
   businessObjects: true,
   partitions: { "actor-group": 0, system: 1, security: 1, external: 2 },
   flowLabelRequired: {
@@ -374,11 +368,6 @@ const applicationView: View = {
   },
   flowLabelRequired: null,
   flowTechRequired: null,
-  flowTechRecommended: {
-    code: "W0540",
-    message: "system-to-system flow without protocol",
-    help: 'add the technology: `A -> B "\u2026" (API_REST, JSON)` (C4 practice: label the how, not just the what)',
-  },
   nesting: [
     {
       code: "E0213",
@@ -582,7 +571,6 @@ const infrastructureView: View = {
     dotted: "D\u00e9pendance — hors trafic nominal",
   },
   flowLabelRequired: null,
-  flowTechRecommended: null,
   flowTechRequired: {
     code: "E0240",
     message: "technical flow without protocol",

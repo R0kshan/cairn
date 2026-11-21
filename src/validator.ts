@@ -269,10 +269,6 @@ function checkEndpointRoles(model: Model, view: View): Diagnostic[] {
 
 function checkFlows(model: Model, view: View): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
-  const isActor = (id: string) => {
-    const kind = model.index.get(id)?.kind;
-    return kind === "actor" || kind === "actor-group";
-  };
   for (const flow of model.flows) {
     for (const [reference, span] of [
       [flow.from, flow.fromSpan],
@@ -290,21 +286,6 @@ function checkFlows(model: Model, view: View): Diagnostic[] {
             : "declare this element before referencing it",
         });
       }
-    }
-    if (
-      view.flowTechRecommended &&
-      !flow.tech?.protocol &&
-      !isActor(flow.from) &&
-      !isActor(flow.to)
-    ) {
-      diagnostics.push({
-        code: view.flowTechRecommended.code,
-        severity: "warning",
-        message: view.flowTechRecommended.message,
-        span: flow.span,
-        note: `completeness check of the \`${view.name}\` view (actor flows are exempt)`,
-        help: view.flowTechRecommended.help,
-      });
     }
     if (view.flowTechRequired && !flow.tech?.protocol) {
       diagnostics.push({

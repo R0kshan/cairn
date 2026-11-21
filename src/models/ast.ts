@@ -286,8 +286,6 @@ export const explanations: Record<string, string> = {
     "Network zones belong to a site (or nest inside a larger zone): DMZ and LAN only mean something relative to a perimeter.",
   E0217:
     "A cluster groups the nodes that stand in for one another, so it needs a network location like any of them: put it in a `network-zone` or a `site`. Its members may be servers, deployed applications or databases \u2014 a Kubernetes cluster of worker nodes, or a database cluster of primary and standby.",
-  W0540:
-    'C4 container-diagram practice: inter-process relationships should be labelled with their technology/protocol ("the how, not just the what"). Human/actor interactions are exempt. Add `(API_REST, JSON)` after the label, or ignore if the diagram is intentionally functional-only.',
   E0223:
     "Unknown endpoint suffix. A flow endpoint may name the side it attaches to — `APP.right -> DB.left` — using the diagram as it is read: `left`, `right`, `top`, `bottom`. It may instead name its role towards a queue at the other end: `producer` or `consumer`. It may name one of each, in either order (`CAPTURE.producer.top`). A declared side is a hint, not a guarantee: one the layout cannot reach is dropped with a W0570 warning rather than forced.",
   E0227:
