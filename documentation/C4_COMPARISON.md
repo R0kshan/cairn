@@ -15,48 +15,11 @@ make different choices everywhere else.
 
 | | C4 | cairn |
 |---|---|---|
-| **Kind of thing** | A notation-independent model with a set of diagram types. Several tools implement it: Structurizr, LikeC4, C4-PlantUML, Mermaid's C4 diagrams. | One DSL and one renderer: a CLI, a browser playground and an embeddable `compile()`. |
+| **Kind** | A notation-independent model with a set of diagram types. Several tools implement it: Structurizr, LikeC4, C4-PlantUML, Mermaid's C4 diagrams. | One DSL and one renderer: a CLI, a browser playground and an embeddable `compile()`. |
 | **Core abstractions** | Person, software system, container, component, plus code | Kinds typed per view: actors, functional blocks, applications, modules, queues, datastores, sites, network zones, servers, clusters, firewalls… |
 | **Views** | System context, container, component, code; also system landscape, dynamic and deployment | [`logical`](DSL_SPEC.md#11-logical-view--diagram-logical), [`application`](DSL_SPEC.md#12-application-view--diagram-application), [`infrastructure`](DSL_SPEC.md#13-infrastructure-view--diagram-infrastructure) |
-| **Source of truth** | In model-based tools (Structurizr, LikeC4), one model that every view is derived from | One `.cairn` file per diagram. There are no imports across files ([by design](DSL_SPEC.md#5-not-in-the-language)). |
+| **Source of truth** | In model-based tools (Structurizr, LikeC4), one model that every view is derived from | One `.cairn` file per diagram. There are no imports across files. |
 | **Main goal** | A shared vocabulary for software structure, at the right level of abstraction for each audience | Dense views that stay readable (no overlapping labels, deterministic layout) and that fit an architecture document |
-
-## Mapping the concepts
-
-C4's abstractions line up with cairn's kinds fairly directly at the application
-and deployment level:
-
-| C4 | cairn | View |
-|---|---|---|
-| Person | `actor`, grouped in an `actor-group` | logical, application (in infrastructure, `actor` sits at the root) |
-| Software system (in scope) | `system` | logical, application |
-| Software system (external) | `external` | all three |
-| Container (an app or service) | `application` | application |
-| Container (a database) | `datastore` | application, infrastructure |
-| Container (a message broker) | `queue` | application, infrastructure |
-| Component | `module`, inside an `application` | application |
-| Relationship: description + technology | flow: label + `(PROTOCOL, FORMAT)` tail | application |
-| Relationship in a deployment diagram | flow: label + `(PROTOCOL/PORT)` | infrastructure |
-| Deployment node | `site`, `network-zone`, `server`, `cluster`, `device` | infrastructure |
-| Container instance | `app-instance` | infrastructure |
-| Infrastructure node | `load-balancer`, `firewall`, `gateway` | infrastructure |
-| Code (classes, …) | — not covered | — |
-| Dynamic diagram | — not covered | — |
-
-Some cairn kinds have no direct C4 counterpart:
-
-- **The logical view as a whole.** It describes what the system *does*:
-  functional `layer`s and `block`s, the business objects carried by flows, and
-  `security` capabilities such as strong authentication or anonymisation, with no
-  technology anywhere. C4's abstractions describe the static structure of
-  software (systems, containers, components), not its functions. Its system
-  context diagram is the closest thing, but it stops at the system boundary.
-- **Typed infrastructure.** `gateway`, `auth`, `idp`, `load-balancer`, `firewall`
-  and `cluster` are their own kinds, each with its own glyph and nesting rules.
-  C4's deployment diagrams have two generic kinds, deployment nodes and
-  infrastructure nodes, told apart by their technology or tags. LikeC4 lets you
-  define your own element kinds; in cairn the kinds are fixed per view, and the
-  compiler enforces where each one may sit.
 
 ## Where they differ
 
@@ -89,7 +52,7 @@ On top of that, every cairn build:
 
 - measures label overlaps, and CI keeps them at zero across all the examples;
 - keeps every flow as its own arrow with its own label;
-- produces deterministic output, so a small edit doesn't reshuffle the picture.
+- produces deterministic output, the same DSL always produces the same diagram with the exact same positionning.
 
 ### Validation
 
