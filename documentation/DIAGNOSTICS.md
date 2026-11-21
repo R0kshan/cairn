@@ -1,6 +1,6 @@
 # Diagnostic codes
 
-Every issue cairn reports carries a stable code. Codes are namespaced by severity and phase: `E01xx` = syntax, `E02xx` = view schema, `W05xx` = completeness / best-practice warnings. Gaps in numbering are reserved for future codes — a gap does not mean a code was removed. The one exception is **W0540** (application flow without a protocol), removed after v1.0.0-RC18; a removed code is never reused.
+Every issue cairn reports carries a stable code. Codes are namespaced by severity and phase: `E01xx` = syntax, `E02xx` = view schema, `W05xx` = completeness / best-practice warnings. Gaps in numbering are reserved for future codes — a gap does not mean a code was removed. The one exception is **W0540** (application flow without technology), removed after v1.0.0-RC18; a removed code is never reused.
 
 Run `cairn explain <CODE>` for the rationale behind any rule (e.g. `cairn explain E0240`).
 
