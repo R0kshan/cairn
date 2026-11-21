@@ -1,16 +1,15 @@
 # cairn and C4
 
 [C4](https://c4model.com) and cairn both describe software architecture as a set
-of views, and both are often written as code. This raises a fair question: if you
-already use C4, or are thinking about it, where does cairn fit? This page maps one
-onto the other, lists where they differ, and says when to pick each.
+of views, and both are often written as code. If you already use C4, or are
+thinking about it, this page maps one onto the other, sets out where they
+differ, and says when each one fits.
 
-**In short:** C4 is a way of *modelling* software structure at four zoom levels,
-and you pick the tool that draws it. cairn is a *drawing* tool for three views
-that enterprise-architecture documents expect: logical, application and
-infrastructure. It cares most about keeping dense diagrams readable and about
-producing the flow matrix that comes with them. The two overlap at the
-application and deployment level and differ everywhere else.
+**In short:** C4 is a way of *modelling* software structure at several zoom
+levels, and you pick the tool that draws it. cairn is a *drawing* tool for three
+views that enterprise-architecture documents expect: logical, application and
+infrastructure. The two overlap at the application and deployment level, and
+make different choices everywhere else.
 
 ## What each one is
 
@@ -59,110 +58,51 @@ Some cairn kinds have no direct C4 counterpart:
   define your own element kinds; in cairn the kinds are fixed per view, and the
   compiler enforces where each one may sit.
 
-## Side by side
-
-Here is the same order platform: in Structurizr DSL as a C4 container view, and
-in cairn as an application view.
-
-```text
-workspace {
-  model {
-    clerk = person "Order clerk"
-    orders = softwareSystem "Order platform" {
-      app = container "Order management" "" "Spring Boot" {
-        capture  = component "Order capture"
-        validate = component "Order validation"
-      }
-      events = container "Order event bus" "" "Kafka" "Queue"
-      db     = container "Order repository" "" "PostgreSQL" "Database"
-    }
-    carrier = softwareSystem "Carrier tracking" "" "External"
-
-    clerk    -> capture  "Captures orders"
-    capture  -> validate "Validates" "REST/JSON"
-    validate -> db       "Reads/writes" "JDBC"
-    validate -> events   "Publishes" "MQ/JSON"
-    events   -> carrier  "Forwards" "SFTP/CSV"
-  }
-  views {
-    container orders {
-      include *
-      autolayout lr
-    }
-    component app {
-      include *
-      autolayout lr
-    }
-  }
-}
-```
-
-```cairn
-diagram application "Order platform — application view"
-
-actor-group SALES "Sales actors" {
-  actor CLERK "Order clerk"
-}
-
-system ORDERS "Order platform" {
-  application ORDER_APP "Order management" { logo: spring
-    module CAPTURE "Order\ncapture"
-    module VALIDATE "Order\nvalidation"
-  }
-  queue EVENTS "Order event\nbus" { logo: apachekafka }
-  datastore ORDER_DB "Order\nrepository" { logo: postgresql }
-}
-
-external CARRIER "Carrier tracking"
-
-CLERK    -> CAPTURE "Captures orders"
-CAPTURE  -> VALIDATE (API_REST, JSON)
-VALIDATE -> ORDER_DB (JDBC)
-VALIDATE -> EVENTS (MQ, JSON)
-EVENTS   -> CARRIER (SFTP, CSV)
-```
-
-What the comparison shows:
-
-- **One model, several views, versus one view per file.** Structurizr derives
-  both the container view and the component view from a single model. In cairn,
-  the application view shows applications and their modules in one drawing. The
-  logical and infrastructure views of the same system are separate files that
-  you keep consistent yourself.
-- **Containment is the zoom.** C4 hides a container's components until you open
-  the component view. cairn draws modules inside their application in the same
-  diagram, so the diagram has to stay dense and readable at once, and the layout
-  is built for that.
-- **The technology is checked per view.** Both carry it on relationships.
-  Structurizr can flag a relationship with no technology through its
-  inspections. In cairn the rule comes with the view: an application flow between
-  non-actors with no tail warns ([W0540](DIAGNOSTICS.md)), and an
-  infrastructure flow with no protocol is an error ([E0240](DIAGNOSTICS.md)).
-
 ## Where they differ
+
+### One model or one file per view
+
+In Structurizr or LikeC4, you describe the system once and derive every view
+from that model, so a renamed container changes in every view at once. In
+cairn, each view is its own file: you keep the logical, application and
+infrastructure views of the same system consistent yourself. In exchange, each
+file is complete on its own and reads top to bottom.
+
+### Zoom levels or containment
+
+C4 gives each level of detail its own diagram: a container's components appear
+in its component diagram. cairn draws modules inside their application in the
+same diagram, and zones, servers and instances inside one another in the
+infrastructure view. C4 keeps each diagram focused on one level; cairn puts more
+on one page, and its layout is built to keep that readable.
 
 ### Layout and readability
 
-C4 tools leave layout to a general-purpose engine (Graphviz or Dagre in
-Structurizr, Graphviz in LikeC4 and C4-PlantUML), or to manual placement. With
-many flows, this is where diagrams become hard to read.
-cairn is built around this problem. Every build measures label overlaps, and CI
-keeps them at zero across all the examples. Every flow stays its own arrow with
-its own label, and the output is deterministic, so a small edit doesn't reshuffle
-the picture. When the automatic layout still gets something
-wrong, the [positioning controls](DSL_SPEC.md#positioning-controls) and the
-playground's drag-to-adjust write the fix back into the source.
+C4 tools use a general-purpose layout engine (Graphviz or Dagre in Structurizr,
+Graphviz in LikeC4 and C4-PlantUML), and Structurizr's diagram editor also
+supports manual placement. That leaves you free to arrange any diagram the way
+you want.
+
+cairn's layout is specialised for dense architecture views. Every build measures
+label overlaps, and CI keeps them at zero across all the examples. Every flow
+stays its own arrow with its own label, and the output is deterministic, so a
+small edit doesn't reshuffle the picture. When the automatic layout still gets
+something wrong, the [positioning controls](DSL_SPEC.md#positioning-controls)
+and the playground's drag-to-adjust write the fix back into the source.
 
 ### Validation
 
 C4 is about abstractions and leaves rules to the tooling. Structurizr checks
-syntax and references, and can run inspections: configurable checks such as an
+syntax and references, and runs inspections: configurable checks such as an
 element with no description or a relationship with no technology. LikeC4
-checks the model against the element kinds you declare. cairn types every view:
-each one declares which element kinds it accepts, how they nest, and what a flow
-must carry. Breaking a rule
-produces a source-located, coded diagnostic, and `cairn explain <code>` gives the
-reason behind it. See [Diagnostics](DIAGNOSTICS.md).
+checks the model against the element kinds you declare.
+
+cairn types every view: each one declares which element kinds it accepts, how
+they nest, and what a flow must carry. An application flow between non-actors
+with no technology tail warns ([W0540](DIAGNOSTICS.md)), and an infrastructure
+flow with no protocol is an error ([E0240](DIAGNOSTICS.md)). Each diagnostic is
+coded and points at the source, and `cairn explain <code>` gives the reason
+behind it. See [Diagnostics](DIAGNOSTICS.md).
 
 ### Deliverables beyond the diagram
 
@@ -171,8 +111,8 @@ Markdown or SVG): one row per flow, endpoints annotated with their zone or
 application. This is the *matrice des flux techniques* that French
 enterprise-architecture dossiers require, and it can be localised with
 `style { lang: fr }`. Structurizr and LikeC4 export diagrams (PlantUML,
-Mermaid, DOT, D2…) and the model, but no flow table: you would script one from
-the model.
+Mermaid, DOT, D2…) and the model itself, but no flow table: you would script
+one from the model.
 
 ### Scope
 
@@ -189,17 +129,16 @@ dynamic view.
 - you want one model with many derived views, kept consistent by the tool;
 - your audience thinks in system → container → component zoom levels;
 - you need dynamic or code-level diagrams, or a landscape across many systems;
-- your diagrams are moderately dense and the default layout reads well.
+- you want documentation and decisions kept next to the model.
 
 **Choose cairn when:**
 
 - your document follows the logical / application / infrastructure structure
   that enterprise-architecture methods and French SAD templates use;
-- your diagrams have many flows and labelled exchanges, and readability is
-  what breaks first;
+- your views carry many flows and labelled exchanges on one page;
 - you need a flow matrix delivered with each view;
 - you want the view's rules (mandatory labels, mandatory protocols, valid
   nesting) checked in CI.
 
 They also work side by side: C4 for the software-structure model a team
-maintains, and cairn for the dense views a formal architecture document needs.
+maintains, and cairn for the views a formal architecture document needs.
