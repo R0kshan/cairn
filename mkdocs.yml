@@ -19,6 +19,7 @@ nav:
   - Home: index.md
   - DSL reference: DSL_SPEC.md
   - Diagnostics: DIAGNOSTICS.md
+  - Use with AI agents: AI_AGENTS.md
 
 theme:
   name: material

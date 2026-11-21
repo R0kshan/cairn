@@ -5,6 +5,7 @@ All notable changes to the cairn project will be documented in this file.
 ## [Unreleased]
 
 ### Added
+- **Agent Skill** (`skills/cairn/`, #5): points AI agents at the DSL spec for their installed cairn version and has them loop on `cairn validate --strict` until the file is clean
 - **npm:** `@r0kshan/cairn` ships TypeScript declarations (`exports["."].types`), and the README documents library use
 
 ### Changed

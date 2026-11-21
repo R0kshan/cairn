@@ -17,6 +17,7 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Use as a library](#use-as-a-library)
 - [Commands](#commands)
 - [License](#license)
+- [Use with AI agents](#use-with-ai-agents)
 - [More](#more)
 
 ## Used by
@@ -463,11 +464,23 @@ Find your row. Most people are in the first one, and owe nothing.
 
 Diagrams you produce are yours — cairn claims nothing in them. The brands drawn by the built-in logos remain their owners' trademarks.
 
+## Use with AI agents
+
+[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io) that teaches an AI agent to write cairn diagrams and check them with `cairn validate --strict`. For Claude Code, install it from a terminal:
+
+```sh
+claude plugin marketplace add R0kshan/cairn --sparse .claude-plugin skills
+claude plugin install cairn@cairn
+```
+
+Installing from inside a session, updates, and other agents: [`AI_AGENTS.md`](https://github.com/R0kshan/cairn/blob/main/documentation/AI_AGENTS.md).
+
 ## More
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
 - [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md) — using the engine from JavaScript or TypeScript.
+- [`AI_AGENTS.md`](https://github.com/R0kshan/cairn/blob/main/documentation/AI_AGENTS.md) — installing the cairn skill for AI agents.
 - [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
 - [`documentation/`](documentation/) — architecture, invariants, DSL and internals.

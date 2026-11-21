@@ -1,0 +1,15 @@
+{
+  "name": "cairn",
+  "description": "cairn — architecture diagrams as code",
+  "owner": {
+    "name": "R0kshan",
+    "url": "https://github.com/R0kshan"
+  },
+  "plugins": [
+    {
+      "name": "cairn",
+      "source": "./skills/cairn",
+      "description": "Write, fix and render cairn architecture diagrams: logical, application and infrastructure views, plus the flow matrix."
+    }
+  ]
+}
