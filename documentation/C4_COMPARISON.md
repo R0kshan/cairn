@@ -98,9 +98,9 @@ element with no description or a relationship with no technology. LikeC4
 checks the model against the element kinds you declare.
 
 cairn types every view: each one declares which element kinds it accepts, how
-they nest, and what a flow must carry. An application flow between non-actors
-with no technology tail warns ([W0540](DIAGNOSTICS.md)), and an infrastructure
-flow with no protocol is an error ([E0240](DIAGNOSTICS.md)). Each diagnostic is
+they nest, and what a flow must carry: a logical flow needs a label
+([E0203](DIAGNOSTICS.md)), and an infrastructure flow needs its protocol
+([E0240](DIAGNOSTICS.md)). Each diagnostic is
 coded and points at the source, and `cairn explain <code>` gives the reason
 behind it. See [Diagnostics](DIAGNOSTICS.md).
 
@@ -113,14 +113,6 @@ enterprise-architecture dossiers require, and it can be localised with
 `style { lang: fr }`. Structurizr and LikeC4 export diagrams (PlantUML,
 Mermaid, DOT, D2…) and the model itself, but no flow table: you would script
 one from the model.
-
-### Scope
-
-C4 covers more ground: the code level, dynamic diagrams, a system landscape
-spanning an entire enterprise, and, in Structurizr, documentation and
-architecture decision records kept with the model. cairn covers three views and
-stops there. It has no shared model, no cross-file imports and no sequence or
-dynamic view.
 
 ## Which to pick
 
