@@ -15,9 +15,9 @@ Cairn is an [Elkjs (Eclipse Layout Kernel)](https://github.com/kieler/elkjs) bas
 - [Preview](#preview)
 - [Installation](#installation)
 - [Use as a library](#use-as-a-library)
-- [Use with AI agents](#use-with-ai-agents)
 - [Commands](#commands)
 - [License](#license)
+- [Use with AI agents](#use-with-ai-agents)
 - [More](#more)
 
 ## Used by
@@ -347,28 +347,6 @@ npm run cairn -- --help          # or: node bin/cairn.js --help
 
 The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0kshan/cairn) for the browser and Node. Installation, usage, flow matrix export and error handling: [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md).
 
-## Use with AI agents
-
-[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io). It points an AI agent at the spec for the cairn version it has installed, then has it loop on `cairn validate --strict` until the file is clean.
-
-**Claude Code**: install it as a plugin, from a terminal. `--sparse` fetches only the plugin files (about 0.5 MB) instead of cloning the whole repository:
-
-```sh
-claude plugin marketplace add R0kshan/cairn --sparse .claude-plugin skills
-claude plugin install cairn@cairn
-```
-
-Inside a Claude Code session, `/plugin marketplace add R0kshan/cairn` then `/plugin install cairn@cairn` also works, but `/plugin` can't take `--sparse`, so it clones the whole repository (about 43 MB).
-
-Updates follow this repository: turn on auto-update for the `cairn` marketplace in `/plugin`, or run `claude plugin marketplace update cairn`.
-
-**Other agents**: the skill is a single file. Download it to wherever your agent loads skills from (for Claude Code without the plugin, `~/.claude/skills/`):
-
-```sh
-mkdir -p ~/.claude/skills/cairn
-curl -fsSL https://raw.githubusercontent.com/R0kshan/cairn/main/skills/cairn/SKILL.md -o ~/.claude/skills/cairn/SKILL.md
-```
-
 ## Commands
 
 Once installed, the command is `cairn`. From a clone, run `npm run cairn -- <command>`.
@@ -485,6 +463,28 @@ Find your row. Most people are in the first one, and owe nothing.
 - **Converting a diagram to PNG, or pasting it into a slide deck, drops the attribution comment.** The artwork is still there, so the attribution has to go somewhere you control: a caption, a credits slide, or `licenses/` shipped alongside. This is the one case cairn cannot handle for you.
 
 Diagrams you produce are yours — cairn claims nothing in them. The brands drawn by the built-in logos remain their owners' trademarks.
+
+## Use with AI agents
+
+[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io). It points an AI agent at the spec for the cairn version it has installed, then has it loop on `cairn validate --strict` until the file is clean.
+
+**Claude Code**: install it as a plugin, from a terminal. `--sparse` fetches only the plugin files (about 0.5 MB) instead of cloning the whole repository:
+
+```sh
+claude plugin marketplace add R0kshan/cairn --sparse .claude-plugin skills
+claude plugin install cairn@cairn
+```
+
+Inside a Claude Code session, `/plugin marketplace add R0kshan/cairn` then `/plugin install cairn@cairn` also works, but `/plugin` can't take `--sparse`, so it clones the whole repository (about 43 MB).
+
+Updates follow this repository: turn on auto-update for the `cairn` marketplace in `/plugin`, or run `claude plugin marketplace update cairn`.
+
+**Other agents**: the skill is a single file. Download it to wherever your agent loads skills from (for Claude Code without the plugin, `~/.claude/skills/`):
+
+```sh
+mkdir -p ~/.claude/skills/cairn
+curl -fsSL https://raw.githubusercontent.com/R0kshan/cairn/main/skills/cairn/SKILL.md -o ~/.claude/skills/cairn/SKILL.md
+```
 
 ## More
 
