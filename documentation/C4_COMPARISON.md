@@ -36,10 +36,11 @@ and deployment level:
 | Container (a database) | `datastore` | application, infrastructure |
 | Container (a message broker) | `queue` | application, infrastructure |
 | Component | `module`, inside an `application` | application |
-| Relationship: description + technology | flow: label + `(protocol, format)` tail | application |
-| Deployment node | `site`, `network-zone`, `server`, `cluster` | infrastructure |
+| Relationship: description + technology | flow: label + `(PROTOCOL, FORMAT)` tail | application |
+| Relationship in a deployment diagram | flow: label + `(PROTOCOL/PORT)` | infrastructure |
+| Deployment node | `site`, `network-zone`, `server`, `cluster`, `device` | infrastructure |
 | Container instance | `app-instance` | infrastructure |
-| Infrastructure node | `load-balancer`, `firewall`, `gateway`, `device` | infrastructure |
+| Infrastructure node | `load-balancer`, `firewall`, `gateway` | infrastructure |
 | Code (classes, …) | — not covered | — |
 | Dynamic diagram | — not covered | — |
 
@@ -48,13 +49,15 @@ Some cairn kinds have no direct C4 counterpart:
 - **The logical view as a whole.** It describes what the system *does*:
   functional `layer`s and `block`s, the business objects carried by flows, and
   `security` capabilities such as strong authentication or anonymisation, with no
-  technology anywhere. C4 deliberately doesn't do functional decomposition. Its
-  system context diagram is the closest thing, but it stops at the system
-  boundary.
+  technology anywhere. C4's abstractions describe the static structure of
+  software (systems, containers, components), not its functions. Its system
+  context diagram is the closest thing, but it stops at the system boundary.
 - **Typed infrastructure.** `gateway`, `auth`, `idp`, `load-balancer`, `firewall`
   and `cluster` are their own kinds, each with its own glyph and nesting rules.
-  C4 represents all of them with one generic element, told apart by a tag or a
-  technology string.
+  C4's deployment diagrams have two generic kinds, deployment nodes and
+  infrastructure nodes, told apart by their technology or tags. LikeC4 lets you
+  define your own element kinds; in cairn the kinds are fixed per view, and the
+  compiler enforces where each one may sit.
 
 ## Side by side
 
@@ -70,10 +73,10 @@ workspace {
         capture  = component "Order capture"
         validate = component "Order validation"
       }
-      events = container "Order event bus" "" "Kafka" { tags "Queue" }
-      db     = container "Order repository" "" "PostgreSQL" { tags "Database" }
+      events = container "Order event bus" "" "Kafka" "Queue"
+      db     = container "Order repository" "" "PostgreSQL" "Database"
     }
-    carrier = softwareSystem "Carrier tracking" { tags "External" }
+    carrier = softwareSystem "Carrier tracking" "" "External"
 
     clerk    -> capture  "Captures orders"
     capture  -> validate "Validates" "REST/JSON"
@@ -82,8 +85,14 @@ workspace {
     events   -> carrier  "Forwards" "SFTP/CSV"
   }
   views {
-    container orders { include * autolayout lr }
-    component app    { include * autolayout lr }
+    container orders {
+      include *
+      autolayout lr
+    }
+    component app {
+      include *
+      autolayout lr
+    }
   }
 }
 ```
@@ -124,30 +133,34 @@ What the comparison shows:
   the component view. cairn draws modules inside their application in the same
   diagram, so the diagram has to stay dense and readable at once, and the layout
   is built for that.
-- **The technology is checked.** Both carry it on relationships, but cairn
-  validates it per view: an application flow between non-actors with no tail
-  warns ([W0540](DIAGNOSTICS.md)), and an infrastructure flow with no protocol is
-  an error ([E0240](DIAGNOSTICS.md)).
+- **The technology is checked per view.** Both carry it on relationships.
+  Structurizr can flag a relationship with no technology through its
+  inspections. In cairn the rule comes with the view: an application flow between
+  non-actors with no tail warns ([W0540](DIAGNOSTICS.md)), and an
+  infrastructure flow with no protocol is an error ([E0240](DIAGNOSTICS.md)).
 
 ## Where they differ
 
 ### Layout and readability
 
-C4 tools usually leave layout to a general-purpose engine (Graphviz or dagre,
-depending on the tool), or to manual placement. With many flows, this is where
-diagrams become hard to read: labels overlap, and parallel arrows merge.
-cairn is built around this problem. Label space is reserved during layout,
-overlaps are measured on every build and kept at zero in CI, every flow stays its
-own arrow with its own label, and the output is deterministic, so a small edit
-doesn't reshuffle the picture. When the automatic layout still gets something
+C4 tools leave layout to a general-purpose engine (Graphviz or Dagre in
+Structurizr, Graphviz in LikeC4 and C4-PlantUML), or to manual placement. With
+many flows, this is where diagrams become hard to read.
+cairn is built around this problem. Every build measures label overlaps, and CI
+keeps them at zero across all the examples. Every flow stays its own arrow with
+its own label, and the output is deterministic, so a small edit doesn't reshuffle
+the picture. When the automatic layout still gets something
 wrong, the [positioning controls](DSL_SPEC.md#positioning-controls) and the
 playground's drag-to-adjust write the fix back into the source.
 
 ### Validation
 
-C4 is about abstractions and leaves rules to the tooling, which mostly checks
-syntax and references. cairn types every view: each one declares which element
-kinds it accepts, how they nest, and what a flow must carry. Breaking a rule
+C4 is about abstractions and leaves rules to the tooling. Structurizr checks
+syntax and references, and can run inspections: configurable checks such as an
+element with no description or a relationship with no technology. LikeC4
+checks the model against the element kinds you declare. cairn types every view:
+each one declares which element kinds it accepts, how they nest, and what a flow
+must carry. Breaking a rule
 produces a source-located, coded diagnostic, and `cairn explain <code>` gives the
 reason behind it. See [Diagnostics](DIAGNOSTICS.md).
 
@@ -157,14 +170,17 @@ Every cairn view exports a [flow matrix](DSL_SPEC.md#3-flow-matrix) (CSV,
 Markdown or SVG): one row per flow, endpoints annotated with their zone or
 application. This is the *matrice des flux techniques* that French
 enterprise-architecture dossiers require, and it can be localised with
-`style { lang: fr }`. C4 tools have nothing equivalent built in.
+`style { lang: fr }`. Structurizr and LikeC4 export diagrams (PlantUML,
+Mermaid, DOT, D2…) and the model, but no flow table: you would script one from
+the model.
 
 ### Scope
 
 C4 covers more ground: the code level, dynamic diagrams, a system landscape
-spanning an entire enterprise, and model-wide queries and documentation in
-Structurizr. cairn covers three views and stops there. It has no shared model, no
-cross-file imports and no sequence or dynamic view.
+spanning an entire enterprise, and, in Structurizr, documentation and
+architecture decision records kept with the model. cairn covers three views and
+stops there. It has no shared model, no cross-file imports and no sequence or
+dynamic view.
 
 ## Which to pick
 
