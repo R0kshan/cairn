@@ -44,6 +44,7 @@ on one page, and its layout is built to keep that readable.
 | | C4 tools | cairn |
 |---|---|---|
 | **Automatic layout** | A general-purpose engine: Graphviz or Dagre in Structurizr, Graphviz in LikeC4 and C4-PlantUML | Specialised for dense architecture views |
+| **Spacing** | Fixed gaps between elements, adjusted by hand per view | Unused space is reclaimed after layout, without making the diagram harder to read |
 | **Manual placement** | In Structurizr's diagram editor, free to arrange any diagram the way you want | With the [positioning controls](DSL_SPEC.md#positioning-controls), or by dragging in the playground |
 | **Where manual positions live** | Outside the DSL, in a JSON version of the workspace, matched back to elements by name each time the DSL loads | In the DSL itself, as hints: `offset:`, `label-offset:`, `segment-offset:`, `ID.side` |
 | **What the source alone gives you** | A DSL free of layout details; the placement comes from the workspace JSON kept alongside it | The whole diagram, placement included: the `.cairn` file renders the same way in the playground, the CLI or CI, with no separate layout file |
@@ -89,7 +90,11 @@ one from the model.
 
 - your document follows the logical / application / infrastructure structure
   that enterprise-architecture methods and French SAD templates use;
-- your views carry many flows and labelled exchanges on one page;
+- your views carry many flows and labelled exchanges on one page, with the
+  option to number them and list the full labels in a legend
+  (`flow-text: numbered`);
+- your document is in French: `lang: fr` translates the legend, band titles
+  and flow-matrix headers;
 - you need a flow matrix delivered with each view;
 - you want the view's rules (mandatory labels, mandatory protocols, valid
   nesting) checked in CI.
