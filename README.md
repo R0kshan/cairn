@@ -466,31 +466,21 @@ Diagrams you produce are yours — cairn claims nothing in them. The brands draw
 
 ## Use with AI agents
 
-[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io). It points an AI agent at the spec for the cairn version it has installed, then has it loop on `cairn validate --strict` until the file is clean.
-
-**Claude Code**: install it as a plugin, from a terminal. `--sparse` fetches only the plugin files (about 0.5 MB) instead of cloning the whole repository:
+[`skills/cairn/`](https://github.com/R0kshan/cairn/tree/main/skills/cairn) is a small [Agent Skill](https://agentskills.io) that teaches an AI agent to write cairn diagrams and check them with `cairn validate --strict`. For Claude Code, install it from a terminal:
 
 ```sh
 claude plugin marketplace add R0kshan/cairn --sparse .claude-plugin skills
 claude plugin install cairn@cairn
 ```
 
-Inside a Claude Code session, `/plugin marketplace add R0kshan/cairn` then `/plugin install cairn@cairn` also works, but `/plugin` can't take `--sparse`, so it clones the whole repository (about 43 MB).
-
-Updates follow this repository: turn on auto-update for the `cairn` marketplace in `/plugin`, or run `claude plugin marketplace update cairn`.
-
-**Other agents**: the skill is a single file. Download it to wherever your agent loads skills from (for Claude Code without the plugin, `~/.claude/skills/`):
-
-```sh
-mkdir -p ~/.claude/skills/cairn
-curl -fsSL https://raw.githubusercontent.com/R0kshan/cairn/main/skills/cairn/SKILL.md -o ~/.claude/skills/cairn/SKILL.md
-```
+Installing from inside a session, updates, and other agents: [`AI_AGENTS.md`](https://github.com/R0kshan/cairn/blob/main/documentation/AI_AGENTS.md).
 
 ## More
 
 - [`DIAGNOSTICS.md`](documentation/DIAGNOSTICS.md) — every diagnostic code and its meaning.
 - [`DSL_SPEC.md`](documentation/DSL_SPEC.md) — the DSL syntax.
 - [`LIBRARY.md`](https://github.com/R0kshan/cairn/blob/main/documentation/LIBRARY.md) — using the engine from JavaScript or TypeScript.
+- [`AI_AGENTS.md`](https://github.com/R0kshan/cairn/blob/main/documentation/AI_AGENTS.md) — installing the cairn skill for AI agents.
 - [`ARCHITECTURE.md`](documentation/ARCHITECTURE.md) — how the pipeline fits together, for contributors.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to open a PR, and the gates it must pass.
 - [`documentation/`](documentation/) — architecture, invariants, DSL and internals.
