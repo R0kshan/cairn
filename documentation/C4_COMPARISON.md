@@ -81,14 +81,18 @@ on one page, and its layout is built to keep that readable.
 C4 tools use a general-purpose layout engine (Graphviz or Dagre in Structurizr,
 Graphviz in LikeC4 and C4-PlantUML), and Structurizr's diagram editor also
 supports manual placement. That leaves you free to arrange any diagram the way
-you want.
+you want. Structurizr keeps those positions out of the DSL, in a JSON version
+of the workspace, and matches them back to elements by name each time it loads
+the DSL, so the source stays free of layout details.
 
 cairn's layout is specialised for dense architecture views. Every build measures
 label overlaps, and CI keeps them at zero across all the examples. Every flow
 stays its own arrow with its own label, and the output is deterministic, so a
 small edit doesn't reshuffle the picture. When the automatic layout still gets
 something wrong, the [positioning controls](DSL_SPEC.md#positioning-controls)
-and the playground's drag-to-adjust write the fix back into the source.
+and the playground's drag-to-adjust write the fix back into the `.cairn` file as
+hints (`offset:`, `label-offset:`, `segment-offset:`, `ID.side`), so the
+placement is versioned with the diagram and the CLI renders it the same way.
 
 ### Validation
 
