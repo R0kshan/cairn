@@ -357,7 +357,14 @@ The engine is published as [`@r0kshan/cairn`](https://www.npmjs.com/package/@r0k
 /plugin install cairn --marketplace R0kshan/cairn
 ```
 
-On Claude Code older than 2.1.275, run it in two steps: `/plugin marketplace add R0kshan/cairn`, then `/plugin install cairn@cairn`. Updates follow this repository; turn on auto-update for the `cairn` marketplace in `/plugin`, or run `/plugin marketplace update cairn`.
+That clones the whole repository (about 40 MB). To fetch only the skill (about 0.5 MB), or on Claude Code older than 2.1.275, use two steps:
+
+```text
+/plugin marketplace add R0kshan/cairn --sparse .claude-plugin skills
+/plugin install cairn@cairn
+```
+
+Updates follow this repository: turn on auto-update for the `cairn` marketplace in `/plugin`, or run `/plugin marketplace update cairn`.
 
 **Other agents**: copy the folder to wherever your agent loads skills from (for Claude Code without the plugin, `~/.claude/skills/`):
 
