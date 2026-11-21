@@ -78,25 +78,18 @@ on one page, and its layout is built to keep that readable.
 
 ### Layout and readability
 
-C4 tools use a general-purpose layout engine (Graphviz or Dagre in Structurizr,
-Graphviz in LikeC4 and C4-PlantUML), and Structurizr's diagram editor also
-supports manual placement. That leaves you free to arrange any diagram the way
-you want. Structurizr keeps those positions out of the DSL, in a JSON version
-of the workspace, and matches them back to elements by name each time it loads
-the DSL, so the source stays free of layout details.
+| | C4 tools | cairn |
+|---|---|---|
+| **Automatic layout** | A general-purpose engine: Graphviz or Dagre in Structurizr, Graphviz in LikeC4 and C4-PlantUML | Specialised for dense architecture views |
+| **Manual placement** | In Structurizr's diagram editor, free to arrange any diagram the way you want | With the [positioning controls](DSL_SPEC.md#positioning-controls), or by dragging in the playground |
+| **Where manual positions live** | Outside the DSL, in a JSON version of the workspace, matched back to elements by name each time the DSL loads | In the DSL itself, as hints: `offset:`, `label-offset:`, `segment-offset:`, `ID.side` |
+| **What the source alone gives you** | A DSL free of layout details; the placement comes from the workspace JSON kept alongside it | The whole diagram, placement included: the `.cairn` file renders the same way in the playground, the CLI or CI, with no separate layout file |
 
-cairn's layout is specialised for dense architecture views. Every build measures
-label overlaps, and CI keeps them at zero across all the examples. Every flow
-stays its own arrow with its own label, and the output is deterministic, so a
-small edit doesn't reshuffle the picture.
+On top of that, every cairn build:
 
-As in Structurizr, manual placement is also possible with cairn, through the
-[positioning controls](DSL_SPEC.md#positioning-controls) or by dragging in the
-playground. Contrary to Structurizr: every move is written into the DSL
-itself, as a hint (`offset:`, `label-offset:`, `segment-offset:`, `ID.side`).
-The `.cairn` file alone carries the whole diagram, placement included, so it
-always renders the same way, in the playground, the CLI or CI, with no separate
-layout file to keep alongside it.
+- measures label overlaps, and CI keeps them at zero across all the examples;
+- keeps every flow as its own arrow with its own label;
+- produces deterministic output, so a small edit doesn't reshuffle the picture.
 
 ### Validation
 
