@@ -38,7 +38,7 @@ On top of that, every [Cairn](https://github.com/R0kshan/cairn) build:
 - keeps every flow as its own arrow with its own label;
 - produces deterministic output: the same DSL always produces the same diagram, with exactly the same positioning.
 
-Label overlaps are one of several [readability metrics](FEATURES.md#readability-metrics) that Cairn's own CI enforces. Every change to Cairn is measured against them, so a new feature either makes diagrams more readable or at least does not make them less readable.
+Label overlaps are one of several [readability metrics](FEATURES.md#readability-metrics) that Cairn's own CI enforces. Every change to Cairn is measured against them: on Cairn's examples, a change may only add a defect if it removes a more serious one.
 
 ## When to use Cairn
 

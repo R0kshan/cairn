@@ -30,6 +30,5 @@ touches, two flows crossing, or a long detour, ranked by how much it costs the
 reader. Some must stay at zero; the others have a ceiling that may only go
 down.
 
-The point is that readability does not regress across Cairn's examples: a new feature either makes
-diagrams more readable or at least does not make them less readable, and a
-change that does is caught before it ships.
+Readability is protected as Cairn evolves: on Cairn's examples, a change may
+only add a defect if it removes a more serious one.
