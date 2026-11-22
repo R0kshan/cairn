@@ -18,6 +18,7 @@ exclude_docs: |
 nav:
   - Home: index.md
   - DSL reference: DSL_SPEC.md
+  - Features: FEATURES.md
   - Diagnostics: DIAGNOSTICS.md
   - Use with AI agents: AI_AGENTS.md
   - cairn and C4: C4_COMPARISON.md
