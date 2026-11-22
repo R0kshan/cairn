@@ -2,7 +2,7 @@
 
 All notable changes to the cairn project will be documented in this file.
 
-## [Unreleased]
+## [v1.0.0](https://github.com/R0kshan/cairn/releases/tag/v1.0.0) - 2026-11-22
 
 ### Added
 - **Agent Skill** (`skills/cairn/`, #5): points AI agents at the DSL spec for their installed cairn version and has them loop on `cairn validate --strict` until the file is clean
