@@ -22,7 +22,7 @@ nav:
   - Diagnostics: DIAGNOSTICS.md
   - Use with AI agents: AI_AGENTS.md
   - cairn and C4: C4_COMPARISON.md
-  - cairn and D2: D2_COMPARISON.md
+  - cairn and TALA: TALA_COMPARISON.md
 
 theme:
   name: material
