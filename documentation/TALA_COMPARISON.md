@@ -100,13 +100,40 @@ points at the source ([Diagnostics](DIAGNOSTICS.md)), with a JSON mode for CI.
 
 ### Manual placement
 
-Both keep manual placement in the source. With TALA, `top` and `left` lock a
-shape's position in the `.d2` file, and positioned shapes can mix with ones
-left to the engine. In cairn, the
-[positioning controls](DSL_SPEC.md#positioning-controls) (`offset:`,
-`label-offset:`, `segment-offset:`, `ID.side`) are written by hand or by
-dragging in the playground, which writes each move into the `.cairn` file.
-Either way, the file alone carries the placement.
+Both keep manual placement in the source, so the file alone carries it. They
+make different choices about what a placement means:
+
+| | TALA | cairn |
+|---|---|---|
+| **What a placement is** | An absolute position: `top` and `left` lock a shape at exact coordinates, and locked shapes mix with ones left to the engine | A delta from where the layout put the element: the layout still runs, and the element keeps its place in the reading order, so the nudge survives edits that re-flow the view |
+| **What you can place** | Shapes, locked with `top` and `left`, or placed relative to another shape with `near` | Elements (`offset:`), flow labels (`label-offset:`), one straight run of a route (`segment-offset:`), the side a flow attaches to (`ID.side`), and container sizes (`size:`) |
+| **How you place it** | Writing `top` and `left` in the `.d2` file | Writing the [positioning controls](DSL_SPEC.md#positioning-controls) by hand, or dragging in the playground, which writes each move into the `.cairn` file |
+
+An absolute lock gives exact control over a shape; a delta keeps working when
+the rest of the view changes. cairn also keeps checking a hand-adjusted view:
+a hint that creates an overlap is honoured but warns (W0572), a side pin the
+layout could not honour warns (W0570), and an offset that would push an element
+out of its container is cut short so the nesting stays true (W0573).
+
+### Readability checks
+
+cairn checks readability around the layout, not only inside it:
+
+- **The medium is part of the view.** `style { disposition: slide }` or
+  `{ disposition: page }` sizes a view for a 16:9 slide or an A4 page, and the
+  build reports the scale it reaches and the resulting label size. When labels
+  would fall below about 7 px, W0520 says the view carries more than the medium
+  can show and should be split.
+- **Every change is measured.** Beyond label overlaps, CI scores every example
+  on a set of readability metrics (crossings, labels pierced by a line,
+  container titles struck, lines through unrelated containers…) and fails when
+  any drawing gets worse than its recorded baseline. The metrics are described
+  in [READABILITY_METRICS.md](https://github.com/R0kshan/cairn/blob/main/documentation/READABILITY_METRICS.md).
+- **Errors are made for automation.** `cairn validate --format json` gives each
+  problem a code, a position, a hint and, when the fix is certain, an edit that
+  can be applied as given; `cairn explain <code>` gives the reason behind it.
+  That suits CI, and AI agents writing views with the
+  [cairn skill](AI_AGENTS.md).
 
 ### Deliverables beyond the diagram
 
