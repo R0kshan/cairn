@@ -1,0 +1,78 @@
+direction: right
+
+"TEAMS": "Internal teams" {
+  "MERCH": "Merchandising\nmanager" {
+    shape: person
+  }
+  "ADVISOR": "Customer-relations\nadvisor" {
+    shape: person
+  }
+  "ACCOUNTANT": "Accountant" {
+    shape: person
+  }
+}
+"FRONT": "Sales front" {
+  "SITE": "E-commerce\nsite"
+  "APP_MOBILE": "Mobile\napp"
+  "CHECKOUT": "Checkout\nfunnel"
+}
+"OMS": "Order management" {
+  "ORDERS": "Order\nlifecycle"
+  "SHIPPING": "Shipment\norchestration"
+  "RETURNS": "Returns and\nrefunds"
+}
+"PIM": "Product repository" {
+  "CATALOG": "Catalog\nmanagement"
+  "MEDIA": "Media\nmanagement"
+}
+"PRICING": "Pricing" {
+  "RULES": "Pricing-rule\nengine"
+}
+"PAYHUB": "Payment hub" {
+  "PAY_ORCH": "Payment\norchestration"
+  "FRAUD": "Anti-fraud\nscoring"
+}
+"CARE": "Customer care" {
+  "TICKETS": "Ticket\nmanagement"
+  "SELFCARE": "Customer\nself-care"
+}
+"EVENTS": "Order\nevent bus" {
+  shape: queue
+}
+"DWH": "Data\nwarehouse" {
+  shape: cylinder
+}
+"REF_CUSTOMERS": "Customer\nrepository" {
+  shape: cylinder
+}
+"PSP": "PSP"
+"CARRIERS": "Carrier\nplatforms"
+"ERP": "Group\nERP"
+
+"TEAMS"."MERCH" -> "PIM"."CATALOG"
+"PIM"."CATALOG" -> "FRONT"."SITE": "(API_REST, JSON)"
+"PIM"."MEDIA" -> "FRONT"."SITE": "(CDN, HTTPS)"
+"PRICING"."RULES" -> "FRONT"."SITE": "(API_REST, JSON)"
+"PRICING"."RULES" -> "FRONT"."CHECKOUT": "(API_REST, JSON)"
+"ERP" -> "PRICING"."RULES": "(SFTP, CSV)"
+"FRONT"."SITE" -> "FRONT"."CHECKOUT": "(local, call)"
+"FRONT"."APP_MOBILE" -> "FRONT"."CHECKOUT": "(API_REST, JSON)"
+"FRONT"."CHECKOUT" -> "OMS"."ORDERS": "(MQ, JSON)"
+"FRONT"."CHECKOUT" -> "PAYHUB"."PAY_ORCH": "(API_REST, JSON)"
+"PAYHUB"."PAY_ORCH" -> "PAYHUB"."FRAUD": "(local, call)"
+"PAYHUB"."PAY_ORCH" -> "PSP": "(API_REST, JSON)"
+"PSP" -> "PAYHUB"."PAY_ORCH": "(webhook, JSON)"
+"PAYHUB"."PAY_ORCH" -> "OMS"."ORDERS": "(MQ, JSON)"
+"OMS"."ORDERS" -> "OMS"."SHIPPING": "(local, call)"
+"OMS"."SHIPPING" -> "CARRIERS": "(API_REST, JSON)"
+"CARRIERS" -> "OMS"."SHIPPING": "(webhook, JSON)"
+"OMS"."SHIPPING" -> "EVENTS": "(MQ, JSON)"
+"CARE"."SELFCARE" -> "EVENTS": "(MQ, JSON)"
+"TEAMS"."ADVISOR" -> "CARE"."TICKETS"
+"CARE"."TICKETS" -> "OMS"."RETURNS": "(API_REST, JSON)"
+"OMS"."RETURNS" -> "PAYHUB"."PAY_ORCH": "(MQ, JSON)"
+"CARE"."SELFCARE" -> "REF_CUSTOMERS": "(JDBC)"
+"OMS"."ORDERS" -> "DWH": "(batch, parquet)"
+"FRONT"."SITE" -> "DWH": "(streaming, avro)"
+"TEAMS"."ACCOUNTANT" -> "PAYHUB"."PAY_ORCH"
+"ERP" -> "OMS"."ORDERS": "(MQ, JSON)"

@@ -1,0 +1,64 @@
+direction: right
+
+"POLICYHOLDERS": "Policyholders" {
+  "POLICYHOLDER": "Policyholder" {
+    shape: person
+  }
+  "THIRD_PARTY": "Involved third party" {
+    shape: person
+  }
+}
+"HANDLERS": "Case handlers" {
+  "HANDLER": "Claims\nhandler" {
+    shape: person
+  }
+  "EXPERT": "Appointed\nexpert" {
+    shape: person
+  }
+  "SUPERVISOR": "Settlement\nsupervisor" {
+    shape: person
+  }
+}
+"CLAIMS": "Claims information system" {
+  "REPORTING": "Claim reporting" {
+    "REPORT_WEB": "Online\nreporting"
+    "REPORT_PHONE": "Phone\nreporting"
+    "DOCS": "Supporting-document\ncollection"
+  }
+  "INVESTIGATION": "Claim investigation" {
+    "CASE": "Claim-file\nmanagement"
+    "ASSESSMENT": "Assessment\ntracking"
+    "FRAUD": "Fraud\ndetection"
+  }
+  "SETTLEMENT": "Claim settlement" {
+    "COMPENSATION": "Compensation\ncalculation"
+    "PAYMENT": "Payment\nscheduling"
+    "RECOURSE": "Subrogation\nand recourse"
+  }
+}
+"EXT": "External systems" {
+  "BANK": "Banking system\n(transfers)"
+  "INTERINSURER": "Inter-insurer\nfiles"
+  "ECM": "Group\nECM"
+}
+
+"POLICYHOLDERS"."POLICYHOLDER" -> "CLAIMS"."REPORTING"."REPORT_WEB": "Report a claim\nClaim"
+"POLICYHOLDERS"."THIRD_PARTY" -> "CLAIMS"."REPORTING"."REPORT_PHONE": "Report involvement"
+"POLICYHOLDERS"."POLICYHOLDER" -> "CLAIMS"."REPORTING"."DOCS": "Upload photos\nand documents"
+"CLAIMS"."REPORTING"."DOCS" -> "EXT"."ECM": "Archive documents"
+"CLAIMS"."REPORTING"."REPORT_WEB" -> "CLAIMS"."INVESTIGATION"."CASE": "Open the case file\nCase file"
+"CLAIMS"."REPORTING"."REPORT_PHONE" -> "CLAIMS"."INVESTIGATION"."CASE": "Open the case file\n(phone channel)"
+"CLAIMS"."INVESTIGATION"."CASE" -> "CLAIMS"."INVESTIGATION"."FRAUD": "Systematic check\nat opening"
+"CLAIMS"."INVESTIGATION"."FRAUD" -> "EXT"."INTERINSURER": "Query claims-history\nfiles"
+"EXT"."INTERINSURER" -> "CLAIMS"."INVESTIGATION"."FRAUD": "Policyholder\nhistory"
+"CLAIMS"."INVESTIGATION"."CASE" -> "CLAIMS"."INVESTIGATION"."ASSESSMENT": "Assessment mission\nif damage > threshold"
+"HANDLERS"."EXPERT" -> "CLAIMS"."INVESTIGATION"."ASSESSMENT": "Submit assessment\nreport\nAssessment report"
+"CLAIMS"."INVESTIGATION"."ASSESSMENT" -> "CLAIMS"."INVESTIGATION"."CASE": "Assessment\nconclusions\nAssessment report"
+"HANDLERS"."HANDLER" -> "CLAIMS"."INVESTIGATION"."CASE": "Investigation and\nmanagement decisions"
+"CLAIMS"."INVESTIGATION"."CASE" -> "CLAIMS"."SETTLEMENT"."COMPENSATION": "Approved items\nfor pricing"
+"CLAIMS"."SETTLEMENT"."COMPENSATION" -> "HANDLERS"."SUPERVISOR": "Approval request\nbeyond delegation"
+"HANDLERS"."SUPERVISOR" -> "CLAIMS"."SETTLEMENT"."COMPENSATION": "Approval or\nreasoned refusal"
+"CLAIMS"."SETTLEMENT"."COMPENSATION" -> "CLAIMS"."SETTLEMENT"."PAYMENT": "Compensation order\nCompensation"
+"CLAIMS"."SETTLEMENT"."PAYMENT" -> "EXT"."BANK": "SEPA transfer\nCompensation"
+"CLAIMS"."INVESTIGATION"."CASE" -> "CLAIMS"."SETTLEMENT"."RECOURSE": "Liability established\nRecourse claim"
+"CLAIMS"."INVESTIGATION"."CASE" -> "POLICYHOLDERS"."POLICYHOLDER": "Notify steps\nand decision"

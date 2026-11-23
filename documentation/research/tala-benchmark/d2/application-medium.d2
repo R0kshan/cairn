@@ -1,0 +1,51 @@
+direction: right
+
+"MANAGERS": "Managers" {
+  "ACCOUNTANT": "Accountant" {
+    shape: person
+  }
+  "SALES_ADMIN": "Sales\nadministration" {
+    shape: person
+  }
+}
+"CRM": "CRM" {
+  "CRM_ACCOUNTS": "Customer-account\nmanagement"
+  "CRM_CONTRACTS": "Contract\nmanagement"
+}
+"BILLING": "Billing" {
+  "BILL_ENGINE": "Billing\nengine"
+  "BILL_ISSUE": "Invoice issuing\nand sending"
+  "BILL_DUNNING": "Dunning and\ncollection"
+  "TAX": "Tax\ncalculation"
+}
+"ACCOUNTING": "Accounting" {
+  "GL": "General ledger"
+  "AR": "Accounts\nreceivable"
+}
+"EVENTS": "Billing\nevent bus" {
+  shape: queue
+}
+"REF_CUSTOMERS": "Customer\nrepository" {
+  shape: cylinder
+}
+"REF_OFFERS": "Offer\ncatalog" {
+  shape: cylinder
+}
+"EDI": "Partner EDI\nplatform"
+"PPF": "Electronic-invoicing\nportal (PPF)"
+
+"MANAGERS"."SALES_ADMIN" -> "CRM"."CRM_CONTRACTS"
+"CRM"."CRM_ACCOUNTS" -> "REF_CUSTOMERS": "(API_REST, JSON)"
+"CRM"."CRM_CONTRACTS" -> "BILLING"."BILL_ENGINE": "(MQ, JSON)"
+"REF_OFFERS" -> "BILLING"."BILL_ENGINE": "(JDBC)"
+"BILLING"."BILL_ENGINE" -> "BILLING"."TAX": "(REST, JSON)"
+"BILLING"."TAX" -> "BILLING"."BILL_ISSUE": "(REST, JSON)"
+"BILLING"."BILL_ENGINE" -> "EVENTS": "(MQ, JSON)"
+"BILLING"."BILL_ISSUE" -> "EVENTS": "(MQ, JSON)"
+"BILLING"."BILL_ISSUE" -> "EDI": "(AS4, UBL)"
+"BILLING"."BILL_ISSUE" -> "PPF": "(API_REST, FacturX)"
+"BILLING"."BILL_ISSUE" -> "ACCOUNTING"."AR": "(MQ, JSON)"
+"BILLING"."BILL_DUNNING" -> "CRM"."CRM_ACCOUNTS": "(API_REST, JSON)"
+"ACCOUNTING"."AR" -> "ACCOUNTING"."GL": "(batch, CSV)"
+"MANAGERS"."ACCOUNTANT" -> "ACCOUNTING"."GL"
+"MANAGERS"."ACCOUNTANT" -> "BILLING"."BILL_DUNNING"

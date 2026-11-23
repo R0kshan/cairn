@@ -1,0 +1,50 @@
+direction: right
+
+"DC": "Main data center" {
+  "DMZ": "DMZ" {
+    "RP": "Reverse proxy\n(HA pair)" {
+      "WAF_I": "WAF"
+    }
+    "SFTP_GW": "Transfer\ngateway"
+  }
+  "LAN_APP": "Application zone" {
+    "AUTH_GW": "Gateway"
+    "OAUTH2": "OAuth2\nproxy"
+    "IDP": "LDAP / IdP"
+    "VM_BILL": "Billing VM" {
+      "BILL_I": "Billing"
+    }
+    "VM_CRM": "CRM VM" {
+      "CRM_I": "CRM"
+    }
+    "KAFKA": "Message\nbroker" {
+      shape: queue
+    }
+  }
+  "LAN_DATA": "Data zone" {
+    "DB_SRV": "Database\nserver" {
+      "PG_I": "PostgreSQL" {
+        shape: cylinder
+      }
+    }
+    "BACKUP": "Backup\nserver"
+  }
+}
+"USERS": "User\nworkstations" {
+  shape: person
+}
+"EDI": "Partner EDI\nplatform"
+
+"USERS" -> "DC"."DMZ"."RP"."WAF_I": "(HTTPS/443)"
+"DC"."DMZ"."RP"."WAF_I" -> "DC"."LAN_APP"."AUTH_GW": "(HTTPS/443)"
+"DC"."LAN_APP"."AUTH_GW" -> "DC"."LAN_APP"."OAUTH2": "(HTTPS/8443)"
+"DC"."LAN_APP"."OAUTH2" -> "DC"."LAN_APP"."IDP": "(LDAPS/636)"
+"DC"."LAN_APP"."AUTH_GW" -> "DC"."LAN_APP"."VM_BILL"."BILL_I": "(HTTPS/8443)"
+"DC"."LAN_APP"."AUTH_GW" -> "DC"."LAN_APP"."VM_CRM"."CRM_I": "(HTTPS/8444)"
+"DC"."LAN_APP"."VM_BILL"."BILL_I" -> "DC"."LAN_DATA"."DB_SRV"."PG_I": "(TCP/5432)"
+"DC"."LAN_APP"."VM_CRM"."CRM_I" -> "DC"."LAN_DATA"."DB_SRV"."PG_I": "(TCP/5432)"
+"DC"."LAN_APP"."VM_BILL"."BILL_I" -> "DC"."LAN_APP"."KAFKA": "(TCP/9092)"
+"DC"."LAN_APP"."VM_CRM"."CRM_I" -> "DC"."LAN_APP"."KAFKA": "(TCP/9092)"
+"DC"."LAN_APP"."VM_BILL"."BILL_I" -> "DC"."DMZ"."SFTP_GW": "(SFTP/22)"
+"DC"."DMZ"."SFTP_GW" -> "EDI": "(AS4/443)"
+"DC"."LAN_DATA"."DB_SRV" -> "DC"."LAN_DATA"."BACKUP": "(TCP/5432)"

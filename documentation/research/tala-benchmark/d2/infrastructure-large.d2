@@ -1,0 +1,71 @@
+direction: right
+
+"DC1": "Main data center" {
+  "DMZ1": "DMZ" {
+    "FW_WAF": "Application\nfirewall (WAF)"
+    "LB1": "Load\nbalancer"
+    "RP1": "Reverse proxies\n(HA)" {
+      "NGINX_I": "Nginx"
+    }
+    "SFTP_GW": "Transfer\ngateway"
+  }
+  "APPS1": "Application zone" {
+    "AUTH_GW": "Gateway"
+    "OAUTH2": "OAuth2\nproxy"
+    "IDP": "LDAP / IdP"
+    "K8S1": "K8s cluster\nfront" {
+      "FRONT_I": "Sales front"
+      "CHECKOUT_I": "Checkout funnel"
+    }
+    "K8S2": "K8s cluster\nbusiness" {
+      "OMS_I": "Order\nmanagement"
+      "PAYHUB_I": "Payment\nhub"
+    }
+  }
+  "DATA1": "Data zone" {
+    "PG_CLU": "PostgreSQL\ncluster" {
+      "PG_I": "PostgreSQL\nprimary" {
+        shape: cylinder
+      }
+    }
+    "KAFKA_SRV": "Kafka\ncluster" {
+      "KAFKA_I": "Kafka"
+    }
+  }
+}
+"DC2": "Disaster-recovery site" {
+  "DATA2": "DR data zone" {
+    "PG_STANDBY": "PostgreSQL\nstandby" {
+      "PG2_I": "PostgreSQL\nreplica" {
+        shape: cylinder
+      }
+    }
+    "BACKUP": "Backup\nserver"
+  }
+}
+"USERS": "Internet\ncustomers" {
+  shape: person
+}
+"PSP_EXT": "PSP"
+"CARRIERS_EXT": "Carrier\nplatforms"
+
+"USERS" -> "DC1"."DMZ1"."FW_WAF": "(HTTPS/443)"
+"DC1"."DMZ1"."FW_WAF" -> "DC1"."DMZ1"."LB1": "(HTTPS/443)"
+"DC1"."DMZ1"."LB1" -> "DC1"."DMZ1"."RP1"."NGINX_I": "(HTTPS/443)"
+"DC1"."DMZ1"."RP1"."NGINX_I" -> "DC1"."APPS1"."AUTH_GW": "(HTTPS/443)"
+"DC1"."APPS1"."AUTH_GW" -> "DC1"."APPS1"."OAUTH2": "(HTTPS/8443)"
+"DC1"."APPS1"."OAUTH2" -> "DC1"."APPS1"."IDP": "(LDAPS/636)"
+"DC1"."APPS1"."AUTH_GW" -> "DC1"."APPS1"."K8S1"."FRONT_I": "(HTTPS/8443)"
+"DC1"."APPS1"."AUTH_GW" -> "DC1"."APPS1"."K8S1"."CHECKOUT_I": "(HTTPS/8444)"
+"DC1"."APPS1"."K8S1"."FRONT_I" -> "DC1"."APPS1"."K8S2"."OMS_I": "(HTTPS/8443)"
+"DC1"."APPS1"."K8S1"."CHECKOUT_I" -> "DC1"."APPS1"."K8S2"."PAYHUB_I": "(HTTPS/8445)"
+"DC1"."APPS1"."K8S2"."PAYHUB_I" -> "PSP_EXT": "(HTTPS/443)"
+"DC1"."APPS1"."K8S2"."OMS_I" -> "DC1"."DATA1"."PG_CLU"."PG_I": "(TCP/5432)"
+"DC1"."APPS1"."K8S2"."PAYHUB_I" -> "DC1"."DATA1"."PG_CLU"."PG_I": "(TCP/5432)"
+"DC1"."APPS1"."K8S2"."OMS_I" -> "DC1"."DATA1"."KAFKA_SRV"."KAFKA_I": "(TCP/9092)"
+"DC1"."APPS1"."K8S1"."FRONT_I" -> "DC1"."DATA1"."KAFKA_SRV"."KAFKA_I": "(TCP/9092)"
+"DC1"."APPS1"."K8S2"."OMS_I" -> "DC1"."DMZ1"."SFTP_GW": "(SFTP/22)"
+"DC1"."DMZ1"."SFTP_GW" -> "CARRIERS_EXT": "(AS4/443)"
+"DC1"."DATA1"."PG_CLU"."PG_I" -> "DC2"."DATA2"."PG_STANDBY"."PG2_I": "(TCP/5432)"
+"DC2"."DATA2"."PG_STANDBY" -> "DC2"."DATA2"."BACKUP": "(TCP/9095)"
+"DC1"."DATA1"."KAFKA_SRV"."KAFKA_I" -> "DC2"."DATA2"."BACKUP": "(TCP/9095)"

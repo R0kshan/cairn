@@ -1,0 +1,121 @@
+direction: right
+
+"CUSTOMERS": "Customers" {
+  "WEB_CUSTOMER": "Web customer" {
+    shape: person
+  }
+  "MOBILE_CUSTOMER": "Mobile customer" {
+    shape: person
+  }
+  "STORE_CUSTOMER": "In-store\ncustomer" {
+    shape: person
+  }
+}
+"INTERNAL": "Internal teams" {
+  "ADVISOR": "Customer-relations\nadvisor" {
+    shape: person
+  }
+  "MERCH": "Merchandising\nmanager" {
+    shape: person
+  }
+  "WAREHOUSE_OP": "Warehouse\noperator" {
+    shape: person
+  }
+  "ACCOUNTANT": "Accountant" {
+    shape: person
+  }
+  "ADMIN": "Platform\nadministrator" {
+    shape: person
+  }
+}
+"FRONT": "Commerce front" {
+  "PRESENTATION": "Sales channels" {
+    "SITE": "E-commerce\nsite"
+    "APP": "Mobile\napp"
+    "KIOSK": "Store\nkiosks"
+  }
+  "JOURNEY": "Customer journey" {
+    "CATALOG_FRONT": "Catalog\nbrowsing"
+    "CART": "Cart and\ncheckout"
+    "ACCOUNT": "Customer\naccount"
+    "RECO": "Personalized\nrecommendations"
+  }
+}
+"CORE": "Commerce core" {
+  "SALES": "Sales" {
+    "ORDER": "Order\nmanagement"
+    "PAYMENT": "Payment\norchestration"
+    "PROMO": "Promotions\nengine"
+    "LOYALTY": "Loyalty\nprogram"
+  }
+  "OFFER": "Offer" {
+    "PIM": "Product\nrepository"
+    "PRICING": "Pricing"
+    "STOCK": "Unified stock\nview"
+  }
+  "EXECUTION": "Execution" {
+    "OMS": "Shipment\norchestration"
+    "WMS_LINK": "Warehouse\ncontrol"
+    "AFTERSALES": "After-sales\nservice"
+  }
+}
+"DATA": "Data platform" {
+  "COLLECTION": "Collection" {
+    "TRACKING": "Browsing-event\ncollection"
+    "CDC": "Reference-data\nchange capture"
+  }
+  "ANALYTICS": "Analytics" {
+    "DWH": "Data\nwarehouse"
+    "SEGMENTS": "Customer\nsegmentation"
+  }
+}
+"EXT": "External systems" {
+  "PSP": "Payment service\nprovider (PSP)"
+  "CARRIERS": "Carrier\nplatforms"
+  "ERP": "Group\nERP"
+  "CRM": "Group\nCRM"
+  "REVIEWS": "Customer-review\nplatform"
+}
+
+"CUSTOMERS"."WEB_CUSTOMER" -> "FRONT"."PRESENTATION"."SITE": "Browse, search,\norder"
+"CUSTOMERS"."MOBILE_CUSTOMER" -> "FRONT"."PRESENTATION"."APP": "Mobile purchase\njourney"
+"CUSTOMERS"."STORE_CUSTOMER" -> "FRONT"."PRESENTATION"."KIOSK": "Check stock and\norder in store"
+"FRONT"."PRESENTATION"."SITE" -> "FRONT"."JOURNEY"."CATALOG_FRONT": "Display product\npages"
+"FRONT"."PRESENTATION"."APP" -> "FRONT"."JOURNEY"."CATALOG_FRONT": "Display mobile\ncatalog"
+"FRONT"."PRESENTATION"."KIOSK" -> "FRONT"."JOURNEY"."CATALOG_FRONT": "Browse the\nstore offer"
+"FRONT"."PRESENTATION"."SITE" -> "FRONT"."JOURNEY"."CART": "Build the cart"
+"FRONT"."PRESENTATION"."APP" -> "FRONT"."JOURNEY"."CART": "Synchronized\nmobile cart"
+"FRONT"."JOURNEY"."CART" -> "CORE"."SALES"."PROMO": "Apply current\noffers"
+"FRONT"."JOURNEY"."CATALOG_FRONT" -> "FRONT"."JOURNEY"."RECO": "Browsing\ncontext"
+"FRONT"."JOURNEY"."RECO" -> "FRONT"."PRESENTATION"."SITE": "Personalized\nsuggestions"
+"FRONT"."JOURNEY"."ACCOUNT" -> "CORE"."SALES"."LOYALTY": "Loyalty balance\nand benefits"
+"FRONT"."JOURNEY"."CART" -> "CORE"."SALES"."ORDER": "Order\nvalidation\nOrder"
+"CORE"."SALES"."ORDER" -> "CORE"."SALES"."PAYMENT": "Charge\nrequest\nPayment"
+"CORE"."SALES"."PAYMENT" -> "EXT"."PSP": "Payment authorization\nand capture\nPayment"
+"EXT"."PSP" -> "CORE"."SALES"."PAYMENT": "Transaction\nstatus"
+"CORE"."SALES"."ORDER" -> "CORE"."EXECUTION"."OMS": "Fulfilment\norder\nOrder"
+"CORE"."EXECUTION"."OMS" -> "CORE"."EXECUTION"."WMS_LINK": "Warehouse picking\nwaves"
+"INTERNAL"."WAREHOUSE_OP" -> "CORE"."EXECUTION"."WMS_LINK": "Pick and ship\nparcels"
+"CORE"."EXECUTION"."OMS" -> "EXT"."CARRIERS": "Pickup requests\nand labels\nParcel"
+"EXT"."CARRIERS" -> "CORE"."EXECUTION"."OMS": "Parcel-tracking\nevents"
+"CORE"."EXECUTION"."OMS" -> "FRONT"."JOURNEY"."ACCOUNT": "Customer order\ntracking"
+"INTERNAL"."ADVISOR" -> "CORE"."EXECUTION"."AFTERSALES": "Handle\ncomplaints"
+"CORE"."EXECUTION"."AFTERSALES" -> "CORE"."SALES"."ORDER": "Returns and\nrefunds"
+"INTERNAL"."MERCH" -> "CORE"."OFFER"."PIM": "Enrich product\npages"
+"CORE"."OFFER"."PIM" -> "FRONT"."JOURNEY"."CATALOG_FRONT": "Publish the\ncatalog\nProduct"
+"CORE"."OFFER"."PRICING" -> "FRONT"."JOURNEY"."CATALOG_FRONT": "Current sale\nprices"
+"EXT"."ERP" -> "CORE"."OFFER"."STOCK": "Accounting stock\nmovements"
+"CORE"."OFFER"."STOCK" -> "FRONT"."JOURNEY"."CATALOG_FRONT": "Product\navailability\nProduct"
+"EXT"."ERP" -> "CORE"."OFFER"."PRICING": "Reference purchase\ncosts"
+"FRONT"."PRESENTATION"."SITE" -> "DATA"."COLLECTION"."TRACKING": "Browsing\nevents"
+"CORE"."OFFER"."PIM" -> "DATA"."COLLECTION"."CDC": "Reference-data\nchanges"
+"DATA"."COLLECTION"."TRACKING" -> "DATA"."ANALYTICS"."DWH": "Feed the data\nfoundation"
+"DATA"."COLLECTION"."CDC" -> "DATA"."ANALYTICS"."DWH": "Reference-data\nsync"
+"DATA"."ANALYTICS"."DWH" -> "DATA"."ANALYTICS"."SEGMENTS": "Compute\nsegments"
+"DATA"."ANALYTICS"."SEGMENTS" -> "FRONT"."JOURNEY"."RECO": "Audience segments\nfor personalization"
+"DATA"."ANALYTICS"."SEGMENTS" -> "EXT"."CRM": "Audiences for\ncampaigns"
+"EXT"."CRM" -> "FRONT"."JOURNEY"."ACCOUNT": "Personalized\noutreach"
+"INTERNAL"."ACCOUNTANT" -> "CORE"."SALES"."PAYMENT": "Reconcile\ncollections"
+"INTERNAL"."ADMIN" -> "CORE"."OFFER"."PIM": "Administer repositories\nand permissions"
+"CORE"."SALES"."ORDER" -> "EXT"."REVIEWS": "Request a review\nafter delivery"
+"EXT"."REVIEWS" -> "FRONT"."JOURNEY"."CATALOG_FRONT": "Product ratings\nand reviews"
