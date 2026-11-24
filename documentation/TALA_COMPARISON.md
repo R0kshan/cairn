@@ -8,9 +8,10 @@ was not free, and how the two differ today.
 
 **In short:** TALA is a general-purpose layout engine for D2 diagrams. It
 searches for an orthogonal, symmetric layout of whatever you describe. cairn
-is a language and a layout for three typed views that enterprise-architecture
-documents expect (logical, application and infrastructure), where each view
-decides where its elements go and what they must carry.
+is built for one job: the three views an architecture document needs
+(logical, application and infrastructure), kept easy to maintain as the
+architecture changes. Each view knows what it describes, checks it, and
+produces what the document needs next to the diagram.
 
 ## TALA, then and now
 
@@ -67,36 +68,79 @@ design, set out below.
 |---|---|---|
 | **Kind of thing** | A layout engine, one of three in D2 alongside dagre and ELK | A language and its renderer, built on ELK |
 | **Input** | Any D2 diagram: boxes, containers and connections whose meaning comes from their labels, shapes and styles | One of three typed views: [`logical`](DSL_SPEC.md#11-logical-view--diagram-logical), [`application`](DSL_SPEC.md#12-application-view--diagram-application), [`infrastructure`](DSL_SPEC.md#13-infrastructure-view--diagram-infrastructure) |
-| **Main goal** | A readable, orthogonal and symmetric layout for software architecture diagrams | Dense architecture views that stay readable and fit an architecture document |
+| **Main goal** | A readable, orthogonal and symmetric layout for software architecture diagrams | Architecture documents that stay easy to maintain: three typed views, readable when dense, each with its flow matrix |
 | **Outputs** | Through D2: SVG, PNG, PDF, PPTX, GIF, ASCII | SVG, plus a flow matrix in CSV, Markdown or SVG |
 | **License** | MPL-2.0, like D2 | Apache-2.0 |
 
 ## Where they differ
 
+### Three architecture views, not a general diagram
+
+TALA lays out whatever D2 describes, and D2 shapes are general: a box becomes a
+database or a person through its `shape` and style. You choose the notation,
+and TALA works for any architecture diagram.
+
+cairn starts from the three views of an architecture document, the
+*architecture logique*, *applicative* and *physique* of French dossiers. Each
+one answers its own question, accepts its own element kinds, and checks what
+its flows carry:
+
+| View | Answers | Describes with | Checks |
+|---|---|---|---|
+| [`logical`](DSL_SPEC.md#11-logical-view--diagram-logical) | What the system does, for whom, with which data | Actors, functional layers and blocks, security capabilities, business objects on flows; no technology | Every flow has a label; blocks sit in a layer, a system or an external |
+| [`application`](DSL_SPEC.md#12-application-view--diagram-application) | Which applications exist and how they exchange | Applications and their modules, gateways, identity providers, queues, datastores, externals; protocol and format on flows | Modules sit in their application; business objects stay in the logical view |
+| [`infrastructure`](DSL_SPEC.md#13-infrastructure-view--diagram-infrastructure) | Where it runs and what crosses which boundary | Sites, network zones, servers, clusters, deployed instances, load balancers, firewalls; protocol and port on flows | Every flow has its protocol; servers sit in a zone, site or cluster |
+
+The layout uses those kinds too: each view places elements in its own bands,
+so actors, the system and externals, or the sites and network zones, always
+read in the same order. Breaking a rule gives a coded diagnostic that points at the source
+([Diagnostics](DIAGNOSTICS.md)).
+
+### Built to maintain architecture documents
+
+An architecture document lives as long as the system it describes. cairn is
+designed so that keeping its views up to date stays cheap:
+
+- **The source is reviewable text.** A view is a `.cairn` file you version and
+  review like code. The same input always gives the same SVG, byte for byte,
+  so rebuilding an unchanged view changes nothing, and a diff shows only real
+  changes.
+- **Mistakes are caught at each edit.** `cairn validate --strict` checks every
+  view against its rules, in an editor, a pre-commit hook or CI. With
+  `--format json`, each problem comes with a code, a position, a hint and,
+  when the fix is certain, an edit that can be applied as given; `cairn explain
+  <code>` gives the reason behind it. That also suits AI agents writing views
+  with the [cairn skill](AI_AGENTS.md).
+- **What goes next to the diagram comes from the same file.** The
+  [flow matrix](DSL_SPEC.md#3-flow-matrix) (the *matrice des flux techniques*
+  French dossiers require) is generated from the view in CSV, Markdown or SVG,
+  so it can't drift from the diagram. So are the legend and the business
+  objects, and `style { lang: fr }` gives French or English headers.
+- **The view fits the page it goes on.** `style { disposition: slide }` or
+  `{ disposition: page }` sizes a view for a 16:9 slide or an A4 page, and the
+  build reports the scale it reaches and the resulting label size. When labels
+  would fall below about 7 px, W0520 says the view carries more than the page
+  can show and should be split.
+- **Adjustments survive edits.** Manual placement is a delta from where the
+  layout put an element, so it keeps working when the rest of the view
+  changes (see below), and cairn keeps checking the adjusted view.
+
 ### How the layout is found
 
 | | TALA | cairn |
 |---|---|---|
-| **Approach** | A general orthogonal layout engine, not limited to hierarchies or trees. It runs several layout attempts with different seeds and keeps the best | ELK's layered layout. Each view places elements in fixed bands: in the logical view, actors, then the system, then externals; in infrastructure, sites and zones in declaration order |
+| **Approach** | A general orthogonal layout engine, not limited to hierarchies or trees. It runs several layout attempts with different seeds and keeps the best | ELK's layered layout, with the view's bands: in the logical view, actors, then the system, then externals; in infrastructure, sites and zones in declaration order |
 | **What decides placement** | The engine, from the graph you describe, guided by hints such as `direction` and `near` | The view, from the kind of each element, then the engine within each band |
-| **Strengths it documents** | Prefers symmetry; first-class containers; `direction` per container; `near` relative to another shape; SQL-table connections that point at the exact row; label positioning that avoids obstructions | Label space reserved during layout; label overlaps measured on every build, and kept at zero across cairn's examples in CI; every flow its own arrow with its own label |
+| **Strengths it documents** | Prefers symmetry; first-class containers; `direction` per container; `near` relative to another shape; SQL-table connections that point at the exact row; label positioning that avoids obstructions | Label space reserved during layout; label overlaps measured on every build; every flow its own arrow with its own label |
 | **Same input** | The same diagram, for the same seeds | The same diagram, byte for byte |
 | **Small edits** | Can cascade into an entirely different layout, as D2's documentation notes | The band order stays the same, so the overall arrangement follows the view's structure |
-| **Dense views** | Orthogonal routing, including for connections between grid cells | Dispositions for wide, tall, a 16:9 slide or a portrait page, and numbered flows with a table under the canvas |
+| **Dense views** | Orthogonal routing, including for connections between grid cells | Numbered flows with a table under the canvas, and dispositions for wide, tall, slide or page |
 
-### What the layout knows about the diagram
-
-TALA lays out what D2 describes, and D2 shapes are general: a box becomes a
-database or a person through its `shape` and style, and `d2 validate` checks a
-file for errors. That makes TALA usable for any architecture diagram, in any
-notation you choose.
-
-cairn's layout starts from typed views. Each view declares the element kinds it
-accepts, how they nest, and what a flow must carry: a `server` must sit in a
-network zone, a site or a cluster, a logical flow needs a label, and an
-infrastructure flow needs its protocol. The layout uses those kinds to place
-elements in their band, and breaking a rule gives a coded diagnostic that
-points at the source ([Diagnostics](DIAGNOSTICS.md)), with a JSON mode for CI.
+cairn's own CI keeps label overlaps at zero across all its examples, and scores
+every example on further readability metrics (crossings, labels pierced by a
+line, container titles struck, lines through unrelated containers…). It fails
+when any drawing gets worse than its recorded baseline; the metrics are
+described in [READABILITY_METRICS.md](https://github.com/R0kshan/cairn/blob/main/documentation/READABILITY_METRICS.md).
 
 ### Manual placement
 
@@ -115,37 +159,6 @@ a hint that creates an overlap is honoured but warns (W0572), a side pin the
 layout could not honour warns (W0570), and an offset that would push an element
 out of its container is cut short so the nesting stays true (W0573).
 
-### Readability checks
-
-cairn checks readability around the layout, not only inside it:
-
-- **The medium is part of the view.** `style { disposition: slide }` or
-  `{ disposition: page }` sizes a view for a 16:9 slide or an A4 page, and the
-  build reports the scale it reaches and the resulting label size. When labels
-  would fall below about 7 px, W0520 says the view carries more than the medium
-  can show and should be split.
-- **Every change is measured.** Beyond label overlaps, CI scores every example
-  on a set of readability metrics (crossings, labels pierced by a line,
-  container titles struck, lines through unrelated containers…) and fails when
-  any drawing gets worse than its recorded baseline. The metrics are described
-  in [READABILITY_METRICS.md](https://github.com/R0kshan/cairn/blob/main/documentation/READABILITY_METRICS.md).
-- **Errors are made for automation.** `cairn validate --format json` gives each
-  problem a code, a position, a hint and, when the fix is certain, an edit that
-  can be applied as given; `cairn explain <code>` gives the reason behind it.
-  That suits CI, and AI agents writing views with the
-  [cairn skill](AI_AGENTS.md).
-
-### Deliverables beyond the diagram
-
-Through D2, a TALA layout can be exported to SVG, PNG, PDF, PowerPoint slides,
-animated GIFs and ASCII, and used across D2's layers, scenarios and steps.
-
-cairn produces what an architecture document needs next to the view: a
-[flow matrix](DSL_SPEC.md#3-flow-matrix) per view in CSV, Markdown or SVG (the
-*matrice des flux techniques* that French architecture dossiers require),
-business objects on logical flows, an automatic legend, and French or English
-headers through `style { lang: fr }`.
-
 ## Which to pick
 
 **Choose D2 with TALA when:**
@@ -159,10 +172,10 @@ headers through `style { lang: fr }`.
 
 - your document needs logical, application and infrastructure views, as French
   SAD templates and enterprise-architecture methods expect;
-- your views carry many flows and labelled exchanges on one page;
-- you need a flow matrix delivered with each view;
-- you want the view's rules (valid nesting, mandatory labels and protocols)
-  checked in CI.
+- you maintain that document over time, and want its views reviewed, checked
+  and rebuilt like code;
+- you need a flow matrix that stays in step with each view;
+- your views carry many flows and labelled exchanges on one page.
 
 ## Sources
 
