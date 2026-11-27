@@ -1,0 +1,6 @@
+d2/
+out/
+results.json
+results.tsv
+summary.txt
+__pycache__/
