@@ -19,8 +19,7 @@ When cairn's layout engine was chosen, in July 2026, TALA was evaluated and
 ruled out: it was then closed-source, required a paid license for commercial
 use, and was not deterministic by design, while cairn needed an engine it could
 extend and that always gives the same output. cairn chose ELK and built its own
-passes on top. TALA has since become open source. The full evaluation is in
-[research/ALTERNATIVES.md](https://github.com/R0kshan/cairn/blob/main/documentation/research/ALTERNATIVES.md).
+passes on top. TALA has since become open source.
 
 ## Two different jobs
 
