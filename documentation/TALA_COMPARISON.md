@@ -31,8 +31,9 @@ passes on top. TALA has since become open source.
 
 A layout engine's job is to arrange what it is given, and TALA does that for
 any architecture diagram, in any style. cairn's job is the architecture
-document itself, which is why it can do things that sit outside a layout
-engine.
+document itself, so it also covers what a layout engine leaves aside: what
+each view may contain, the rules it must follow, and the flow matrix and
+legend that go with it.
 
 ## What cairn adds
 
